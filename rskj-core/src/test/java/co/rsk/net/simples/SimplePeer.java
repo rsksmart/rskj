@@ -19,11 +19,12 @@
 package co.rsk.net.simples;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
+import org.ethereum.TestUtils;
 import org.junit.jupiter.api.Assertions;
 
 import java.net.InetAddress;
@@ -49,9 +50,7 @@ public class SimplePeer implements Peer {
     }
 
     public SimplePeer() {
-        byte[] bytes = new byte[32];
-        random.nextBytes(bytes);
-        this.nodeID = new NodeID(bytes);
+        this.nodeID = new NodeID(TestUtils.generateBytesFromRandom(random,32));
         initAddress();
     }
 

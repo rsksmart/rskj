@@ -488,7 +488,7 @@ class SyncProcessorTest {
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(new Random(101).nextLong(), headers);
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(TestUtils.generateLong("rejectResponse"), headers);
         processor.registerExpectedMessage(response);
 
         processor.processBlockHeadersResponse(sender, response);
@@ -521,7 +521,7 @@ class SyncProcessorTest {
         for (int k = 10; k >= 2; k--)
             headers.add(otherBlockchain.getBlockByNumber(k).getHeader());
 
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(new Random(102).nextLong(), headers);
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(TestUtils.generateLong("response"), headers);
         processor.registerExpectedMessage(response);
 
         processor.processBlockHeadersResponse(sender, response);
@@ -551,7 +551,7 @@ class SyncProcessorTest {
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(new Random(103).nextLong(), headers);
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(TestUtils.generateLong("ResponseWithOneExistingHeader"), headers);
         processor.registerExpectedMessage(response);
 
         processor.processBlockHeadersResponse(sender, response);
@@ -578,7 +578,7 @@ class SyncProcessorTest {
                 mock(Genesis.class),
                 mock(EthereumListener.class));
 
-        BodyResponseMessage response = new BodyResponseMessage(new Random(104).nextLong(), null, null);
+        BodyResponseMessage response = new BodyResponseMessage(TestUtils.generateLong("response"), null, null);
         processor.registerExpectedMessage(response);
 
         processor.processBodyResponse(sender, response);
@@ -615,7 +615,7 @@ class SyncProcessorTest {
                 mock(EthereumListener.class));
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
-        long lastRequestId = new Random(105).nextLong();
+        long lastRequestId = TestUtils.generateLong("lastRequestId");
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
@@ -673,7 +673,7 @@ class SyncProcessorTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
-        long lastRequestId = new Random(106).nextLong();
+        long lastRequestId = TestUtils.generateLong("lastRequestId");
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, txs, uncles);
         processor.registerExpectedMessage(response);
 
@@ -730,7 +730,7 @@ class SyncProcessorTest {
                 mock(EthereumListener.class));
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
-        long lastRequestId = new Random(107).nextLong();
+        long lastRequestId = TestUtils.generateLong("lastRequestId");
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
@@ -823,7 +823,7 @@ class SyncProcessorTest {
                 mock(EthereumListener.class));
         List<Transaction> transactions = block.getTransactionsList();
         List<BlockHeader> uncles = block.getUncleList();
-        long lastRequestId = new Random(108).nextLong();
+        long lastRequestId = TestUtils.generateLong("lastRequestId");
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
@@ -873,7 +873,7 @@ class SyncProcessorTest {
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
                 mock(EthereumListener.class));
-        BlockResponseMessage response = new BlockResponseMessage(new Random(109).nextLong(), block);
+        BlockResponseMessage response = new BlockResponseMessage(TestUtils.generateLong("response"), block);
         processor.registerExpectedMessage(response);
 
         processor.processBlockResponse(sender, response);
@@ -1032,7 +1032,7 @@ class SyncProcessorTest {
         processor.startDownloadingSkeleton(connectionPoint, sender);
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
-        SkeletonResponseMessage response = new SkeletonResponseMessage(new Random(110).nextLong(), blockIdentifiers);
+        SkeletonResponseMessage response = new SkeletonResponseMessage(TestUtils.generateLong("response"), blockIdentifiers);
         processor.registerExpectedMessage(response);
         processor.processSkeletonResponse(sender, response);
 
@@ -1073,7 +1073,7 @@ class SyncProcessorTest {
 
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
 
-        SkeletonResponseMessage response = new SkeletonResponseMessage(new Random(111).nextLong(), blockIdentifiers);
+        SkeletonResponseMessage response = new SkeletonResponseMessage(TestUtils.generateLong("response"), blockIdentifiers);
         processor.registerExpectedMessage(response);
         processor.processSkeletonResponse(sender, response);
 
@@ -1114,7 +1114,7 @@ class SyncProcessorTest {
         processor.startDownloadingSkeleton(connectionPoint, sender);
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
-        SkeletonResponseMessage response = new SkeletonResponseMessage(new Random(112).nextLong(), blockIdentifiers);
+        SkeletonResponseMessage response = new SkeletonResponseMessage(TestUtils.generateLong("response"), blockIdentifiers);
         processor.registerExpectedMessage(response);
         processor.processSkeletonResponse(sender, response);
 

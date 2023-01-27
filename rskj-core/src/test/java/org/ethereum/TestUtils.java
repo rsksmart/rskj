@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Assertions;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.math.BigInteger;
@@ -60,7 +61,19 @@ public final class TestUtils {
         return new Keccak256(generateBytes(TestUtils.class, discriminator, 32));
     }
 
-    public static ECKey generateECKey(String discriminator){
+    public static Long generateLong(@Nonnull String discriminator) {
+        return new Random(discriminator.hashCode()).nextLong();
+    }
+
+    public static Integer generateInt(@Nonnull String discriminator){
+        return new Random(discriminator.hashCode()).nextInt();
+    }
+
+    public static Integer generateInt(@Nonnull String discriminator, int bound){
+        return new Random(discriminator.hashCode()).nextInt(bound);
+    }
+
+    public static ECKey generateECKey(@Nonnull String discriminator) {
         return new ECKey(new SecureRandom(discriminator.getBytes()));
     }
 
@@ -90,13 +103,13 @@ public final class TestUtils {
         for (int i = 0; i < length; ++i) {
 
             byte[] difficutly = new BigInteger(8, random).toByteArray();
-            byte[] newHash = generateBytes("newHash",32);
+            byte[] newHash = generateBytes("newHash", 32);
 
             BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                     .setParentHash(lastHash)
                     .setUnclesHash(newHash)
                     .setCoinbase(RskAddress.nullAddress())
-                    .setStateRoot(generateBytes("newHeader",32))
+                    .setStateRoot(generateBytes("newHeader", 32))
                     .setDifficultyFromBytes(difficutly)
                     .setNumber(lastIndex)
                     .build();
@@ -127,12 +140,12 @@ public final class TestUtils {
         return StringUtils.leftPad(s, n, '0');
     }
 
-    public static InetAddress generateIpAddressV4(String discriminator) throws UnknownHostException {
+    public static InetAddress generateIpAddressV4(@Nonnull String discriminator) throws UnknownHostException {
         byte[] bytes = TestUtils.generateBytes(discriminator, 4);
         return InetAddress.getByAddress(bytes);
     }
 
-    public static InetAddress generateIpAddressV6(String discriminator) throws UnknownHostException {
+    public static InetAddress generateIpAddressV6(@Nonnull String discriminator) throws UnknownHostException {
         byte[] bytes = TestUtils.generateBytes(discriminator, 16);
         return InetAddress.getByAddress(bytes);
     }
@@ -228,30 +241,20 @@ public final class TestUtils {
         return generateBytes(seedWithSalt, length);
     }
 
-    public static byte[] generateBytes(String discriminator, int length) {
+    public static byte[] generateBytes(@Nonnull String discriminator, @Nonnull int length) {
         return generateBytes(TestUtils.class, discriminator, length);
     }
 
-    public static byte[] generateBytesFromRandom(Random random, int size) {
+    public static byte[] generateBytesFromRandom(@Nonnull Random random, @Nonnull int size) {
         byte[] byteArray = new byte[size];
         random.nextBytes(byteArray);
         return byteArray;
     }
 
     /**
-     * @return - generate random 32 byte hash
-     */
-    public static byte[] generateHashInBytes(String discriminator) {
-        byte[] randomHash = new byte[32];
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(randomHash);
-        return randomHash;
-    }
-
-    /**
      * @return generates random peer id for the HelloMessage
      */
-    public static byte[] generatePeerId(String discriminator) {
+    public static byte[] generatePeerId(@Nonnull String discriminator) {
         Random random = new SecureRandom(discriminator.getBytes());
         byte[] peerIdBytes = new BigInteger(512, random).toByteArray();
 

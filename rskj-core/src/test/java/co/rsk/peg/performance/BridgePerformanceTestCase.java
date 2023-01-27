@@ -29,6 +29,7 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -36,13 +37,15 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-
 import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.BeforeAll;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class BridgePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
@@ -115,7 +118,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
         }
 
         public static BtcBlock generateBtcBlock(BtcBlock prevBlock) {
-            Sha256Hash merkleRoot = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(new Random(prevBlock.hashCode()).nextLong()).toByteArray()));
+            Sha256Hash merkleRoot = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(TestUtils.generateLong("merkleRoot")).toByteArray()));
             List<BtcTransaction> txs = Collections.emptyList();
             return generateBtcBlock(prevBlock, txs, merkleRoot);
         }

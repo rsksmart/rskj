@@ -19,6 +19,7 @@
 package co.rsk.test.builders;
 
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
@@ -28,7 +29,6 @@ import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 import java.util.Optional;
-import java.util.Random;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -144,7 +144,7 @@ public class TransactionBuilder {
     }
 
     public Transaction buildRandomTransaction(long seed) {
-        int i = new Random(seed).nextInt();
+        int i = TestUtils.generateInt(String.valueOf(seed));
         long k = i * -1L;
 
         BigInteger randomPositiveVal = i > 0 ?  BigInteger.valueOf(i) : BigInteger.valueOf(k);

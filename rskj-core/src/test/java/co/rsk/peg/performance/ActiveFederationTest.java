@@ -24,6 +24,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import org.ethereum.TestUtils;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -36,7 +37,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 @Disabled
 class ActiveFederationTest extends BridgePerformanceTestCase {
@@ -119,7 +119,7 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
 
                 federation = new Federation(
                         members,
-                        Instant.ofEpochMilli(new Random(executionIndex).nextLong()),
+                        Instant.ofEpochMilli(TestUtils.generateLong(String.valueOf(executionIndex))),
                         Helper.randomInRange(1, 10),
                         networkParameters
                 );
