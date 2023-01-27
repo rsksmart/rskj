@@ -8,13 +8,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.googlecode.jsonrpc4j.ErrorResolver;
-import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.squareup.okhttp.*;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValueFactory;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.ethereum.jsontestsuite.JSONReader;
 import org.ethereum.rpc.Web3;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Assertions;
@@ -28,7 +26,6 @@ import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -70,7 +67,7 @@ class Web3HttpServerTest {
 
         int randomPort = 9000;
 
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, new TestSystemProperties());
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
@@ -94,7 +91,7 @@ class Web3HttpServerTest {
                 "    \"jsonrpc\": \"2.0\"\n" +
                 "}]";
 
-        Response response = sendJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
+        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
@@ -116,7 +113,7 @@ class Web3HttpServerTest {
 
         int randomPort = 9000;
 
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, new TestSystemProperties());
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
@@ -140,7 +137,7 @@ class Web3HttpServerTest {
                 "    \"jsonrpc\": \"2.0\"\n" +
                 "}]]]";
 
-        Response response = sendJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
+        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
@@ -162,7 +159,7 @@ class Web3HttpServerTest {
 
         int randomPort = 9900;
 
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, new TestSystemProperties());
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
@@ -181,7 +178,7 @@ class Web3HttpServerTest {
             content = String.format("[[[[[[[[[[%s]]]]]]]]]]", content);
         }
 
-        Response response = sendJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
+        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
@@ -259,7 +256,7 @@ class Web3HttpServerTest {
             return config;
         };
 
-        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\",\"data\":\"co.rsk.rpc.netty.ExecTimeoutContext$TimeoutException\"}}";
+        String mockResult = "{\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
     }
 
@@ -286,7 +283,7 @@ class Web3HttpServerTest {
             return config;
         };
 
-        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\",\"data\":\"co.rsk.rpc.netty.ExecTimeoutContext$TimeoutException\"}}";
+        String mockResult = "{\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
     }
 
@@ -294,7 +291,7 @@ class Web3HttpServerTest {
     void smokeTestProducesMethodNotFoundException() throws Exception {
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 1, new HashMap<>()));
 
-        String mockResult = "{\"error\":{\"code\":-32099,\"message\":\"Unexpected error\"}}";
+        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":13,\"error\":{\"code\":-32601,\"message\":\"method not found\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, null, mockResult, "");
     }
 
@@ -302,7 +299,7 @@ class Web3HttpServerTest {
     void smokeTestProducesMethodInvalidException() throws Exception {
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 1, new HashMap<>()));
 
-        String mockResult = "{\"error\":{\"code\":-32099,\"message\":\"Unexpected error\"}}";
+        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":13,\"error\":{\"code\":-32601,\"message\":\"method not found\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, null, mockResult, "web3sha3");
     }
 
@@ -365,24 +362,33 @@ class Web3HttpServerTest {
         smokeTest(contentType, "127.0.0.1");
     }
 
-    private Response sendJsonRpcMessage(int port, String contentType, String host) throws IOException {
-        return sendJsonRpcMessage(port, contentType, host, null, "web3_sha3");
+    private Response sendHugeJsonRpcMessage(int port, String contentType, String host, String content) throws IOException {
+        Map<String, JsonNode> jsonRpcRequestProperties = new HashMap<>();
+        jsonRpcRequestProperties.put("jsonrpc", JSON_NODE_FACTORY.textNode("2.0"));
+        jsonRpcRequestProperties.put("id", JSON_NODE_FACTORY.numberNode(13));
+        jsonRpcRequestProperties.put("method", JSON_NODE_FACTORY.textNode("web3_sha3"));
+        jsonRpcRequestProperties.put("params", JSON_NODE_FACTORY.arrayNode().add("value"));
+
+        RequestBody requestBody = RequestBody.create(MediaType.parse(contentType),
+                Optional.ofNullable(content)
+                        .orElse(JSON_NODE_FACTORY.objectNode().setAll(jsonRpcRequestProperties).toString()));
+        URL url = new URL("http", "localhost", port, "/");
+        Request request = new Request.Builder().url(url)
+                .addHeader("Host", host)
+                .addHeader("Accept-Encoding", "identity")
+                .post(requestBody).build();
+        return getUnsafeOkHttpClient().newCall(request).execute();
     }
 
-    private Response sendJsonRpcMessage(int port, String contentType, String host, String content) throws IOException {
-        return sendJsonRpcMessage(port, contentType, host, content, "web3_sha3");
-    }
-
-    private Response sendJsonRpcMessage(int port, String contentType, String host, String content, String method) throws IOException {
+    private Response sendJsonRpcMessage(int port, String contentType, String host, String method) throws IOException {
         Map<String, JsonNode> jsonRpcRequestProperties = new HashMap<>();
         jsonRpcRequestProperties.put("jsonrpc", JSON_NODE_FACTORY.textNode("2.0"));
         jsonRpcRequestProperties.put("id", JSON_NODE_FACTORY.numberNode(13));
         jsonRpcRequestProperties.put("method", JSON_NODE_FACTORY.textNode(method));
         jsonRpcRequestProperties.put("params", JSON_NODE_FACTORY.arrayNode().add("value"));
 
-        RequestBody requestBody = RequestBody.create(MediaType.parse(contentType),
-                Optional.ofNullable(content)
-                        .orElse(JSON_NODE_FACTORY.objectNode().setAll(jsonRpcRequestProperties).toString()));
+        RequestBody requestBody = RequestBody.create(MediaType.parse(contentType), JSON_NODE_FACTORY.objectNode()
+                .setAll(jsonRpcRequestProperties).toString());
         URL url = new URL("http", "localhost", port, "/");
         Request request = new Request.Builder().url(url)
                 .addHeader("Host", host)

@@ -19,9 +19,7 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.rpc.JsonRpcMethodFilter;
-import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.util.JacksonParserUtil;
@@ -31,8 +29,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.jsonrpc4j.*;
+import com.sun.xml.ws.util.NoCloseInputStream;
 import io.netty.buffer.*;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -42,11 +40,16 @@ import org.ethereum.rpc.exception.RskErrorResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
 
 @ChannelHandler.Sharable
 public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBufHolder> {
@@ -56,10 +59,17 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final ObjectMapper mapper = new ObjectMapper();
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
+    private final TimeUnit timeoutUnit;
+    private final int defaultTimeout;
+    private final List<ModuleDescription> modules;
 
     @VisibleForTesting
-    JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer) {
+    JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer, RskSystemProperties rskSystemProperties) {
         this.jsonRpcServer = jsonRpcServer;
+
+        this.timeoutUnit = rskSystemProperties.getRpcTimeoutUnit();
+        this.defaultTimeout = rskSystemProperties.getRpcTimeout();
+        this.modules = new ArrayList<>(rskSystemProperties.getRpcModules());
     }
 
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize, RskSystemProperties rskSystemProperties) {
@@ -69,6 +79,10 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         jsonRpcServer.setInterceptorList(interceptors);
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
+
+        this.timeoutUnit = rskSystemProperties.getRpcTimeoutUnit();
+        this.defaultTimeout = rskSystemProperties.getRpcTimeout();
+        this.modules = new ArrayList<>(rskSystemProperties.getRpcModules());
     }
 
     @Override
@@ -76,9 +90,15 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         ByteBuf responseContent = Unpooled.buffer();
         int responseCode;
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain());
+             InputStream localIs = new NoCloseInputStream(new ByteBufInputStream(request.content().copy()))) {
 
-            responseCode = jsonRpcServer.handleRequest(is, os);
+            responseCode = handleRequest(os, is, localIs);
+        } catch (ExecTimeoutContext.TimeoutException e) {
+            LOGGER.error(e.getMessage(), e);
+            int errorCode = INTERNAL_ERROR.code;
+            responseContent = buildErrorContent(errorCode, e.getMessage());
+            responseCode = errorCode;
         } catch (JsonRpcRequestPayloadException e) {
             String invalidReqMsg = "Invalid request";
             LOGGER.error(invalidReqMsg, e);
@@ -108,6 +128,48 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         LOGGER.error("Unexpected exception", cause);
         ctx.close();
+    }
+
+    private int handleRequest(ByteBufOutputStream os, ByteBufInputStream is, InputStream localIs) throws IOException {
+        int responseCode;
+        JsonNode node = mapper.readValue(localIs, JsonNode.class);
+
+        String method = Optional.ofNullable(node.get("method")).map(JsonNode::asText).orElse("");
+
+        if (method.isEmpty()) {
+            return jsonRpcServer.handleRequest(is, os);
+        }
+
+        String[] methodParts = method.split("_");
+
+        if (methodParts.length < 2) {
+            return jsonRpcServer.handleRequest(is, os);
+        }
+
+        String moduleName = methodParts[0];
+        String methodName = methodParts[1];
+
+        Optional<ModuleDescription> optModule = modules.stream()
+                .filter(m -> m.getName().equals(moduleName))
+                .findFirst();
+
+        int timeout = optModule
+                .map(m -> m.getTimeout(methodName, defaultTimeout))
+                .orElse(defaultTimeout);
+
+        if (timeout <= 0) {
+            responseCode = jsonRpcServer.handleRequest(is, os);
+        } else {
+            try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout, timeoutUnit)) {
+                responseCode = jsonRpcServer.handleRequest(is, os);
+                ExecTimeoutContext.checkIfExpired();
+            } catch (ExecTimeoutContext.TimeoutException e) {
+                LOGGER.error(e.getMessage(), e);
+                throw e;
+            }
+        }
+
+        return responseCode;
     }
 
     private ByteBuf buildErrorContent(int errorCode, String errorMessage) throws JsonProcessingException {
