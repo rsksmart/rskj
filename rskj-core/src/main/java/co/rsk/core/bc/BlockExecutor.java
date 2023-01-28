@@ -39,11 +39,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
+import static org.ethereum.util.BIUtil.toBI;
 
 /**
  * This is a stateless class with methods to execute blocks with its transactions.
@@ -364,6 +370,8 @@ public class BlockExecutor {
             boolean acceptInvalidTransactions,
             boolean saveState,
             boolean mining) {
+        int numTxInBlock = block.getTransactionsList().size();
+        long startTimeSetup = System.nanoTime();
         boolean vmTrace = programTraceProcessor != null;
         logger.trace("Start execute pre RSKIP144.");
         loggingApplyBlock(block);
@@ -391,9 +399,9 @@ public class BlockExecutor {
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
-
+        long endTimeSetup = System.nanoTime();
         int txindex = 0;
-
+        long startTimeExecution = System.nanoTime();
         for (Transaction tx : block.getTransactionsList()) {
 
             addFeesToRemascIfRemascTx(block, track, totalPaidFees, txindex, tx);
@@ -439,8 +447,8 @@ public class BlockExecutor {
 
             loggingTxDone();
         }
-
-
+        long endTimeExecution = System.nanoTime();
+        long startTimeFinish = System.nanoTime();
         saveOrCommitTrackState(saveState, track);
 
         BlockResult result = new BlockResult(
@@ -453,6 +461,56 @@ public class BlockExecutor {
                 vmTrace ? null : track.getTrie()
 
         );
+        long endTimeFinish = System.nanoTime();
+
+        String playOrGenerate = isPlay()? "play" : "generate";
+
+        if (!isMetrics()) {
+            Path file_times = Paths.get(getFilePath_timesSplitted());
+            String header_times = "playOrGenerate,rskip144,moment,bnumber,time\r";
+            long blockNumber = block.getNumber();
+            boolean isRskip144Actived = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber);
+            String data_times_setup = playOrGenerate+","+ isRskip144Actived +",setup,"+ blockNumber +","+(endTimeSetup-startTimeSetup)+ "\r";
+            String data_times_seq = playOrGenerate+","+ isRskip144Actived +",execSequential,"+ blockNumber +","+(endTimeExecution-startTimeExecution)+ "\r";
+            String data_times_finish = playOrGenerate+","+ isRskip144Actived +",finishExec,"+ blockNumber +","+(endTimeFinish-startTimeFinish)+ "\r";
+            try {
+                FileWriter myWriter_times = new FileWriter(getFilePath_timesSplitted(), true);
+
+                if (!Files.exists(file_times)) {
+                    myWriter_times.write(header_times);
+                }
+                myWriter_times.write(data_times_setup);
+                myWriter_times.write(data_times_seq);
+                myWriter_times.write(data_times_finish);
+                myWriter_times.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            String moment = mining? "mining" : "tryToConnect";
+
+            //Num tx in sequential and in parallel are -1 because we are in the execution pre-RSKIP144, there is no subliwsts
+            String header = "playOrGenerate,rskip144,moment,bnumber,gasLimit,numTxInBlock,numExecutedTx,feeTotal,gasTotal,numTxInParallel,numTxInSequential\r";
+            String data = playOrGenerate+","+ isRskip144Actived +","+moment+","+
+                    blockNumber +","+ toBI(block.getGasLimit()).longValue()+"," + numTxInBlock +","+ result.getExecutedTransactions().size() +","+result.getPaidFees().toString()+","+ result.getGasUsed()+",-1,-1\r";
+
+            try {
+                String filePath = getFilePath_forMetrics();
+                Path file = Paths.get(filePath);
+                FileWriter myWriter;
+                if (!Files.exists(file) || Files.size(file) == 0) {
+                    myWriter = new FileWriter(filePath, true);
+                    myWriter.write(header);
+                    myWriter.write(data);
+                } else {
+                    myWriter = new FileWriter(filePath, true);
+                    myWriter.write(data);
+                }
+                myWriter.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         profiler.stop(metric);
         logger.trace("End execute pre RSKIP144.");
         return result;
@@ -494,6 +552,8 @@ public class BlockExecutor {
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions,
             boolean saveState) {
+        int numTxInBlock = block.getTransactionsList().size();
+        long startTimeSetup = System.nanoTime();
         boolean vmTrace = programTraceProcessor != null;
         logger.trace("Start executeParallel.");
         loggingApplyBlock(block);
@@ -520,6 +580,9 @@ public class BlockExecutor {
         int nTasks = 0;
 
         // execute parallel subsets of transactions
+        long endTimeSetup = System.nanoTime();
+        long startTimeParallel = System.nanoTime();
+
         short start = 0;
         for (short end : block.getHeader().getTxExecutionSublistsEdges()) {
             List<Transaction> sublist = block.getTransactionsList().subList(start, end);
@@ -571,6 +634,8 @@ public class BlockExecutor {
             }
         }
 
+        long endTimeParallel = System.nanoTime();
+        long startTimeDetectCollision = System.nanoTime();
         // Review collision
         if (aTracker.detectCollision()) {
             logger.warn("block: [{}] execution failed", block.getNumber());
@@ -578,6 +643,8 @@ public class BlockExecutor {
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
 
+        long endTimeDetectCollision = System.nanoTime();
+        long startTimeMerge = System.nanoTime();
         // Merge maps.
         Map<Integer, Transaction> executedTransactions = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
@@ -595,6 +662,10 @@ public class BlockExecutor {
             totalPaidFees = totalPaidFees.add(tle.getTotalFees());
             totalGasUsed += tle.getTotalGas();
         }
+
+        long executedTransactionsInParallel = executedTransactions.size();
+        long endTimeMerge = System.nanoTime();
+        long startTimeSequential = System.nanoTime();
 
         // execute remaining transactions after the parallel subsets
         List<Transaction> sublist = block.getTransactionsList().subList(start, block.getTransactionsList().size());
@@ -617,10 +688,15 @@ public class BlockExecutor {
                 totalPaidFees,
                 remascEnabled
         );
+
+        long endTimeSequential = System.nanoTime();
+        long startTimeFinish = System.nanoTime();
         Boolean success = txListExecutor.call();
         if (!Boolean.TRUE.equals(success)) {
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
+
+        long executedTransactionsInSequential = executedTransactions.size() - executedTransactionsInParallel;
 
         Coin totalBlockPaidFees = txListExecutor.getTotalFees();
         totalGasUsed += txListExecutor.getTotalGas();
@@ -636,6 +712,102 @@ public class BlockExecutor {
                 totalBlockPaidFees,
                 vmTrace ? null : track.getTrie()
         );
+        long endTimeFinish = System.nanoTime();
+
+        String playOrGenerate = isPlay()? "play" : "generate";
+        if (!isMetrics()) {
+            Path file_times = Paths.get(getFilePath_timesSplitted());
+            String header_times = "playOrGenerate,rskip144,moment,bnumber,time\r";
+            long blockNumber = block.getNumber();
+            boolean isRskip144Active = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber);
+
+            String data_times_setup = playOrGenerate + "," + isRskip144Active + ",setup," + blockNumber + "," + (endTimeSetup - startTimeSetup) + "\r";
+            String data_times_parallel = playOrGenerate + "," + isRskip144Active + ",execParallel," + blockNumber + "," + (endTimeParallel - startTimeParallel) + "\r";
+            String data_times_collision = playOrGenerate + "," + isRskip144Active + ",detectCollision," + blockNumber + "," + (endTimeDetectCollision - startTimeDetectCollision) + "\r";
+            String data_times_merge = playOrGenerate + "," + isRskip144Active + ",mergeMaps," + blockNumber + "," + (endTimeMerge - startTimeMerge) + "\r";
+            String data_times_seq = playOrGenerate + "," + isRskip144Active + ",execSequential," + blockNumber + "," + (endTimeSequential - startTimeSequential) + "\r";
+            String data_times_finish = playOrGenerate + "," + isRskip144Active + ",finishExec," + blockNumber + "," + (endTimeFinish - startTimeFinish) + "\r";
+
+            try {
+                FileWriter myWriter_times = new FileWriter(getFilePath_timesSplitted(), true);
+
+                if (!Files.exists(file_times) || Files.size(file_times) == 0) {
+                    myWriter_times.write(header_times);
+                }
+                myWriter_times.write(data_times_setup);
+                myWriter_times.write(data_times_parallel);
+                myWriter_times.write(data_times_collision);
+                myWriter_times.write(data_times_merge);
+                myWriter_times.write(data_times_seq);
+                myWriter_times.write(data_times_finish);
+                myWriter_times.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+//            profiler.stop(metric);
+//            logger.trace("End execute pre RSKIP144.");
+//            return result;
+//        }
+
+
+            String filePath = getFilePath_forMetrics();
+            Path file = Paths.get(filePath);
+            int threads = Constants.getTransactionExecutionThreads();
+            String header = "playOrGenerate,rskip144,moment,bnumber,gasLimit,numTxInBlock,numExecutedTx,feeTotal,gasTotal,numTxInParallel,numTxInSequential";
+
+            for (int j = 0; j < threads; j++) {
+                header = header.concat(",thread".concat(String.valueOf(j)));
+            }
+
+            for (int j = 0; j < threads; j++) {
+                header = header.concat(",gasThread".concat(String.valueOf(j)));
+            }
+
+            header = header + "\r";
+
+            short[] txExecutionSublistsEdges = block.getHeader().getTxExecutionSublistsEdges();
+
+            String data = playOrGenerate + "," + activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber()) + ",tryToConnect," +
+                    block.getNumber() + "," + toBI(block.getGasLimit()).longValue() + "," + numTxInBlock + "," + result.getExecutedTransactions().size() + "," + result.getPaidFees().toString() + "," + result.getGasUsed() + "," + executedTransactionsInParallel + "," + executedTransactionsInSequential;
+
+            short lastNum = 0;
+            short len = 0;
+            for (short edge : txExecutionSublistsEdges) {
+                data = data.concat("," + (edge - lastNum));
+                lastNum = edge;
+                len++;
+            }
+
+            if (len < threads) {
+                for (int i = 0; i < threads - len; i++) {
+                    data = data.concat("," + 0);
+                }
+            }
+
+            for (int i = 0; i < threads; i++) {
+                data = data.concat(',' + String.valueOf(-1));
+            }
+
+            data = data + "\r";
+
+
+            try {
+                FileWriter myWriter;
+
+                if (!Files.exists(file)) {
+                    myWriter = new FileWriter(filePath, true);
+                    myWriter.write(header);
+                    myWriter.write(data);
+                } else {
+                    myWriter = new FileWriter(filePath, true);
+                    myWriter.write(data);
+                }
+                myWriter.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         profiler.stop(metric);
         logger.trace("End executeParallel.");
         return result;
@@ -658,6 +830,7 @@ public class BlockExecutor {
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions,
             boolean saveState) {
+        int numTxInBlock = block.getTransactionsList().size();
         logger.trace("Start executeForMining.");
         List<Transaction> transactionsList = block.getTransactionsList();
         loggingApplyBlock(block);
@@ -771,6 +944,60 @@ public class BlockExecutor {
                 totalPaidFees,
                 track.getTrie()
         );
+
+
+//        if (!isMetrics()) {
+//            profiler.stop(metric);
+//            logger.trace("End execute pre RSKIP144.");
+//            return result;
+//        }
+
+        String playOrGenerate = isPlay()? "play" : "generate";
+        String filePath = getFilePath_forMetrics();
+        Path file = Paths.get(filePath);
+
+        int threads = Constants.getTransactionExecutionThreads();
+        String header = "playOrGenerate,rskip144,moment,bnumber,gasLimit,numTxInBlock,numExecutedTx,feeTotal,gasTotal,numTxInParallel,numTxInSequential";
+
+        for (int j = 0; j < threads; j++) {
+            header = header.concat(",thread".concat(String.valueOf(j)));
+        }
+
+        for (int j = 0; j < threads; j++) {
+            header = header.concat(",gasThread".concat(String.valueOf(j)));
+        }
+
+        header = header+"\r";
+
+        String data = playOrGenerate+","+activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",mining,"+
+                block.getNumber() + ","+ toBI(block.getGasLimit()).longValue() + "," + numTxInBlock + "," + result.getExecutedTransactions().size() +","+result.getPaidFees().toString()+","+ result.getGasUsed()+","+ parallelizeTransactionHandler.getTxInParallel() +","+ parallelizeTransactionHandler.getTxInSequential();
+
+        List<Short> transactionsInOrder = parallelizeTransactionHandler.getTxsPerSublist();
+        for (Short txs : transactionsInOrder) {
+            data = data.concat(','+String.valueOf(txs));
+        }
+
+        List<Long> gasPerSublist = parallelizeTransactionHandler.getGasPerSublist();
+        for (Long gas : gasPerSublist) {
+            data = data.concat(','+String.valueOf(gas));
+        }
+
+        data = data+"\r";
+
+        try {
+            FileWriter myWriter;
+            if (!Files.exists(file)) {
+                myWriter = new FileWriter(filePath, true);
+                myWriter.write(header);
+            } else {
+                myWriter = new FileWriter(filePath,     true);
+            }
+            myWriter.write(data);
+            myWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         profiler.stop(metric);
         logger.trace("End executeForMining.");
         return result;
