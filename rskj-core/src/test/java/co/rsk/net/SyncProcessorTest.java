@@ -261,10 +261,11 @@ class SyncProcessorTest {
                 mock(EthereumListener.class));
 
         List<SimplePeer> senders = new ArrayList<>();
-
+        Random random = new Random(SyncProcessor.class.hashCode());
         int lessPeers = SyncConfiguration.DEFAULT.getExpectedPeers() - 1;
         for (int i = 0; i < lessPeers; i++) {
-            SimplePeer sender = new SimplePeer();
+            NodeID nodeID = new NodeID(TestUtils.generateBytesFromRandom(random,32));
+            SimplePeer sender = new SimplePeer(nodeID);
             senders.add(sender);
             when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         }

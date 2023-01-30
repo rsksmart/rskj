@@ -32,14 +32,12 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class SimplePeer implements Peer {
-    private static Random random = new Random(SimplePeer.class.hashCode());
     private List<Message> messages = new ArrayList<>();
     private NodeID nodeID;
     private InetAddress address;
@@ -50,7 +48,7 @@ public class SimplePeer implements Peer {
     }
 
     public SimplePeer() {
-        this.nodeID = new NodeID(TestUtils.generateBytesFromRandom(random,32));
+        this.nodeID = new NodeID(TestUtils.generateBytes("nodeID",32));
         initAddress();
     }
 
