@@ -22,6 +22,8 @@ import co.rsk.validators.BlockHeaderValidationRule;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
@@ -32,6 +34,8 @@ import javax.annotation.Nonnull;
  * - validation of the header data of the block
  */
 public class BlockHeaderValidatorImpl implements BlockValidator {
+
+    private static final Logger logger = LoggerFactory.getLogger("blocksyncservice");
 
     private final BlockHeaderValidationRule blockHeaderValidator;
 
@@ -48,6 +52,7 @@ public class BlockHeaderValidatorImpl implements BlockValidator {
     @Override
     public boolean isValid(@Nonnull Block block) {
         if (block.isGenesis()) {
+            logger.warn("Block is Genesis");
             return false;
         }
 
