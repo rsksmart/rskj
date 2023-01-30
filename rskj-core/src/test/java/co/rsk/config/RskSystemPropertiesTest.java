@@ -117,7 +117,7 @@ class RskSystemPropertiesTest {
                 )
         );
 
-        List<String> disabledModuleNames = Stream.of("sco", "debug", "trace").collect(Collectors.toList());
+        List<String> disabledModuleNames = Stream.of( "sco", "debug", "trace").collect(Collectors.toList());
 
         Map<String, List<ModuleDescription>> moduleNameEnabledMap = rskSystemProperties.getRpcModules()
                 .stream()
