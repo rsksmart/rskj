@@ -442,7 +442,8 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     private boolean isPending(long messageId, MessageType messageType) {
-        return pendingMessages.containsKey(messageId) && pendingMessages.get(messageId).type == messageType;
+        MessageInfo messageInfo = pendingMessages.get(messageId);
+        return messageInfo != null && messageInfo.type == messageType;
     }
 
     private void removePendingMessage(long messageId, MessageType messageType) {

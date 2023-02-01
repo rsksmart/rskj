@@ -21,10 +21,12 @@ package co.rsk.net;
 public class NodeMsgTraceInfo {
     private final String messageId;
     private final String sessionId;
+    private final long creationTime;
 
     public NodeMsgTraceInfo(String messageId, String sessionId) {
         this.messageId = messageId;
         this.sessionId = sessionId;
+        this.creationTime = System.currentTimeMillis();
     }
 
     public String getMessageId() {
@@ -33,5 +35,9 @@ public class NodeMsgTraceInfo {
 
     public String getSessionId() {
         return sessionId;
+    }
+
+    public long getLifeTimeInSeconds() {
+        return (System.currentTimeMillis() - this.creationTime) / 1000;
     }
 }

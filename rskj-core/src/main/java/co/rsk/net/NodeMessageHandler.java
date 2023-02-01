@@ -30,7 +30,6 @@ import co.rsk.net.messages.MessageVisitor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
-import co.rsk.util.FormatUtils;
 import co.rsk.util.TraceUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.HashUtil;
@@ -125,33 +124,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     public synchronized void processMessage(final Peer sender, @Nonnull final Message message) {
         messageCounter.decrement(sender);
 
-        long start = System.nanoTime();
         MessageType messageType = message.getMessageType();
         logger.trace("Process message type: {}", messageType);
 
         MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, transactionGateway, peerScoringManager, channelManager, sender);
         message.accept(mv);
-
-        long processTime = System.nanoTime() - start;
-        logProcessingTime(message, processTime);
-    }
-
-    private static void logProcessingTime(@Nonnull Message message, long processTime) {
-        String timeInSecondsStr = FormatUtils.formatNanosecondsToSeconds(processTime);
-
-        boolean isBlockRelated = message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.BODY_RESPONSE_MESSAGE;
-        if (isBlockRelated && BlockUtils.tooMuchProcessTime(processTime)) {
-            loggerMessageProcess.warn("Message[{}] processing took too much: [{}] seconds.", message.getMessageType(), timeInSecondsStr);
-            return;
-        }
-
-        double processTimeInSeconds = processTime / 1E9;
-        if (!isBlockRelated && processTimeInSeconds > PROCESSING_TIME_TO_WARN_LIMIT) {
-            loggerMessageProcess.warn("Message[{}] processing took too much: [{}] seconds.", message.getMessageType(), timeInSecondsStr);
-            return;
-        }
-
-        loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSecondsStr);
     }
 
     @Override
@@ -317,10 +294,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
                 if (task != null) {
                     addTracingKeys(task.getNodeMsgTraceInfo());
-                    logger.trace("Start task");
-                    logTooLongWaitingTime(task);
+                    long startMillis = System.currentTimeMillis();
+                    logStart(task);
                     this.processMessage(task.getSender(), task.getMessage());
-                    logger.trace("End task");
+                    logEnd(task, startMillis);
                 } else {
                     logger.trace("No task");
                 }
@@ -349,20 +326,41 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
     }
 
-    private void removeTracingKeys() {
-        MDC.remove(TraceUtils.MSG_ID);
-        MDC.remove(TraceUtils.SESSION_ID);
-    }
+    private void logStart(MessageTask task) {
+        MessageType messageType = task.getMessage().getMessageType();
 
-    private void logTooLongWaitingTime(MessageTask task) {
-        long taskWaitTimeInSeconds = task.getLifeTimeInSeconds();
-        if (taskWaitTimeInSeconds < QUEUED_TIME_TO_WARN_LIMIT) {
+        if (task.getNodeMsgTraceInfo() == null) {
+            logger.trace("Start {} message task", messageType);
             return;
         }
 
-        logger.debug("Task {} was waiting too much in the queue: [{}] seconds", task.message.getMessageType(), taskWaitTimeInSeconds);
+        long taskWaitTimeInSeconds = task.getNodeMsgTraceInfo().getLifeTimeInSeconds();
+        logger.trace("Start {} message task after {}s", messageType, taskWaitTimeInSeconds);
 
-        recentDelays = true;
+        if (taskWaitTimeInSeconds >= QUEUED_TIME_TO_WARN_LIMIT) {
+            logger.debug("Task {} was waiting too much in the queue: [{}] seconds", messageType, taskWaitTimeInSeconds);
+            recentDelays = true;
+        }
+    }
+
+    private void logEnd(MessageTask task, long startMillis) {
+        long processTimeInSeconds = (System.currentTimeMillis() - startMillis) / 1000;
+
+        Message message = task.getMessage();
+        boolean isBlockRelated = message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.BODY_RESPONSE_MESSAGE;
+        boolean isBlockSlow = isBlockRelated && BlockUtils.tooMuchProcessTime(processTimeInSeconds);
+        boolean isOtherSlow = !isBlockRelated && processTimeInSeconds > PROCESSING_TIME_TO_WARN_LIMIT;
+
+        if (isBlockSlow || isOtherSlow) {
+            loggerMessageProcess.warn("Message[{}] processing took too much: [{}] seconds.", message.getMessageType(), processTimeInSeconds);
+        }
+
+        logger.trace("End {} message task after {}s", task.getMessage().getMessageType(), processTimeInSeconds);
+    }
+
+    private void removeTracingKeys() {
+        MDC.remove(TraceUtils.MSG_ID);
+        MDC.remove(TraceUtils.SESSION_ID);
     }
 
     private void updateTimedEvents() {
@@ -406,14 +404,12 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         private final Message message;
         private final double score;
         private final NodeMsgTraceInfo nodeMsgTraceInfo;
-        private final long creationTime;
 
         public MessageTask(Peer sender, Message message, double score, NodeMsgTraceInfo nodeMsgTraceInfo) {
             this.sender = sender;
             this.message = message;
             this.score = score;
             this.nodeMsgTraceInfo = nodeMsgTraceInfo;
-            this.creationTime = System.currentTimeMillis();
         }
 
         public Peer getSender() {
@@ -426,10 +422,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
         public NodeMsgTraceInfo getNodeMsgTraceInfo() {
             return nodeMsgTraceInfo;
-        }
-
-        private long getLifeTimeInSeconds() {
-            return (System.currentTimeMillis() - this.creationTime) / 1000;
         }
 
         @Override
