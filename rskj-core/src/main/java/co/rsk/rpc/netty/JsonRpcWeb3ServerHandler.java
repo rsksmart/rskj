@@ -44,8 +44,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
-
 @ChannelHandler.Sharable
 public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBufHolder> {
 
@@ -55,18 +53,16 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
     private final int defaultTimeout;
-    private final List<ModuleDescription> modules;
 
     @VisibleForTesting
     JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer, RskSystemProperties rskSystemProperties) {
         this.jsonRpcServer = jsonRpcServer;
 
         this.defaultTimeout = rskSystemProperties.getRpcTimeout();
-        this.modules = new ArrayList<>(rskSystemProperties.getRpcModules());
     }
 
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize, RskSystemProperties rskSystemProperties) {
-        this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
+        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), rskSystemProperties.getRpcModules(), rskSystemProperties.getRpcTimeout());
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new JsonRpcRequestValidatorInterceptor(maxBatchRequestsSize));
         jsonRpcServer.setInterceptorList(interceptors);
@@ -74,7 +70,6 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
 
         this.defaultTimeout = rskSystemProperties.getRpcTimeout();
-        this.modules = new ArrayList<>(rskSystemProperties.getRpcModules());
     }
 
     @Override
@@ -92,11 +87,6 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
                 responseCode = jsonRpcServer.handleRequest(is, os);
                 ExecTimeoutContext.checkIfExpired();
             }
-        } catch (ExecTimeoutContext.TimeoutException e) {
-            LOGGER.error(e.getMessage(), e);
-            int errorCode = INTERNAL_ERROR.code;
-            responseContent = buildErrorContent(errorCode, e.getMessage());
-            responseCode = errorCode;
         } catch (JsonRpcRequestPayloadException e) {
             String invalidReqMsg = "Invalid request";
             LOGGER.error(invalidReqMsg, e);

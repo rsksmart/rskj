@@ -23,7 +23,7 @@ import java.util.Set;
 
 public class ExecTimeoutContext implements AutoCloseable {
 
-    private static final ThreadLocal<ExecTimeoutContext> sExecTimeoutContext = new InheritableThreadLocal<>();
+    private static final ThreadLocal<Set<ExecTimeoutContext>> sExecTimeoutContext = ThreadLocal.withInitial(HashSet::new);
 
     /**
      * Creates a new context, which at some point has to be closed.
@@ -43,20 +43,16 @@ public class ExecTimeoutContext implements AutoCloseable {
      * @param timeout time after which this exec context should be considered expired.
      */
     public static ExecTimeoutContext create(long timeout) {
-        ExecTimeoutContext ctx = sExecTimeoutContext.get();
-        if (ctx != null) {
-            ctx.execTimeoutContexts.add(new ExecTimeoutContext(timeout));
-        } else {
-            ctx = new ExecTimeoutContext(timeout);
-            sExecTimeoutContext.set(ctx);
-        }
+        Set<ExecTimeoutContext> ctxs = sExecTimeoutContext.get();
+        ExecTimeoutContext ctx = new ExecTimeoutContext(timeout);
+        ctxs.add(new ExecTimeoutContext(timeout));
+        sExecTimeoutContext.set(ctxs);
 
         return ctx;
     }
 
     public static void checkIfExpired() {
-        ExecTimeoutContext execTimeoutContext = sExecTimeoutContext.get();
-        checkIfExpired(execTimeoutContext);
+        sExecTimeoutContext.get().forEach(ExecTimeoutContext::checkIfExpired);
     }
 
     public static void checkIfExpired(ExecTimeoutContext execTimeoutContext) {
@@ -66,11 +62,6 @@ public class ExecTimeoutContext implements AutoCloseable {
             if (currentTimeInMillis > execTimeoutContext.expirationTimeInMillis) {
                 throw new TimeoutException("Execution has expired.");
             }
-        }
-
-        Set<ExecTimeoutContext> ctxs = execTimeoutContext.execTimeoutContexts;
-        for (ExecTimeoutContext ctx : ctxs) {
-            checkIfExpired(ctx);
         }
     }
 
@@ -85,10 +76,8 @@ public class ExecTimeoutContext implements AutoCloseable {
 
     @Override
     public void close() {
-        ExecTimeoutContext execTimeoutContext = sExecTimeoutContext.get();
-        close(execTimeoutContext);
-
-        Set<ExecTimeoutContext> ctxs = execTimeoutContext.execTimeoutContexts;
+        Set<ExecTimeoutContext> ctxs = sExecTimeoutContext.get();
+        ctxs.remove(this);
 
         if (ctxs.isEmpty()) {
             sExecTimeoutContext.remove();
