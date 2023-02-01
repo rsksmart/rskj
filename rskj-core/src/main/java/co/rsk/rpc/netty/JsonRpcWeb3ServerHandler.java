@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.jsonrpc4j.*;
-import com.sun.xml.ws.util.NoCloseInputStream;
 import io.netty.buffer.*;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -40,10 +39,6 @@ import org.ethereum.rpc.exception.RskErrorResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,7 +54,6 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final ObjectMapper mapper = new ObjectMapper();
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
-    private final TimeUnit timeoutUnit;
     private final int defaultTimeout;
     private final List<ModuleDescription> modules;
 
@@ -67,7 +61,6 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer, RskSystemProperties rskSystemProperties) {
         this.jsonRpcServer = jsonRpcServer;
 
-        this.timeoutUnit = rskSystemProperties.getRpcTimeoutUnit();
         this.defaultTimeout = rskSystemProperties.getRpcTimeout();
         this.modules = new ArrayList<>(rskSystemProperties.getRpcModules());
     }
@@ -80,7 +73,6 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
 
-        this.timeoutUnit = rskSystemProperties.getRpcTimeoutUnit();
         this.defaultTimeout = rskSystemProperties.getRpcTimeout();
         this.modules = new ArrayList<>(rskSystemProperties.getRpcModules());
     }
@@ -89,11 +81,17 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder request) throws Exception {
         ByteBuf responseContent = Unpooled.buffer();
         int responseCode;
+
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
              ByteBufInputStream is = new ByteBufInputStream(request.content().retain());
-             InputStream localIs = new NoCloseInputStream(new ByteBufInputStream(request.content().copy()))) {
+             ExecTimeoutContext ignored = ExecTimeoutContext.create(defaultTimeout)) {
 
-            responseCode = handleRequest(os, is, localIs);
+            if (defaultTimeout <= 0) {
+                responseCode = jsonRpcServer.handleRequest(is, os);
+            } else {
+                responseCode = jsonRpcServer.handleRequest(is, os);
+                ExecTimeoutContext.checkIfExpired();
+            }
         } catch (ExecTimeoutContext.TimeoutException e) {
             LOGGER.error(e.getMessage(), e);
             int errorCode = INTERNAL_ERROR.code;
@@ -128,48 +126,6 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         LOGGER.error("Unexpected exception", cause);
         ctx.close();
-    }
-
-    private int handleRequest(ByteBufOutputStream os, ByteBufInputStream is, InputStream localIs) throws IOException {
-        int responseCode;
-        JsonNode node = mapper.readValue(localIs, JsonNode.class);
-
-        String method = Optional.ofNullable(node.get("method")).map(JsonNode::asText).orElse("");
-
-        if (method.isEmpty()) {
-            return jsonRpcServer.handleRequest(is, os);
-        }
-
-        String[] methodParts = method.split("_");
-
-        if (methodParts.length < 2) {
-            return jsonRpcServer.handleRequest(is, os);
-        }
-
-        String moduleName = methodParts[0];
-        String methodName = methodParts[1];
-
-        Optional<ModuleDescription> optModule = modules.stream()
-                .filter(m -> m.getName().equals(moduleName))
-                .findFirst();
-
-        int timeout = optModule
-                .map(m -> m.getTimeout(methodName, defaultTimeout))
-                .orElse(defaultTimeout);
-
-        if (timeout <= 0) {
-            responseCode = jsonRpcServer.handleRequest(is, os);
-        } else {
-            try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout, timeoutUnit)) {
-                responseCode = jsonRpcServer.handleRequest(is, os);
-                ExecTimeoutContext.checkIfExpired();
-            } catch (ExecTimeoutContext.TimeoutException e) {
-                LOGGER.error(e.getMessage(), e);
-                throw e;
-            }
-        }
-
-        return responseCode;
     }
 
     private ByteBuf buildErrorContent(int errorCode, String errorMessage) throws JsonProcessingException {

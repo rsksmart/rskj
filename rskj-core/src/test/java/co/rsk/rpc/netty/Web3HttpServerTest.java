@@ -26,7 +26,6 @@ import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.hamcrest.core.Is.is;
@@ -240,20 +239,16 @@ class Web3HttpServerTest {
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 1, new HashMap<>()));
 
         Function<Config, Config> decorator = rawConfig -> {
-            Config config = rawConfig.withValue("rpc.timeoutunit", ConfigValueFactory.fromAnyRef(TimeUnit.MICROSECONDS.name()));
-            List<? extends ConfigObject> list = config.getObjectList("rpc.modules");
+            List<? extends ConfigObject> list = rawConfig.getObjectList("rpc.modules");
 
             ConfigObject configElement = list.get(0);
             configElement = configElement.withValue("name", ConfigValueFactory.fromAnyRef("web3"));
             configElement = configElement.withValue("timeout", ConfigValueFactory.fromAnyRef(1));
-            configElement = configElement.withValue("timeoutunit", ConfigValueFactory.fromAnyRef(TimeUnit.MICROSECONDS.name()));
 
             List<ConfigObject> modules = new ArrayList<>(list);
             modules.add(configElement);
 
-            config = config.withValue("rpc.modules", ConfigValueFactory.fromAnyRef(modules));
-
-            return config;
+            return rawConfig.withValue("rpc.modules", ConfigValueFactory.fromAnyRef(modules));
         };
 
         String mockResult = "{\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\"}}";
@@ -265,8 +260,7 @@ class Web3HttpServerTest {
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 1, new HashMap<>()));
 
         Function<Config, Config> decorator = rawConfig -> {
-            Config config = rawConfig.withValue("rpc.timeoutunit", ConfigValueFactory.fromAnyRef(TimeUnit.MICROSECONDS.name()));
-            List<? extends ConfigObject> list = config.getObjectList("rpc.modules");
+            List<? extends ConfigObject> list = rawConfig.getObjectList("rpc.modules");
 
             Map<String, Integer> methodTimeoutMap = new HashMap<>();
             methodTimeoutMap.put("sha3", 1);
@@ -278,9 +272,7 @@ class Web3HttpServerTest {
             List<ConfigObject> modules = new ArrayList<>(list);
             modules.add(configElement);
 
-            config = config.withValue("rpc.modules", ConfigValueFactory.fromAnyRef(modules));
-
-            return config;
+            return rawConfig.withValue("rpc.modules", ConfigValueFactory.fromAnyRef(modules));
         };
 
         String mockResult = "{\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\"}}";

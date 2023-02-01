@@ -92,7 +92,6 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_GAS_ESTIMATION_CAP = "rpc.gasEstimationCap";
     private static final String PROPERTY_RPC_GAS_CAP = "rpc.gascap";
     private static final String PROPERTY_RPC_TIMEOUT = "rpc.timeout";
-    private static final String PROPERTY_RPC_TIMEOUT_UNIT = "rpc.timeoutunit";
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
@@ -736,9 +735,5 @@ public abstract class SystemProperties {
 
     public int getRpcTimeout() {
         return configFromFiles.getInt(PROPERTY_RPC_TIMEOUT);
-    }
-
-    public TimeUnit getRpcTimeoutUnit() {
-        return configFromFiles.hasPath(PROPERTY_RPC_TIMEOUT_UNIT) ? TimeUnit.valueOf(configFromFiles.getString(PROPERTY_RPC_TIMEOUT_UNIT)) : TimeUnit.SECONDS;
     }
 }
