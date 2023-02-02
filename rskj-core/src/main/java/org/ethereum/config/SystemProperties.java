@@ -734,6 +734,10 @@ public abstract class SystemProperties {
     }
 
     public long getRpcTimeout() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_TIMEOUT)) {
+            return 0L;
+        }
+
         return configFromFiles.getLong(PROPERTY_RPC_TIMEOUT);
     }
 }

@@ -23,12 +23,9 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.googlecode.jsonrpc4j.*;
 
 import io.netty.channel.ChannelHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +33,6 @@ import java.util.Optional;
 
 @ChannelHandler.Sharable
 public class JsonRpcCustomServer extends JsonRpcBasicServer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcCustomServer.class);
-
-    private final ObjectMapper mapper;
     private final List<ModuleDescription> modules;
     private final long defaultTimeout;
 
@@ -47,30 +41,6 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
 
         this.modules = new ArrayList<>(modules);
         this.defaultTimeout = defaultTimeout;
-        this.mapper = new ObjectMapper();
-    }
-
-    private JsonResponse customCreateResponseError(String jsonRpc, Object id, ErrorResolver.JsonError errorObject) {
-        ObjectNode response = mapper.createObjectNode();
-        response.put(JSONRPC, jsonRpc);
-
-        response.put(ID, (String) id);
-
-        int responseCode = ErrorResolver.JsonError.OK.code;
-        if (errorObject != null) {
-            ObjectNode error = mapper.createObjectNode();
-            error.put(ERROR_CODE, errorObject.code);
-            error.put(ERROR_MESSAGE, errorObject.message);
-            if (errorObject.data != null) {
-                error.set(DATA, mapper.valueToTree(errorObject.data));
-            }
-            responseCode = errorObject.code;
-            response.set(ERROR, error);
-        } else {
-            response.set(RESULT, null);
-        }
-
-        return new JsonResponse(response, responseCode);
     }
 
     @Override
@@ -103,9 +73,6 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
         try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout)) {
             response = super.handleJsonNodeRequest(node);
             ExecTimeoutContext.checkIfExpired();
-        } catch (ExecTimeoutContext.TimeoutException e) {
-            LOGGER.error("Timeout exception", e);
-            throw e;
         }
 
         return response;

@@ -23,7 +23,22 @@ import java.util.Set;
 
 public class ExecTimeoutContext implements AutoCloseable {
 
+    public static class TimeoutException extends RuntimeException {
+        public TimeoutException(String message) {
+            super(message);
+        }
+    }
+
     private static final ThreadLocal<Set<ExecTimeoutContext>> sExecTimeoutContext = ThreadLocal.withInitial(HashSet::new);
+    private final long expirationTimeInMillis;
+
+    private ExecTimeoutContext(long timeoutInMillis) {
+        if (timeoutInMillis <= 0) {
+            expirationTimeInMillis = Long.MAX_VALUE;
+        } else {
+            expirationTimeInMillis = System.currentTimeMillis() + timeoutInMillis;
+        }
+    }
 
     /**
      * Creates a new context, which at some point has to be closed.
@@ -55,22 +70,13 @@ public class ExecTimeoutContext implements AutoCloseable {
     }
 
     public static void checkIfExpired(ExecTimeoutContext execTimeoutContext) {
-        if (execTimeoutContext != null && execTimeoutContext.timeoutInMillis > 0) {
+        if (execTimeoutContext != null) {
             long currentTimeInMillis = System.currentTimeMillis();
 
             if (currentTimeInMillis > execTimeoutContext.expirationTimeInMillis) {
                 throw new TimeoutException("Execution has expired.");
             }
         }
-    }
-
-    private final long expirationTimeInMillis;
-    private final long timeoutInMillis;
-    private final HashSet<ExecTimeoutContext> execTimeoutContexts = new HashSet<>();
-
-    private ExecTimeoutContext(long timeoutInMillis) {
-        this.timeoutInMillis = timeoutInMillis;
-        this.expirationTimeInMillis = System.currentTimeMillis() + timeoutInMillis;
     }
 
     @Override
@@ -80,13 +86,6 @@ public class ExecTimeoutContext implements AutoCloseable {
 
         if (ctxs.isEmpty()) {
             sExecTimeoutContext.remove();
-        }
-    }
-
-    public static class TimeoutException extends RuntimeException {
-
-        public TimeoutException(String message) {
-            super(message);
         }
     }
 }
