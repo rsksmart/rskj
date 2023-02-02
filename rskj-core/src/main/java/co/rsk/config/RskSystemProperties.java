@@ -259,14 +259,14 @@ public class RskSystemProperties extends SystemProperties {
             String name = configElement.getString("name");
             String version = configElement.getString("version");
             boolean enabled = configElement.getBoolean("enabled");
-            int timeout = 0;
-            Map<String, Integer> methodTimeoutMap = new HashMap<>();
+            long timeout = 0;
+            Map<String, Long> methodTimeoutMap = new HashMap<>();
 
             if (configElement.hasPath("timeout")) {
-                timeout = configElement.getInt("timeout");
+                timeout = configElement.getLong("timeout");
             }
 
-            if (configElement.hasPath("methodTimeout")) {
+            if (configElement.hasPath("methods.timeout")) {
                 fetchMethodTimeout(configElement, methodTimeoutMap);
             }
 
@@ -428,12 +428,12 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getBoolean("rpc.zeroSignatureIfRemasc");
     }
 
-    private void fetchMethodTimeout(Config configElement, Map<String, Integer> methodTimeoutMap) {
-        configElement.getObject("methodTimeout")
+    private void fetchMethodTimeout(Config configElement, Map<String, Long> methodTimeoutMap) {
+        configElement.getObject("methods.timeout")
                 .unwrapped()
                 .entrySet()
                 .stream()
-                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), (Integer) entry.getValue()))
+                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), (Long) entry.getValue()))
                 .forEach(entry -> methodTimeoutMap.put(entry.getKey(), entry.getValue()));
     }
 }

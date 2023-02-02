@@ -733,7 +733,7 @@ public abstract class SystemProperties {
         return configFromFiles.getLong(PROPERTY_RPC_GAS_CAP);
     }
 
-    public int getRpcTimeout() {
-        return configFromFiles.getInt(PROPERTY_RPC_TIMEOUT);
+    public long getRpcTimeout() {
+        return configFromFiles.getLong(PROPERTY_RPC_TIMEOUT);
     }
 }

@@ -262,17 +262,20 @@ class Web3HttpServerTest {
         Function<Config, Config> decorator = rawConfig -> {
             List<? extends ConfigObject> list = rawConfig.getObjectList("rpc.modules");
 
-            Map<String, Integer> methodTimeoutMap = new HashMap<>();
-            methodTimeoutMap.put("sha3", 1);
+            Map<String, Long> methodTimeoutMap = new HashMap<>();
+            methodTimeoutMap.put("sha3", 1L);
+            Map<String, Map<String, Long>> timeoutMap = new HashMap<>();
+            timeoutMap.put("timeout", methodTimeoutMap);
 
             ConfigObject configElement = list.get(0);
             configElement = configElement.withValue("name", ConfigValueFactory.fromAnyRef("web3"));
-            configElement = configElement.withValue("methodTimeout", ConfigValueFactory.fromAnyRef(methodTimeoutMap));
+            configElement = configElement.withValue("methods", ConfigValueFactory.fromAnyRef(timeoutMap));
 
             List<ConfigObject> modules = new ArrayList<>(list);
             modules.add(configElement);
 
-            return rawConfig.withValue("rpc.modules", ConfigValueFactory.fromAnyRef(modules));
+            return rawConfig.withValue("rpc.modules", ConfigValueFactory.fromAnyRef(modules))
+                    .withValue("rpc.timeout",  ConfigValueFactory.fromAnyRef(10_000_000_000L));
         };
 
         String mockResult = "{\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\"}}";
@@ -281,7 +284,7 @@ class Web3HttpServerTest {
 
     @Test
     void smokeTestProducesMethodNotFoundException() throws Exception {
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 1, new HashMap<>()));
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
 
         String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":13,\"error\":{\"code\":-32601,\"message\":\"method not found\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, null, mockResult, "");
@@ -289,7 +292,7 @@ class Web3HttpServerTest {
 
     @Test
     void smokeTestProducesMethodInvalidException() throws Exception {
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 1, new HashMap<>()));
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
 
         String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":13,\"error\":{\"code\":-32601,\"message\":\"method not found\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, null, mockResult, "web3sha3");

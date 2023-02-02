@@ -46,7 +46,6 @@ public class ExecTimeoutContext implements AutoCloseable {
         Set<ExecTimeoutContext> ctxs = sExecTimeoutContext.get();
         ExecTimeoutContext ctx = new ExecTimeoutContext(timeout);
         ctxs.add(new ExecTimeoutContext(timeout));
-        sExecTimeoutContext.set(ctxs);
 
         return ctx;
     }
@@ -81,15 +80,6 @@ public class ExecTimeoutContext implements AutoCloseable {
 
         if (ctxs.isEmpty()) {
             sExecTimeoutContext.remove();
-        }
-    }
-
-    public void close(ExecTimeoutContext execTimeoutContext) {
-        Set<ExecTimeoutContext> ctxs = execTimeoutContext.execTimeoutContexts;
-        ctxs.remove(this);
-
-        for (ExecTimeoutContext ctx : ctxs) {
-            close(ctx);
         }
     }
 

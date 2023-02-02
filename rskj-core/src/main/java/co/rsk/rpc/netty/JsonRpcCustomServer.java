@@ -27,21 +27,22 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.googlecode.jsonrpc4j.*;
 
 import io.netty.channel.ChannelHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
-
 @ChannelHandler.Sharable
 public class JsonRpcCustomServer extends JsonRpcBasicServer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcCustomServer.class);
 
     private final ObjectMapper mapper;
     private final List<ModuleDescription> modules;
-    private final int defaultTimeout;
+    private final long defaultTimeout;
 
-    public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules, int defaultTimeout) {
+    public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules, long defaultTimeout) {
         super(new ObjectMapper(), handler, remoteInterface);
 
         this.modules = new ArrayList<>(modules);
@@ -78,6 +79,10 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
 
         String[] methodParts = method.split("_");
 
+        if (methodParts.length < 2) {
+            return super.handleJsonNodeRequest(node);
+        }
+
         String moduleName = methodParts[0];
         String methodName = methodParts[1];
 
@@ -85,7 +90,7 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
                 .filter(m -> m.getName().equals(moduleName))
                 .findFirst();
 
-        int timeout = optModule
+        long timeout = optModule
                 .map(m -> m.getTimeout(methodName, defaultTimeout))
                 .orElse(defaultTimeout);
 
@@ -99,8 +104,8 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
             response = super.handleJsonNodeRequest(node);
             ExecTimeoutContext.checkIfExpired();
         } catch (ExecTimeoutContext.TimeoutException e) {
-            ErrorResolver.JsonError jsonError = new ErrorResolver.JsonError(INTERNAL_ERROR.code, e.getMessage(), e.getClass().getName());
-            response = customCreateResponseError(VERSION, NULL, jsonError);
+            LOGGER.error("Timeout exception", e);
+            throw e;
         }
 
         return response;

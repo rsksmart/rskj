@@ -44,6 +44,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
+
 @ChannelHandler.Sharable
 public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBufHolder> {
 
@@ -52,7 +54,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final ObjectMapper mapper = new ObjectMapper();
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
-    private final int defaultTimeout;
+    private final long defaultTimeout;
 
     @VisibleForTesting
     JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer, RskSystemProperties rskSystemProperties) {
@@ -97,6 +99,11 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             LOGGER.error(stackOverflowErrorMsg, e);
             int errorCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
             responseContent = buildErrorContent(errorCode, stackOverflowErrorMsg);
+            responseCode = errorCode;
+        }  catch (ExecTimeoutContext.TimeoutException e) {
+            LOGGER.error(e.getMessage(), e);
+            int errorCode = INTERNAL_ERROR.code;
+            responseContent = buildErrorContent(errorCode, e.getMessage());
             responseCode = errorCode;
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";

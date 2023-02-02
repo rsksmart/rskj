@@ -30,13 +30,13 @@ public class ModuleDescription {
     private String name;
     private String version;
     private boolean enabled;
-    private int timeout;
-    private Map<String, Integer> methodTimeoutMap;
+    private long timeout;
+    private Map<String, Long> methodTimeoutMap;
 
     private List<String> enabledMethods;
     private List<String> disabledMethods;
 
-    public ModuleDescription(String name, String version, boolean enabled, List<String> enabledMethods, List<String> disabledMethods, int timeout, Map<String, Integer> methodTimeoutMap) {
+    public ModuleDescription(String name, String version, boolean enabled, List<String> enabledMethods, List<String> disabledMethods, long timeout, Map<String, Long> methodTimeoutMap) {
         this.name = name;
         this.version = version;
         this.enabled = enabled;
@@ -86,21 +86,21 @@ public class ModuleDescription {
         return true;
     }
 
-    public int getTimeout() {
+    public long getTimeout() {
         return timeout;
     }
 
-    public int getTimeout(String methodName, int defaultTimeout) {
+    public long getTimeout(String methodName, long defaultTimeout) {
         if (methodName.isEmpty()) {
             return defaultTimeout;
         }
 
-        Optional<Integer> optMethodTimeout = Optional.ofNullable(getMethodTimeout(methodName));
+        Optional<Long> optMethodTimeout = Optional.ofNullable(getMethodTimeout(methodName));
 
         return optMethodTimeout.orElseGet(this::getTimeout);
     }
 
-    public Integer getMethodTimeout(String methodName) {
+    public Long getMethodTimeout(String methodName) {
         return methodTimeoutMap.get(methodName);
     }
 
