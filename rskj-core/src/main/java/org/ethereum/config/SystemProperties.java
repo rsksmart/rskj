@@ -102,7 +102,6 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT = "cache.states.persist-snapshot";
     public static final String PROPERTY_PERSIST_BLOOMS_CACHE_SNAPSHOT = "cache.blooms.persist-snapshot";
-    public static final String PROPERTY_PERCENTAGE_OF_PEERS_TO_CONSIDER_IN_RND_SELECTION = "rpc.percentageOfPeersToConsiderInRandomSelection";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
@@ -729,15 +728,6 @@ public abstract class SystemProperties {
     public DbKind databaseKind() {
         return DbKind.ofName(configFromFiles.getString(KeyValueDataSource.KEYVALUE_DATASOURCE_PROP_NAME));
     }
-
-    public double getPercentageOfPeersToConsiderInRandomSelection() {
-        if (!configFromFiles.hasPath(PROPERTY_PERCENTAGE_OF_PEERS_TO_CONSIDER_IN_RND_SELECTION)) {
-            return 50.0D;
-        }
-
-        return configFromFiles.getDouble(PROPERTY_PERCENTAGE_OF_PEERS_TO_CONSIDER_IN_RND_SELECTION);
-    }
-
 
     public long getCallGasCap() {
         if (!configFromFiles.hasPath(PROPERTY_RPC_CALL_GAS_CAP)) {

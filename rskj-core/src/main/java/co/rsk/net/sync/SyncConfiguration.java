@@ -24,10 +24,10 @@ import java.time.Duration;
 
 @Immutable
 public final class SyncConfiguration {
-    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10);
+    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0);
 
     @VisibleForTesting
-    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10);
+    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 0);
 
     private final int expectedPeers;
     private final Duration timeoutWaitingPeers;
@@ -37,6 +37,7 @@ public final class SyncConfiguration {
     private final int chunkSize;
     private final int longSyncLimit;
     private final int maxRequestedBodies;
+    private final double topBest;
 
     /**
      * @param expectedPeers The expected number of peers we would want to start finding a connection point.
@@ -47,6 +48,7 @@ public final class SyncConfiguration {
      * @param chunkSize Amount of blocks contained in a chunk
      * @param maxRequestedBodies Amount of bodies to request at the same time when synchronizing backwards.
      * @param longSyncLimit Distance to the tip of the peer's blockchain to enable long synchronization.
+     * @param topBest Distance to the tip of the peer's blockchain to enable long synchronization.
      */
     public SyncConfiguration(
             int expectedPeers,
@@ -56,7 +58,8 @@ public final class SyncConfiguration {
             int maxSkeletonChunks,
             int chunkSize,
             int maxRequestedBodies,
-            int longSyncLimit) {
+            int longSyncLimit,
+            double topBest) {
         this.expectedPeers = expectedPeers;
         this.timeoutWaitingPeers = Duration.ofSeconds(timeoutWaitingPeers);
         this.timeoutWaitingRequest = Duration.ofSeconds(timeoutWaitingRequest);
@@ -65,6 +68,7 @@ public final class SyncConfiguration {
         this.chunkSize = chunkSize;
         this.maxRequestedBodies = maxRequestedBodies;
         this.longSyncLimit = longSyncLimit;
+        this.topBest = topBest;
     }
 
     public final int getExpectedPeers() {
@@ -97,5 +101,9 @@ public final class SyncConfiguration {
 
     public int getLongSyncLimit() {
         return longSyncLimit;
+    }
+
+    public double getTopBest() {
+       return topBest;
     }
 }

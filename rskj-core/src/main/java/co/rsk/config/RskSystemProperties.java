@@ -33,7 +33,12 @@ import org.ethereum.crypto.HashUtil;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ajlopez on 3/3/2016.
@@ -53,6 +58,8 @@ public class RskSystemProperties extends SystemProperties {
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final String RPC_MODULES_PATH = "rpc.modules";
     private static final int CHUNK_SIZE = 192;
+
+    public static final String PROPERTY_SYNC_TOP_BEST = "sync.topBest";
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -451,6 +458,14 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean rpcZeroSignatureIfRemasc() {
         return configFromFiles.getBoolean("rpc.zeroSignatureIfRemasc");
+    }
+
+    public double getTopBest() {
+        if (!configFromFiles.hasPath(PROPERTY_SYNC_TOP_BEST)) {
+            return 0.0D;
+        }
+
+        return configFromFiles.getDouble(PROPERTY_SYNC_TOP_BEST);
     }
 
     private void fetchMethodTimeout(Config configElement, Map<String, Long> methodTimeoutMap) {
