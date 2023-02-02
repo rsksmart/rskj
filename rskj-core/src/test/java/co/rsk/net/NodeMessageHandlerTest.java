@@ -35,6 +35,7 @@ import co.rsk.scoring.*;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.*;
+import org.awaitility.Awaitility;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -46,11 +47,15 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.*;
@@ -883,5 +888,89 @@ class NodeMessageHandlerTest {
         Assertions.assertEquals(config.getMessageQueueMaxSize(), (Integer) handler.getMessageQueueSize(sender));
 
     }
+
+    @Test
+    void testTooLongIdle() {
+        final SimplePeer sender = new SimplePeer();
+
+        final ChannelManager channelManager = mock(ChannelManager.class);
+        when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
+
+        final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
+
+        BlockGenerator blockGenerator = new BlockGenerator();
+        final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
+        final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
+        final Message message = new StatusMessage(status);
+
+        handler.start();
+
+        BooleanSupplier checkDelays = () -> TestUtils.getInternalState(handler, "recentIdleTime");
+
+        // recentIdleTime should be originally false
+        Assertions.assertFalse(checkDelays);
+
+        // fake an old creationTime and wait for recentIdleTime to become true on message processing
+        long oldCreationTime = System.currentTimeMillis() - Duration.ofSeconds(3).toMillis();
+        handler.addMessage(sender, message, 100, new NodeMsgTraceInfo("testMsg", "testSession", oldCreationTime));
+        Awaitility.await().atMost(2, TimeUnit.SECONDS).until(checkDelays::getAsBoolean);
+
+        // fake an expired lastIdleWarn and wait for recentIdleTime to become false on #updateTimedEvents
+        long oldDelayWarn = System.currentTimeMillis() - Duration.ofSeconds(11).toMillis();
+        TestUtils.setInternalState(handler, "lastIdleWarn", oldDelayWarn);
+        Awaitility.await().atMost(2, TimeUnit.SECONDS).until(() -> !checkDelays.getAsBoolean());
+
+        // recentIdleTime should become true again on new message processing
+        handler.addMessage(sender, message, 100, new NodeMsgTraceInfo("testMsg2", "testSession2", oldCreationTime));
+        Awaitility.await().atMost(2, TimeUnit.SECONDS).until(checkDelays::getAsBoolean);
+    }
+
+    @Test
+    void testTooLongProcessing() {
+        final SimplePeer sender = new SimplePeer();
+
+        final ChannelManager channelManager = mock(ChannelManager.class);
+        when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
+
+        final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
+
+        BlockGenerator blockGenerator = new BlockGenerator();
+        final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
+
+        {
+            Logger loggerNonBlock = mock(Logger.class);
+            TestUtils.setFinalStatic(handler, "loggerMessageProcess", loggerNonBlock);
+
+            final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
+            final Message message1 = new StatusMessage(status);
+            NodeMessageHandler.MessageTask task1 = new NodeMessageHandler.MessageTask(sender, message1, 100, new NodeMsgTraceInfo("testMsg", "testSession"));
+
+            // fake old start: 1st warn
+            handler.logEnd(task1, System.nanoTime() - Duration.ofSeconds(3).toNanos());
+            verify(loggerNonBlock, times(1)).warn(argThat(s -> s.contains("processing took too much")), eq(message1.getMessageType()), anyLong());
+
+            // fake recent start: still 1 one warn
+            handler.logEnd(task1, System.nanoTime() - Duration.ofMillis(5).toNanos());
+            verify(loggerNonBlock, times(1)).warn(argThat(s -> s.contains("processing took too much")), eq(message1.getMessageType()), anyLong());
+        }
+
+        {
+            Logger loggerBlock = mock(Logger.class);
+            TestUtils.setFinalStatic(handler, "loggerMessageProcess", loggerBlock);
+
+            final Message message2 = new BlockMessage(block);
+            NodeMessageHandler.MessageTask task2 = new NodeMessageHandler.MessageTask(sender, message2, 100, new NodeMsgTraceInfo("testMsg2", "testSession2"));
+
+            // fake old start for block: 1st warn
+            handler.logEnd(task2, System.nanoTime() - Duration.ofSeconds(61).toNanos());
+            verify(loggerBlock, times(1)).warn(argThat(s -> s.contains("processing took too much")), eq(message2.getMessageType()), anyLong());
+
+            // fake old start for non-block: still 1 warn, Block has higher threshold for warn
+            handler.logEnd(task2, System.nanoTime() - Duration.ofSeconds(3).toNanos());
+            verify(loggerBlock, times(1)).warn(argThat(s -> s.contains("processing took too much")), eq(message2.getMessageType()), anyLong());
+        }
+
+    }
+
 }
 

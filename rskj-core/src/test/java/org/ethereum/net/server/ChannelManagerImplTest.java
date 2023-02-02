@@ -30,15 +30,15 @@ import org.ethereum.net.NodeManager;
 import org.ethereum.sync.SyncPool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.Duration;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.LongSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -173,5 +173,28 @@ class ChannelManagerImplTest {
         }
 
         return peers;
+    }
+
+    @Test
+    void testLogActivePeers() {
+        final Map<NodeID,Channel> activePeers = peersForTests(2);
+        final ChannelManagerImpl channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+        channelManager.setActivePeers(activePeers);
+
+        Logger logger = mock(Logger.class);
+        TestUtils.setFinalStatic(channelManager, "logger", logger);
+        when(logger.isDebugEnabled()).thenReturn(true);
+
+        LongSupplier timeLastLoggedPeersSupplier = () -> TestUtils.getInternalState(channelManager, "timeLastLoggedPeers");
+
+        // not enough time passed to log peers again, timeLastLoggedPeers should remain intact
+        long timeLastLoggedPeers = timeLastLoggedPeersSupplier.getAsLong();
+        channelManager.logActivePeers(System.currentTimeMillis());
+        Assertions.assertEquals(timeLastLoggedPeers, timeLastLoggedPeersSupplier.getAsLong());
+
+        // fake time passed for peers to be logged, timeLastLoggedPeers should be updated
+        long runTime = System.currentTimeMillis() + Duration.ofSeconds(61).toMillis();
+        channelManager.logActivePeers(runTime);
+        Assertions.assertEquals(runTime, timeLastLoggedPeersSupplier.getAsLong());
     }
 }

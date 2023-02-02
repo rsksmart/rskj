@@ -101,7 +101,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private void handleNewPeersAndDisconnections() {
         this.tryProcessNewPeers();
         this.cleanDisconnections();
-        this.logActivePeers();
+        this.logActivePeers(System.currentTimeMillis());
     }
 
     @VisibleForTesting
@@ -349,9 +349,9 @@ public class ChannelManagerImpl implements ChannelManager {
         this.activePeers.putAll(newActivePeers);
     }
 
-    private void logActivePeers() {
-        long now = System.currentTimeMillis();
-        Duration timeFromLastLog = Duration.ofMillis(now - timeLastLoggedPeers);
+    @VisibleForTesting
+    void logActivePeers(long refTime) {
+        Duration timeFromLastLog = Duration.ofMillis(refTime - timeLastLoggedPeers);
 
         if (timeFromLastLog.getSeconds() > LOG_ACTIVE_PEERS_PERIOD) {
             logger.info("Active peers count: {}", activePeers.size());
@@ -365,7 +365,7 @@ public class ChannelManagerImpl implements ChannelManager {
                 logger.debug("Active peers list: [{}]", activePeersStr);
             }
 
-            this.timeLastLoggedPeers = now;
+            this.timeLastLoggedPeers = refTime;
         }
     }
 

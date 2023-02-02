@@ -37,6 +37,7 @@ import org.mapdb.DBMaker;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -167,6 +168,21 @@ public final class TestUtils {
         Assertions.assertNotNull(thrownException);
         Assertions.assertEquals(thrownException.getClass(), c);
         return c.cast(thrownException);
+    }
+
+    public static <T, V> void setFinalStatic(T instance, String fieldName, V value) {
+        try {
+            Field field = getPrivateField(instance, fieldName);
+            field.setAccessible(true);
+
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+            field.set(null, value);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new WhiteboxException("Could not set private static field", e);
+        }
     }
 
     public static <T, V> void setInternalState(T instance, String fieldName, V value) {

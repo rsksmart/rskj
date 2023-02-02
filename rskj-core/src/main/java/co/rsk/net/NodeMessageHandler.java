@@ -79,8 +79,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final MessageCounter messageCounter = new MessageCounter();
     private final int messageQueueMaxSize;
 
-    private volatile boolean recentDelays = false;
-    private volatile long lastDelayWarn = System.currentTimeMillis();
+    private volatile boolean recentIdleTime = false;
+    private volatile long lastIdleWarn = System.currentTimeMillis();
 
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
@@ -225,7 +225,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         return !contains;
     }
 
-    private void addMessage(Peer sender, Message message, double score, NodeMsgTraceInfo nodeMsgTraceInfo) {
+    @VisibleForTesting
+    void addMessage(Peer sender, Message message, double score, NodeMsgTraceInfo nodeMsgTraceInfo) {
         // optimistic increment() to ensure it is called before decrement() on processMessage()
         // there was a race condition on which queue got the new item and decrement() was called before increment() for the same sender
         // also, while queue implementation stays unbounded, offer() will never return false
@@ -294,10 +295,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
                 if (task != null) {
                     addTracingKeys(task.getNodeMsgTraceInfo());
-                    long startMillis = System.currentTimeMillis();
+                    long startNanos = System.nanoTime();
                     logStart(task);
                     this.processMessage(task.getSender(), task.getMessage());
-                    logEnd(task, startMillis);
+                    logEnd(task, startNanos);
                 } else {
                     logger.trace("No task");
                 }
@@ -335,27 +336,28 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
 
         long taskWaitTimeInSeconds = task.getNodeMsgTraceInfo().getLifeTimeInSeconds();
-        logger.trace("Start {} message task after {}s", messageType, taskWaitTimeInSeconds);
+        logger.trace("Start {} message task after [{}]s", messageType, taskWaitTimeInSeconds);
 
         if (taskWaitTimeInSeconds >= QUEUED_TIME_TO_WARN_LIMIT) {
-            logger.debug("Task {} was waiting too much in the queue: [{}] seconds", messageType, taskWaitTimeInSeconds);
-            recentDelays = true;
+            logger.debug("Task {} was waiting too much in the queue: [{}]s", messageType, taskWaitTimeInSeconds);
+            recentIdleTime = true;
         }
     }
 
-    private void logEnd(MessageTask task, long startMillis) {
-        long processTimeInSeconds = (System.currentTimeMillis() - startMillis) / 1000;
+    @VisibleForTesting
+    void logEnd(MessageTask task, long startNanos) {
+        Duration processTime = Duration.ofNanos(System.nanoTime() - startNanos);
 
         Message message = task.getMessage();
         boolean isBlockRelated = message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.BODY_RESPONSE_MESSAGE;
-        boolean isBlockSlow = isBlockRelated && BlockUtils.tooMuchProcessTime(processTimeInSeconds);
-        boolean isOtherSlow = !isBlockRelated && processTimeInSeconds > PROCESSING_TIME_TO_WARN_LIMIT;
+        boolean isBlockSlow = isBlockRelated && BlockUtils.tooMuchProcessTime(processTime.toNanos());
+        boolean isOtherSlow = !isBlockRelated && processTime.getSeconds() > PROCESSING_TIME_TO_WARN_LIMIT;
 
         if (isBlockSlow || isOtherSlow) {
-            loggerMessageProcess.warn("Message[{}] processing took too much: [{}] seconds.", message.getMessageType(), processTimeInSeconds);
+            loggerMessageProcess.warn("Message[{}] processing took too much: [{}]s.", message.getMessageType(), processTime.getSeconds());
         }
 
-        logger.trace("End {} message task after {}s", task.getMessage().getMessageType(), processTimeInSeconds);
+        logger.trace("End {} message task after [{}]s", task.getMessage().getMessageType(), processTime.getSeconds());
     }
 
     private void removeTracingKeys() {
@@ -381,12 +383,12 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             lastStatusSent = now;
         }
 
-        Duration timeDelayWarn = Duration.ofMillis(now - lastDelayWarn);
-        boolean isTimeToWarnDelays = recentDelays && timeDelayWarn.getSeconds() > QUEUED_TIME_TO_WARN_PERIOD;
-        if (isTimeToWarnDelays) {
-            logger.warn("Tasks are waiting too much in the queue: > [{}] seconds", QUEUED_TIME_TO_WARN_LIMIT);
-            recentDelays = false;
-            lastDelayWarn = now;
+        Duration timeIdleWarn = Duration.ofMillis(now - lastIdleWarn);
+        boolean isTimeToWarnIdle = recentIdleTime && timeIdleWarn.getSeconds() > QUEUED_TIME_TO_WARN_PERIOD;
+        if (isTimeToWarnIdle) {
+            logger.warn("Tasks are waiting too much in the queue: > [{}]s", QUEUED_TIME_TO_WARN_LIMIT);
+            recentIdleTime = false;
+            lastIdleWarn = now;
         }
     }
 
@@ -399,7 +401,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event, message, this.getClass());
     }
 
-    private static class MessageTask {
+    @VisibleForTesting
+    static class MessageTask {
         private final Peer sender;
         private final Message message;
         private final double score;
