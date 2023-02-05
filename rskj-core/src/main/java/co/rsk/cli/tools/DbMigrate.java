@@ -17,6 +17,7 @@
  */
 package co.rsk.cli.tools;
 
+import co.rsk.RskContext;
 import co.rsk.cli.PicoCliToolRskContextAware;
 import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.DbKind;
@@ -125,8 +126,8 @@ public class DbMigrate extends PicoCliToolRskContextAware {
             ));
         }
 
-        String sourceDbDir = ctx.getRskSystemProperties().databaseDir();
-        String targetDbDir = sourceDbDir + "_tmp";
+        String sourceDbDir = Paths.get(ctx.getRskSystemProperties().databaseDir()).toFile().getAbsolutePath();
+        String targetDbDir =  sourceDbDir + "_tmp";
 
         logger.info("Preparing to migrate from {} to {}", sourceDbKind.name(), targetDbKind.name());
 
@@ -158,12 +159,6 @@ public class DbMigrate extends PicoCliToolRskContextAware {
                 this.migrate(dbMigrationInformation);
 
                 KeyValueDataSource.generatedDbKindFile(targetDbKind, fullTargetDbPath);
-
-                String nodeIdFilePath = "/" + NODE_ID_FILE;
-
-                if (new File(fullSourceDbPath, NODE_ID_FILE).exists()) {
-                    Files.move(Paths.get(fullSourceDbPath + nodeIdFilePath), Paths.get(fullTargetDbPath + nodeIdFilePath));
-                }
 
                 FileUtil.recursiveDelete(fullSourceDbPath);
             }
