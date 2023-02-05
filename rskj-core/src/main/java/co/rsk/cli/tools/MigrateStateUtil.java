@@ -2,6 +2,7 @@ package co.rsk.cli.tools;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.*;
+import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
@@ -12,10 +13,7 @@ import javax.annotation.Nonnull;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class MigrateStateUtil {
     private static final Logger logger = LoggerFactory.getLogger(MigrateStateUtil.class);
@@ -92,7 +90,8 @@ public class MigrateStateUtil {
 
         NumberFormat format = NumberFormat.getInstance();
 
-        long memory = runtime.totalMemory() - runtime.freeMemory();;
+        long memory = runtime.totalMemory() - runtime.freeMemory();
+        ;
         consoleLog("  used memory: " + format.format(memory / 1000) + "k -> ");
     }
 
@@ -381,16 +380,34 @@ public class MigrateStateUtil {
 
     private void copyAll() {
         consoleLog("Fetching keys...");
-        Set<ByteArrayWrapper> keys = dsSrc.keys();
-        consoleLog("Done");
         long nodesExported = 0;
-        for (ByteArrayWrapper key : keys) {
-            dsDst.put(key.getData(), dsSrc.get(key.getData()));
-            nodesExported++;
-            if (nodesExported % 50000 == 0) {
-                consoleLog("nodes scanned: " + (nodesExported / 1000) + "k (" + nodesExported * 100 / keys.size() + "%)");
-                ;
+        Map<ByteArrayWrapper, byte[]> bulkData = new HashMap<>();
+
+        try (DataSourceKeyIterator iterator = dsSrc.keyIterator()) {
+            while (iterator.hasNext()) {
+                byte[] data = iterator.next();
+
+                bulkData.put(
+                        new ByteArrayWrapper(data),
+                        dsSrc.get(data)
+                );
+
+                nodesExported++;
+                if (nodesExported % 50000 == 0) {
+                    consoleLog("nodes scanned: " + (nodesExported / 1000) + "k");
+                    dsDst.updateBatch(bulkData, new HashSet<>());
+                    bulkData.clear();
+                }
             }
+
+            if (!bulkData.isEmpty()) {
+                dsDst.updateBatch(bulkData, new HashSet<>());
+                bulkData.clear();
+            }
+        } catch (Exception e) {
+            logger.error("An error happened closing DB Key Iterator", e);
+            throw new RuntimeException(e);
         }
+        consoleLog("Done");
     }
 }

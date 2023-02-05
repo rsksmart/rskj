@@ -844,7 +844,6 @@ class CliToolsTest {
         File stateFile = stateFilePath.toFile();
         File dstStateFile = dstStateFilePath.toFile();
 
-        MigrateState migrateStateCliTool = new MigrateState();
         MigrateState.main(new String[]{
                 "--command",
                 "copy",
@@ -897,8 +896,7 @@ class CliToolsTest {
         ByteArrayWrapper root = dsStateKeys.iterator().next();
         dsState.close();
 
-        MigrateState migrateStateCliTool = new MigrateState();
-        Assertions.assertDoesNotThrow(() -> migrateStateCliTool.main(new String[]{
+        Assertions.assertDoesNotThrow(() -> MigrateState.main(new String[]{
                 "--command",
                 "check",
                 "--root",

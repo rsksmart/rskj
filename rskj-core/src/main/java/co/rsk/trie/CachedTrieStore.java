@@ -22,12 +22,11 @@ import java.util.Optional;
 
 public class CachedTrieStore implements TrieStore {
 
-    private TrieStore cache;
-    private TrieStore base;
+    private final TrieStore cache;
+    private final TrieStore base;
     /**
      */
     public CachedTrieStore(TrieStore cache, TrieStore base) {
-
         this.base = base;
         this.cache = cache;
     }
@@ -37,13 +36,10 @@ public class CachedTrieStore implements TrieStore {
         base.save(trie);
     }
 
-
     @Override
     public void flush() {
         base.flush();
     }
-
-
 
     @Override
     public Optional<Trie> retrieve(byte[] rootHash) {

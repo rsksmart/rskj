@@ -19,10 +19,7 @@ import java.util.concurrent.Callable;
 /**
  * The entry point for export state CLI tool
  * This is an experimental/unsupported tool
- * <p>
- * This tool can be interrupted and re-started and it will continue the migration from
- * the point where it left.
- * <p>
+ *
  * For maximum performance, disable the state cache by adding the argument:
  * -Xcache.states.max-elements=0
  */
@@ -201,7 +198,8 @@ public class MigrateState implements Callable<Integer> {
             dsDst.close();
         }
 
-        if (!result) {
+        if (!result && migrationStateCmd != MigrateStateUtil.Command.VALUEEXISTS
+                && migrationStateCmd != MigrateStateUtil.Command.NODEEXISTS) {
             throw new RuntimeException("The result of your operation is not correct.");
         }
     }
