@@ -62,4 +62,11 @@ public class Stack extends java.util.Stack<DataWord> implements ProgramListenerA
     private boolean isAccessible(int from) {
         return from >= 0 && from < size();
     }
+
+    @Override
+    public Object clone(){
+        Stack clone = (Stack) super.clone();
+        clone.setTraceListener(this.traceListener);
+        return clone;
+    }
 }
