@@ -64,7 +64,7 @@ public class Stack extends java.util.Stack<DataWord> implements ProgramListenerA
     }
 
     @Override
-    public Object clone(){
+    public synchronized Object clone(){
         Stack clone = (Stack) super.clone();
         clone.setTraceListener(this.traceListener);
         return clone;

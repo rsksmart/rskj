@@ -5,7 +5,6 @@ import co.rsk.util.RLPException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -14,8 +13,8 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PeersMessageTest {
-    //This is the result of enconding the test peerList
-    private static String encodedHexString = "db05cc847649472482b6de821010c0cc8473cce52482f8ab821010c0";
+    //This is the result of encoding the test peerList
+    private static final String encodedHexString = "db05cc847649472482b6de821010c0cc8473cce52482f8ab821010c0";
 
     @Test
     void peerMessageIsCreatedProperly() throws UnknownHostException {
@@ -36,7 +35,7 @@ class PeersMessageTest {
         Set<PeerConnectionData> messagePeers = peersMessage.getPeers();
         assertEquals(messagePeers, peerSet);
         byte[] encodedData = peersMessage.getEncoded();
-        assertNotNull(encodedData);
+        assertEquals(Hex.toHexString(encodedData), encodedHexString);
     }
 
     @Test
@@ -46,20 +45,7 @@ class PeersMessageTest {
         PeersMessage message = new PeersMessage(payload);
         byte[] encoded = message.getEncoded();
         assertEquals(payload, encoded, "Payload must be used as encoded data");
-        assertThrows(RLPException.class, () -> message.getPeers(), "Exception expected as payload is not valid and parse method is called");
-    }
-
-    @Test
-    void encodeFunctionIsCalledProperly() {
-        Set<PeerConnectionData> set = new HashSet<>(Arrays.asList(Mockito.mock(PeerConnectionData.class)));
-        PeersMessage peersMessage = new PeersMessage(set);
-
-        assertNotNull(peersMessage.getPeers(), "Parse Method is not called");
-        assertThrows(
-                NullPointerException.class,
-                () -> peersMessage.getEncoded(),
-                "NPE expected as it is working with mock set. To encode must fail"
-        );
+        assertThrows(RLPException.class, message::getPeers, "Exception expected as payload is not valid and parse method is called");
     }
 
     @Test

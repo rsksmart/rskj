@@ -210,6 +210,23 @@ public class PeersInformation {
         return otherFailInstant.compareTo(failInstant);
     }
 
+    private int comparePeerScoring(
+            Map.Entry<NodeID, SyncPeerStatus> entry,
+            Map.Entry<NodeID, SyncPeerStatus> other) {
+        int score = getScore(entry.getKey());
+        int scoreOther = getScore(other.getKey());
+        // Treats all non-negative scores the same for calculating the best peer
+        if (score >= 0 && scoreOther >= 0) {
+            return 0;
+        }
+
+        return Integer.compare(score, scoreOther);
+    }
+
+    private int getScore(NodeID peerId) {
+        return peerScoringManager.getPeerScoring(peerId).getScore();
+    }
+
     private int comparePeerTotalDifficulty(
             Map.Entry<Peer, SyncPeerStatus> entry,
             Map.Entry<Peer, SyncPeerStatus> other) {
