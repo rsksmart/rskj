@@ -63,10 +63,4 @@ public class Stack extends java.util.Stack<DataWord> implements ProgramListenerA
         return from >= 0 && from < size();
     }
 
-    @Override
-    public synchronized Object clone(){
-        Stack clone = (Stack) super.clone();
-        clone.setTraceListener(this.traceListener);
-        return clone;
-    }
 }

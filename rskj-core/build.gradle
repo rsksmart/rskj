@@ -18,7 +18,9 @@ testing {
 test {
     useJUnitPlatform()
 
-
+    beforeTest { descriptor ->
+        logger.lifecycle("Running test: ${descriptor}")
+    }
 
     jvmArgs '-Xss32m', '-Xmx3G'
 
@@ -27,21 +29,6 @@ test {
         exceptionFormat "short"
     }
     finalizedBy jacocoTestReport
-    if (project.hasProperty("quick")) {
-        failFast = true
-        println("Executing in parallel")
-        //to calculate the max threads we could use at the same time
-        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(3)*2 ?: 1
-        //to avoid generate reports (usually not needed during development)
-        reports.html.required = false
-        reports.junitXml.required = false
-    }else{
-        beforeTest { descriptor ->
-            logger.lifecycle("Running test: ${descriptor}")
-        }
-    }
-    //this is recommended in large projects to clean the vm were the test are executed
-    forkEvery = 750
 }
 
 integrationTest {

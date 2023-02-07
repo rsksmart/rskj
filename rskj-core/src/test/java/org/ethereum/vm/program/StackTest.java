@@ -8,7 +8,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
@@ -49,12 +48,6 @@ class StackTest {
         stack.push(dataWord2);
         stack.swap(1,0);
         verify(programListener).onStackSwap(eq(1),eq(0));
-    }
-
-    @Test
-    void testClone(){
-        Stack clone = (Stack) stack.clone();
-        assertNotNull(clone);
     }
 
 }
