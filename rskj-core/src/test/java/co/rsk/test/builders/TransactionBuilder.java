@@ -28,6 +28,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
+import java.util.Optional;
 import java.util.Random;
 
 /**
@@ -42,6 +43,7 @@ public class TransactionBuilder {
     private BigInteger gasPrice = BigInteger.ONE;
     private BigInteger gasLimit = BigInteger.valueOf(21000);
     private BigInteger nonce = BigInteger.ZERO;
+    private Byte chainId = null;
     private boolean immutable;
 
     public TransactionBuilder sender(Account sender) {
@@ -94,12 +96,22 @@ public class TransactionBuilder {
         return this;
     }
 
+    public TransactionBuilder chainId(byte chainId) {
+        this.chainId = chainId;
+        return this;
+    }
+
     public Transaction build() {
+        byte chainId = Optional.ofNullable(this.chainId).orElse(Constants.REGTEST_CHAIN_ID);
+
+        return build(chainId);
+    }
+
+    public Transaction build(byte chainId) {
         final String to = receiver != null ? ByteUtil.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? ByteUtil.toHexString(receiverAddress) : null);
         BigInteger nonce = this.nonce;
         BigInteger gasLimit = this.gasLimit;
         BigInteger gasPrice = this.gasPrice;
-        byte chainId = Constants.REGTEST_CHAIN_ID;
         byte[] data = this.data;
         BigInteger value = this.value;
 
@@ -127,10 +139,12 @@ public class TransactionBuilder {
 
     /**
      * Generates a random transaction
-     * */
+     */
     public Transaction buildRandomTransaction() {
-        int i = new Random().nextInt();
-        BigInteger randomPositiveVal = i > 0 ?  BigInteger.valueOf(i) : BigInteger.valueOf(i * -1);
+        long i = new Random().nextInt();
+        long k = i * -1L;
+
+        BigInteger randomPositiveVal = i > 0 ? BigInteger.valueOf(i) : BigInteger.valueOf(k);
 
         Account receiver = new AccountBuilder().name("account" + randomPositiveVal).build();
 

@@ -4,14 +4,14 @@
 [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/rsksmart/rskj.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rsksmart/rskj/context:java)
 
 # About
-RskJ is a Java implementation of the RSK node. For more information about RSK, visit [www.rsk.co](http://www.rsk.co). The [RSK white paper](https://www.rsk.co/Whitepapers/RSK-White-Paper-Updated.pdf) provides a complete conceptual overview of the platform.
+RskJ is a Java implementation of the Rootstock node. For more information about Rootstock, visit [rootstock.io/](https://rootstock.io/). The [Rootstock white paper](https://rootstock.io/rsk-white-paper-updated.pdf) provides a complete conceptual overview of the platform.
 
 If you have questions about the code please find us on [![Gitter](https://badges.gitter.im/rsksmart/rskj.svg)](https://gitter.im/rsksmart/rskj?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 You may also want to check [our blog](https://blog.rsk.co/) for articles and updates on the project.
 
 # Getting Started
-Information about compiling and running an RSK node can be found in the [wiki](https://github.com/rsksmart/rskj/wiki).
+Information about compiling and running a Rootstock node can be found in the [wiki](https://github.com/rsksmart/rskj/wiki).
 The stable versions are the tags published in [releases tab](https://github.com/rsksmart/rskj/releases).
 
 # Report Security Vulnerabilities

@@ -16,18 +16,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net;
+package co.rsk.rpc.exception;
 
 /**
- * Created by ajlopez on 5/11/2016.
+ * Exception thrown when a request payload is invalid.
+ *
+ * @author reynold.morel
+ * @since  11.07.23
  */
-
-import co.rsk.net.messages.Message;
-
-public interface MessageHandler {
-    void processMessage(Peer sender, Message message);
-
-    void postMessage(Peer sender, Message message, NodeMsgTraceInfo traceInfo) throws InterruptedException;
-
-    long getMessageQueueSize();
+public class JsonRpcRequestPayloadException extends IllegalArgumentException {
+    public JsonRpcRequestPayloadException(String message) {
+        super(message);
+    }
 }

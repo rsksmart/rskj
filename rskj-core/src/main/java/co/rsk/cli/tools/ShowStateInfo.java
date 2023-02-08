@@ -17,8 +17,7 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.CliToolRskContextAware;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.trie.NodeReference;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
@@ -26,8 +25,10 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
+import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,7 +40,12 @@ import java.util.Optional;
  * Required cli args:
  * - args[0] - block number or "best"
  */
-public class ShowStateInfo extends CliToolRskContextAware {
+@CommandLine.Command(name = "show-state-info", mixinStandardHelpOptions = true, version = "show-state-info 1.0",
+        description = "Shows state information for a specific block number")
+public class ShowStateInfo extends PicoCliToolRskContextAware {
+
+    @CommandLine.Option(names = {"-b", "--block"}, description = "block number or \"best\"", required = true)
+    private String blockNum;
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
@@ -58,23 +64,25 @@ public class ShowStateInfo extends CliToolRskContextAware {
     }
 
     @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+    public Integer call() throws IOException {
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
 
-        printStateInfo(args, blockStore, trieStore);
+        printStateInfo(blockStore, trieStore);
+
+        return 0;
     }
 
-    private void printStateInfo(String[] args, BlockStore blockStore, TrieStore trieStore) {
+    private void printStateInfo(BlockStore blockStore, TrieStore trieStore) throws NumberFormatException {
         StateInfo stateInfo = new StateInfo();
 
         Block block;
 
-        if ("best".equals(args[0])) {
+        if ("best".equals(blockNum)) {
             block = blockStore.getBestBlock();
         }
         else {
-            block = blockStore.getChainBlockByNumber(Long.parseLong(args[0]));
+            block = blockStore.getChainBlockByNumber(Long.parseLong(blockNum));
         }
 
         printer.println("Block number: " + block.getNumber());

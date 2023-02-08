@@ -23,8 +23,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.MiningMainchainView;
-import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -2110,54 +2108,106 @@ class Web3ImplTest {
     }
 
     @Test
-    void sendPersonalTransaction() {
-        Web3Impl web3 = createWeb3();
+    void sendPersonalTransaction() throws Exception {
 
         // **** Initializes data ******************
-        String addr1 = web3.personal_newAccount("passphrase1");
-        String addr2 = web3.personal_newAccount("passphrase2");
+        Ethereum ethereumMock = Web3Mocks.getMockEthereum();
+        Web3Impl web3 = createWeb3(ethereumMock);
+        TransactionPoolAddResult pendingTransactionResult = TransactionPoolAddResult.okPendingTransaction(Mockito.mock(Transaction.class));
 
-        String toAddress = addr2;
+        String fromAddress = web3.personal_newAccount("passphrase1");
+        String toAddress = web3.personal_newAccount("passphrase2");
         BigInteger value = BigInteger.valueOf(7);
         BigInteger gasPrice = BigInteger.valueOf(8);
         BigInteger gasLimit = BigInteger.valueOf(9);
         String data = "0xff";
         BigInteger nonce = BigInteger.ONE;
+        byte chainId = config.getNetworkConstants().getChainId();
 
-        // ***** Executes the transaction *******************
         CallArguments args = new CallArguments();
-        args.setFrom(addr1);
-        args.setTo(addr2);
+        args.setFrom(fromAddress);
+        args.setTo(toAddress);
         args.setData(data);
         args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
         args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
         args.setValue(value.toString());
         args.setNonce(nonce.toString());
-
-        String txHash = null;
-        try {
-            txHash = web3.personal_sendTransaction(args, "passphrase1");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        args.setChainId(HexUtils.toJsonHex(new byte[]{chainId}));
 
         // ***** Verifies tx hash
-        Transaction tx = Transaction
+        Transaction expectedTx = Transaction
                 .builder()
                 .destination(toAddress.substring(2))
                 .value(value)
                 .nonce(nonce)
                 .gasPrice(gasPrice)
                 .gasLimit(gasLimit)
-                .data(args.getData())
+                .data(args.getData().substring(2))
                 .chainId(config.getNetworkConstants().getChainId())
                 .build();
-        Account account = wallet.getAccount(new RskAddress(addr1), "passphrase1");
-        tx.sign(account.getEcKey().getPrivKeyBytes());
 
-        String expectedHash = tx.getHash().toJsonString();
+        Account account = wallet.getAccount(new RskAddress(fromAddress), "passphrase1");
+        expectedTx.sign(account.getEcKey().getPrivKeyBytes());
+        String expectedHash = expectedTx.getHash().toJsonString();
 
+        when(ethereumMock.submitTransaction(expectedTx)).thenReturn(pendingTransactionResult);
+
+        // ***** Executes the transaction *******************
+       String txHash = web3.personal_sendTransaction(args, "passphrase1");
+
+
+        // ***** Checking expected result *******************
         assertEquals(0, expectedHash.compareTo(txHash), "Method is not creating the expected transaction");
+    }
+
+    @Test
+    void sendPersonalTransactionFailsIfTransactionIsNotQueued(){
+
+        Ethereum ethereumMock = Web3Mocks.getMockEthereum();
+        Web3Impl web3 = createWeb3(ethereumMock);
+        TransactionPoolAddResult pendingTransactionResult = TransactionPoolAddResult.withError("Testing error");
+
+        String fromAddress = web3.personal_newAccount("passphrase1");
+        String toAddress = web3.personal_newAccount("passphrase2");
+        BigInteger value = BigInteger.valueOf(7);
+        BigInteger gasPrice = BigInteger.valueOf(8);
+        BigInteger gasLimit = BigInteger.valueOf(9);
+        String data = "0xff";
+        BigInteger nonce = BigInteger.ONE;
+
+        CallArguments args = new CallArguments();
+        args.setFrom(fromAddress);
+        args.setTo(toAddress);
+        args.setData(data);
+        args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
+        args.setValue(value.toString());
+        args.setNonce(nonce.toString());
+
+        Transaction expectedTx = Transaction
+                .builder()
+                .destination(toAddress.substring(2))
+                .value(value)
+                .nonce(nonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gasLimit)
+                .data(args.getData().substring(2))
+                .chainId(config.getNetworkConstants().getChainId())
+                .build();
+
+        Account account = wallet.getAccount(new RskAddress(fromAddress), "passphrase1");
+        expectedTx.sign(account.getEcKey().getPrivKeyBytes());
+
+        when(ethereumMock.submitTransaction(expectedTx)).thenReturn(pendingTransactionResult);
+
+        // ***** Executes the transaction *******************
+        RskJsonRpcRequestException thrownEx = Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
+            web3.personal_sendTransaction(args, "passphrase1");
+        });
+
+        assertEquals(-32010,thrownEx.getCode(), "Unexpected exception code");
+        assertEquals(pendingTransactionResult.getErrorMessage(),thrownEx.getMessage(),"Exception message should be the same as the one from add transaction result.");
+
     }
 
     @Test
@@ -2203,13 +2253,6 @@ class Web3ImplTest {
         Account account1 = wallet.getAccount(new RskAddress(addr));
 
         assertNull(account1);
-    }
-
-    private Web3Impl createWeb3() {
-        return createWeb3(
-                Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
-                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache
-        );
     }
 
     @Test
@@ -2356,6 +2399,20 @@ class Web3ImplTest {
         Assertions.assertEquals("0x", result);
     }
 
+    private Web3Impl createWeb3() {
+        return createWeb3(
+                Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
+                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache
+        );
+    }
+
+    private Web3Impl createWeb3(Ethereum ethereum) {
+        return createWeb3(
+                ethereum, Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
+                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache
+        );
+    }
+
     private Web3Impl createWeb3(World world) {
         return createWeb3(world, null);
     }
@@ -2432,7 +2489,7 @@ class Web3ImplTest {
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore,
-                                                                  blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+                blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         return createWeb3(eth, world, transactionPool, receiptStore);
     }
 
@@ -2465,7 +2522,7 @@ class Web3ImplTest {
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(),
-                                                                  blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+                blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         RepositoryLocator repositoryLocator = new RepositoryLocator(world.getTrieStore(), world.getStateRootHandler());
         return createWeb3(
                 Web3Mocks.getMockEthereum(), blockChain, repositoryLocator, transactionPool,

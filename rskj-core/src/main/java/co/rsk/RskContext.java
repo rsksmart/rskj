@@ -258,9 +258,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     /***** Constructors ***********************************************************************************************/
 
     public RskContext(String[] args) {
+        this(args, false);
+    }
+
+    public RskContext(String[] args, boolean ignoreUnmatchedArgs) {
         this(new CliArgs.Parser<>(
                 NodeCliOptions.class,
-                NodeCliFlags.class
+                NodeCliFlags.class,
+                ignoreUnmatchedArgs
         ).parse(args));
     }
 
@@ -637,7 +642,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     .orElse(new ArrayList<>())
                     .contains("*");
 
-            if (acceptAnyHost && rskSystemProperties.isWalletEnabled()) {
+            if (acceptAnyHost && rskSystemProperties != null && rskSystemProperties.isWalletEnabled()) {
                 logger.warn("It is not recommended to bypass hosts checks, by setting '*' in" +
                         " the host list, and have wallet enabled both together." +
                         " If you bypass hosts check we suggest to have wallet disabled, the same thing" +
@@ -1934,9 +1939,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private JsonRpcWeb3ServerHandler getJsonRpcWeb3ServerHandler() {
         if (jsonRpcWeb3ServerHandler == null) {
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
             jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(
                     getWeb3(),
-                    getRskSystemProperties().getRpcModules()
+                    getRskSystemProperties().getRpcModules(),
+                    rskSystemProperties.getMaxBatchRequestsSize()
             );
         }
 
@@ -1985,7 +1992,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     true,
                     new CorsConfiguration(rskSystemProperties.corsDomains()),
                     getJsonRpcWeb3FilterHandler(),
-                    getJsonRpcWeb3ServerHandler()
+                    getJsonRpcWeb3ServerHandler(),
+                    rskSystemProperties.rpcHttpMaxAggregatedFrameSize()
             );
         }
 

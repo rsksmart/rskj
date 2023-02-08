@@ -19,12 +19,15 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.rpc.JsonRpcMethodFilter;
+import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.util.JacksonParserUtil;
+import co.rsk.rpc.exception.JsonRpcRequestPayloadException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.jsonrpc4j.*;
 import io.netty.buffer.*;
 import io.netty.channel.ChannelHandler;
@@ -35,6 +38,7 @@ import org.ethereum.rpc.exception.RskErrorResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +52,16 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
 
-    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules) {
+    @VisibleForTesting
+    JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer) {
+        this.jsonRpcServer = jsonRpcServer;
+    }
+
+    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize) {
         this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
+        List<JsonRpcInterceptor> interceptors = new ArrayList<>();
+        interceptors.add(new JsonRpcRequestValidatorInterceptor(maxBatchRequestsSize));
+        jsonRpcServer.setInterceptorList(interceptors);
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
     }
@@ -59,9 +71,20 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         ByteBuf responseContent = Unpooled.buffer();
         int responseCode;
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())){
-            
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
+
             responseCode = jsonRpcServer.handleRequest(is, os);
+        } catch (JsonRpcRequestPayloadException e) {
+            String invalidReqMsg = "Invalid request";
+            LOGGER.error(invalidReqMsg, e);
+            responseContent = buildErrorContent(ErrorResolver.JsonError.INVALID_REQUEST.code, e.getMessage());
+            responseCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
+        } catch (StackOverflowError e) {
+            String stackOverflowErrorMsg = "Invalid request";
+            LOGGER.error(stackOverflowErrorMsg, e);
+            int errorCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
+            responseContent = buildErrorContent(errorCode, stackOverflowErrorMsg);
+            responseCode = errorCode;
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";
             LOGGER.error(unexpectedErrorMsg, e);
@@ -71,8 +94,8 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         }
 
         ctx.fireChannelRead(new Web3Result(
-            responseContent,
-            responseCode
+                responseContent,
+                responseCode
         ));
     }
 

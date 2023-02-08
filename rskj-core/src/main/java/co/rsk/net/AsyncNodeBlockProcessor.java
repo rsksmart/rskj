@@ -89,7 +89,7 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
         // Validate block header first to see if its PoW is valid at all
         if (!isBlockHeaderValid(block)) {
-            logger.warn("Invalid block with number {} {} from {} ", blockNumber, blockHash, peer);
+            logger.warn("Invalid block header with number {} {} from {} ", blockNumber, blockHash, peer);
             return invalidBlockResult(block, start);
         }
 

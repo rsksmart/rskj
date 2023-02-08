@@ -17,16 +17,16 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.CliToolRskContextAware;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.core.BlockDifficulty;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
+import picocli.CommandLine;
 
-import javax.annotation.Nonnull;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 
@@ -39,26 +39,34 @@ import java.lang.invoke.MethodHandles;
  * - args[1] - to block number
  * - args[2] - file path
  */
-public class ExportBlocks extends CliToolRskContextAware {
+@CommandLine.Command(name = "export-blocks", mixinStandardHelpOptions = true, version = "export-blocks 1.0",
+        description = "Exports blocks from a specific block range to a file")
+public class ExportBlocks extends PicoCliToolRskContextAware {
+    @CommandLine.Option(names = {"-fb", "--fromBlock"}, description = "From block number", required = true)
+    private Long fromBlockNumber;
+
+    @CommandLine.Option(names = {"-tb", "--toBlock"}, description = "To block number", required = true)
+    private Long toBlockNumber;
+
+    @CommandLine.Option(names = {"-f", "--file"}, description = "Path to a file to export blocks to", required = true)
+    private String filePath;
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
-        String filePath = args[2];
+    public Integer call() throws IOException {
         BlockStore blockStore = ctx.getBlockStore();
 
         try (PrintStream writer = new PrintStream(new BufferedOutputStream(new FileOutputStream(filePath)))) {
-            exportBlocks(args, blockStore, writer);
+            exportBlocks(blockStore, writer);
         }
+
+        return 0;
     }
 
-    private void exportBlocks(String[] args, BlockStore blockStore, PrintStream writer) {
-        long fromBlockNumber = Long.parseLong(args[0]);
-        long toBlockNumber = Long.parseLong(args[1]);
-
+    private void exportBlocks(BlockStore blockStore, PrintStream writer) {
         for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
             Block block = blockStore.getChainBlockByNumber(n);
             BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());

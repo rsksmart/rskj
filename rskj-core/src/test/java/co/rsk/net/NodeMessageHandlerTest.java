@@ -152,8 +152,8 @@ class NodeMessageHandlerTest {
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
-        processor.postMessage(sender, message);
-        processor.postMessage(sender, message);
+        processor.postMessage(sender, message, null);
+        processor.postMessage(sender, message, null);
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
@@ -173,7 +173,7 @@ class NodeMessageHandlerTest {
         Message message = new BlockMessage(block);
 
         processor.start();
-        processor.postMessage(new SimplePeer(), message);
+        processor.postMessage(new SimplePeer(), message, null);
 
         Thread.sleep(1000);
 
@@ -199,7 +199,7 @@ class NodeMessageHandlerTest {
         NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(config, sbp, null, null, null, scoring,
                 mock(StatusResolver.class));
 
-        nodeMessageHandler.postMessage(sender, message);
+        nodeMessageHandler.postMessage(sender, message, null);
 
         Assertions.assertEquals(0, nodeMessageHandler.getMessageQueueSize());
     }
@@ -222,7 +222,7 @@ class NodeMessageHandlerTest {
         NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(config, sbp, null, null, null, scoring,
                 mock(StatusResolver.class));
 
-        nodeMessageHandler.postMessage(sender, message);
+        nodeMessageHandler.postMessage(sender, message, null);
 
         Assertions.assertEquals(1, nodeMessageHandler.getMessageQueueSize());
     }
@@ -503,7 +503,7 @@ class NodeMessageHandlerTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        handler.processMessage(sender, new BlockHeadersRequestMessage(1,block.getHash().getBytes(), 1));
+        handler.processMessage(sender, new BlockHeadersRequestMessage(1, block.getHash().getBytes(), 1));
 
         Assertions.assertFalse(sender.getMessages().isEmpty());
         Assertions.assertEquals(1, sender.getMessages().size());
@@ -879,7 +879,7 @@ class NodeMessageHandlerTest {
 
         	final TransactionsMessage message = new TransactionsMessage(TransactionUtils.getTransactions(1));
 
-        	handler.postMessage(sender, message);
+            handler.postMessage(sender, message, null);
 
         }
 

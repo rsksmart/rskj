@@ -318,6 +318,7 @@ class TransactionModuleTest {
     private String sendRawTransaction(Web3Impl web3) {
         Account sender = new AccountBuilder().name("cow").build();
         Account receiver = new AccountBuilder().name("addr2").build();
+        byte chainId = config.getNetworkConstants().getChainId();
 
         Transaction tx = new TransactionBuilder()
                 .sender(sender)
@@ -326,6 +327,7 @@ class TransactionModuleTest {
                 .gasLimit(BigInteger.valueOf(50000))
                 .value(BigInteger.valueOf(7))
                 .nonce(0)
+                .chainId(chainId)
                 .build();
 
         String rawData = ByteUtil.toHexString(tx.getEncoded());

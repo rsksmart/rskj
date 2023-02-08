@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2021 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,19 +15,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package co.rsk.cli;
 
-package co.rsk.net;
+import co.rsk.RskContext;
+import co.rsk.cli.exceptions.PicocliBadResultException;
+import picocli.CommandLine;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+import javax.annotation.Nonnull;
+import java.util.concurrent.Callable;
 
-import co.rsk.net.messages.Message;
+public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware implements Callable<Integer> {
 
-public interface MessageHandler {
-    void processMessage(Peer sender, Message message);
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) {
+        this.ctx = ctx;
 
-    void postMessage(Peer sender, Message message, NodeMsgTraceInfo traceInfo) throws InterruptedException;
+        int result = new CommandLine(this).setUnmatchedArgumentsAllowed(true).execute(args);
 
-    long getMessageQueueSize();
+        if (result != 0) {
+            throw new PicocliBadResultException(result);
+        }
+    }
 }

@@ -18,6 +18,7 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
+import co.rsk.cli.exceptions.PicocliBadResultException;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
 import org.ethereum.core.Block;
@@ -25,43 +26,71 @@ import org.ethereum.core.Bloom;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.util.concurrent.Callable;
 
 /**
  * The entry point for indexing block blooms
  * This is an experimental/unsupported tool
  */
-public class IndexBlooms {
+@CommandLine.Command(name = "index-blooms", mixinStandardHelpOptions = true, version = "index-blooms 1.0",
+        description = "Indexes blooms for a specific block range")
+public class IndexBlooms implements Callable<Integer> {
+
+    @CommandLine.Option(names = {"-fb", "--fromBlock"}, description = "From block number", required = true)
+    private String fromBlockNumber;
+
+    @CommandLine.Option(names = {"-tb", "--toBlock"}, description = "To block number", required = true)
+    private String toBlockNumber;
 
     private static final Logger logger = LoggerFactory.getLogger(IndexBlooms.class);
 
     private static final String EARLIEST = "earliest";
     private static final String LATEST = "latest";
 
-    public static void main(String[] args) {
-        try (RskContext ctx = new RskContext(args)) {
-            BlockStore blockStore = ctx.getBlockStore();
-            BlocksBloomStore blocksBloomStore = ctx.getBlocksBloomStore();
+    private final RskContext ctx;
 
-            execute(makeBlockRange(args, blockStore), blockStore, blocksBloomStore);
+    public IndexBlooms(RskContext ctx) {
+        this.ctx = ctx;
+    }
+
+    public static void main(String[] args) {
+        try (RskContext ctx = new RskContext(args, true)) {
+            int result = new CommandLine(new IndexBlooms(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
+
+            if (result != 0) {
+                throw new PicocliBadResultException(result);
+            }
         }
+    }
+
+    @Override
+    public Integer call() throws IOException {
+        BlockStore blockStore = ctx.getBlockStore();
+        BlocksBloomStore blocksBloomStore = ctx.getBlocksBloomStore();
+
+        execute(makeBlockRange(this.fromBlockNumber, this.toBlockNumber, blockStore), blockStore, blocksBloomStore);
+
+        return 0;
     }
 
     /**
      * Creates a block range by extract from/to values from {@code args}.
      */
     @Nonnull
-    static Range makeBlockRange(@Nonnull String[] args, @Nonnull BlockStore blockStore) {
-        if (args.length < 2) {
+    static Range makeBlockRange(String fromBlock, String toBlock,  @Nonnull BlockStore blockStore) {
+        if (fromBlock == null || toBlock == null) {
             throw new IllegalArgumentException("Missing 'from' and/or 'to' block number(s)");
         }
 
         long minNumber = blockStore.getMinNumber();
         long maxNumber = blockStore.getMaxNumber();
 
-        long fromBlockNumber = EARLIEST.equals(args[0]) ? minNumber : Long.parseLong(args[0]);
-        long toBlockNumber = LATEST.equals(args[1]) ? maxNumber : Long.parseLong(args[1]);
+        long fromBlockNumber = EARLIEST.equals(fromBlock) ? minNumber : Long.parseLong(fromBlock);
+        long toBlockNumber = LATEST.equals(toBlock) ? maxNumber : Long.parseLong(toBlock);
 
         if (fromBlockNumber < 0 || fromBlockNumber > toBlockNumber) {
             throw new IllegalArgumentException("Invalid 'from' and/or 'to' block number");

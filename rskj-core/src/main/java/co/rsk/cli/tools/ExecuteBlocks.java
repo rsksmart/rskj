@@ -17,8 +17,7 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.CliToolRskContextAware;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.crypto.Keccak256;
@@ -26,8 +25,9 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
+import picocli.CommandLine;
 
-import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 
@@ -39,27 +39,33 @@ import java.util.Arrays;
  * - args[0] - from block number
  * - args[1] - to block number
  */
-public class ExecuteBlocks extends CliToolRskContextAware {
+@CommandLine.Command(name = "execute-blocks", mixinStandardHelpOptions = true, version = "execute-blocks 1.0",
+        description = "Executes blocks for a specified block range")
+public class ExecuteBlocks extends PicoCliToolRskContextAware {
+    @CommandLine.Option(names = {"-fb", "--fromBlock"}, description = "From block number", required = true)
+    private Long fromBlockNumber;
+
+    @CommandLine.Option(names = {"-tb", "--toBlock"}, description = "To block number", required = true)
+    private Long toBlockNumber;
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+    public Integer call() throws IOException {
         BlockExecutor blockExecutor = ctx.getBlockExecutor();
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
         StateRootHandler stateRootHandler = ctx.getStateRootHandler();
 
-        executeBlocks(args, blockExecutor, blockStore, trieStore, stateRootHandler);
+        executeBlocks(blockExecutor, blockStore, trieStore, stateRootHandler);
+
+        return 0;
     }
 
-    private void executeBlocks(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore,
+    private void executeBlocks(BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore,
                                StateRootHandler stateRootHandler) {
-        long fromBlockNumber = Long.parseLong(args[0]);
-        long toBlockNumber = Long.parseLong(args[1]);
-
         for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
             Block block = blockStore.getChainBlockByNumber(n);
             Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());

@@ -17,15 +17,16 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.CliToolRskContextAware;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
+import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,7 +43,22 @@ import java.util.Optional;
  * - "fmi" option can be used for finding minimum inconsistent block number and printing it to stdout. It'll print -1, if no such block is found;
  * - "rbc" option does two things: it looks for minimum inconsistent block and, if there's such, rewinds blocks from top one till the found one inclusively.
  */
-public class RewindBlocks extends CliToolRskContextAware {
+@CommandLine.Command(name = "rewindblocks", mixinStandardHelpOptions = true, version = "rewindblocks 1.0",
+        description = "The entry point for rewind blocks state CLI tool")
+public class RewindBlocks extends PicoCliToolRskContextAware {
+    static class RewindOpts {
+        @CommandLine.Option(names = {"-b", "--block"}, description = "block number to rewind blocks to")
+        public Long blockNum;
+
+        @CommandLine.Option(names = {"-fmi", "--findMinInconsistentBlock"}, description = "flag to find a min inconsistent block", defaultValue = "false")
+        public Boolean findMinInconsistentBlock;
+
+        @CommandLine.Option(names = {"-rbc", "--rewindToBestConsistentBlock"}, description = "flag to rewind to a best consistent block", defaultValue = "false")
+        public Boolean rewindToBestConsistentBlock;
+    }
+
+    @CommandLine.ArgGroup(multiplicity = "1")
+    private RewindOpts opts;
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
@@ -61,23 +77,22 @@ public class RewindBlocks extends CliToolRskContextAware {
     }
 
     @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) {
+    public Integer call() throws IOException {
         BlockStore blockStore = ctx.getBlockStore();
-        String blockNumOrOp = args[0];
 
-        if ("fmi".equals(blockNumOrOp)) {
+        if (opts.findMinInconsistentBlock) {
             RepositoryLocator repositoryLocator = ctx.getRepositoryLocator();
 
             printMinInconsistentBlock(blockStore, repositoryLocator);
-        } else if ("rbc".equals(blockNumOrOp)) {
+        } else if (opts.rewindToBestConsistentBlock) {
             RepositoryLocator repositoryLocator = ctx.getRepositoryLocator();
 
             rewindInconsistentBlocks(blockStore, repositoryLocator);
         } else {
-            long blockNumber = Long.parseLong(blockNumOrOp);
-
-            rewindBlocks(blockNumber, blockStore);
+            rewindBlocks(opts.blockNum, blockStore);
         }
+
+        return 0;
     }
 
     private void printMinInconsistentBlock(@Nonnull BlockStore blockStore, @Nonnull RepositoryLocator repositoryLocator) {
@@ -95,6 +110,8 @@ public class RewindBlocks extends CliToolRskContextAware {
         long minInconsistentBlockNum = findMinInconsistentBlock(blockStore, repositoryLocator);
         if (minInconsistentBlockNum == -1) {
             printer.println("No inconsistent block has been found. Nothing to do");
+        } else if (minInconsistentBlockNum < blockStore.getMinNumber()) {
+            printer.println("Cannot rewind to " + minInconsistentBlockNum + ", such block is not in store.");
         } else {
             printer.println("Min inconsistent block number: " + minInconsistentBlockNum);
             rewindBlocks(minInconsistentBlockNum - 1, blockStore);
@@ -122,7 +139,7 @@ public class RewindBlocks extends CliToolRskContextAware {
     }
 
     private void rewindBlocks(long blockNumber, BlockStore blockStore) {
-        long maxNumber = blockStore.getMaxNumber();
+        long maxNumber = tryGetMaxNumber(blockStore);
 
         printInfo("Highest block number stored in db: {}", maxNumber);
         printInfo("Block number to rewind to: {}", blockNumber);
@@ -134,10 +151,20 @@ public class RewindBlocks extends CliToolRskContextAware {
 
             printer.println("Done");
 
-            maxNumber = blockStore.getMaxNumber();
+            maxNumber = tryGetMaxNumber(blockStore);
             printer.println("New highest block number stored in db: " + maxNumber);
         } else {
             printer.println("No need to rewind");
         }
+    }
+
+    private static long tryGetMaxNumber(BlockStore blockStore) {
+        long maxNumber;
+        try {
+            maxNumber = blockStore.getMaxNumber();
+        } catch (IllegalStateException ise) {
+            maxNumber = -1;
+        }
+        return maxNumber;
     }
 }

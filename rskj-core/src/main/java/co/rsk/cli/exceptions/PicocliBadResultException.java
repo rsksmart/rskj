@@ -1,6 +1,7 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,18 +17,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net;
+package co.rsk.cli.exceptions;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+public class PicocliBadResultException extends RuntimeException {
+    private final int errorCode;
 
-import co.rsk.net.messages.Message;
+    public PicocliBadResultException(int errorCode) {
+        super(String.format("Command finished with code: %s", errorCode));
 
-public interface MessageHandler {
-    void processMessage(Peer sender, Message message);
+        this.errorCode = errorCode;
+    }
 
-    void postMessage(Peer sender, Message message, NodeMsgTraceInfo traceInfo) throws InterruptedException;
-
-    long getMessageQueueSize();
+    public int getErrorCode() {
+        return errorCode;
+    }
 }
