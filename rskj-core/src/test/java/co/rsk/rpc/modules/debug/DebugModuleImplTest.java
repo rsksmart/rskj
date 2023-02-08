@@ -337,7 +337,7 @@ class DebugModuleImplTest {
         TimeProvider timeProvider = mock(TimeProvider.class);
         when(timeProvider.currentTimeMillis()).thenReturn(creationTimestamp);
 
-        TxQuota txQuotaCreated = TxQuota.createNew(address, TestUtils.randomHash(), initialQuota, timeProvider);
+        TxQuota txQuotaCreated = TxQuota.createNew(address, TestUtils.generateHash("rawAddress"), initialQuota, timeProvider);
         when(txQuotaChecker.getTxQuota(address)).thenReturn(txQuotaCreated);
 
         TxQuota txQuotaRetrieved = debugModule.accountTransactionQuota(rawAddress);
@@ -354,7 +354,7 @@ class DebugModuleImplTest {
     void debug_accountTransactionQuota_whenNonExistingAddress_returnsNull() {
         RskAddress address = new RskAddress("0x7986b3df570230288501eea3d890bd66948c9b79");
 
-        TxQuota txQuotaCreated = TxQuota.createNew(address, TestUtils.randomHash(), 200L, System::currentTimeMillis);
+        TxQuota txQuotaCreated = TxQuota.createNew(address, TestUtils.generateHash("txQuota"), 200L, System::currentTimeMillis);
 
         when(txQuotaChecker.getTxQuota(address)).thenReturn(txQuotaCreated);
 

@@ -28,10 +28,10 @@ import co.rsk.net.utils.AsyncNodeBlockProcessorListener;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
-import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -39,7 +39,10 @@ import org.junit.jupiter.api.Timeout;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 class AsyncNodeBlockProcessorTest {
 
@@ -984,7 +987,7 @@ class AsyncNodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        processor.processBlockHeadersRequest(sender, 100, HashUtil.randomHash(), 20);
+        processor.processBlockHeadersRequest(sender, 100, TestUtils.generateBytes("senderHash",32), 20);
 
         Assertions.assertTrue(sender.getMessages().isEmpty());
     }

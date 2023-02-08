@@ -24,8 +24,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeStatistics;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilitiesImpl;
@@ -43,7 +43,10 @@ import java.util.List;
 import static org.ethereum.net.client.Capability.RSK;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class HandshakeHandlerTest {
 
@@ -113,7 +116,7 @@ class HandshakeHandlerTest {
         responsePacketByteBuf.readBytes(responsePacket);
         handshake.handleAuthResponseV4(remoteKey, initiatePacket, responsePacket);
 
-        HelloMessage helloMessage = new HelloMessage(P2pHandler.VERSION, "", capabilities, 4321, ByteUtil.toHexString(HashUtil.randomPeerId()));
+        HelloMessage helloMessage = new HelloMessage(P2pHandler.VERSION, "", capabilities, 4321, ByteUtil.toHexString(TestUtils.generatePeerId("hello")));
         byte[] payload = helloMessage.getEncoded();
         FrameCodec frameCodec = new FrameCodec(handshake.getSecrets());
         ByteBuf byteBufMsg = ch.alloc().buffer();

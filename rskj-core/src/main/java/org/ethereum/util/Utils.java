@@ -25,7 +25,6 @@ import org.bouncycastle.util.encoders.Hex;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -35,8 +34,6 @@ import java.util.regex.Pattern;
 
 
 public class Utils {
-
-    private static SecureRandom random = new SecureRandom();
 
     /**
      * @param number should be in form '0x34fabd34....'
@@ -123,9 +120,6 @@ public class Utils {
         return sb.toString();
     }
 
-    public static SecureRandom getRandom() {
-        return random;
-    }
 
     public static final double JAVA_VERSION = getJavaVersion();
 

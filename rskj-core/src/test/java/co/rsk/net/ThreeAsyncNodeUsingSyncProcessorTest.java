@@ -29,8 +29,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.util.Random;
-
 
 @SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
 class ThreeAsyncNodeUsingSyncProcessorTest {
@@ -289,7 +287,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
         node3.waitUntilNTasksWithTimeout(setupRequests);
         node3.waitUntilNTasksWithTimeout(5);
         // synchronize 200 (extra tasks are from old sync protocol messages)
-        BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), null, null);
+        BodyResponseMessage response = new BodyResponseMessage(123123123123L, null, null);
         node3.getSyncProcessor().registerExpectedMessage(response);
         node3.getSyncProcessor().processBodyResponse(node1.getMessageChannel(node3), response);
         node3.waitExactlyNTasksWithTimeout(200 + setupRequests - 15);

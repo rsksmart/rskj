@@ -42,8 +42,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static org.ethereum.TestUtils.assertThrows;
-import static org.ethereum.TestUtils.randomBytes;
+import static org.ethereum.TestUtils.generateBytesFromRandom;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -299,8 +298,9 @@ class RocksDbDataSourceTest {
 
     private static Map<ByteArrayWrapper, byte[]> createBatch(int batchSize) {
         HashMap<ByteArrayWrapper, byte[]> result = new HashMap<>();
+        Random random = new Random(RocksDbDataSourceTest.class.hashCode());
         for (int i = 0; i < batchSize; i++) {
-            result.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
+            result.put(ByteUtil.wrap(generateBytesFromRandom(random,32)), generateBytesFromRandom(random,32));
         }
         return result;
     }

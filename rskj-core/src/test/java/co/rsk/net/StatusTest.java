@@ -1,7 +1,7 @@
 package co.rsk.net;
 
 import co.rsk.core.BlockDifficulty;
-import org.ethereum.crypto.HashUtil;
+import org.ethereum.TestUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +13,7 @@ import java.math.BigInteger;
 class StatusTest {
     @Test
     void createWithOriginalArguments() {
-        byte[] hash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
 
         Status status = new Status(42, hash);
 
@@ -26,8 +26,8 @@ class StatusTest {
 
     @Test
     void createWithCompleteArguments() {
-        byte[] hash = HashUtil.randomHash();
-        byte[] parentHash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
+        byte[] parentHash = TestUtils.generateBytes("parentHash",32);
 
         Status status = new Status(42, hash, parentHash, new BlockDifficulty(BigInteger.TEN));
 

@@ -20,15 +20,14 @@ package org.ethereum.rpc.dto;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Random;
-
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 
 class TransactionResultDTOTest {
@@ -40,7 +39,7 @@ class TransactionResultDTOTest {
 
     @Test
     void remascAddressSerialization() {
-        RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
+        RemascTransaction remascTransaction = new RemascTransaction(TestUtils.generateLong("remascTransaction"));
 
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         assertThat(dto.getFrom(), is("0x0000000000000000000000000000000000000000"));
@@ -101,7 +100,7 @@ class TransactionResultDTOTest {
 
     @Test
     void transactionRemascHasSignatureNullWhenFlagIsFalse() {
-        RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
+        RemascTransaction remascTransaction = new RemascTransaction(TestUtils.generateLong("remascTransaction"));
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         Assertions.assertNull(dto.getV());
         Assertions.assertNull(dto.getR());
@@ -110,7 +109,7 @@ class TransactionResultDTOTest {
 
     @Test
     void transactionRemascHasSignatureZeroWhenFlagIsTrue() {
-        RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
+        RemascTransaction remascTransaction = new RemascTransaction(TestUtils.generateLong("remascTransaction"));
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction, true, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         Assertions.assertEquals(HEX_ZERO, dto.getV());
         Assertions.assertEquals(HEX_ZERO, dto.getR());

@@ -26,7 +26,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Bloom;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +42,7 @@ class NetBlockStoreTest {
     @Test
     void getUnknownBlockAsNull() {
         NetBlockStore store = new NetBlockStore();
-        Assertions.assertNull(store.getBlockByHash(TestUtils.randomBytes(32)));
+        Assertions.assertNull(store.getBlockByHash(TestUtils.generateBytes(NetBlockStoreTest.class, "hash", 32)));
     }
 
     @Test
@@ -224,7 +223,7 @@ class NetBlockStoreTest {
         NetBlockStore store = new NetBlockStore();
         BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHash(new byte[0])
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.generateAddress("coinbase"))
                 .setNumber(1)
                 .setMinimumGasPrice(Coin.ZERO)
                 .build();
@@ -238,7 +237,7 @@ class NetBlockStoreTest {
         NetBlockStore store = new NetBlockStore();
         BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHash(new byte[0])
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.generateAddress("coinbase"))
                 .setNumber(1)
                 .setMinimumGasPrice(Coin.ZERO)
                 .build();

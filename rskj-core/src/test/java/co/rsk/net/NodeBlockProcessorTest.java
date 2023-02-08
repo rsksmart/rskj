@@ -27,10 +27,10 @@ import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidator;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
-import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,10 @@ import java.math.BigInteger;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * Created by ajlopez on 5/11/2016.
@@ -927,7 +930,7 @@ class NodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        processor.processBlockHeadersRequest(sender, 100, HashUtil.randomHash(), 20);
+        processor.processBlockHeadersRequest(sender, 100, TestUtils.generateBytes("processor",32), 20);
 
         Assertions.assertTrue(sender.getMessages().isEmpty());
     }

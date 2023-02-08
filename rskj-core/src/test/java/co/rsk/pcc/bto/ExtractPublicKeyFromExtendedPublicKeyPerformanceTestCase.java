@@ -55,7 +55,7 @@ class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Precompil
 
     private ExecutionStats estimateExtractPublicKeyFromExtendedPublicKey(int times, EnvironmentBuilder environmentBuilder) throws VMException {
         ExecutionStats stats = new ExecutionStats(function.name);
-        Random rnd = new Random();
+        Random rnd = new Random(times);
         byte[] chainCode = new byte[32];
         NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 

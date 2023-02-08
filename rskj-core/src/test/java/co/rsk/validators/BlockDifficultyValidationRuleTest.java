@@ -52,7 +52,7 @@ class BlockDifficultyValidationRuleTest {
 
     private BlockHeader getEmptyHeader(BlockDifficulty difficulty, long blockTimestamp, int uCount) {
         return blockFactory.getBlockHeaderBuilder()
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.generateAddress(String.valueOf(blockTimestamp)))
                 .setDifficulty(difficulty)
                 .setTimestamp(blockTimestamp)
                 .setUncleCount(uCount)

@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
@@ -61,7 +62,7 @@ class MinerUtilsTest {
         s1[0] = 0;
         s2[0] = 1;
 
-        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        byte[] addressBytes = TestUtils.generateBytes("addressBytes",20);
 
         Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
         Mockito.when(tx2.getHash()).thenReturn(new Keccak256(s2));
@@ -133,7 +134,7 @@ class MinerUtilsTest {
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
-        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        byte[] addressBytes = TestUtils.generateBytes("addressBytes",20);
         accountNounces.put(new RskAddress(addressBytes), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         Coin minGasPrice = Coin.valueOf(2L);
@@ -151,7 +152,7 @@ class MinerUtilsTest {
         txs.add(tx);
         Mockito.when(tx.getGasPrice()).thenReturn(null);
         Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
-        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        byte[] addressBytes = TestUtils.generateBytes("addressBytes",20);
         accountNounces.put(new RskAddress(addressBytes), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         Coin minGasPrice = Coin.valueOf(2L);
@@ -224,7 +225,7 @@ class MinerUtilsTest {
         byte[] nonce1 = ByteUtil.cloneBytes(BigInteger.valueOf(1).toByteArray());
         byte[] nonce2 = ByteUtil.cloneBytes(BigInteger.valueOf(2).toByteArray());
 
-        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        byte[] addressBytes = TestUtils.generateBytes("addressBytes",20);
         Mockito.when(tx0.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(addressBytes));
         Mockito.when(tx0.getNonce()).thenReturn(ByteUtil.cloneBytes(nonce0));
         Mockito.when(tx0.getGasPrice()).thenReturn(Coin.valueOf(10));
@@ -278,7 +279,7 @@ class MinerUtilsTest {
         Transaction tx5 = Mockito.mock(Transaction.class);
         Transaction tx6 = Mockito.mock(Transaction.class);
 
-        byte[] addressBytes2 = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(100).nextLong()).toByteArray(), 20);
+        byte[] addressBytes2 = TestUtils.generateBytes("addressBytes2",20);
         Mockito.when(tx4.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(addressBytes2));
         Mockito.when(tx4.getNonce()).thenReturn(ByteUtil.cloneBytes(nonce0));
         Mockito.when(tx4.getGasPrice()).thenReturn(Coin.valueOf(50));
@@ -312,7 +313,7 @@ class MinerUtilsTest {
         Transaction tx8 = Mockito.mock(Transaction.class);
         Transaction tx9 = Mockito.mock(Transaction.class);
 
-        byte[] addressBytes3 = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(1000).nextLong()).toByteArray(), 20);
+        byte[] addressBytes3 = TestUtils.generateBytes("addressBytes3",20);
         Mockito.when(tx7.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(addressBytes3));
         Mockito.when(tx7.getNonce()).thenReturn(ByteUtil.cloneBytes(nonce0));
         Mockito.when(tx7.getGasPrice()).thenReturn(Coin.valueOf(500));

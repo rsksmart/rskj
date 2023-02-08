@@ -59,8 +59,9 @@ public class Tx {
         r.nextBytes(returnReceiveAddressBytes);
         RskAddress returnReceiveAddress = new RskAddress(returnReceiveAddressBytes);
 
+        byte[] randomBytes = TestUtils.generateBytes(Tx.class, "txHash",32);
         Mockito.when(transaction.getSender(any(SignatureCache.class))).thenReturn(returnSender);
-        Mockito.when(transaction.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
+        Mockito.when(transaction.getHash()).thenReturn(new Keccak256(randomBytes));
         Mockito.when(transaction.acceptTransactionSignature(config.getNetworkConstants().getChainId())).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
         ArrayList<Byte> bytes = new ArrayList<>();

@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
@@ -293,8 +294,7 @@ class FederationTest {
         FederationMember federationMember = federation.getMembers().get(0);
         Assertions.assertTrue(federation.isMember(federationMember));
 
-        byte[] b = new byte[20];
-        new Random().nextBytes(b);
+        byte[] b = TestUtils.generateBytes("b",20);
 
         ECKey invalidRskKey = ECKey.fromPrivate(b);
         BtcECKey invalidBtcKey = BtcECKey.fromPrivate(b);

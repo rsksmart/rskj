@@ -36,6 +36,7 @@ import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
@@ -1345,7 +1346,7 @@ class BridgeSerializationUtilsTest {
     }
 
     private int randomInRange(int min, int max) {
-        return new Random().nextInt(max - min + 1) + min;
+        return TestUtils.generateInt(BridgeSerializationUtilsTest.class.toString(),max - min + 1) + min;
     }
 
     private static AddressBasedAuthorizer getTestingAddressBasedAuthorizer() {

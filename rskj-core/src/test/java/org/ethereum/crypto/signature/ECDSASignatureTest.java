@@ -19,14 +19,13 @@
 
 package org.ethereum.crypto.signature;
 
+import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class ECDSASignatureTest {
 
@@ -97,7 +96,7 @@ class ECDSASignatureTest {
     @Test
     void fromComponentsWithRecoveryCalculation() {
         ECKey key = new ECKey();
-        byte[] hash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("randomHash",32);
         ECDSASignature signature = ECDSASignature.fromSignature(key.sign(hash));
 
         // With uncompressed public key

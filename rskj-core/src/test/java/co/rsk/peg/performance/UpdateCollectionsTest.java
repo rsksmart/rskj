@@ -168,7 +168,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         final BridgeStorageProvider[] providerArrayWrapper = new BridgeStorageProvider[1];
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-            Random rnd = new Random();
+            Random rnd = new Random(numCases);
             List<UTXO> utxos;
             ReleaseRequestQueue queue;
 
@@ -231,7 +231,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
     private void updateCollections_confirmTxs(ExecutionStats stats, int numCases) throws IOException, VMException {
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-            Random rnd = new Random();
+            Random rnd = new Random(numCases);
             SortedMap<Keccak256, BtcTransaction> txsWaitingForSignatures;
             ReleaseTransactionSet txSet;
 
@@ -287,7 +287,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
     private void updateCollections_buildReleaseTxsForBatchingPegouts(ExecutionStats stats, int numCases) throws IOException, VMException {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-            Random rnd = new Random();
+            Random rnd = new Random(numCases);
             List<UTXO> utxos;
             ReleaseRequestQueue queue;
 

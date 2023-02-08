@@ -38,11 +38,15 @@ import co.rsk.peg.pegininstructions.PeginInstructions;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsVersion1;
-import co.rsk.peg.utils.*;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.MerkleTreeUtils;
+import co.rsk.peg.utils.RejectedPeginReason;
+import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -68,11 +72,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.PegTestUtils.*;
+import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
+import static co.rsk.peg.PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
@@ -1392,7 +1399,7 @@ class BridgeSupportTest {
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), txWithoutWitness.bitcoinSerialize(), height, pmtWithoutWitness.bitcoinSerialize());
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(txWithoutWitness.getHash(), executionBlock.getNumber());
 
-        Assertions.assertNotEquals(txWithWitness.getHash(true), txWithoutWitness.getHash());
+        assertNotEquals(txWithWitness.getHash(true), txWithoutWitness.getHash());
     }
 
     @Test
@@ -6883,7 +6890,7 @@ class BridgeSupportTest {
         // Configure existing utxos in both federations
         if (amountInOldFed != null) {
             UTXO utxo = new UTXO(
-                Sha256Hash.wrap(HashUtil.randomHash()),
+                Sha256Hash.wrap(TestUtils.generateBytes("amountInOldFed",32)),
                 0,
                 amountInOldFed,
                 1,
@@ -6895,7 +6902,7 @@ class BridgeSupportTest {
         }
         if (amountInNewFed != null) {
             UTXO utxo = new UTXO(
-                Sha256Hash.wrap(HashUtil.randomHash()),
+                Sha256Hash.wrap(TestUtils.generateBytes("amountInNewFed",32)),
                 0,
                 amountInNewFed,
                 1,

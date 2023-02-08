@@ -355,7 +355,7 @@ class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.generateAddress("nhCoinbase"))
                 .setDifficulty(TEST_DIFFICULTY)
                 .setEmptyMergedMiningForkDetectionData()
                 .setMinimumGasPrice(Coin.valueOf(10))

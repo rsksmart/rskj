@@ -41,9 +41,10 @@ class DataSourceWithCacheTest {
      */
     @Test
     void getAfterMiss() {
-        byte[] randomKey = TestUtils.randomBytes(20);
+        byte[] randomKey = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomKey", 20);
+        byte[] randomValue = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomValue", 20);
 
-        baseDataSource.put(randomKey, TestUtils.randomBytes(20));
+        baseDataSource.put(randomKey, randomValue);
         dataSourceWithCache.get(randomKey);
         dataSourceWithCache.get(randomKey);
 
@@ -63,8 +64,8 @@ class DataSourceWithCacheTest {
 
     @Test
     void getAfterModification() {
-        byte[] randomKey = TestUtils.randomBytes(20);
-        byte[] randomValue = TestUtils.randomBytes(20);
+        byte[] randomKey = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomKey", 20);
+        byte[] randomValue = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomValue", 20);
 
         baseDataSource.put(randomKey, randomValue);
         byte[] modifiedRandomValue = Arrays.copyOf(randomValue, randomValue.length);
@@ -82,8 +83,10 @@ class DataSourceWithCacheTest {
 
     @Test
     void getAfterDeletion() {
-        byte[] randomKey = TestUtils.randomBytes(20);
-        baseDataSource.put(randomKey, TestUtils.randomBytes(20));
+        byte[] randomKey = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomKey", 20);
+        byte[] randomValue = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomValue", 20);
+
+        baseDataSource.put(randomKey, randomValue);
 
         dataSourceWithCache.delete(randomKey);
 
@@ -116,8 +119,8 @@ class DataSourceWithCacheTest {
 
     @Test
     void put() {
-        byte[] randomKey = TestUtils.randomBytes(20);
-        byte[] randomValue = TestUtils.randomBytes(20);
+        byte[] randomKey = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomKey", 20);
+        byte[] randomValue = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomValue", 20);
 
         dataSourceWithCache.put(randomKey, randomValue);
         MatcherAssert.assertThat(baseDataSource.get(randomKey), is(nullValue()));
@@ -151,10 +154,10 @@ class DataSourceWithCacheTest {
     void putTwoKeyValuesWrittenInOrder() {
         InOrder order = inOrder(baseDataSource);
 
-        byte[] randomKey1 = TestUtils.randomBytes(20);
-        byte[] randomValue1 = TestUtils.randomBytes(20);
-        byte[] randomKey2 = TestUtils.randomBytes(20);
-        byte[] randomValue2 = TestUtils.randomBytes(20);
+        byte[] randomKey1 = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomKey1", 20);
+        byte[] randomValue1 = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomValue1", 20);
+        byte[] randomKey2 = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomKey2", 20);
+        byte[] randomValue2 = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomValue2", 20);
 
         dataSourceWithCache.put(randomKey1, randomValue1);
         dataSourceWithCache.put(randomKey2, randomValue2);
@@ -222,7 +225,7 @@ class DataSourceWithCacheTest {
 
         MatcherAssert.assertThat(datasourceSet, is(initialKeys));
 
-        byte[] keyNotIncluded = TestUtils.randomBytes(20);
+        byte[] keyNotIncluded = TestUtils.generateBytes(DataSourceWithCacheTest.class,"keyNotIncluded", 20);
         dataSourceWithCache.get(keyNotIncluded);
         Assertions.assertFalse(datasourceSet.contains(keyNotIncluded));
 
@@ -236,8 +239,10 @@ class DataSourceWithCacheTest {
         Map<ByteArrayWrapper, byte[]> initialEntries = generateRandomValuesToUpdate(CACHE_SIZE);
         baseDataSource.updateBatch(initialEntries, Collections.emptySet());
 
-        byte[] keyIncluded = TestUtils.randomBytes(20);
-        dataSourceWithCache.put(keyIncluded, TestUtils.randomBytes(20));
+        byte[] keyIncluded = TestUtils.generateBytes(DataSourceWithCacheTest.class,"keyIncluded", 20);
+        byte[] value = TestUtils.generateBytes(DataSourceWithCacheTest.class,"value", 20);
+
+        dataSourceWithCache.put(keyIncluded, value);
 
         Set<byte[]> datasourceSet = dataSourceWithCache.keys().stream()
                 .map(ByteArrayWrapper::getData)
@@ -245,7 +250,7 @@ class DataSourceWithCacheTest {
         MatcherAssert.assertThat(datasourceSet, hasItem(keyIncluded));
 
         // ensure "contains" behavior is checked
-        byte[] keyNotIncluded = TestUtils.randomBytes(20);
+        byte[] keyNotIncluded = TestUtils.generateBytes(DataSourceWithCacheTest.class,"keyNotIncluded", 20);
         assertFalse(datasourceSet.contains(keyNotIncluded));
         assertTrue(datasourceSet.contains(keyIncluded));
     }
@@ -273,8 +278,10 @@ class DataSourceWithCacheTest {
 
     @Test
     void delete() {
-        byte[] randomKey = TestUtils.randomBytes(20);
-        baseDataSource.put(randomKey, TestUtils.randomBytes(20));
+        byte[] randomKey = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomKey", 20);
+        byte[] randomValue = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomValue", 20);
+
+        baseDataSource.put(randomKey, randomValue);
 
         dataSourceWithCache.delete(randomKey);
         dataSourceWithCache.flush();
@@ -284,7 +291,7 @@ class DataSourceWithCacheTest {
 
     @Test
     void deleteNonExistentCachedKey() {
-        byte[] randomKey = TestUtils.randomBytes(20);
+        byte[] randomKey = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomKey", 20);
 
         // force caching non existing value
         dataSourceWithCache.get(randomKey);
@@ -298,7 +305,7 @@ class DataSourceWithCacheTest {
 
     @Test
     void deleteUnknownKey() {
-        byte[] randomKey = TestUtils.randomBytes(20);
+        byte[] randomKey = TestUtils.generateBytes(DataSourceWithCacheTest.class,"randomKey",20);
 
         dataSourceWithCache.delete(randomKey);
         dataSourceWithCache.flush();
@@ -431,8 +438,9 @@ class DataSourceWithCacheTest {
 
     private Map<ByteArrayWrapper, byte[]> generateRandomValuesToUpdate(int maxValuesToCreate) {
         Map<ByteArrayWrapper, byte[]> updatedValues = new HashMap<>();
+        Random random = new Random(DataSourceWithCacheTest.class.hashCode());
         for (int i = 0; i < maxValuesToCreate; i++) {
-            updatedValues.put(ByteUtil.wrap(TestUtils.randomBytes(20)), TestUtils.randomBytes(20));
+            updatedValues.put(ByteUtil.wrap(TestUtils.generateBytesFromRandom(random,20)), TestUtils.generateBytesFromRandom(random,20));
         }
         return updatedValues;
     }

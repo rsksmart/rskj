@@ -91,7 +91,7 @@ class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContractPerfor
     private ExecutionStats estimateGetMultisigScriptHash(int times, int numberOfKeys, EnvironmentBuilder environmentBuilder) throws VMException {
         String name = String.format("%s-%d", function.name, numberOfKeys);
         ExecutionStats stats = new ExecutionStats(name);
-        Random rnd = new Random();
+        Random rnd = new Random(times);
 
         int minimumSignatures = rnd.nextInt(numberOfKeys) + 1;
         byte[][] publicKeys = new byte[numberOfKeys][];

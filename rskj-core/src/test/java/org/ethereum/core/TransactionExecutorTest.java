@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -285,11 +286,12 @@ class TransactionExecutorTest {
         Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value, -1);
         assertTrue(executeValidTransaction(transaction, blockTxSignatureCache));
 
+        Random random = new Random(TransactionExecutorTest.class.hashCode());
         for (int i = 0; i < MAX_CACHE_SIZE; i++) {
             if (i == MAX_CACHE_SIZE - 1) {
                 assertNotNull(blockTxSignatureCache.getSender(transaction));
             }
-            sender = new RskAddress(TestUtils.randomAddress().getBytes());
+            sender = new RskAddress(TestUtils.generateBytesFromRandom(random,20));
             when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
             when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(68000L)));
             Transaction transactionAux = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value, i);

@@ -278,7 +278,7 @@ class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
             int numberOfTransactions = Helper.randomInRange(minNumberOfTransactions, maxNumberOfTransactions);
             int targetTxPosition = Helper.randomInRange(0, numberOfTransactions-1);
 
-            Random rnd = new Random();
+            Random rnd = new Random(numberOfConfirmations);
             for(int i=0; i < numberOfTransactions ; i++) {
                 if (i == targetTxPosition) {
                     allLeafHashes.add(targetTx.getHash());

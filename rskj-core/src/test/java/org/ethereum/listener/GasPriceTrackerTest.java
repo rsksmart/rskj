@@ -1,11 +1,10 @@
 package org.ethereum.listener;
 
 import co.rsk.core.Coin;
-import co.rsk.crypto.Keccak256;
 import co.rsk.peg.simples.SimpleRskTransaction;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +16,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -197,7 +198,7 @@ class GasPriceTrackerTest {
         Block block = mock(Block.class);
 
         when(block.getMinimumGasPrice()).thenReturn(mgp);
-        when(block.getParentHash()).thenReturn(new Keccak256(HashUtil.randomHash()));
+        when(block.getParentHash()).thenReturn(TestUtils.generateHash("parentHash"));
         when(block.getGasUsed()).thenReturn(700_000L);
         when(block.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(6_800_000));
 
