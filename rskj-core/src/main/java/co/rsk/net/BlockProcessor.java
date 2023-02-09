@@ -34,11 +34,7 @@ public interface BlockProcessor {
 
     BlockNodeInformation getNodeInformation();
 
-    long getLastKnownBlockNumber();
-
     void processNewBlockHashesMessage(Peer sender, NewBlockHashesMessage message);
-
-    void processBlockHeaders(Peer sender, List<BlockHeader> blockHeaders);
 
     boolean hasBlock(byte[] hash);
 

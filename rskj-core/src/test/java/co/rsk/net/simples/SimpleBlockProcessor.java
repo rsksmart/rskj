@@ -90,17 +90,8 @@ public class SimpleBlockProcessor implements BlockProcessor {
         return this.blocks;
     }
 
-    public long getLastKnownBlockNumber() {
-        return lastKnownBlockNumber;
-    }
-
     @Override
     public void processNewBlockHashesMessage(Peer sender, NewBlockHashesMessage message) {
-
-    }
-
-    @Override
-    public void processBlockHeaders(Peer sender, List<BlockHeader> blockHeaders) {
 
     }
 

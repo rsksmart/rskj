@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2023 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,22 +16,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net;
+package org.ethereum.net.server;
 
-import co.rsk.net.messages.Message;
-import co.rsk.net.messages.MessageType;
+public class ChannelObserver {
 
-import java.net.InetAddress;
+    private ChannelObserver() {
+    }
 
-public interface Peer {
-    void sendMessage(Message message);
+    public interface Observable {
+        void addObserver(ChannelObserver.Observer observer);
+    }
 
-    NodeID getPeerNodeID();
+    public interface Observer {
+        void notifyWireActivated(Channel channel);
+    }
 
-    InetAddress getAddress();
-
-    double score(long currentTime, MessageType type);
-    void imported(boolean best);
-
-    void wireActivated();
 }

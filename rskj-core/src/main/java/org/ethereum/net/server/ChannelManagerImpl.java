@@ -58,11 +58,6 @@ public class ChannelManagerImpl implements ChannelManager {
     private final Object activePeersLock = new Object();
     private final Map<NodeID, Channel> activePeers;
 
-    // Using a concurrent list
-    // (the add and remove methods copy an internal array,
-    // but the iterator directly use the internal array)
-    private final List<Channel> newPeers;
-
     private final ScheduledExecutorService mainWorker;
     private final Map<InetAddress, Instant> disconnectionsTimeouts;
     private final Object disconnectionTimeoutsLock = new Object();
@@ -74,20 +69,19 @@ public class ChannelManagerImpl implements ChannelManager {
     private final int networkCIDR;
 
     public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool) {
-        this.mainWorker = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "newPeersProcessor"));
+        this.mainWorker = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "timedTasksProcessor"));
         this.syncPool = syncPool;
         this.maxActivePeers = config.maxActivePeers();
         this.trustedPeers = config.trustedPeers();
         this.disconnectionsTimeouts = new HashMap<>();
         this.activePeers = new ConcurrentHashMap<>();
-        this.newPeers = new CopyOnWriteArrayList<>();
         this.maxConnectionsAllowed = config.maxConnectionsAllowed();
         this.networkCIDR = config.networkCIDR();
     }
 
     @Override
     public void start() {
-        mainWorker.scheduleWithFixedDelay(this::handleNewPeersAndDisconnections, 0, 1, TimeUnit.SECONDS);
+        mainWorker.scheduleWithFixedDelay(this::runTimedTasks, 0, 1, TimeUnit.SECONDS);
     }
 
     @Override
@@ -95,22 +89,8 @@ public class ChannelManagerImpl implements ChannelManager {
         mainWorker.shutdown();
     }
 
-    private void handleNewPeersAndDisconnections() {
-        this.tryProcessNewPeers();
+    private void runTimedTasks() {
         this.cleanDisconnections();
-    }
-
-    @VisibleForTesting
-    public void tryProcessNewPeers() {
-        if (newPeers.isEmpty()) {
-            return;
-        }
-
-        try {
-            processNewPeers();
-        } catch (Exception e) {
-            logger.error("Error", e);
-        }
     }
 
     private void cleanDisconnections() {
@@ -120,22 +100,15 @@ public class ChannelManagerImpl implements ChannelManager {
         }
     }
 
-    private void processNewPeers() {
-        synchronized (newPeers) {
-            List<Channel> processedChannels = new ArrayList<>();
-            newPeers.stream().filter(Channel::isProtocolsInitialized).forEach(c -> processNewPeer(c, processedChannels));
-            newPeers.removeAll(processedChannels);
+    private void processNewPeer(Channel channel) {
+        synchronized (activePeersLock) {
+            ReasonCode reason = getNewPeerDisconnectionReason(channel);
+            if (reason != null) {
+                disconnect(channel, reason);
+            } else {
+                addToActives(channel);
+            }
         }
-    }
-
-    private void processNewPeer(Channel channel, List<Channel> processedChannels) {
-        ReasonCode reason = getNewPeerDisconnectionReason(channel);
-        if (reason != null) {
-            disconnect(channel, reason);
-        } else {
-            addToActives(channel);
-        }
-        processedChannels.add(channel);
     }
 
     private ReasonCode getNewPeerDisconnectionReason(Channel channel) {
@@ -151,11 +124,27 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private void disconnect(Channel peer, ReasonCode reason) {
-        logger.debug("Disconnecting peer with reason {} : {}", reason, peer);
-        peer.disconnect(reason);
+        if (reason == ReasonCode.DUPLICATE_PEER) {
+            disconnectDuplicatePeer(peer);
+        } else {
+            logger.debug("Disconnecting peer with reason {} : {}", reason, peer);
+            peer.disconnect(reason);
+        }
+
         synchronized (disconnectionTimeoutsLock) {
             disconnectionsTimeouts.put(peer.getInetSocketAddress().getAddress(),
                     Instant.now().plus(INBOUND_CONNECTION_BAN_TIMEOUT));
+        }
+    }
+
+    private void disconnectDuplicatePeer(Channel offendingChannel) {
+        logger.warn("Disconnecting DUPLICATE_PEER channel: {}", offendingChannel);
+        offendingChannel.disconnect(ReasonCode.DUPLICATE_PEER);
+
+        Channel activeChannel = activePeers.remove(offendingChannel.getPeerNodeID());
+        if (activeChannel != null) {
+            logger.warn("Disconnecting active channel after DUPLICATE_PEER: {}", offendingChannel);
+            activeChannel.disconnect(ReasonCode.DUPLICATE_PEER);
         }
     }
 
@@ -170,11 +159,9 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private void addToActives(Channel peer) {
-        if (peer.isUsingNewProtocol() || peer.hasEthStatusSucceeded()) {
-            syncPool.add(peer);
-            synchronized (activePeersLock) {
-                activePeers.put(peer.getNodeId(), peer);
-            }
+        syncPool.add(peer);
+        synchronized (activePeersLock) {
+            activePeers.put(peer.getNodeId(), peer);
         }
     }
 
@@ -259,24 +246,20 @@ public class ChannelManagerImpl implements ChannelManager {
         return Math.min(10, Math.min(Math.max(3, peerCountSqrt), peerCount));
     }
 
+    @Override
     public void add(Channel peer) {
-        newPeers.add(peer);
+        peer.addObserver(this);
     }
 
+    @Override
     public void notifyDisconnect(Channel channel) {
         logger.debug("Peer {}: notifies about disconnect", channel.getPeerId());
-        channel.onDisconnect();
-        synchronized (newPeers) {
-            if(newPeers.remove(channel)) {
-                logger.info("Peer removed from new peers list: {}", channel.getPeerId());
+        synchronized (activePeersLock) {
+            if(activePeers.values().remove(channel)) {
+                logger.info("Peer removed from active peers list: {}", channel.getPeerId());
             }
-            synchronized (activePeersLock){
-                if(activePeers.values().remove(channel)) {
-                    logger.info("Peer removed from active peers list: {}", channel.getPeerId());
-                }
-            }
-            syncPool.onDisconnect(channel);
         }
+        syncPool.onDisconnect(channel);
     }
 
     public Collection<Peer> getActivePeers() {
@@ -343,6 +326,11 @@ public class ChannelManagerImpl implements ChannelManager {
     public void setActivePeers(Map<NodeID, Channel> newActivePeers) {
         this.activePeers.clear();
         this.activePeers.putAll(newActivePeers);
+    }
+
+    @Override
+    public void notifyWireActivated(Channel channel) {
+        processNewPeer(channel);
     }
 
 }
