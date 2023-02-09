@@ -221,6 +221,12 @@ public interface KeyValueDataSource extends DataSource {
             throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + " for " + databaseDir + ".");
         }
 
+        File dbKindFile = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
+
+        if (!dbKindFile.exists() || !dbKindFile.canRead()) {
+            return true;
+        }
+
         return false;
     }
 }
