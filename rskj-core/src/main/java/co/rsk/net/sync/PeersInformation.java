@@ -52,6 +52,8 @@ public class PeersInformation {
     private final Comparator<Map.Entry<Peer, SyncPeerStatus>> peerComparator;
     private Map<Peer, SyncPeerStatus> peerStatuses = new HashMap<>();
     private final double topBest;
+    private final Random random = new Random();
+
 
     public PeersInformation(ChannelManager channelManager,
                             SyncConfiguration syncConfiguration,
@@ -120,10 +122,9 @@ public class PeersInformation {
 
             int numberOfPeersToConsider = (int) Math.round(((double) entries.size()) * (topBest / 100.0D));
 
-            List<Map.Entry<Peer, SyncPeerStatus>> entriesToConsider = entries.subList(0, numberOfPeersToConsider - 1);
+            List<Map.Entry<Peer, SyncPeerStatus>> entriesToConsider = entries.subList(0, numberOfPeersToConsider);
 
-            Random random = new Random();
-            int randomIndex = random.nextInt(entries.size() - 1);
+            int randomIndex = random.nextInt(entriesToConsider.size());
 
             return Optional.of(entriesToConsider.get(randomIndex).getKey());
         }
