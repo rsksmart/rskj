@@ -91,6 +91,10 @@ public class ModuleDescription {
     }
 
     public long getTimeout(String methodName, long defaultTimeout) {
+        if (methodName == null) {
+            throw new IllegalArgumentException("methodName cannot be null.");
+        }
+
         if (methodName.isEmpty()) {
             return defaultTimeout;
         }

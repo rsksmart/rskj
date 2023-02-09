@@ -28,7 +28,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.jsonrpc4j.*;
 import io.netty.buffer.*;
 import io.netty.channel.ChannelHandler;
@@ -56,13 +55,6 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final JsonRpcBasicServer jsonRpcServer;
     private final long defaultTimeout;
 
-    @VisibleForTesting
-    JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer, RskSystemProperties rskSystemProperties) {
-        this.jsonRpcServer = jsonRpcServer;
-
-        this.defaultTimeout = rskSystemProperties.getRpcTimeout();
-    }
-
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize, RskSystemProperties rskSystemProperties) {
         this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), rskSystemProperties.getRpcModules(), rskSystemProperties.getRpcTimeout());
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
@@ -80,14 +72,15 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         int responseCode;
 
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain());
-             ExecTimeoutContext ignored = ExecTimeoutContext.create(defaultTimeout)) {
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
 
             if (defaultTimeout <= 0) {
                 responseCode = jsonRpcServer.handleRequest(is, os);
             } else {
-                responseCode = jsonRpcServer.handleRequest(is, os);
-                ExecTimeoutContext.checkIfExpired();
+                try (ExecTimeoutContext ignored = ExecTimeoutContext.create(defaultTimeout)) {
+                    responseCode = jsonRpcServer.handleRequest(is, os);
+                    ExecTimeoutContext.checkIfExpired();
+                }
             }
         } catch (JsonRpcRequestPayloadException e) {
             String invalidReqMsg = "Invalid request";
@@ -100,7 +93,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             int errorCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
             responseContent = buildErrorContent(errorCode, stackOverflowErrorMsg);
             responseCode = errorCode;
-        }  catch (ExecTimeoutContext.TimeoutException e) {
+        } catch (ExecTimeoutContext.TimeoutException e) {
             LOGGER.error(e.getMessage(), e);
             int errorCode = INTERNAL_ERROR.code;
             responseContent = buildErrorContent(errorCode, e.getMessage());

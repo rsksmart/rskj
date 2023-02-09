@@ -111,6 +111,10 @@ public class CallArgumentsToByteArray {
         byte[] gasLimitBytes = this.getGasLimit();
         long gasLimit = ByteUtil.byteArrayToLong(gasLimitBytes);
 
+        if (gasCap <= 0) {
+            return gasLimitBytes;
+        }
+
         if(gasLimit > gasCap) {
             LOGGER.warn("provided gasLimit ({}) exceeds the gas cap," +
                     " using the gas cap ({})", gasLimit, gasCap);

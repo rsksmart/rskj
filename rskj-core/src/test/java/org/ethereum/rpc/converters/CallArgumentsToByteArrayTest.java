@@ -153,7 +153,7 @@ class CallArgumentsToByteArrayTest {
     @Test
     void gasLimitForGasExceedingGasCap() {
         long hugeAmountOfGas = 900000000000000l;
-        long gasCap = config.getGasCap();
+        long callGasCap = config.getCallGasCap();
 
         CallArguments callArguments = new CallArguments();
         callArguments.setGas(HexUtils.toQuantityJsonHex(hugeAmountOfGas));
@@ -163,7 +163,7 @@ class CallArgumentsToByteArrayTest {
         CallArgumentsToByteArray callArgumentsToByteArray = new CallArgumentsToByteArray(callArguments);
 
         Assertions.assertEquals(hugeAmountOfGas, ByteUtil.byteArrayToLong(callArgumentsToByteArray.getGasLimit()));
-        Assertions.assertEquals(gasCap, ByteUtil.byteArrayToLong(callArgumentsToByteArray.gasLimitForCall(gasCap)));
+        Assertions.assertEquals(callGasCap, ByteUtil.byteArrayToLong(callArgumentsToByteArray.gasLimitForCall(callGasCap)));
     }
 
     @Test
@@ -174,6 +174,6 @@ class CallArgumentsToByteArrayTest {
         CallArgumentsToByteArray callArgumentsToByteArray = new CallArgumentsToByteArray(callArguments);
 
         Assertions.assertEquals(1, ByteUtil.byteArrayToLong(
-                callArgumentsToByteArray.gasLimitForCall(config.getGasCap())));
+                callArgumentsToByteArray.gasLimitForCall(config.getCallGasCap())));
     }
 }

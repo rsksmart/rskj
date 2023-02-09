@@ -55,7 +55,7 @@ public class EthModuleTestUtils {
                 null,
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
-                config.getGasCap());
+                config.getCallGasCap());
     }
 
     public static EthModuleGasEstimation buildBasicEthModuleForGasEstimation(World world) {
@@ -74,7 +74,7 @@ public class EthModuleTestUtils {
                 null,
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
-                config.getGasCap());
+                config.getCallGasCap());
     }
 
     private static TransactionExecutorFactory buildBasicExecutorFactory(World world, TestSystemProperties config) {

@@ -18,6 +18,7 @@
 
 package co.rsk.rpc.netty;
 
+import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -69,13 +70,11 @@ public class ExecTimeoutContext implements AutoCloseable {
         sExecTimeoutContext.get().forEach(ExecTimeoutContext::checkIfExpired);
     }
 
-    public static void checkIfExpired(ExecTimeoutContext execTimeoutContext) {
-        if (execTimeoutContext != null) {
-            long currentTimeInMillis = System.currentTimeMillis();
+    private static void checkIfExpired(@Nonnull ExecTimeoutContext execTimeoutContext) {
+        long currentTimeInMillis = System.currentTimeMillis();
 
-            if (currentTimeInMillis > execTimeoutContext.expirationTimeInMillis) {
-                throw new TimeoutException("Execution has expired.");
-            }
+        if (currentTimeInMillis > execTimeoutContext.expirationTimeInMillis) {
+            throw new TimeoutException("Execution has expired.");
         }
     }
 

@@ -25,13 +25,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.*;
 
-import io.netty.channel.ChannelHandler;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@ChannelHandler.Sharable
 public class JsonRpcCustomServer extends JsonRpcBasicServer {
     private final List<ModuleDescription> modules;
     private final long defaultTimeout;
@@ -45,6 +42,10 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
 
     @Override
     protected JsonResponse handleJsonNodeRequest(final JsonNode node) throws JsonParseException, JsonMappingException {
+        if (!node.isObject()) {
+            return super.handleJsonNodeRequest(node);
+        }
+
         String method = Optional.ofNullable(node.get("method")).map(JsonNode::asText).orElse("");
 
         String[] methodParts = method.split("_");
@@ -62,13 +63,16 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
 
         long timeout = optModule
                 .map(m -> m.getTimeout(methodName, defaultTimeout))
-                .orElse(defaultTimeout);
-
-        if (!node.isObject() || timeout <= 0) {
-            return super.handleJsonNodeRequest(node);
-        }
+                .orElse(0L);
 
         JsonResponse response;
+
+        if (timeout <= 0) {
+            response = super.handleJsonNodeRequest(node);
+            ExecTimeoutContext.checkIfExpired();
+
+            return response;
+        }
 
         try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout)) {
             response = super.handleJsonNodeRequest(node);

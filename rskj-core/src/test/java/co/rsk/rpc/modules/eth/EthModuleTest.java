@@ -98,7 +98,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getGasCap());
+                config.getCallGasCap());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(args, "latest");
@@ -138,7 +138,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getGasCap());
+                config.getCallGasCap());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(args, "latest");
@@ -183,7 +183,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getGasCap());
+                config.getCallGasCap());
 
         try {
             eth.call(args, "latest");
@@ -328,7 +328,7 @@ class EthModuleTest {
                         signatureCache
                 ),
                 config.getGasEstimationCap(),
-                config.getGasCap()
+                config.getCallGasCap()
         );
 
         String addr = eth.getCode(TestUtils.generateAddress("addr").toHexString(), "pending");
@@ -349,7 +349,7 @@ class EthModuleTest {
                 mock(EthModuleTransaction.class),
                 mock(BridgeSupportFactory.class),
                 config.getGasEstimationCap(),
-                config.getGasCap()
+                config.getCallGasCap()
         );
         assertThat(eth.chainId(), is("0x21"));
     }

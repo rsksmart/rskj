@@ -714,7 +714,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getEthModuleTransaction(),
                     getBridgeSupportFactory(),
                     getRskSystemProperties().getGasEstimationCap(),
-                    getRskSystemProperties().getGasCap()
+                    getRskSystemProperties().getCallGasCap()
             );
         }
 

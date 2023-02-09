@@ -90,7 +90,7 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_WEBSOCKET_SERVER_MAX_FRAME_SIZE = "rpc.providers.web.ws.max_frame_size";
     private static final String PROPERTY_RPC_WEBSOCKET_SERVER_MAX_AGGREGATED_FRAME_SIZE = "rpc.providers.web.ws.max_aggregated_frame_size";
     private static final String PROPERTY_RPC_GAS_ESTIMATION_CAP = "rpc.gasEstimationCap";
-    private static final String PROPERTY_RPC_GAS_CAP = "rpc.gascap";
+    private static final String PROPERTY_RPC_CALL_GAS_CAP = "rpc.callGasCap";
     private static final String PROPERTY_RPC_TIMEOUT = "rpc.timeout";
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
@@ -729,8 +729,12 @@ public abstract class SystemProperties {
         return DbKind.ofName(configFromFiles.getString(KeyValueDataSource.KEYVALUE_DATASOURCE_PROP_NAME));
     }
 
-    public long getGasCap() {
-        return configFromFiles.getLong(PROPERTY_RPC_GAS_CAP);
+    public long getCallGasCap() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_CALL_GAS_CAP)) {
+            return 0L;
+        }
+
+        return configFromFiles.getLong(PROPERTY_RPC_CALL_GAS_CAP);
     }
 
     public long getRpcTimeout() {
