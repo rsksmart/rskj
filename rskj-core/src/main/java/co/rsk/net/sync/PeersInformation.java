@@ -28,6 +28,7 @@ import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Blockchain;
 import org.ethereum.net.server.ChannelManager;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Predicate;
@@ -52,14 +53,13 @@ public class PeersInformation {
     private final Comparator<Map.Entry<Peer, SyncPeerStatus>> peerComparator;
     private Map<Peer, SyncPeerStatus> peerStatuses = new HashMap<>();
     private final double topBest;
-    private final Random random = new Random();
+    private final Random random = new SecureRandom();
 
 
     public PeersInformation(ChannelManager channelManager,
                             SyncConfiguration syncConfiguration,
                             Blockchain blockchain,
-                            PeerScoringManager peerScoringManager,
-                            double topBest) {
+                            PeerScoringManager peerScoringManager) {
         this.channelManager = channelManager;
         this.syncConfiguration = syncConfiguration;
         this.blockchain = blockchain;
@@ -69,7 +69,7 @@ public class PeersInformation {
                 // TODO reenable when unprocessable blocks stop being marked as invalid blocks
 //                .thenComparing(this::comparePeerScoring)
                 .thenComparing(this::comparePeerTotalDifficulty);
-        this.topBest = topBest;
+        this.topBest = syncConfiguration.getTopBest();
     }
 
     public void reportEventToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {
@@ -121,6 +121,8 @@ public class PeersInformation {
             }
 
             int numberOfPeersToConsider = (int) Math.round(((double) entries.size()) * (topBest / 100.0D));
+            numberOfPeersToConsider = Math.max(1, numberOfPeersToConsider);
+            numberOfPeersToConsider = Math.min(entries.size(), numberOfPeersToConsider);
 
             List<Map.Entry<Peer, SyncPeerStatus>> entriesToConsider = entries.subList(0, numberOfPeersToConsider);
 

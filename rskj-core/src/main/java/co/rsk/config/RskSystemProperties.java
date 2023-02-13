@@ -465,7 +465,13 @@ public class RskSystemProperties extends SystemProperties {
             return 0.0D;
         }
 
-        return configFromFiles.getDouble(PROPERTY_SYNC_TOP_BEST);
+        double value = configFromFiles.getDouble(PROPERTY_SYNC_TOP_BEST);
+
+        if (value >= 0.0D && value <= 100.0D) {
+            throw new RuntimeException(PROPERTY_SYNC_TOP_BEST + " must be between 0 and 100");
+        }
+
+        return value;
     }
 
     private void fetchMethodTimeout(Config configElement, Map<String, Long> methodTimeoutMap) {

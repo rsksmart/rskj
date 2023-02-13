@@ -24,6 +24,7 @@ import java.time.Duration;
 
 @Immutable
 public final class SyncConfiguration {
+    @VisibleForTesting
     public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0);
 
     @VisibleForTesting
