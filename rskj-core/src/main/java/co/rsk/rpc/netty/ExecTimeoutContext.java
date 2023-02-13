@@ -30,7 +30,7 @@ public class ExecTimeoutContext implements AutoCloseable {
         }
     }
 
-    private static final ThreadLocal<Set<ExecTimeoutContext>> sExecTimeoutContext = ThreadLocal.withInitial(HashSet::new);
+    private static final ThreadLocal<Set<ExecTimeoutContext>> sExecTimeoutContext = new ThreadLocal<>();
     private final long expirationTimeInMillis;
 
     private ExecTimeoutContext(long timeoutInMillis) {
@@ -59,7 +59,7 @@ public class ExecTimeoutContext implements AutoCloseable {
      * @param timeout time after which this exec context should be considered expired.
      */
     public static ExecTimeoutContext create(long timeout) {
-        Set<ExecTimeoutContext> ctxs = sExecTimeoutContext.get();
+        Set<ExecTimeoutContext> ctxs = ExecTimeoutContext.get();
         ExecTimeoutContext ctx = new ExecTimeoutContext(timeout);
         ctxs.add(new ExecTimeoutContext(timeout));
 
@@ -67,7 +67,7 @@ public class ExecTimeoutContext implements AutoCloseable {
     }
 
     public static void checkIfExpired() {
-        sExecTimeoutContext.get().forEach(ExecTimeoutContext::checkIfExpired);
+        ExecTimeoutContext.get().forEach(ExecTimeoutContext::checkIfExpired);
     }
 
     private static void checkIfExpired(@Nonnull ExecTimeoutContext execTimeoutContext) {
@@ -76,6 +76,17 @@ public class ExecTimeoutContext implements AutoCloseable {
         if (currentTimeInMillis > execTimeoutContext.expirationTimeInMillis) {
             throw new TimeoutException("Execution has expired.");
         }
+    }
+
+    private static Set<ExecTimeoutContext> get() {
+        Set<ExecTimeoutContext> ctxs = sExecTimeoutContext.get();
+
+        if (ctxs == null) {
+            ctxs = new HashSet<>();
+            sExecTimeoutContext.set(ctxs);
+        }
+
+        return ctxs;
     }
 
     @Override
