@@ -61,13 +61,19 @@ public class ExecTimeoutContext implements AutoCloseable {
     public static ExecTimeoutContext create(long timeout) {
         Set<ExecTimeoutContext> ctxs = ExecTimeoutContext.get();
         ExecTimeoutContext ctx = new ExecTimeoutContext(timeout);
-        ctxs.add(new ExecTimeoutContext(timeout));
+        ctxs.add(ctx);
 
         return ctx;
     }
 
     public static void checkIfExpired() {
-        ExecTimeoutContext.get().forEach(ExecTimeoutContext::checkIfExpired);
+        Set<ExecTimeoutContext> ctxs = sExecTimeoutContext.get();
+
+        if (ctxs == null) {
+            return;
+        }
+
+        ctxs.forEach(ExecTimeoutContext::checkIfExpired);
     }
 
     private static void checkIfExpired(@Nonnull ExecTimeoutContext execTimeoutContext) {
@@ -92,6 +98,11 @@ public class ExecTimeoutContext implements AutoCloseable {
     @Override
     public void close() {
         Set<ExecTimeoutContext> ctxs = sExecTimeoutContext.get();
+
+        if (ctxs == null) {
+            return;
+        }
+
         ctxs.remove(this);
 
         if (ctxs.isEmpty()) {
