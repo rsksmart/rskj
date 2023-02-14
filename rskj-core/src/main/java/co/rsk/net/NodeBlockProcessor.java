@@ -98,10 +98,13 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processNewBlockHashesMessage(final Peer sender, final NewBlockHashesMessage message) {
+        //TODO - change this method (make use of isAdvancedBlock to avoid requesting far blocks)
         message.getBlockIdentifiers().stream()
+                .filter(bi -> !isAdvancedBlock(bi.getNumber()))
                 .map(bi -> new Keccak256(bi.getHash()))
                 .distinct()
                 .filter(b -> !hasBlock(b.getBytes()))
+               // .filter(b -> !hasBlock(b.getBytes()) && !isAdvancedBlock(b.getBlockNumber()))
                 .forEach(
                         b -> {
                             sender.sendMessage(new GetBlockMessage(b.getBytes()));
