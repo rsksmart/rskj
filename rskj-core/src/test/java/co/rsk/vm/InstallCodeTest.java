@@ -187,6 +187,7 @@ public class InstallCodeTest {
         long expected = GasCost.CALL+InstallCode.BASE_COST+GasCost.NEW_ACCT_CALL+2*200;
         Assertions.assertEquals(expected ,ecr.gasConsumedInCALL);
     }
+
     @Test
     public void testiInstallCode_successRemovalTest() {
         // EXTCODESIZE check
