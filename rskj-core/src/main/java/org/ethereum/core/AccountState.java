@@ -29,6 +29,7 @@ import java.math.BigInteger;
 public class AccountState {
 
     private static final int ACC_HIBERNATED_MASK = 1;
+    private static final int ACC_SMART_MASK = 2;
     private byte[] rlpEncoded;
 
     /* A value equalBytes to the number of transactions sent
@@ -156,6 +157,18 @@ public class AccountState {
     public void hibernate() {
         stateFlags = stateFlags | ACC_HIBERNATED_MASK;
         rlpEncoded = null;
+    }
+
+    public void smarty() {
+        stateFlags = stateFlags | ACC_SMART_MASK;
+        rlpEncoded = null;
+    }
+
+    public Boolean isSmart() {
+        return ((stateFlags & ACC_SMART_MASK) != 0);
+    }
+    public void desmarty() {
+        stateFlags = stateFlags & ~ACC_SMART_MASK;
     }
 
     public void wakeUp() {

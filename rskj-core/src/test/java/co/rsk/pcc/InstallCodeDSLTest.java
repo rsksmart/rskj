@@ -9,6 +9,7 @@ import co.rsk.util.HexUtils;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.ethereum.core.Account;
+import org.ethereum.core.AccountState;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,8 +21,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class InstallCodeDSLTest {
     private World world;
@@ -82,5 +82,7 @@ public class InstallCodeDSLTest {
         byte[] code = snapshot.getCode(acc1.getAddress());
         assertNotNull(code);
         assertTrue(code.length  > 0);
+        AccountState state = snapshot.getAccountState(acc1.getAddress());
+        assertTrue(state.isSmart());
     }
 }

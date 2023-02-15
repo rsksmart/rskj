@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import org.ethereum.util.ByteUtil;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -66,5 +67,24 @@ class AccountStateTest {
         assertEquals(BigInteger.ZERO, result.getNonce());
         assertEquals(BigInteger.valueOf(2).pow(200), result.getBalance().asBigInteger());
         assertEquals(238, result.getStateFlags());
+    }
+
+    @Test
+    public void testFlags() {
+        AccountState a = new AccountState();
+        Assertions.assertFalse(a.isSmart());
+        Assertions.assertFalse(a.isHibernated());
+        a.smarty();
+        Assertions.assertTrue(a.isSmart());
+        Assertions.assertFalse(a.isHibernated());
+        a.hibernate();
+        Assertions.assertTrue(a.isSmart());
+        Assertions.assertTrue(a.isHibernated());
+        a.wakeUp();
+        Assertions.assertTrue(a.isSmart());
+        Assertions.assertFalse(a.isHibernated());
+        a.desmarty();
+        Assertions.assertFalse(a.isSmart());
+        Assertions.assertFalse(a.isHibernated());
     }
 }

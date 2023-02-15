@@ -120,6 +120,7 @@ public class InstallCode extends PrecompiledContracts.PrecompiledContract {
             checkSignatureFormat(r, s, v);
 
             // 5th - bytecode
+            // TODO: we can check here for the hash of the code, if it doesn't match the default, we fail.
             byte[] code = readArgument(dataBytes, new byte[data.length - MIN_ARG_SIZE]);
 
             // Get nonce if any
@@ -135,6 +136,9 @@ public class InstallCode extends PrecompiledContracts.PrecompiledContract {
             if (state == null) {
                 state = repository.createAccount(rskAddress);
             }
+
+            state.smarty();
+            repository.updateAccountState(rskAddress, state);
 
             // Now let the user replace the code if existent.
             if (!repository.isContract(rskAddress)) {
