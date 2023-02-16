@@ -18,6 +18,7 @@
 
 package co.rsk.test.dsl;
 
+import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.Block;
@@ -34,11 +35,15 @@ import java.util.List;
 public class BlockBuildDslProcessor {
     private World world;
     private String name;
-    private BlockBuilder builder = new BlockBuilder(null, null, null);
+    private BlockBuilder builder; // = new BlockBuilder(null, null, null);
 
     public BlockBuildDslProcessor(World world, String name) {
         this.world = world;
         this.name = name;
+
+        this.builder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                world.getBlockStore(), new BlockGenerator(world.getConfig().getNetworkConstants(), world.getConfig().getActivationConfig())
+        ).trieStore(world.getTrieStore());
     }
 
     public void processCommands(DslParser parser) throws DslProcessorException {
@@ -55,7 +60,7 @@ public class BlockBuildDslProcessor {
         else if (cmd.isCommand("gasLimit"))
             this.builder.gasLimit(BigInteger.valueOf(Long.parseLong(cmd.getArgument(0))));
         else if (cmd.isCommand("build")) {
-            Block block = this.builder.build();
+            Block block = this.builder.build(this.world.getConfig());
             this.world.saveBlock(this.name, block);
         }
         else if (cmd.isCommand("uncles")) {

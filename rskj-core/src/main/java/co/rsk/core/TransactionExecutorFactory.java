@@ -76,7 +76,8 @@ public class TransactionExecutorFactory {
             long totalGasUsed,
             boolean vmTrace,
             int vmTraceOptions,
-            Set<DataWord> deletedAccounts) {
+            Set<DataWord> deletedAccounts,
+            boolean postponeFeePayment) {
         // Tracing configuration is scattered across different files (VM, DetailedProgramTrace, etc.) and
         // TransactionExecutor#extractTrace doesn't work when called independently.
         // It would be great to decouple from VmConfig#vmTrace, but sadly that's a major refactor we can't do now.
@@ -109,7 +110,21 @@ public class TransactionExecutorFactory {
                 config.isRemascEnabled(),
                 precompiledContracts,
                 deletedAccounts,
-                blockTxSignatureCache
+                blockTxSignatureCache,
+                postponeFeePayment
         );
+    }
+
+    public TransactionExecutor newInstance(
+            Transaction tx,
+            int txindex,
+            RskAddress coinbase,
+            Repository track,
+            Block block,
+            long totalGasUsed,
+            boolean vmTrace,
+            int vmTraceOptions,
+            Set<DataWord> deletedAccounts) {
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, vmTrace, vmTraceOptions, deletedAccounts, false);
     }
 }

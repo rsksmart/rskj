@@ -340,7 +340,7 @@ public class BlockExecutor {
 
         for (Transaction tx : block.getTransactionsList()) {
 
-            addFeesToRemascIfRemascTx(block, track, totalPaidFees, txindex, tx);
+            // addFeesToRemascIfRemascTx(block, track, totalPaidFees, txindex, tx);
 
             loggingApplyBlockToTx(block, i);
 
@@ -633,13 +633,16 @@ public class BlockExecutor {
 
         int txindex = 0;
 
+        Coin remascAdditionalBalance = Coin.ZERO;
+        Coin coinbaseAdditionalBalance = Coin.ZERO;
+
         for (Transaction tx : transactionsList) {
             loggingApplyBlockToTx(block, i);
 
             int numberOfTransactions = transactionsList.size();
             boolean isRemascTransaction = tx.isRemascTransaction(txindex, numberOfTransactions);
 
-            addFeesToRemascIfRemascTxAndTrack(track, totalPaidFees, isRemascTransaction);
+            // addFeesToRemascIfRemascTxAndTrack(track, totalPaidFees, isRemascTransaction);
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
@@ -650,14 +653,19 @@ public class BlockExecutor {
                     parallelizeTransactionHandler.getGasUsedInSequential(),
                     false,
                     0,
-                    deletedAccounts
+                    deletedAccounts,
+                    true
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
-                if (discardIfInvalid(block, discardInvalidTxs, track, totalPaidFees, txindex, tx, numberOfTransactions, isRemascTransaction)) {
+                // payToRemascWhenThereIsNoRemascTx(track, totalPaidFees, txindex, numberOfTransactions, isRemascTransaction);
+
+                if (!discardInvalidTxs) {
                     return getBlockResultAndLogExecutionInterrupted(block, metric, tx);
                 }
+
+                loggingDiscardedBlock(block, tx);
                 txindex++;
                 continue;
             }
@@ -665,9 +673,13 @@ public class BlockExecutor {
             Optional<Long> sublistGasAccumulated = calculateSublistGasAccumulated(readWrittenKeysTracker, parallelizeTransactionHandler, tx, isRemascTransaction, txExecutor);
 
             if (!acceptInvalidTransactions && !sublistGasAccumulated.isPresent()) {
-                if (discardIfInvalid(block, discardInvalidTxs, track, totalPaidFees, txindex, tx, numberOfTransactions, isRemascTransaction)) {
+                // payToRemascWhenThereIsNoRemascTx(track, totalPaidFees, txindex, numberOfTransactions, isRemascTransaction);
+
+                if (!discardInvalidTxs) {
                     return getBlockResultAndLogExecutionInterrupted(block, metric, tx);
                 }
+
+                loggingDiscardedBlock(block, tx);
                 txindex++;
                 continue;
             }
@@ -678,7 +690,16 @@ public class BlockExecutor {
             gasUsedInBlock += gasUsed;
             totalPaidFees = addTotalPaidFees(totalPaidFees, txExecutor);
 
-            payToRemascWhenThereIsNoRemascTx(track, totalPaidFees, txindex, numberOfTransactions, isRemascTransaction);
+            // payToRemascWhenThereIsNoRemascTx(track, totalPaidFees, txindex, numberOfTransactions, isRemascTransaction);
+
+            if (transactionExecuted) {
+                Coin fee = txExecutor.getPaidFees();
+                if (remascEnabled) {
+                    remascAdditionalBalance = remascAdditionalBalance.add(fee);
+                } else {
+                    coinbaseAdditionalBalance = coinbaseAdditionalBalance.add(fee);
+                }
+            }
 
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
@@ -697,6 +718,8 @@ public class BlockExecutor {
             loggingTxDone();
         }
 
+        if (!remascAdditionalBalance.equals(Coin.ZERO)) track.addBalance(PrecompiledContracts.REMASC_ADDR, remascAdditionalBalance);
+        if (!coinbaseAdditionalBalance.equals(Coin.ZERO)) track.addBalance(block.getCoinbase(), remascAdditionalBalance);
 
         saveOrCommitTrackState(saveState, track);
 
@@ -736,17 +759,6 @@ public class BlockExecutor {
             receipts.add(receiptsByTx.get(tx));
         }
         return receipts;
-    }
-
-    private boolean discardIfInvalid(Block block, boolean discardInvalidTxs, Repository track, Coin totalPaidFees, int txindex, Transaction tx, int numberOfTransactions, boolean isRemascTransaction) {
-        payToRemascWhenThereIsNoRemascTx(track, totalPaidFees, txindex, numberOfTransactions, isRemascTransaction);
-
-        if (!discardInvalidTxs) {
-            return true;
-        }
-
-        loggingDiscardedBlock(block, tx);
-        return false;
     }
 
     private Optional<Long> calculateSublistGasAccumulated(IReadWrittenKeysTracker readWrittenKeysTracker, ParallelizeTransactionHandler parallelizeTransactionHandler, Transaction tx, boolean isRemascTransaction, TransactionExecutor txExecutor) {

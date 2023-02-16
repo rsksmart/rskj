@@ -435,6 +435,9 @@ public class Trie {
      * is build, adding some new nodes
      */
     public Trie put(byte[] key, byte[] value) {
+        // System.out.println(Arrays.toString(key));
+        // System.out.println(Arrays.toString(value));
+
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
         Trie trie = put(keySlice, value, false);
 

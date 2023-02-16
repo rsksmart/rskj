@@ -100,12 +100,27 @@ public class TransactionExecutor {
 
     private boolean localCall = false;
 
+    private boolean postponeFeePayment;
+
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
             boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
             SignatureCache signatureCache) {
+        this(constants, activationConfig, tx, txindex, coinbase,
+                track, blockStore, receiptStore, blockFactory,
+                programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
+                remascEnabled, precompiledContracts, deletedAccounts,
+                signatureCache, false);
+    }
+
+    public TransactionExecutor(
+            Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
+            Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
+            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
+            boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
+            SignatureCache signatureCache, boolean postponeFeePayment) {
         this.constants = constants;
         this.signatureCache = signatureCache;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
@@ -124,6 +139,7 @@ public class TransactionExecutor {
         this.precompiledContracts = precompiledContracts;
         this.enableRemasc = remascEnabled;
         this.deletedAccounts = new HashSet<>(deletedAccounts);
+        this.postponeFeePayment = postponeFeePayment;
     }
 
     /**
@@ -527,8 +543,13 @@ public class TransactionExecutor {
         Coin summaryFee = summary.getFee();
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if (!enableRemasc) {
-            track.addBalance(coinbase, summaryFee);
+        if (!postponeFeePayment) {
+            if (enableRemasc) {
+                logger.trace("Adding fee to remasc contract account");
+                track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
+            } else {
+                track.addBalance(coinbase, summaryFee);
+            }
         }
 
         this.paidFees = summaryFee;

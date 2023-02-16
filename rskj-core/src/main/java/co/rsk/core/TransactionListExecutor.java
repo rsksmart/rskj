@@ -94,7 +94,8 @@ public class TransactionListExecutor implements Callable<Boolean> {
                     totalGasUsed,
                     vmTrace,
                     vmTraceOptions,
-                    deletedAccounts
+                    deletedAccounts,
+                    true
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
