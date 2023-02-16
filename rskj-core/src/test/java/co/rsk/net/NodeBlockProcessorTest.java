@@ -37,12 +37,14 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 
 /**
  * Created by ajlopez on 5/11/2016.
@@ -1081,5 +1083,37 @@ class NodeBlockProcessorTest {
 
         verify(sender, never()).sendMessage(any());
 
+    }
+
+    @Test
+    void processNewBlockHashesMessageDoesNotRequestFarBlocks() {
+        final NetBlockStore store = new NetBlockStore();
+        final Peer sender = mock(SimplePeer.class);
+        final BlockNodeInformation nodeInformation = mock(BlockNodeInformation.class);
+        final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
+
+        TestSystemProperties config = new TestSystemProperties();
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+
+        final long advancedBlockNumber = (long) syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks() + blockchain.getBestBlock().getNumber() + 1;
+
+        BlockIdentifier advancedBlockIdentifier = new BlockIdentifier(new byte[32], advancedBlockNumber);
+        BlockIdentifier nonAdvancedBlockIdentifier = new BlockIdentifier(new byte[32], advancedBlockNumber - 1);
+
+        // create list of block identifiers with advanced and non-advanced blocks
+        List<BlockIdentifier> blockIdentifierList = new ArrayList<>();
+
+        blockIdentifierList.add(nonAdvancedBlockIdentifier);
+        blockIdentifierList.add(advancedBlockIdentifier);
+
+        NewBlockHashesMessage message = new NewBlockHashesMessage(blockIdentifierList);
+
+        processor.processNewBlockHashesMessage(sender, message);
+
+        // verify that only the non-advanced block is requested and added to the node information
+        verify(sender, times(1)).sendMessage(any(GetBlockMessage.class));
+        verify(nodeInformation, times(1)).addBlockToNode(any(), any());
     }
 }
