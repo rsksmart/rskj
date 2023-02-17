@@ -136,9 +136,6 @@ public class MutableTrieCache implements MutableTrie {
     // This method optimizes cache-to-cache transfers
     @Override
     public void put(ByteArrayWrapper wrapper, byte[] value) {
-        // System.out.println(Arrays.toString(wrapper.getData()));
-        // System.out.println(Arrays.toString(value));
-
         // If value==null, do we have the choice to either store it
         // in cache with null or in deleteCache. Here we have the choice to
         // to add it to cache with null value or to deleteCache.

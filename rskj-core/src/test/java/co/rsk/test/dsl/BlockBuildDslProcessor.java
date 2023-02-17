@@ -35,7 +35,7 @@ import java.util.List;
 public class BlockBuildDslProcessor {
     private World world;
     private String name;
-    private BlockBuilder builder; // = new BlockBuilder(null, null, null);
+    private BlockBuilder builder;
 
     public BlockBuildDslProcessor(World world, String name) {
         this.world = world;

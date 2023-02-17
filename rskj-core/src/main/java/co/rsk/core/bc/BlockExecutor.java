@@ -633,16 +633,12 @@ public class BlockExecutor {
 
         int txindex = 0;
 
-        Coin remascAdditionalBalance = Coin.ZERO;
-        Coin coinbaseAdditionalBalance = Coin.ZERO;
-
         for (Transaction tx : transactionsList) {
             loggingApplyBlockToTx(block, i);
 
             int numberOfTransactions = transactionsList.size();
             boolean isRemascTransaction = tx.isRemascTransaction(txindex, numberOfTransactions);
-
-            // addFeesToRemascIfRemascTxAndTrack(track, totalPaidFees, isRemascTransaction);
+//            addFeesToRemascIfRemascTxAndTrack(track, totalPaidFees, isRemascTransaction);
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
@@ -692,15 +688,6 @@ public class BlockExecutor {
 
             // payToRemascWhenThereIsNoRemascTx(track, totalPaidFees, txindex, numberOfTransactions, isRemascTransaction);
 
-            if (transactionExecuted) {
-                Coin fee = txExecutor.getPaidFees();
-                if (remascEnabled) {
-                    remascAdditionalBalance = remascAdditionalBalance.add(fee);
-                } else {
-                    coinbaseAdditionalBalance = coinbaseAdditionalBalance.add(fee);
-                }
-            }
-
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
             //orElseGet is used for testing only when acceptInvalidTransactions is set.
@@ -718,8 +705,13 @@ public class BlockExecutor {
             loggingTxDone();
         }
 
-        if (!remascAdditionalBalance.equals(Coin.ZERO)) track.addBalance(PrecompiledContracts.REMASC_ADDR, remascAdditionalBalance);
-        if (!coinbaseAdditionalBalance.equals(Coin.ZERO)) track.addBalance(block.getCoinbase(), remascAdditionalBalance);
+        if (totalPaidFees.compareTo(Coin.ZERO) > 0) {
+            if (remascEnabled) {
+                track.addBalance(PrecompiledContracts.REMASC_ADDR, totalPaidFees);
+            } else {
+                track.addBalance(block.getCoinbase(), totalPaidFees);
+            }
+        }
 
         saveOrCommitTrackState(saveState, track);
 

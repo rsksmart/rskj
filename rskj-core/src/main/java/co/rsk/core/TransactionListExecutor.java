@@ -100,7 +100,9 @@ public class TransactionListExecutor implements Callable<Boolean> {
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
-                if (discardIfInvalid(tx, numberOfTransactions, isRemascTransaction)) return false;
+                if (discardIfInvalid(tx, numberOfTransactions, isRemascTransaction)) {
+                    return false;
+                }
                 continue;
             }
 
