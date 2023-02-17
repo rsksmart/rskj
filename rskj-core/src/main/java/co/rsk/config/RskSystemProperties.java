@@ -433,7 +433,7 @@ public class RskSystemProperties extends SystemProperties {
                 .unwrapped()
                 .entrySet()
                 .stream()
-                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), (Long) entry.getValue()))
+                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), Long.parseLong(entry.getValue().toString())))
                 .forEach(entry -> methodTimeoutMap.put(entry.getKey(), entry.getValue()));
     }
 }

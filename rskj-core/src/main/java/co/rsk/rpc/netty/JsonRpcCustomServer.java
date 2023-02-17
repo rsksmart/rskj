@@ -31,13 +31,11 @@ import java.util.Optional;
 
 public class JsonRpcCustomServer extends JsonRpcBasicServer {
     private final List<ModuleDescription> modules;
-    private final long defaultTimeout;
 
-    public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules, long defaultTimeout) {
+    public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules) {
         super(new ObjectMapper(), handler, remoteInterface);
 
         this.modules = new ArrayList<>(modules);
-        this.defaultTimeout = defaultTimeout;
     }
 
     @Override
@@ -55,14 +53,13 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
         }
 
         String moduleName = methodParts[0];
-        String methodName = methodParts[1];
 
         Optional<ModuleDescription> optModule = modules.stream()
                 .filter(m -> m.getName().equals(moduleName))
                 .findFirst();
 
         long timeout = optModule
-                .map(m -> m.getTimeout(methodName, defaultTimeout))
+                .map(m -> m.getTimeout(method))
                 .orElse(0L);
 
         JsonResponse response;

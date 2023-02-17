@@ -90,13 +90,9 @@ public class ModuleDescription {
         return timeout;
     }
 
-    public long getTimeout(String methodName, long defaultTimeout) {
-        if (methodName == null) {
+    public long getTimeout(String methodName) {
+        if (methodName == null || methodName.isEmpty()) {
             throw new IllegalArgumentException("methodName cannot be null.");
-        }
-
-        if (methodName.isEmpty()) {
-            return defaultTimeout;
         }
 
         Optional<Long> optMethodTimeout = Optional.ofNullable(getMethodTimeout(methodName));

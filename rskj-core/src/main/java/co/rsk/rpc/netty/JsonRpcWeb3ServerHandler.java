@@ -56,7 +56,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final long defaultTimeout;
 
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize, RskSystemProperties rskSystemProperties) {
-        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), rskSystemProperties.getRpcModules(), rskSystemProperties.getRpcTimeout());
+        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), rskSystemProperties.getRpcModules());
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new JsonRpcRequestValidatorInterceptor(maxBatchRequestsSize));
         jsonRpcServer.setInterceptorList(interceptors);
