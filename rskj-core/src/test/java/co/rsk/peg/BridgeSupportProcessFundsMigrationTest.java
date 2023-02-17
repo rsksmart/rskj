@@ -45,6 +45,11 @@ class BridgeSupportProcessFundsMigrationTest {
     }
 
     @Test
+    void processFundsMigration_in_migration_age_after_rskip_374_activation_testnet() throws IOException {
+        test_processFundsMigration(BridgeTestNetConstants.getInstance(), true, true, true, true);
+    }
+
+    @Test
     void processFundsMigration_past_migration_age_before_rskip_146_activation_testnet() throws IOException {
         test_processFundsMigration(BridgeTestNetConstants.getInstance(), false, false, false);
     }
@@ -57,6 +62,11 @@ class BridgeSupportProcessFundsMigrationTest {
     @Test
     void processFundsMigration_past_migration_age_after_rskip_357_activation_testnet() throws IOException {
         test_processFundsMigration(BridgeTestNetConstants.getInstance(), true, true, false);
+    }
+
+    @Test
+    void processFundsMigration_past_migration_age_after_rskip_374_activation_testnet() throws IOException {
+        test_processFundsMigration(BridgeTestNetConstants.getInstance(), true, true, true, false);
     }
 
     @Test
@@ -75,6 +85,11 @@ class BridgeSupportProcessFundsMigrationTest {
     }
 
     @Test
+    void processFundsMigration_in_migration_age_after_rskip_374_activation_mainnet() throws IOException {
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), true, true, true, true);
+    }
+
+    @Test
     void processFundsMigration_past_migration_age_before_rskip_146_activation_mainnet() throws IOException {
         test_processFundsMigration(BridgeMainNetConstants.getInstance(), false, false, false);
     }
@@ -89,15 +104,32 @@ class BridgeSupportProcessFundsMigrationTest {
         test_processFundsMigration(BridgeMainNetConstants.getInstance(), true, true, false);
     }
 
+    @Test
+    void processFundsMigration_past_migration_age_after_rskip_374_activation_mainnet() throws IOException {
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), true, true, true, false);
+    }
+
     private void test_processFundsMigration(
         BridgeConstants bridgeConstants,
         boolean isRskip146Active,
         boolean isRskip357Active,
+        boolean inMigrationAge
+    ) throws IOException {
+        test_processFundsMigration(bridgeConstants, isRskip146Active, isRskip357Active, false, inMigrationAge);
+    }
+
+    private void test_processFundsMigration(
+        BridgeConstants bridgeConstants,
+        boolean isRskip146Active,
+        boolean isRskip357Active,
+        boolean isRskip374Active,
         boolean inMigrationAge) throws IOException {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(isRskip146Active);
         when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(isRskip357Active);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(isRskip374Active);
+
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
