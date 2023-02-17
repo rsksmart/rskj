@@ -17,14 +17,15 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.cli.PicoCliToolRskContextAware;
+import co.rsk.RskContext;
+import co.rsk.cli.CliToolRskContextAware;
 import co.rsk.core.BlockDifficulty;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.db.BlockStore;
-import picocli.CommandLine;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -38,27 +39,22 @@ import java.math.BigInteger;
  * Required cli args:
  * - args[0] - file path
  */
-@CommandLine.Command(name = "import-blocks", mixinStandardHelpOptions = true, version = "import-blocks 1.0",
-        description = "Imports blocks from a file")
-public class ImportBlocks extends PicoCliToolRskContextAware {
-
-    @CommandLine.Option(names = {"-f", "--file"}, description = "Path to a file to import blocks from", required = true)
-    private String filePath;
+public class ImportBlocks extends CliToolRskContextAware {
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
-    public Integer call() throws IOException {
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
         BlockFactory blockFactory = ctx.getBlockFactory();
         BlockStore blockStore = ctx.getBlockStore();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        String filename = args[0];
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             importBlocks(blockFactory, blockStore, reader);
         }
-
-        return 0;
     }
 
     private void importBlocks(BlockFactory blockFactory, BlockStore blockStore, BufferedReader reader) throws IOException {

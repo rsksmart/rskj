@@ -258,14 +258,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     /***** Constructors ***********************************************************************************************/
 
     public RskContext(String[] args) {
-        this(args, false);
-    }
-
-    public RskContext(String[] args, boolean ignoreUnmatchedArgs) {
         this(new CliArgs.Parser<>(
                 NodeCliOptions.class,
-                NodeCliFlags.class,
-                ignoreUnmatchedArgs
+                NodeCliFlags.class
         ).parse(args));
     }
 
@@ -641,7 +636,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     .orElse(new ArrayList<>())
                     .contains("*");
 
-            if (acceptAnyHost && rskSystemProperties != null && rskSystemProperties.isWalletEnabled()) {
+            if (acceptAnyHost && rskSystemProperties.isWalletEnabled()) {
                 logger.warn("It is not recommended to bypass hosts checks, by setting '*' in" +
                         " the host list, and have wallet enabled both together." +
                         " If you bypass hosts check we suggest to have wallet disabled, the same thing" +

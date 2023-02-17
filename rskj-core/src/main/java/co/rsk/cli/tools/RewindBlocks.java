@@ -17,16 +17,15 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.cli.PicoCliToolRskContextAware;
+import co.rsk.RskContext;
+import co.rsk.cli.CliToolRskContextAware;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
-import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.Optional;
@@ -43,22 +42,7 @@ import java.util.Optional;
  * - "fmi" option can be used for finding minimum inconsistent block number and printing it to stdout. It'll print -1, if no such block is found;
  * - "rbc" option does two things: it looks for minimum inconsistent block and, if there's such, rewinds blocks from top one till the found one inclusively.
  */
-@CommandLine.Command(name = "rewindblocks", mixinStandardHelpOptions = true, version = "rewindblocks 1.0",
-        description = "The entry point for rewind blocks state CLI tool")
-public class RewindBlocks extends PicoCliToolRskContextAware {
-    static class RewindOpts {
-        @CommandLine.Option(names = {"-b", "--block"}, description = "block number to rewind blocks to")
-        public Long blockNum;
-
-        @CommandLine.Option(names = {"-fmi", "--findMinInconsistentBlock"}, description = "flag to find a min inconsistent block", defaultValue = "false")
-        public Boolean findMinInconsistentBlock;
-
-        @CommandLine.Option(names = {"-rbc", "--rewindToBestConsistentBlock"}, description = "flag to rewind to a best consistent block", defaultValue = "false")
-        public Boolean rewindToBestConsistentBlock;
-    }
-
-    @CommandLine.ArgGroup(multiplicity = "1")
-    private RewindOpts opts;
+public class RewindBlocks extends CliToolRskContextAware {
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
@@ -77,22 +61,23 @@ public class RewindBlocks extends PicoCliToolRskContextAware {
     }
 
     @Override
-    public Integer call() throws IOException {
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) {
         BlockStore blockStore = ctx.getBlockStore();
+        String blockNumOrOp = args[0];
 
-        if (opts.findMinInconsistentBlock) {
+        if ("fmi".equals(blockNumOrOp)) {
             RepositoryLocator repositoryLocator = ctx.getRepositoryLocator();
 
             printMinInconsistentBlock(blockStore, repositoryLocator);
-        } else if (opts.rewindToBestConsistentBlock) {
+        } else if ("rbc".equals(blockNumOrOp)) {
             RepositoryLocator repositoryLocator = ctx.getRepositoryLocator();
 
             rewindInconsistentBlocks(blockStore, repositoryLocator);
         } else {
-            rewindBlocks(opts.blockNum, blockStore);
-        }
+            long blockNumber = Long.parseLong(blockNumOrOp);
 
-        return 0;
+            rewindBlocks(blockNumber, blockStore);
+        }
     }
 
     private void printMinInconsistentBlock(@Nonnull BlockStore blockStore, @Nonnull RepositoryLocator repositoryLocator) {
