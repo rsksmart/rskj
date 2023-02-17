@@ -128,9 +128,15 @@ public abstract class BridgeConstants {
     }
 
     public long getFundsMigrationAgeSinceActivationEnd(ActivationConfig.ForBlock activations) {
-        return activations.isActive(ConsensusRule.RSKIP357) ?
-            specialCaseFundsMigrationAgeSinceActivationEnd :
-            fundsMigrationAgeSinceActivationEnd;
+        if (activations.isActive(ConsensusRule.RSKIP374)){
+            return fundsMigrationAgeSinceActivationEnd;
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP357)){
+            return specialCaseFundsMigrationAgeSinceActivationEnd;
+        }
+
+        return fundsMigrationAgeSinceActivationEnd;
     }
 
     public AddressBasedAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }
