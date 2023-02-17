@@ -103,7 +103,7 @@ public class MinerHelper {
              * This method is a helper of the test "testSEND_1". It is replicating the
              * behavior of BlockExecutor but slightly different. In the BlockExecutor, the
              * fees are sent to the Remasc address once all the transactions are executed.
-             * Since the only test using this helper processes one transaction, so the loop has no sense.
+             * Since the only test using this helper processes one transaction, so the loop makes no sense.
              * */
 
             /*boolean isRemascTx = tx.isRemascTransaction(txindex, block.getTransactionsList().size());
