@@ -106,10 +106,10 @@ public class MinerHelper {
              * Since the only test using this helper processes one transaction, so the loop has no sense.
              * */
 
-            boolean isRemascTx = tx.isRemascTransaction(txindex, block.getTransactionsList().size());
+            /*boolean isRemascTx = tx.isRemascTransaction(txindex, block.getTransactionsList().size());
             if (config.isRemascEnabled() && isRemascTx && totalPaidFees.compareTo(Coin.ZERO) > 0) {
                 track.addBalance(PrecompiledContracts.REMASC_ADDR, totalPaidFees);
-            }
+            }*/
 
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                     config,
@@ -128,10 +128,10 @@ public class MinerHelper {
             totalGasUsed += gasUsed;
             totalPaidFees = totalPaidFees.add(paidFees);
 
-            boolean isLastTx = txindex == block.getTransactionsList().size();
+            /*boolean isLastTx = txindex == block.getTransactionsList().size();
             if (config.isRemascEnabled() && isLastTx && !isRemascTx && totalPaidFees.compareTo(Coin.ZERO) > 0) {
                 track.addBalance(PrecompiledContracts.REMASC_ADDR, totalPaidFees);
-            }
+            }*/
 
             track.commit();
 
