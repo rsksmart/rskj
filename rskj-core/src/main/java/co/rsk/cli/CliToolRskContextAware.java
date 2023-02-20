@@ -31,14 +31,12 @@ import java.util.Objects;
 /**
  * An abstract class for cli tools that need {@link RskContext}. Lifecycle of the  {@link RskContext} instance
  * is being managed by {@link CliToolRskContextAware}.
- * <p>
+ *
  * Also {@link CliToolRskContextAware} provides a logger instance for derived classes.
  */
 public abstract class CliToolRskContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger("clitool");
-    protected RskContext ctx;
-    protected NodeStopper stopper;
 
     protected static CliToolRskContextAware create(@Nonnull Class<?> cliToolClass) {
         Objects.requireNonNull(cliToolClass, "cliToolClass should not be null");
@@ -59,27 +57,18 @@ public abstract class CliToolRskContextAware {
         execute(args, () -> new RskContext(args), System::exit);
     }
 
-    public void execute(@Nonnull String[] args, @Nonnull Factory<RskContext> contextFactory, @Nonnull NodeStopper nodeStopper) {
+    public void execute(@Nonnull String[] args, @Nonnull Factory<RskContext> contextFactory, @Nonnull NodeStopper stopper) {
         Objects.requireNonNull(args, "args should not be null");
         Objects.requireNonNull(contextFactory, "contextFactory should not be null");
-        Objects.requireNonNull(nodeStopper, "stopper should not be null");
+        Objects.requireNonNull(stopper, "stopper should not be null");
 
         String cliToolName = getClass().getSimpleName();
 
-        // Ignore contextFactory if ctx was set previously
-        // in order to allow compatibility between picocli
-        // and old cli tool version
-        if (this.ctx == null) {
-            this.ctx = contextFactory.create();
-        }
-        // Ignore nodeStopper if stopper was set previously
-        // in order to allow compatibility between picocli
-        // and old cli tool version
-        if (this.stopper == null) {
-            this.stopper = nodeStopper;
-        }
-
+        RskContext ctx = null;
+        // not using try-with-resources because System::exit (from stopper) prevents autocloseable closing
         try {
+            ctx = contextFactory.create();
+
             printInfo("{} started", cliToolName);
 
             RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();

@@ -77,16 +77,10 @@ public class CliArgs<O, F> {
 
         private final EnumSet<O> options;
         private final EnumSet<F> flags;
-        private final boolean ignoreUnmatchedArgs;
 
         public Parser(Class<O> optionsClass, Class<F> flagsClass) {
-            this(optionsClass, flagsClass, false);
-        }
-
-        public Parser(Class<O> optionsClass, Class<F> flagsClass, boolean ignoreUnmatchedArgs) {
             this.options = EnumSet.allOf(optionsClass);
             this.flags = EnumSet.allOf(flagsClass);
-            this.ignoreUnmatchedArgs = ignoreUnmatchedArgs;
         }
 
         public CliArgs<O, F> parse(String[] args) {
@@ -98,7 +92,27 @@ public class CliArgs<O, F> {
             for (int i = 0; i < args.length; i++) {
                 switch (args[i].charAt(0)) {
                     case '-':
-                        this.parseArguments(args, i, options, flags, paramValueMap);
+                        if (args[i].length() < 2) {
+                            throw new IllegalArgumentException("You must provide an option name, e.g. -d");
+                        }
+                        char currentChar = Character.toLowerCase(args[i].charAt(1));
+                        if (currentChar == '-') {
+                            if (args[i].length() < 3) {
+                                throw new IllegalArgumentException("You must provide a flag name, e.g. --quiet");
+                            }
+                            flags.add(getFlagByName(args[i].substring(2, args[i].length())));
+                        } else if (currentChar == 'x') {
+                            String arg = args[i].substring(2);
+                            paramValueMap.putAll(parseArgToMap(arg));
+                        } else {
+                            if (args.length - 1 == i) {
+                                throw new IllegalArgumentException(
+                                        String.format("A value must be provided after the option -%s", args[i])
+                                );
+                            }
+                            options.put(getOptionByName(args[i].substring(1, args[i].length())), args[i + 1]);
+                            i++;
+                        }
                         break;
                     default:
                         arguments.add(args[i]);
@@ -119,65 +133,22 @@ public class CliArgs<O, F> {
             return new CliArgs<>(arguments, options, flags, paramValueMap);
         }
 
-        private void parseArguments(String[] args, int i, Map<O, String> options, Set<F> flags, Map<String, String> paramValueMap) {
-            if (args[i].length() < 2) {
-                throw new IllegalArgumentException("You must provide an option name, e.g. -d");
-            }
-            char currentChar = Character.toLowerCase(args[i].charAt(1));
-            if (currentChar == '-') {
-                if (args[i].length() < 3) {
-                    throw new IllegalArgumentException("You must provide a flag name, e.g. --quiet");
-                }
-
-                F flag = getFlagByName(args[i].substring(2, args[i].length()));
-
-                if (flag != null) {
-                    flags.add(flag);
-                }
-            } else if (currentChar == 'x') {
-                String arg = args[i].substring(2);
-                paramValueMap.putAll(parseArgToMap(arg));
-            } else {
-                if (args.length - 1 == i) {
-                    throw new IllegalArgumentException(
-                            String.format("A value must be provided after the option -%s", args[i])
-                    );
-                }
-
-                O option = getOptionByName(args[i].substring(1, args[i].length()));
-
-                if (option != null) {
-                    options.put(option, args[i + 1]);
-                }
-
-                i++;
-            }
-        }
-
         private F getFlagByName(String flagName) {
-            F flagFound = flags.stream()
+            return flags.stream()
                     .filter(flag -> flag.getName().equals(flagName))
                     .findFirst()
-                    .orElse(null);
-
-            if (flagFound == null && !this.ignoreUnmatchedArgs) {
-                throw new NoSuchElementException(String.format("--%s is not a valid flag", flagName));
-            }
-
-            return flagFound;
+                    .orElseThrow(
+                            () -> new NoSuchElementException(String.format("--%s is not a valid flag", flagName))
+                    );
         }
 
         private O getOptionByName(String optionName) {
-            O option = options.stream()
+            return options.stream()
                     .filter(opt -> opt.getName().equals(optionName))
                     .findFirst()
-                    .orElse(null);
-
-            if (option == null && !this.ignoreUnmatchedArgs) {
-                throw new NoSuchElementException(String.format("-%s is not a valid option", optionName));
-            }
-
-            return option;
+                    .orElseThrow(
+                            () -> new NoSuchElementException(String.format("-%s is not a valid option", optionName))
+                    );
         }
 
         /**

@@ -17,15 +17,16 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.cli.PicoCliToolRskContextAware;
+import co.rsk.RskContext;
+import co.rsk.cli.CliToolRskContextAware;
 import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import picocli.CommandLine;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -37,22 +38,17 @@ import java.util.stream.Stream;
 /**
  * The entry point for db migration CLI tool
  * This is an experimental/unsupported tool
- *
+ * <p>
  * Required cli args:
  * - args[0] - database target where we are going to insert the information from the current selected database.
- *
+ * <p>
  * We do support the migrations between the following databases:
  * - LevelDb (leveldb as argument)
  * - RocksDb (rocksdb as argument)
  */
-@CommandLine.Command(name = "db-migrate", mixinStandardHelpOptions = true, version = "db-migrate 1.0",
-        description = "Migrates between different databases such as leveldb and rocksdb.")
-public class DbMigrate extends PicoCliToolRskContextAware {
+public class DbMigrate extends CliToolRskContextAware {
     private static final Logger logger = LoggerFactory.getLogger(DbMigrate.class);
     private static final String NODE_ID_FILE = "nodeId.properties";
-
-    @CommandLine.Option(names = {"-t", "--targetDb"}, description = "The target db to migrate to. Example: leveldb, rocksdb ...", required = true)
-    private String targetdb;
 
     private static class DbInformation {
         private final KeyValueDataSource keyValueDataSource;
@@ -95,19 +91,20 @@ public class DbMigrate extends PicoCliToolRskContextAware {
         create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
+    @SuppressWarnings("unused")
     public DbMigrate() {
     }
 
     @Override
-    public Integer call() throws IOException {
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws IOException {
         logger.info("Starting db migration...");
 
-        if (this.targetdb == null) {
+        if (args.length == 0) {
             throw new IllegalArgumentException("Db to migrate not specified. Please specify in the first argument.");
         }
 
         DbKind sourceDbKind = ctx.getRskSystemProperties().databaseKind();
-        DbKind targetDbKind = DbKind.ofName(this.targetdb);
+        DbKind targetDbKind = DbKind.ofName(args[0]);
 
         if (sourceDbKind == targetDbKind) {
             throw new IllegalArgumentException(String.format(
@@ -142,8 +139,6 @@ public class DbMigrate extends PicoCliToolRskContextAware {
         FileUtil.recursiveDelete(sourceDbDir);
 
         Files.move(Paths.get(targetDbDir), Paths.get(sourceDbDir));
-
-        return 0;
     }
 
     private DbMigrationInformation buildDbMigrationInformation(

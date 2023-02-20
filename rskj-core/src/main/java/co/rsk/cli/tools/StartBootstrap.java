@@ -19,7 +19,6 @@ package co.rsk.cli.tools;
 
 import co.rsk.NodeRunner;
 import co.rsk.RskContext;
-import co.rsk.cli.exceptions.PicocliBadResultException;
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.discovery.UDPServer;
@@ -27,13 +26,10 @@ import co.rsk.util.NodeStopper;
 import co.rsk.util.PreflightChecksUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * Entry point of RSK bootstrap node.
@@ -43,38 +39,19 @@ import java.util.concurrent.Callable;
  *
  * Note: this is an experimental tool
  */
-@CommandLine.Command(name = "start-bootstrap", mixinStandardHelpOptions = true, version = "start-bootstrap 1.0",
-        description = "Starts a bootstrap node with one service, which only participates in the peer discovery protocol")
-public class StartBootstrap implements Callable<Integer> {
+public class StartBootstrap {
 
     private static final Logger logger = LoggerFactory.getLogger("bootstrap");
-
-    private final RskContext ctx;
-
-    public StartBootstrap(RskContext ctx) {
-        this.ctx = ctx;
-    }
 
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
 
-        try (RskContext ctx = new BootstrapRskContext(args)) {
-            int result = new CommandLine(new StartBootstrap(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
-
-            if (result != 0) {
-                throw new PicocliBadResultException(result);
-            }
-        }
-    }
-
-    @Override
-    public Integer call() throws IOException {
+        RskContext ctx = new BootstrapRskContext(args);
         PreflightChecksUtils preflightChecks = new PreflightChecksUtils(ctx);
         Runtime runtime = Runtime.getRuntime();
         NodeStopper nodeStopper = System::exit;
 
         runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
-        return 0;
     }
 
     static void runBootstrapNode(@Nonnull RskContext ctx,
@@ -111,7 +88,7 @@ public class StartBootstrap implements Callable<Integer> {
     static class BootstrapRskContext extends RskContext {
 
         BootstrapRskContext(String[] args) {
-            super(args, true);
+            super(args);
         }
 
         @Override
