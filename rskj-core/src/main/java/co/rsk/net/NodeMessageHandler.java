@@ -41,10 +41,7 @@ import org.slf4j.MDC;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -68,7 +65,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final PeerScoringManager peerScoringManager;
 
     private final StatusResolver statusResolver;
-    private final Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
+    private final Map<Peer, Set<Keccak256>> receivedPeerMessages = Collections.synchronizedMap(new HashMap<>());
 
     private final Set<RskAddress> bannedMiners;
 
@@ -208,14 +205,19 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private boolean allowByMessageUniqueness(Peer sender, Message message) {
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
 
+        Set<Keccak256> receivedMessages = receivedPeerMessages.getOrDefault(sender, Collections.synchronizedSet(new HashSet<>()));
         boolean contains = receivedMessages.contains(encodedMessage);
 
         if (!contains) {
             if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
-                if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
-                    this.receivedMessages.clear();
+                if (receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
+                    receivedMessages.clear();
                 }
-                this.receivedMessages.add(encodedMessage);
+                if (this.receivedPeerMessages.isEmpty()) {
+                    this.receivedPeerMessages.put(sender, receivedMessages);
+                }
+
+                receivedMessages.add(encodedMessage);
             }
 
         } else {
@@ -242,8 +244,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private void cleanExpiredMessages() {
         long currentTime = System.currentTimeMillis();
         if (currentTime - cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
-            logger.trace("Cleaning {} messages from rlp queue", receivedMessages.size());
-            receivedMessages.clear();
+            logger.trace("Cleaning {} messages from rlp queue", receivedPeerMessages.values().stream().mapToLong(Set::size).sum());
+            receivedPeerMessages.clear();
             cleanMsgTimestamp = currentTime;
         }
     }
