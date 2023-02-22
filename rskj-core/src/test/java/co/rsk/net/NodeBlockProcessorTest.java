@@ -34,12 +34,14 @@ import org.ethereum.core.Blockchain;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -254,7 +256,8 @@ class NodeBlockProcessorTest {
         Assertions.assertFalse(processor.hasBetterBlockToSync());
     }
 
-    @Test @Disabled("Ignored when Process status deleted on block processor")
+    @Test
+    @Disabled("Ignored when Process status deleted on block processor")
     void noSyncingWithEmptyBlockchainAndLowBestBlock() {
         NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().createBlock(10, 0);
@@ -274,7 +277,8 @@ class NodeBlockProcessorTest {
         Assertions.assertFalse(processor.hasBetterBlockToSync());
     }
 
-    @Test @Disabled("Ignored when Process status deleted on block processor")
+    @Test
+    @Disabled("Ignored when Process status deleted on block processor")
     void syncingWithEmptyBlockchainAndHighBestBlock() {
         NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().createBlock(30, 0);
@@ -294,7 +298,8 @@ class NodeBlockProcessorTest {
         Assertions.assertTrue(processor.hasBetterBlockToSync());
     }
 
-    @Test @Disabled("Ignored when Process status deleted on block processor")
+    @Test
+    @Disabled("Ignored when Process status deleted on block processor")
     void syncingThenNoSyncing() {
         NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().createBlock(30, 0);
@@ -464,7 +469,8 @@ class NodeBlockProcessorTest {
         Assertions.assertArrayEquals(block.getParentHash().getBytes(), gbMessage.getBlockHash());
     }
 
-    @Test @Disabled("Ignored when Process status deleted on block processor")
+    @Test
+    @Disabled("Ignored when Process status deleted on block processor")
     void processStatusRetrievingBestBlockUsingSender() throws UnknownHostException {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -497,7 +503,8 @@ class NodeBlockProcessorTest {
         Assertions.assertEquals(0, store.size());
     }
 
-    @Test @Disabled("Ignored when Process status deleted on block processor")
+    @Test
+    @Disabled("Ignored when Process status deleted on block processor")
     void processStatusHavingBestBlockInStore() throws UnknownHostException {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -520,7 +527,8 @@ class NodeBlockProcessorTest {
         Assertions.assertEquals(1, store.size());
     }
 
-    @Test @Disabled("Ignored when Process status deleted on block processor")
+    @Test
+    @Disabled("Ignored when Process status deleted on block processor")
     void processStatusHavingBestBlockAsBestBlockInBlockchain() throws UnknownHostException {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(2);
@@ -545,7 +553,8 @@ class NodeBlockProcessorTest {
         Assertions.assertEquals(0, store.size());
     }
 
-    @Test @Disabled("Ignored when Process status deleted on block processor")
+    @Test
+    @Disabled("Ignored when Process status deleted on block processor")
     void processStatusHavingBestBlockInBlockchainStore() throws UnknownHostException {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(2);
@@ -932,7 +941,7 @@ class NodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        processor.processBlockHeadersRequest(sender, 100, TestUtils.generateBytes("processor",32), 20);
+        processor.processBlockHeadersRequest(sender, 100, TestUtils.generateBytes("processor", 32), 20);
 
         Assertions.assertTrue(sender.getMessages().isEmpty());
     }
@@ -1061,7 +1070,7 @@ class NodeBlockProcessorTest {
     }
 
     @Test
-    void failIfProcessBlockHeadersRequestCountHigher()  {
+    void failIfProcessBlockHeadersRequestCountHigher() {
 
         final Peer sender = mock(Peer.class);
 
@@ -1087,8 +1096,9 @@ class NodeBlockProcessorTest {
 
     @Test
     void processNewBlockHashesMessageOnlyRequestsNonAdvancedBlock() {
+        // create mocks and test objects
         final NetBlockStore store = new NetBlockStore();
-        final Peer sender = mock(SimplePeer.class);
+        final SimplePeer sender = mock(SimplePeer.class);
         final BlockNodeInformation nodeInformation = mock(BlockNodeInformation.class);
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -1104,46 +1114,23 @@ class NodeBlockProcessorTest {
 
         // create list of block identifiers with advanced and non-advanced blocks
         List<BlockIdentifier> blockIdentifierList = new ArrayList<>();
-
         blockIdentifierList.add(nonAdvancedBlockIdentifier);
         blockIdentifierList.add(advancedBlockIdentifier);
 
         NewBlockHashesMessage message = new NewBlockHashesMessage(blockIdentifierList);
 
+        // use ArgumentCaptor to capture arguments passed to addBlockToNode()
+        ArgumentCaptor<Keccak256> blockHashCaptor = ArgumentCaptor.forClass(Keccak256.class);
+
+        // call the method being tested
         processor.processNewBlockHashesMessage(sender, message);
 
-        // verify that only the non-advanced block is requested and added to the node information
+        // verify that just one block is requested and added to node information
         verify(sender, times(1)).sendMessage(any(GetBlockMessage.class));
-        verify(nodeInformation, times(1)).addBlockToNode(any(), any());
-    }
+        verify(nodeInformation, times(1)).addBlockToNode(blockHashCaptor.capture(), any());
 
-    @Test
-    void processNewBlockHashesMessageDoesNotRequestAdvancedBlocks() {
-        final NetBlockStore store = new NetBlockStore();
-        final Peer sender = mock(SimplePeer.class);
-        final BlockNodeInformation nodeInformation = mock(BlockNodeInformation.class);
-        final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
-
-        TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-
-        final long advancedBlockNumber = (long) syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks() + blockchain.getBestBlock().getNumber() + 1;
-
-        BlockIdentifier advancedBlockIdentifier = new BlockIdentifier(new byte[32], advancedBlockNumber);
-
-        // create list of block identifiers with advanced and non-advanced blocks
-        List<BlockIdentifier> blockIdentifierList = new ArrayList<>();
-
-        blockIdentifierList.add(advancedBlockIdentifier);
-
-        NewBlockHashesMessage message = new NewBlockHashesMessage(blockIdentifierList);
-
-        processor.processNewBlockHashesMessage(sender, message);
-
-        // verify that only the non-advanced block is requested and added to the node information
-        verify(sender, times(0)).sendMessage(any(GetBlockMessage.class));
-        verify(nodeInformation, times(0)).addBlockToNode(any(), any());
+        // assert that the block that got requested was the non-advanced one
+        Assertions.assertEquals(nonAdvancedBlockIdentifier.getHash(), blockHashCaptor.getValue().getBytes());
+        Assertions.assertNotEquals(advancedBlockIdentifier.getHash(), blockHashCaptor.getValue().getBytes());
     }
 }
