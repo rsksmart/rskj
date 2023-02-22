@@ -263,7 +263,7 @@ public class BlockExecutor {
         if (rskip144Active || (block.getHeader().getTxExecutionSublistsEdges() != null)) {
             return executeForMiningAfterRSKIP144(block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState);
         } else {
-            return executePreviousRSKIP144(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState);
+            return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState);
         }
     }
 
@@ -296,11 +296,15 @@ public class BlockExecutor {
             if (rskip144Active && block.getHeader().getTxExecutionSublistsEdges() != null) {
                 return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
             } else {
-                return executePreviousRSKIP144(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
+                return executeInternal(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
             }
     }
 
-    private BlockResult executePreviousRSKIP144(
+    // executes the block before RSKIP 144
+    // when RSKIP 144 is active the block is in executed parallel
+    // miners use executeForMiningAfterRSKIP144 to create the parallel schedule
+    // new blocks are executed with executeParallel
+    private BlockResult executeInternal(
             @Nullable ProgramTraceProcessor programTraceProcessor,
             int vmTraceOptions,
             Block block,
@@ -339,9 +343,6 @@ public class BlockExecutor {
         int txindex = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
-
-            addFeesToRemascIfRemascTx(block, track, totalPaidFees, txindex, tx);
-
             loggingApplyBlockToTx(block, i);
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
@@ -353,8 +354,7 @@ public class BlockExecutor {
                     totalGasUsed,
                     vmTrace,
                     vmTraceOptions,
-                    deletedAccounts
-            );
+                    deletedAccounts);
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
@@ -366,6 +366,7 @@ public class BlockExecutor {
             }
 
             registerExecutedTx(programTraceProcessor, vmTrace, executedTransactions, tx, txExecutor);
+
             long gasUsed = txExecutor.getGasUsed();
             totalGasUsed += gasUsed;
 
@@ -402,34 +403,6 @@ public class BlockExecutor {
         return result;
     }
 
-    private void registerExecutedTx(ProgramTraceProcessor programTraceProcessor, boolean vmTrace, List<Transaction> executedTransactions, Transaction tx, TransactionExecutor txExecutor) {
-        executedTransactions.add(tx);
-
-        if (this.registerProgramResults) {
-            this.transactionResults.put(tx.getHash(), txExecutor.getResult());
-        }
-
-        if (vmTrace) {
-            txExecutor.extractTrace(programTraceProcessor);
-        }
-
-        loggingTxExecuted();
-    }
-
-    private void addFeesToRemascIfRemascTx(Block block, Repository track, Coin totalPaidFees, int txindex, Transaction tx) {
-        if (this.isRemascEnabled() && tx.isRemascTransaction(block.getTransactionsList().size(), txindex)) {
-            addFeesToRemasc(totalPaidFees, track);
-        }
-    }
-
-    private Coin addTotalPaidFees(Coin totalPaidFees, TransactionExecutor txExecutor) {
-        Coin paidFees = txExecutor.getPaidFees();
-        if (paidFees != null) {
-            totalPaidFees = totalPaidFees.add(paidFees);
-        }
-        return totalPaidFees;
-    }
-
     private BlockResult executeParallel(
             @Nullable ProgramTraceProcessor programTraceProcessor,
             int vmTraceOptions,
@@ -454,17 +427,19 @@ public class BlockExecutor {
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+
+        ReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
+        Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
+
+        maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
+        readWrittenKeysTracker.clear();
+
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.getTransactionExecutionThreads());
         ExecutorCompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
         List<TransactionListExecutor> transactionListExecutors = new ArrayList<>();
-        ReadWrittenKeysTracker aTracker = new ReadWrittenKeysTracker();
-        Repository track = repositoryLocator.startTrackingAt(parent, aTracker);
-        maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
-        aTracker.clear();
-        int nTasks = 0;
 
-        // execute parallel subsets of transactions
         short start = 0;
+
         for (short end : block.getHeader().getTxExecutionSublistsEdges()) {
             List<Transaction> sublist = block.getTransactionsList().subList(start, end);
             TransactionListExecutor txListExecutor = new TransactionListExecutor(
@@ -488,12 +463,11 @@ public class BlockExecutor {
             );
             completionService.submit(txListExecutor);
             transactionListExecutors.add(txListExecutor);
-            nTasks++;
             start = end;
         }
         executorService.shutdown();
 
-        for (int i = 0; i < nTasks; i++) {
+        for (int i = 0; i < transactionListExecutors.size(); i++) {
             try {
                 Future<Boolean> success = completionService.take();
                 if (!Boolean.TRUE.equals(success.get())) {
@@ -516,7 +490,7 @@ public class BlockExecutor {
         }
 
         // Review collision
-        if (aTracker.detectCollision()) {
+        if (readWrittenKeysTracker.detectCollision()) {
             logger.warn("block: [{}] execution failed", block.getNumber());
             profiler.stop(metric);
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
@@ -585,17 +559,6 @@ public class BlockExecutor {
         return result;
     }
 
-    private void addFeesToRemasc(Coin remascFees, Repository track) {
-        if (remascFees.compareTo(Coin.ZERO) > 0) {
-            logger.trace("Adding fee to remasc contract account");
-            track.addBalance(PrecompiledContracts.REMASC_ADDR, remascFees);
-        }
-    }
-
-    private boolean isRemascEnabled() {
-        return this.remascEnabled;
-    }
-
     private BlockResult executeForMiningAfterRSKIP144(
             Block block,
             BlockHeader parent,
@@ -621,25 +584,22 @@ public class BlockExecutor {
 
         IReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
         Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
+
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
         readWrittenKeysTracker.clear();
+
         int i = 1;
-        long gasUsedInBlock = 0;
+        long totalGasUsed = 0;
         Coin totalPaidFees = Coin.ZERO;
         Map<Transaction, TransactionReceipt> receiptsByTx = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
 
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()));
-
         int txindex = 0;
+
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()));
 
         for (Transaction tx : transactionsList) {
             loggingApplyBlockToTx(block, i);
-
-            int numberOfTransactions = transactionsList.size();
-            boolean isRemascTransaction = tx.isRemascTransaction(txindex, numberOfTransactions);
-
-            addFeesToRemascIfRemascTxAndTrack(track, totalPaidFees, isRemascTransaction);
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
@@ -650,24 +610,34 @@ public class BlockExecutor {
                     parallelizeTransactionHandler.getGasUsedInSequential(),
                     false,
                     0,
-                    deletedAccounts
+                    deletedAccounts,
+                    true
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
-                if (discardIfInvalid(block, discardInvalidTxs, track, totalPaidFees, txindex, tx, numberOfTransactions, isRemascTransaction)) {
+                if (!discardInvalidTxs) {
                     return getBlockResultAndLogExecutionInterrupted(block, metric, tx);
                 }
+
+                loggingDiscardedBlock(block, tx);
                 txindex++;
                 continue;
             }
 
-            Optional<Long> sublistGasAccumulated = calculateSublistGasAccumulated(readWrittenKeysTracker, parallelizeTransactionHandler, tx, isRemascTransaction, txExecutor);
+            Optional<Long> sublistGasAccumulated = calculateSublistGasAccumulated(
+                    readWrittenKeysTracker,
+                    parallelizeTransactionHandler,
+                    tx,
+                    tx.isRemascTransaction(txindex, transactionsList.size()),
+                    txExecutor);
 
             if (!acceptInvalidTransactions && !sublistGasAccumulated.isPresent()) {
-                if (discardIfInvalid(block, discardInvalidTxs, track, totalPaidFees, txindex, tx, numberOfTransactions, isRemascTransaction)) {
+                if (!discardInvalidTxs) {
                     return getBlockResultAndLogExecutionInterrupted(block, metric, tx);
                 }
+
+                loggingDiscardedBlock(block, tx);
                 txindex++;
                 continue;
             }
@@ -675,10 +645,8 @@ public class BlockExecutor {
             registerTxExecutedForMiningAfterRSKIP144(readWrittenKeysTracker, tx, txExecutor);
 
             long gasUsed = txExecutor.getGasUsed();
-            gasUsedInBlock += gasUsed;
+            totalGasUsed += gasUsed;
             totalPaidFees = addTotalPaidFees(totalPaidFees, txExecutor);
-
-            payToRemascWhenThereIsNoRemascTx(track, totalPaidFees, txindex, numberOfTransactions, isRemascTransaction);
 
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
@@ -697,6 +665,13 @@ public class BlockExecutor {
             loggingTxDone();
         }
 
+        if (totalPaidFees.compareTo(Coin.ZERO) > 0) {
+            if (remascEnabled) {
+                track.addBalance(PrecompiledContracts.REMASC_ADDR, totalPaidFees);
+            } else {
+                track.addBalance(block.getCoinbase(), totalPaidFees);
+            }
+        }
 
         saveOrCommitTrackState(saveState, track);
 
@@ -710,13 +685,35 @@ public class BlockExecutor {
                 executedTransactions,
                 receipts,
                 sublistOrder,
-                gasUsedInBlock,
+                totalGasUsed,
                 totalPaidFees,
                 track.getTrie()
         );
         profiler.stop(metric);
         logger.trace("End executeForMining.");
         return result;
+    }
+
+    private void registerExecutedTx(ProgramTraceProcessor programTraceProcessor, boolean vmTrace, List<Transaction> executedTransactions, Transaction tx, TransactionExecutor txExecutor) {
+        executedTransactions.add(tx);
+
+        if (this.registerProgramResults) {
+            this.transactionResults.put(tx.getHash(), txExecutor.getResult());
+        }
+
+        if (vmTrace) {
+            txExecutor.extractTrace(programTraceProcessor);
+        }
+
+        loggingTxExecuted();
+    }
+
+    private Coin addTotalPaidFees(Coin totalPaidFees, TransactionExecutor txExecutor) {
+        Coin paidFees = txExecutor.getPaidFees();
+        if (paidFees != null) {
+            totalPaidFees = totalPaidFees.add(paidFees);
+        }
+        return totalPaidFees;
     }
 
     private void registerTxExecutedForMiningAfterRSKIP144(IReadWrittenKeysTracker readWrittenKeysTracker, Transaction tx, TransactionExecutor txExecutor) {
@@ -738,17 +735,6 @@ public class BlockExecutor {
         return receipts;
     }
 
-    private boolean discardIfInvalid(Block block, boolean discardInvalidTxs, Repository track, Coin totalPaidFees, int txindex, Transaction tx, int numberOfTransactions, boolean isRemascTransaction) {
-        payToRemascWhenThereIsNoRemascTx(track, totalPaidFees, txindex, numberOfTransactions, isRemascTransaction);
-
-        if (!discardInvalidTxs) {
-            return true;
-        }
-
-        loggingDiscardedBlock(block, tx);
-        return false;
-    }
-
     private Optional<Long> calculateSublistGasAccumulated(IReadWrittenKeysTracker readWrittenKeysTracker, ParallelizeTransactionHandler parallelizeTransactionHandler, Transaction tx, boolean isRemascTransaction, TransactionExecutor txExecutor) {
         Optional<Long> sublistGasAccumulated;
         if (isRemascTransaction) {
@@ -757,12 +743,6 @@ public class BlockExecutor {
             sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getThisThreadReadKeys(), readWrittenKeysTracker.getThisThreadWrittenKeys(), txExecutor.getGasUsed());
         }
         return sublistGasAccumulated;
-    }
-
-    private void addFeesToRemascIfRemascTxAndTrack(Repository track, Coin totalPaidFees, boolean isRemascTransaction) {
-        if (this.isRemascEnabled() && isRemascTransaction) {
-            addFeesToRemasc(totalPaidFees, track);
-        }
     }
 
     private void saveOrCommitTrackState(boolean saveState, Repository track) {
@@ -775,14 +755,6 @@ public class BlockExecutor {
             logger.trace("Committing track.");
             track.commit();
             logger.trace("End committing track.");
-        }
-    }
-
-    // This method is used just when a block does not contain REMASC as last transaction. It happens only for testing.
-    private void payToRemascWhenThereIsNoRemascTx(Repository track, Coin totalPaidFees, int txindex, int numberOfTransactions, boolean isRemascTransaction) {
-        boolean isLastTx = txindex == numberOfTransactions - 1;
-        if (this.remascEnabled && isLastTx && !isRemascTransaction) {
-            addFeesToRemasc(totalPaidFees, track);
         }
     }
 

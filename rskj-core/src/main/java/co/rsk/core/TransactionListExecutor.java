@@ -94,12 +94,15 @@ public class TransactionListExecutor implements Callable<Boolean> {
                     totalGasUsed,
                     vmTrace,
                     vmTraceOptions,
-                    deletedAccounts
+                    deletedAccounts,
+                    true
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
-                if (discardIfInvalid(tx, numberOfTransactions, isRemascTransaction)) return false;
+                if (discardIfInvalid(tx, numberOfTransactions, isRemascTransaction)) {
+                    return false;
+                }
                 continue;
             }
 

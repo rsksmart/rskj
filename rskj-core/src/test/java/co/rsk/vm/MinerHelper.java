@@ -103,13 +103,13 @@ public class MinerHelper {
              * This method is a helper of the test "testSEND_1". It is replicating the
              * behavior of BlockExecutor but slightly different. In the BlockExecutor, the
              * fees are sent to the Remasc address once all the transactions are executed.
-             * Since the only test using this helper processes one transaction, so the loop has no sense.
+             * Since the only test using this helper processes one transaction, so the loop makes no sense.
              * */
 
-            boolean isRemascTx = tx.isRemascTransaction(txindex, block.getTransactionsList().size());
+            /*boolean isRemascTx = tx.isRemascTransaction(txindex, block.getTransactionsList().size());
             if (config.isRemascEnabled() && isRemascTx && totalPaidFees.compareTo(Coin.ZERO) > 0) {
                 track.addBalance(PrecompiledContracts.REMASC_ADDR, totalPaidFees);
-            }
+            }*/
 
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                     config,
@@ -128,10 +128,10 @@ public class MinerHelper {
             totalGasUsed += gasUsed;
             totalPaidFees = totalPaidFees.add(paidFees);
 
-            boolean isLastTx = txindex == block.getTransactionsList().size();
+            /*boolean isLastTx = txindex == block.getTransactionsList().size();
             if (config.isRemascEnabled() && isLastTx && !isRemascTx && totalPaidFees.compareTo(Coin.ZERO) > 0) {
                 track.addBalance(PrecompiledContracts.REMASC_ADDR, totalPaidFees);
-            }
+            }*/
 
             track.commit();
 
