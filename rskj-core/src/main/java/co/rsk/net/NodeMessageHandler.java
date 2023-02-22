@@ -203,28 +203,30 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      * record event if message is repeated
      */
     private boolean allowByMessageUniqueness(Peer sender, Message message) {
-        Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
-
-        Set<Keccak256> receivedMessages = receivedPeerMessages.getOrDefault(sender, Collections.synchronizedSet(new HashSet<>()));
-        boolean contains = receivedMessages.contains(encodedMessage);
-
-        if (!contains) {
-            if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
-                if (receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
-                    receivedMessages.clear();
-                }
-                if (this.receivedPeerMessages.isEmpty()) {
-                    this.receivedPeerMessages.put(sender, receivedMessages);
-                }
-
-                receivedMessages.add(encodedMessage);
-            }
-
-        } else {
-            reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
+        if (message.getMessageType() != MessageType.BLOCK_MESSAGE && message.getMessageType() != MessageType.TRANSACTIONS) {
+            return false;
         }
 
-        return !contains;
+        Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
+
+        if (this.receivedPeerMessages.containsKey(sender)) {
+            this.receivedPeerMessages.put(sender, Collections.synchronizedSet(new HashSet<>()));
+        }
+
+        Set<Keccak256> receivedMessages = receivedPeerMessages.get(sender);
+
+        if (receivedMessages.contains(encodedMessage)) {
+            reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
+            return false;
+        }
+
+        if (receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
+            receivedMessages.clear();
+        }
+
+        receivedMessages.add(encodedMessage);
+
+        return true;
     }
 
     @VisibleForTesting
