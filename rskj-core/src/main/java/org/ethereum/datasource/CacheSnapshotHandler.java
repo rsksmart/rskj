@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
@@ -113,9 +114,7 @@ public class CacheSnapshotHandler {
                 throw new IOException("Cannot replace existing cache snapshot file '" + relativePath + "'");
             }
 
-            if (!tempFile.renameTo(cacheSnapshotFile)) {
-                throw new IOException("Cannot move temp file to '" + relativePath + "'");
-            }
+            Files.move(tempFile.toPath(), cacheSnapshotPath);
 
             logger.info("Saved {} cache entries in '{}'", count, relativePath);
         } catch (IOException e) {
