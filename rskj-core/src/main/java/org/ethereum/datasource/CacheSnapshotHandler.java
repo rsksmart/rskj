@@ -114,6 +114,7 @@ public class CacheSnapshotHandler {
                 throw new IOException("Cannot replace existing cache snapshot file '" + relativePath + "'");
             }
 
+            // move to final destination
             Files.move(tempFile.toPath(), cacheSnapshotFile.toPath());
 
             logger.info("Saved {} cache entries in '{}'", count, relativePath);
