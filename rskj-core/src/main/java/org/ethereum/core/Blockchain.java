@@ -67,6 +67,9 @@ public interface Blockchain {
     @Nullable
     TransactionInfo getTransactionInfo(byte[] hash);
 
+    @Nullable
+    TransactionInfo getTransactionInfoForMainChainBlock(Transaction tx, Block blockMainChain);
+
     byte[] getBestBlockHash();
 
     List<Block> getBlocksByNumber(long blockNr);

@@ -27,10 +27,7 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.*;
 
 import java.nio.file.Path;
 
@@ -45,7 +42,7 @@ public class RskTestContext extends RskContext {
 
     @Override
     protected ReceiptStore buildReceiptStore() {
-        return new ReceiptStoreImpl(new HashMapDB());
+        return new ReceiptStoreImplV2(new HashMapDB());
     }
 
     @Override

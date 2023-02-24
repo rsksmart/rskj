@@ -446,6 +446,18 @@ public class BlockChainImpl implements Blockchain {
     }
 
     @Override
+    public TransactionInfo getTransactionInfoForMainChainBlock(Transaction tx, Block blockMainChain) {
+        TransactionInfo txInfo = receiptStore.get(tx.getHash().getBytes(), blockMainChain.getHash().getBytes()).orElse(null);
+        if (txInfo == null) {
+            return null;
+        }
+
+        txInfo.setTransaction(tx);
+
+        return txInfo;
+    }
+
+    @Override
     public BlockDifficulty getTotalDifficulty() {
         return status.getTotalDifficulty();
     }

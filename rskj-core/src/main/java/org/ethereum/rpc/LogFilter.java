@@ -20,11 +20,7 @@ package org.ethereum.rpc;
 
 import java.util.Collection;
 
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Bloom;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.LogInfo;
@@ -68,8 +64,7 @@ public class LogFilter extends Filter {
         add(new LogFilterEvent(new LogFilterElement(logInfo, b, txIndex, tx, logIdx)));
     }
 
-    void onTransaction(Transaction tx, Block b, int txIndex) {
-        TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash().getBytes());
+    private void onTransactionCommon(TransactionInfo txInfo, Block block, int txIndex) {
         TransactionReceipt receipt = txInfo.getReceipt();
 
         LogFilterElement[] logs = new LogFilterElement[receipt.getLogInfoList().size()];
@@ -78,19 +73,48 @@ public class LogFilter extends Filter {
             LogInfo logInfo = receipt.getLogInfoList().get(i);
 
             if (addressesTopicsFilter.matchesExactly(logInfo)) {
-                onLogMatch(logInfo, b, txIndex, receipt.getTransaction(), i);
+                onLogMatch(logInfo, block, txIndex, receipt.getTransaction(), i);
             }
         }
     }
 
-    void onBlock(Block b) {
-        if (addressesTopicsFilter.matchBloom(new Bloom(b.getLogBloom()))) {
-            int txIdx = 0;
+    void onTransaction(Transaction tx, Block block, int txIndex) {
+        TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash().getBytes());
+        if (txInfo == null) {
+            return;
+        }
+        onTransactionCommon(txInfo, block, txIndex);
+    }
 
-            for (Transaction tx : b.getTransactionsList()) {
-                onTransaction(tx, b, txIdx);
-                txIdx++;
-            }
+    void onTransactionFromMainChain(Transaction tx, Block blockMainChain, int txIndex) {
+        TransactionInfo txInfo = blockchain.getTransactionInfoForMainChainBlock(tx, blockMainChain);
+        if (txInfo == null) {
+            return;
+        }
+        onTransactionCommon(txInfo, blockMainChain, txIndex);
+    }
+
+    void onBlock(Block block) {
+        if (!addressesTopicsFilter.matchBloom(new Bloom(block.getLogBloom()))) {
+            return;
+        }
+
+        int txIdx = 0;
+        for (Transaction tx : block.getTransactionsList()) {
+            onTransaction(tx, block, txIdx);
+            txIdx++;
+        }
+    }
+
+    void onBlockFromMainChain(Block blockMainChain) {
+        if (!addressesTopicsFilter.matchBloom(new Bloom(blockMainChain.getLogBloom()))) {
+            return;
+        }
+
+        int txIdx = 0;
+        for (Transaction tx : blockMainChain.getTransactionsList()) {
+            onTransactionFromMainChain(tx, blockMainChain, txIdx);
+            txIdx++;
         }
     }
 
@@ -256,20 +280,20 @@ public class LogFilter extends Filter {
                     auxiliaryBlocksBloom = new BlocksBloom();
                 }
 
-                Block block = blockchain.getBlockByNumber(blockNum);
-
+                Block blockMainChain = blockchain.getBlockByNumber(blockNum);
                 if (auxiliaryBlocksBloom != null) {
-                    auxiliaryBlocksBloom.addBlockBloom(blockNum, new Bloom(block.getLogBloom()));
+                    auxiliaryBlocksBloom.addBlockBloom(blockNum, new Bloom(blockMainChain.getLogBloom()));
                 }
 
                 if (auxiliaryBlocksBloom != null && blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
                     blocksBloomStore.addBlocksBloom(auxiliaryBlocksBloom);
                 }
 
-                filter.onBlock(block);
+                filter.onBlockFromMainChain(blockMainChain);
             }
             else {
-                filter.onBlock(blockchain.getBlockByNumber(blockNum));
+                Block blockMainChain = blockchain.getBlockByNumber(blockNum);
+                filter.onBlockFromMainChain(blockMainChain);
             }
         }
     }
