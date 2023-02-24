@@ -690,4 +690,8 @@ public class TransactionExecutor {
     }
 
     public Coin getPaidFees() { return paidFees; }
+
+    public PrecompiledContracts getPrecompiledContracts() {
+        return precompiledContracts;
+    }
 }

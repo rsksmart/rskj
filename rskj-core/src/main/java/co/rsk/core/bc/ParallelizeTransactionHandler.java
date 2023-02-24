@@ -71,6 +71,19 @@ public class ParallelizeTransactionHandler {
         return Optional.of(sequentialSublist.getGasUsed());
     }
 
+    public Optional<Long> addTxSentToPrecompiledContract(Transaction tx, long gasUsedByTx) {
+        TransactionSublist sequentialSublist = getSequentialSublist();
+
+        if (!sublistHasAvailableGas(tx, sequentialSublist)) {
+            return Optional.empty();
+        }
+
+        sequentialSublist.addTransaction(tx, gasUsedByTx);
+        addNewKeysToMaps(tx.getSender(), sequentialSublist, new HashSet<>(), new HashSet<>());
+
+        return Optional.of(sequentialSublist.getGasUsed());
+    }
+
     public long getGasUsedIn(Short sublistId) {
 
         if (sublistId < 0 || sublistId >= sublists.size()) {
