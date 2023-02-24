@@ -209,7 +209,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
 
-        if (this.receivedPeerMessages.containsKey(sender)) {
+        if (!this.receivedPeerMessages.containsKey(sender)) {
             this.receivedPeerMessages.put(sender, Collections.synchronizedSet(new HashSet<>()));
         }
 
