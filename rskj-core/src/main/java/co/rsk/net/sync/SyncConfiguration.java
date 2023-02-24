@@ -49,7 +49,7 @@ public final class SyncConfiguration {
      * @param chunkSize Amount of blocks contained in a chunk
      * @param maxRequestedBodies Amount of bodies to request at the same time when synchronizing backwards.
      * @param longSyncLimit Distance to the tip of the peer's blockchain to enable long synchronization.
-     * @param topBest Distance to the tip of the peer's blockchain to enable long synchronization.
+     * @param topBest % of top best nodes that  will be considered for random selection.
      */
     public SyncConfiguration(
             int expectedPeers,

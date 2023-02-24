@@ -467,8 +467,8 @@ public class RskSystemProperties extends SystemProperties {
 
         double value = configFromFiles.getDouble(PROPERTY_SYNC_TOP_BEST);
 
-        if (value >= 0.0D && value <= 100.0D) {
-            throw new RuntimeException(PROPERTY_SYNC_TOP_BEST + " must be between 0 and 100");
+        if (value < 0.0D || value > 100.0D) {
+            throw new RskConfigurationException(PROPERTY_SYNC_TOP_BEST + " must be between 0 and 100");
         }
 
         return value;
