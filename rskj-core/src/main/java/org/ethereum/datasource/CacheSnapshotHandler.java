@@ -70,10 +70,13 @@ public class CacheSnapshotHandler {
             logger.info("Loaded {} cache entries from '{}'", cache.size(), relativePath);
         } catch (IOException e) {
             cache.clear();
-            File errFile = cacheSnapshotPath.resolveSibling(cacheSnapshotPath.getFileName() + ".err").toFile();
+            Path errFilePath = cacheSnapshotPath.resolveSibling(cacheSnapshotPath.getFileName() + ".err");
+            File errFile = errFilePath.toFile();
             if (!errFile.exists()) {
-                if (!cacheSnapshotFile.renameTo(errFile)) {
-                    logger.error("Cannot rename cache snapshot file", e);
+                try {
+                    Files.move(cacheSnapshotPath, errFilePath);
+                } catch (IOException ex) {
+                    logger.error("Cannot rename cache snapshot file", ex);
                 }
             }
             logger.error("Cannot read from cache snapshot file", e);
