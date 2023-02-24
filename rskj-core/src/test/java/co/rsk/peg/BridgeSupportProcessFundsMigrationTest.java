@@ -31,74 +31,153 @@ class BridgeSupportProcessFundsMigrationTest {
 
     @Test
     void processFundsMigration_in_migration_age_before_rskip_146_activation_testnet() throws IOException {
-        test_processFundsMigration(BridgeTestNetConstants.getInstance(), false, false, true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeTestNetConstants.getInstance(), activations, true);
     }
 
     @Test
     void processFundsMigration_in_migration_age_after_rskip_146_activation_testnet() throws IOException {
-        test_processFundsMigration(BridgeTestNetConstants.getInstance(), true, false, true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeTestNetConstants.getInstance(), activations, true);
     }
 
     @Test
     void processFundsMigration_in_migration_age_after_rskip_357_activation_testnet() throws IOException {
-        test_processFundsMigration(BridgeTestNetConstants.getInstance(), true, true, true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeTestNetConstants.getInstance(), activations, true);
+    }
+
+    @Test
+    void processFundsMigration_in_migration_age_after_rskip_374_activation_testnet() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+        test_processFundsMigration(BridgeTestNetConstants.getInstance(), activations, true);
     }
 
     @Test
     void processFundsMigration_past_migration_age_before_rskip_146_activation_testnet() throws IOException {
-        test_processFundsMigration(BridgeTestNetConstants.getInstance(), false, false, false);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeTestNetConstants.getInstance(), activations, false);
     }
 
     @Test
     void processFundsMigration_past_migration_age_after_rskip_146_activation_testnet() throws IOException {
-        test_processFundsMigration(BridgeTestNetConstants.getInstance(), true, false, false);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeTestNetConstants.getInstance(), activations, false);
     }
 
     @Test
     void processFundsMigration_past_migration_age_after_rskip_357_activation_testnet() throws IOException {
-        test_processFundsMigration(BridgeTestNetConstants.getInstance(), true, true, false);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeTestNetConstants.getInstance(), activations, false);
+    }
+
+    @Test
+    void processFundsMigration_past_migration_age_after_rskip_374_activation_testnet() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+        test_processFundsMigration(BridgeTestNetConstants.getInstance(), activations, false);
     }
 
     @Test
     void processFundsMigration_in_migration_age_before_rskip_146_activation_mainnet() throws IOException {
-        test_processFundsMigration(BridgeMainNetConstants.getInstance(), false, false, true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, true);
     }
 
     @Test
     void processFundsMigration_in_migration_age_after_rskip_146_activation_mainnet() throws IOException {
-        test_processFundsMigration(BridgeMainNetConstants.getInstance(), true, false, true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, true);
     }
 
     @Test
     void processFundsMigration_in_migration_age_after_rskip_357_activation_mainnet() throws IOException {
-        test_processFundsMigration(BridgeMainNetConstants.getInstance(), true, true, true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, true);
+    }
+
+    @Test
+    void processFundsMigration_in_migration_age_after_rskip_374_activation_mainnet() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, true);
     }
 
     @Test
     void processFundsMigration_past_migration_age_before_rskip_146_activation_mainnet() throws IOException {
-        test_processFundsMigration(BridgeMainNetConstants.getInstance(), false, false, false);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, false);
     }
 
     @Test
     void processFundsMigration_past_migration_age_after_rskip_146_activation_mainnet() throws IOException {
-        test_processFundsMigration(BridgeMainNetConstants.getInstance(), true, false, false);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, false);
     }
 
     @Test
     void processFundsMigration_past_migration_age_after_rskip_357_activation_mainnet() throws IOException {
-        test_processFundsMigration(BridgeMainNetConstants.getInstance(), true, true, false);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, false);
+    }
+
+    @Test
+    void processFundsMigration_past_migration_age_after_rskip_374_activation_mainnet() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, false);
     }
 
     private void test_processFundsMigration(
         BridgeConstants bridgeConstants,
-        boolean isRskip146Active,
-        boolean isRskip357Active,
-        boolean inMigrationAge) throws IOException {
-
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(isRskip146Active);
-        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(isRskip357Active);
-
+        ActivationConfig.ForBlock activations,
+        boolean inMigrationAge
+    ) throws IOException {
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
         Federation oldFederation = bridgeConstants.getGenesisFederation();
@@ -149,10 +228,10 @@ class BridgeSupportProcessFundsMigrationTest {
         Transaction updateCollectionsTx = buildUpdateCollectionsTransaction();
         bridgeSupport.updateCollections(updateCollectionsTx);
 
-        Assertions.assertEquals(isRskip146Active ? 0 : 1, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assertions.assertEquals(isRskip146Active ? 1 : 0, provider.getReleaseTransactionSet().getEntriesWithHash().size());
+        Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
+        Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146) ? 1 : 0, provider.getReleaseTransactionSet().getEntriesWithHash().size());
 
-        if (isRskip146Active) {
+        if (activations.isActive(ConsensusRule.RSKIP146)) {
             // Should have been logged with the migrated UTXO
             ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet()
                 .getEntriesWithHash()
