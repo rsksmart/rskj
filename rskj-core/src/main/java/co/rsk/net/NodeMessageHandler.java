@@ -42,9 +42,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
 
@@ -65,7 +67,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final PeerScoringManager peerScoringManager;
 
     private final StatusResolver statusResolver;
-    private final Map<Peer, Set<Keccak256>> receivedPeerMessages = Collections.synchronizedMap(new HashMap<>());
+    private final Map<Peer, Set<Keccak256>> receivedPeerMessages = new ConcurrentHashMap<>();
 
     private final Set<RskAddress> bannedMiners;
 
@@ -203,28 +205,22 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      * record event if message is repeated
      */
     private boolean allowByMessageUniqueness(Peer sender, Message message) {
-        if (message.getMessageType() != MessageType.BLOCK_MESSAGE && message.getMessageType() != MessageType.TRANSACTIONS) {
-            return false;
-        }
-
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
 
-        if (!this.receivedPeerMessages.containsKey(sender)) {
-            this.receivedPeerMessages.put(sender, Collections.synchronizedSet(new HashSet<>()));
-        }
-
-        Set<Keccak256> receivedMessages = receivedPeerMessages.get(sender);
+        Set<Keccak256> receivedMessages = this.receivedPeerMessages.computeIfAbsent(sender, k -> Collections.synchronizedSet(new HashSet<>()));
 
         if (receivedMessages.contains(encodedMessage)) {
             reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
             return false;
         }
 
-        if (receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
-            receivedMessages.clear();
-        }
+        if (Stream.of(MessageType.BLOCK_MESSAGE, MessageType.TRANSACTIONS).anyMatch(t -> message.getMessageType() == t)) {
+            if (receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
+                receivedMessages.clear();
+            }
 
-        receivedMessages.add(encodedMessage);
+            receivedMessages.add(encodedMessage);
+        }
 
         return true;
     }
