@@ -27,17 +27,28 @@ import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.core.Blockchain;
 import org.ethereum.net.server.ChannelManager;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import java.math.BigInteger;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class PeersInformationTest {
+    @Mock
+    Random random;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     void testGetBestPeer_ShouldReturnBestPeerWithTopBestAt0Perc() {
@@ -50,49 +61,45 @@ class PeersInformationTest {
     @Test
     void testGetBestPeer_ShouldReturnBestPeerWithTopBestAt30Perc() {
         PeersInformation peersInformation = setupTopBestScenario(30.0D);
+
+        Mockito.doReturn(1).when(random).nextInt(Mockito.eq(2));
+
         Optional<Peer> optionalPeer = peersInformation.getBestPeer();
 
-        Assertions.assertTrue(
-                Stream.of(new NodeID("peer5".getBytes()), new NodeID("peer4".getBytes()))
-                        .anyMatch(n -> n.equals(optionalPeer.get().getPeerNodeID()))
-        );
+        Assertions.assertEquals(optionalPeer.get().getPeerNodeID(), new NodeID("peer4".getBytes()));
     }
 
     @Test
     void testGetBestPeer_ShouldReturnBestPeerWithTopBestAt60Perc() {
         PeersInformation peersInformation = setupTopBestScenario(60.0D);
+
+        Mockito.doReturn(2).when(random).nextInt(Mockito.eq(3));
+
         Optional<Peer> optionalPeer = peersInformation.getBestPeer();
 
-        Assertions.assertTrue(
-                Stream.of(new NodeID("peer5".getBytes()), new NodeID("peer4".getBytes()),
-                                new NodeID("peer3".getBytes()))
-                        .anyMatch(n -> n.equals(optionalPeer.get().getPeerNodeID()))
-        );
+        Assertions.assertEquals(optionalPeer.get().getPeerNodeID(), new NodeID("peer3".getBytes()));
     }
 
     @Test
     void testGetBestPeer_ShouldReturnBestPeerWithTopBestAt80Perc() {
         PeersInformation peersInformation = setupTopBestScenario(80.0D);
+
+        Mockito.doReturn(3).when(random).nextInt(Mockito.eq(4));
+
         Optional<Peer> optionalPeer = peersInformation.getBestPeer();
 
-        Assertions.assertTrue(
-                Stream.of(new NodeID("peer5".getBytes()), new NodeID("peer4".getBytes()),
-                                new NodeID("peer3".getBytes()), new NodeID("peer2".getBytes()))
-                        .anyMatch(n -> n.equals(optionalPeer.get().getPeerNodeID()))
-        );
+        Assertions.assertEquals(optionalPeer.get().getPeerNodeID(), new NodeID("peer2".getBytes()));
     }
 
     @Test
     void testGetBestPeer_ShouldReturnBestPeerWithTopBestAt100Perc() {
         PeersInformation peersInformation = setupTopBestScenario(100.0D);
+
+        Mockito.doReturn(4).when(random).nextInt(Mockito.eq(5));
+
         Optional<Peer> optionalPeer = peersInformation.getBestPeer();
 
-        Assertions.assertTrue(
-                Stream.of(new NodeID("peer5".getBytes()), new NodeID("peer4".getBytes()),
-                                new NodeID("peer3".getBytes()), new NodeID("peer2".getBytes()),
-                                new NodeID("peer1".getBytes()))
-                        .anyMatch(n -> n.equals(optionalPeer.get().getPeerNodeID()))
-        );
+        Assertions.assertEquals(optionalPeer.get().getPeerNodeID(), new NodeID("peer1".getBytes()));
     }
 
     private PeersInformation setupTopBestScenario(double topBest) {
@@ -123,13 +130,16 @@ class PeersInformationTest {
         Mockito.when(syncConfiguration.getExpirationTimePeerStatus())
                 .thenReturn(Duration.of(1, ChronoUnit.HOURS));
 
+        Mockito.when(syncConfiguration.getTopBest())
+                .thenReturn(topBest);
+
         Mockito.when(peerScoringManager.hasGoodReputation(Mockito.eq(peer1.getPeerNodeID()))).thenReturn(true);
         Mockito.when(peerScoringManager.hasGoodReputation(Mockito.eq(peer2.getPeerNodeID()))).thenReturn(true);
         Mockito.when(peerScoringManager.hasGoodReputation(Mockito.eq(peer3.getPeerNodeID()))).thenReturn(true);
         Mockito.when(peerScoringManager.hasGoodReputation(Mockito.eq(peer4.getPeerNodeID()))).thenReturn(true);
         Mockito.when(peerScoringManager.hasGoodReputation(Mockito.eq(peer5.getPeerNodeID()))).thenReturn(true);
 
-        PeersInformation peersInformation = new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager);
+        PeersInformation peersInformation = new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager, random);
 
         SyncPeerStatus syncPeerStatus1 = peersInformation.registerPeer(peer1);
         syncPeerStatus1.setStatus(new Status(1L, "".getBytes(), null, new BlockDifficulty(BigInteger.valueOf(1L))));

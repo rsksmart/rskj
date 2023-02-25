@@ -25,6 +25,7 @@ import co.rsk.net.Status;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.MaxSizeHashMap;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Blockchain;
 import org.ethereum.net.server.ChannelManager;
 
@@ -53,13 +54,22 @@ public class PeersInformation {
     private final Comparator<Map.Entry<Peer, SyncPeerStatus>> peerComparator;
     private Map<Peer, SyncPeerStatus> peerStatuses = new HashMap<>();
     private final double topBest;
-    private final Random random = new SecureRandom();
+    private final Random random;
 
 
     public PeersInformation(ChannelManager channelManager,
                             SyncConfiguration syncConfiguration,
                             Blockchain blockchain,
                             PeerScoringManager peerScoringManager) {
+        this(channelManager, syncConfiguration, blockchain, peerScoringManager, new SecureRandom());
+    }
+
+    @VisibleForTesting
+    PeersInformation(ChannelManager channelManager,
+                            SyncConfiguration syncConfiguration,
+                            Blockchain blockchain,
+                            PeerScoringManager peerScoringManager,
+                            Random random) {
         this.channelManager = channelManager;
         this.syncConfiguration = syncConfiguration;
         this.blockchain = blockchain;
@@ -67,9 +77,10 @@ public class PeersInformation {
         this.peerScoringManager = peerScoringManager;
         this.peerComparator = ((Comparator<Map.Entry<Peer, SyncPeerStatus>>) this::comparePeerFailInstant)
                 // TODO reenable when unprocessable blocks stop being marked as invalid blocks
-//                .thenComparing(this::comparePeerScoring)
+                // .thenComparing(this::comparePeerScoring)
                 .thenComparing(this::comparePeerTotalDifficulty);
         this.topBest = syncConfiguration.getTopBest();
+        this.random = random;
     }
 
     public void reportEventToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {
