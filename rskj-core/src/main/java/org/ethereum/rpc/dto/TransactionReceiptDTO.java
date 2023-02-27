@@ -43,6 +43,7 @@ public class TransactionReceiptDTO {
     private String to;                   // address of the receiver. null when it's a contract creation transaction.
     private String status;               // either 1 (success) or 0 (failure)
     private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
+    private String type;
 
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache) {
         TransactionReceipt receipt = txInfo.getReceipt();
@@ -71,6 +72,7 @@ public class TransactionReceiptDTO {
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = HexUtils.toQuantityJsonHex(txInfo.getIndex());
         logsBloom = HexUtils.toUnformattedJsonHex(txInfo.getReceipt().getBloomFilter().getData());
+        type = "0x00";
     }
 
     public String getTransactionHash() {
@@ -119,5 +121,9 @@ public class TransactionReceiptDTO {
 
     public String getLogsBloom() {
         return logsBloom;
+    }
+
+    public String getType() {
+        return type;
     }
 }
