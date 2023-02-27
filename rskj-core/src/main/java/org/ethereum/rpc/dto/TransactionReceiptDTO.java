@@ -72,7 +72,7 @@ public class TransactionReceiptDTO {
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = HexUtils.toQuantityJsonHex(txInfo.getIndex());
         logsBloom = HexUtils.toUnformattedJsonHex(txInfo.getReceipt().getBloomFilter().getData());
-        type = "0x00";
+        type = "0x0";
     }
 
     public String getTransactionHash() {
