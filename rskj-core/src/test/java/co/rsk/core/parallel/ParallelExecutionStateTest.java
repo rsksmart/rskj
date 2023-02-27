@@ -27,6 +27,7 @@ import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.vm.GasCost;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -112,10 +113,21 @@ class ParallelExecutionStateTest {
      *     function readWithRevert() external { another = x; revert(); }
      *     function writeWithRevert(uint value) external { x = value; revert(); }
      *     function updateWithRevert(uint increment) external { x += increment; revert(); }
+     *
+     *     function wasteGas(uint gas) external {
+     *         uint i = uint(keccak256(abi.encode(0x12349876)));
+     *         another = i;
+     *         uint gasLeft = gasleft();
+     *         while (gasLeft < gas + gasleft()) {
+     *             unchecked {
+     *                 i = (i / 7 + 10) * 8;
+     *             }
+     *         }
+     *     }
      * }
      */
 
-    private final String creationData = "608060405234801561001057600080fd5b5061029c806100206000396000f3fe6080604052600436106100595760003560e01c80630d2a2d8d146100655780631b892f871461007c5780632f048afa146100a557806357de26a4146100ce57806382ab890a146100e5578063e2033a131461010e57610060565b3661006057005b600080fd5b34801561007157600080fd5b5061007a610137565b005b34801561008857600080fd5b506100a3600480360381019061009e91906101d6565b610144565b005b3480156100b157600080fd5b506100cc60048036038101906100c791906101d6565b610160565b005b3480156100da57600080fd5b506100e361016a565b005b3480156100f157600080fd5b5061010c600480360381019061010791906101d6565b610175565b005b34801561011a57600080fd5b50610135600480360381019061013091906101d6565b610190565b005b6000546001819055600080fd5b806000808282546101559190610232565b925050819055600080fd5b8060008190555050565b600054600181905550565b806000808282546101869190610232565b9250508190555050565b806000819055600080fd5b600080fd5b6000819050919050565b6101b3816101a0565b81146101be57600080fd5b50565b6000813590506101d0816101aa565b92915050565b6000602082840312156101ec576101eb61019b565b5b60006101fa848285016101c1565b91505092915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b600061023d826101a0565b9150610248836101a0565b92508282019050808211156102605761025f610203565b5b9291505056fea264697066735822122026312b78fe7401c6254384280f0829175f2da1a68f8ed8f45a7193b0a04158bc64736f6c63430008110033";
+    private final String creationData = "608060405234801561001057600080fd5b506103f5806100206000396000f3fe6080604052600436106100745760003560e01c806357de26a41161004e57806357de26a4146100e95780637fa4dcd81461010057806382ab890a14610129578063e2033a13146101525761007b565b80630d2a2d8d146100805780631b892f87146100975780632f048afa146100c05761007b565b3661007b57005b600080fd5b34801561008c57600080fd5b5061009561017b565b005b3480156100a357600080fd5b506100be60048036038101906100b99190610290565b610188565b005b3480156100cc57600080fd5b506100e760048036038101906100e29190610290565b6101a4565b005b3480156100f557600080fd5b506100fe6101ae565b005b34801561010c57600080fd5b5061012760048036038101906101229190610290565b6101b9565b005b34801561013557600080fd5b50610150600480360381019061014b9190610290565b61022f565b005b34801561015e57600080fd5b5061017960048036038101906101749190610290565b61024a565b005b6000546001819055600080fd5b8060008082825461019991906102ec565b925050819055600080fd5b8060008190555050565b600054600181905550565b600063123498766040516020016101d09190610375565b6040516020818303038152906040528051906020012060001c90508060018190555060005a90505b5a8361020491906102ec565b81101561022a576008600a600784816102205761021f610390565b5b04010291506101f8565b505050565b8060008082825461024091906102ec565b9250508190555050565b806000819055600080fd5b600080fd5b6000819050919050565b61026d8161025a565b811461027857600080fd5b50565b60008135905061028a81610264565b92915050565b6000602082840312156102a6576102a5610255565b5b60006102b48482850161027b565b91505092915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b60006102f78261025a565b91506103028361025a565b925082820190508082111561031a576103196102bd565b5b92915050565b6000819050919050565b600063ffffffff82169050919050565b6000819050919050565b600061035f61035a61035584610320565b61033a565b61032a565b9050919050565b61036f81610344565b82525050565b600060208201905061038a6000830184610366565b92915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fdfea26469706673582212205b0597a6850277acf28d04e99d281b91a759c03cdf277adbc86c3d0ba87c44ba64736f6c63430008110033";
 
     // call data
     private final String writeTen = "2f048afa000000000000000000000000000000000000000000000000000000000000000a";
@@ -124,6 +136,8 @@ class ParallelExecutionStateTest {
     private final String writeTenWithRevert = "0d2a2d8d";
     private final String readDataWithRevert = "e2033a13000000000000000000000000000000000000000000000000000000000000000a";
     private final String updateByTenWithRevert = "1b892f87000000000000000000000000000000000000000000000000000000000000000a";
+    private final String wasteTwoMillionGas = "7fa4dcd800000000000000000000000000000000000000000000000000000000001e8480";
+    private final String wasteHundredThousandGas = "7fa4dcd800000000000000000000000000000000000000000000000000000000000186a0";
 
     // substrings for dsl text
     private final String createThreeAccounts = "account_new acc1 10000000\n" +
@@ -162,6 +176,14 @@ class ParallelExecutionStateTest {
             "assert_tx_success tx03\n" +
             "\n";
 
+    private String skeleton(String txs, boolean validate) {
+        return createThreeAccounts +
+                createContractInBlock01 +
+                txs +
+                buildBlockWithToTxs +
+                (validate ? validateTxs : "");
+    }
+
     private void createContractAndTestCallWith(String firstCall, String secondCall, short[] edges) throws DslProcessorException {
         createContractAndTestCallWith(firstCall, secondCall, edges, true);
     }
@@ -176,8 +198,7 @@ class ParallelExecutionStateTest {
      * @throws DslProcessorException
      */
     private void createContractAndTestCallWith(String firstCall, String secondCall, short[] edges, boolean validate) throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144(createThreeAccounts +
-                createContractInBlock01 +
+        this.testProcessingPreAndPostRSKIP144(skeleton(
                 "transaction_build tx02\n" +
                 "    sender acc1\n" +
                 "    contract tx01\n" +
@@ -191,9 +212,7 @@ class ParallelExecutionStateTest {
                 "    data " + secondCall + "\n" +
                 "    gas 100000\n" +
                 "    build\n" +
-                "\n" +
-                buildBlockWithToTxs +
-                (validate ? validateTxs : ""), edges);
+                "\n", validate), edges);
     }
 
     // 1. A and B have the same sender account
@@ -425,5 +444,75 @@ class ParallelExecutionStateTest {
                 "assert_tx_success tx02\n" +
                 "assert_balance tx01 10000\n" +
                 "\n", new short[]{ 2 });
+    }
+
+    // 2. A is in a parallel sublist without enough gas available: B is placed in the sequential sublist
+    @Test
+    void useSequentialThread() throws DslProcessorException {
+        World parallel = this.createWorld(skeleton("transaction_build tx02\n" +
+                "    sender acc1\n" +
+                "    contract tx01\n" +
+                "    data " + wasteTwoMillionGas + "\n" +
+                "    gas 2500000\n" +
+                "    build\n" +
+                "\n" +
+                "transaction_build tx03\n" +
+                "    sender acc2\n" +
+                "    contract tx01\n" +
+                "    data " + wasteTwoMillionGas + "\n" +
+                "    gas 2500000\n" +
+                "    build\n" +
+                "\n", true), 0);
+
+        Assertions.assertEquals(3000000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
+        Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[] { 1 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    // 3. A is in the sequential sublist: B is placed in the sequential sublist
+    @Test
+    void bothUseSequentialThread() throws DslProcessorException {
+        World parallel = this.createWorld(createThreeAccounts +
+                createContractInBlock01 +
+                "transaction_build tx02\n" +
+                "    sender acc1\n" +
+                "    contract tx01\n" +
+                "    data " + wasteTwoMillionGas + "\n" +
+                "    gas 2500000\n" +
+                "    nonce 0\n" +
+                "    build\n" +
+                "\n" +
+                "transaction_build tx03\n" +
+                "    sender acc1\n" +
+                "    contract tx01\n" +
+                "    data " + wasteTwoMillionGas + "\n" +
+                "    gas 2500000\n" +
+                "    nonce 1\n" +
+                "    build\n" +
+                "\n" + // goes to sequential
+                "transaction_build tx04\n" +
+                "    sender acc2\n" +
+                "    contract tx01\n" +
+                "    data " + wasteHundredThousandGas + "\n" +
+                "    gas 200000\n" +
+                "    build\n" +
+                "\n" +
+                "block_build b02\n" +
+                "    parent b01\n" +
+                "    transactions tx02 tx03 tx04\n" +
+                "    build\n" +
+                "\n" +
+                "block_connect b02\n" +
+                "\n" +
+                "assert_best b02\n" +
+                "assert_tx_success tx01\n" +
+                "assert_tx_success tx02\n" +
+                "assert_tx_success tx03\n" +
+                "assert_tx_success tx04\n" +
+                "\n", 0);
+
+        Assertions.assertEquals(3000000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
+        Assertions.assertEquals(3, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[] { 1 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 }
