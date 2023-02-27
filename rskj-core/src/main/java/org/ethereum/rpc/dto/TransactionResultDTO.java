@@ -47,6 +47,7 @@ public class TransactionResultDTO {
     private String v;
     private String r;
     private String s;
+    private String type;
 
     public TransactionResultDTO(Block b, Integer index, Transaction tx, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
         hash = tx.getHash().toJsonString();
@@ -62,6 +63,8 @@ public class TransactionResultDTO {
         gas = HexUtils.toQuantityJsonHex(tx.getGasLimit());
 
         gasPrice = HexUtils.toQuantityJsonHex(tx.getGasPrice().getBytes());
+
+        type = "0x0";
 
         if (Coin.ZERO.equals(tx.getValue())) {
             value = "0x0";
@@ -142,4 +145,7 @@ public class TransactionResultDTO {
         return s;
     }
 
+    public String getType() {
+        return type;
+    }
 }
