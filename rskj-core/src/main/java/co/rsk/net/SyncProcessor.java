@@ -47,6 +47,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class SyncProcessor implements SyncEventsHandler {
     private static final int MAX_PENDING_MESSAGES = 100_000;
+
+    private static final int ROUNDTRIP_TIME_TO_WARN_PERIOD = 10; // seconds
+    private static final int ROUNDTRIP_TIME_TO_WARN_LIMIT = 4; // seconds
+
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     private final SyncConfiguration syncConfiguration;
@@ -62,11 +66,13 @@ public class SyncProcessor implements SyncEventsHandler {
     private final EthereumListener ethereumListener;
 
     private final PeersInformation peersInformation;
-    private final Map<Long, MessageType> pendingMessages;
+    private final Map<Long, MessageInfo> pendingMessages;
     private final AtomicBoolean isSyncing = new AtomicBoolean();
 
     private volatile long initialBlockNumber;
     private volatile long highestBlockNumber;
+
+    private volatile long lastDelayWarn = System.currentTimeMillis();
 
     private SyncState syncState;
     private long lastRequestId;
@@ -94,9 +100,9 @@ public class SyncProcessor implements SyncEventsHandler {
         this.difficultyRule = new DifficultyRule(difficultyCalculator);
         this.genesis = genesis;
         this.ethereumListener = ethereumListener;
-        this.pendingMessages = new LinkedHashMap<Long, MessageType>() {
+        this.pendingMessages = new LinkedHashMap<Long, MessageInfo>() {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<Long, MessageType> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<Long, MessageInfo> eldest) {
                 boolean shouldDiscard = size() > MAX_PENDING_MESSAGES;
                 if (shouldDiscard) {
                     logger.trace("Pending {}@{} DISCARDED", eldest.getValue(), eldest.getKey());
@@ -388,7 +394,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private void sendMessage(Peer peer, MessageWithId message) {
         MessageType messageType = message.getResponseMessageType();
         long messageId = message.getId();
-        pendingMessages.put(messageId, messageType);
+        pendingMessages.put(messageId, new MessageInfo(messageType));
         logger.trace("Pending {}@{} ADDED for {}", messageType, messageId, peer.getPeerNodeID());
         peer.sendMessage(message);
     }
@@ -422,7 +428,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @VisibleForTesting
     public void registerExpectedMessage(MessageWithId message) {
-        pendingMessages.put(message.getId(), message.getMessageType());
+        pendingMessages.put(message.getId(), new MessageInfo(message.getMessageType()));
     }
 
     @VisibleForTesting
@@ -431,17 +437,33 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @VisibleForTesting
-    public Map<Long, MessageType> getExpectedResponses() {
+    public Map<Long, MessageInfo> getExpectedResponses() {
         return pendingMessages;
     }
 
     private boolean isPending(long messageId, MessageType messageType) {
-        return pendingMessages.containsKey(messageId) && pendingMessages.get(messageId) == messageType;
+        MessageInfo messageInfo = pendingMessages.get(messageId);
+        return messageInfo != null && messageInfo.type == messageType;
     }
 
     private void removePendingMessage(long messageId, MessageType messageType) {
-        pendingMessages.remove(messageId);
-        logger.trace("Pending {}@{} REMOVED", messageType, messageId);
+        MessageInfo messageInfo = pendingMessages.remove(messageId);
+        long taskWaitTimeInSeconds = messageInfo.getLifeTimeInSeconds();
+        logger.trace("Pending {}@{} REMOVED after [{}]s", messageType, messageId, taskWaitTimeInSeconds);
+        logDelays(messageId, messageType, taskWaitTimeInSeconds);
+    }
+
+    private void logDelays(long messageId, MessageType messageType, long taskWaitTimeInSeconds) {
+        if (taskWaitTimeInSeconds < ROUNDTRIP_TIME_TO_WARN_LIMIT) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        Duration timeDelayWarn = Duration.ofMillis(now - lastDelayWarn);
+        if (timeDelayWarn.getSeconds() > ROUNDTRIP_TIME_TO_WARN_PERIOD) {
+            logger.warn("{}-{} round-trip took too much (either slow peer response or task waited too much on the queue): [{}]s", messageType, messageId, taskWaitTimeInSeconds);
+            lastDelayWarn = now;
+        }
     }
 
     private void logSyncIssue(Peer peer, String message, Object[] messageArgs) {
@@ -449,5 +471,19 @@ public class SyncProcessor implements SyncEventsHandler {
         String nodeInfo = peer.getPeerNodeID() + " - " + Optional.ofNullable(peer.getAddress()).map(InetAddress::getHostAddress).orElse("unknown");
         Object[] completeArguments = ArrayUtils.add(messageArgs, 0, nodeInfo);
         logger.trace(completeMessage, completeArguments);
+    }
+
+    private static class MessageInfo {
+        private final MessageType type;
+        private final long creationTime;
+
+        public MessageInfo(MessageType type) {
+            this.type = type;
+            this.creationTime = System.currentTimeMillis();
+        }
+
+        public long getLifeTimeInSeconds() {
+            return (System.currentTimeMillis() - creationTime) / 1000;
+        }
     }
 }

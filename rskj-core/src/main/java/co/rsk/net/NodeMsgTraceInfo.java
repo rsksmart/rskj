@@ -18,13 +18,24 @@
 
 package co.rsk.net;
 
+import com.google.common.annotations.VisibleForTesting;
+
 public class NodeMsgTraceInfo {
     private final String messageId;
     private final String sessionId;
+    private final long creationTime;
 
     public NodeMsgTraceInfo(String messageId, String sessionId) {
         this.messageId = messageId;
         this.sessionId = sessionId;
+        this.creationTime = System.currentTimeMillis();
+    }
+
+    @VisibleForTesting
+    NodeMsgTraceInfo(String messageId, String sessionId, long creationTimeMillis) {
+        this.messageId = messageId;
+        this.sessionId = sessionId;
+        this.creationTime = creationTimeMillis;
     }
 
     public String getMessageId() {
@@ -34,4 +45,9 @@ public class NodeMsgTraceInfo {
     public String getSessionId() {
         return sessionId;
     }
+
+    public long getLifeTimeInSeconds() {
+        return (System.currentTimeMillis() - this.creationTime) / 1000;
+    }
+
 }
