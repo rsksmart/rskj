@@ -36,23 +36,24 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 class ParallelExecutionStateTest {
-    private World createWorld(String dsl, int rskip144) throws DslProcessorException {
+    private World createWorld(int rskip144) {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(rskip144))
         );
 
         World world = new World(receiptStore, config);
+        return world;
+    }
+
+    private World createWorldAndProcess(String dsl, int rskip144) throws DslProcessorException {
+        World world = createWorld(rskip144);
 
         DslParser parser = new DslParser(dsl);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
         return world;
-    }
-
-    private byte[] getStateRoot (World world) {
-        return world.getBlockChain().getBestBlock().getHeader().getStateRoot();
     }
 
     /**
@@ -62,8 +63,8 @@ class ParallelExecutionStateTest {
      * @throws DslProcessorException
      */
     private void testProcessingPreAndPostRSKIP144(String dsl, short[] expectedEdges) throws DslProcessorException {
-        World parallel = this.createWorld(dsl, 0);
-        World series = this.createWorld(dsl, -1);
+        World parallel = this.createWorldAndProcess(dsl, 0);
+        World series = this.createWorldAndProcess(dsl, -1);
 
         compareTwoWorldsAndTestEdges(series, parallel, expectedEdges);
     }
@@ -77,33 +78,8 @@ class ParallelExecutionStateTest {
         Assertions.assertArrayEquals(expectedEdges, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
-    @Test
-    void empty() throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144("block_chain g00", null);
-    }
-
-    @Test
-    void oneTx() throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144("account_new acc1 10000000\n" +
-                "account_new acc2 0\n" +
-                "\n" +
-                "transaction_build tx01\n" +
-                "    sender acc1\n" +
-                "    receiver acc2\n" +
-                "    value 1000\n" +
-                "    build\n" +
-                "\n" +
-                "block_build b01\n" +
-                "    parent g00\n" +
-                "    transactions tx01\n" +
-                "    build\n" +
-                "\n" +
-                "block_connect b01\n" +
-                "\n" +
-                "assert_best b01\n" +
-                "assert_tx_success tx01\n" +
-                "assert_balance acc2 1000\n" +
-                "\n", new short[]{ 1 });
+    private byte[] getStateRoot (World world) {
+        return world.getBlockChain().getBestBlock().getHeader().getStateRoot();
     }
 
     /**
@@ -147,6 +123,8 @@ class ParallelExecutionStateTest {
      * }
      */
 
+    // creation codes
+
     private final String creationData = "608060405234801561001057600080fd5b50610473806100206000396000f3fe6080604052600436106100745760003560e01c806334b091931161004e57806334b09193146100e957806357de26a41461011257806382ab890a14610129578063e2033a13146101525761007b565b80630d2a2d8d146100805780631b892f87146100975780632f048afa146100c05761007b565b3661007b57005b600080fd5b34801561008c57600080fd5b5061009561017b565b005b3480156100a357600080fd5b506100be60048036038101906100b991906102bb565b610188565b005b3480156100cc57600080fd5b506100e760048036038101906100e291906102bb565b6101a4565b005b3480156100f557600080fd5b50610110600480360381019061010b91906102e8565b6101ae565b005b34801561011e57600080fd5b5061012761024f565b005b34801561013557600080fd5b50610150600480360381019061014b91906102bb565b61025a565b005b34801561015e57600080fd5b50610179600480360381019061017491906102bb565b610275565b005b6000546001819055600080fd5b80600080828254610199919061036a565b925050819055600080fd5b8060008190555050565b600063123498766040516020016101c591906103f3565b6040516020818303038152906040528051906020012060001c905080600260008581526020019081526020016000208190555080600260008481526020019081526020016000208190555060005a90505b5a85610222919061036a565b811015610248576008600a6007848161023e5761023d61040e565b5b0401029150610216565b5050505050565b600054600181905550565b8060008082825461026b919061036a565b9250508190555050565b806000819055600080fd5b600080fd5b6000819050919050565b61029881610285565b81146102a357600080fd5b50565b6000813590506102b58161028f565b92915050565b6000602082840312156102d1576102d0610280565b5b60006102df848285016102a6565b91505092915050565b60008060006060848603121561030157610300610280565b5b600061030f868287016102a6565b9350506020610320868287016102a6565b9250506040610331868287016102a6565b9150509250925092565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b600061037582610285565b915061038083610285565b92508282019050808211156103985761039761033b565b5b92915050565b6000819050919050565b600063ffffffff82169050919050565b6000819050919050565b60006103dd6103d86103d38461039e565b6103b8565b6103a8565b9050919050565b6103ed816103c2565b82525050565b600060208201905061040860008301846103e4565b92915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fdfea264697066735822122081578079990ee4f4eaa55ebeeedcb31b8f178ab346b989e62541a894e60d381164736f6c63430008110033";
     private String getProxyCreationCode (String address) {
         return "608060405234801561001057600080fd5b50604051610417380380610417833981810160405281019061003291906100ed565b806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505061011a565b600080fd5b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006100a88261007d565b9050919050565b60006100ba8261009d565b9050919050565b6100ca816100af565b81146100d557600080fd5b50565b6000815190506100e7816100c1565b92915050565b60006020828403121561010357610102610078565b5b6000610111848285016100d8565b91505092915050565b6102ee806101296000396000f3fe608060405234801561001057600080fd5b50600436106100415760003560e01c80632f048afa1461004657806357de26a41461006257806382ab890a1461006c575b600080fd5b610060600480360381019061005b9190610261565b610088565b005b61006a610116565b005b61008660048036038101906100819190610261565b610198565b005b60008054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16632f048afa826040518263ffffffff1660e01b81526004016100e1919061029d565b600060405180830381600087803b1580156100fb57600080fd5b505af115801561010f573d6000803e3d6000fd5b5050505050565b60008054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166357de26a46040518163ffffffff1660e01b8152600401600060405180830381600087803b15801561017e57600080fd5b505af1158015610192573d6000803e3d6000fd5b50505050565b60008054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166382ab890a826040518263ffffffff1660e01b81526004016101f1919061029d565b600060405180830381600087803b15801561020b57600080fd5b505af115801561021f573d6000803e3d6000fd5b5050505050565b600080fd5b6000819050919050565b61023e8161022b565b811461024957600080fd5b50565b60008135905061025b81610235565b92915050565b60006020828403121561027757610276610226565b5b60006102858482850161024c565b91505092915050565b6102978161022b565b82525050565b60006020820190506102b2600083018461028e565b9291505056fea264697066735822122034c249e40cf35f03e8970cf8c91dbaf8426d01814edfcb782e7548b32f6d9e7964736f6c63430008110033000000000000000000000000"
@@ -154,6 +132,7 @@ class ParallelExecutionStateTest {
     }
 
     // call data
+
     // write(10)
     private final String writeTen = "2f048afa000000000000000000000000000000000000000000000000000000000000000a";
     // read()
@@ -228,10 +207,6 @@ class ParallelExecutionStateTest {
                 (validate ? validateTxs : "");
     }
 
-    private void createContractAndTestCallWith(String firstCall, String secondCall, short[] edges) throws DslProcessorException {
-        createContractAndTestCallWith(firstCall, secondCall, edges, true);
-    }
-
     /**
      * creates the contract, performs two calls from different accounts
      * tests the state root and the tx edges
@@ -259,14 +234,17 @@ class ParallelExecutionStateTest {
                 "\n", validate), edges);
     }
 
+    private void createContractAndTestCall(String firstCall, String secondCall, short[] edges) throws DslProcessorException {
+        createContractAndTestCallWith(firstCall, secondCall, edges, true);
+    }
+
+    private void createContractAndTestCallWithRevert(String firstCall, String secondCall, short[] edges) throws DslProcessorException {
+        createContractAndTestCallWith(firstCall, secondCall, edges, false);
+    }
+
     // For tests calling with proxy contract
     private World processCallWithContract(String firstCall, String secondCall, int rskip144) throws DslProcessorException {
-        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        TestSystemProperties config = new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(rskip144))
-        );
-
-        World world = new World(receiptStore, config);
+        World world = createWorld(rskip144);
 
         DslParser parser = new DslParser(createThreeAccounts +
                 createContractInBlock01 +
@@ -335,6 +313,34 @@ class ParallelExecutionStateTest {
         compareTwoWorldsAndTestEdges(series, parallel, expectedEdges);
     }
 
+    @Test
+    void empty() throws DslProcessorException {
+        this.testProcessingPreAndPostRSKIP144("block_chain g00", null);
+    }
+
+    @Test
+    void oneTx() throws DslProcessorException {
+        this.testProcessingPreAndPostRSKIP144("account_new acc1 10000000\n" +
+                "account_new acc2 0\n" +
+                "\n" +
+                "transaction_build tx01\n" +
+                "    sender acc1\n" +
+                "    receiver acc2\n" +
+                "    value 1000\n" +
+                "    build\n" +
+                "\n" +
+                "block_build b01\n" +
+                "    parent g00\n" +
+                "    transactions tx01\n" +
+                "    build\n" +
+                "\n" +
+                "block_connect b01\n" +
+                "\n" +
+                "assert_best b01\n" +
+                "assert_tx_success tx01\n" +
+                "assert_balance acc2 1000\n" +
+                "\n", new short[]{ 1 });
+    }
 
     // 1. A and B have the same sender account
     @Test
@@ -428,12 +434,12 @@ class ParallelExecutionStateTest {
     // 4. B reads a smart contract variable that A writes
     @Test
     void readWrite() throws DslProcessorException {
-        this.createContractAndTestCallWith(writeTen, readData, new short[]{ 2 });
+        this.createContractAndTestCall(writeTen, readData, new short[]{ 2 });
     }
 
     @Test
     void readWriteWithRevert() throws DslProcessorException {
-        this.createContractAndTestCallWith(writeTen, readDataWithRevert, new short[]{ 2 }, false);
+        this.createContractAndTestCallWithRevert(writeTen, readDataWithRevert, new short[]{ 2 });
     }
 
     @Test
@@ -444,12 +450,12 @@ class ParallelExecutionStateTest {
     // 5. B reads a smart contract variable that A updates (i.e., +=)
     @Test
     void readUpdate() throws DslProcessorException {
-        this.createContractAndTestCallWith(updateByTen, readData, new short[]{ 2 });
+        this.createContractAndTestCall(updateByTen, readData, new short[]{ 2 });
     }
 
     @Test
     void readUpdateWithRevert() throws DslProcessorException {
-        this.createContractAndTestCallWith(updateByTen, readDataWithRevert, new short[]{ 2 }, false);
+        this.createContractAndTestCallWithRevert(updateByTen, readDataWithRevert, new short[]{ 2 });
     }
 
     @Test
@@ -460,12 +466,12 @@ class ParallelExecutionStateTest {
     //6. B writes a smart contract variable that A writes
     @Test
     void writeWrite() throws DslProcessorException {
-        this.createContractAndTestCallWith(writeTen, writeTen, new short[]{ 2 });
+        this.createContractAndTestCall(writeTen, writeTen, new short[]{ 2 });
     }
 
     @Test
     void writeWriteWithRevert() throws DslProcessorException {
-        this.createContractAndTestCallWith(writeTen, writeTenWithRevert, new short[]{ 2 }, false);
+        this.createContractAndTestCallWithRevert(writeTen, writeTenWithRevert, new short[]{ 2 });
     }
 
     @Test
@@ -476,12 +482,12 @@ class ParallelExecutionStateTest {
     // 7. B writes a smart contract variable that A updates
     @Test
     void writeUpdate() throws DslProcessorException {
-        this.createContractAndTestCallWith(updateByTen, writeTen, new short[]{ 2 });
+        this.createContractAndTestCall(updateByTen, writeTen, new short[]{ 2 });
     }
 
     @Test
     void writeUpdateWithRevert() throws DslProcessorException {
-        this.createContractAndTestCallWith(updateByTen, writeTenWithRevert, new short[]{ 2 }, false);
+        this.createContractAndTestCallWithRevert(updateByTen, writeTenWithRevert, new short[]{ 2 });
     }
 
     @Test
@@ -492,12 +498,12 @@ class ParallelExecutionStateTest {
     // 8. B writes a smart contract variable that A reads
     @Test
     void writeRead() throws DslProcessorException {
-        this.createContractAndTestCallWith(readData, writeTen, new short[]{ 2 });
+        this.createContractAndTestCall(readData, writeTen, new short[]{ 2 });
     }
 
     @Test
     void writeReadWithRevert() throws DslProcessorException {
-        this.createContractAndTestCallWith(readData, writeTenWithRevert, new short[]{ 2 }, false);
+        this.createContractAndTestCallWithRevert(readData, writeTenWithRevert, new short[]{ 2 });
     }
 
     @Test
@@ -508,12 +514,12 @@ class ParallelExecutionStateTest {
     // 9. B updates a smart contract variable that A writes
     @Test
     void updateWrite() throws DslProcessorException {
-        this.createContractAndTestCallWith(writeTen, updateByTen, new short[]{ 2 });
+        this.createContractAndTestCall(writeTen, updateByTen, new short[]{ 2 });
     }
 
     @Test
     void updateWriteWithRevert() throws DslProcessorException {
-        this.createContractAndTestCallWith(writeTen, updateByTenWithRevert, new short[]{ 2 }, false);
+        this.createContractAndTestCallWithRevert(writeTen, updateByTenWithRevert, new short[]{ 2 });
     }
 
     @Test
@@ -524,13 +530,13 @@ class ParallelExecutionStateTest {
     // 10. B updates a smart contract variable that A reads
     @Test
     void updateRead() throws DslProcessorException {
-        this.createContractAndTestCallWith(readData, updateByTen, new short[]{ 2 });
+        this.createContractAndTestCall(readData, updateByTen, new short[]{ 2 });
     }
 
     // 11. B updates a smart contract variable that A updates
     @Test
     void updateUpdate() throws DslProcessorException {
-        this.createContractAndTestCallWith(updateByTen, updateByTen, new short[]{ 2 });
+        this.createContractAndTestCall(updateByTen, updateByTen, new short[]{ 2 });
     }
 
     // 12. B calls a smart contract that A creates
@@ -599,7 +605,7 @@ class ParallelExecutionStateTest {
     // 2. A is in a parallel sublist without enough gas available: B is placed in the sequential sublist
     @Test
     void useSequentialForGas() throws DslProcessorException {
-        World parallel = this.createWorld(skeleton("transaction_build tx02\n" +
+        World parallel = this.createWorldAndProcess(skeleton("transaction_build tx02\n" +
                 "    sender acc1\n" +
                 "    contract tx01\n" +
                 "    data " + wasteTwoMillionGas + "\n" +
@@ -622,7 +628,7 @@ class ParallelExecutionStateTest {
     // 3. A is in the sequential sublist: B is placed in the sequential sublist
     @Test
     void useSequentialForCollisionWithSequential() throws DslProcessorException {
-        World parallel = this.createWorld(createThreeAccounts +
+        World parallel = this.createWorldAndProcess(createThreeAccounts +
                 createContractInBlock01 +
                 "transaction_build tx02\n" +
                 "    sender acc1\n" +
@@ -669,7 +675,7 @@ class ParallelExecutionStateTest {
     // 1. A and B are in different parallel sublists with enough gas: C is placed in the sequential sublist
     @Test
     void useSequentialForCollisionWithTwoParallel() throws DslProcessorException {
-        World parallel = this.createWorld(createThreeAccounts +
+        World parallel = this.createWorldAndProcess(createThreeAccounts +
                 "account_new acc4 10000000\n" +
                 createContractInBlock01 +
                 "transaction_build tx02\n" +
@@ -715,7 +721,7 @@ class ParallelExecutionStateTest {
     // 2. A and B are in different parallel sublists without enough gas: C is placed in the sequential sublist
     @Test
     void useSequentialForCollisionWithTwoParallelWithoutGas() throws DslProcessorException {
-        World parallel = this.createWorld(createThreeAccounts +
+        World parallel = this.createWorldAndProcess(createThreeAccounts +
                 "account_new acc4 10000000\n" +
                 createContractInBlock01 +
                 "transaction_build tx02\n" +
@@ -761,7 +767,7 @@ class ParallelExecutionStateTest {
     // 3. A is in a parallel sublist and B is in the sequential sublist: C is placed in the sequential sublist
     @Test
     void useSequentialForCollisionWithSequentialAndParallel() throws DslProcessorException {
-        World parallel = this.createWorld(createThreeAccounts +
+        World parallel = this.createWorldAndProcess(createThreeAccounts +
                 "account_new acc4 10000000\n" +
                 createContractInBlock01 +
                 "transaction_build tx02\n" +
