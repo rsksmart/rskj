@@ -19,6 +19,7 @@
 package co.rsk.core.parallel;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
@@ -27,9 +28,12 @@ import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.core.Transaction;
 import org.ethereum.vm.GasCost;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 class ParallelExecutionStateTest {
     private World createWorld(String dsl, int rskip144) throws DslProcessorException {
@@ -61,6 +65,10 @@ class ParallelExecutionStateTest {
         World parallel = this.createWorld(dsl, 0);
         World series = this.createWorld(dsl, -1);
 
+        compareTwoWorldsAndTestEdges(series, parallel, expectedEdges);
+    }
+
+    private void compareTwoWorldsAndTestEdges(World series, World parallel, short[] expectedEdges) {
         Assertions.assertArrayEquals(
                 this.getStateRoot(series),
                 this.getStateRoot(parallel)
@@ -129,9 +137,21 @@ class ParallelExecutionStateTest {
      *         }
      *     }
      * }
+     *
+     * contract Proxy {
+     *     ReadWrite readWrite;
+     *     constructor (ReadWrite _readWrite) { readWrite = _readWrite; }
+     *     function read() external { readWrite.read(); }
+     *     function write(uint value) external { readWrite.write(value); }
+     *     function update(uint increment) external { readWrite.update(increment); }
+     * }
      */
 
     private final String creationData = "608060405234801561001057600080fd5b50610473806100206000396000f3fe6080604052600436106100745760003560e01c806334b091931161004e57806334b09193146100e957806357de26a41461011257806382ab890a14610129578063e2033a13146101525761007b565b80630d2a2d8d146100805780631b892f87146100975780632f048afa146100c05761007b565b3661007b57005b600080fd5b34801561008c57600080fd5b5061009561017b565b005b3480156100a357600080fd5b506100be60048036038101906100b991906102bb565b610188565b005b3480156100cc57600080fd5b506100e760048036038101906100e291906102bb565b6101a4565b005b3480156100f557600080fd5b50610110600480360381019061010b91906102e8565b6101ae565b005b34801561011e57600080fd5b5061012761024f565b005b34801561013557600080fd5b50610150600480360381019061014b91906102bb565b61025a565b005b34801561015e57600080fd5b50610179600480360381019061017491906102bb565b610275565b005b6000546001819055600080fd5b80600080828254610199919061036a565b925050819055600080fd5b8060008190555050565b600063123498766040516020016101c591906103f3565b6040516020818303038152906040528051906020012060001c905080600260008581526020019081526020016000208190555080600260008481526020019081526020016000208190555060005a90505b5a85610222919061036a565b811015610248576008600a6007848161023e5761023d61040e565b5b0401029150610216565b5050505050565b600054600181905550565b8060008082825461026b919061036a565b9250508190555050565b806000819055600080fd5b600080fd5b6000819050919050565b61029881610285565b81146102a357600080fd5b50565b6000813590506102b58161028f565b92915050565b6000602082840312156102d1576102d0610280565b5b60006102df848285016102a6565b91505092915050565b60008060006060848603121561030157610300610280565b5b600061030f868287016102a6565b9350506020610320868287016102a6565b9250506040610331868287016102a6565b9150509250925092565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b600061037582610285565b915061038083610285565b92508282019050808211156103985761039761033b565b5b92915050565b6000819050919050565b600063ffffffff82169050919050565b6000819050919050565b60006103dd6103d86103d38461039e565b6103b8565b6103a8565b9050919050565b6103ed816103c2565b82525050565b600060208201905061040860008301846103e4565b92915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fdfea264697066735822122081578079990ee4f4eaa55ebeeedcb31b8f178ab346b989e62541a894e60d381164736f6c63430008110033";
+    private String getProxyCreationCode (String address) {
+        return "608060405234801561001057600080fd5b50604051610417380380610417833981810160405281019061003291906100ed565b806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505061011a565b600080fd5b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006100a88261007d565b9050919050565b60006100ba8261009d565b9050919050565b6100ca816100af565b81146100d557600080fd5b50565b6000815190506100e7816100c1565b92915050565b60006020828403121561010357610102610078565b5b6000610111848285016100d8565b91505092915050565b6102ee806101296000396000f3fe608060405234801561001057600080fd5b50600436106100415760003560e01c80632f048afa1461004657806357de26a41461006257806382ab890a1461006c575b600080fd5b610060600480360381019061005b9190610261565b610088565b005b61006a610116565b005b61008660048036038101906100819190610261565b610198565b005b60008054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16632f048afa826040518263ffffffff1660e01b81526004016100e1919061029d565b600060405180830381600087803b1580156100fb57600080fd5b505af115801561010f573d6000803e3d6000fd5b5050505050565b60008054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166357de26a46040518163ffffffff1660e01b8152600401600060405180830381600087803b15801561017e57600080fd5b505af1158015610192573d6000803e3d6000fd5b50505050565b60008054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166382ab890a826040518263ffffffff1660e01b81526004016101f1919061029d565b600060405180830381600087803b15801561020b57600080fd5b505af115801561021f573d6000803e3d6000fd5b5050505050565b600080fd5b6000819050919050565b61023e8161022b565b811461024957600080fd5b50565b60008135905061025b81610235565b92915050565b60006020828403121561027757610276610226565b5b60006102858482850161024c565b91505092915050565b6102978161022b565b82525050565b60006020820190506102b2600083018461028e565b9291505056fea264697066735822122034c249e40cf35f03e8970cf8c91dbaf8426d01814edfcb782e7548b32f6d9e7964736f6c63430008110033000000000000000000000000"
+                + address;
+    }
 
     // call data
     // write(10)
@@ -239,6 +259,83 @@ class ParallelExecutionStateTest {
                 "\n", validate), edges);
     }
 
+    // For tests calling with proxy contract
+    private World processCallWithContract(String firstCall, String secondCall, int rskip144) throws DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(rskip144))
+        );
+
+        World world = new World(receiptStore, config);
+
+        DslParser parser = new DslParser(createThreeAccounts +
+                createContractInBlock01 +
+                "assert_tx_success tx01\n");
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String readWriteAddress = world.getTransactionByName("tx01").getContractAddress().toHexString();
+
+        String createProxy = "transaction_build tx02\n" +
+                "    sender acc3\n" +
+                "    receiverAddress 00\n" +
+                "    data " + getProxyCreationCode(readWriteAddress) + "\n" +
+                "    gas 1200000\n" +
+                "    nonce 1\n" +
+                "    build\n" +
+                "\n" +
+                "block_build b02\n" +
+                "    parent b01\n" +
+                "    transactions tx02\n" +
+                "    build\n" +
+                "\n" +
+                "block_connect b02\n" +
+                "assert_tx_success tx02\n" +
+                "\n";
+
+        String sendTwoTxs = "transaction_build tx03\n" +
+                "    sender acc1\n" +
+                "    contract tx02\n" +
+                "    data " + firstCall + "\n" +
+                "    gas 100000\n" +
+                "    build\n" +
+                "\n" +
+                "transaction_build tx04\n" +
+                "    sender acc2\n" +
+                "    contract tx02\n" +
+                "    data " + secondCall + "\n" +
+                "    gas 100000\n" +
+                "    build\n" +
+                "\n" +
+                "block_build b03\n" +
+                "    parent b02\n" +
+                "    transactions tx03 tx04\n" +
+                "    build\n" +
+                "\n" +
+                "block_connect b03\n" +
+                "assert_tx_success tx03 tx04\n";
+
+        parser = new DslParser(createProxy + sendTwoTxs);
+        processor.processCommands(parser);
+
+        RskAddress proxyAddress = world.getTransactionByName("tx02").getContractAddress();
+        Assertions.assertNotNull(world.getRepository().getCode(proxyAddress));
+
+        List<Transaction> txList = world.getBlockChain().getBestBlock().getTransactionsList();
+        Assertions.assertTrue(proxyAddress.equals(txList.get(0).getReceiveAddress()));
+        Assertions.assertTrue(proxyAddress.equals(txList.get(0).getReceiveAddress()));
+
+        return world;
+    }
+
+    private void createContractAndTestCallWithContract(String firstCall, String secondCall, short[] expectedEdges) throws DslProcessorException {
+        World parallel = processCallWithContract(firstCall, secondCall, 0);
+        World series = processCallWithContract(firstCall, secondCall, 0);
+
+        compareTwoWorldsAndTestEdges(series, parallel, expectedEdges);
+    }
+
+
     // 1. A and B have the same sender account
     @Test
     void sameSender() throws DslProcessorException {
@@ -339,6 +436,11 @@ class ParallelExecutionStateTest {
         this.createContractAndTestCallWith(writeTen, readDataWithRevert, new short[]{ 2 }, false);
     }
 
+    @Test
+    void readWriteWithContract() throws DslProcessorException {
+        this.createContractAndTestCallWithContract(writeTen, readData, new short[]{ 2 });
+    }
+
     // 5. B reads a smart contract variable that A updates (i.e., +=)
     @Test
     void readUpdate() throws DslProcessorException {
@@ -350,6 +452,10 @@ class ParallelExecutionStateTest {
         this.createContractAndTestCallWith(updateByTen, readDataWithRevert, new short[]{ 2 }, false);
     }
 
+    @Test
+    void readUpdateWithContract() throws DslProcessorException {
+        this.createContractAndTestCallWithContract(updateByTen, readData, new short[]{ 2 });
+    }
 
     //6. B writes a smart contract variable that A writes
     @Test
@@ -360,6 +466,11 @@ class ParallelExecutionStateTest {
     @Test
     void writeWriteWithRevert() throws DslProcessorException {
         this.createContractAndTestCallWith(writeTen, writeTenWithRevert, new short[]{ 2 }, false);
+    }
+
+    @Test
+    void writeWriteWithContract() throws DslProcessorException {
+        this.createContractAndTestCallWithContract(writeTen, writeTen, new short[]{ 2 });
     }
 
     // 7. B writes a smart contract variable that A updates
@@ -373,6 +484,11 @@ class ParallelExecutionStateTest {
         this.createContractAndTestCallWith(updateByTen, writeTenWithRevert, new short[]{ 2 }, false);
     }
 
+    @Test
+    void writeUpdateWithContract() throws DslProcessorException {
+        this.createContractAndTestCallWithContract(updateByTen, writeTen, new short[]{ 2 });
+    }
+
     // 8. B writes a smart contract variable that A reads
     @Test
     void writeRead() throws DslProcessorException {
@@ -384,6 +500,11 @@ class ParallelExecutionStateTest {
         this.createContractAndTestCallWith(readData, writeTenWithRevert, new short[]{ 2 }, false);
     }
 
+    @Test
+    void writeReadWithContract() throws DslProcessorException {
+        this.createContractAndTestCallWithContract(readData, writeTen, new short[]{ 2 });
+    }
+
     // 9. B updates a smart contract variable that A writes
     @Test
     void updateWrite() throws DslProcessorException {
@@ -393,6 +514,11 @@ class ParallelExecutionStateTest {
     @Test
     void updateWriteWithRevert() throws DslProcessorException {
         this.createContractAndTestCallWith(writeTen, updateByTenWithRevert, new short[]{ 2 }, false);
+    }
+
+    @Test
+    void updateWriteWithContract() throws DslProcessorException {
+        this.createContractAndTestCallWithContract(writeTen, updateByTen, new short[]{ 2 });
     }
 
     // 10. B updates a smart contract variable that A reads
