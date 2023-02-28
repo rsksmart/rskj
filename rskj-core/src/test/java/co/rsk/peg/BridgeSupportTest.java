@@ -79,6 +79,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -2095,6 +2096,52 @@ class BridgeSupportTest {
         bridgeSupport.updateCollections(tx);
 
         assertEquals(btcTx, provider.getRskTxsWaitingForSignatures().get(tx.getHash()));
+        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+    }
+
+    @Test
+    void rskTxWaitingForSignature_uses_pegoutCreation_rskTxHash_after_rskip_375_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP375)).thenReturn(true);
+
+        BridgeConstants spiedBridgeConstants = spy(BridgeRegTestConstants.getInstance());
+        doReturn(1).when(spiedBridgeConstants).getRsk2BtcMinimumAcceptableConfirmations();
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        Keccak256 pegoutCreationRskTxHash = Keccak256.ZERO_HASH;
+        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L, pegoutCreationRskTxHash));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(2L);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(spiedBridgeConstants)
+            .withProvider(provider)
+            .withExecutionBlock(executionBlock)
+            .withActivations(activations)
+            .build();
+
+        Transaction tx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+        bridgeSupport.updateCollections(tx);
+
+        assertNull(provider.getRskTxsWaitingForSignatures().get(tx.getHash()));
+        assertEquals(btcTx, provider.getRskTxsWaitingForSignatures().get(pegoutCreationRskTxHash));
         assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
     }
 
