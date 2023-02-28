@@ -308,7 +308,7 @@ class ParallelExecutionStateTest {
 
     private void createContractAndTestCallWithContract(String firstCall, String secondCall, short[] expectedEdges) throws DslProcessorException {
         World parallel = processCallWithContract(firstCall, secondCall, 0);
-        World series = processCallWithContract(firstCall, secondCall, 0);
+        World series = processCallWithContract(firstCall, secondCall, -1);
 
         compareTwoWorldsAndTestEdges(series, parallel, expectedEdges);
     }
