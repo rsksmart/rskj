@@ -25,7 +25,9 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeSupport.TxType;
@@ -61,6 +63,8 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -2099,15 +2103,16 @@ class BridgeSupportTest {
         assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
     }
 
-    @Test
-    void rskTxWaitingForSignature_uses_pegoutCreation_rskTxHash_after_rskip_375_activation() throws IOException {
+    private static Stream<BridgeConstants> provideBridgeConstants() {
+        return Stream.of(BridgeRegTestConstants.getInstance(), BridgeTestNetConstants.getInstance(), BridgeMainNetConstants.getInstance());
+    }
+    @ParameterizedTest
+    @MethodSource("provideBridgeConstants")
+    void rskTxWaitingForSignature_uses_pegoutCreation_rskTxHash_after_rskip_375_activation(BridgeConstants bridgeConstants) throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP375)).thenReturn(true);
-
-        BridgeConstants spiedBridgeConstants = spy(BridgeRegTestConstants.getInstance());
-        doReturn(1).when(spiedBridgeConstants).getRsk2BtcMinimumAcceptableConfirmations();
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
@@ -2119,10 +2124,10 @@ class BridgeSupportTest {
         when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         Block executionBlock = mock(Block.class);
-        when(executionBlock.getNumber()).thenReturn(2L);
+        when(executionBlock.getNumber()).thenReturn(2L + bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(spiedBridgeConstants)
+            .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
             .withExecutionBlock(executionBlock)
             .withActivations(activations)
