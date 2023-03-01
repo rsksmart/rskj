@@ -84,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -149,7 +150,7 @@ class BridgeSupportTest {
             .withProvider(provider)
             .build();
 
-        Assertions.assertThrows(NullPointerException.class, () -> bridgeSupport.voteFeePerKbChange(tx, null));
+        assertThrows(NullPointerException.class, () -> bridgeSupport.voteFeePerKbChange(tx, null));
 
         verify(provider, never()).setFeePerKb(any());
     }
@@ -2150,6 +2151,55 @@ class BridgeSupportTest {
         assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
     }
 
+    @Test()
+    void rskTxWaitingForSignature_override_entry_attempt_after_rskip_375_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP375)).thenReturn(true);
+
+        BridgeConstants spiedBridgeConstants = spy(BridgeRegTestConstants.getInstance());
+        doReturn(1).when(spiedBridgeConstants).getRsk2BtcMinimumAcceptableConfirmations();
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        Keccak256 pegoutCreationRskTxHash = Keccak256.ZERO_HASH;
+        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L, pegoutCreationRskTxHash));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+
+        TreeMap<Keccak256, BtcTransaction> txsWaitingForSignatures = new TreeMap<>();
+
+        txsWaitingForSignatures.put(pegoutCreationRskTxHash, btcTx);
+        when(provider.getRskTxsWaitingForSignatures()).thenReturn(txsWaitingForSignatures);
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(2L);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(spiedBridgeConstants)
+            .withProvider(provider)
+            .withExecutionBlock(executionBlock)
+            .withActivations(activations)
+            .build();
+
+        Transaction tx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            bridgeSupport.updateCollections(tx);
+        });
+    }
+
     @Test
     void when_registerBtcTransaction_sender_not_recognized_before_rskip170_no_lock_and_no_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -3264,7 +3314,7 @@ class BridgeSupportTest {
             .withBtcBlockStoreFactory(mockFactory)
             .build();
 
-        Assertions.assertThrows(VerificationException.EmptyInputsOrOutputs.class, () -> bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize()));
+        assertThrows(VerificationException.EmptyInputsOrOutputs.class, () -> bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize()));
 
         // When we send a segwit tx when the fork is not enabled, the tx is rejected because it does not have the
         // expected input format, therefore this method is never reached
@@ -4693,7 +4743,7 @@ class BridgeSupportTest {
         mockChainOfStoredBlocks(btcBlockStore, mock(BtcBlock.class), 5, height);
         when(btcBlockStore.getFromCache(mock(Sha256Hash.class))).thenReturn(new StoredBlock(mock(BtcBlock.class), BigInteger.ZERO, 0));
 
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.registerBtcCoinbaseTransaction(
+        assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.registerBtcCoinbaseTransaction(
             txWithoutWitness.bitcoinSerialize(),
             mock(Sha256Hash.class),
             pmt.bitcoinSerialize(),
@@ -4743,7 +4793,7 @@ class BridgeSupportTest {
         mockChainOfStoredBlocks(btcBlockStore, mock(BtcBlock.class), 5, height);
         when(btcBlockStore.getFromCache(mock(Sha256Hash.class))).thenReturn(new StoredBlock(mock(BtcBlock.class), BigInteger.ZERO, 0));
 
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.registerBtcCoinbaseTransaction(
+        assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.registerBtcCoinbaseTransaction(
             txWithoutWitness.bitcoinSerialize(),
             mock(Sha256Hash.class),
             new byte[]{6, 6, 6},
@@ -4873,7 +4923,7 @@ class BridgeSupportTest {
         byte[] btcTxSerialized = tx.bitcoinSerialize();
         byte[] pmtSerialized = pmt.bitcoinSerialize();
         byte[] bytes = Sha256Hash.ZERO_HASH.getBytes();
-        Assertions.assertThrows(VerificationException.class, () -> bridgeSupport.registerBtcCoinbaseTransaction(
+        assertThrows(VerificationException.class, () -> bridgeSupport.registerBtcCoinbaseTransaction(
             btcTxSerialized,
             hash,
             pmtSerialized,
@@ -5021,7 +5071,7 @@ class BridgeSupportTest {
 
         when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(null);
 
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.registerBtcCoinbaseTransaction(
+        assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.registerBtcCoinbaseTransaction(
             txWithoutWitness.bitcoinSerialize(),
             mock(Sha256Hash.class),
             pmt.bitcoinSerialize(),
@@ -5278,7 +5328,7 @@ class BridgeSupportTest {
             mockFactory
         );
 
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(
+        assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(
             btcTx.getHash(),
             btcTxHeight,
             pmtSerialized,
@@ -5347,7 +5397,7 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> {
+        assertThrows(BridgeIllegalArgumentException.class, () -> {
             BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
                 mock(BridgeStorageProvider.class),
@@ -5403,7 +5453,7 @@ class BridgeSupportTest {
         Sha256Hash hash = btcTx.getHash();
         byte[] pmtSerialized = pmt.bitcoinSerialize();
         byte[] btcTxSerialized = btcTx.bitcoinSerialize();
-        Assertions.assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(hash, btcTxHeight, pmtSerialized, btcTxSerialized));
+        assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(hash, btcTxHeight, pmtSerialized, btcTxSerialized));
     }
 
     @Test
@@ -5448,7 +5498,7 @@ class BridgeSupportTest {
         Sha256Hash hash = btcTx.getHash();
         byte[] pmtSerialized = pmt.bitcoinSerialize();
         byte[] decode = Hex.decode("00000000000100");
-        Assertions.assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(hash, 0, pmtSerialized, decode));
+        assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(hash, 0, pmtSerialized, decode));
     }
 
     @Test
@@ -6067,7 +6117,7 @@ class BridgeSupportTest {
         BtcTransaction btcTx = mock(BtcTransaction.class);
         when(btcTx.getValueSentToMe(any())).thenReturn(Coin.valueOf(1));
 
-        Assertions.assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.processPegIn(
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.processPegIn(
             btcTx,
             mock(Transaction.class),
             0,
