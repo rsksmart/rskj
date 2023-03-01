@@ -19,6 +19,7 @@
 package org.ethereum.rpc;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
@@ -30,6 +31,8 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.util.HexUtils;
+
+import javax.annotation.Nullable;
 
 /**
  * Created by ajlopez on 17/01/2018.
@@ -64,57 +67,33 @@ public class LogFilter extends Filter {
         add(new LogFilterEvent(new LogFilterElement(logInfo, b, txIndex, tx, logIdx)));
     }
 
-    private void onTransactionCommon(TransactionInfo txInfo, Block block, int txIndex) {
+    void onTransaction(Transaction tx, Block block, int txIndex, boolean reverseLogIdxOrder) {
+        TransactionInfo txInfo = blockchain.getTransactionInfoForBlock(tx, block.getHash().getBytes());
         TransactionReceipt receipt = txInfo.getReceipt();
 
         LogFilterElement[] logs = new LogFilterElement[receipt.getLogInfoList().size()];
 
         for (int i = 0; i < logs.length; i++) {
-            LogInfo logInfo = receipt.getLogInfoList().get(i);
+            int logIdx = reverseLogIdxOrder ? logs.length - i - 1 : i;
+
+            LogInfo logInfo = receipt.getLogInfoList().get(logIdx);
 
             if (addressesTopicsFilter.matchesExactly(logInfo)) {
-                onLogMatch(logInfo, block, txIndex, receipt.getTransaction(), i);
+                onLogMatch(logInfo, block, txIndex, receipt.getTransaction(), logIdx);
             }
         }
     }
 
-    void onTransaction(Transaction tx, Block block, int txIndex) {
-        TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash().getBytes());
-        if (txInfo == null) {
-            return;
-        }
-        onTransactionCommon(txInfo, block, txIndex);
-    }
-
-    void onTransactionFromMainChain(Transaction tx, Block blockMainChain, int txIndex) {
-        TransactionInfo txInfo = blockchain.getTransactionInfoForMainChainBlock(tx, blockMainChain);
-        if (txInfo == null) {
-            return;
-        }
-        onTransactionCommon(txInfo, blockMainChain, txIndex);
-    }
-
-    void onBlock(Block block) {
+    void onBlock(Block block, boolean reverseTxOrder) {
         if (!addressesTopicsFilter.matchBloom(new Bloom(block.getLogBloom()))) {
             return;
         }
 
-        int txIdx = 0;
-        for (Transaction tx : block.getTransactionsList()) {
-            onTransaction(tx, block, txIdx);
-            txIdx++;
-        }
-    }
+        List<Transaction> txs = block.getTransactionsList();
 
-    void onBlockFromMainChain(Block blockMainChain) {
-        if (!addressesTopicsFilter.matchBloom(new Bloom(blockMainChain.getLogBloom()))) {
-            return;
-        }
-
-        int txIdx = 0;
-        for (Transaction tx : blockMainChain.getTransactionsList()) {
-            onTransactionFromMainChain(tx, blockMainChain, txIdx);
-            txIdx++;
+        for (int i = 0; i < txs.size(); i++) {
+            int txIdx = reverseTxOrder ? txs.size() - i - 1 : i;
+            onTransaction(txs.get(txIdx), block, txIdx, reverseTxOrder);
         }
     }
 
@@ -122,10 +101,10 @@ public class LogFilter extends Filter {
     public void newBlockReceived(Block b) {
         if (this.fromLatestBlock) {
             this.clearEvents();
-            onBlock(b);
+            onBlock(b, false);
         }
         else if (this.toLatestBlock) {
-            onBlock(b);
+            onBlock(b, false);
         }
     }
 
@@ -224,7 +203,6 @@ public class LogFilter extends Filter {
     }
 
     private static void retrieveHistoricalData(FilterRequest fr, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) {
-
         if (fr.getBlockHash() != null) {
             processSingleBlockByHash(fr.getBlockHash(), blockchain, filter, blocksBloomStore);
             return;
@@ -241,10 +219,9 @@ public class LogFilter extends Filter {
             // need to add historical data
             blockTo = blockTo == null ? blockchain.getBestBlock() : blockTo;
 
-            processBlocks(blockFrom.getNumber(), blockTo.getNumber(), filter, blockchain, blocksBloomStore);
-        }
-        else if ("latest".equalsIgnoreCase(fr.getFromBlock())) {
-            filter.onBlock(blockchain.getBestBlock());
+            processBlocks(blockFrom, blockTo, filter, blockchain, blocksBloomStore);
+        } else if ("latest".equalsIgnoreCase(fr.getFromBlock())) {
+            filter.onBlock(blockchain.getBestBlock(), false);
         }
     }
 
@@ -255,47 +232,75 @@ public class LogFilter extends Filter {
             return;
         }
 
-        long blockNumber = blockByHash.getNumber();
-        processBlocks(blockNumber, blockNumber, filter, blockchain, blocksBloomStore);
+        processBlocks(blockByHash, blockByHash, filter, blockchain, blocksBloomStore);
     }
 
-    private static void processBlocks(long fromBlockNumber, long toBlockNumber, LogFilter filter, Blockchain blockchain, BlocksBloomStore blocksBloomStore) {
-        BlocksBloom auxiliaryBlocksBloom = null;
-        long bestBlockNumber = blockchain.getBestBlock().getNumber();
+    private static void processBlocks(Block fromBlock, Block toBlock, LogFilter filter, Blockchain blockchain, BlocksBloomStore blocksBloomStore) {
+        final long bestBlockNumber = blockchain.getBestBlock().getNumber();
 
-        for (long blockNum = fromBlockNumber; blockNum <= toBlockNumber; blockNum++) {
-            boolean isConfirmedBlock = blockNum <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
+        BlocksBloom bloomAccumulator = null;
 
-            if (isConfirmedBlock) {
-                if (blocksBloomStore.firstNumberInRange(blockNum) == blockNum) {
-                    if (blocksBloomStore.hasBlockNumber(blockNum)) {
-                        BlocksBloom blocksBloom = blocksBloomStore.getBlocksBloomByNumber(blockNum);
+        Block block = toBlock;
+        while (block != null && block.getNumber() >= fromBlock.getNumber()) {
+            boolean isConfirmedBlock = block.getNumber() <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
 
-                        if (!filter.addressesTopicsFilter.matchBloom(blocksBloom.getBloom())) {
-                            blockNum = blocksBloomStore.lastNumberInRange(blockNum);
-                            continue;
-                        }
-                    }
+            BlocksBloom blocksBloom = isConfirmedBlock ? blocksBloomStore.getBlocksBloomByNumber(block.getNumber()) : null;
+            boolean hasBloom = blocksBloom != null;
 
-                    auxiliaryBlocksBloom = new BlocksBloom();
-                }
-
-                Block blockMainChain = blockchain.getBlockByNumber(blockNum);
-                if (auxiliaryBlocksBloom != null) {
-                    auxiliaryBlocksBloom.addBlockBloom(blockNum, new Bloom(blockMainChain.getLogBloom()));
-                }
-
-                if (auxiliaryBlocksBloom != null && blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
-                    blocksBloomStore.addBlocksBloom(auxiliaryBlocksBloom);
-                }
-
-                filter.onBlockFromMainChain(blockMainChain);
+            if (hasBloom && !bloomMatches(blocksBloom, filter)) {
+                block = getBlockToSkipToOrNullIfDone(block, fromBlock.getNumber(), blocksBloomStore, blockchain);
+                continue;
             }
-            else {
-                Block blockMainChain = blockchain.getBlockByNumber(blockNum);
-                filter.onBlockFromMainChain(blockMainChain);
+
+            boolean needsBloom = isConfirmedBlock && !hasBloom;
+            if (needsBloom) {
+                bloomAccumulator = addBlockBloom(block, bloomAccumulator, blocksBloomStore);
             }
+
+            // reverseTxOrder=true to process txs in reverse order for later complete list reverse
+            filter.onBlock(block, true);
+            block = blockchain.getBlockByHash(block.getParentHash().getBytes());
         }
+
+        // sort in a from-to fashion after looping in reverse order
+        filter.reverseEvents();
+    }
+
+    private static boolean bloomMatches(BlocksBloom blocksBloom, LogFilter filter) {
+        return filter.addressesTopicsFilter.matchBloom(blocksBloom.getBloom());
+    }
+
+    @Nullable
+    private static BlocksBloom addBlockBloom(Block block, BlocksBloom bloomAccumulator, BlocksBloomStore blocksBloomStore) {
+        // reset bloomAccumulator on every confirmed lastInRange block to start a new bloom
+        if (isLastInRange(block, blocksBloomStore)) {
+            bloomAccumulator = new BlocksBloom();
+        }
+
+        // start accumulating blocks the first time a lastInRange block is reached to keep only complete blooms
+        if (bloomAccumulator == null) {
+            return null;
+        }
+
+        bloomAccumulator.addBlockBloomBackwards(block.getNumber(), new Bloom(block.getLogBloom()));
+
+        boolean firstInRange = blocksBloomStore.firstNumberInRange(block.getNumber()) == block.getNumber();
+        if (firstInRange) {
+            blocksBloomStore.addBlocksBloom(bloomAccumulator);
+            bloomAccumulator = null;
+        }
+
+        return bloomAccumulator;
+    }
+
+    @Nullable
+    private static Block getBlockToSkipToOrNullIfDone(Block currentBlock, long minBlock, BlocksBloomStore blocksBloomStore, Blockchain blockchain) {
+        long candidateHeight = blocksBloomStore.firstNumberInRange(currentBlock.getNumber()) - 1;
+        return candidateHeight < minBlock ? null : blockchain.getBlockByNumber(candidateHeight);
+    }
+
+    private static boolean isLastInRange(Block block, BlocksBloomStore blocksBloomStore) {
+        return blocksBloomStore.lastNumberInRange(block.getNumber()) == block.getNumber();
     }
 
     private static boolean isBlockWord(String id) {

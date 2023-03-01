@@ -22,6 +22,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -69,6 +70,10 @@ public class Filter {
 
     protected synchronized void add(FilterEvent evt) {
         events.add(evt);
+    }
+
+    protected void reverseEvents() {
+        Collections.reverse(this.events);
     }
 
     public void newBlockReceived(Block b) {

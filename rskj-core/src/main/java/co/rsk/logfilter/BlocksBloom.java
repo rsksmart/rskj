@@ -67,12 +67,22 @@ public class BlocksBloom {
     }
 
     public void addBlockBloom(long blockNumber, Bloom blockBloom) {
+        addBlockBloomInternal(blockNumber, blockBloom, false);
+    }
+
+    public void addBlockBloomBackwards(long blockNumber, Bloom blockBloom) {
+        addBlockBloomInternal(blockNumber, blockBloom, true);
+    }
+
+    private void addBlockBloomInternal(long blockNumber, Bloom blockBloom, boolean reverseOrder) {
+        long nextBlock = reverseOrder ? toBlock - 1 : toBlock + 1;
+
         if (this.empty) {
             this.fromBlock = blockNumber;
             this.toBlock = blockNumber;
             this.empty = false;
         }
-        else if (blockNumber == toBlock + 1) {
+        else if (blockNumber == nextBlock) {
             this.toBlock = blockNumber;
         }
         else {
