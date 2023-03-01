@@ -1269,6 +1269,7 @@ public class BridgeSupport {
         Keccak256 rskTxHash;
         if (activations.isActive(ConsensusRule.RSKIP375)){
             rskTxHash = entry.getRskTxHash();
+            checkIfEntryExistsInTxsWaitingForSignatures(rskTxHash, entry.getTransaction(), txsWaitingForSignatures);
         }
         // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
         else if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
@@ -1280,6 +1281,26 @@ public class BridgeSupport {
             rskTxHash = rskTx.getHash();
         }
         return rskTxHash;
+    }
+
+    private void checkIfEntryExistsInTxsWaitingForSignatures(Keccak256 rskTxHash, BtcTransaction btcTransaction, Map<Keccak256, BtcTransaction> txsWaitingForSignatures) {
+        if (txsWaitingForSignatures.containsKey(rskTxHash)) {
+            logger.error(
+                "[checkIfEntryExistsInTxsWaitingForSignatures] An entry for the given rskTxHash {} already exists. Entry " +
+                    "overriding for txsWaitingForSignatures map is not allowed." +
+                "Existing btcTx value: {}" +
+                "btcTx value trying to be put: {}" +
+                rskTxHash,
+                txsWaitingForSignatures.get(rskTxHash),
+                btcTransaction
+            );
+            throw new IllegalStateException(
+                String.format(
+                    "An entry for the given rskTxHash {} already exists. Entry overriding for txsWaitingForSignatures map is not allowed." +
+                        rskTxHash
+                )
+            );
+        }
     }
 
     private void updateFederationCreationBlockHeights() {
