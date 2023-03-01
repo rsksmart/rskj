@@ -694,4 +694,8 @@ public class TransactionExecutor {
     public PrecompiledContracts getPrecompiledContracts() {
         return precompiledContracts;
     }
+
+    public boolean precompiledContractHasBeenCalled() {
+        return program.precompiledContractHasBeenCalled();
+    }
 }
