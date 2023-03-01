@@ -1257,6 +1257,15 @@ public class BridgeSupport {
 
         ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
 
+        Keccak256 txWaitingForSignatureKey = getTxWaitingForSignatureKey(rskTx, entry);
+        txsWaitingForSignatures.put(txWaitingForSignatureKey, entry.getTransaction());
+
+        if(activations.isActive(ConsensusRule.RSKIP326)) {
+            eventLogger.logPegoutConfirmed(entry.getTransaction().getHash(), entry.getRskBlockNumber());
+        }
+    }
+
+    private Keccak256 getTxWaitingForSignatureKey(Transaction rskTx, ReleaseTransactionSet.Entry entry) {
         Keccak256 rskTxHash;
         if (activations.isActive(ConsensusRule.RSKIP375)){
             rskTxHash = entry.getRskTxHash();
@@ -1270,12 +1279,7 @@ public class BridgeSupport {
         else {
             rskTxHash = rskTx.getHash();
         }
-
-        txsWaitingForSignatures.put(rskTxHash, entry.getTransaction());
-
-        if(activations.isActive(ConsensusRule.RSKIP326)) {
-            eventLogger.logPegoutConfirmed(entry.getTransaction().getHash(), entry.getRskBlockNumber());
-        }
+        return rskTxHash;
     }
 
     private void updateFederationCreationBlockHeights() {
