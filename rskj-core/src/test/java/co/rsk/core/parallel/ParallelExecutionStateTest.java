@@ -62,7 +62,7 @@ class ParallelExecutionStateTest {
      * @param expectedEdges the tx execution edges to assert equals
      * @throws DslProcessorException
      */
-    private void testProcessingPreAndPostRSKIP144(String dsl, short[] expectedEdges) throws DslProcessorException {
+    private void compareStateRootPreAndPostRSKIP144AndTestEdges(String dsl, short[] expectedEdges) throws DslProcessorException {
         World parallel = this.createWorldAndProcess(dsl, 0);
         World series = this.createWorldAndProcess(dsl, -1);
 
@@ -184,7 +184,7 @@ class ParallelExecutionStateTest {
                     "block_connect b01\n" +
                     "\n";
 
-    private final String buildBlockWithToTxs = "block_build b02\n" +
+    private final String buildBlockWithTwoTxs = "block_build b02\n" +
             "    parent b01\n" +
             "    transactions tx02 tx03\n" +
             "    build\n" +
@@ -203,7 +203,7 @@ class ParallelExecutionStateTest {
         return createThreeAccounts +
                 createContractInBlock01 +
                 txs +
-                buildBlockWithToTxs +
+                buildBlockWithTwoTxs +
                 (validate ? validateTxs : "");
     }
 
@@ -217,7 +217,7 @@ class ParallelExecutionStateTest {
      * @throws DslProcessorException
      */
     private void createContractAndTestCallWith(String firstCall, String secondCall, short[] edges, boolean validate) throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144(skeleton(
+        this.compareStateRootPreAndPostRSKIP144AndTestEdges(skeleton(
                 "transaction_build tx02\n" +
                 "    sender acc1\n" +
                 "    contract tx01\n" +
@@ -315,12 +315,12 @@ class ParallelExecutionStateTest {
 
     @Test
     void empty() throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144("block_chain g00", null);
+        this.compareStateRootPreAndPostRSKIP144AndTestEdges("block_chain g00", null);
     }
 
     @Test
     void oneTx() throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144("account_new acc1 10000000\n" +
+        this.compareStateRootPreAndPostRSKIP144AndTestEdges("account_new acc1 10000000\n" +
                 "account_new acc2 0\n" +
                 "\n" +
                 "transaction_build tx01\n" +
@@ -345,7 +345,7 @@ class ParallelExecutionStateTest {
     // 1. A and B have the same sender account
     @Test
     void sameSender() throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144("account_new acc1 10000000\n" +
+        this.compareStateRootPreAndPostRSKIP144AndTestEdges("account_new acc1 10000000\n" +
                 "account_new acc2 0\n" +
                 "\n" +
                 "transaction_build tx01\n" +
@@ -379,7 +379,7 @@ class ParallelExecutionStateTest {
     // 2. A and B transfer value to the same destination account
     @Test
     void sameRecipient() throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144("account_new acc1 10000000\n" +
+        this.compareStateRootPreAndPostRSKIP144AndTestEdges("account_new acc1 10000000\n" +
                 "account_new acc2 10000000\n" +
                 "account_new acc3 0\n" +
                 "\n" +
@@ -412,7 +412,7 @@ class ParallelExecutionStateTest {
     // 3. A and B transfer value to the same smart contract
     @Test
     void sameContractRecipient() throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144(createThreeAccounts +
+        this.compareStateRootPreAndPostRSKIP144AndTestEdges(createThreeAccounts +
                 createContractInBlock01 +
                 "transaction_build tx02\n" +
                 "    sender acc1\n" +
@@ -428,7 +428,7 @@ class ParallelExecutionStateTest {
                 "    gas 100000\n" +
                 "    build\n" +
                 "\n"
-                + buildBlockWithToTxs + validateTxs, new short[]{ 2 });
+                + buildBlockWithTwoTxs + validateTxs, new short[]{ 2 });
     }
 
     // 4. B reads a smart contract variable that A writes
@@ -542,7 +542,7 @@ class ParallelExecutionStateTest {
     // 12. B calls a smart contract that A creates
     @Test
     void callCreatedContract() throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144("account_new acc1 10000000\n" +
+        this.compareStateRootPreAndPostRSKIP144AndTestEdges("account_new acc1 10000000\n" +
                 "account_new acc2 10000000\n" +
                 "\n" +
                 "transaction_build tx01\n" +
@@ -573,7 +573,7 @@ class ParallelExecutionStateTest {
     // 13. B transfers value to a smart contract that A creates
     @Test
     void sendToCreatedContract() throws DslProcessorException {
-        this.testProcessingPreAndPostRSKIP144("account_new acc1 10000000\n" +
+        this.compareStateRootPreAndPostRSKIP144AndTestEdges("account_new acc1 10000000\n" +
                 "account_new acc2 10000000\n" +
                 "\n" +
                 "transaction_build tx01\n" +
