@@ -115,5 +115,19 @@ class TransactionResultDTOTest {
         Assertions.assertEquals(HEX_ZERO, dto.getR());
         Assertions.assertEquals(HEX_ZERO, dto.getS());
     }
+
+    @Test
+    void transactionResultHasType() {
+        Transaction originalTransaction = CallTransaction.createCallTransaction(
+                1, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), chainId);
+
+        originalTransaction.sign(new byte[]{});
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertEquals("0x0", dto.getType());
+    }
 }
 

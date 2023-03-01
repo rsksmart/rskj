@@ -153,4 +153,33 @@ class TransactionReceiptDTOTest {
         assertNotNull(actualStatus);
         assertEquals("0x0", actualStatus);
     }
+    @Test
+    void testTypeField() {
+        RskAddress rskAddress = RskAddress.nullAddress();
+        Keccak256 hash = Keccak256.ZERO_HASH;
+        Bloom bloom = new Bloom();
+
+        Block block = mock(Block.class);
+        when(block.getHash()).thenReturn(hash);
+
+        Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(hash);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
+        when(transaction.getReceiveAddress()).thenReturn(rskAddress);
+
+        TransactionReceipt txReceipt = mock(TransactionReceipt.class);
+        when(txReceipt.getTransaction()).thenReturn(transaction);
+        when(txReceipt.getLogInfoList()).thenReturn(Collections.emptyList());
+        when(txReceipt.getBloomFilter()).thenReturn(bloom);
+        when(txReceipt.getStatus()).thenReturn(ByteUtil.EMPTY_BYTE_ARRAY);
+
+        TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
+
+        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        String actualType = transactionReceiptDTO.getType();
+
+        assertNotNull(actualType);
+        assertEquals("0x0", actualType);
+    }
 }
