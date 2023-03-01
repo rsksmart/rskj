@@ -2151,6 +2151,53 @@ class BridgeSupportTest {
         assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
     }
 
+    @ParameterizedTest
+    @MethodSource("provideBridgeConstants")
+    void rskTxWaitingForSignature_override_entry_is_allowed_before_rskip_375_activation(BridgeConstants bridgeConstants) throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP375)).thenReturn(false);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        Keccak256 pegoutCreationRskTxHash = Keccak256.ZERO_HASH;
+        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L, pegoutCreationRskTxHash));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+
+        TreeMap<Keccak256, BtcTransaction> txsWaitingForSignatures = new TreeMap<>();
+
+        txsWaitingForSignatures.put(pegoutCreationRskTxHash, btcTx);
+        when(provider.getRskTxsWaitingForSignatures()).thenReturn(txsWaitingForSignatures);
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(2L + bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations());
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withExecutionBlock(executionBlock)
+            .withActivations(activations)
+            .build();
+
+        Transaction tx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+        bridgeSupport.updateCollections(tx);
+
+        assertEquals(btcTx, provider.getRskTxsWaitingForSignatures().get(tx.getHash()));
+        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+    }
+
     @Test()
     void rskTxWaitingForSignature_override_entry_attempt_after_rskip_375_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -2195,9 +2242,7 @@ class BridgeSupportTest {
             .value(DUST_AMOUNT)
             .build();
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            bridgeSupport.updateCollections(tx);
-        });
+        assertThrows(IllegalStateException.class, () -> bridgeSupport.updateCollections(tx));
     }
 
     @Test
