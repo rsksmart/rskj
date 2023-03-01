@@ -1258,6 +1258,10 @@ public class BridgeSupport {
         ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
 
         Keccak256 txWaitingForSignatureKey = getTxWaitingForSignatureKey(rskTx, entry);
+        if (activations.isActive(ConsensusRule.RSKIP375)){
+            checkIfEntryExistsInTxsWaitingForSignatures(txWaitingForSignatureKey, entry.getTransaction(), txsWaitingForSignatures);
+        }
+
         txsWaitingForSignatures.put(txWaitingForSignatureKey, entry.getTransaction());
 
         if(activations.isActive(ConsensusRule.RSKIP326)) {
@@ -1269,7 +1273,6 @@ public class BridgeSupport {
         Keccak256 rskTxHash;
         if (activations.isActive(ConsensusRule.RSKIP375)){
             rskTxHash = entry.getRskTxHash();
-            checkIfEntryExistsInTxsWaitingForSignatures(rskTxHash, entry.getTransaction(), txsWaitingForSignatures);
         }
         // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
         else if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
@@ -1287,17 +1290,13 @@ public class BridgeSupport {
         if (txsWaitingForSignatures.containsKey(rskTxHash)) {
             logger.error(
                 "[checkIfEntryExistsInTxsWaitingForSignatures] An entry for the given rskTxHash {} already exists. Entry " +
-                    "overriding for txsWaitingForSignatures map is not allowed." +
-                "Existing btcTx value: {}" +
-                "btcTx value trying to be put: {}" +
-                rskTxHash,
-                txsWaitingForSignatures.get(rskTxHash),
-                btcTransaction
+                    "overriding is not allowed for txsWaitingForSignatures map.",
+                rskTxHash
             );
             throw new IllegalStateException(
                 String.format(
-                    "An entry for the given rskTxHash {} already exists. Entry overriding for txsWaitingForSignatures map is not allowed." +
-                        rskTxHash
+                    "An entry for the given rskTxHash {} already exists. Entry overriding is not allowed for txsWaitingForSignatures map.",
+                    rskTxHash
                 )
             );
         }
