@@ -2160,17 +2160,12 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP375)).thenReturn(false);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        BtcTransaction btcTx = mock(BtcTransaction.class);
+        BtcTransaction btcTxNewEntryValue = mock(BtcTransaction.class);
         Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
         Keccak256 pegoutCreationRskTxHash = Keccak256.ZERO_HASH;
-        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L, pegoutCreationRskTxHash));
+        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTxNewEntryValue, 1L, pegoutCreationRskTxHash));
         when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-
-        TreeMap<Keccak256, BtcTransaction> txsWaitingForSignatures = new TreeMap<>();
-
-        txsWaitingForSignatures.put(pegoutCreationRskTxHash, btcTx);
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(txsWaitingForSignatures);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(2L + bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations());
@@ -2192,9 +2187,20 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+
+        TreeMap<Keccak256, BtcTransaction> txsWaitingForSignatures = new TreeMap<>();
+        BtcTransaction existingBtcTxEntryValue = mock(BtcTransaction.class);
+        txsWaitingForSignatures.put(tx.getHash(), existingBtcTxEntryValue);
+        when(provider.getRskTxsWaitingForSignatures()).thenReturn(txsWaitingForSignatures);
+
         bridgeSupport.updateCollections(tx);
 
-        assertEquals(btcTx, provider.getRskTxsWaitingForSignatures().get(tx.getHash()));
+        BtcTransaction updatedBtcTxEntryValue = provider.getRskTxsWaitingForSignatures().get(tx.getHash());
+
+        assertEquals(btcTxNewEntryValue, updatedBtcTxEntryValue);
+        assertNotEquals(existingBtcTxEntryValue, updatedBtcTxEntryValue);
+        assertNull(provider.getRskTxsWaitingForSignatures().get(pegoutCreationRskTxHash));
+        assertEquals(1, provider.getRskTxsWaitingForSignatures().size());
         assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
     }
 

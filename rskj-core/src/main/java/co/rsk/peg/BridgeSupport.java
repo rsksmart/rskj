@@ -1259,7 +1259,7 @@ public class BridgeSupport {
 
         Keccak256 txWaitingForSignatureKey = getTxWaitingForSignatureKey(rskTx, entry);
         if (activations.isActive(ConsensusRule.RSKIP375)){
-            checkIfEntryExistsInTxsWaitingForSignatures(txWaitingForSignatureKey, entry.getTransaction(), txsWaitingForSignatures);
+            checkIfEntryExistsInTxsWaitingForSignatures(txWaitingForSignatureKey, txsWaitingForSignatures);
         }
 
         txsWaitingForSignatures.put(txWaitingForSignatureKey, entry.getTransaction());
@@ -1270,35 +1270,26 @@ public class BridgeSupport {
     }
 
     private Keccak256 getTxWaitingForSignatureKey(Transaction rskTx, ReleaseTransactionSet.Entry entry) {
-        Keccak256 rskTxHash;
         if (activations.isActive(ConsensusRule.RSKIP375)){
-            rskTxHash = entry.getRskTxHash();
+            return entry.getRskTxHash();
         }
         // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
-        else if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
+        if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
             // The release transaction may have been created prior to the Consensus Rule activation
             // therefore it won't have a rskTxHash value, fallback to this transaction's hash
-            rskTxHash = entry.getRskTxHash() == null ? rskTx.getHash() : entry.getRskTxHash();
+            return entry.getRskTxHash() == null ? rskTx.getHash() : entry.getRskTxHash();
         }
-        else {
-            rskTxHash = rskTx.getHash();
-        }
-        return rskTxHash;
+        return rskTx.getHash();
     }
 
-    private void checkIfEntryExistsInTxsWaitingForSignatures(Keccak256 rskTxHash, BtcTransaction btcTransaction, Map<Keccak256, BtcTransaction> txsWaitingForSignatures) {
+    private void checkIfEntryExistsInTxsWaitingForSignatures(Keccak256 rskTxHash, Map<Keccak256, BtcTransaction> txsWaitingForSignatures) {
         if (txsWaitingForSignatures.containsKey(rskTxHash)) {
-            logger.error(
-                "[checkIfEntryExistsInTxsWaitingForSignatures] An entry for the given rskTxHash {} already exists. Entry " +
-                    "overriding is not allowed for txsWaitingForSignatures map.",
+            String message = String.format(
+                "An entry for the given rskTxHash %s already exists. Entry overriding is not allowed for txsWaitingForSignatures map.",
                 rskTxHash
             );
-            throw new IllegalStateException(
-                String.format(
-                    "An entry for the given rskTxHash {} already exists. Entry overriding is not allowed for txsWaitingForSignatures map.",
-                    rskTxHash
-                )
-            );
+            logger.error("[checkIfEntryExistsInTxsWaitingForSignatures] {}", message);
+            throw new IllegalStateException(message);
         }
     }
 
