@@ -29,7 +29,7 @@ public class HealthCheckModule extends RestModule {
 
     @Override
     public DefaultFullHttpResponse processRequest(String uri, HttpMethod method) {
-        if ("/health-check/ping".equals(uri) && method.equals(HttpMethod.GET)) {
+        if (uri.endsWith("/ping") && method.equals(HttpMethod.GET)) {
             return RestUtils.createResponse("pong");
         }
 

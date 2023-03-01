@@ -20,7 +20,6 @@ package co.rsk.rest;
 import co.rsk.rest.modules.RestModule;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +32,6 @@ import java.util.Objects;
 public class RestServerDispatcher {
     private static final Logger logger = LoggerFactory.getLogger(RestServerDispatcher.class);
 
-    private static final String NOT_FOUND = "Not Found";
-
     private final List<RestModule> moduleList;
 
     public RestServerDispatcher(List<RestModule> moduleList) {
@@ -44,19 +41,19 @@ public class RestServerDispatcher {
 
     public DefaultFullHttpResponse dispatch(HttpRequest request) throws URISyntaxException {
 
-        String uri = new URI(request.getUri()).getPath();
+        String uri = new URI(request.uri()).getPath();
 
         RestModule restModule = moduleList.stream()
                 .filter(module -> uri.startsWith(module.getUri())).findFirst().orElse(null);
 
         if (restModule == null) {
             logger.info("Handler Not Found.");
-            return RestUtils.createResponse(NOT_FOUND, HttpResponseStatus.NOT_FOUND);
+            return RestUtils.createNotFoundResponse();
         }
 
         if (restModule.isActive()) {
             logger.info("Dispatching request.");
-            DefaultFullHttpResponse response = restModule.processRequest(uri, request.getMethod());
+            DefaultFullHttpResponse response = restModule.processRequest(uri, request.method());
 
             if (response != null) {
                 logger.info("Returning response.");
@@ -64,11 +61,11 @@ public class RestServerDispatcher {
             }
 
             logger.info("Request received but module could not process it.");
-            return RestUtils.createResponse(NOT_FOUND, HttpResponseStatus.NOT_FOUND);
+            return RestUtils.createNotFoundResponse();
         }
 
         logger.info("Request received but module is disabled.");
-        return RestUtils.createResponse(NOT_FOUND, HttpResponseStatus.NOT_FOUND);
+        return RestUtils.createNotFoundResponse();
 
     }
 

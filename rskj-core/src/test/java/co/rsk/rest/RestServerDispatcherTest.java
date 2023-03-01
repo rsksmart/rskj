@@ -78,14 +78,14 @@ class RestServerDispatcherTest {
         // Given
         String uri = "/unsupported.uri/does.not.exists";
         HttpRequest requestMock = mock(HttpRequest.class);
-        doReturn(uri).when(requestMock).getUri();
+        doReturn(uri).when(requestMock).uri();
 
         // When
         DefaultFullHttpResponse response = restServerDispatcher.dispatch(requestMock);
 
         // Then
         assertNotNull(response);
-        assertEquals(HttpResponseStatus.NOT_FOUND, response.getStatus());
+        assertEquals(HttpResponseStatus.NOT_FOUND, response.status());
         assertEquals(Unpooled.copiedBuffer("Not Found", StandardCharsets.UTF_8),
                 response.content());
     }
@@ -95,14 +95,14 @@ class RestServerDispatcherTest {
         // Given
         String uri = "test.url.inactive";
         HttpRequest requestMock = mock(HttpRequest.class);
-        doReturn(uri).when(requestMock).getUri();
+        doReturn(uri).when(requestMock).uri();
 
         // When
         DefaultFullHttpResponse response = restServerDispatcher.dispatch(requestMock);
 
         // Then
         assertNotNull(response);
-        assertEquals(HttpResponseStatus.NOT_FOUND, response.getStatus());
+        assertEquals(HttpResponseStatus.NOT_FOUND, response.status());
         assertEquals(Unpooled.copiedBuffer("Not Found", StandardCharsets.UTF_8),
                 response.content());
     }
@@ -112,14 +112,14 @@ class RestServerDispatcherTest {
         // Given
         String uri = "test.url.active";
         HttpRequest requestMock = mock(HttpRequest.class);
-        doReturn(uri).when(requestMock).getUri();
+        doReturn(uri).when(requestMock).uri();
 
         // When
         DefaultFullHttpResponse response = restServerDispatcher.dispatch(requestMock);
 
         // Then
         assertNotNull(response);
-        assertEquals(HttpResponseStatus.OK, response.getStatus());
+        assertEquals(HttpResponseStatus.OK, response.status());
         assertEquals(Unpooled.copiedBuffer("test", StandardCharsets.UTF_8),
                 response.content());
     }

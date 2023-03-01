@@ -67,15 +67,17 @@ public class RestServer implements InternalService {
             logger.error("REST server couldn't be started", e);
             Thread.currentThread().interrupt();
         } finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
-            logger.info("REST Server Stopped");
+            shutdown();
         }
 
     }
 
     @Override
     public void stop() {
+        shutdown();
+    }
+
+    private void shutdown() {
         bossGroup.shutdownGracefully();
         workerGroup.shutdownGracefully();
         logger.info("REST Server Stopped");

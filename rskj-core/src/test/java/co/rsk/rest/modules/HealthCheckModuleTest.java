@@ -48,7 +48,7 @@ class HealthCheckModuleTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(HttpResponseStatus.OK, response.getStatus());
+        assertEquals(HttpResponseStatus.OK, response.status());
         assertEquals(Unpooled.copiedBuffer("pong", StandardCharsets.UTF_8),
                 response.content());
     }

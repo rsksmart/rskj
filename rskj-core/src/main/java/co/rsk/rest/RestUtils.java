@@ -35,6 +35,8 @@ public class RestUtils {
     private static final HttpVersion DEFAULT_HTTP_VERSION = HttpVersion.HTTP_1_1;
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
+    private static final String NOT_FOUND_MESSAGE = "Not Found";
+
     private RestUtils() {}
 
     public static DefaultFullHttpResponse createResponse(String content) {
@@ -64,6 +66,10 @@ public class RestUtils {
         response.headers().set(CONTENT_LENGTH, bufContent.readableBytes());
 
         return response;
+    }
+
+    public static DefaultFullHttpResponse createNotFoundResponse() {
+        return createResponse(NOT_FOUND_MESSAGE, HttpResponseStatus.NOT_FOUND);
     }
 
 }
