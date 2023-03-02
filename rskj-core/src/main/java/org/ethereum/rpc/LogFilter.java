@@ -241,39 +241,53 @@ public class LogFilter extends Filter {
         BlocksBloom bloomAccumulator = null;
 
         Block block = toBlock;
-        while (block != null && block.getNumber() >= fromBlock.getNumber()) {
-            boolean isConfirmedBlock = block.getNumber() <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
+        long blockNumber = block.getNumber();
+        Keccak256 blockHash = block.getHash();
 
-            BlocksBloom blocksBloom = isConfirmedBlock ? blocksBloomStore.getBlocksBloomByNumber(block.getNumber()) : null;
-            boolean hasBloom = blocksBloom != null;
+        boolean skippingToNumber = false;
 
-            if (hasBloom && !bloomMatches(blocksBloom, filter)) {
-                block = getBlockToSkipToOrNullIfDone(block, fromBlock.getNumber(), blocksBloomStore, blockchain);
+        do {
+            boolean isConfirmedBlock = blockNumber <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
+
+            BlocksBloom blocksBloom = isConfirmedBlock ? blocksBloomStore.getBlocksBloomByNumber(blockNumber) : null;
+            if (canSkipByBloom(blocksBloom, filter)) {
+                blockNumber = getBlockToSkipTo(blockNumber, blocksBloomStore);
+                skippingToNumber = true;
                 continue;
             }
 
-            boolean needsBloom = isConfirmedBlock && !hasBloom;
-            if (needsBloom) {
-                bloomAccumulator = addBlockBloom(block, bloomAccumulator, blocksBloomStore);
+            if (skippingToNumber) {
+                block = blockchain.getBlockByNumber(blockNumber);
+            } else {
+                // redundant on first iter as we already have the block, but it's cached so left like this for code simplicity
+                block = blockchain.getBlockByHash(blockHash.getBytes());
             }
+            skippingToNumber = false;
 
             // reverseTxOrder=true to process txs in reverse order for later complete list reverse
             filter.onBlock(block, true);
-            block = blockchain.getBlockByHash(block.getParentHash().getBytes());
-        }
+
+            boolean hasBloom = blocksBloom != null;
+            if (isConfirmedBlock && !hasBloom) {
+                bloomAccumulator = addBlockBloom(block, bloomAccumulator, blocksBloomStore);
+            }
+
+            blockNumber = blockNumber - 1;
+            blockHash = block.getParentHash();
+        } while (blockNumber >= fromBlock.getNumber());
 
         // sort in a from-to fashion after looping in reverse order
         filter.reverseEvents();
     }
 
-    private static boolean bloomMatches(BlocksBloom blocksBloom, LogFilter filter) {
-        return filter.addressesTopicsFilter.matchBloom(blocksBloom.getBloom());
+    private static boolean canSkipByBloom(BlocksBloom blocksBloom, LogFilter filter) {
+        return blocksBloom != null && !filter.addressesTopicsFilter.matchBloom(blocksBloom.getBloom());
     }
 
     @Nullable
     private static BlocksBloom addBlockBloom(Block block, BlocksBloom bloomAccumulator, BlocksBloomStore blocksBloomStore) {
         // reset bloomAccumulator on every confirmed lastInRange block to start a new bloom
-        if (isLastInRange(block, blocksBloomStore)) {
+        if (blocksBloomStore.lastNumberInRange(block.getNumber()) == block.getNumber()) {
             bloomAccumulator = BlocksBloom.createEmptyWithBackwardsAddition();
         }
 
@@ -293,14 +307,8 @@ public class LogFilter extends Filter {
         return bloomAccumulator;
     }
 
-    @Nullable
-    private static Block getBlockToSkipToOrNullIfDone(Block currentBlock, long minBlock, BlocksBloomStore blocksBloomStore, Blockchain blockchain) {
-        long candidateHeight = blocksBloomStore.firstNumberInRange(currentBlock.getNumber()) - 1;
-        return candidateHeight < minBlock ? null : blockchain.getBlockByNumber(candidateHeight);
-    }
-
-    private static boolean isLastInRange(Block block, BlocksBloomStore blocksBloomStore) {
-        return blocksBloomStore.lastNumberInRange(block.getNumber()) == block.getNumber();
+    private static long getBlockToSkipTo(long currentBlock, BlocksBloomStore blocksBloomStore) {
+        return blocksBloomStore.firstNumberInRange(currentBlock) - 1;
     }
 
     private static boolean isBlockWord(String id) {
