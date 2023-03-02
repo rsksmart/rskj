@@ -78,6 +78,29 @@ class BlocksBloomTest {
     }
 
     @Test
+    void addTwoBlocksToBlocksBloomReversed() {
+        BlocksBloom blocksBloom = BlocksBloom.createEmptyWithBackwardsAddition();
+        byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
+        bytes1[0] = 0x01;
+        byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
+        bytes2[1] = 0x10;
+
+        Bloom bloom1 = new Bloom(bytes1);
+        Bloom bloom2 = new Bloom(bytes2);
+
+        blocksBloom.addBlockBloom(2, bloom2);
+        blocksBloom.addBlockBloom(1, bloom1);
+
+        Assertions.assertEquals(2, blocksBloom.size());
+        Assertions.assertEquals(1, blocksBloom.fromBlock());
+        Assertions.assertEquals(2, blocksBloom.toBlock());
+
+        bloom1.or(bloom2);
+
+        Assertions.assertArrayEquals(bloom1.getData(), blocksBloom.getBloom().getData());
+    }
+
+    @Test
     void addTwoNonConsecutiveBlocksToBlocksBloom() {
         BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
@@ -90,6 +113,23 @@ class BlocksBloomTest {
 
         blocksBloom.addBlockBloom(1, bloom1);
         Exception exception = Assertions.assertThrows(UnsupportedOperationException.class, () -> blocksBloom.addBlockBloom(3, bloom2));
+
+        Assertions.assertEquals("Block out of sequence", exception.getMessage());
+    }
+
+    @Test
+    void addTwoNonConsecutiveBlocksToBlocksBloomReversed() {
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
+        byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
+        bytes1[0] = 0x01;
+        byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
+        bytes2[1] = 0x10;
+
+        Bloom bloom1 = new Bloom(bytes1);
+        Bloom bloom2 = new Bloom(bytes2);
+
+        blocksBloom.addBlockBloom(3, bloom1);
+        Exception exception = Assertions.assertThrows(UnsupportedOperationException.class, () -> blocksBloom.addBlockBloom(1, bloom2));
 
         Assertions.assertEquals("Block out of sequence", exception.getMessage());
     }
@@ -118,8 +158,51 @@ class BlocksBloomTest {
     }
 
     @Test
+    void matchesBloomReversed() {
+        BlocksBloom blocksBloom = BlocksBloom.createEmptyWithBackwardsAddition();
+
+        byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
+        bytes1[0] = 0x01;
+        byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
+        bytes2[1] = 0x10;
+
+        Bloom bloom1 = new Bloom(bytes1);
+        Bloom bloom2 = new Bloom(bytes2);
+
+        blocksBloom.addBlockBloom(2, bloom2);
+        blocksBloom.addBlockBloom(1, bloom1);
+
+        Assertions.assertTrue(blocksBloom.matches(bloom1));
+        Assertions.assertTrue(blocksBloom.matches(bloom2));
+
+        bloom1.or(bloom2);
+
+        Assertions.assertTrue(blocksBloom.matches(bloom1));
+    }
+
+    @Test
     void doesNotMatchBloom() {
         BlocksBloom blocksBloom = BlocksBloom.createEmpty();
+
+        byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
+        bytes1[0] = 0x01;
+        byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
+        bytes2[1] = 0x10;
+
+        Bloom bloom1 = new Bloom(bytes1);
+        Bloom bloom2 = new Bloom(bytes2);
+
+        Assertions.assertFalse(blocksBloom.matches(bloom1));
+        Assertions.assertFalse(blocksBloom.matches(bloom2));
+
+        bloom1.or(bloom2);
+
+        Assertions.assertFalse(blocksBloom.matches(bloom1));
+    }
+
+    @Test
+    void doesNotMatchBloomReversed() {
+        BlocksBloom blocksBloom = BlocksBloom.createEmptyWithBackwardsAddition();
 
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;

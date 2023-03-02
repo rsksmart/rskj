@@ -82,17 +82,15 @@ public class BlocksBloom {
     }
 
     public void addBlockBloom(long blockNumber, Bloom blockBloom) {
-        long nextBlock = backwardsAddition ? toBlock - 1 : toBlock + 1;
-
         if (this.empty) {
             this.fromBlock = blockNumber;
             this.toBlock = blockNumber;
             this.empty = false;
-        }
-        else if (blockNumber == nextBlock) {
+        } else if (backwardsAddition && blockNumber == toBlock - 1) {
+            this.fromBlock = blockNumber;
+        } else if (!backwardsAddition && blockNumber == toBlock + 1) {
             this.toBlock = blockNumber;
-        }
-        else {
+        } else {
             throw new UnsupportedOperationException("Block out of sequence");
         }
 
