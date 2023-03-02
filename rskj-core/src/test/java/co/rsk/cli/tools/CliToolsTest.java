@@ -63,6 +63,7 @@ import org.mockito.Mockito;
 import picocli.CommandLine;
 
 import java.io.*;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -83,6 +84,21 @@ class CliToolsTest {
 
     @TempDir
     private Path tempDir;
+
+    @CommandLine.Command(name = "dummy-tool", mixinStandardHelpOptions = true, version = "1.0", description = "")
+    public static class DummyTool extends PicoCliToolRskContextAware {
+        @CommandLine.Option(names = {"-t", "--target"}, description = "A dummy target", required = true)
+        private String target;
+
+        public static void main(String[] args) {
+            create(MethodHandles.lookup().lookupClass()).execute(args);
+        }
+
+        @Override
+        public Integer call() throws IOException {
+            return 0;
+        }
+    }
 
     @Test
     void exportBlocks() throws IOException, DslProcessorException {
@@ -340,7 +356,7 @@ class CliToolsTest {
 
     @Test
     void importState() throws IOException {
-        byte[] value = TestUtils.generateBytes(CliToolsTest.class,"value",42);
+        byte[] value = TestUtils.generateBytes(CliToolsTest.class, "value", 42);
 
 
         StringBuilder stringBuilder = new StringBuilder();
@@ -394,11 +410,11 @@ class CliToolsTest {
 
         for (long i = 0; i < blocksToGenerate; i++) {
             Block block = mock(Block.class);
-            Keccak256 blockHash = new Keccak256(generateBytesFromRandom(random,32));
+            Keccak256 blockHash = new Keccak256(generateBytesFromRandom(random, 32));
             when(block.getHash()).thenReturn(blockHash);
             when(block.getParentHash()).thenReturn(parentHash);
             when(block.getNumber()).thenReturn(i);
-            when(block.getEncoded()).thenReturn(generateBytesFromRandom(random,128));
+            when(block.getEncoded()).thenReturn(generateBytesFromRandom(random, 128));
 
             indexedBlockStore.saveBlock(block, ZERO, true);
             parentHash = blockHash;
@@ -734,5 +750,10 @@ class CliToolsTest {
         dummyTool.execute(new String[]{}, () -> rskContext, stopper);
 
         verify(stopper, times(1)).stop(Mockito.eq(1));
+    }
+
+    @Test
+    void execToolIgnoringArgsShouldNotThrowNoSuchElementException() {
+        Assertions.assertDoesNotThrow(() -> DummyTool.main(new String[]{"--reset", "-t", "dummy-value"}));
     }
 }
