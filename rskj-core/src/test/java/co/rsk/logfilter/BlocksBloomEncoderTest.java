@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 class BlocksBloomEncoderTest {
     @Test
     void encodeDecodeEmptyBlocksBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
 
@@ -47,7 +47,7 @@ class BlocksBloomEncoderTest {
 
     @Test
     void encodeDecodeBlocksBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom(0, 100, new Bloom());
+        BlocksBloom blocksBloom = BlocksBloom.createForExisting(0, 100, new Bloom());
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
 
@@ -64,7 +64,7 @@ class BlocksBloomEncoderTest {
     @Test
     void encodeDecodeBlocksBloomWithData() {
         byte[] bloomData = TestUtils.generateBytes("bloomData",Bloom.BLOOM_BYTES);
-        BlocksBloom blocksBloom = new BlocksBloom(100, 2000, new Bloom(bloomData));
+        BlocksBloom blocksBloom = BlocksBloom.createForExisting(100, 2000, new Bloom(bloomData));
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
 

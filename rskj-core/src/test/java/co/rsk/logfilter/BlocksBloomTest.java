@@ -11,7 +11,7 @@ class BlocksBloomTest {
 
     @Test
     void createBlocksBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
 
         Assertions.assertEquals(0, blocksBloom.size());
 
@@ -22,7 +22,7 @@ class BlocksBloomTest {
 
     @Test
     void addBlockToBlocksBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         byte[] bytes = new byte[Bloom.BLOOM_BYTES];
         bytes[0] = 0x01;
         Bloom bloom = new Bloom(bytes);
@@ -40,7 +40,7 @@ class BlocksBloomTest {
 
     @Test
     void addBlockZeroToBlocksBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         byte[] bytes = new byte[Bloom.BLOOM_BYTES];
         bytes[0] = 0x01;
         Bloom bloom = new Bloom(bytes);
@@ -56,7 +56,7 @@ class BlocksBloomTest {
 
     @Test
     void addTwoBlocksToBlocksBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
@@ -79,7 +79,7 @@ class BlocksBloomTest {
 
     @Test
     void addTwoNonConsecutiveBlocksToBlocksBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
@@ -96,7 +96,7 @@ class BlocksBloomTest {
 
     @Test
     void matchesBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
 
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
@@ -119,7 +119,7 @@ class BlocksBloomTest {
 
     @Test
     void doesNotMatchBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
 
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;

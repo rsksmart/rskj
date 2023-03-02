@@ -68,7 +68,7 @@ public class LogFilter extends Filter {
     }
 
     void onTransaction(Transaction tx, Block block, int txIndex, boolean reverseLogIdxOrder) {
-        TransactionInfo txInfo = blockchain.getTransactionInfoForBlock(tx, block.getHash().getBytes());
+        TransactionInfo txInfo = blockchain.getTransactionInfoByBlock(tx, block.getHash().getBytes());
         TransactionReceipt receipt = txInfo.getReceipt();
 
         LogFilterElement[] logs = new LogFilterElement[receipt.getLogInfoList().size()];
@@ -274,7 +274,7 @@ public class LogFilter extends Filter {
     private static BlocksBloom addBlockBloom(Block block, BlocksBloom bloomAccumulator, BlocksBloomStore blocksBloomStore) {
         // reset bloomAccumulator on every confirmed lastInRange block to start a new bloom
         if (isLastInRange(block, blocksBloomStore)) {
-            bloomAccumulator = new BlocksBloom();
+            bloomAccumulator = BlocksBloom.createEmptyWithBackwardsAddition();
         }
 
         // start accumulating blocks the first time a lastInRange block is reached to keep only complete blooms
@@ -282,7 +282,7 @@ public class LogFilter extends Filter {
             return null;
         }
 
-        bloomAccumulator.addBlockBloomBackwards(block.getNumber(), new Bloom(block.getLogBloom()));
+        bloomAccumulator.addBlockBloom(block.getNumber(), new Bloom(block.getLogBloom()));
 
         boolean firstInRange = blocksBloomStore.firstNumberInRange(block.getNumber()) == block.getNumber();
         if (firstInRange) {

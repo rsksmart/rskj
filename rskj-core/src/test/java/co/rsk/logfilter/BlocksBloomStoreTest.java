@@ -51,7 +51,7 @@ class BlocksBloomStoreTest {
 
         Assertions.assertFalse(blocksBloomStore.hasBlockNumber(0));
 
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         Bloom bloom1 = new Bloom();
         Bloom bloom2 = new Bloom();
 
@@ -67,7 +67,7 @@ class BlocksBloomStoreTest {
     void hasBlockNumberInStore() {
         KeyValueDataSource internalStore = new HashMapDB();
         Bloom bloom = new Bloom();
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         blocksBloom.addBlockBloom(64, bloom);
         blocksBloom.addBlockBloom(65, bloom);
 
@@ -82,7 +82,7 @@ class BlocksBloomStoreTest {
 
     @Test
     void addBlocksBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
@@ -108,7 +108,7 @@ class BlocksBloomStoreTest {
     @Test
     void addBlocksBloomUsingDataSource() {
         KeyValueDataSource dataSource = new HashMapDB();
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
