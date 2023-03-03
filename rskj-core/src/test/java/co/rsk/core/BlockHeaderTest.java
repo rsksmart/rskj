@@ -451,7 +451,7 @@ class BlockHeaderTest {
                 headerV0.getPaidFees(), headerV0.getBitcoinMergedMiningHeader(), headerV0.getBitcoinMergedMiningMerkleProof(),
                 headerV0.getBitcoinMergedMiningCoinbaseTransaction(), headerV0.getMiningForkDetectionData(),
                 headerV0.getMinimumGasPrice(), headerV0.getUncleCount(), headerV0.isSealed(),
-                false, false, headerV0.getUmmRoot(), headerV0.getTxExecutionSublistsEdges()
+                false, false, headerV0.getUmmRoot(), headerV0.getTxExecutionSublistsEdges(), false
         );
     }
 
@@ -647,7 +647,8 @@ class BlockHeaderTest {
                 useRskip92Encoding,
                 includeForkDetectionData,
                 ummRoot,
-                edges);
+                edges,
+                false);
 
         return new BlockHeaderV0(
                 PegTestUtils.createHash3().getBytes(),

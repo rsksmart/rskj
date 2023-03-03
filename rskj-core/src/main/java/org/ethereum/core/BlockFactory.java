@@ -204,27 +204,15 @@ public class BlockFactory {
         }
 
         if (version == 1) {
-            if (compressed) {
-                return new BlockHeaderV1(
-                        parentHash, unclesHash, coinbase, stateRoot,
-                        txTrieRoot, receiptTrieRoot, extensionData, difficulty,
-                        blockNumber, glBytes, gasUsed, timestamp, extraData,
-                        paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                        bitcoinMergedMiningCoinbaseTransaction, new byte[0],
-                        minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                        ummRoot
-                );
-            } else {
-                return new BlockHeaderV1(
-                        parentHash, unclesHash, coinbase, stateRoot,
-                        txTrieRoot, receiptTrieRoot, extensionData, difficulty,
-                        blockNumber, glBytes, gasUsed, timestamp, extraData,
-                        paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                        bitcoinMergedMiningCoinbaseTransaction, new byte[0],
-                        minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                        ummRoot, txExecutionSublistsEdges
-                );
-            }
+            return new BlockHeaderV1(
+                    parentHash, unclesHash, coinbase, stateRoot,
+                    txTrieRoot, receiptTrieRoot, extensionData, difficulty,
+                    blockNumber, glBytes, gasUsed, timestamp, extraData,
+                    paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction, new byte[0],
+                    minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
+                    ummRoot, txExecutionSublistsEdges, compressed
+            );
         }
 
         return new BlockHeaderV0(

@@ -348,7 +348,7 @@ public class BlockHeaderBuilder {
                 mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount,
                 false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot, txExecutionSublistsEdges
+                includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false
         );
 
         return new BlockHeaderV0(

@@ -19,46 +19,25 @@ public class BlockHeaderV1 extends BlockHeader {
     @Override
     public void setExtension(BlockHeaderExtension extension) { this.extension = (BlockHeaderExtensionV1) extension; }
 
-    // this constructor is used when all the header info is existent
-    public BlockHeaderV1(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
-                         byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
-                         long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
-                         Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                         byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
-                         Coin minimumGasPrice, int uncleCount, boolean sealed,
-                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, short[] txExecutionSublistsEdges) {
-        super(parentHash,unclesHash, coinbase, stateRoot,
-                txTrieRoot, receiptTrieRoot, null, difficulty,
-                number, gasLimit, gasUsed, timestamp, extraData,
-                paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
-                minimumGasPrice, uncleCount, sealed,
-                useRskip92Encoding, includeForkDetectionData, ummRoot);
-
-        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(logsBloom, txExecutionSublistsEdges);
-
-        this.extensionData = BlockHeaderV1.createExtensionData(extension.getHash()); // update after calculating
-        this.extension = extension;
-    }
-
-    // this constructor is used when header is created with compressed encoding and receives extension
-    // on body message
     public BlockHeaderV1(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                          byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty,
                          long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                          Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                          Coin minimumGasPrice, int uncleCount, boolean sealed,
-                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
+                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, short[] txExecutionSublistsEdges, boolean compressed) {
         super(parentHash,unclesHash, coinbase, stateRoot,
-                txTrieRoot, receiptTrieRoot, extensionData, difficulty,
+                txTrieRoot, receiptTrieRoot, compressed ? extensionData : null, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot);
+        this.extension = compressed
+                ? new BlockHeaderExtensionV1(null, null)
+                : new BlockHeaderExtensionV1(extensionData, txExecutionSublistsEdges);
+        if(!compressed) this.updateExtensionData(); // update after calculating
 
-        this.extension = new BlockHeaderExtensionV1(null, null);
     }
 
     @VisibleForTesting
