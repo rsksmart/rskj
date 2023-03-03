@@ -56,7 +56,11 @@ public abstract class CliToolRskContextAware {
     }
 
     public void execute(@Nonnull String[] args) {
-        execute(args, () -> new RskContext(args, true), System::exit);
+        execute(args, System::exit);
+    }
+
+    public void execute(@Nonnull String[] args, @Nonnull NodeStopper nodeStopper) {
+        execute(args, () -> new RskContext(args, true), nodeStopper);
     }
 
     public void execute(@Nonnull String[] args, @Nonnull Factory<RskContext> contextFactory, @Nonnull NodeStopper nodeStopper) {
