@@ -28,11 +28,16 @@ import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslParser;
+import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import com.google.common.primitives.Bytes;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
@@ -55,6 +60,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
@@ -662,15 +668,13 @@ class TransactionTest {
         try {
             contract1.parseInvocation(new byte[32]);
             Assertions.fail();
-        }
-        catch (RuntimeException ex) {
+        } catch (RuntimeException ex) {
         }
 
         try {
             contract1.parseInvocation(new byte[2]);
             Assertions.fail();
-        }
-        catch (RuntimeException ex) {
+        } catch (RuntimeException ex) {
         }
 
         Transaction tx1 = createTx(sender, contractAddress, callData, repository);
@@ -804,6 +808,57 @@ class TransactionTest {
         } catch (Exception e) {
             fail(e.getMessage());
         }
+    }
+
+    //AA Transaction
+    @Test
+    void AA_serialize() {
+        // Random inputs
+        BigInteger value = new BigInteger("1000000000000000000000");
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
+        ECKey ecKey = ECKey.fromPrivate(privKey);
+        byte[] gasPrice = Hex.decode("09184e72a000");
+        byte[] gas = Hex.decode("4255");
+        final String data = "abcd";
+        final byte[] rawsignature = {1, 2};
+        final BigInteger nonce = BigInteger.ONE;
+
+        // Test
+        Transaction tx = Transaction.builder()
+                .nonce(nonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(ecKey.getAddress())
+                .value(value)
+                .data(data)
+                .chainId(Constants.MAINNET_CHAIN_ID)
+                .type(Transaction.AA_TYPE)
+                .sender(ecKey.getAddress())
+                .rawsignature(rawsignature)
+                .build();
+        byte[] encoded = tx.getEncoded();
+        Transaction tx1 = new Transaction(encoded);
+
+        // Asserts
+        assertEquals(Transaction.AA_TYPE, tx.getType());
+        assertEquals(Transaction.AA_TYPE, tx1.getType());
+        assertArrayEquals(tx.getNonce(), tx1.getNonce());
+        assertEquals(tx.getGasPrice(), tx1.getGasPrice());
+        assertArrayEquals(tx.getGasLimit(), tx1.getGasLimit());
+        assertEquals(tx.getReceiveAddress(), tx1.getReceiveAddress());
+        assertEquals(tx.getValue(), tx1.getValue());
+        assertArrayEquals(tx.getData(), tx1.getData());
+        assertEquals(tx.getChainId(), tx1.getChainId());
+        assertEquals(tx.getSender(), tx1.getSender());
+        assertArrayEquals(tx.getRawsignature(), tx1.getRawsignature());
+    }
+
+    @Test
+    void AA_dsl() throws FileNotFoundException {
+        DslParser parser = DslParser.fromResource("dsl/transaction/type_AA.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));
     }
 
     private Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, final Repository repository) throws InterruptedException {

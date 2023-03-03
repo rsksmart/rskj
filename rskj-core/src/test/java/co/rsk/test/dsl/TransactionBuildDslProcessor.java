@@ -47,31 +47,48 @@ public class TransactionBuildDslProcessor {
     }
 
     private void processCommand(DslCommand cmd) throws DslProcessorException {
-        if (cmd.isCommand("sender"))
-            this.builder.sender(this.world.getAccountByName(cmd.getArgument(0)));
-        else if (cmd.isCommand("receiver"))
-            this.builder.receiver(this.world.getAccountByName(cmd.getArgument(0)));
-        else if (cmd.isCommand("nonce"))
-            this.builder.nonce(Long.parseLong(cmd.getArgument(0)));
-        else if (cmd.isCommand("contract"))
-            this.builder.receiverAddress(this.world.getTransactionByName(cmd.getArgument(0)).getContractAddress().getBytes());
-        else if (cmd.isCommand("receiverAddress"))
-            if (cmd.getArgument(0).equals("0") || cmd.getArgument(0).equals("00"))
-                this.builder.receiverAddress(ByteUtil.EMPTY_BYTE_ARRAY);
-            else
-                this.builder.receiverAddress(Hex.decode(cmd.getArgument(0)));
-        else if (cmd.isCommand("value"))
-            this.builder.value(new BigInteger(cmd.getArgument(0)));
-        else if (cmd.isCommand("gas"))
-            this.builder.gasLimit(new BigInteger(cmd.getArgument(0)));
-        else if (cmd.isCommand("gasPrice"))
-            this.builder.gasPrice(new BigInteger(cmd.getArgument(0)));
-        else if (cmd.isCommand("data"))
-            this.builder.data(cmd.getArgument(0));
-        else if (cmd.isCommand("build"))
-            this.world.saveTransaction(this.name, this.builder.build());
-        else
-            throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
+        final String argument0 = cmd.getArgument(0);
+        switch (cmd.getVerb()) {
+            case "sender":
+                this.builder.sender(this.world.getAccountByName(argument0));
+                break;
+            case "receiver":
+                this.builder.receiver(this.world.getAccountByName(argument0));
+                break;
+            case "nonce":
+                this.builder.nonce(Long.parseLong(argument0));
+                break;
+            case "contract":
+                this.builder.receiverAddress(this.world.getTransactionByName(argument0).getContractAddress().getBytes());
+                break;
+            case "receiverAddress":
+                this.builder.receiverAddress(isEmpty(argument0) ? ByteUtil.EMPTY_BYTE_ARRAY : Hex.decode(argument0));
+                break;
+            case "value":
+                this.builder.value(new BigInteger(argument0));
+                break;
+            case "gas":
+                this.builder.gasLimit(new BigInteger(argument0));
+                break;
+            case "gasPrice":
+                this.builder.gasPrice(new BigInteger(argument0));
+                break;
+            case "data":
+                this.builder.data(argument0);
+                break;
+            case "type":
+                this.builder.type(Hex.decode(argument0)[0]);
+                break;
+            case "build":
+                this.world.saveTransaction(this.name, this.builder.build());
+                break;
+            default:
+                throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
+        }
+    }
+
+    private boolean isEmpty(String argument) {
+        return argument.equals("0") || argument.equals("00");
     }
 }
 
