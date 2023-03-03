@@ -112,6 +112,7 @@ class Web3ImplLogsTest {
     private BlockStore blockStore;
 
     private SignatureCache signatureCache;
+    private BlocksBloomStore blocksBloomStore;
 
     //20965255 getValue()
     //371303c0 inc()
@@ -448,6 +449,13 @@ class Web3ImplLogsTest {
         assertEquals(receipt3Logs.transactionIndex, logs3.transactionIndex);
         assertEquals(receipt3Logs.logIndex, logs3.logIndex);
         assertArrayEquals(receipt3Logs.topics, logs3.topics);
+
+        // block1 bloomed after call
+        assertTrue(blocksBloomStore.hasBlockNumber(0));
+        assertTrue(blocksBloomStore.hasBlockNumber(1));
+
+        // block2 not bloomed after call because the bloom was not complete (1 out of 2 blocks)
+        assertFalse(blocksBloomStore.hasBlockNumber(2));
     }
 
     @Test
@@ -1113,6 +1121,7 @@ class Web3ImplLogsTest {
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        blocksBloomStore = new BlocksBloomStore(2, 0, new HashMapDB());
         return new Web3RskImpl(
                 eth,
                 blockChain,
@@ -1136,7 +1145,7 @@ class Web3ImplLogsTest {
                 null,
                 new SimpleConfigCapabilities(),
                 null,
-                new BlocksBloomStore(2, 0, new HashMapDB()),
+                blocksBloomStore,
                 mock(Web3InformationRetriever.class),
                 null,
                 null);

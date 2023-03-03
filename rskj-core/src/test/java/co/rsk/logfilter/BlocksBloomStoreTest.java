@@ -96,6 +96,29 @@ class BlocksBloomStoreTest {
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
 
+        addBlocksBloomCommon(blocksBloomStore, blocksBloom);
+    }
+
+    @Test
+    void addBlocksBloomReversed() {
+        BlocksBloom blocksBloom = BlocksBloom.createEmptyWithBackwardsAddition();
+        byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
+        bytes1[0] = 0x01;
+        byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
+        bytes2[1] = 0x10;
+
+        Bloom bloom1 = new Bloom(bytes1);
+        Bloom bloom2 = new Bloom(bytes2);
+
+        BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, new HashMapDB());
+
+        blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
+        blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
+
+        addBlocksBloomCommon(blocksBloomStore, blocksBloom);
+    }
+
+    private void addBlocksBloomCommon(BlocksBloomStore blocksBloomStore, BlocksBloom blocksBloom) {
         blocksBloomStore.addBlocksBloom(blocksBloom);
 
         BlocksBloom actualBlocksBloom = blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks());
@@ -122,6 +145,30 @@ class BlocksBloomStoreTest {
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
 
+        addBlocksBloomUsingDataSourceCommon(blocksBloomStore, blocksBloom, dataSource);
+    }
+
+    @Test
+    void addBlocksBloomUsingDataSourceBackwards() {
+        KeyValueDataSource dataSource = new HashMapDB();
+        BlocksBloom blocksBloom = BlocksBloom.createEmptyWithBackwardsAddition();
+        byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
+        bytes1[0] = 0x01;
+        byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
+        bytes2[1] = 0x10;
+
+        Bloom bloom1 = new Bloom(bytes1);
+        Bloom bloom2 = new Bloom(bytes2);
+
+        BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
+
+        blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
+        blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
+
+        addBlocksBloomUsingDataSourceCommon(blocksBloomStore, blocksBloom, dataSource);
+    }
+
+    private void addBlocksBloomUsingDataSourceCommon(BlocksBloomStore blocksBloomStore, BlocksBloom blocksBloom, KeyValueDataSource dataSource) {
         blocksBloomStore.addBlocksBloom(blocksBloom);
 
         BlocksBloom actualBlocksBloom = blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks());

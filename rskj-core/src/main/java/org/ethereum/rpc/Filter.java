@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 
@@ -66,6 +67,11 @@ public class Filter {
         this.accessTime = System.currentTimeMillis();
 
         return events.stream().map(fe -> fe.getJsonEventObject()).collect(Collectors.toList()).toArray();
+    }
+
+    @VisibleForTesting
+    List<FilterEvent> getEventsInternal() {
+        return new ArrayList<>(events);
     }
 
     protected synchronized void add(FilterEvent evt) {

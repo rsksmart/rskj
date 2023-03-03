@@ -251,7 +251,7 @@ public class LogFilter extends Filter {
 
             BlocksBloom blocksBloom = isConfirmedBlock ? blocksBloomStore.getBlocksBloomByNumber(blockNumber) : null;
             if (canSkipByBloom(blocksBloom, filter)) {
-                blockNumber = getBlockToSkipTo(blockNumber, blocksBloomStore);
+                blockNumber = blocksBloomStore.firstNumberInRange(blockNumber) - 1;
                 skippingToNumber = true;
                 continue;
             }
@@ -305,10 +305,6 @@ public class LogFilter extends Filter {
         }
 
         return bloomAccumulator;
-    }
-
-    private static long getBlockToSkipTo(long currentBlock, BlocksBloomStore blocksBloomStore) {
-        return blocksBloomStore.firstNumberInRange(currentBlock) - 1;
     }
 
     private static boolean isBlockWord(String id) {
