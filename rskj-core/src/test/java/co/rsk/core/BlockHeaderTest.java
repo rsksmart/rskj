@@ -29,6 +29,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
@@ -403,16 +404,19 @@ class BlockHeaderTest {
         this.testHeaderVersion((byte) 0x1);
     }
 
-    @Test
-    public void encodeForLogsBloomField() {
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+    private static byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+    private static short[] edges = new short[]{ 1, 2, 3, 4 };
+
+    @BeforeAll
+    static void setupLogsBloom() {
         logsBloom[0] = 0x01;
         logsBloom[1] = 0x02;
         logsBloom[2] = 0x03;
         logsBloom[3] = 0x04;
+    }
 
-        short[] edges = new short[]{ 1, 2, 3, 4 };
-
+    @Test
+    public void encodeForLogsBloomField() {
         BlockHeaderV1 header = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
         header.setLogsBloom(logsBloom);
         header.setTxExecutionSublistsEdges(edges);
@@ -430,14 +434,6 @@ class BlockHeaderTest {
         // this test is added to assert the blockchain is still serializable
         // it is still possible to serialize wether logs bloom field is the
         // actual logs bloom or the extension data by reading its length != 256
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
-
-        short[] edges = new short[]{ 1, 2, 3, 4 };
-
         BlockHeaderV1 header = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
         header.setLogsBloom(logsBloom);
         header.setTxExecutionSublistsEdges(edges);
@@ -471,12 +467,6 @@ class BlockHeaderTest {
 
     @Test
     public void encodedV0IsTheSameForV0andV1 () {
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
-
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
@@ -487,12 +477,6 @@ class BlockHeaderTest {
 
     @Test
     public void fullEncodedV0IsTheSameForV0andV1 () {
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
-
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
@@ -503,12 +487,6 @@ class BlockHeaderTest {
 
     @Test
     public void fullEncodedV0IsTheSameAsEncodedForHeaderMessage () {
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
-
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
@@ -518,12 +496,6 @@ class BlockHeaderTest {
     @Test
     public void fullEncodedV1IsTheSameAsCompressedButLogsBloomEdgesAndVersion () {
         // this test is added to assert that there were no changes in the rest of the elements
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
-
         BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
         headerV1.setLogsBloom(logsBloom);
 
@@ -550,12 +522,6 @@ class BlockHeaderTest {
         // this test is added to assert that the rlp header size does not change
         // in the hard fork, assuming both RSKIP 351 and RSKIP 144 are activated
         // together
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
-
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
         headerV0.setTxExecutionSublistsEdges(null);
@@ -574,11 +540,6 @@ class BlockHeaderTest {
     public void hashOfV1IncludesLogsBloom() {
         BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
 
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
         headerV1.setLogsBloom(logsBloom);
         byte[] hash = headerV1.getHash().getBytes();
 
@@ -596,7 +557,6 @@ class BlockHeaderTest {
     public void hashOfV1IncludesEdges() {
         BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
 
-        short[] edges = new short[]{ 1, 2, 3, 4};
         headerV1.setTxExecutionSublistsEdges(edges);
         byte[] hash = headerV1.getHash().getBytes();
 
