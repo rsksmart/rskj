@@ -117,7 +117,7 @@ public class BlockFactory {
             receiptTrieRoot = EMPTY_TRIE_HASH;
         }
 
-        byte[] logsBloomField = rlpHeader.get(6).getRLPData(); // logs bloom when decoding extended, list(version, hash(extension)) when compressed
+        byte[] extensionData = rlpHeader.get(6).getRLPData(); // rskip351: logs bloom when decoding extended, list(version, hash(extension)) when compressed
         byte[] difficultyBytes = rlpHeader.get(7).getRLPData();
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(difficultyBytes);
 
@@ -158,7 +158,7 @@ public class BlockFactory {
 
         if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
             version = compressed
-                    ? RLP.decodeList(logsBloomField).get(0).getRLPData()[0]
+                    ? RLP.decodeList(extensionData).get(0).getRLPData()[0]
                     : rlpHeader.get(r++).getRLPData()[0];
         }
 
@@ -187,7 +187,7 @@ public class BlockFactory {
             return new GenesisHeader(
                     parentHash,
                     unclesHash,
-                    logsBloomField,
+                    extensionData,
                     difficultyBytes,
                     blockNumber,
                     glBytes,
@@ -207,7 +207,7 @@ public class BlockFactory {
             if (compressed) {
                 return new BlockHeaderV1(
                         parentHash, unclesHash, coinbase, stateRoot,
-                        txTrieRoot, receiptTrieRoot, logsBloomField, difficulty,
+                        txTrieRoot, receiptTrieRoot, extensionData, difficulty,
                         blockNumber, glBytes, gasUsed, timestamp, extraData,
                         paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                         bitcoinMergedMiningCoinbaseTransaction, new byte[0],
@@ -217,7 +217,7 @@ public class BlockFactory {
             } else {
                 return new BlockHeaderV1(
                         parentHash, unclesHash, coinbase, stateRoot,
-                        txTrieRoot, receiptTrieRoot, logsBloomField, difficulty,
+                        txTrieRoot, receiptTrieRoot, extensionData, difficulty,
                         blockNumber, glBytes, gasUsed, timestamp, extraData,
                         paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                         bitcoinMergedMiningCoinbaseTransaction, new byte[0],
@@ -229,7 +229,7 @@ public class BlockFactory {
 
         return new BlockHeaderV0(
                 parentHash, unclesHash, coinbase, stateRoot,
-                txTrieRoot, receiptTrieRoot, logsBloomField, difficulty,
+                txTrieRoot, receiptTrieRoot, extensionData, difficulty,
                 blockNumber, glBytes, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
