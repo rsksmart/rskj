@@ -91,8 +91,8 @@ class CliToolsTest {
         private String target;
 
         public static void main(String[] args) {
-            NodeStopper stopper = mock(NodeStopper.class);
-            create(MethodHandles.lookup().lookupClass()).execute(args, stopper);
+            NodeStopper stopperMock = mock(NodeStopper.class);
+            create(MethodHandles.lookup().lookupClass()).execute(args, stopperMock);
         }
 
         @Override
