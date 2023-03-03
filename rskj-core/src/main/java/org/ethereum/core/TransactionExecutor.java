@@ -206,7 +206,8 @@ public class TransactionExecutor {
             return false;
         }
 
-        if (!tx.acceptTransactionSignature(constants.getChainId())) {
+        // TODO check if RSKIP is active
+        if (!tx.acceptTransactionSignature(constants.getChainId()) && tx.getType() == Transaction.LEGACY_TYPE) {
             logger.warn("Transaction {} signature not accepted: {}", tx.getHash(), tx.getSignature());
             logger.warn("Transaction Data: {}", tx);
             logger.warn("Tx Included in the following block: {}", this.executionBlock);

@@ -19,6 +19,7 @@
 
 package org.ethereum.crypto.signature;
 
+import com.google.common.primitives.Bytes;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
 
@@ -122,6 +123,10 @@ public class ECDSASignature {
 
     public void setV(byte v) {
         this.v = v;
+    }
+
+    public byte[] getRaw() {
+        return Bytes.concat(new byte[]{this.v}, this.getR().toByteArray(), this.getS().toByteArray());
     }
 
     /**

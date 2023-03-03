@@ -32,11 +32,17 @@ public final class TransactionBuilder {
 	private boolean isLocalCall = false;
 	private byte[] nonce = ByteUtil.cloneBytes(null);
 	private Coin value = Coin.ZERO;
+	private RskAddress sender = RskAddress.nullAddress();
 	private RskAddress receiveAddress = RskAddress.nullAddress();
 	private Coin gasPrice = Coin.ZERO;
 	private byte[] gasLimit = ByteUtil.cloneBytes(null);
 	private byte[] data = ByteUtil.cloneBytes(null);
 	private byte chainId = 0;
+
+	//EIP-2718
+	private byte type = Transaction.LEGACY_TYPE;
+	//Account Abstraction - Can be of any type, not only ECDSA
+	private byte[] rawsignature;
 
 	TransactionBuilder() {
 	}
@@ -123,8 +129,27 @@ public final class TransactionBuilder {
 		return this.nonce(value.getBytes());
 	}
 
+	public TransactionBuilder sender(RskAddress sender) {
+		this.sender = sender;
+		return this;
+	}
+
+	public TransactionBuilder sender(byte[] sender) {
+		return this.sender(RLP.parseRskAddress(ByteUtil.cloneBytes(sender)));
+	}
+
+	public TransactionBuilder type(byte type) {
+		this.type = type;
+		return this;
+	}
+
+	public TransactionBuilder rawsignature(byte[] rawsignature) {
+		this.rawsignature = rawsignature;
+		return this;
+	}
+
 	public Transaction build() {
-		return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall);
+		return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall, this.type, this.sender, this.rawsignature);
 	}
 
 	public TransactionBuilder data(String data) {

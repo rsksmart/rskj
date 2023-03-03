@@ -43,6 +43,7 @@ public class TransactionBuilder {
     private BigInteger gasLimit = BigInteger.valueOf(21000);
     private BigInteger nonce = BigInteger.ZERO;
     private Byte chainId = null;
+    private Byte type = Transaction.LEGACY_TYPE;
     private boolean immutable;
 
     public TransactionBuilder sender(Account sender) {
@@ -95,6 +96,11 @@ public class TransactionBuilder {
         return this;
     }
 
+    public TransactionBuilder type(byte type) {
+        this.type = type;
+        return this;
+    }
+
     public TransactionBuilder chainId(byte chainId) {
         this.chainId = chainId;
         return this;
@@ -102,23 +108,17 @@ public class TransactionBuilder {
 
     public Transaction build() {
         byte chainId = Optional.ofNullable(this.chainId).orElse(Constants.REGTEST_CHAIN_ID);
-
         return build(chainId);
     }
 
     public Transaction build(byte chainId) {
         final String to = receiver != null ? ByteUtil.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? ByteUtil.toHexString(receiverAddress) : null);
-        BigInteger nonce = this.nonce;
-        BigInteger gasLimit = this.gasLimit;
-        BigInteger gasPrice = this.gasPrice;
-        byte[] data = this.data;
-        BigInteger value = this.value;
-
-        return build(to, nonce, gasLimit, gasPrice, chainId, data, value, sender.getEcKey().getPrivKeyBytes(), this.immutable);
+        return build(this.sender.getAddress().getBytes(), to, this.nonce, this.gasLimit, this.gasPrice, chainId, this.data, this.value, sender.getEcKey().getPrivKeyBytes(), this.immutable, this.type);
     }
 
-    private Transaction build(String to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice, byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes, boolean immutable) {
+    private Transaction build(byte[] sender, String to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice, byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes, boolean immutable, byte type) {
         Transaction tx = Transaction.builder()
+                .sender(sender)
                 .destination(to)
                 .nonce(nonce)
                 .gasLimit(gasLimit)
@@ -126,6 +126,7 @@ public class TransactionBuilder {
                 .chainId(chainId)
                 .data(data)
                 .value(value)
+                .type(type)
                 .build();
         tx.sign(privKeyBytes);
 
@@ -158,8 +159,10 @@ public class TransactionBuilder {
         byte chainId = Constants.REGTEST_CHAIN_ID; // should be a random valid one
         byte[] data = randomPositiveVal.toByteArray();
         BigInteger value = randomPositiveVal;
-        byte[] privateKey = ECKey.fromPrivate(randomPositiveVal).getPrivKeyBytes();
+        final ECKey ecKey = ECKey.fromPrivate(randomPositiveVal);
+        byte[] privateKey = ecKey.getPrivKeyBytes();
 
-        return build(to, nonce, gasLimit, gasPrice, chainId, data, value, privateKey, false);
+        return build(ecKey.getAddress(), to, nonce, gasLimit, gasPrice, chainId, data, value, privateKey, false, Transaction.LEGACY_TYPE);
     }
+
 }
