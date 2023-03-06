@@ -58,6 +58,30 @@ tasks.withType(AbstractArchiveTask) {
     fileMode = 0664
 }
 
+def integrationTestSourceSet = sourceSets.create('integrationTest')
+
+configurations[integrationTestSourceSet.implementationConfigurationName].extendsFrom(configurations.testImplementation)
+configurations[integrationTestSourceSet.runtimeOnlyConfigurationName].extendsFrom(configurations.testRuntimeOnly)
+
+task integrationTest (type: Test) {
+    testClassesDirs = integrationTestSourceSet.output.classesDirs
+    classpath = configurations[integrationTestSourceSet.runtimeClasspathConfigurationName] + integrationTestSourceSet.output
+
+    useJUnitPlatform()
+
+    beforeTest { descriptor ->
+        logger.lifecycle("Running integration test: ${descriptor}")
+    }
+
+    jvmArgs '-Xss32m', '-Xmx3G'
+
+    testLogging {
+        events "failed"
+        exceptionFormat "short"
+    }
+    finalizedBy jacocoTestReport
+}
+
 ext {
     libVersions = [
             nettyVer               : '4.1.78.Final',
@@ -163,6 +187,7 @@ dependencies {
     testImplementation "${testLibs.okhttpWsLib}"
 
     testImplementation "${testLibs.rskLllLib}"
+    integrationTestImplementation project
 }
 
 javadoc {
