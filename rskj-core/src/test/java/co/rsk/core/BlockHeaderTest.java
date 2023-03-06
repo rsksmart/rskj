@@ -397,10 +397,10 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void getVersion0() { this.testHeaderVersion((byte) 0x0); }
+    void getVersion0() { this.testHeaderVersion((byte) 0x0); }
 
     @Test
-    public void getVersion1() {
+    void getVersion1() {
         this.testHeaderVersion((byte) 0x1);
     }
 
@@ -416,7 +416,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void encodeForLogsBloomField() {
+    void encodeForLogsBloomField() {
         BlockHeaderV1 header = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
         header.setLogsBloom(logsBloom);
         header.setTxExecutionSublistsEdges(edges);
@@ -430,7 +430,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void encodeForLogsBloomFieldIsNotLogsBloomSize() {
+    void encodeForLogsBloomFieldIsNotLogsBloomSize() {
         // this test is added to assert the blockchain is still serializable
         // it is still possible to serialize wether logs bloom field is the
         // actual logs bloom or the extension data by reading its length != 256
@@ -466,7 +466,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void encodedV0IsTheSameForV0andV1 () {
+    void encodedV0IsTheSameForV0andV1 () {
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
@@ -476,7 +476,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void fullEncodedV0IsTheSameForV0andV1 () {
+    void fullEncodedV0IsTheSameForV0andV1 () {
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
@@ -486,7 +486,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void fullEncodedV0IsTheSameAsEncodedForHeaderMessage () {
+    void fullEncodedV0IsTheSameAsEncodedForHeaderMessage () {
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
@@ -494,7 +494,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void fullEncodedV1IsTheSameAsCompressedButLogsBloomEdgesAndVersion () {
+    void fullEncodedV1IsTheSameAsCompressedButLogsBloomEdgesAndVersion () {
         // this test is added to assert that there were no changes in the rest of the elements
         BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
         headerV1.setLogsBloom(logsBloom);
@@ -518,7 +518,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void compressedEncodingV1HasSameRLPSizeAsFullEncodedV0WithoutEdges () {
+    void compressedEncodingV1HasSameRLPSizeAsFullEncodedV0WithoutEdges () {
         // this test is added to assert that the rlp header size does not change
         // in the hard fork, assuming both RSKIP 351 and RSKIP 144 are activated
         // together
@@ -537,7 +537,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void hashOfV1IncludesLogsBloom() {
+    void hashOfV1IncludesLogsBloom() {
         BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
 
         headerV1.setLogsBloom(logsBloom);
@@ -554,7 +554,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void hashOfV1IncludesEdges() {
+    void hashOfV1IncludesEdges() {
         BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
 
         headerV1.setTxExecutionSublistsEdges(edges);

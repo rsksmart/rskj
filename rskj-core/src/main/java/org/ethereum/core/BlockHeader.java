@@ -51,8 +51,7 @@ public abstract class BlockHeader {
     public abstract void setExtension(BlockHeaderExtension extension);
 
     // contains the logs bloom or the hash of the extension depending on version
-    protected byte[] extensionData;
-    public byte[] getExtensionData() { return this.extensionData; };
+    public byte[] getExtensionData() { return this.extensionData; }
 
     // fields from block header extension
     public abstract byte[] getLogsBloom();
@@ -120,6 +119,8 @@ public abstract class BlockHeader {
     private byte[] miningForkDetectionData;
 
     private final byte[] ummRoot;
+
+    protected byte[] extensionData;
 
     /**
      * The mgp for a tx to be included in the block.

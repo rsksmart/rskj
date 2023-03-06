@@ -295,12 +295,12 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void genesisHasVersion0() {
+    void genesisHasVersion0() {
         Assertions.assertEquals((byte) 0x0, factory.decodeBlock(genesisRaw()).getHeader().getVersion());
     }
 
     @Test
-    public void headerIsVersion0Before351Activation () {
+    void headerIsVersion0Before351Activation () {
         long number = 20L;
         enableRskip351At(number);
         BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number - 1).build();
@@ -308,7 +308,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void headerIsVersion1After351Activation () {
+    void headerIsVersion1After351Activation () {
         long number = 20L;
         enableRskip351At(number);
         BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number).build();
@@ -334,7 +334,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeCompressedBefore351() {
+    void decodeCompressedBefore351() {
         long number = 20L;
         enableRulesAt(number, RSKIP144);
         enableRskip351At(number);
@@ -357,7 +357,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeCompressedBefore351WithEdges() {
+    void decodeCompressedBefore351WithEdges() {
         long number = 20L;
         long blockNumber = number - 1;
         enableRulesAt(blockNumber, RSKIP144);
@@ -384,7 +384,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeCompressedWithNoEdgesAndMergedMiningFields() {
+    void decodeCompressedWithNoEdgesAndMergedMiningFields() {
         long blockNumber = 20L;
         enableRulesAt(blockNumber, RSKIP144, RSKIP92, RSKIPUMM);
         enableRskip351At(blockNumber);
@@ -416,7 +416,7 @@ class BlockFactoryTest {
      */
 
     @Test
-    public void decodeCompressedOfExtendedBefore351() {
+    void decodeCompressedOfExtendedBefore351() {
         long number = 20L;
         enableRulesAt(number, RSKIP144);
         enableRskip351At(number);
@@ -439,7 +439,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeCompressedOfExtendedBefore351WithEdges() {
+    void decodeCompressedOfExtendedBefore351WithEdges() {
         long number = 20L;
         long blockNumber = number - 1;
         enableRulesAt(blockNumber, RSKIP144);
@@ -466,7 +466,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeCompressedAfter351WithEdges() {
+    void decodeCompressedAfter351WithEdges() {
         long blockNumber = 20L;
         enableRulesAt(blockNumber, RSKIP144);
         enableRskip351At(blockNumber);
@@ -492,7 +492,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeFullBefore351And144() {
+    void decodeFullBefore351And144() {
         long number = 20L;
         long blockNumber = number - 1;
         enableRulesAt(number, RSKIP144);
@@ -516,7 +516,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeFullBefore351WithEdges() {
+    void decodeFullBefore351WithEdges() {
         long number = 20L;
         long blockNumber = number - 1;
         enableRulesAt(blockNumber, RSKIP144);
@@ -543,7 +543,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeFullAfter351WithEdges() {
+    void decodeFullAfter351WithEdges() {
         long blockNumber = 20L;
         enableRulesAt(blockNumber, RSKIP144);
         enableRskip351At(blockNumber);
@@ -569,7 +569,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockRskip144OnRskipUMMOnAndMergedMiningFields() {
+    void decodeBlockRskip144OnRskipUMMOnAndMergedMiningFields() {
         long number = 500L;
         enableRulesAt(number, RSKIPUMM, RSKIP144);
         short[] edges = TestUtils.randomShortArray(4);
@@ -587,7 +587,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockRskip144OnRskipUMMOnAndNoMergedMiningFields() {
+    void decodeBlockRskip144OnRskipUMMOnAndNoMergedMiningFields() {
         long number = 500L;
         enableRulesAt(number, RSKIPUMM, RSKIP144);
         short[] edges = TestUtils.randomShortArray(4);
@@ -605,7 +605,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockRskip144OnRskipUMMOffAndMergedMiningFields() {
+    void decodeBlockRskip144OnRskipUMMOffAndMergedMiningFields() {
         long number = 500L;
         enableRulesAt(number, RSKIP144);
         short[] edges = TestUtils.randomShortArray(4);
@@ -623,7 +623,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockRskip144OnRskipUMMOffAndNoMergedMiningFields() {
+    void decodeBlockRskip144OnRskipUMMOffAndNoMergedMiningFields() {
         long number = 500L;
         enableRulesAt(number, RSKIP144);
         short[] edges = TestUtils.randomShortArray(4);
@@ -728,7 +728,6 @@ class BlockFactoryTest {
                 .setTxExecutionSublistsEdges(edges)
                 .build();
     }
-
 
     private static byte[] genesisRawHash() {
         return Hex.decode("cabb7fbe88cd6d922042a32ffc08ce8b1fbb37d650b9d4e7dbfe2a7469adfa42");

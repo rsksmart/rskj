@@ -164,10 +164,9 @@ public class BlockFactory {
 
         short[] txExecutionSublistsEdges = null;
 
-        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) {
-            if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
-                txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
-            }
+        if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
+                (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))) {
+            txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -183,6 +182,20 @@ public class BlockFactory {
         boolean includeForkDetectionData = activationConfig.isActive(ConsensusRule.RSKIP110, blockNumber) &&
                 blockNumber >= MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION;
 
+        return createBlockHeader(compressed, sealed, parentHash, unclesHash,
+                coinBaseBytes, coinbase, stateRoot, txTrieRoot, receiptTrieRoot, extensionData,
+                difficultyBytes, difficulty, glBytes, blockNumber, gasUsed, timestamp, extraData,
+                paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, version, txExecutionSublistsEdges,
+                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
+                useRskip92Encoding, includeForkDetectionData);
+    }
+
+    private BlockHeader createBlockHeader(boolean compressed, boolean sealed, byte[] parentHash, byte[] unclesHash,
+                                          byte[] coinBaseBytes, RskAddress coinbase, byte[] stateRoot, byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData,
+                                          byte[] difficultyBytes, BlockDifficulty difficulty, byte[] glBytes, long blockNumber, long gasUsed, long timestamp, byte[] extraData,
+                                          Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot, byte version, short[] txExecutionSublistsEdges,
+                                          byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof, byte[] bitcoinMergedMiningCoinbaseTransaction,
+                                          boolean useRskip92Encoding, boolean includeForkDetectionData) {
         if (blockNumber == Genesis.NUMBER) {
             return new GenesisHeader(
                     parentHash,
@@ -238,8 +251,14 @@ public class BlockFactory {
     }
 
     private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed, int preParallelSizeAdjustment) {
-        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) return 1; // remove version
-        if (compressed) return 2 - preParallelSizeAdjustment; // remove version and edges if existent
+        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
+            return 1; // remove version
+        }
+
+        if (compressed) {
+            return 2 - preParallelSizeAdjustment; // remove version and edges if existent
+        }
+
         return 0;
     }
 

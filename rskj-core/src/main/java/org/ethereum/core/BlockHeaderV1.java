@@ -36,7 +36,9 @@ public class BlockHeaderV1 extends BlockHeader {
         this.extension = compressed
                 ? new BlockHeaderExtensionV1(null, null)
                 : new BlockHeaderExtensionV1(extensionData, txExecutionSublistsEdges);
-        if(!compressed) this.updateExtensionData(); // update after calculating
+        if(!compressed) {
+            this.updateExtensionData(); // update after calculating
+        }
 
     }
 
