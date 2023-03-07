@@ -25,6 +25,7 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeMessageHandler;
+import co.rsk.util.NodeStopper;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
@@ -83,5 +84,9 @@ public class Web3Mocks {
 
     public static BlockExecutor getMockBlockExecutor() {
         return mock(BlockExecutor.class);
+    }
+
+    public static NodeStopper getMockNodeStopper() {
+        return mock(NodeStopper.class);
     }
 }
