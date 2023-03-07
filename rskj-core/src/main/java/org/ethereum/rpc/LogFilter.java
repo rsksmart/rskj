@@ -254,11 +254,6 @@ public class LogFilter extends Filter {
         do {
             ExecTimeoutContext.checkIfExpired();
 
-            if (Thread.interrupted()) {
-                logger.error("Current operation was interrupted by thread. Quitting from 'processBlocks'");
-                return;
-            }
-
             boolean isConfirmedBlock = blockNumber <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
 
             BlocksBloom blocksBloom = isConfirmedBlock ? blocksBloomStore.getBlocksBloomByNumber(blockNumber) : null;
