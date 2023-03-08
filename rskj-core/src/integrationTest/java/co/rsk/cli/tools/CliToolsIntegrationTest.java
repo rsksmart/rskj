@@ -17,17 +17,30 @@
  */
 package co.rsk.cli.tools;
 
+import co.rsk.util.HexUtils;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.squareup.okhttp.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import javax.net.ssl.*;
 import java.io.*;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class CliToolsIntegrationTest {
@@ -36,6 +49,9 @@ class CliToolsIntegrationTest {
     private String logsFile;
     private String jarName;
     private String databaseDir;
+    private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
+    private final int port = 9999;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     class CustomProcess {
         private final Process process;
@@ -85,15 +101,151 @@ class CliToolsIntegrationTest {
         Files.deleteIfExists(Paths.get(logsFile));
     }
 
-    private CustomProcess runCommand(String cmd, int timeuout, TimeUnit timeUnit) throws InterruptedException, IOException {
+    private CustomProcess runCommand(String cmd, int timeout, TimeUnit timeUnit) throws InterruptedException, IOException {
+        return runCommand(cmd, timeout, timeUnit, null);
+    }
+
+    private CustomProcess runCommand(String cmd, int timeout, TimeUnit timeUnit, Consumer<Process> beforeDestroyFn) throws InterruptedException, IOException {
         Process proc = Runtime.getRuntime().exec(cmd);
 
-        proc.waitFor(timeuout, timeUnit);
+        proc.waitFor(timeout, timeUnit);
         String procInput = getProcStreamAsString(proc.getInputStream());
         String procErrors = getProcStreamAsString(proc.getErrorStream());
+
+        if (beforeDestroyFn != null) {
+
+            beforeDestroyFn.accept(proc);
+        }
+
         proc.destroy();
 
         return new CustomProcess(proc, procInput, procErrors);
+    }
+
+    private String getHashFromLog(List<String> logLines, int logIndex) {
+        List<String> hashes = logLines.stream().filter(l -> l.contains("[miner client]") && l.contains("blockHash"))
+                .map(this::getHashFromLog)
+                .collect(Collectors.toList());
+
+        return logIndex < 0 ? hashes.get(hashes.size() - 1) : hashes.get(logIndex);
+    }
+
+    private String getHashFromLog(String log) {
+        return log.split("\\[blockHash=")[1].split(", blockHeight")[0];
+    }
+
+    private Response getLatestProcessedBlock() throws IOException {
+        List<String> rskProc1Lines = Files.readAllLines(Paths.get(logsFile));
+
+        String blockHash = getHashFromLog(rskProc1Lines, -1);
+
+        String content = String.format("[{\n" +
+                        "    \"method\": \"eth_getBlockByHash\",\n" +
+                        "    \"params\": [\n" +
+                        "        \"%s\",\n" +
+                        "        true\n" +
+                        "    ],\n" +
+                        "    \"id\": 1,\n" +
+                        "    \"jsonrpc\": \"2.0\"\n" +
+                        "}]",
+                blockHash);
+
+        return sendJsonRpcMessage(content);
+    }
+
+    private static OkHttpClient getUnsafeOkHttpClient() {
+        try {
+            // Create a trust manager that does not validate certificate chains
+            final TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] chain,
+                                                       String authType) throws CertificateException {
+                        }
+
+                        @Override
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] chain,
+                                                       String authType) throws CertificateException {
+                        }
+
+                        @Override
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
+                    }
+            };
+            // Install the all-trusting trust manager
+            final SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            // Create an ssl socket factory with our all-trusting manager
+            final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+            return new OkHttpClient()
+                    .setSslSocketFactory(sslSocketFactory)
+                    .setHostnameVerifier(new HostnameVerifier() {
+                        @Override
+                        public boolean verify(String hostname, SSLSession session) {
+                            return true;
+                        }
+                    });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Response sendJsonRpcMessage(String content) throws IOException {
+        RequestBody requestBody = RequestBody.create(MediaType.parse("application/json-rpc"), content);
+        URL url = new URL("http", "localhost", port, "/");
+        Request request = new Request.Builder().url(url)
+                .addHeader("Host", "localhost")
+                .addHeader("Accept-Encoding", "identity")
+                .post(requestBody).build();
+        return getUnsafeOkHttpClient().newCall(request).execute();
+    }
+
+    @Test
+    void whenExportBlocksRuns_shouldExportSpecifiedBlocks() throws Exception {
+        Map<String, Response> responseMap = new HashMap<>();
+        String dbDir = tempDir.toString();
+        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset --regtest -Xkeyvalue.datasource=leveldb -Xdatabase.dir=%s -Xrpc.providers.web.http.port=%s", buildLibsPath, jarName, databaseDir, port);
+        runCommand(
+                cmd,
+                1,
+                TimeUnit.MINUTES,
+                proc -> {
+                    try {
+                        Response response = getLatestProcessedBlock();
+                        responseMap.put("latestProcessedBlock", response);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+        );
+
+        String responseBody = responseMap.get("latestProcessedBlock").body().string();
+        JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
+        JsonNode transactionsNode = jsonRpcResponse.get(0).get("result").get("transactions");
+
+        Long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
+
+        Files.delete(Paths.get(logsFile));
+
+        File blocksFile = tempDir.resolve("blocks.txt").toFile();
+        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock %s --file %s -Xdatabase.dir=%s --regtest -Xkeyvalue.datasource=leveldb", buildLibsPath, jarName, blockNumber, blocksFile.getAbsolutePath(), dbDir);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Files.delete(Paths.get(logsFile));
+
+        List<String> exportedBlocksLines = Files.readAllLines(Paths.get(blocksFile.getAbsolutePath()));
+        String exportedBlocksLine = exportedBlocksLines.stream()
+                .filter(l -> l.split(",")[0].equals(blockNumber.toString()))
+                .findFirst()
+                .get();
+        String[] exportedBlocksLineParts = exportedBlocksLine.split(",");
+
+        Files.delete(Paths.get(blocksFile.getAbsolutePath()));
+
+        Assertions.assertFalse(exportedBlocksLines.isEmpty());
+        Assertions.assertTrue(transactionsNode.get(0).get("blockHash").asText().contains(exportedBlocksLineParts[1]));
     }
 
     @Test
@@ -140,5 +292,6 @@ class CliToolsIntegrationTest {
 
         Assertions.assertTrue(dbMigrateProc.getInput().contains("DbMigrate finished"));
         Assertions.assertTrue(rskProc2Lines.stream().anyMatch(l -> l.contains("DEBUG [minerClient] [Refresh work for mining]  There is a new best block")));
+        Assertions.assertTrue(rskProc2Lines.stream().noneMatch(l -> l.contains("Exception:")));
     }
 }
