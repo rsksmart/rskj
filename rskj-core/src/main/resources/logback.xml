@@ -63,7 +63,7 @@
     <logger name="gaspricetracker" level="INFO"/>
     <logger name="web3" level="INFO"/>
     <logger name="repository" level="INFO"/>
-    <logger name="VM" level="ERROR"/>
+    <logger name="VM" level="INFO"/>
     <logger name="blockqueue" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
     <logger name="block" level="INFO"/>

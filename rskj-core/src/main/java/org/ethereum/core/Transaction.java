@@ -63,9 +63,9 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
-    private static final String TYPED = "7c"; //EIP-2718
+    private static final String TYPED = "7f"; //EIP-2718
     public static final byte LEGACY_TYPE = 0;
-    protected static final byte AA_TYPE = 1;
+    public static final byte AA_TYPE = 1;
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
     private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
     private static final Profiler profiler = ProfilerFactory.getInstance();
@@ -114,8 +114,8 @@ public class Transaction {
     protected Transaction(byte[] rawData) {
         final boolean typed = Hex.toHexString(new byte[]{rawData[0]}).compareTo(TYPED) < 0;
         this.type = typed ? rawData[0] : LEGACY_TYPE;
-        final byte[] data = typed ? Arrays.copyOfRange(rawData,1, rawData.length) : rawData;
-        RLPList transaction = RLP.decodeList(data);
+        final byte[] txdata = typed ? Arrays.copyOfRange(rawData,1, rawData.length) : rawData;
+        RLPList transaction = RLP.decodeList(txdata);
         if (transaction.size() != 9) {
             throw new IllegalArgumentException("A transaction must have exactly 9 elements, but it has: " + transaction.size());
         }

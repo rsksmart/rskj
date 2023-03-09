@@ -1,0 +1,3 @@
+account_new acc1 10000000000
+account_new acc2 10000000000
+

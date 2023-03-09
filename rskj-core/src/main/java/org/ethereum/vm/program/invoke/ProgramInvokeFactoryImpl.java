@@ -20,16 +20,16 @@ package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
+import co.rsk.peg.ABICallSpec;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -50,7 +50,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
-        RskAddress addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
+        RskAddress addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getType() == Transaction.AA_TYPE ? tx.getSender() : tx.getReceiveAddress();
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
@@ -75,7 +75,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         /***     CALLDATALOAD  op   ***/
         /***     CALLDATACOPY  op   ***/
         /***     CALLDATASIZE  op   ***/
-        byte[] data = tx.isContractCreation() ? ByteUtil.EMPTY_BYTE_ARRAY : nullToEmpty(tx.getData());
+        byte[] data = tx.isContractCreation() ? ByteUtil.EMPTY_BYTE_ARRAY : getTxData(tx);
 
         /***    PREVHASH  op  ***/
         byte[] lastHash = block.getParentHash().getBytes();
@@ -133,6 +133,25 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), gasPrice.getBytes(), gas, callValue.getBytes(), data,
                 lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
                 repository, blockStore);
+    }
+
+    // AA - Depends on the type of tx it transform the data
+    private byte[] getTxData(Transaction tx) {
+        if(tx.getType() == Transaction.AA_TYPE) {
+            return CallTransaction.Function.fromSignature("executeTransaction",
+                            new String[]{SolidityType.UINT256})//, SolidityType.UINT256,SolidityType.UINT256, SolidityType.UINT256,SolidityType.UINT256, SolidityType.UINT256,SolidityType.UINT256, SolidityType.BYTES, SolidityType.BYTES })
+                    .encode(
+                            tx.getType() /*,
+                            tx.getSender().toHexString(),
+                            tx.getReceiveAddress().toHexString(),
+                            Hex.toHexString(tx.getGasLimit()),
+                            tx.getGasPrice().asBigInteger(),
+                            Hex.toHexString(tx.getNonce()),
+                            tx.getValue().asBigInteger(),
+                            tx.getData(),
+                            tx.getRawsignature()*/);
+        }
+        return nullToEmpty(tx.getData());
     }
 
     /**

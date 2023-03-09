@@ -169,7 +169,7 @@ public class TransactionExecutor {
 
         Coin totalCost = tx.getValue();
 
-        if (basicTxCost > 0 ) {
+        if (basicTxCost > 0) {
             // add gas cost only for priced transactions
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             totalCost = totalCost.add(txGasCost);
@@ -206,7 +206,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        // TODO check if RSKIP is active
+        // TODO check if RSKIP is active & check if from address is AA.
         if (!tx.acceptTransactionSignature(constants.getChainId()) && tx.getType() == Transaction.LEGACY_TYPE) {
             logger.warn("Transaction {} signature not accepted: {}", tx.getHash(), tx.getSignature());
             logger.warn("Transaction Data: {}", tx);
@@ -296,7 +296,7 @@ public class TransactionExecutor {
     private void call() {
         logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
-        RskAddress targetAddress = tx.getReceiveAddress();
+        RskAddress targetAddress = tx.getType() == Transaction.AA_TYPE ? tx.getSender() : tx.getReceiveAddress();
 
         // DataWord(targetAddress)) can fail with exception:
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
@@ -317,7 +317,7 @@ public class TransactionExecutor {
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
             if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
-                execError(String.format( "Out of Gas calling precompiled contract at block %d " +
+                execError(String.format("Out of Gas calling precompiled contract at block %d " +
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, gasLeftover));
                 gasLeftover = 0;
@@ -349,6 +349,9 @@ public class TransactionExecutor {
             byte[] code = track.getCode(targetAddress);
             // Code can be null
             if (isEmpty(code)) {
+                if (tx.getType() == Transaction.AA_TYPE) {
+                    // TODO AA throw error
+                }
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
             } else {
@@ -473,7 +476,7 @@ public class TransactionExecutor {
             result = program.getResult();
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else {
-            gasLeftover = GasCost.subtract(gasLeftover,  returnDataGasValue);
+            gasLeftover = GasCost.subtract(gasLeftover, returnDataGasValue);
             program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
@@ -550,12 +553,12 @@ public class TransactionExecutor {
     }
 
     private void localCallFinalization() {
-        if(result == null) {
+        if (result == null) {
             logger.warn("this is unexpected, a transaction executor should always have a non null result");
             return;
         }
 
-        if(result.getException() != null) {
+        if (result.getException() != null) {
             logger.warn("Local call produced an execution error: {}",
                     executionError != null ? executionError : "unexpected");
             return;
@@ -635,8 +638,7 @@ public class TransactionExecutor {
             // TODO improve this settings; the trace should already have the values
             ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException()).revert(result.isRevert());
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
-        }
-        else {
+        } else {
             TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender(signatureCache).getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
@@ -672,5 +674,7 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(toBI(gasLeftover)).longValue();
     }
 
-    public Coin getPaidFees() { return paidFees; }
+    public Coin getPaidFees() {
+        return paidFees;
+    }
 }

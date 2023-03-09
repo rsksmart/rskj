@@ -41,7 +41,7 @@ assert_tx_success tx02
 
 transaction_build tx03
     sender acc2
-    contract tx02
+    contract acc1 #TODO check if this is working
     value 0
     data c2985578 # foo()
     gas 2000000

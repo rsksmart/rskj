@@ -21,6 +21,9 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslParser;
+import co.rsk.test.dsl.WorldDslProcessor;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -32,9 +35,11 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.FileNotFoundException;
 import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Random;
@@ -299,6 +304,15 @@ class TransactionExecutorTest {
         }
 
         assertNotNull(blockTxSignatureCache.getSender(transaction));
+    }
+
+
+    @Test
+    void AA_dsl() throws FileNotFoundException {
+        DslParser parser = DslParser.fromResource("dsl/transaction/execution_type_AA.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));
     }
 
     private boolean executeValidTransaction(Transaction transaction, BlockTxSignatureCache blockTxSignatureCache) {
