@@ -68,6 +68,10 @@ public class ProgramResult {
     private long gasUsedBeforeRefunds = 0; // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
 
     public void movedRemainingGasToChild(boolean moved) {
+        // once market as true, this should prevail
+        if (this.movedRemainingGasToChild) {
+            return;
+        }
         this.movedRemainingGasToChild = moved;
     }
 
