@@ -169,6 +169,10 @@ class CliToolsIntegrationTest {
         return rskContext.getBlockStore().getBlockByHash(HexUtils.stringHexToByteArray(blockHash));
     }
 
+    private Block getBestBlock(RskContext rskContext) throws IOException {
+        return rskContext.getBlockchain().getBestBlock();
+    }
+
     private static OkHttpClient getUnsafeOkHttpClient() {
         try {
             // Create a trust manager that does not validate certificate chains
@@ -337,6 +341,46 @@ class CliToolsIntegrationTest {
 
         Assertions.assertFalse(stateInfoLines.isEmpty());
         Assertions.assertTrue(stateInfoLines.stream().anyMatch(l -> l.contains(HexUtils.removeHexPrefix(result.get("hash").asText()))));
+    }
+
+    @Test
+    void whenExecuteBlocksRuns_shouldReturnExpectedBestBlock() throws Exception {
+        Map<String, Response> responseMap = new HashMap<>();
+        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
+        runCommand(
+                cmd,
+                1,
+                TimeUnit.MINUTES, proc -> {
+                    try {
+                        Response response = getLatestProcessedBlock();
+                        responseMap.put("latestProcessedBlock", response);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+        );
+
+        String responseBody = responseMap.get("latestProcessedBlock").body().string();
+        JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
+        JsonNode result = jsonRpcResponse.get(0).get("result");
+        JsonNode transactionsNode = result.get("transactions");
+
+        Long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
+
+        Files.delete(Paths.get(logsFile));
+
+        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.ExecuteBlocks --fromBlock 0 --toBlock %s %s", buildLibsPath, jarName, blockNumber, strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Files.delete(Paths.get(logsFile));
+
+        RskContext rskContext = new RskContext(baseArgs);
+
+        Block block = getBestBlock(rskContext);
+
+        rskContext.close();
+
+        Assertions.assertEquals(block.getNumber(), blockNumber + 1);
     }
 
     @Test
