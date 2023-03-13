@@ -303,6 +303,43 @@ class CliToolsIntegrationTest {
     }
 
     @Test
+    void whenShowStateInfoRuns_shouldShowSpecifiedState() throws Exception {
+        Map<String, Response> responseMap = new HashMap<>();
+        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
+        runCommand(
+                cmd,
+                1,
+                TimeUnit.MINUTES, proc -> {
+                    try {
+                        Response response = getLatestProcessedBlock();
+                        responseMap.put("latestProcessedBlock", response);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+        );
+
+        String responseBody = responseMap.get("latestProcessedBlock").body().string();
+        JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
+        JsonNode result = jsonRpcResponse.get(0).get("result");
+        JsonNode transactionsNode = result.get("transactions");
+
+        Long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
+
+        Files.delete(Paths.get(logsFile));
+
+        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.ShowStateInfo --block %s %s", buildLibsPath, jarName, blockNumber, strBaseArgs);
+        CustomProcess showStateInfoProc = runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Files.delete(Paths.get(logsFile));
+
+        List<String> stateInfoLines = Arrays.asList(showStateInfoProc.getInput().split("\\n"));
+
+        Assertions.assertFalse(stateInfoLines.isEmpty());
+        Assertions.assertTrue(stateInfoLines.stream().anyMatch(l -> l.contains(HexUtils.removeHexPrefix(result.get("hash").asText()))));
+    }
+
+    @Test
     void whenDbMigrateRuns_shouldMigrateLevelDbToRocksDbAndShouldNotStartNodeWithPrevDbKind() throws Exception {
         String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
@@ -337,7 +374,7 @@ class CliToolsIntegrationTest {
         Files.delete(Paths.get(logsFile));
 
         LinkedList<String> args = Stream.of(baseArgs)
-                .map(arg -> arg.equals("-Xkeyvalue.datasource=leveldb") ? "-Xkeyvalue.datasource=rocksdb" : arg )
+                .map(arg -> arg.equals("-Xkeyvalue.datasource=leveldb") ? "-Xkeyvalue.datasource=rocksdb" : arg)
                 .collect(Collectors.toCollection(LinkedList::new));
 
         cmd = String.format("java -cp %s/%s co.rsk.Start %s", buildLibsPath, jarName, String.join(" ", args));
