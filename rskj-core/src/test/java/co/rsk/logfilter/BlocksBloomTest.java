@@ -55,49 +55,98 @@ class BlocksBloomTest {
     }
 
     @Test
-    void addTwoBlocksToBlocksBloom() {
+    void addThreeBlocksToBlocksBloom() {
         BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
         bytes2[1] = 0x10;
+        byte[] bytes3 = new byte[Bloom.BLOOM_BYTES];
+        bytes3[2] = 0x20;
 
         Bloom bloom1 = new Bloom(bytes1);
         Bloom bloom2 = new Bloom(bytes2);
+        Bloom bloom3 = new Bloom(bytes3);
 
         blocksBloom.addBlockBloom(1, bloom1);
         blocksBloom.addBlockBloom(2, bloom2);
+        blocksBloom.addBlockBloom(3, bloom3);
 
-        Assertions.assertEquals(2, blocksBloom.size());
+        Assertions.assertEquals(3, blocksBloom.size());
         Assertions.assertEquals(1, blocksBloom.fromBlock());
-        Assertions.assertEquals(2, blocksBloom.toBlock());
+        Assertions.assertEquals(3, blocksBloom.toBlock());
 
         bloom1.or(bloom2);
+        bloom1.or(bloom3);
 
         Assertions.assertArrayEquals(bloom1.getData(), blocksBloom.getBloom().getData());
     }
 
     @Test
-    void addTwoBlocksToBlocksBloomReversed() {
+    void addThreeBlocksToBlocksBloomBackwards() {
         BlocksBloom blocksBloom = BlocksBloom.createEmptyWithBackwardsAddition();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
         bytes2[1] = 0x10;
+        byte[] bytes3 = new byte[Bloom.BLOOM_BYTES];
+        bytes3[2] = 0x20;
 
         Bloom bloom1 = new Bloom(bytes1);
         Bloom bloom2 = new Bloom(bytes2);
+        Bloom bloom3 = new Bloom(bytes3);
 
+        blocksBloom.addBlockBloom(3, bloom3);
         blocksBloom.addBlockBloom(2, bloom2);
         blocksBloom.addBlockBloom(1, bloom1);
 
-        Assertions.assertEquals(2, blocksBloom.size());
+        Assertions.assertEquals(3, blocksBloom.size());
         Assertions.assertEquals(1, blocksBloom.fromBlock());
-        Assertions.assertEquals(2, blocksBloom.toBlock());
+        Assertions.assertEquals(3, blocksBloom.toBlock());
+
+        bloom3.or(bloom2);
+        bloom3.or(bloom1);
+
+        Assertions.assertArrayEquals(bloom3.getData(), blocksBloom.getBloom().getData());
+    }
+
+    @Test
+    void backwardsAndForwardBloomEquals() {
+        byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
+        bytes1[0] = 0x01;
+        byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
+        bytes2[1] = 0x10;
+        byte[] bytes3 = new byte[Bloom.BLOOM_BYTES];
+        bytes3[2] = 0x20;
+
+        Bloom bloom1 = new Bloom(bytes1);
+        Bloom bloom2 = new Bloom(bytes2);
+        Bloom bloom3 = new Bloom(bytes3);
+
+        BlocksBloom blocksBloomBackwards = BlocksBloom.createEmptyWithBackwardsAddition();
+        blocksBloomBackwards.addBlockBloom(3, bloom3);
+        blocksBloomBackwards.addBlockBloom(2, bloom2);
+        blocksBloomBackwards.addBlockBloom(1, bloom1);
+
+        BlocksBloom blocksBloomForward = BlocksBloom.createEmpty();
+        blocksBloomForward.addBlockBloom(1, bloom1);
+        blocksBloomForward.addBlockBloom(2, bloom2);
+        blocksBloomForward.addBlockBloom(3, bloom3);
+
+        Assertions.assertEquals(blocksBloomForward.size(), blocksBloomBackwards.size());
+        Assertions.assertEquals(blocksBloomForward.fromBlock(), blocksBloomBackwards.fromBlock());
+        Assertions.assertEquals(blocksBloomForward.toBlock(), blocksBloomBackwards.toBlock());
+        Assertions.assertEquals(blocksBloomForward.getBloom(), blocksBloomBackwards.getBloom());
 
         bloom1.or(bloom2);
+        bloom1.or(bloom3);
+        Assertions.assertArrayEquals(bloom1.getData(), blocksBloomBackwards.getBloom().getData());
+        Assertions.assertArrayEquals(bloom1.getData(), blocksBloomForward.getBloom().getData());
 
-        Assertions.assertArrayEquals(bloom1.getData(), blocksBloom.getBloom().getData());
+        bloom3.or(bloom2);
+        bloom3.or(bloom1);
+        Assertions.assertArrayEquals(bloom3.getData(), blocksBloomBackwards.getBloom().getData());
+        Assertions.assertArrayEquals(bloom3.getData(), blocksBloomForward.getBloom().getData());
     }
 
     @Test
@@ -112,13 +161,15 @@ class BlocksBloomTest {
         Bloom bloom2 = new Bloom(bytes2);
 
         blocksBloom.addBlockBloom(1, bloom1);
-        Exception exception = Assertions.assertThrows(UnsupportedOperationException.class, () -> blocksBloom.addBlockBloom(3, bloom2));
+        Exception exceptionGap = Assertions.assertThrows(UnsupportedOperationException.class, () -> blocksBloom.addBlockBloom(3, bloom2));
+        Assertions.assertEquals("Block out of sequence", exceptionGap.getMessage());
 
-        Assertions.assertEquals("Block out of sequence", exception.getMessage());
+        Exception exceptionSame = Assertions.assertThrows(UnsupportedOperationException.class, () -> blocksBloom.addBlockBloom(1, bloom2));
+        Assertions.assertEquals("Block out of sequence", exceptionSame.getMessage());
     }
 
     @Test
-    void addTwoNonConsecutiveBlocksToBlocksBloomReversed() {
+    void addTwoNonConsecutiveBlocksToBlocksBloomBackwards() {
         BlocksBloom blocksBloom = BlocksBloom.createEmpty();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
@@ -129,9 +180,11 @@ class BlocksBloomTest {
         Bloom bloom2 = new Bloom(bytes2);
 
         blocksBloom.addBlockBloom(3, bloom1);
-        Exception exception = Assertions.assertThrows(UnsupportedOperationException.class, () -> blocksBloom.addBlockBloom(1, bloom2));
+        Exception exceptionGap = Assertions.assertThrows(UnsupportedOperationException.class, () -> blocksBloom.addBlockBloom(1, bloom2));
+        Assertions.assertEquals("Block out of sequence", exceptionGap.getMessage());
 
-        Assertions.assertEquals("Block out of sequence", exception.getMessage());
+        Exception exceptionSame = Assertions.assertThrows(UnsupportedOperationException.class, () -> blocksBloom.addBlockBloom(3, bloom2));
+        Assertions.assertEquals("Block out of sequence", exceptionSame.getMessage());
     }
 
     @Test

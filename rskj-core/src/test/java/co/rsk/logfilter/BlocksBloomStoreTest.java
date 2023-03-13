@@ -87,31 +87,39 @@ class BlocksBloomStoreTest {
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
         bytes2[1] = 0x10;
+        byte[] bytes3 = new byte[Bloom.BLOOM_BYTES];
+        bytes3[2] = 0x20;
 
         Bloom bloom1 = new Bloom(bytes1);
         Bloom bloom2 = new Bloom(bytes2);
+        Bloom bloom3 = new Bloom(bytes3);
 
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, new HashMapDB());
 
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
+        blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 2, bloom3);
 
         addBlocksBloomCommon(blocksBloomStore, blocksBloom);
     }
 
     @Test
-    void addBlocksBloomReversed() {
+    void addBlocksBloomBackwards() {
         BlocksBloom blocksBloom = BlocksBloom.createEmptyWithBackwardsAddition();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
         bytes2[1] = 0x10;
+        byte[] bytes3 = new byte[Bloom.BLOOM_BYTES];
+        bytes3[2] = 0x20;
 
         Bloom bloom1 = new Bloom(bytes1);
         Bloom bloom2 = new Bloom(bytes2);
+        Bloom bloom3 = new Bloom(bytes3);
 
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, new HashMapDB());
 
+        blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 2, bloom3);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
 
@@ -136,14 +144,18 @@ class BlocksBloomStoreTest {
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
         bytes2[1] = 0x10;
+        byte[] bytes3 = new byte[Bloom.BLOOM_BYTES];
+        bytes3[2] = 0x20;
 
         Bloom bloom1 = new Bloom(bytes1);
         Bloom bloom2 = new Bloom(bytes2);
+        Bloom bloom3 = new Bloom(bytes3);
 
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
 
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
+        blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 2, bloom3);
 
         addBlocksBloomUsingDataSourceCommon(blocksBloomStore, blocksBloom, dataSource);
     }
@@ -156,12 +168,16 @@ class BlocksBloomStoreTest {
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
         bytes2[1] = 0x10;
+        byte[] bytes3 = new byte[Bloom.BLOOM_BYTES];
+        bytes3[2] = 0x20;
 
         Bloom bloom1 = new Bloom(bytes1);
         Bloom bloom2 = new Bloom(bytes2);
+        Bloom bloom3 = new Bloom(bytes3);
 
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
 
+        blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 2, bloom3);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
 

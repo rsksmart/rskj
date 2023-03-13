@@ -86,7 +86,7 @@ public class BlocksBloom {
             this.fromBlock = blockNumber;
             this.toBlock = blockNumber;
             this.empty = false;
-        } else if (backwardsAddition && blockNumber == toBlock - 1) {
+        } else if (backwardsAddition && blockNumber == fromBlock - 1) {
             this.fromBlock = blockNumber;
         } else if (!backwardsAddition && blockNumber == toBlock + 1) {
             this.toBlock = blockNumber;
