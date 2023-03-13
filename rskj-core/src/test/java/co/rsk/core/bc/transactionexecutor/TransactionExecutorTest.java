@@ -15,30 +15,47 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.ethereum.core;
+package co.rsk.core.bc.transactionexecutor;
 
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
+import static co.rsk.core.bc.BlockExecutorTest.createAccount;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -66,7 +83,6 @@ class TransactionExecutorTest {
         // paperwork: mock a whole nice transaction executor
         txIndex = 1;
         gasUsedInTheBlock = 0;
-
         activationConfig = ActivationConfigsForTest.all();
         constants = mock(Constants.class);
         rskAddress = mock(RskAddress.class);
@@ -298,6 +314,8 @@ class TransactionExecutorTest {
 
         assertNotNull(blockTxSignatureCache.getSender(transaction));
     }
+
+
 
     private boolean executeValidTransaction(Transaction transaction, BlockTxSignatureCache blockTxSignatureCache) {
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());

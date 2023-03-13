@@ -739,7 +739,7 @@ public class BlockExecutor {
         DataWord receiver = DataWord.valueOf(tx.getReceiveAddress().getBytes());
         PrecompiledContracts.PrecompiledContract precompiledContractAddress = txExecutor.getPrecompiledContracts().getContractForAddress(activations, receiver);
 
-        if (precompiledContractAddress != null) {
+        if (precompiledContractAddress != null || txExecutor.precompiledContractHasBeenCalled()) {
             if (isRemascTransaction) {
                 sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {

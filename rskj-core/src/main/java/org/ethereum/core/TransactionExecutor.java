@@ -99,6 +99,7 @@ public class TransactionExecutor {
     private final SignatureCache signatureCache;
 
     private boolean localCall = false;
+    private boolean precompiledContractHasBeenCalledFlag = false;
 
     private boolean postponeFeePayment;
 
@@ -322,6 +323,7 @@ public class TransactionExecutor {
         this.subtraces = new ArrayList<>();
 
         if (precompiledContract != null) {
+            this.precompiledContractHasBeenCalledFlag = true;
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
             profiler.stop(metric);
@@ -439,6 +441,7 @@ public class TransactionExecutor {
 
             vm.play(program);
 
+            precompiledContractHasBeenCalledFlag |= program.precompiledContractHasBeenCalled();
             result = program.getResult();
             gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
@@ -696,6 +699,6 @@ public class TransactionExecutor {
     }
 
     public boolean precompiledContractHasBeenCalled() {
-        return program.precompiledContractHasBeenCalled();
+        return this.precompiledContractHasBeenCalledFlag;
     }
 }

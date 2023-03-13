@@ -837,6 +837,7 @@ public class Program {
 
         getTrace().merge(program.getTrace());
         getResult().merge(childResult);
+        this.precompiledContractHasBeenCalled |= program.precompiledContractHasBeenCalled;
 
         boolean childCallSuccessful = true;
 
@@ -1334,7 +1335,7 @@ public class Program {
     }
 
     public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
-        this.precompiledContractHasBeenCalled = true;
+        setPrecompiledContractHasBeenCalled();
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), " call deep limit reach");
@@ -1446,6 +1447,10 @@ public class Program {
         } catch (VMException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void setPrecompiledContractHasBeenCalled() {
+        this.precompiledContractHasBeenCalled = true;
     }
 
     /**
