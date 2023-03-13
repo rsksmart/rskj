@@ -333,7 +333,7 @@ public class BlockHeaderBuilder {
             }
         }
 
-        if (createParallelCompliantHeader && txExecutionSublistsEdges == null) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP144, number) && createParallelCompliantHeader && txExecutionSublistsEdges == null) {
             txExecutionSublistsEdges = new short[0];
         }
 
@@ -348,7 +348,7 @@ public class BlockHeaderBuilder {
                 mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount,
                 false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot, txExecutionSublistsEdges
+                includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false
         );
 
         return new BlockHeaderV0(

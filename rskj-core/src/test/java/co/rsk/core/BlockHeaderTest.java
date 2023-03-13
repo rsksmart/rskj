@@ -29,6 +29,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
@@ -396,30 +397,50 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void getVersion0() { this.testHeaderVersion((byte) 0x0); }
+    void getVersion0() { this.testHeaderVersion((byte) 0x0); }
 
     @Test
-    public void getVersion1() {
+    void getVersion1() {
         this.testHeaderVersion((byte) 0x1);
     }
 
-    @Test
-    public void encodeForLogsBloomField() {
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+    private static byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+    private static short[] edges = new short[]{ 1, 2, 3, 4 };
+
+    @BeforeAll
+    static void setupLogsBloom() {
         logsBloom[0] = 0x01;
         logsBloom[1] = 0x02;
         logsBloom[2] = 0x03;
         logsBloom[3] = 0x04;
+    }
 
+    @Test
+    void encodeForLogsBloomField() {
         BlockHeaderV1 header = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
         header.setLogsBloom(logsBloom);
+        header.setTxExecutionSublistsEdges(edges);
 
-        byte[] logsBloomField = RLP.decode2(header.getLogsBloomFieldEncoded()).get(0).getRLPData();
+        RLPList extensionDataRLP = RLP.decodeList(header.getExtensionData());
+        byte version = extensionDataRLP.get(0).getRLPData()[0];
+        byte[] extensionHash = extensionDataRLP.get(1).getRLPData();
 
-        Assertions.assertEquals(0x1, logsBloomField[0]);
-        Assertions.assertArrayEquals(header.getExtension().getHash(), Arrays.copyOfRange(logsBloomField, 1, 33));
-        for (byte b:Arrays.copyOfRange(logsBloomField, 33, Bloom.BLOOM_BYTES)) Assertions.assertEquals(0x0, b);
-        Assertions.assertEquals(Bloom.BLOOM_BYTES, logsBloomField.length);
+        Assertions.assertEquals((byte) 0x1, version);
+        Assertions.assertArrayEquals(header.getExtension().getHash(), extensionHash);
+    }
+
+    @Test
+    void encodeForLogsBloomFieldIsNotLogsBloomSize() {
+        // this test is added to assert the blockchain is still serializable
+        // it is still possible to serialize wether logs bloom field is the
+        // actual logs bloom or the extension data by reading its length != 256
+        BlockHeaderV1 header = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
+        header.setLogsBloom(logsBloom);
+        header.setTxExecutionSublistsEdges(edges);
+
+        byte[] extensionData = header.getExtensionData();
+
+        Assertions.assertNotEquals(Bloom.BLOOM_BYTES, extensionData.length);
     }
 
     private BlockHeaderV1 createV1FromV0(BlockHeaderV0 headerV0) {
@@ -430,90 +451,95 @@ class BlockHeaderTest {
                 headerV0.getPaidFees(), headerV0.getBitcoinMergedMiningHeader(), headerV0.getBitcoinMergedMiningMerkleProof(),
                 headerV0.getBitcoinMergedMiningCoinbaseTransaction(), headerV0.getMiningForkDetectionData(),
                 headerV0.getMinimumGasPrice(), headerV0.getUncleCount(), headerV0.isSealed(),
-                false, false, headerV0.getUmmRoot(), headerV0.getTxExecutionSublistsEdges()
+                false, false, headerV0.getUmmRoot(), headerV0.getTxExecutionSublistsEdges(), false
         );
     }
 
-    @Test
-    public void encodedV0IsTheSameForV0andV1 () {
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
+    private void testEncodingButVersion(BlockHeaderV0 headerV0, BlockHeaderV1 headerV1) {
+        RLPList rlpHeaderV0 = RLP.decodeList(headerV0.getEncoded());
+        RLPList rlpHeaderV1 = RLP.decodeList(headerV1.getEncoded());
 
+        for (int i = 0; i < rlpHeaderV0.size(); i++) {
+            // jump version field
+            Assertions.assertArrayEquals(rlpHeaderV0.get(i).getRLPData(), rlpHeaderV1.get(i > 15 ? i + 1 : i).getRLPData());
+        }
+    }
+
+    @Test
+    void encodedV0IsTheSameForV0andV1 () {
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
         BlockHeaderV1 headerV1 = createV1FromV0(headerV0);
 
-        Assertions.assertArrayEquals(headerV0.getEncoded(), headerV1.getEncoded());
+        testEncodingButVersion(headerV0, headerV1);
     }
 
     @Test
-    public void fullEncodedV0IsTheSameForV0andV1 () {
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
-
+    void fullEncodedV0IsTheSameForV0andV1 () {
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
         BlockHeaderV1 headerV1 = createV1FromV0(headerV0);
 
-        Assertions.assertArrayEquals(headerV0.getFullEncoded(), headerV1.getFullEncoded());
+        testEncodingButVersion(headerV0, headerV1);
     }
 
     @Test
-    public void fullEncodedV0IsTheSameAsEncodedForHeaderMessage () {
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
-
+    void fullEncodedV0IsTheSameAsEncodedForHeaderMessage () {
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
-        Assertions.assertArrayEquals(headerV0.getFullEncoded(), headerV0.getEncodedForHeaderMessage());
+        Assertions.assertArrayEquals(headerV0.getFullEncoded(), headerV0.getEncodedCompressed());
     }
 
     @Test
-    public void fullEncodedV1IsTheSameAsEncodedForHeaderMessageButLogsBloomAndEdges () {
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
-
+    void fullEncodedV1IsTheSameAsCompressedButLogsBloomEdgesAndVersion () {
+        // this test is added to assert that there were no changes in the rest of the elements
         BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
         headerV1.setLogsBloom(logsBloom);
 
         RLPList fullEncoded = RLP.decodeList(headerV1.getFullEncoded());
-        RLPList encodedForHeaderMessage = RLP.decodeList(headerV1.getEncodedForHeaderMessage());
+        RLPList encodedCompressed = RLP.decodeList(headerV1.getEncodedCompressed());
 
-        Assertions.assertEquals(fullEncoded.size() - 1, encodedForHeaderMessage.size());
+        // extension data takes the element of logs bloom
+        // version element is not existent, is inside the rlp list od the extension data
+        // edges is not existent
+        int sizeDifference = 2;
+        Assertions.assertEquals(fullEncoded.size() - sizeDifference, encodedCompressed.size());
 
-        for (int i = 0; i < encodedForHeaderMessage.size(); i++) {
-            int j = i < 16 ? i : i + 1; //padding if extension has edges
-            if (i != 6) // logs bloom field
-                Assertions.assertArrayEquals(fullEncoded.get(j).getRLPData(), encodedForHeaderMessage.get(i).getRLPData());
+        for (int i = 0; i < encodedCompressed.size(); i++) {
+            int j = i < 16 ? i : i + sizeDifference; // keep comparing elements jumping version and edges
+            if (i != 6) {
+                // logs bloom field
+                Assertions.assertArrayEquals(fullEncoded.get(j).getRLPData(), encodedCompressed.get(i).getRLPData());
+            }
         }
-
-        Assertions.assertFalse(Arrays.equals(fullEncoded.get(6).getRLPData(), encodedForHeaderMessage.get(6).getRLPData()));
     }
 
     @Test
-    public void hashOfV1IncludesLogsBloom() {
+    void compressedEncodingV1HasSameRLPSizeAsFullEncodedV0WithoutEdges () {
+        // this test is added to assert that the rlp header size does not change
+        // in the hard fork, assuming both RSKIP 351 and RSKIP 144 are activated
+        // together
+        BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
+        headerV0.setLogsBloom(logsBloom);
+        headerV0.setTxExecutionSublistsEdges(null);
+
+        BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
+        headerV1.setLogsBloom(logsBloom);
+        headerV1.setTxExecutionSublistsEdges(null);
+
+        RLPList compressedEncodingV1 = RLP.decodeList(headerV1.getEncodedCompressed());
+        RLPList fullEncodedV0 = RLP.decodeList(headerV0.getFullEncoded());
+
+        Assertions.assertEquals(fullEncodedV0.size(), compressedEncodingV1.size());
+    }
+
+    @Test
+    void hashOfV1IncludesLogsBloom() {
         BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
 
-        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
-        logsBloom[0] = 0x01;
-        logsBloom[1] = 0x02;
-        logsBloom[2] = 0x03;
-        logsBloom[3] = 0x04;
         headerV1.setLogsBloom(logsBloom);
         byte[] hash = headerV1.getHash().getBytes();
 
@@ -523,6 +549,20 @@ class BlockHeaderTest {
         logsBloom[2] = 0x03;
         logsBloom[3] = 0x05;
         headerV1.setLogsBloom(otherLogsBloom);
+
+        Assertions.assertFalse(Arrays.equals(hash, headerV1.getHash().getBytes()));
+    }
+
+    @Test
+    void hashOfV1IncludesEdges() {
+        BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
+
+        headerV1.setTxExecutionSublistsEdges(edges);
+        byte[] hash = headerV1.getHash().getBytes();
+
+
+        short[] otherEdges = new short[]{ 1, 2, 3, 5};
+        headerV1.setTxExecutionSublistsEdges(otherEdges);
 
         Assertions.assertFalse(Arrays.equals(hash, headerV1.getHash().getBytes()));
     }
@@ -607,7 +647,8 @@ class BlockHeaderTest {
                 useRskip92Encoding,
                 includeForkDetectionData,
                 ummRoot,
-                edges);
+                edges,
+                false);
 
         return new BlockHeaderV0(
                 PegTestUtils.createHash3().getBytes(),

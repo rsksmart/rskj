@@ -1,7 +1,5 @@
 package co.rsk.core;
 
-import org.ethereum.TestUtils;
-import org.ethereum.core.BlockHeaderExtension;
 import org.ethereum.core.BlockHeaderExtensionV1;
 import org.ethereum.core.Bloom;
 import org.junit.jupiter.api.Assertions;
@@ -11,11 +9,6 @@ import java.util.Arrays;
 
 public class BlockHeaderExtensionV1Test {
     private static short[] EDGES = new short[] { 1, 2, 3, 4 };
-    @Test
-    public void hasVersion1 () {
-        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(TestUtils.randomBytes(256), EDGES);
-        Assertions.assertEquals(1, extension.getHeaderVersion());
-    }
 
     @Test
     public void createWithLogsBloomAndEdges() {

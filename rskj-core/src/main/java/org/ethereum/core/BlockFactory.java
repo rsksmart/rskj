@@ -39,8 +39,8 @@ import java.util.List;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
-    private static final int RLP_HEADER_SIZE = 18;
-    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 21;
+    private static final int RLP_HEADER_SIZE = 19;
+    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 22;
 
     private final ActivationConfig activationConfig;
 
@@ -67,7 +67,7 @@ public class BlockFactory {
         }
 
         RLPList rlpHeader = (RLPList) block.get(0);
-        BlockHeader header = decodeHeader(rlpHeader, sealed);
+        BlockHeader header = decodeHeader(rlpHeader, false, sealed);
 
         List<Transaction> transactionList = parseTxs((RLPList) block.get(1));
 
@@ -77,7 +77,7 @@ public class BlockFactory {
 
         for (int k = 0; k < uncleHeadersRlp.size(); k++) {
             RLPElement element = uncleHeadersRlp.get(k);
-            BlockHeader uncleHeader = decodeHeader((RLPList)element, sealed);
+            BlockHeader uncleHeader = decodeHeader((RLPList)element, false, sealed);
             uncleList.add(uncleHeader);
         }
 
@@ -93,11 +93,11 @@ public class BlockFactory {
         return new Block(header, transactionList, uncleList, isRskip126Enabled, sealed);
     }
 
-    public BlockHeader decodeHeader(byte[] encoded) {
-        return decodeHeader(RLP.decodeList(encoded), true);
+    public BlockHeader decodeHeader(byte[] encoded, boolean compressed) {
+        return decodeHeader(RLP.decodeList(encoded), compressed, true);
     }
 
-    private BlockHeader decodeHeader(RLPList rlpHeader, boolean sealed) {
+    private BlockHeader decodeHeader(RLPList rlpHeader, boolean compressed, boolean sealed) {
         byte[] parentHash = rlpHeader.get(0).getRLPData();
         byte[] unclesHash = rlpHeader.get(1).getRLPData();
         byte[] coinBaseBytes = rlpHeader.get(2).getRLPData();
@@ -117,7 +117,7 @@ public class BlockFactory {
             receiptTrieRoot = EMPTY_TRIE_HASH;
         }
 
-        byte[] logsBloom = rlpHeader.get(6).getRLPData();
+        byte[] extensionData = rlpHeader.get(6).getRLPData(); // rskip351: logs bloom when decoding extended, list(version, hash(extension)) when compressed
         byte[] difficultyBytes = rlpHeader.get(7).getRLPData();
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(difficultyBytes);
 
@@ -137,7 +137,7 @@ public class BlockFactory {
         byte[] minimumGasPriceBytes = rlpHeader.get(14).getRLPData();
         Coin minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPriceBytes);
 
-        if (!canBeDecoded(rlpHeader, blockNumber)) {
+        if (!canBeDecoded(rlpHeader, blockNumber, compressed)) {
             throw new IllegalArgumentException(String.format(
                     "Invalid block header size: %d",
                     rlpHeader.size()
@@ -154,8 +154,18 @@ public class BlockFactory {
             ummRoot = rlpHeader.get(r++).getRLPRawData();
         }
 
+        byte version = 0x0;
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
+            version = compressed
+                    ? RLP.decodeList(extensionData).get(0).getRLPData()[0]
+                    : rlpHeader.get(r++).getRLPData()[0];
+        }
+
         short[] txExecutionSublistsEdges = null;
-        if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+
+        if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
+                (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))) {
             txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
         }
 
@@ -172,11 +182,25 @@ public class BlockFactory {
         boolean includeForkDetectionData = activationConfig.isActive(ConsensusRule.RSKIP110, blockNumber) &&
                 blockNumber >= MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION;
 
+        return createBlockHeader(compressed, sealed, parentHash, unclesHash,
+                coinBaseBytes, coinbase, stateRoot, txTrieRoot, receiptTrieRoot, extensionData,
+                difficultyBytes, difficulty, glBytes, blockNumber, gasUsed, timestamp, extraData,
+                paidFees, minimumGasPriceBytes, minimumGasPrice, uncleCount, ummRoot, version, txExecutionSublistsEdges,
+                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
+                useRskip92Encoding, includeForkDetectionData);
+    }
+
+    private BlockHeader createBlockHeader(boolean compressed, boolean sealed, byte[] parentHash, byte[] unclesHash,
+                                          byte[] coinBaseBytes, RskAddress coinbase, byte[] stateRoot, byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData,
+                                          byte[] difficultyBytes, BlockDifficulty difficulty, byte[] glBytes, long blockNumber, long gasUsed, long timestamp, byte[] extraData,
+                                          Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot, byte version, short[] txExecutionSublistsEdges,
+                                          byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof, byte[] bitcoinMergedMiningCoinbaseTransaction,
+                                          boolean useRskip92Encoding, boolean includeForkDetectionData) {
         if (blockNumber == Genesis.NUMBER) {
             return new GenesisHeader(
                     parentHash,
                     unclesHash,
-                    logsBloom,
+                    extensionData,
                     difficultyBytes,
                     blockNumber,
                     glBytes,
@@ -192,19 +216,21 @@ public class BlockFactory {
                     stateRoot);
         }
 
-        if (activationConfig.getHeaderVersion(blockNumber) == 1) return new BlockHeaderV1(
-                parentHash, unclesHash, coinbase, stateRoot,
-                txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
-                blockNumber, glBytes, gasUsed, timestamp, extraData,
-                paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, new byte[0],
-                minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                ummRoot, txExecutionSublistsEdges
-        );
+        if (version == 1) {
+            return new BlockHeaderV1(
+                    parentHash, unclesHash, coinbase, stateRoot,
+                    txTrieRoot, receiptTrieRoot, extensionData, difficulty,
+                    blockNumber, glBytes, gasUsed, timestamp, extraData,
+                    paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction, new byte[0],
+                    minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
+                    ummRoot, txExecutionSublistsEdges, compressed
+            );
+        }
 
         return new BlockHeaderV0(
                 parentHash, unclesHash, coinbase, stateRoot,
-                txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
+                txTrieRoot, receiptTrieRoot, extensionData, difficulty,
                 blockNumber, glBytes, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
@@ -213,17 +239,27 @@ public class BlockFactory {
         );
     }
 
-    private boolean canBeDecoded(RLPList rlpHeader, long blockNumber) {
+    private boolean canBeDecoded(RLPList rlpHeader, long blockNumber, boolean compressed) {
         int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
         int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
-        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment;
-        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment;
+        int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment);
 
-        int preHeaderExtensionAdjustment = activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) ? 1 : 0;
+        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment;
+        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment;
 
-        return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM ||
-                rlpHeader.size() == expectedSize - preHeaderExtensionAdjustment ||
-                rlpHeader.size() == expectedSizeMM - preHeaderExtensionAdjustment;
+        return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM;
+    }
+
+    private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed, int preParallelSizeAdjustment) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
+            return 1; // remove version
+        }
+
+        if (compressed) {
+            return 2 - preParallelSizeAdjustment; // remove version and edges if existent
+        }
+
+        return 0;
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {
