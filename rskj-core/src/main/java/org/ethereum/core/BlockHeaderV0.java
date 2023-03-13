@@ -21,7 +21,6 @@ package org.ethereum.core;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.util.RLP;
 
 import java.util.Arrays;
 import java.util.List;
