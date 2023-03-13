@@ -1259,6 +1259,15 @@ public class BridgeSupport {
 
         Keccak256 txWaitingForSignatureKey = getTxWaitingForSignatureKey(rskTx, entry);
         if (activations.isActive(ConsensusRule.RSKIP375)){
+            /*
+             This check aims to prevent entry overriding. Currently, we do not accept more than one peg-out
+             confirmation in the same update collections, but if in the future we do, then only one peg-out would be
+             kept in the map, since the key used in the RSK tx hash that calls updateCollections would override the
+             last one, thus resulting in losing funds. For this reason, we add this check that will alert anyone by
+             throwing an exception during the development/QA phase when any code change introduces a bug allowing two
+             entries to have the same key. So, informing on time the existence of this critical bug to pursue
+             awareness and hint to rethink the changes being added.
+             */
             checkIfEntryExistsInTxsWaitingForSignatures(txWaitingForSignatureKey, txsWaitingForSignatures);
         }
 
