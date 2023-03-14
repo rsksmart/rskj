@@ -20,18 +20,26 @@ package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.ABICallSpec;
-import org.ethereum.core.*;
+import co.rsk.util.HexUtils;
+import org.ethereum.core.Block;
+import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
-import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.aa.AATransaction;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
+import org.web3j.abi.FunctionEncoder;
+import org.web3j.abi.datatypes.Function;
+import org.web3j.abi.datatypes.Type;
 
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
 
 import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
 
@@ -131,25 +139,30 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         }
 
         return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), gasPrice.getBytes(), gas, callValue.getBytes(), data,
-                lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
+                lastHash, coinbase, timestamp, number, txindex, difficulty, gaslimit,
                 repository, blockStore);
     }
 
     // AA - Depends on the type of tx it transform the data
     private byte[] getTxData(Transaction tx) {
-        if(tx.getType() == Transaction.AA_TYPE) {
-            return CallTransaction.Function.fromSignature("executeTransaction",
-                            new String[]{SolidityType.UINT256})//, SolidityType.UINT256,SolidityType.UINT256, SolidityType.UINT256,SolidityType.UINT256, SolidityType.UINT256,SolidityType.UINT256, SolidityType.BYTES, SolidityType.BYTES })
-                    .encode(
-                            tx.getType() /*,
-                            tx.getSender().toHexString(),
-                            tx.getReceiveAddress().toHexString(),
-                            Hex.toHexString(tx.getGasLimit()),
-                            tx.getGasPrice().asBigInteger(),
-                            Hex.toHexString(tx.getNonce()),
-                            tx.getValue().asBigInteger(),
-                            tx.getData(),
-                            tx.getRawsignature()*/);
+        if (tx.getType() == Transaction.AA_TYPE) {
+            final String encoded = FunctionEncoder.encode(
+                    new Function("executeTransaction",
+                            Arrays.<Type>asList(new AATransaction(tx.getType(),
+                                    tx.getSender().toHexString(),
+                                    tx.getReceiveAddress().toHexString(),
+                                    tx.getGasLimit(),
+                                    tx.getGasPrice().asBigInteger(),
+                                    tx.getNonce(),
+                                    tx.getValue().asBigInteger(),
+                                    tx.getData(),
+                                    tx.getRawsignature())),
+                            Collections.emptyList()
+                    )
+            );
+            final boolean[] booleans = new boolean[3];
+            boolean[] a = new boolean[booleans.length];
+            return HexUtils.stringHexToByteArray(encoded);
         }
         return nullToEmpty(tx.getData());
     }

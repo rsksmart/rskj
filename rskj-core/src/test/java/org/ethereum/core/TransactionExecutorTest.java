@@ -309,7 +309,7 @@ class TransactionExecutorTest {
 
     @Test
     void AA_dsl() throws FileNotFoundException {
-        DslParser parser = DslParser.fromResource("dsl/transaction/execution_type_AA.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction/AA_transaction_execution.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));

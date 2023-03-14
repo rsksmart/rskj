@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TransactionExecutorDSLTest {
+public class AATransactionDSLTest {
 
     private World world;
     private WorldDslProcessor processor;
@@ -32,6 +32,10 @@ public class TransactionExecutorDSLTest {
 
     }
 
+    /**
+     * This test is only to get the signed bytecode to be installed.
+     * If bytecode is updated, we need to run this, copy the output of the console and update the DSL calldata to the precompiled.
+      */
     @Test
     void signTest() throws IOException, DslProcessorException, DecoderException {
         processor.processCommands(DslParser.fromResource("dsl/transaction/setup.txt"));
@@ -63,17 +67,18 @@ public class TransactionExecutorDSLTest {
 
 
     /**
-     * account1 Installs code in its own EOA (via InstallCode), and then acc2 calls a contract
-     * that invokes a method on acc1 and checks for success.
+     * - Create Smart Account in 'acc1' by calling InstallCode precompiled contract.
+     * - Create a Dummy contract in tx02
+     * - Call/Send 666 to the Dummy contract through the Smart Account created in step 1.
      * */
     @Test
     public void testInstallCode_CallExecution() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction/execution_type_AA.txt");
+
+        //
+        DslParser parser = DslParser.fromResource("dsl/transaction/AA_transaction_execution.txt");
         processor.processCommands(parser);
 
         Account acc1 = world.getAccountByName("acc1");
-        acc1.getAddress();
-
         RepositorySnapshot snapshot = world.getRepositoryLocator()
                 .findSnapshotAt(world.getBlockByName("b02").getHeader())
                 .get();
