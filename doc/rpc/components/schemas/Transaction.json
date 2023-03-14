@@ -67,6 +67,11 @@
         "title": "transactionSigS",
         "type": "string",
         "description": "ECDSA signature s"
+      },
+      "type": {
+        "title": "ReceiptType",
+        "description": "is a positive unsigned 8-bit number that represents the type of the transaction.",
+        "type": "string"
       }
     }
   }
