@@ -384,6 +384,55 @@ class CliToolsIntegrationTest {
     }
 
     @Test
+    void whenConnectBlocksRuns_shouldConnectSpecifiedBlocks() throws Exception {
+        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Files.delete(Paths.get(logsFile));
+
+        RskContext rskContext = new RskContext(baseArgs);
+
+        Block block1 = rskContext.getBlockchain().getBlockByNumber(1);
+        Block block2 = rskContext.getBlockchain().getBlockByNumber(2);
+
+        rskContext.close();
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("1,");
+        stringBuilder.append(ByteUtil.toHexString(block1.getHash().getBytes()));
+        stringBuilder.append(",02,");
+        stringBuilder.append(ByteUtil.toHexString(block1.getEncoded()));
+        stringBuilder.append("\n");
+        stringBuilder.append("1,");
+        stringBuilder.append(ByteUtil.toHexString(block2.getHash().getBytes()));
+        stringBuilder.append(",03,");
+        stringBuilder.append(ByteUtil.toHexString(block2.getEncoded()));
+        stringBuilder.append("\n");
+
+        File blocksFile = tempDir.resolve("blocks.txt").toFile();
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(blocksFile))) {
+            writer.write(stringBuilder.toString());
+        }
+
+        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.ConnectBlocks --file %s %s", buildLibsPath, jarName, blocksFile.getAbsolutePath(), strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Files.delete(Paths.get(logsFile));
+        Files.delete(Paths.get(blocksFile.getAbsolutePath()));
+
+        rskContext = new RskContext(baseArgs);
+
+        Block block1AfterConnect = rskContext.getBlockchain().getBlockByNumber(1);
+        Block block2AfterConnect = rskContext.getBlockchain().getBlockByNumber(2);
+
+        rskContext.close();
+
+        Assertions.assertEquals(block1.getHash(), block1AfterConnect.getHash());
+        Assertions.assertEquals(block2.getHash(), block2AfterConnect.getHash());
+    }
+
+    @Test
     void whenDbMigrateRuns_shouldMigrateLevelDbToRocksDbAndShouldNotStartNodeWithPrevDbKind() throws Exception {
         String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
