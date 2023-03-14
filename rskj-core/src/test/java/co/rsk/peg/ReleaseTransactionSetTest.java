@@ -139,63 +139,27 @@ class ReleaseTransactionSetTest {
     }
 
     @Test
-    void sliceWithConfirmations_withLimit_none() {
-        Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(9L, 5, Optional.of(1));
-        Assertions.assertEquals(0, result.size());
-        Assertions.assertEquals(setEntries, set.getEntries());
+    void getNextPegoutWithEnoughConfirmations_no_matches() {
+        Optional<ReleaseTransactionSet.Entry> result = set.getNextPegoutWithEnoughConfirmations(9L, 5);
+        Assertions.assertFalse(result.isPresent());
     }
 
     @Test
-    void sliceWithConfirmations_withLimit_singleMatch() {
-        Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(10L, 5, Optional.of(2));
-        Assertions.assertEquals(1, result.size());
-        setEntries.remove(new ReleaseTransactionSet.Entry(createTransaction(8, Coin.CENT.times(5)), 5L));
-        Assertions.assertEquals(setEntries, set.getEntries());
+    void getNextPegoutWithEnoughConfirmations_ok() {
+        Optional<ReleaseTransactionSet.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5);
+        Assertions.assertTrue(result.isPresent());
+        Assertions.assertTrue(set.removeEntry(result.get()));
+        Assertions.assertFalse(set.removeEntry(result.get()));
     }
 
     @Test
     void sliceWithConfirmations_withLimit_multipleMatch() {
-        Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(15L, 5, Optional.of(2));
-        Assertions.assertEquals(2, result.size());
-        Iterator<ReleaseTransactionSet.Entry> resultIterator = result.iterator();
-        while (resultIterator.hasNext()) {
-            ReleaseTransactionSet.Entry itemTx = resultIterator.next();
-            ReleaseTransactionSet.Entry item = setEntries.stream().filter(e -> e.getTransaction().equals(itemTx.getTransaction())).findFirst().get();
-            Assertions.assertTrue(15L - item.getRskBlockNumber() >= 5);
-            setEntries.remove(item);
-        }
-        Assertions.assertEquals(3, set.getEntries().size());
-        Assertions.assertEquals(setEntries, set.getEntries());
-    }
-
-    @Test
-    void sliceWithConfirmations_noLimit_none() {
-        Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(9L, 5, Optional.empty());
-        Assertions.assertEquals(0, result.size());
-        Assertions.assertEquals(setEntries, set.getEntries());
-    }
-
-    @Test
-    void sliceWithConfirmations_noLimit_singleMatch() {
-        Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(10L, 5, Optional.empty());
-        Assertions.assertEquals(1, result.size());
-        setEntries.remove(new ReleaseTransactionSet.Entry(createTransaction(8, Coin.CENT.times(5)), 5L));
-        Assertions.assertEquals(setEntries, set.getEntries());
-    }
-
-    @Test
-    void sliceWithConfirmations_noLimit_multipleMatch() {
-        Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(15L, 5, Optional.empty());
-        Assertions.assertEquals(3, result.size());
-        Iterator<ReleaseTransactionSet.Entry> resultIterator = result.iterator();
-        while (resultIterator.hasNext()) {
-            ReleaseTransactionSet.Entry itemTx = resultIterator.next();
-            ReleaseTransactionSet.Entry item = setEntries.stream().filter(e -> e.getTransaction().equals(itemTx.getTransaction())).findFirst().get();
-            Assertions.assertTrue(15L - item.getRskBlockNumber() >= 5);
-            setEntries.remove(item);
-        }
-        Assertions.assertEquals(2, set.getEntries().size());
-        Assertions.assertEquals(setEntries, set.getEntries());
+        int size = set.getEntries().size();
+        Optional<ReleaseTransactionSet.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5);
+        Assertions.assertTrue(result.isPresent());
+        Assertions.assertTrue(set.removeEntry(result.get()));
+        Assertions.assertFalse(set.removeEntry(result.get()));
+        Assertions.assertEquals(set.getEntries().size(), size-1);
     }
 
     private BtcTransaction createTransaction(int toPk, Coin value) {

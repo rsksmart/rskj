@@ -1244,18 +1244,18 @@ public class BridgeSupport {
         // TODO: dependant upon this. That is the reason we
         // TODO: add only one btc transaction at a time
         // TODO: (at least at this stage).
-
-        // IMPORTANT: sliceWithEnoughConfirmations also modifies the transaction set in place
-        Set<ReleaseTransactionSet.Entry> txsWithEnoughConfirmations = releaseTransactionSet.sliceWithConfirmations(
+        Optional<ReleaseTransactionSet.Entry> nextPegoutWithEnoughConfirmations = releaseTransactionSet
+            .getNextPegoutWithEnoughConfirmations(
                 rskExecutionBlock.getNumber(),
-                bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
-                Optional.of(1)
-        );
-        if (txsWithEnoughConfirmations.isEmpty()) {
+                bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations()
+            );
+
+        if (!nextPegoutWithEnoughConfirmations.isPresent()) {
             return;
         }
 
-        ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
+        ReleaseTransactionSet.Entry entry = nextPegoutWithEnoughConfirmations.get();
+        releaseTransactionSet.removeEntry(entry);
 
         Keccak256 txWaitingForSignatureKey = getTxWaitingForSignatureKey(rskTx, entry);
         if (activations.isActive(ConsensusRule.RSKIP375)){
