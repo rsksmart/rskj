@@ -677,7 +677,7 @@ public class ParallelizeTransactionHandlerTest {
     @Test
     void aRemascTxAddedShouldBeInTheSequentialSublist() {
         List<Transaction> expectedListOfTxs = Collections.singletonList(tx);
-        long gasUsedByTx = GasCost.toGas(bigTx.getGasLimit());
+        long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
         Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
         Optional<Long> sequentialSublistGasUsed = handler.addRemascTransaction(tx, gasUsedByTx);
@@ -690,8 +690,28 @@ public class ParallelizeTransactionHandlerTest {
 
     @Test
     void aTxDirectedToAPrecompiledContractAddedShouldBeInTheSequentialSublist() {
+        List<Transaction> expectedListOfTxs = Collections.singletonList(bigTx);
+        long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
+        long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
+
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+
+        Optional<Long> sequentialSublistGasUsedAfterBigTx = handler.addTxSentToPrecompiledContract(bigTx, gasUsedByBigTx);
+        Assertions.assertTrue(sequentialSublistGasUsedAfterBigTx.isPresent());
+        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertEquals(gasUsedByBigTx, (long) sequentialSublistGasUsedAfterBigTx.get());
+
+        Optional<Long> sequentialSublistGasUsedAfterTx = handler.addTxSentToPrecompiledContract(tx, gasUsedByTx);
+        Assertions.assertFalse(sequentialSublistGasUsedAfterTx.isPresent());
+
+        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+    }
+
+    @Test
+    void aTxDirectedToAPrecompiledContractAddedWithSequentialSublistFullShouldNotBeAdded() {
         List<Transaction> expectedListOfTxs = Collections.singletonList(tx);
-        long gasUsedByTx = GasCost.toGas(bigTx.getGasLimit());
+        long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
         Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
         Optional<Long> sequentialSublistGasUsed = handler.addTxSentToPrecompiledContract(tx, gasUsedByTx);
@@ -700,6 +720,28 @@ public class ParallelizeTransactionHandlerTest {
         Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
         Assertions.assertEquals(gasUsedByTx, (long) sequentialSublistGasUsed.get());
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+    }
+
+    @Test
+    void whenATxCallsAPrecompiledAnotherWithTheSameSenderShouldGoToSequential() {
+        List<Transaction> expectedListOfTxsPreSecondTx = Collections.singletonList(tx);
+        List<Transaction> expectedListOfTxsPostSecondTx = Arrays.asList(tx, tx);
+        long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
+
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        Optional<Long> sequentialSublistGasUsed = handler.addTxSentToPrecompiledContract(tx, gasUsedByTx);
+
+        Assertions.assertTrue(sequentialSublistGasUsed.isPresent());
+        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertEquals(gasUsedByTx, (long) sequentialSublistGasUsed.get());
+        Assertions.assertEquals(expectedListOfTxsPreSecondTx, handler.getTransactionsInOrder());
+
+        Optional<Long> sequentialSublistGasUsedByTx2 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+
+        Assertions.assertTrue(sequentialSublistGasUsedByTx2.isPresent());
+        Assertions.assertEquals(gasUsedByTx*2, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertEquals(gasUsedByTx*2, (long) sequentialSublistGasUsedByTx2.get());
+        Assertions.assertEquals(expectedListOfTxsPostSecondTx, handler.getTransactionsInOrder());
     }
 
     @Test
