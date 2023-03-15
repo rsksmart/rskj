@@ -22,56 +22,6 @@
         </filter>
     </appender>
 
-    <logger name="execute" level="INFO"/>
-    <logger name="blockvalidator" level="INFO"/>
-    <logger name="blockexecutor" level="INFO"/>
-    <logger name="general" level="INFO"/>
-    <logger name="gaspricetracker" level="INFO"/>
-    <logger name="web3" level="INFO"/>
-    <logger name="repository" level="INFO"/>
-    <logger name="VM" level="ERROR"/>
-    <logger name="blockqueue" level="INFO"/>
-    <logger name="io.netty" level="INFO"/>
-    <logger name="block" level="INFO"/>
-    <logger name="minerserver" level="INFO"/>
-    <logger name="txbuilderex" level="INFO"/>
-    <logger name="pendingstate" level="INFO"/>
-    <logger name="hsqldb.db" level="INFO"/>
-    <logger name="TCK-Test" level="INFO"/>
-    <logger name="db" level="INFO"/>
-    <logger name="net" level="INFO"/>
-    <logger name="start" level="INFO"/>
-    <logger name="cli" level="INFO"/>
-    <logger name="txs" level="INFO"/>
-    <logger name="gas" level="ERROR"/>
-    <logger name="main" level="INFO"/>
-    <logger name="trie" level="INFO"/>
-    <logger name="peermonitor" level="INFO"/>
-    <logger name="bridge" level="INFO"/>
-    <logger name="rlp" level="INFO"/>
-    <logger name="messagehandler" level="INFO"/>
-    <logger name="sync" level="INFO"/>
-    <logger name="BtcToRskClient" level="INFO"/>
-    <logger name="ui" level="INFO"/>
-    <logger name="java.nio" level="INFO"/>
-    <logger name="org.eclipse.jetty" level="INFO"/>
-    <logger name="wire" level="INFO"/>
-    <logger name="BridgeSupport" level="INFO"/>
-    <logger name="jsonrpc" level="INFO"/>
-    <logger name="wallet" level="INFO"/>
-    <logger name="blockchain" level="INFO"/>
-    <logger name="blockprocessor" level="INFO"/>
-    <logger name="asyncblockprocessor" level="INFO"/>
-    <logger name="state" level="INFO"/>
-    <logger name="org.bitcoinj" level="INFO"/>
-    <logger name="metrics" level="INFO"/>
-    <logger name="messageProcess" level="INFO"/>
-    <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
-    <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
-    <logger name="co.rsk.core.bc.BlockChainFlusher" level="TRACE"/>
-    <logger name="blooms" level="INFO"/>
-    <logger name="triestore" level="TRACE" />
-
     <root level="DEBUG">
         <appender-ref ref="stdout"/>
     </root>

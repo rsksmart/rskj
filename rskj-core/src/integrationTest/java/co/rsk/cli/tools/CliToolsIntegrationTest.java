@@ -48,7 +48,6 @@ import java.util.stream.Stream;
 class CliToolsIntegrationTest {
     private String projectPath;
     private String buildLibsPath;
-    private String logsFile;
     private String jarName;
     private String databaseDir;
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
@@ -57,6 +56,10 @@ class CliToolsIntegrationTest {
     private String[] baseArgs;
     private LinkedList<String> lnkListBaseArgs;
     private String strBaseArgs;
+    private String integrationTestResourcesPath;
+    private String logbackXmlFile;
+    private String baseJavaCmd;
+
 
     class CustomProcess {
         private final Process process;
@@ -95,7 +98,8 @@ class CliToolsIntegrationTest {
     public void setup() throws IOException {
         projectPath = System.getProperty("user.dir");
         buildLibsPath = String.format("%s/build/libs", projectPath);
-        logsFile = String.format("%s/logs/rsk.log", projectPath);
+        integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
+        logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
         Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath));
         jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
                 .map(p -> p.getFileName().toString())
@@ -103,10 +107,15 @@ class CliToolsIntegrationTest {
                 .findFirst()
                 .get();
         databaseDir = tempDir.toString();
-        baseArgs = new String[]{String.format("-Xdatabase.dir=%s", databaseDir), "--regtest", "-Xkeyvalue.datasource=leveldb", String.format("-Xrpc.providers.web.http.port=%s", port)};
+        baseArgs = new String[]{
+                String.format("-Xdatabase.dir=%s", databaseDir),
+                "--regtest",
+                "-Xkeyvalue.datasource=leveldb",
+                String.format("-Xrpc.providers.web.http.port=%s", port)
+        };
         lnkListBaseArgs = Stream.of(baseArgs).collect(Collectors.toCollection(LinkedList::new));
-        strBaseArgs = Stream.of(baseArgs).collect(Collectors.joining(" "));
-        Files.deleteIfExists(Paths.get(logsFile));
+        strBaseArgs = String.join(" ", baseArgs);
+        baseJavaCmd = String.format("java %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile));
     }
 
     private CustomProcess runCommand(String cmd, int timeout, TimeUnit timeUnit) throws InterruptedException, IOException {
@@ -121,7 +130,6 @@ class CliToolsIntegrationTest {
         String procErrors = getProcStreamAsString(proc.getErrorStream());
 
         if (beforeDestroyFn != null) {
-
             beforeDestroyFn.accept(proc);
         }
 
@@ -142,34 +150,21 @@ class CliToolsIntegrationTest {
         return log.split("\\[blockHash=")[1].split(", blockHeight")[0];
     }
 
-    private Response getLatestProcessedBlock() throws IOException {
-        List<String> rskProc1Lines = Files.readAllLines(Paths.get(logsFile));
-
-        String blockHash = getHashFromLog(rskProc1Lines, -1);
-
-        String content = String.format("[{\n" +
-                        "    \"method\": \"eth_getBlockByHash\",\n" +
-                        "    \"params\": [\n" +
-                        "        \"%s\",\n" +
-                        "        true\n" +
-                        "    ],\n" +
-                        "    \"id\": 1,\n" +
-                        "    \"jsonrpc\": \"2.0\"\n" +
-                        "}]",
-                blockHash);
+    private Response getBestBlock() throws IOException {
+        String content = "[{\n" +
+                "    \"method\": \"eth_getBlockByNumber\",\n" +
+                "    \"params\": [\n" +
+                "        \"latest\",\n" +
+                "        true\n" +
+                "    ],\n" +
+                "    \"id\": 1,\n" +
+                "    \"jsonrpc\": \"2.0\"\n" +
+                "}]";
 
         return sendJsonRpcMessage(content);
     }
 
-    private Block getLatestProcessedBlock(RskContext rskContext) throws IOException {
-        List<String> rskProc1Lines = Files.readAllLines(Paths.get(logsFile));
-
-        String blockHash = getHashFromLog(rskProc1Lines, -1);
-
-        return rskContext.getBlockStore().getBlockByHash(HexUtils.stringHexToByteArray(blockHash));
-    }
-
-    private Block getBestBlock(RskContext rskContext) throws IOException {
+    private Block getBestBlock(RskContext rskContext) {
         return rskContext.getBlockchain().getBestBlock();
     }
 
@@ -225,14 +220,14 @@ class CliToolsIntegrationTest {
     @Test
     void whenExportBlocksRuns_shouldExportSpecifiedBlocks() throws Exception {
         Map<String, Response> responseMap = new HashMap<>();
-        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         runCommand(
                 cmd,
                 1,
                 TimeUnit.MINUTES,
                 proc -> {
                     try {
-                        Response response = getLatestProcessedBlock();
+                        Response response = getBestBlock();
                         responseMap.put("latestProcessedBlock", response);
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -246,17 +241,13 @@ class CliToolsIntegrationTest {
 
         Long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
 
-        Files.delete(Paths.get(logsFile));
-
         File blocksFile = tempDir.resolve("blocks.txt").toFile();
         Files.deleteIfExists(Paths.get(blocksFile.getAbsolutePath()));
 
         Assertions.assertTrue(blocksFile.createNewFile());
 
-        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock %s --file %s %s", buildLibsPath, jarName, blockNumber, blocksFile.getAbsolutePath(), strBaseArgs);
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock %s --file %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, blocksFile.getAbsolutePath(), strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        Files.delete(Paths.get(logsFile));
 
         List<String> exportedBlocksLines = Files.readAllLines(Paths.get(blocksFile.getAbsolutePath()));
         String exportedBlocksLine = exportedBlocksLines.stream()
@@ -273,12 +264,12 @@ class CliToolsIntegrationTest {
 
     @Test
     void whenExportStateRuns_shouldExportSpecifiedBlockState() throws Exception {
-        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
 
         RskContext rskContext = new RskContext(baseArgs);
 
-        Block block = getLatestProcessedBlock(rskContext);
+        Block block = getBestBlock(rskContext);
         Optional<Trie> optionalTrie = rskContext.getTrieStore().retrieve(block.getStateRoot());
         byte[] bMessage = optionalTrie.get().toMessage();
         String strMessage = ByteUtil.toHexString(bMessage);
@@ -286,17 +277,13 @@ class CliToolsIntegrationTest {
 
         rskContext.close();
 
-        Files.delete(Paths.get(logsFile));
-
         File statesFile = tempDir.resolve("states.txt").toFile();
         Files.deleteIfExists(Paths.get(statesFile.getAbsolutePath()));
 
         Assertions.assertTrue(statesFile.createNewFile());
 
-        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.ExportState --block %s --file %s %s", buildLibsPath, jarName, blockNumber, statesFile.getAbsolutePath(), strBaseArgs);
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportState --block %s --file %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, statesFile.getAbsolutePath(), strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        Files.delete(Paths.get(logsFile));
 
         List<String> exportedStateLines = Files.readAllLines(Paths.get(statesFile.getAbsolutePath()));
 
@@ -309,13 +296,13 @@ class CliToolsIntegrationTest {
     @Test
     void whenShowStateInfoRuns_shouldShowSpecifiedState() throws Exception {
         Map<String, Response> responseMap = new HashMap<>();
-        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         runCommand(
                 cmd,
                 1,
                 TimeUnit.MINUTES, proc -> {
                     try {
-                        Response response = getLatestProcessedBlock();
+                        Response response = getBestBlock();
                         responseMap.put("latestProcessedBlock", response);
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -330,12 +317,8 @@ class CliToolsIntegrationTest {
 
         Long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
 
-        Files.delete(Paths.get(logsFile));
-
-        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.ShowStateInfo --block %s %s", buildLibsPath, jarName, blockNumber, strBaseArgs);
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ShowStateInfo --block %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, strBaseArgs);
         CustomProcess showStateInfoProc = runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        Files.delete(Paths.get(logsFile));
 
         List<String> stateInfoLines = Arrays.asList(showStateInfoProc.getInput().split("\\n"));
 
@@ -346,13 +329,13 @@ class CliToolsIntegrationTest {
     @Test
     void whenExecuteBlocksRuns_shouldReturnExpectedBestBlock() throws Exception {
         Map<String, Response> responseMap = new HashMap<>();
-        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         runCommand(
                 cmd,
                 1,
                 TimeUnit.MINUTES, proc -> {
                     try {
-                        Response response = getLatestProcessedBlock();
+                        Response response = getBestBlock();
                         responseMap.put("latestProcessedBlock", response);
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -367,12 +350,8 @@ class CliToolsIntegrationTest {
 
         Long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
 
-        Files.delete(Paths.get(logsFile));
-
-        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.ExecuteBlocks --fromBlock 0 --toBlock %s %s", buildLibsPath, jarName, blockNumber, strBaseArgs);
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExecuteBlocks --fromBlock 0 --toBlock %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        Files.delete(Paths.get(logsFile));
 
         RskContext rskContext = new RskContext(baseArgs);
 
@@ -380,15 +359,13 @@ class CliToolsIntegrationTest {
 
         rskContext.close();
 
-        Assertions.assertEquals(block.getNumber(), blockNumber + 1);
+        Assertions.assertEquals(block.getNumber(), blockNumber);
     }
 
     @Test
     void whenConnectBlocksRuns_shouldConnectSpecifiedBlocks() throws Exception {
-        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        Files.delete(Paths.get(logsFile));
 
         RskContext rskContext = new RskContext(baseArgs);
 
@@ -415,10 +392,9 @@ class CliToolsIntegrationTest {
             writer.write(stringBuilder.toString());
         }
 
-        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.ConnectBlocks --file %s %s", buildLibsPath, jarName, blocksFile.getAbsolutePath(), strBaseArgs);
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ConnectBlocks --file %s %s", baseJavaCmd, buildLibsPath, jarName, blocksFile.getAbsolutePath(), strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
 
-        Files.delete(Paths.get(logsFile));
         Files.delete(Paths.get(blocksFile.getAbsolutePath()));
 
         rskContext = new RskContext(baseArgs);
@@ -434,50 +410,40 @@ class CliToolsIntegrationTest {
 
     @Test
     void whenDbMigrateRuns_shouldMigrateLevelDbToRocksDbAndShouldNotStartNodeWithPrevDbKind() throws Exception {
-        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
 
-        Files.delete(Paths.get(logsFile));
-
-        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.DbMigrate --targetDb rocksdb %s", buildLibsPath, jarName, strBaseArgs);
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.DbMigrate --targetDb rocksdb %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         CustomProcess dbMigrateProc = runCommand(cmd, 1, TimeUnit.MINUTES);
 
-        Files.delete(Paths.get(logsFile));
+        cmd = String.format("%s -cp %s/%s co.rsk.Start --regtest %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
 
-        cmd = String.format("java -cp %s/%s co.rsk.Start --regtest %s", buildLibsPath, jarName, strBaseArgs);
-        runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        List<String> rskProc2Lines = Files.readAllLines(Paths.get(logsFile));
-        Files.delete(Paths.get(logsFile));
+        List<String> logLines = Arrays.asList(proc.getInput().split("\\n"));
 
         Assertions.assertTrue(dbMigrateProc.getInput().contains("DbMigrate finished"));
-        Assertions.assertTrue(rskProc2Lines.stream().anyMatch(l -> l.equals("java.lang.IllegalStateException: DbKind mismatch. You have selected LEVEL_DB when the previous detected DbKind was ROCKS_DB.")));
+        Assertions.assertTrue(logLines.stream().anyMatch(l -> l.equals("java.lang.IllegalStateException: DbKind mismatch. You have selected LEVEL_DB when the previous detected DbKind was ROCKS_DB.")));
     }
 
     @Test
     public void whenDbMigrateRuns_shouldMigrateLevelDbToRocksDbAndShouldStartNodeSuccessfully() throws Exception {
-        String cmd = String.format("java -cp %s/%s co.rsk.Start --reset %s", buildLibsPath, jarName, strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
 
-        Files.delete(Paths.get(logsFile));
-
-        cmd = String.format("java -cp %s/%s co.rsk.cli.tools.DbMigrate --targetDb rocksdb %s", buildLibsPath, jarName, strBaseArgs);
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.DbMigrate --targetDb rocksdb %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         CustomProcess dbMigrateProc = runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        Files.delete(Paths.get(logsFile));
 
         LinkedList<String> args = Stream.of(baseArgs)
                 .map(arg -> arg.equals("-Xkeyvalue.datasource=leveldb") ? "-Xkeyvalue.datasource=rocksdb" : arg)
                 .collect(Collectors.toCollection(LinkedList::new));
 
-        cmd = String.format("java -cp %s/%s co.rsk.Start %s", buildLibsPath, jarName, String.join(" ", args));
-        runCommand(cmd, 1, TimeUnit.MINUTES);
+        cmd = String.format("%s -cp %s/%s co.rsk.Start %s", baseJavaCmd, buildLibsPath, jarName, String.join(" ", args));
+        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
 
-        List<String> rskProc2Lines = Files.readAllLines(Paths.get(logsFile));
-        Files.delete(Paths.get(logsFile));
+        List<String> logLines = Arrays.asList(proc.getInput().split("\\n"));
 
         Assertions.assertTrue(dbMigrateProc.getInput().contains("DbMigrate finished"));
-        Assertions.assertTrue(rskProc2Lines.stream().anyMatch(l -> l.contains("DEBUG [minerClient] [Refresh work for mining]  There is a new best block")));
-        Assertions.assertTrue(rskProc2Lines.stream().noneMatch(l -> l.contains("Exception:")));
+        Assertions.assertTrue(logLines.stream().anyMatch(l -> l.contains("[minerserver] [miner client]  Mined block import result is IMPORTED_BEST")));
+        Assertions.assertTrue(logLines.stream().noneMatch(l -> l.contains("Exception:")));
     }
 }
