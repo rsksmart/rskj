@@ -1,4 +1,0 @@
-extraction:
-  java:
-    before_index:
-      - ./configure.sh
