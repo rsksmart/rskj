@@ -1,0 +1,60 @@
+{
+  "name": "sco_clearPeerScoring",
+  "summary": "Clears scoring records for the given peer id",
+  "description": "Clears scoring records for the given peer id",
+  "params": [
+    {
+      "required": true,
+      "name": "peerId",
+      "description": "First tried as an IPAddress, used as a NodeId otherwise",
+      "schema": {
+        "title": "ip address or nodeId",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/IPAddress"
+          },
+          {
+            "$ref": "#/components/schemas/NodeId"
+          }
+        ]
+      }
+    }
+  ],
+  "result": {
+    "name": "Peers scoring",
+    "schema": {
+      "title": "peersScoring",
+      "type": "array",
+      "description": "Array of scoring for every connected peer, or an empty array if no peers.",
+      "items": {
+        "$ref": "#/components/schemas/PeerScoring"
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "by IP address",
+      "params": [
+        {
+          "name": "address",
+          "value": "192.168.51.1"
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/ScoringPeerListExampleResult"
+      }
+    },
+    {
+      "name": "by nodeID",
+      "params": [
+        {
+          "name": "nodeId",
+          "value": "b8f94fad1160652ddbadae837ce544e4d47b53c2cdcf7a397e3426465ce649c5056c9acf36cf8d869176b58ed7eefe2257334b9be8c895fce3109a40ee06d86e"
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/ScoringPeerListExampleResult"
+      }
+    }
+  ]
+}

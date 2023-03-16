@@ -1,0 +1,45 @@
+{
+  "name": "sco_reputationSummary",
+  "summary": "Generates a reputation summary (all peers aggregated)",
+  "description": "Generates a reputation summary (all peers aggregated)",
+  "params": [],
+  "result": {
+    "name": "Reputation Summary",
+    "schema": {
+      "title": "reputationSummary",
+      "type": "array",
+      "description": "Aggregated reputation summary.",
+      "items": {
+        "$ref": "#/components/schemas/ReputationSummary"
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "example",
+      "params": [],
+      "result": {
+        "name": "reputation summary",
+        "value": {
+          "count": 36,
+          "successfulHandshakes": 840,
+          "failedHandshakes": 0,
+          "invalidHeader": 0,
+          "validBlocks": 0,
+          "invalidBlocks": 0,
+          "validTransactions": 24,
+          "invalidTransactions": 0,
+          "invalidNetworks": 0,
+          "invalidMessages": 0,
+          "repeatedMessages": 558,
+          "timeoutMessages": 0,
+          "unexpectedMessages": 0,
+          "peersTotalScore": 24,
+          "punishments": 0,
+          "goodReputationCount": 36,
+          "badReputationCount": 0
+        }
+      }
+    }
+  ]
+}
