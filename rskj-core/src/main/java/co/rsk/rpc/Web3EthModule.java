@@ -38,6 +38,10 @@ public interface Web3EthModule {
         return getEthModule().sign(addr, data);
     }
 
+    default String personal_sign(String data, String addr) {
+        return getEthModule().sign(addr, data);
+    }
+
     default String eth_call(CallArguments args, String bnOrId) {
         return getEthModule().call(args, bnOrId);
     }

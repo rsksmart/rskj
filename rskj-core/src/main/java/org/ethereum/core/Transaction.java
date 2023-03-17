@@ -65,7 +65,7 @@ public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
     private static final String TYPED = "7f"; //EIP-2718
     public static final byte LEGACY_TYPE = 0;
-    public static final byte AA_TYPE = 1;
+    public static final byte AA_TYPE = 3;
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
     private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
     private static final Profiler profiler = ProfilerFactory.getInstance();

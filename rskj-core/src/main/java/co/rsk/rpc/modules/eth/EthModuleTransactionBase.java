@@ -18,26 +18,20 @@
 
 package co.rsk.rpc.modules.eth;
 
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-
+import co.rsk.core.RskAddress;
+import co.rsk.core.Wallet;
+import co.rsk.net.TransactionGateway;
+import co.rsk.util.HexUtils;
 import co.rsk.util.RLPException;
 import org.ethereum.config.Constants;
-import org.ethereum.core.Account;
-import org.ethereum.core.ImmutableTransaction;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionArguments;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.core.*;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.TransactionArgumentsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import co.rsk.core.RskAddress;
-import co.rsk.core.Wallet;
-import co.rsk.net.TransactionGateway;
-import co.rsk.util.HexUtils;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
@@ -106,7 +100,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 throw invalidParamError("Missing parameter, gasPrice, gas or value");
             }
 
-            if (!tx.acceptTransactionSignature(constants.getChainId())) {
+            if (tx.getType() != Transaction.AA_TYPE && !tx.acceptTransactionSignature(constants.getChainId())) {
                 throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
             }
 

@@ -23,6 +23,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
+import com.google.common.primitives.Bytes;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -219,16 +220,25 @@ public class BlockFactory {
 
     private static List<Transaction> parseTxs(RLPList txTransactions) {
         List<Transaction> parsedTxs = new ArrayList<>();
-
+        byte[] typePrefix = new byte[]{};
         for (int i = 0; i < txTransactions.size(); i++) {
             RLPElement transactionRaw = txTransactions.get(i);
-            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
+            final byte[] rlpData = transactionRaw.getRLPData();
+            if(rlpData.length == 1){
+                typePrefix = new byte[]{rlpData[0]};
+                continue;
+            }
+
+            Transaction tx = new ImmutableTransaction(Bytes.concat(typePrefix, rlpData));
 
             if (tx.isRemascTransaction(i, txTransactions.size())) {
                 // It is the remasc transaction
-                tx = new RemascTransaction(transactionRaw.getRLPData());
+                tx = new RemascTransaction(rlpData);
             }
             parsedTxs.add(tx);
+            if(typePrefix.length > 0) {
+                typePrefix = new byte[]{};
+            }
         }
 
         return Collections.unmodifiableList(parsedTxs);

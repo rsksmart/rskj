@@ -23,6 +23,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.Secp256k1;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.util.Arrays;
 import java.util.List;
@@ -171,19 +173,25 @@ public class InstallCode extends PrecompiledContracts.PrecompiledContract {
         byte[] codeHash = Keccak256Helper.keccak256(code);
         byte[] message = buildMessageToSign(account, nonce, codeHash);
         byte[] h = Keccak256Helper.keccak256(message);
-        return h;
+
+        // 0x19 = 25, length should be an ascii decimals, message - original
+        String prefix = (char) 25 + "Ethereum Signed Message:\n" + h.length;
+
+        byte[] messageHash = HashUtil.keccak256(ByteUtil.merge(
+                prefix.getBytes(StandardCharsets.UTF_8),
+                h
+        ));
+        return messageHash;
     }
 
     static public byte[] buildMessageToSign(byte[] account, byte[] nonce, byte[] codeHash) {
         assert (account.length == 32);
         assert (nonce.length == 32);
         assert (codeHash.length == 32);
-        byte[] message = new byte[1 + 1 + 32 + 32 + 32]; // account + nonce + codehash
-        message[0] = 0x19;
-        message[1] = 0x10;
-        System.arraycopy(account, 0, message, 2, 32);
-        System.arraycopy(nonce, 0, message, 2 + 32, 32);
-        System.arraycopy(codeHash, 0, message, 2 + 64, 32);
+        byte[] message = new byte[32 + 32 + 32]; // account + nonce + codehash
+        System.arraycopy(account, 0, message, 0, 32);
+        System.arraycopy(nonce, 0, message, 32, 32);
+        System.arraycopy(codeHash, 0, message, 64, 32);
         return message;
     }
 
