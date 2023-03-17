@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.squareup.okhttp.*;
 import org.ethereum.core.Block;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.FileUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,7 +107,7 @@ class CliToolsIntegrationTest {
                 .filter(fn -> fn.endsWith("-all.jar"))
                 .findFirst()
                 .get();
-        databaseDir = tempDir.toString();
+        databaseDir = tempDir.resolve("database").toString();
         baseArgs = new String[]{
                 String.format("-Xdatabase.dir=%s", databaseDir),
                 "--regtest",
@@ -371,8 +372,8 @@ class CliToolsIntegrationTest {
 
         Block block1 = rskContext.getBlockchain().getBlockByNumber(1);
         Block block2 = rskContext.getBlockchain().getBlockByNumber(2);
-
         rskContext.close();
+
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("1,");
@@ -406,6 +407,32 @@ class CliToolsIntegrationTest {
 
         Assertions.assertEquals(block1.getHash(), block1AfterConnect.getHash());
         Assertions.assertEquals(block2.getHash(), block2AfterConnect.getHash());
+    }
+
+    @Test
+    void whenImportBlocksRuns_shouldImportAllExportedBlocks() throws Exception {
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        File blocksFile = tempDir.resolve("blocks.txt").toFile();
+
+        Assertions.assertTrue(blocksFile.createNewFile());
+
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock 20 --file %s %s", baseJavaCmd, buildLibsPath, jarName, blocksFile.getAbsolutePath(), strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        FileUtil.recursiveDelete(databaseDir);
+
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ImportBlocks --file %s %s", baseJavaCmd, buildLibsPath, jarName, blocksFile.getAbsolutePath(), strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        RskContext rskContext = new RskContext(baseArgs);
+
+        Long maxNumber = rskContext.getBlockStore().getMaxNumber();
+
+        rskContext.close();
+
+        Assertions.assertEquals(20, maxNumber);
     }
 
     @Test
