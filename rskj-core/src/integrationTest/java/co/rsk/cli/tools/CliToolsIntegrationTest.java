@@ -18,13 +18,20 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
+import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.util.HexUtils;
+import co.rsk.util.TestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.squareup.okhttp.*;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FileUtil;
 import org.junit.jupiter.api.Assertions;
@@ -45,6 +52,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class CliToolsIntegrationTest {
     private String projectPath;
@@ -165,10 +175,6 @@ class CliToolsIntegrationTest {
         return sendJsonRpcMessage(content);
     }
 
-    private Block getBestBlock(RskContext rskContext) {
-        return rskContext.getBlockchain().getBestBlock();
-    }
-
     private static OkHttpClient getUnsafeOkHttpClient() {
         try {
             // Create a trust manager that does not validate certificate chains
@@ -270,7 +276,7 @@ class CliToolsIntegrationTest {
 
         RskContext rskContext = new RskContext(baseArgs);
 
-        Block block = getBestBlock(rskContext);
+        Block block = rskContext.getBlockchain().getBestBlock();
         Optional<Trie> optionalTrie = rskContext.getTrieStore().retrieve(block.getStateRoot());
         byte[] bMessage = optionalTrie.get().toMessage();
         String strMessage = ByteUtil.toHexString(bMessage);
@@ -356,7 +362,7 @@ class CliToolsIntegrationTest {
 
         RskContext rskContext = new RskContext(baseArgs);
 
-        Block block = getBestBlock(rskContext);
+        Block block = rskContext.getBlockchain().getBestBlock();
 
         rskContext.close();
 
@@ -433,6 +439,101 @@ class CliToolsIntegrationTest {
         rskContext.close();
 
         Assertions.assertEquals(20, maxNumber);
+    }
+
+    @Test
+    void whenImportStateRuns_shouldImportStateSuccessfully() throws Exception {
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        RskContext rskContext = new RskContext(baseArgs);
+
+        Block block = rskContext.getBlockchain().getBestBlock();
+        Optional<Trie> optionalTrie = rskContext.getTrieStore().retrieve(block.getStateRoot());
+        byte[] bMessage = optionalTrie.get().toMessage();
+        String strMessage = ByteUtil.toHexString(bMessage);
+        Long blockNumber = block.getNumber();
+
+        rskContext.close();
+
+        File statesFile = tempDir.resolve("states.txt").toFile();
+        Files.deleteIfExists(Paths.get(statesFile.getAbsolutePath()));
+
+        Assertions.assertTrue(statesFile.createNewFile());
+
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportState --block %s --file %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, statesFile.getAbsolutePath(), strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        FileUtil.recursiveDelete(databaseDir);
+
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ImportState --file %s %s", baseJavaCmd, buildLibsPath, jarName, statesFile.getAbsolutePath(), strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Files.delete(Paths.get(statesFile.getAbsolutePath()));
+
+        rskContext = new RskContext(baseArgs);
+
+        Block blockImported = rskContext.getBlockchain().getBestBlock();
+        Optional<Trie> optionalTrieImported = rskContext.getTrieStore().retrieve(blockImported.getStateRoot());
+        byte[] bMessageImported = optionalTrieImported.get().toMessage();
+        String strMessageImported = ByteUtil.toHexString(bMessageImported);
+
+        rskContext.close();
+
+        Assertions.assertEquals(strMessage, strMessageImported);
+    }
+
+    @Test
+    void whenRewindBlocksRuns_shouldNotFindInconsistentBlocks() throws Exception {
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.RewindBlocks -fmi %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Assertions.assertTrue(proc.getInput().contains("No inconsistent block has been found"));
+    }
+
+    @Test
+    void whenRewindBlocksRuns_shouldRewindSpecifiedBlocks() throws Exception {
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        RskContext rskContext = new RskContext(baseArgs);
+
+        Random random = new Random(100);
+
+        Block bestBlock = rskContext.getBlockStore().getBestBlock();
+        long blocksToGenerate = bestBlock.getNumber() + 14;
+        Keccak256 parentHash = bestBlock.getHash();
+
+        for (long i = bestBlock.getNumber() + 1; i < blocksToGenerate; i++) {
+            Block block = mock(Block.class);
+            Keccak256 blockHash = new Keccak256(TestUtils.generateBytesFromRandom(random, 32));
+            when(block.getHash()).thenReturn(blockHash);
+            when(block.getParentHash()).thenReturn(parentHash);
+            when(block.getNumber()).thenReturn(i);
+            when(block.getEncoded()).thenReturn(bestBlock.getEncoded());
+
+            rskContext.getBlockStore().saveBlock(block, BlockDifficulty.ZERO, true);
+            parentHash = blockHash;
+        }
+
+        Long maxNumber = rskContext.getBlockStore().getMaxNumber();
+
+        rskContext.close();
+
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.RewindBlocks --block %s %s", baseJavaCmd, buildLibsPath, jarName, bestBlock.getNumber() + 2, strBaseArgs);
+        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        rskContext = new RskContext(baseArgs);
+
+        Long maxNumberAfterRewind = rskContext.getBlockStore().getMaxNumber();
+
+        rskContext.close();
+
+        Assertions.assertTrue(maxNumber > maxNumberAfterRewind);
+        Assertions.assertEquals(bestBlock.getNumber() + 2, maxNumberAfterRewind);
     }
 
     @Test
