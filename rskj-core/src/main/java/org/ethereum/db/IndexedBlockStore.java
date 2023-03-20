@@ -229,7 +229,7 @@ public class IndexedBlockStore implements BlockStore {
         }
 
         index.putBlocks(block.getNumber(), blockInfos);
-        blockCache.addBlock(block);
+        blockCache.addBlock(block, getBestBlock().getNumber());
         remascCache.put(block.getHash(), getSiblingsFromBlock(block));
     }
 
@@ -278,7 +278,7 @@ public class IndexedBlockStore implements BlockStore {
             return null;
         }
 
-        blockCache.addBlock(block);
+        blockCache.addBlock(block, getBestBlock().getNumber());
         remascCache.put(block.getHash(), getSiblingsFromBlock(block));
         return block;
     }
