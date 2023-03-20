@@ -43,11 +43,6 @@ public class FileUtil {
         }
     }
 
-    public static boolean fileRename(String originalName, String newName) {
-        File file = new File(originalName);
-        return file.renameTo(new File(newName));
-    }
-
     public static boolean recursiveDelete(String fileName) {
         File file = new File(fileName);
         if (file.exists()) {
