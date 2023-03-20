@@ -28,10 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.squareup.okhttp.*;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FileUtil;
 import org.junit.jupiter.api.Assertions;
@@ -69,6 +65,7 @@ class CliToolsIntegrationTest {
     private String strBaseArgs;
     private String integrationTestResourcesPath;
     private String logbackXmlFile;
+    private String rskConfFile;
     private String baseJavaCmd;
 
 
@@ -111,6 +108,7 @@ class CliToolsIntegrationTest {
         buildLibsPath = String.format("%s/build/libs", projectPath);
         integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
         logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
+        rskConfFile = String.format("%s/rskj.conf", integrationTestResourcesPath);
         Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath));
         jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
                 .map(p -> p.getFileName().toString())
@@ -126,7 +124,7 @@ class CliToolsIntegrationTest {
         };
         lnkListBaseArgs = Stream.of(baseArgs).collect(Collectors.toCollection(LinkedList::new));
         strBaseArgs = String.join(" ", baseArgs);
-        baseJavaCmd = String.format("java %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile));
+        baseJavaCmd = String.format("java %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile), String.format("-Drsk.conf.file file=%s", rskConfFile));
     }
 
     private CustomProcess runCommand(String cmd, int timeout, TimeUnit timeUnit) throws InterruptedException, IOException {
@@ -380,7 +378,6 @@ class CliToolsIntegrationTest {
         Block block2 = rskContext.getBlockchain().getBlockByNumber(2);
         rskContext.close();
 
-
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("1,");
         stringBuilder.append(ByteUtil.toHexString(block1.getHash().getBytes()));
@@ -469,12 +466,12 @@ class CliToolsIntegrationTest {
         cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ImportState --file %s %s", baseJavaCmd, buildLibsPath, jarName, statesFile.getAbsolutePath(), strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
 
+        List<String> lines = Files.readAllLines(Paths.get(statesFile.getAbsolutePath()));
         Files.delete(Paths.get(statesFile.getAbsolutePath()));
 
         rskContext = new RskContext(baseArgs);
 
-        Block blockImported = rskContext.getBlockchain().getBestBlock();
-        Optional<Trie> optionalTrieImported = rskContext.getTrieStore().retrieve(blockImported.getStateRoot());
+        Optional<Trie> optionalTrieImported = rskContext.getTrieStore().retrieve(block.getStateRoot());
         byte[] bMessageImported = optionalTrieImported.get().toMessage();
         String strMessageImported = ByteUtil.toHexString(bMessageImported);
 
@@ -524,7 +521,7 @@ class CliToolsIntegrationTest {
         rskContext.close();
 
         cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.RewindBlocks --block %s %s", baseJavaCmd, buildLibsPath, jarName, bestBlock.getNumber() + 2, strBaseArgs);
-        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
 
         rskContext = new RskContext(baseArgs);
 
@@ -573,5 +570,28 @@ class CliToolsIntegrationTest {
         Assertions.assertTrue(dbMigrateProc.getInput().contains("DbMigrate finished"));
         Assertions.assertTrue(logLines.stream().anyMatch(l -> l.contains("[minerserver] [miner client]  Mined block import result is IMPORTED_BEST")));
         Assertions.assertTrue(logLines.stream().noneMatch(l -> l.contains("Exception:")));
+    }
+
+    @Test
+    void whenStartBootstrapRuns_shouldRunSuccessfully() throws Exception {
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.StartBootstrap -Xpeer.discovery.enabled=true %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Assertions.assertTrue(proc.getInput().contains("Identified public IP"));
+    }
+
+    @Test
+    void whenIndexBloomsRuns_shouldIndexBlockRangeSInBLoomsDbSuccessfully() throws Exception {
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.IndexBlooms -fb %s -tb %s %s", baseJavaCmd, buildLibsPath, jarName, "earliest", "latest", strBaseArgs);
+        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Assertions.assertTrue(proc.getErrors().isEmpty());
+        Assertions.assertTrue(proc.getInput().contains("[c.r.c.t.IndexBlooms] [main]  Processed "));
     }
 }
