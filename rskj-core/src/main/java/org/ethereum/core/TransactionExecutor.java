@@ -270,7 +270,6 @@ public class TransactionExecutor {
 
         if (!localCall) {
 
-            track.increaseNonce(tx.getSender(signatureCache));
 
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
@@ -278,12 +277,13 @@ public class TransactionExecutor {
 
             logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
         }
-
+        track.increaseNonce(tx.getSender(signatureCache));
         if (tx.isContractCreation()) {
             create();
         } else {
             call();
         }
+
     }
 
     private boolean enoughGas(long txGasLimit, long requiredGas, long gasUsed) {
