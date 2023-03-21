@@ -31,9 +31,7 @@ import org.ethereum.crypto.HashUtil;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by ajlopez on 3/3/2016.
@@ -261,6 +259,17 @@ public class RskSystemProperties extends SystemProperties {
             String name = configElement.getString("name");
             String version = configElement.getString("version");
             boolean enabled = configElement.getBoolean("enabled");
+            long timeout = 0;
+            Map<String, Long> methodTimeoutMap = new HashMap<>();
+
+            if (configElement.hasPath("timeout")) {
+                timeout = configElement.getLong("timeout");
+            }
+
+            if (configElement.hasPath("methods.timeout")) {
+                fetchMethodTimeout(configElement, methodTimeoutMap);
+            }
+
             List<String> enabledMethods = null;
             List<String> disabledMethods = null;
 
@@ -272,7 +281,7 @@ public class RskSystemProperties extends SystemProperties {
                 disabledMethods = configElement.getStringList("methods.disabled");
             }
 
-            modules.add(new ModuleDescription(name, version, enabled, enabledMethods, disabledMethods));
+            modules.add(new ModuleDescription(name, version, enabled, enabledMethods, disabledMethods, timeout, methodTimeoutMap));
         }
 
         this.moduleDescriptions = modules;
@@ -417,5 +426,14 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean rpcZeroSignatureIfRemasc() {
         return configFromFiles.getBoolean("rpc.zeroSignatureIfRemasc");
+    }
+
+    private void fetchMethodTimeout(Config configElement, Map<String, Long> methodTimeoutMap) {
+        configElement.getObject("methods.timeout")
+                .unwrapped()
+                .entrySet()
+                .stream()
+                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), Long.parseLong(entry.getValue().toString())))
+                .forEach(entry -> methodTimeoutMap.put(entry.getKey(), entry.getValue()));
     }
 }

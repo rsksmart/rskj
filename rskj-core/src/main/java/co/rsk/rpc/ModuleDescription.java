@@ -20,6 +20,8 @@ package co.rsk.rpc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by ajlopez on 19/04/2017.
@@ -28,14 +30,18 @@ public class ModuleDescription {
     private String name;
     private String version;
     private boolean enabled;
+    private long timeout;
+    private Map<String, Long> methodTimeoutMap;
 
     private List<String> enabledMethods;
     private List<String> disabledMethods;
 
-    public ModuleDescription(String name, String version, boolean enabled, List<String> enabledMethods, List<String> disabledMethods) {
+    public ModuleDescription(String name, String version, boolean enabled, List<String> enabledMethods, List<String> disabledMethods, long timeout, Map<String, Long> methodTimeoutMap) {
         this.name = name;
         this.version = version;
         this.enabled = enabled;
+        this.timeout = timeout;
+        this.methodTimeoutMap = methodTimeoutMap;
         this.enabledMethods = enabledMethods == null ? new ArrayList<>() : enabledMethods;
         this.disabledMethods = disabledMethods == null ? new ArrayList<>() : disabledMethods;
     }
@@ -78,6 +84,24 @@ public class ModuleDescription {
         }
 
         return true;
+    }
+
+    public long getTimeout() {
+        return timeout;
+    }
+
+    public long getTimeout(String methodName) {
+        if (methodName == null || methodName.isEmpty()) {
+            throw new IllegalArgumentException("methodName cannot be null.");
+        }
+
+        Optional<Long> optMethodTimeout = Optional.ofNullable(getMethodTimeout(methodName));
+
+        return optMethodTimeout.orElseGet(this::getTimeout);
+    }
+
+    public Long getMethodTimeout(String methodName) {
+        return methodTimeoutMap.get(methodName);
     }
 
     public boolean methodIsEnable(String methodName) {

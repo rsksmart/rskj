@@ -21,7 +21,12 @@ package org.ethereum.rpc;
 import java.util.Collection;
 import java.util.List;
 
-import org.ethereum.core.*;
+import co.rsk.rpc.netty.ExecTimeoutContext;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.LogInfo;
@@ -247,6 +252,8 @@ public class LogFilter extends Filter {
         boolean skippingToNumber = false;
 
         do {
+            ExecTimeoutContext.checkIfExpired();
+
             boolean isConfirmedBlock = blockNumber <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
 
             BlocksBloom blocksBloom = isConfirmedBlock ? blocksBloomStore.getBlocksBloomByNumber(blockNumber) : null;

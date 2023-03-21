@@ -18,6 +18,7 @@
 
 package co.rsk.rpc.netty;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.ModuleDescription;
@@ -27,7 +28,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.jsonrpc4j.*;
 import io.netty.buffer.*;
 import io.netty.channel.ChannelHandler;
@@ -43,6 +43,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
+
 @ChannelHandler.Sharable
 public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBufHolder> {
 
@@ -51,29 +53,35 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final ObjectMapper mapper = new ObjectMapper();
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
+    private final long defaultTimeout;
 
-    @VisibleForTesting
-    JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer) {
-        this.jsonRpcServer = jsonRpcServer;
-    }
-
-    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize) {
-        this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
+    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize, RskSystemProperties rskSystemProperties) {
+        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), rskSystemProperties.getRpcModules());
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new JsonRpcRequestValidatorInterceptor(maxBatchRequestsSize));
         jsonRpcServer.setInterceptorList(interceptors);
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
+
+        this.defaultTimeout = rskSystemProperties.getRpcTimeout();
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder request) throws Exception {
         ByteBuf responseContent = Unpooled.buffer();
         int responseCode;
+
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
              ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
 
-            responseCode = jsonRpcServer.handleRequest(is, os);
+            if (defaultTimeout <= 0) {
+                responseCode = jsonRpcServer.handleRequest(is, os);
+            } else {
+                try (ExecTimeoutContext ignored = ExecTimeoutContext.create(defaultTimeout)) {
+                    responseCode = jsonRpcServer.handleRequest(is, os);
+                    ExecTimeoutContext.checkIfExpired();
+                }
+            }
         } catch (JsonRpcRequestPayloadException e) {
             String invalidReqMsg = "Invalid request";
             LOGGER.error(invalidReqMsg, e);
@@ -84,6 +92,11 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             LOGGER.error(stackOverflowErrorMsg, e);
             int errorCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
             responseContent = buildErrorContent(errorCode, stackOverflowErrorMsg);
+            responseCode = errorCode;
+        } catch (ExecTimeoutContext.TimeoutException e) {
+            LOGGER.error(e.getMessage(), e);
+            int errorCode = INTERNAL_ERROR.code;
+            responseContent = buildErrorContent(errorCode, e.getMessage());
             responseCode = errorCode;
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";

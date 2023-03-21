@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -31,7 +32,7 @@ import java.util.List;
 class ModuleDescriptionTest {
     @Test
     void createWithInitialData() {
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null);
+        ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null, 0, new HashMap<>());
 
         Assertions.assertEquals("evm", description.getName());
         Assertions.assertEquals("1.0", description.getVersion());
@@ -55,7 +56,7 @@ class ModuleDescriptionTest {
         disabledMethods.add("evm_reset");
         disabledMethods.add("evm_increaseTime");
 
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
+        ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods, 0, new HashMap<>());
 
         Assertions.assertEquals("evm", description.getName());
         Assertions.assertEquals("1.0", description.getVersion());
@@ -77,7 +78,7 @@ class ModuleDescriptionTest {
 
     @Test
     void methodIsInModule() {
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null);
+        ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null, 0, new HashMap<>());
 
         Assertions.assertTrue(description.methodIsInModule("evm_snapshot"));
         Assertions.assertTrue(description.methodIsInModule("evm_do"));
@@ -92,7 +93,7 @@ class ModuleDescriptionTest {
 
     @Test
     void methodIsEnabledWhenEmptyNameList() {
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null);
+        ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null, 0, new HashMap<>());
 
         Assertions.assertTrue(description.methodIsEnable("evm_snapshot"));
         Assertions.assertTrue(description.methodIsEnable("evm_do"));
@@ -111,7 +112,7 @@ class ModuleDescriptionTest {
         enabledMethods.add("evm_snapshot");
         enabledMethods.add("evm_revert");
 
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, null);
+        ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, null, 0, new HashMap<>());
 
         Assertions.assertTrue(description.methodIsEnable("evm_snapshot"));
         Assertions.assertTrue(description.methodIsEnable("evm_revert"));
@@ -134,7 +135,7 @@ class ModuleDescriptionTest {
         disabledMethods.add("evm_reset");
         disabledMethods.add("evm_increaseTime");
 
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, disabledMethods);
+        ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, disabledMethods, 0, new HashMap<>());
 
         Assertions.assertTrue(description.methodIsEnable("evm_snapshot"));
         Assertions.assertTrue(description.methodIsEnable("evm_revert"));
@@ -162,7 +163,7 @@ class ModuleDescriptionTest {
         disabledMethods.add("evm_reset");
         disabledMethods.add("evm_increaseTime");
 
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
+        ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods, 0, new HashMap<>());
 
         Assertions.assertTrue(description.methodIsEnable("evm_snapshot"));
         Assertions.assertTrue(description.methodIsEnable("evm_revert"));

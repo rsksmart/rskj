@@ -644,7 +644,8 @@ class TransactionModuleTest {
                 new BridgeSupportFactory(
                         btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
                         config.getActivationConfig(), signatureCache),
-                config.getGasEstimationCap()
+                config.getGasEstimationCap(),
+                config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, new ReceivedTxSignatureCache());
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
