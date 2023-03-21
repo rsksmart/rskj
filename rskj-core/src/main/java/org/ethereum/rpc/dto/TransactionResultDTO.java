@@ -32,6 +32,7 @@ import co.rsk.util.HexUtils;
 public class TransactionResultDTO {
 
     private static final String HEX_ZERO = "0x0";
+    private static final String TRANSACTION_TYPE = "0x0";
 
     private String hash;
     private String nonce;
@@ -47,6 +48,7 @@ public class TransactionResultDTO {
     private String v;
     private String r;
     private String s;
+    private String type = TRANSACTION_TYPE;
 
     public TransactionResultDTO(Block b, Integer index, Transaction tx, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
         hash = tx.getHash().toJsonString();
@@ -142,4 +144,7 @@ public class TransactionResultDTO {
         return s;
     }
 
+    public String getType() {
+        return type;
+    }
 }

@@ -57,7 +57,8 @@
               }
             ],
             "logsBloom": "0x00...0",
-            "status": "0x1"
+            "status": "0x1",
+            "type": "0x0"
           }
         ]
       }

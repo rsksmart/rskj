@@ -14,7 +14,8 @@
       "logsBloom",
       "to",
       "transactionHash",
-      "transactionIndex"
+      "transactionIndex",
+      "type"
     ],
     "properties": {
       "blockHash": {
@@ -72,6 +73,11 @@
         "title": "ReceiptStatus",
         "description": "Whether or not the transaction threw an error.",
         "type": "boolean"
+      },
+      "type": {
+        "title": "ReceiptType",
+        "description": "is a positive unsigned 8-bit number that represents the type of the transaction.",
+        "type": "string"
       },
       "root": {
         "title": "Receipt Root",
