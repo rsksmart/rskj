@@ -18,9 +18,7 @@
 
 package org.ethereum.rpc;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 import java.math.BigInteger;
@@ -114,6 +112,7 @@ class Web3ImplLogsTest {
     private BlockStore blockStore;
 
     private SignatureCache signatureCache;
+    private BlocksBloomStore blocksBloomStore;
 
     //20965255 getValue()
     //371303c0 inc()
@@ -409,6 +408,55 @@ class Web3ImplLogsTest {
         assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[1]).address);
     }
 
+    @Test
+    void getLogsKeepsCorrectOrderForReverseSearch() throws Exception {
+        List<Transaction> transactions = addContractInvokeManyTxPerBlock();
+
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        Object[] logs = web3.eth_getLogs(fr);
+
+        assertNotNull(logs);
+        assertEquals(3, logs.length);
+
+        String txHash1 = "0x" + transactions.get(0).getHash().toHexString();
+        TransactionReceiptDTO txReceipt1 = web3.eth_getTransactionReceipt(txHash1);
+        String contractAddress = txReceipt1.getContractAddress();
+        LogFilterElement logs1 = (LogFilterElement) logs[0];
+        assertEquals(contractAddress, logs1.address);
+        assertEquals(txHash1, logs1.transactionHash);
+        LogFilterElement receipt1Logs = txReceipt1.getLogs()[0];
+        assertEquals(receipt1Logs.transactionIndex, logs1.transactionIndex);
+        assertEquals(receipt1Logs.logIndex, logs1.logIndex);
+        assertArrayEquals(receipt1Logs.topics, logs1.topics);
+
+        String txHash2 = "0x" + transactions.get(1).getHash().toHexString();
+        TransactionReceiptDTO txReceipt2 = web3.eth_getTransactionReceipt(txHash2);
+        LogFilterElement logs2 = (LogFilterElement) logs[1];
+        assertEquals(contractAddress, logs2.address);
+        assertEquals(txHash2, logs2.transactionHash);
+        LogFilterElement receipt2Logs = txReceipt2.getLogs()[0];
+        assertEquals(receipt2Logs.transactionIndex, logs2.transactionIndex);
+        assertEquals(receipt2Logs.logIndex, logs2.logIndex);
+        assertArrayEquals(receipt2Logs.topics, logs2.topics);
+
+        String txHash3 = "0x" + transactions.get(2).getHash().toHexString();
+        TransactionReceiptDTO txReceipt3 = web3.eth_getTransactionReceipt(txHash3);
+        LogFilterElement logs3 = (LogFilterElement) logs[2];
+        assertEquals(contractAddress, logs3.address);
+        assertEquals(txHash3, logs3.transactionHash);
+        LogFilterElement receipt3Logs = txReceipt3.getLogs()[0];
+        assertEquals(receipt3Logs.transactionIndex, logs3.transactionIndex);
+        assertEquals(receipt3Logs.logIndex, logs3.logIndex);
+        assertArrayEquals(receipt3Logs.topics, logs3.topics);
+
+        // block1 bloomed after call
+        assertTrue(blocksBloomStore.hasBlockNumber(0));
+        assertTrue(blocksBloomStore.hasBlockNumber(1));
+
+        // block2 not bloomed after call because the bloom was not complete (1 out of 2 blocks)
+        assertFalse(blocksBloomStore.hasBlockNumber(2));
+    }
 
     @Test
     void getLogsTwiceFromBlockchainWithInvokeContract() throws Exception {
@@ -1073,6 +1121,7 @@ class Web3ImplLogsTest {
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        blocksBloomStore = new BlocksBloomStore(2, 0, new HashMapDB());
         return new Web3RskImpl(
                 eth,
                 blockChain,
@@ -1096,7 +1145,7 @@ class Web3ImplLogsTest {
                 null,
                 new SimpleConfigCapabilities(),
                 null,
-                new BlocksBloomStore(2, 0, new HashMapDB()),
+                blocksBloomStore,
                 mock(Web3InformationRetriever.class),
                 null,
                 null);
@@ -1205,6 +1254,49 @@ class Web3ImplLogsTest {
 
         web3.personal_newAccountWithSeed("default");
         web3.personal_newAccountWithSeed("notDefault");
+    }
+
+    private List<Transaction> addContractInvokeManyTxPerBlock() {
+        Account acc1 = new AccountBuilder(blockChain,
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+
+        List<Transaction> allTxs = new ArrayList<>();
+
+        Block genesis = blockChain.getBlockByNumber(0);
+
+        // Block 1
+        List<Transaction> txs = new ArrayList<>();
+
+        Transaction tx = getContractTransaction(acc1);
+        txs.add(tx);
+        allTxs.add(tx);
+
+        Block block1 = new BlockBuilder(blockChain, null, blockStore)
+                .trieStore(trieStore).parent(genesis).transactions(txs).build();
+        assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
+
+        byte[] contractAddress = tx.getContractAddress().getBytes();
+
+        // Block 2
+        txs = new ArrayList<>();
+
+        Transaction tx2 = getContractTransactionWithInvoke(acc1, contractAddress);
+        txs.add(tx2);
+        allTxs.add(tx2);
+
+        Transaction tx3 = getContractTransactionWithCall(acc1, contractAddress);
+        txs.add(tx3);
+        allTxs.add(tx3);
+
+        Block block2 = new BlockBuilder(blockChain, null, blockStore)
+                .trieStore(trieStore).parent(block1).transactions(txs).build();
+        assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
+
+        web3.personal_newAccountWithSeed("default");
+        web3.personal_newAccountWithSeed("notDefault");
+
+        return allTxs;
     }
 
     private void addContractCall() {

@@ -53,10 +53,10 @@ public class BlocksBloomEncoder {
         Bloom bloom = new Bloom(list.get(2).getRLPData());
 
         if (from == 0 && to == 0 && Arrays.equals(emptyBloom.getData(), bloom.getData())) {
-            return new BlocksBloom();
+            return BlocksBloom.createEmpty();
         }
 
-        return new BlocksBloom(from, to, bloom);
+        return BlocksBloom.createForExisting(from, to, bloom);
     }
 
     private static byte[] encodeLong(long value) {

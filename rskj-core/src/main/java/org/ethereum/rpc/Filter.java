@@ -18,10 +18,12 @@
 
 package org.ethereum.rpc;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,8 +69,17 @@ public class Filter {
         return events.stream().map(fe -> fe.getJsonEventObject()).collect(Collectors.toList()).toArray();
     }
 
+    @VisibleForTesting
+    List<FilterEvent> getEventsInternal() {
+        return new ArrayList<>(events);
+    }
+
     protected synchronized void add(FilterEvent evt) {
         events.add(evt);
+    }
+
+    protected void reverseEvents() {
+        Collections.reverse(this.events);
     }
 
     public void newBlockReceived(Block b) {
