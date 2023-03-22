@@ -625,10 +625,10 @@ public class BlockExecutor {
             Optional<Long> sublistGasAccumulated = addTxToSublistAndGetAccumulatedGas(
                     readWrittenKeysTracker,
                     parallelizeTransactionHandler,
-                    block.getNumber(),
                     tx,
                     tx.isRemascTransaction(txindex, transactionsList.size()),
-                    txExecutor);
+                    txExecutor.getGasUsed(),
+                    txExecutor.precompiledContractHasBeenCalled());
 
             if (!acceptInvalidTransactions && !sublistGasAccumulated.isPresent()) {
                 if (!discardInvalidTxs) {
@@ -732,21 +732,17 @@ public class BlockExecutor {
         return receipts;
     }
 
-    private Optional<Long> addTxToSublistAndGetAccumulatedGas(IReadWrittenKeysTracker readWrittenKeysTracker, ParallelizeTransactionHandler parallelizeTransactionHandler, long blockNumber, Transaction tx, boolean isRemascTransaction, TransactionExecutor txExecutor) {
+    private Optional<Long> addTxToSublistAndGetAccumulatedGas(IReadWrittenKeysTracker readWrittenKeysTracker, ParallelizeTransactionHandler parallelizeTransactionHandler, Transaction tx, boolean isRemascTransaction, long gasUsed, boolean precompiledContractHasBeenCalled) {
         Optional<Long> sublistGasAccumulated;
 
-        ActivationConfig.ForBlock activations = activationConfig.forBlock(blockNumber);
-        DataWord receiver = DataWord.valueOf(tx.getReceiveAddress().getBytes());
-        PrecompiledContracts.PrecompiledContract precompiledContractAddress = txExecutor.getPrecompiledContracts().getContractForAddress(activations, receiver);
-
-        if (precompiledContractAddress != null || txExecutor.precompiledContractHasBeenCalled()) {
+        if (precompiledContractHasBeenCalled) {
             if (isRemascTransaction) {
-                sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
+                sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, gasUsed);
             } else {
-                sublistGasAccumulated = parallelizeTransactionHandler.addTxSentToPrecompiledContract(tx, txExecutor.getGasUsed());
+                sublistGasAccumulated = parallelizeTransactionHandler.addTxSentToPrecompiledContract(tx, gasUsed);
             }
         } else {
-            sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getThisThreadReadKeys(), readWrittenKeysTracker.getThisThreadWrittenKeys(), txExecutor.getGasUsed());
+            sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getThisThreadReadKeys(), readWrittenKeysTracker.getThisThreadWrittenKeys(), gasUsed);
         }
         return sublistGasAccumulated;
     }

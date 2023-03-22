@@ -441,7 +441,11 @@ public class TransactionExecutor {
 
             vm.play(program);
 
+            // This line checks whether the invoked smart contract calls a Precompiled contract.
+            // This flag is then taken by the Parallel transaction handler, if the tx calls a precompiled contract,
+            // it should be executed sequentially.
             precompiledContractHasBeenCalledFlag |= program.precompiledContractHasBeenCalled();
+
             result = program.getResult();
             gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
@@ -693,10 +697,6 @@ public class TransactionExecutor {
     }
 
     public Coin getPaidFees() { return paidFees; }
-
-    public PrecompiledContracts getPrecompiledContracts() {
-        return precompiledContracts;
-    }
 
     public boolean precompiledContractHasBeenCalled() {
         return this.precompiledContractHasBeenCalledFlag;

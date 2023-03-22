@@ -112,7 +112,7 @@ public class Program {
     private final Set<DataWord> deletedAccountsInBlock;
 
     private final SignatureCache signatureCache;
-    private boolean precompiledContractHasBeenCalled;
+    private boolean precompiledContractHasBeenCalled = false;
 
     public Program(
             VmConfig config,
@@ -151,8 +151,6 @@ public class Program {
         this.storage = setupProgramListener(new Storage(programInvoke));
         this.deletedAccountsInBlock = new HashSet<>(deletedAccounts);
         this.signatureCache = signatureCache;
-        this.precompiledContractHasBeenCalled = false;
-
         precompile();
         traceListener = new ProgramTraceListener(config);
     }
@@ -1335,7 +1333,7 @@ public class Program {
     }
 
     public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
-        setPrecompiledContractHasBeenCalled();
+        this.precompiledContractHasBeenCalled = true;
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), " call deep limit reach");
@@ -1447,10 +1445,6 @@ public class Program {
         } catch (VMException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void setPrecompiledContractHasBeenCalled() {
-        this.precompiledContractHasBeenCalled = true;
     }
 
     /**

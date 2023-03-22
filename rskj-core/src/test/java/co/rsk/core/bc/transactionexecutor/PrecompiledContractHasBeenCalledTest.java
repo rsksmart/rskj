@@ -336,7 +336,7 @@ public class PrecompiledContractHasBeenCalledTest {
         return genesis;
     }
 
-    private RskAddress getContractAddress(Account aSender, BigInteger nonce) {
+    public RskAddress getContractAddress(Account aSender, BigInteger nonce) {
         return new RskAddress(HashUtil.calcNewAddr(aSender.getAddress().getBytes(), nonce.toByteArray()));
     }
 
@@ -353,7 +353,7 @@ public class PrecompiledContractHasBeenCalledTest {
         Assertions.assertEquals(hasRevert, transactionResult.isRevert());
     }
 
-    private byte[] getDeployDataWithAddressAsParameterToProxyConstructor(String data, RskAddress address) {
+    public byte[] getDeployDataWithAddressAsParameterToProxyConstructor(String data, RskAddress address) {
         return Hex.decode(data + address);
     }
 
