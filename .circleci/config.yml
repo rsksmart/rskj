@@ -34,7 +34,7 @@ jobs:
           command: |
             ./configure.sh
             ./gradlew --no-daemon dependencies
-            ./gradlew --no-daemon --stacktrace build -x test
+            ./gradlew --no-daemon --stacktrace build -x test -x integrationTest
       - persist_to_workspace:
           root: .
           paths:
@@ -73,6 +73,10 @@ jobs:
       - run:
           name: rskj tests
           command: ./gradlew --no-daemon --stacktrace test
+      - run:
+          name: rskj integration tests
+          no_output_timeout: 1h
+          command: ./gradlew --no-daemon --stacktrace integrationTest
       - run:
           name: Save test results
           command: |

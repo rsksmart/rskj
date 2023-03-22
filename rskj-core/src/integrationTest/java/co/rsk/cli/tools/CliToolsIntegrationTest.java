@@ -223,6 +223,18 @@ class CliToolsIntegrationTest {
     }
 
     @Test
+    void whenIndexBloomsRuns_shouldIndexBlockRangeSInBLoomsDbSuccessfully() throws Exception {
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.IndexBlooms -fb %s -tb %s %s", baseJavaCmd, buildLibsPath, jarName, "earliest", "latest", strBaseArgs);
+        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Assertions.assertEquals(proc.getErrors(), "");
+        Assertions.assertTrue(proc.getInput().contains("[c.r.c.t.IndexBlooms] [main]  Processed "));
+    }
+
+    @Test
     void whenExportBlocksRuns_shouldExportSpecifiedBlocks() throws Exception {
         Map<String, Response> responseMap = new HashMap<>();
         String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
@@ -582,16 +594,4 @@ class CliToolsIntegrationTest {
 
         Assertions.assertTrue(proc.getInput().contains("Identified public IP"));
     }
-
-//    @Test
-//    void whenIndexBloomsRuns_shouldIndexBlockRangeSInBLoomsDbSuccessfully() throws Exception {
-//        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-//        runCommand(cmd, 1, TimeUnit.MINUTES);
-//
-//        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.IndexBlooms -fb %s -tb %s %s", baseJavaCmd, buildLibsPath, jarName, "earliest", "latest", strBaseArgs);
-//        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
-//
-//        Assertions.assertTrue(proc.getErrors().isEmpty());
-//        Assertions.assertTrue(proc.getInput().contains("[c.r.c.t.IndexBlooms] [main]  Processed "));
-//    }
 }
