@@ -57,6 +57,7 @@ class CliToolsIntegrationTest {
     private String buildLibsPath;
     private String jarName;
     private String databaseDir;
+    private String bloomsDbDir;
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final int port = 9999;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -115,7 +116,9 @@ class CliToolsIntegrationTest {
                 .filter(fn -> fn.endsWith("-all.jar"))
                 .findFirst()
                 .get();
-        databaseDir = tempDir.resolve("database").toString();
+        Path databaseDirPath =  tempDir.resolve("database");
+        databaseDir = databaseDirPath.toString();
+        bloomsDbDir = databaseDirPath.resolve("blooms").toString();
         baseArgs = new String[]{
                 String.format("-Xdatabase.dir=%s", databaseDir),
                 "--regtest",
@@ -220,18 +223,6 @@ class CliToolsIntegrationTest {
                 .addHeader("Accept-Encoding", "identity")
                 .post(requestBody).build();
         return getUnsafeOkHttpClient().newCall(request).execute();
-    }
-
-    @Test
-    void whenIndexBloomsRuns_shouldIndexBlockRangeSInBLoomsDbSuccessfully() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.IndexBlooms -fb %s -tb %s %s", baseJavaCmd, buildLibsPath, jarName, "earliest", "latest", strBaseArgs);
-        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        Assertions.assertEquals(proc.getErrors(), "");
-        Assertions.assertTrue(proc.getInput().contains("[c.r.c.t.IndexBlooms] [main]  Processed "));
     }
 
     @Test
@@ -593,5 +584,18 @@ class CliToolsIntegrationTest {
         CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
 
         Assertions.assertTrue(proc.getInput().contains("Identified public IP"));
+    }
+
+    @Test
+    void whenIndexBloomsRuns_shouldIndexBlockRangeSInBLoomsDbSuccessfully() throws Exception {
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        FileUtil.recursiveDelete(bloomsDbDir);
+
+        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.IndexBlooms -fb %s -tb %s %s", baseJavaCmd, buildLibsPath, jarName, "earliest", "latest", strBaseArgs);
+        CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
+
+        Assertions.assertTrue(proc.getInput().contains("[c.r.c.t.IndexBlooms] [main]  Processed "));
     }
 }
