@@ -58,6 +58,8 @@ public class IndexedBlockStore implements BlockStore {
     private final KeyValueDataSource blocks;
     private final BlockFactory blockFactory;
 
+    private Block bestBlock;
+
     public IndexedBlockStore(
             BlockFactory blockFactory,
             KeyValueDataSource blocks,
@@ -69,6 +71,8 @@ public class IndexedBlockStore implements BlockStore {
         // remascCache should be an external component and not be inside blockstore
         this.blockCache = new BlockCache(5000);
         this.remascCache = new MaxSizeHashMap<>(50000, true);
+
+        this.bestBlock = initialiseBestBlock();
     }
 
     @Override
@@ -94,8 +98,7 @@ public class IndexedBlockStore implements BlockStore {
         binfos.removeAll(toremove);
     }
 
-    @Override
-    public synchronized Block getBestBlock() {
+    private Block initialiseBestBlock() {
         if (index.isEmpty()) {
             return null;
         }
@@ -116,6 +119,11 @@ public class IndexedBlockStore implements BlockStore {
         }
 
         return bestBlock;
+    }
+
+    @Override
+    public Block getBestBlock() {
+        return this.bestBlock;
     }
 
     /**
@@ -228,8 +236,13 @@ public class IndexedBlockStore implements BlockStore {
             blocks.put(block.getHash().getBytes(), block.getEncoded());
         }
 
-        index.putBlocks(block.getNumber(), blockInfos);
-        blockCache.addBlock(block, getBestBlock().getNumber());
+        boolean newMax = index.putBlocks(block.getNumber(), blockInfos);
+        if (newMax && mainChain) {
+            this.bestBlock = block;
+        }
+
+        long bestBlockNumber = this.bestBlock != null ? this.bestBlock.getNumber() : 0L;
+        blockCache.addBlock(block, bestBlockNumber);
         remascCache.put(block.getHash(), getSiblingsFromBlock(block));
     }
 
@@ -272,20 +285,20 @@ public class IndexedBlockStore implements BlockStore {
 
     @Override
     public synchronized Block getBlockByHash(byte[] hash) {
-
         Block block = getBlock(hash);
         if (block == null) {
             return null;
         }
 
-        blockCache.addBlock(block, getBestBlock().getNumber());
+        long bestBlockNumber = this.bestBlock != null ? this.bestBlock.getNumber() : 0L;
+        blockCache.addBlock(block, bestBlockNumber);
         remascCache.put(block.getHash(), getSiblingsFromBlock(block));
         return block;
     }
 
+    // POI: no need to be synchronised
     private synchronized Block getBlock(byte[] hash) {
         Block block = this.blockCache.getBlockByHash(hash);
-
         if (block != null) {
             return block;
         }
@@ -309,6 +322,7 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
+    // POI: no need to be synchronised
     public synchronized BlockDifficulty getTotalDifficultyForHash(byte[] hash){
         Block block = this.getBlockByHash(hash);
         if (block == null) {
@@ -338,6 +352,7 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
+    // POI: no need to be synchronised
     public synchronized List<byte[]> getListHashesEndWith(byte[] hash, long number){
 
         List<Block> blocks = getListBlocksEndWith(hash, number);
@@ -350,6 +365,7 @@ public class IndexedBlockStore implements BlockStore {
         return hashes;
     }
 
+    // POI: no need to be synchronised
     private synchronized List<Block> getListBlocksEndWith(byte[] hash, long qty) {
         Block block = getBlockByHash(hash);
 
@@ -372,7 +388,9 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized void reBranch(Block forkBlock){
+    public synchronized void reBranch(final Block forkBlock){
+        // fork determines always the new best block
+        this.bestBlock = forkBlock;
 
         Block bestBlock = getBestBlock();
         long maxLevel = Math.max(bestBlock.getNumber(), forkBlock.getNumber());
@@ -381,8 +399,7 @@ public class IndexedBlockStore implements BlockStore {
         long currentLevel = maxLevel;
         Block forkLine = forkBlock;
 
-        if (forkBlock.getNumber() > bestBlock.getNumber()) {
-
+        if (forkBlock.getNumber() > bestBlock.getNumber()) { // convert new blocks from fork to main chain
             while(currentLevel > bestBlock.getNumber()) {
                 List<BlockInfo> blocks = index.getBlocksByNumber(currentLevel);
                 BlockInfo blockInfo = getBlockInfoForHash(blocks, forkLine.getHash().getBytes());
@@ -398,8 +415,7 @@ public class IndexedBlockStore implements BlockStore {
         }
 
         Block bestLine = bestBlock;
-        if (bestBlock.getNumber() > forkBlock.getNumber()){
-
+        if (bestBlock.getNumber() > forkBlock.getNumber()){ // convert existing blocks not in fork to secondary chain
             while(currentLevel > forkBlock.getNumber()) {
                 List<BlockInfo> blocks =  index.getBlocksByNumber(currentLevel);
                 BlockInfo blockInfo = getBlockInfoForHash(blocks, bestLine.getHash().getBytes());
@@ -448,6 +464,7 @@ public class IndexedBlockStore implements BlockStore {
 
         int i;
         for (i = 0; i < maxBlocks; ++i) {
+            // POI: probably `index.getBlocksByNumber` should be synchronised
             List<BlockInfo> blockInfos =  index.getBlocksByNumber(number);
             if (blockInfos == null) {
                 break;
@@ -579,7 +596,6 @@ public class IndexedBlockStore implements BlockStore {
             this.mainChain = mainChain;
         }
     }
-
 
     public static final Serializer<List<BlockInfo>> BLOCK_INFO_SERIALIZER = new Serializer<List<BlockInfo>>(){
 

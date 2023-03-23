@@ -70,8 +70,10 @@ public interface BlocksIndex {
      * Stores a list of blocks by their number, overwriting the previous existing ones.
      *
      * @param blocks A non null, non empty list of blocks.
+     *
+     * @return true if added block is new best, false otherwise
      */
-    void putBlocks(long blockNumber, List<IndexedBlockStore.BlockInfo> blocks);
+    boolean putBlocks(long blockNumber, List<IndexedBlockStore.BlockInfo> blocks);
 
     /**
      * Removes the blocks with the highest block number from the storage.

@@ -97,7 +97,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
     }
 
     @Override
-    public void putBlocks(long blockNumber, List<IndexedBlockStore.BlockInfo> blocks) {
+    public boolean putBlocks(long blockNumber, List<IndexedBlockStore.BlockInfo> blocks) {
         if (blocks == null || blocks.isEmpty()) {
             throw new IllegalArgumentException("Block list cannot be empty nor null.");
         }
@@ -106,11 +106,16 @@ public class MapDBBlocksIndex implements BlocksIndex {
         if (index.size() > 0) {
             maxNumber = getMaxNumber();
         }
+
+        boolean newMax = false;
         if (blockNumber > maxNumber) {
             metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(blockNumber));
+            newMax = true;
         }
 
         index.put(blockNumber, blocks);
+
+        return newMax;
     }
 
     @Override
