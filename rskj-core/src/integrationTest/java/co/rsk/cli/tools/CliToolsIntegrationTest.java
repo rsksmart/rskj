@@ -577,13 +577,11 @@ class CliToolsIntegrationTest {
 
     @Test
     void whenStartBootstrapRuns_shouldRunSuccessfully() throws Exception {
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        runCommand(cmd, 1, TimeUnit.MINUTES);
-
-        cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.StartBootstrap %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        String cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.StartBootstrap --reset --stopTimeout 40000 %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         CustomProcess proc = runCommand(cmd, 1, TimeUnit.MINUTES);
 
         Assertions.assertTrue(proc.getInput().contains("Identified public IP"));
+        Assertions.assertTrue(proc.getInput().contains("Discovery UDPListener started"));
     }
 
     @Test

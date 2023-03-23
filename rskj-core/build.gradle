@@ -33,6 +33,10 @@ test {
 
 integrationTest {
     dependsOn assemble
+
+    beforeTest { descriptor ->
+        logger.lifecycle("Running integration test: ${descriptor}")
+    }
 }
 
 jacocoTestReport {

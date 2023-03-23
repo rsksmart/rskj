@@ -60,7 +60,7 @@ jobs:
             else
               extra_flags="-Dsonar.branch.name=master"
             fi
-            ./gradlew sonarqube --no-daemon -x build -x test \
+            ./gradlew sonarqube --no-daemon -x build -x test -x integrationTest \
                 $extra_flags \
                 -Dsonar.organization=rsksmart \
                 -Dsonar.host.url="$SONAR_URL" \
@@ -75,7 +75,6 @@ jobs:
           command: ./gradlew --no-daemon --stacktrace test
       - run:
           name: rskj integration tests
-          no_output_timeout: 1h
           command: ./gradlew --no-daemon --stacktrace integrationTest
       - run:
           name: Save test results
