@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -44,6 +45,8 @@ import org.mockito.Mockito;
 
 import java.util.Map;
 import java.util.function.Supplier;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by Anton Nashatyrev on 29.12.2015.
@@ -77,7 +80,8 @@ class ImportLightTest {
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class),
+                mock(ReversibleTransactionExecutor.class));
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,

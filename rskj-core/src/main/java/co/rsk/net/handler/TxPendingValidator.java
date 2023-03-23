@@ -18,15 +18,14 @@
 package co.rsk.net.handler;
 
 import co.rsk.core.Coin;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.AccountState;
-import org.ethereum.core.Block;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
+import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +51,7 @@ public class TxPendingValidator {
 
     private final SignatureCache signatureCache;
 
-    public TxPendingValidator(Constants constants, ActivationConfig activationConfig, int accountSlots, SignatureCache signatureCache) {
+    public TxPendingValidator(Constants constants, ActivationConfig activationConfig, int accountSlots, SignatureCache signatureCache, ReversibleTransactionExecutor reversibleTransactionExecutor, BlockStore blockStore) {
         this.constants = constants;
         this.activationConfig = activationConfig;
         this.signatureCache = signatureCache;
@@ -66,6 +65,7 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig, signatureCache));
         validatorSteps.add(new TxValidatorMaximumGasPriceValidator(activationConfig));
+        validatorSteps.add(new TxAAValidatorCallValidate(constants, activationConfig, reversibleTransactionExecutor, blockStore));
     }
 
     public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {

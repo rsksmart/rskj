@@ -396,7 +396,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.txOutdatedThreshold(),
                     rskSystemProperties.txOutdatedTimeout(),
                     getTxQuotaChecker(),
-                    getGasPriceTracker());
+                    getGasPriceTracker(),
+                    getReversibleTransactionExecutor());
         }
 
         return transactionPool;

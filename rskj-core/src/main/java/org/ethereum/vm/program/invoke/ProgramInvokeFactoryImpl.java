@@ -160,8 +160,6 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             Collections.emptyList()
                     )
             );
-            final boolean[] booleans = new boolean[3];
-            boolean[] a = new boolean[booleans.length];
             return HexUtils.stringHexToByteArray(encoded);
         }
         return nullToEmpty(tx.getData());

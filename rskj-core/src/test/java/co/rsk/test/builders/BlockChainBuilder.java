@@ -21,6 +21,7 @@ package co.rsk.test.builders;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
@@ -52,6 +53,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -245,7 +248,8 @@ public class BlockChainBuilder {
 
         transactionPool = new TransactionPoolImpl(
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
-                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class),
+                mock(ReversibleTransactionExecutor.class));
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,

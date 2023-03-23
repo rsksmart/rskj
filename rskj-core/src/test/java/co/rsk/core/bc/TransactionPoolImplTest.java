@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.handler.quota.TxQuotaChecker;
@@ -93,7 +94,8 @@ class TransactionPoolImplTest {
                 10,
                 100,
                 Mockito.mock(TxQuotaChecker.class),
-                Mockito.mock(GasPriceTracker.class));
+                Mockito.mock(GasPriceTracker.class),
+                mock(ReversibleTransactionExecutor.class));
 
         quotaChecker = mock(TxQuotaChecker.class);
         when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);

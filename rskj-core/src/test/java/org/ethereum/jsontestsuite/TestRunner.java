@@ -21,6 +21,7 @@ package org.ethereum.jsontestsuite;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -155,7 +156,8 @@ public class TestRunner {
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class),
+                mock(ReversibleTransactionExecutor.class));
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,

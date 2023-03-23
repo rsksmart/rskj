@@ -19,6 +19,7 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -81,7 +82,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private final GasPriceTracker gasPriceTracker;
 
     @java.lang.SuppressWarnings("squid:S107")
-    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker) {
+    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker, ReversibleTransactionExecutor reversibleTransactionExecutor) {
         this.config = config;
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
@@ -97,7 +98,7 @@ public class TransactionPoolImpl implements TransactionPool {
         pendingTransactions = new TransactionSet(this.signatureCache);
         queuedTransactions = new TransactionSet(this.signatureCache);
 
-        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots(), signatureCache);
+        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots(), signatureCache, reversibleTransactionExecutor, blockStore);
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));

@@ -22,10 +22,8 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.BlockDifficulty;
+import co.rsk.core.*;
 import co.rsk.core.Coin;
-import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -119,7 +117,8 @@ public abstract class MinerServerTest {
                 10,
                 100,
                 mock(TxQuotaChecker.class),
-                mock(GasPriceTracker.class));
+                mock(GasPriceTracker.class),
+                mock(ReversibleTransactionExecutor.class));
 
         transactionPool.processBest(standardBlockchain.getBestBlock());
 
