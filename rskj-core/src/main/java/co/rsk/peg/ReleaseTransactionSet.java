@@ -104,10 +104,7 @@ public class ReleaseTransactionSet {
     }
 
     public void add(BtcTransaction transaction, Long blockNumber) {
-        // Disallow duplicate transactions
-        if (entries.stream().noneMatch(e -> e.getTransaction().equals(transaction))) {
-            entries.add(new Entry(transaction, blockNumber, null));
-        }
+        add(transaction, blockNumber, null);
     }
 
     public void add(BtcTransaction transaction, Long blockNumber, Keccak256 rskTxHash) {
