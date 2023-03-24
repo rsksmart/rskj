@@ -1255,7 +1255,6 @@ public class BridgeSupport {
         }
 
         ReleaseTransactionSet.Entry entry = nextPegoutWithEnoughConfirmations.get();
-        releaseTransactionSet.removeEntry(entry);
 
         Keccak256 txWaitingForSignatureKey = getTxWaitingForSignatureKey(rskTx, entry);
         if (activations.isActive(ConsensusRule.RSKIP375)){
@@ -1272,6 +1271,7 @@ public class BridgeSupport {
         }
 
         txsWaitingForSignatures.put(txWaitingForSignatureKey, entry.getTransaction());
+        releaseTransactionSet.removeEntry(entry);
 
         if(activations.isActive(ConsensusRule.RSKIP326)) {
             eventLogger.logPegoutConfirmed(entry.getTransaction().getHash(), entry.getRskBlockNumber());
