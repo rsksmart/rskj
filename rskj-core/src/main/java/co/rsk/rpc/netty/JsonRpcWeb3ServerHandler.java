@@ -22,8 +22,9 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.ModuleDescription;
-import co.rsk.util.JacksonParserUtil;
 import co.rsk.rpc.exception.JsonRpcRequestPayloadException;
+import co.rsk.rpc.exception.JsonRpcResponseLimitException;
+import co.rsk.util.JacksonParserUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,13 +57,12 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final long defaultTimeout;
 
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize, RskSystemProperties rskSystemProperties) {
-        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), rskSystemProperties.getRpcModules());
+        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), rskSystemProperties.getRpcModules(), rskSystemProperties.getRpcMaxResponseSize());
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new JsonRpcRequestValidatorInterceptor(maxBatchRequestsSize));
         jsonRpcServer.setInterceptorList(interceptors);
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
-
         this.defaultTimeout = rskSystemProperties.getRpcTimeout();
     }
 
@@ -97,6 +97,11 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             LOGGER.error(e.getMessage(), e);
             int errorCode = INTERNAL_ERROR.code;
             responseContent = buildErrorContent(errorCode, e.getMessage());
+            responseCode = errorCode;
+        } catch (JsonRpcResponseLimitException limitEx) {
+            LOGGER.error(limitEx.getMessage(), limitEx);
+            int errorCode = JsonRpcResponseLimitException.ERROR_CODE;
+            responseContent = buildErrorContent(errorCode, limitEx.getMessage());
             responseCode = errorCode;
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";

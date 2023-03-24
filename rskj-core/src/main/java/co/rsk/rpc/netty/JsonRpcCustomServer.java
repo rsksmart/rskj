@@ -19,11 +19,14 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.rpc.json.CustomJsonNodeFactory;
+import co.rsk.rpc.json.JsonResponseSizeLimiter;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.googlecode.jsonrpc4j.*;
+import com.googlecode.jsonrpc4j.JsonResponse;
+import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,10 +34,11 @@ import java.util.Optional;
 
 public class JsonRpcCustomServer extends JsonRpcBasicServer {
     private final List<ModuleDescription> modules;
+    private final int responseLimit;
 
-    public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules) {
-        super(new ObjectMapper(), handler, remoteInterface);
-
+    public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules, int responseLimit) {
+        super(getObjectMapper(responseLimit), handler, remoteInterface);
+        this.responseLimit = responseLimit;
         this.modules = new ArrayList<>(modules);
     }
 
@@ -68,14 +72,24 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
             response = super.handleJsonNodeRequest(node);
             ExecTimeoutContext.checkIfExpired();
 
-            return response;
+        } else {
+            try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout)) {
+                response = super.handleJsonNodeRequest(node);
+                ExecTimeoutContext.checkIfExpired();
+            }
         }
-
-        try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout)) {
-            response = super.handleJsonNodeRequest(node);
-            ExecTimeoutContext.checkIfExpired();
+        if (responseLimit > 0) {
+            JsonResponseSizeLimiter.getSizeInBytesWithLimit(response.getResponse(), responseLimit);
         }
 
         return response;
+    }
+
+    private static ObjectMapper getObjectMapper(int maxSize) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        if (maxSize > 0) {
+            objectMapper.setNodeFactory(new CustomJsonNodeFactory(maxSize));
+        }
+        return objectMapper;
     }
 }
