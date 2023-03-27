@@ -153,7 +153,7 @@ class ReleaseTransactionSetTest {
     }
 
     @Test
-    void sliceWithConfirmations_withLimit_multipleMatch() {
+    void getNextPegoutWithEnoughConfirmation_multipleMatch() {
         int size = set.getEntries().size();
         Optional<ReleaseTransactionSet.Entry> result = set.getNextPegoutWithEnoughConfirmations(10L, 5);
         Assertions.assertTrue(result.isPresent());
