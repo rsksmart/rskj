@@ -62,7 +62,6 @@ import static org.ethereum.util.BIUtil.toBI;
 public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
     private static final Profiler profiler = ProfilerFactory.getInstance();
-    public static final String OUTPUT_ROOT_DIR = "./output/";
 
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
@@ -87,18 +86,29 @@ public class BlockExecutor {
             boolean remascEnabled,
             boolean isPlay,
             boolean isMetrics) {
+        this(activationConfig, repositoryLocator, transactionExecutorFactory, remascEnabled, isPlay, isMetrics, "");
+    }
+
+    public BlockExecutor(
+            ActivationConfig activationConfig,
+            RepositoryLocator repositoryLocator,
+            TransactionExecutorFactory transactionExecutorFactory,
+            boolean remascEnabled,
+            boolean isPlay,
+            boolean isMetrics,
+            String outputRootDir) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.activationConfig = activationConfig;
         this.remascEnabled = remascEnabled;
         this.isPlay = isPlay;
         this.isMetrics = isMetrics;
-        this.filePath_times = OUTPUT_ROOT_DIR + "times.csv";
-        this.filePath_forMetrics = OUTPUT_ROOT_DIR + "metrics.csv";
-        this.filePath_timesSplitted = OUTPUT_ROOT_DIR + "timesSplitted.csv";
-        this.filePath_timesValidity = OUTPUT_ROOT_DIR + "validitySplitted.csv";
-        this.filePath_validRule = OUTPUT_ROOT_DIR + "blockTxsValidRuleSplitted.csv";
-        this.filePath_timesSplitted_saveReceipts = OUTPUT_ROOT_DIR + "saveReceiptsSplitted.csv";
+        this.filePath_times = outputRootDir + "times.csv";
+        this.filePath_forMetrics = outputRootDir + "metrics.csv";
+        this.filePath_timesSplitted = outputRootDir + "timesSplitted.csv";
+        this.filePath_timesValidity = outputRootDir + "validitySplitted.csv";
+        this.filePath_validRule = outputRootDir + "blockTxsValidRuleSplitted.csv";
+        this.filePath_timesSplitted_saveReceipts = outputRootDir + "saveReceiptsSplitted.csv";
     }
 
     /**

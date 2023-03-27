@@ -160,6 +160,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
     private boolean metrics;
     private boolean play;
+    private String outputRootDir;
 
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
@@ -263,12 +264,21 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         this(args, false);
     }
 
+    // used by generate and play
+    public RskContext(String[] args, boolean metrics, boolean play, String outputRootDir) {
+        this(new CliArgs.Parser<>(
+                NodeCliOptions.class,
+                NodeCliFlags.class,
+                true
+        ).parse(args), metrics, play, outputRootDir);
+    }
+
     public RskContext(String[] args, boolean metrics, boolean play) {
         this(new CliArgs.Parser<>(
                 NodeCliOptions.class,
                 NodeCliFlags.class,
                 true
-        ).parse(args), metrics, play);
+        ).parse(args), metrics, play, "");
     }
 
     public RskContext(String[] args, boolean ignoreUnmatchedArgs) {
@@ -276,13 +286,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 NodeCliOptions.class,
                 NodeCliFlags.class,
                 ignoreUnmatchedArgs
-        ).parse(args), false, false);
+        ).parse(args), false, false, "");
     }
 
-    private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs, boolean metrics, boolean play) {
+    private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs, boolean metrics, boolean play, String outputRootDir) {
         this.cliArgs = cliArgs;
         this.metrics = metrics;
         this.play = play;
+        this.outputRootDir = outputRootDir;
         initializeNativeLibs();
     }
 
@@ -503,7 +514,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getTransactionExecutorFactory(),
                     getRskSystemProperties().isRemascEnabled(),
                     play,
-                    metrics);
+                    metrics,
+                    outputRootDir);
         }
 
         return blockExecutor;

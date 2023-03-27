@@ -35,7 +35,7 @@ public class Start {
 
         RskContext ctx = null;
         try {
-            ctx = new RskContext(args, false, true);
+            ctx = new RskContext(args);
 
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {
