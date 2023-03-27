@@ -680,7 +680,7 @@ class BridgeSupportReleaseBtcTest {
         List<UTXO> utxos = new ArrayList<>();
         utxos.add(PegTestUtils.createUTXO(1, 0, Coin.COIN.multiply(4), federation.getAddress()));
 
-        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(
+        ReleaseRequestQueue pegoutRequests = new ReleaseRequestQueue(
             Arrays.asList(
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.MILLICOIN),
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.MILLICOIN),
@@ -688,15 +688,15 @@ class BridgeSupportReleaseBtcTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
-        when(provider.getReleaseRequestQueue()).thenReturn(releaseRequestQueue);
+        when(provider.getReleaseRequestQueue()).thenReturn(pegoutRequests);
         when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
 
-        Coin totalValue = releaseRequestQueue.getEntries()
+        Coin totalValue = pegoutRequests.getEntries()
             .stream()
             .map(ReleaseRequestQueue.Entry::getAmount)
             .reduce(Coin.ZERO, Coin::add);
 
-        List<Keccak256> rskHashesList = releaseRequestQueue.getEntries()
+        List<Keccak256> rskHashesList = pegoutRequests.getEntries()
             .stream()
             .map(ReleaseRequestQueue.Entry::getRskTxHash)
             .collect(Collectors.toList());
@@ -929,13 +929,13 @@ class BridgeSupportReleaseBtcTest {
             new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(3))
         );
 
-        ReleaseRequestQueue originalReleaseRequestQueue = new ReleaseRequestQueue(entries);
-        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(entries);
+        ReleaseRequestQueue originalPegoutRequests = new ReleaseRequestQueue(entries);
+        ReleaseRequestQueue pegoutRequests = new ReleaseRequestQueue(entries);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
         when(provider.getReleaseRequestQueue())
-            .thenReturn(releaseRequestQueue);
+            .thenReturn(pegoutRequests);
         when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -947,7 +947,7 @@ class BridgeSupportReleaseBtcTest {
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        Assertions.assertEquals(originalReleaseRequestQueue, provider.getReleaseRequestQueue());
+        Assertions.assertEquals(originalPegoutRequests, provider.getReleaseRequestQueue());
         Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
     }
 
@@ -975,14 +975,14 @@ class BridgeSupportReleaseBtcTest {
         expectedEntries.addAll(entries.subList(BridgeSupport.MAX_RELEASE_ITERATIONS, entries.size()));
         expectedEntries.addAll(entries.subList(0, BridgeSupport.MAX_RELEASE_ITERATIONS));
 
-        ReleaseRequestQueue expectedReleaseRequestQueue = new ReleaseRequestQueue(expectedEntries);
-        ReleaseRequestQueue originalReleaseRequestQueue = new ReleaseRequestQueue(entries);
-        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(entries);
+        ReleaseRequestQueue expectedPegoutRequests = new ReleaseRequestQueue(expectedEntries);
+        ReleaseRequestQueue originalPegoutRequests = new ReleaseRequestQueue(entries);
+        ReleaseRequestQueue pegoutRequests = new ReleaseRequestQueue(entries);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
         when(provider.getReleaseRequestQueue())
-            .thenReturn(releaseRequestQueue);
+            .thenReturn(pegoutRequests);
         when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -994,9 +994,9 @@ class BridgeSupportReleaseBtcTest {
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        Assertions.assertNotEquals(originalReleaseRequestQueue, provider.getReleaseRequestQueue());
+        Assertions.assertNotEquals(originalPegoutRequests, provider.getReleaseRequestQueue());
 
-        Assertions.assertEquals(expectedReleaseRequestQueue, provider.getReleaseRequestQueue());
+        Assertions.assertEquals(expectedPegoutRequests, provider.getReleaseRequestQueue());
 
         Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
     }
