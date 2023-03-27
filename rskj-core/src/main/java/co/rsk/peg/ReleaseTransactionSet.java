@@ -104,10 +104,7 @@ public class ReleaseTransactionSet {
     }
 
     public void add(BtcTransaction transaction, Long blockNumber) {
-        // Disallow duplicate transactions
-        if (entries.stream().noneMatch(e -> e.getTransaction().equals(transaction))) {
-            entries.add(new Entry(transaction, blockNumber, null));
-        }
+        add(transaction, blockNumber, null);
     }
 
     public void add(BtcTransaction transaction, Long blockNumber, Keccak256 rskTxHash) {
@@ -126,27 +123,14 @@ public class ReleaseTransactionSet {
      * Sliced items are also removed from the set (thus the name, slice).
      * @param currentBlockNumber the current execution block number (height).
      * @param minimumConfirmations the minimum desired confirmations for the slice elements.
-     * @param maximumSliceSize (optional) the maximum number of elements in the slice.
-     * @return the slice of entries.
+     * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
-    public Set<Entry> sliceWithConfirmations(Long currentBlockNumber, Integer minimumConfirmations, Optional<Integer> maximumSliceSize) {
-        Set<Entry> output = new HashSet<>();
+    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations) {
+        return entries.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations)).findFirst();
+    }
 
-        int count = 0;
-        Iterator<Entry> iterator = entries.iterator();
-        while (iterator.hasNext()) {
-            Entry entry = iterator.next();
-            if (hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations) && (!maximumSliceSize.isPresent() || count < maximumSliceSize.get())) {
-                output.add(entry);
-                iterator.remove();
-                count++;
-                if (maximumSliceSize.isPresent() && count == maximumSliceSize.get()) {
-                    break;
-                }
-            }
-        }
-
-        return output;
+    public boolean removeEntry(Entry entry){
+        return entries.remove(entry);
     }
 
     private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
