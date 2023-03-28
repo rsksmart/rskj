@@ -1253,7 +1253,7 @@ public class BridgeSupport {
 
         ReleaseTransactionSet.Entry entry = nextPegoutWithEnoughConfirmations.get();
 
-        Keccak256 txWaitingForSignatureKey = getTxWaitingForSignatureKey(rskTx, entry);
+        Keccak256 txWaitingForSignatureKey = getPegoutWaitingForSignatureKey(rskTx, entry);
         if (activations.isActive(ConsensusRule.RSKIP375)){
             /*
              This check aims to prevent entry overriding. Currently, we do not accept more than one peg-out
@@ -1275,7 +1275,7 @@ public class BridgeSupport {
         }
     }
 
-    private Keccak256 getTxWaitingForSignatureKey(Transaction rskTx, ReleaseTransactionSet.Entry entry) {
+    private Keccak256 getPegoutWaitingForSignatureKey(Transaction rskTx, ReleaseTransactionSet.Entry entry) {
         if (activations.isActive(ConsensusRule.RSKIP375)){
             return entry.getPegoutCreationRskTxHash();
         }

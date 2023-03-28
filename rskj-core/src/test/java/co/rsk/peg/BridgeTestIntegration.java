@@ -215,9 +215,9 @@ public class BridgeTestIntegration {
 
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmation() throws IOException, VMException {
-        BtcTransaction tx1 = createTransaction();
-        BtcTransaction tx2 = createTransaction();
-        BtcTransaction tx3 = createTransaction();
+        BtcTransaction tx1 = createTransaction(2, Coin.valueOf(150));
+        BtcTransaction tx2 = createTransaction(3, Coin.valueOf(200));
+        BtcTransaction tx3 = createTransaction(4, Coin.valueOf(250));
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -271,9 +271,9 @@ public class BridgeTestIntegration {
 
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException, VMException {
-        BtcTransaction tx1 = createTransaction();
-        BtcTransaction tx2 = createTransaction();
-        BtcTransaction tx3 = createTransaction();
+        BtcTransaction tx1 = createTransaction(2, Coin.valueOf(150));
+        BtcTransaction tx2 = createTransaction(3, Coin.valueOf(200));
+        BtcTransaction tx3 = createTransaction(4, Coin.valueOf(250));
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -3285,7 +3285,34 @@ public class BridgeTestIntegration {
     }
 
     private BtcTransaction createTransaction() {
-        return new SimpleBtcTransaction(networkParameters, PegTestUtils.createHash());
+        return createTransaction(PegTestUtils.createHash());
+    }
+
+    private BtcTransaction createTransaction(Sha256Hash hash) {
+        return new SimpleBtcTransaction(networkParameters, hash);
+    }
+
+    private BtcTransaction createTransaction(int toPk, Coin value) {
+        return createTransaction(toPk, value, BtcECKey.fromPrivate(BigInteger.valueOf(123456)));
+    }
+
+    private BtcTransaction createUniqueTransaction(int toPk, Coin value) {
+        return createTransaction(toPk, value, new BtcECKey());
+    }
+
+    private BtcTransaction createTransaction(int toPk, Coin value, BtcECKey btcECKey) {
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        BtcTransaction input = new BtcTransaction(params);
+
+        input.addOutput(Coin.FIFTY_COINS, btcECKey.toAddress(params));
+
+        Address to = BtcECKey.fromPrivate(BigInteger.valueOf(toPk)).toAddress(params);
+
+        BtcTransaction result = new BtcTransaction(params);
+        result.addInput(input.getOutput(0));
+        result.getInput(0).disconnect();
+        result.addOutput(value, to);
+        return result;
     }
 
     private Block getGenesisBlock() {

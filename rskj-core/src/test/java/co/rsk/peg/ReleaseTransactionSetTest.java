@@ -53,20 +53,25 @@ class ReleaseTransactionSetTest {
 
     @Test
     void entryEquals() {
-        ReleaseTransactionSet.Entry e1 = new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 15L);
-        ReleaseTransactionSet.Entry e2 = new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 15L);
+
+        BtcTransaction uniqueTransaction1 = createUniqueTransaction(2, Coin.valueOf(150));
+        BtcTransaction uniqueTransaction2 = createUniqueTransaction(5, Coin.valueOf(230));
+        BtcTransaction uniqueTransaction3 = createUniqueTransaction(5, Coin.valueOf(230));
+
+        ReleaseTransactionSet.Entry e1 = new ReleaseTransactionSet.Entry(uniqueTransaction1, 15L);
+        ReleaseTransactionSet.Entry e2 = new ReleaseTransactionSet.Entry(uniqueTransaction1, 15L);
         ReleaseTransactionSet.Entry e3 = new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(149)), 14L);
         ReleaseTransactionSet.Entry e4 = new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(230)), 15L);
-        ReleaseTransactionSet.Entry e5 = new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(230)), 15L, PegTestUtils.createHash3(0));
-        ReleaseTransactionSet.Entry e6 = new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(230)), 15L, PegTestUtils.createHash3(0));
-        ReleaseTransactionSet.Entry e7 = new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(230)), 15L, null);
-        ReleaseTransactionSet.Entry e8 = new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(230)), 15L, null);
+        ReleaseTransactionSet.Entry e5 = new ReleaseTransactionSet.Entry(uniqueTransaction2, 15L, PegTestUtils.createHash3(0));
+        ReleaseTransactionSet.Entry e6 = new ReleaseTransactionSet.Entry(uniqueTransaction2, 15L, PegTestUtils.createHash3(0));
+        ReleaseTransactionSet.Entry e7 = new ReleaseTransactionSet.Entry(uniqueTransaction3, 15L, null);
+        ReleaseTransactionSet.Entry e8 = new ReleaseTransactionSet.Entry(uniqueTransaction3, 15L, null);
 
         Assertions.assertEquals(e1, e2);
         Assertions.assertNotEquals(e1, e3);
         Assertions.assertNotEquals(e1, e4);
         Assertions.assertEquals(e5, e6);
-        Assertions.assertEquals(e5, e7);
+        Assertions.assertNotEquals(e5, e7);
         Assertions.assertEquals(e7, e8);
     }
 
@@ -134,7 +139,7 @@ class ReleaseTransactionSetTest {
         Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getPegoutCreationBtcTx().equals(createTransaction(2, Coin.valueOf(150)))).count());
         set.add(createTransaction(2, Coin.valueOf(150)), 23L);
         Assertions.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
-        Assertions.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 23L)));
+        Assertions.assertFalse(set.getEntries().contains(new ReleaseTransactionSet.Entry(createUniqueTransaction(2, Coin.valueOf(150)), 23L)));
         Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getPegoutCreationBtcTx().equals(createTransaction(2, Coin.valueOf(150)))).count());
     }
 
@@ -163,9 +168,18 @@ class ReleaseTransactionSetTest {
     }
 
     private BtcTransaction createTransaction(int toPk, Coin value) {
+        return createTransaction(toPk, value, BtcECKey.fromPrivate(BigInteger.valueOf(123456)));
+    }
+
+    private BtcTransaction createUniqueTransaction(int toPk, Coin value) {
+        return createTransaction(toPk, value, new BtcECKey());
+    }
+
+    private BtcTransaction createTransaction(int toPk, Coin value, BtcECKey btcECKey) {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BtcTransaction input = new BtcTransaction(params);
-        input.addOutput(Coin.FIFTY_COINS, BtcECKey.fromPrivate(BigInteger.valueOf(123456)).toAddress(params));
+
+        input.addOutput(Coin.FIFTY_COINS, btcECKey.toAddress(params));
 
         Address to = BtcECKey.fromPrivate(BigInteger.valueOf(toPk)).toAddress(params);
 
