@@ -814,7 +814,7 @@ class BridgeSupportFlyoverTest {
         if (result.longValue() == FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value() || result.longValue() == FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()){
             List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
                 .stream()
-                .map(ReleaseTransactionSet.Entry::getTransaction)
+                .map(ReleaseTransactionSet.Entry::getPegoutCreationBtcTx)
                 .collect(Collectors.toList());
 
             assertEquals(1, releaseTxs.size());

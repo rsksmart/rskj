@@ -66,7 +66,7 @@ class ReleaseTransactionSetTest {
         Assertions.assertNotEquals(e1, e3);
         Assertions.assertNotEquals(e1, e4);
         Assertions.assertEquals(e5, e6);
-        Assertions.assertNotEquals(e5, e7);
+        Assertions.assertEquals(e5, e7);
         Assertions.assertEquals(e7, e8);
     }
 
@@ -74,8 +74,8 @@ class ReleaseTransactionSetTest {
     void entryGetters() {
         ReleaseTransactionSet.Entry entry = new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(100)), 7L);
 
-        Assertions.assertEquals(createTransaction(5, Coin.valueOf(100)), entry.getTransaction());
-        Assertions.assertEquals(7L, entry.getRskBlockNumber().longValue());
+        Assertions.assertEquals(createTransaction(5, Coin.valueOf(100)), entry.getPegoutCreationBtcTx());
+        Assertions.assertEquals(7L, entry.getPegoutCreationRskBlockNumber().longValue());
     }
 
     @Test
@@ -131,11 +131,11 @@ class ReleaseTransactionSetTest {
     @Test
     void add_existing() {
         Assertions.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
-        Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
+        Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getPegoutCreationBtcTx().equals(createTransaction(2, Coin.valueOf(150)))).count());
         set.add(createTransaction(2, Coin.valueOf(150)), 23L);
         Assertions.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
-        Assertions.assertFalse(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 23L)));
-        Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
+        Assertions.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 23L)));
+        Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getPegoutCreationBtcTx().equals(createTransaction(2, Coin.valueOf(150)))).count());
     }
 
     @Test

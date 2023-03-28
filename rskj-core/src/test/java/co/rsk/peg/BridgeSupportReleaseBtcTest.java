@@ -714,7 +714,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
 
-        BtcTransaction generatedTransaction = provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction();
+        BtcTransaction generatedTransaction = provider.getReleaseTransactionSet().getEntries().iterator().next().getPegoutCreationBtcTx();
 
         verify(provider, times(1)).getNextPegoutHeight();
         verify(provider, times(1)).setNextPegoutHeight(any(Long.class));

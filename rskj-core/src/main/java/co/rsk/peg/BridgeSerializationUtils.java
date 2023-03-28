@@ -682,8 +682,8 @@ public class BridgeSerializationUtils {
         int n = 0;
 
         for (ReleaseTransactionSet.Entry entry : entries) {
-            bytes[n++] = RLP.encodeElement(entry.getTransaction().bitcoinSerialize());
-            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getRskBlockNumber()));
+            bytes[n++] = RLP.encodeElement(entry.getPegoutCreationBtcTx().bitcoinSerialize());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getPegoutCreationRskBlockNumber()));
         }
 
         return RLP.encodeList(bytes);
@@ -697,9 +697,9 @@ public class BridgeSerializationUtils {
         int n = 0;
 
         for (ReleaseTransactionSet.Entry entry : entries) {
-            bytes[n++] = RLP.encodeElement(entry.getTransaction().bitcoinSerialize());
-            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getRskBlockNumber()));
-            bytes[n++] = RLP.encodeElement(entry.getRskTxHash().getBytes());
+            bytes[n++] = RLP.encodeElement(entry.getPegoutCreationBtcTx().bitcoinSerialize());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getPegoutCreationRskBlockNumber()));
+            bytes[n++] = RLP.encodeElement(entry.getPegoutCreationRskTxHash().getBytes());
         }
 
         return RLP.encodeList(bytes);
