@@ -40,31 +40,31 @@ public class ReleaseTransactionSet {
 
             @Override
             public int compare(Entry e1, Entry e2) {
-                return comparator.compare(e1.getTransaction().bitcoinSerialize(), e2.getTransaction().bitcoinSerialize());
+                return comparator.compare(e1.getPegoutCreationBtcTx().bitcoinSerialize(), e2.getPegoutCreationBtcTx().bitcoinSerialize());
             }
         };
 
-        private BtcTransaction transaction;
-        private Long rskBlockNumber;
-        private Keccak256 rskTxHash;
+        private BtcTransaction pegoutCreationBtcTx;
+        private Long pegoutCreationRskBlockNumber;
+        private Keccak256 pegoutCreationRskTxHash;
 
-        public Entry(BtcTransaction transaction, Long rskBlockNumber, Keccak256 rskTxHash) {
-            this.transaction = transaction;
-            this.rskBlockNumber = rskBlockNumber;
-            this.rskTxHash = rskTxHash;
+        public Entry(BtcTransaction pegoutCreationBtcTx, Long pegoutCreationRskBlockNumber, Keccak256 pegoutCreationRskTxHash) {
+            this.pegoutCreationBtcTx = pegoutCreationBtcTx;
+            this.pegoutCreationRskBlockNumber = pegoutCreationRskBlockNumber;
+            this.pegoutCreationRskTxHash = pegoutCreationRskTxHash;
         }
 
-        public Entry(BtcTransaction transaction, Long rskBlockNumber) { this(transaction, rskBlockNumber, null); }
+        public Entry(BtcTransaction pegoutCreationBtcTx, Long pegoutCreationRskBlockNumber) { this(pegoutCreationBtcTx, pegoutCreationRskBlockNumber, null); }
 
-        public BtcTransaction getTransaction() {
-            return transaction;
+        public BtcTransaction getPegoutCreationBtcTx() {
+            return pegoutCreationBtcTx;
         }
 
-        public Long getRskBlockNumber() {
-            return rskBlockNumber;
+        public Long getPegoutCreationRskBlockNumber() {
+            return pegoutCreationRskBlockNumber;
         }
 
-        public Keccak256 getRskTxHash() { return rskTxHash; }
+        public Keccak256 getPegoutCreationRskTxHash() { return pegoutCreationRskTxHash; }
 
         @Override
         public boolean equals(Object o) {
@@ -73,15 +73,12 @@ public class ReleaseTransactionSet {
             }
 
             Entry otherEntry = (Entry) o;
-            return otherEntry.getTransaction().equals(getTransaction()) &&
-                    otherEntry.getRskBlockNumber().equals(getRskBlockNumber()) &&
-                            (otherEntry.getRskTxHash() == null && getRskTxHash() == null ||
-                                    otherEntry.getRskTxHash() != null && otherEntry.getRskTxHash().equals(getRskTxHash()));
+            return otherEntry.getPegoutCreationBtcTx().equals(getPegoutCreationBtcTx());
          }
 
         @Override
         public int hashCode() {
-            return Objects.hash(getTransaction(), getRskBlockNumber());
+            return pegoutCreationBtcTx.hashCode();
         }
     }
 
@@ -92,11 +89,11 @@ public class ReleaseTransactionSet {
     }
 
     public Set<Entry> getEntriesWithoutHash() {
-        return entries.stream().filter(e -> e.getRskTxHash() == null).collect(Collectors.toSet());
+        return entries.stream().filter(e -> e.getPegoutCreationRskTxHash() == null).collect(Collectors.toSet());
     }
 
     public Set<Entry> getEntriesWithHash() {
-        return entries.stream().filter(e -> e.getRskTxHash() != null).collect(Collectors.toSet());
+        return entries.stream().filter(e -> e.getPegoutCreationRskTxHash() != null).collect(Collectors.toSet());
     }
 
     public Set<Entry> getEntries() {
@@ -108,10 +105,7 @@ public class ReleaseTransactionSet {
     }
 
     public void add(BtcTransaction transaction, Long blockNumber, Keccak256 rskTxHash) {
-        // Disallow duplicate transactions
-        if (entries.stream().noneMatch(e -> e.getTransaction().equals(transaction))) {
-            entries.add(new Entry(transaction, blockNumber, rskTxHash));
-        }
+        entries.add(new Entry(transaction, blockNumber, rskTxHash));
     }
 
     /**
@@ -134,6 +128,6 @@ public class ReleaseTransactionSet {
     }
 
     private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
-        return (currentBlockNumber - entry.getRskBlockNumber()) >= minimumConfirmations;
+        return (currentBlockNumber - entry.getPegoutCreationRskBlockNumber()) >= minimumConfirmations;
     }
 }

@@ -238,7 +238,7 @@ class BridgeSupportProcessFundsMigrationTest {
                 .toArray()[0];
             verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
                 updateCollectionsTx.getHash().getBytes(),
-                entry.getTransaction(),
+                entry.getPegoutCreationBtcTx(),
                 Coin.COIN
             );
         } else {

@@ -1086,7 +1086,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(ReleaseTransactionSet.Entry::getPegoutCreationBtcTx)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .collect(Collectors.toList());
 
@@ -1257,7 +1257,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(ReleaseTransactionSet.Entry::getPegoutCreationBtcTx)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .collect(Collectors.toList());
 
@@ -1533,7 +1533,7 @@ class BridgeSupportTest {
         Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntriesWithHash().size());
         ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntriesWithHash().toArray()[0];
         // Should have been logged with the migrated UTXO
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(tx.getHash().getBytes(), entry.getTransaction(), Coin.COIN);
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(tx.getHash().getBytes(), entry.getPegoutCreationBtcTx(), Coin.COIN);
     }
 
     @Test
@@ -1660,7 +1660,7 @@ class BridgeSupportTest {
         Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntriesWithHash().size());
         ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntriesWithHash().toArray()[0];
         // Should have been logged with the migrated UTXO
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(tx.getHash().getBytes(), entry.getTransaction(), Coin.COIN);
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(tx.getHash().getBytes(), entry.getPegoutCreationBtcTx(), Coin.COIN);
     }
 
     @Test
@@ -2593,7 +2593,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(ReleaseTransactionSet.Entry::getPegoutCreationBtcTx)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .collect(Collectors.toList());
 
@@ -2945,7 +2945,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(ReleaseTransactionSet.Entry::getPegoutCreationBtcTx)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .collect(Collectors.toList());
 
@@ -3114,7 +3114,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(ReleaseTransactionSet.Entry::getPegoutCreationBtcTx)
             .collect(Collectors.toList());
 
         // First release tx should correspond to the 5 BTC lock tx
@@ -3288,7 +3288,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(ReleaseTransactionSet.Entry::getPegoutCreationBtcTx)
             .collect(Collectors.toList());
 
         // First release tx should correspond to the 5 BTC lock tx
@@ -4170,7 +4170,7 @@ class BridgeSupportTest {
 
         List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(ReleaseTransactionSet.Entry::getPegoutCreationBtcTx)
             .collect(Collectors.toList());
 
         // First release tx should correspond to the 5 BTC lock tx
@@ -6277,7 +6277,7 @@ class BridgeSupportTest {
             // Check rejection tx input was created from btc tx and sent to the btc refund address indicated by the user
             boolean successfulRejection = false;
             for (ReleaseTransactionSet.Entry e : releaseTransactionSet.getEntries()) {
-                BtcTransaction refundTx = e.getTransaction();
+                BtcTransaction refundTx = e.getPegoutCreationBtcTx();
                 if (refundTx.getInput(0).getOutpoint().getHash() == btcTx.getHash() &&
                     refundTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams).equals(btcSenderAddress)) {
                     successfulRejection = true;
@@ -6609,7 +6609,7 @@ class BridgeSupportTest {
         // Check rejection tx input was created from btc tx
         boolean successfulRejection = false;
         for (ReleaseTransactionSet.Entry e : releaseTransactionSet.getEntries()) {
-            if (e.getTransaction().getInput(0).getOutpoint().getHash() == btcTx.getHash()) {
+            if (e.getPegoutCreationBtcTx().getInput(0).getOutpoint().getHash() == btcTx.getHash()) {
                 successfulRejection = true;
                 break;
             }
@@ -6734,7 +6734,7 @@ class BridgeSupportTest {
         }
 
         releaseTransactionSet.getEntries().forEach(e -> {
-            Integer inputsSize = e.getTransaction().getInputs().size();
+            Integer inputsSize = e.getPegoutCreationBtcTx().getInputs().size();
             expectedInputSizes.remove(inputsSize);
         });
 
@@ -6981,7 +6981,7 @@ class BridgeSupportTest {
             // Check rejection tx input was created from btc tx and sent to the btc refund address indicated by the user
             boolean successfulRejection = false;
             for (ReleaseTransactionSet.Entry e : releaseTransactionSet.getEntries()) {
-                BtcTransaction refundTx = e.getTransaction();
+                BtcTransaction refundTx = e.getPegoutCreationBtcTx();
                 if (refundTx.getInput(0).getOutpoint().getHash() == btcTx.getHash() &&
                     refundTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams).equals(btcRefundAddress.get())) {
                     successfulRejection = true;
@@ -7174,7 +7174,7 @@ class BridgeSupportTest {
 
         if (!shouldLock) {
             // Release tx should have been created directly to the signatures stack
-            BtcTransaction releaseTx = provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction();
+            BtcTransaction releaseTx = provider.getReleaseTransactionSet().getEntries().iterator().next().getPegoutCreationBtcTx();
             Assertions.assertNotNull(releaseTx);
             // returns the funds to the sender
             Assertions.assertEquals(1, releaseTx.getOutputs().size());
