@@ -1,26 +1,15 @@
 package org.ethereum.vm.aa;
 
-import co.rsk.util.HexUtils;
-import org.bouncycastle.util.encoders.Hex;
-import org.web3j.abi.datatypes.DynamicStruct;
+import org.ethereum.core.Transaction;
 
-import java.math.BigInteger;
+public class AATransaction extends Transaction {
 
-public class AATransaction extends DynamicStruct {
-
-    public AATransaction(byte txType, String sender, String receiver, byte[] gasLimit, BigInteger gasPrice, byte[] nonce,
-                         BigInteger value, byte[] data, byte[] rawsignature) {
-        super(
-                new org.web3j.abi.datatypes.generated.Uint256(new BigInteger(new byte[]{txType})),
-                new org.web3j.abi.datatypes.Address(sender),
-                new org.web3j.abi.datatypes.Address(receiver),
-                new org.web3j.abi.datatypes.generated.Uint256(HexUtils.stringHexToBigInteger(HexUtils.toJsonHex(gasLimit))),
-                new org.web3j.abi.datatypes.generated.Uint256(gasPrice),
-                new org.web3j.abi.datatypes.generated.Uint256(new BigInteger(nonce)),
-                new org.web3j.abi.datatypes.generated.Uint256(value),
-                new org.web3j.abi.datatypes.DynamicBytes(data),
-                new org.web3j.abi.datatypes.DynamicBytes(rawsignature)
-        );
+    protected AATransaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
+        super(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data);
     }
 
+    public AATransaction(Transaction tx, byte[] data) {
+        this(tx.getNonce(), tx.getGasPrice().getBytes(), tx.getGasLimit(), tx.getSender().getBytes(), tx.getValue().getBytes(), data);
+        super.sender = tx.getSender();
+    }
 }

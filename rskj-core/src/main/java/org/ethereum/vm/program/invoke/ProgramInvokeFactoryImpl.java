@@ -20,7 +20,6 @@ package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.util.HexUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
@@ -28,18 +27,12 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.aa.AATransaction;
+import org.ethereum.vm.aa.AATransactionABI;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
-import org.web3j.abi.FunctionEncoder;
-import org.web3j.abi.datatypes.Function;
-import org.web3j.abi.datatypes.Type;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
 
 import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
 
@@ -83,7 +76,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         /***     CALLDATALOAD  op   ***/
         /***     CALLDATACOPY  op   ***/
         /***     CALLDATASIZE  op   ***/
-        byte[] data = tx.isContractCreation() ? ByteUtil.EMPTY_BYTE_ARRAY : getTxData(tx);
+        byte[] data = tx.isContractCreation() ? ByteUtil.EMPTY_BYTE_ARRAY : AATransactionABI.getExecutionTxData(tx);
 
         /***    PREVHASH  op  ***/
         byte[] lastHash = block.getParentHash().getBytes();
@@ -143,27 +136,6 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                 repository, blockStore);
     }
 
-    // AA - Depends on the type of tx it transform the data
-    private byte[] getTxData(Transaction tx) {
-        if (tx.getType() == Transaction.AA_TYPE) {
-            final String encoded = FunctionEncoder.encode(
-                    new Function("executeTransaction",
-                            Arrays.<Type>asList(new AATransaction(tx.getType(),
-                                    tx.getSender().toHexString(),
-                                    tx.getReceiveAddress().toHexString(),
-                                    tx.getGasLimit(),
-                                    tx.getGasPrice().asBigInteger(),
-                                    tx.getNonce(),
-                                    tx.getValue().asBigInteger(),
-                                    tx.getData(),
-                                    tx.getRawsignature())),
-                            Collections.emptyList()
-                    )
-            );
-            return HexUtils.stringHexToByteArray(encoded);
-        }
-        return nullToEmpty(tx.getData());
-    }
 
     /**
      * This invocation created for contract call contract

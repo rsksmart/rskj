@@ -318,6 +318,21 @@ public class Transaction {
     }
 
     public boolean acceptTransactionSignature(byte currentChainId) {
+        if (this.getType() == AA_TYPE) {
+            return this.acceptAATransactionSignature(currentChainId);
+        }
+        return this.acceptLegacyTransactionSignature(currentChainId);
+    }
+
+    public boolean acceptAATransactionSignature(byte currentChainId) {
+        byte[] signature = getRawsignature();
+        if (signature == null) {
+            return false;
+        }
+        return this.getChainId() == 0 || this.getChainId() == currentChainId;
+    }
+
+    public boolean acceptLegacyTransactionSignature(byte currentChainId) {
         ECDSASignature signature = getSignature();
         if (signature == null || !signature.validateComponents() || signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
             return false;

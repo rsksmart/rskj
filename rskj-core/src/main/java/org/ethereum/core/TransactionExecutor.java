@@ -24,14 +24,21 @@ import co.rsk.core.RskAddress;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.net.TransactionValidationResult;
+import co.rsk.net.handler.txvalidator.TxAAValidatorCallValidate;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.rpc.Web3EthModule;
+import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.util.HexUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
+import org.ethereum.vm.aa.AATransaction;
+import org.ethereum.vm.aa.AATransactionABI;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
@@ -192,6 +199,37 @@ public class TransactionExecutor {
             return false;
         }
 
+        if (!validateAATransaction()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validateAATransaction() {
+        if (tx.getType()!= Transaction.AA_TYPE) {
+            return true;
+        }
+        Repository tempTrack = track.startTracking();
+        tempTrack.getBalance(tx.getSender());
+        Transaction txValidate = new AATransaction(tx, AATransactionABI.getValidateTxData(tx));
+        ProgramInvoke programInvoke =
+                programInvokeFactory.createProgramInvoke(txValidate, txindex, executionBlock, tempTrack, blockStore, signatureCache);
+        byte[] code = track.getCode(tx.getSender());
+        VM vm = new VM(vmConfig, precompiledContracts);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, txValidate, deletedAccounts, signatureCache);
+        vm.play(program);
+        ProgramResult resultVal = program.getResult();
+        String response = HexUtils.toUnformattedJsonHex(resultVal.getHReturn());
+        logger.info("Gas used for validate AA transaction: ", resultVal.getGasUsed());
+        if (resultVal.isRevert() || resultVal.getException() != null  ) {
+            Optional<String> reason = EthModule.decodeRevertReason(resultVal);
+            logger.info("Reverted validation AA transaction: {}", reason.get());
+            return false;
+        }
+        if (response == null || !"0x1626ba7e".equals(response.substring(0, 10))) {
+            return false;
+        }
         return true;
     }
 
@@ -206,8 +244,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        // TODO check if RSKIP is active & check if from address is AA.
-        if (!tx.acceptTransactionSignature(constants.getChainId()) && tx.getType() == Transaction.LEGACY_TYPE) {
+        if (!tx.acceptTransactionSignature(constants.getChainId())) {
             logger.warn("Transaction {} signature not accepted: {}", tx.getHash(), tx.getSignature());
             logger.warn("Transaction Data: {}", tx);
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
