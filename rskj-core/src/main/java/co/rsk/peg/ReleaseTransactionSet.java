@@ -78,7 +78,7 @@ public class ReleaseTransactionSet {
 
         @Override
         public int hashCode() {
-            return pegoutCreationBtcTx.hashCode();
+            return Objects.hash(getPegoutCreationBtcTx());
         }
     }
 
