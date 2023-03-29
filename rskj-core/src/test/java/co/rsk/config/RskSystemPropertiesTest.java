@@ -132,7 +132,48 @@ class RskSystemPropertiesTest {
 
         assertTrue(enabledModuleNames.stream().allMatch(k -> moduleNameEnabledMap.get(k).get(0).isEnabled()));
     }
+    @Test
+    void testGetRpcModulesWithList() {
+        TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "rpc.modules = [\n" +
+                        "  {\n" +
+                        "    name: \"eth\", \n" +
+                        "    version: \"1.0\",\n" +
+                        "    enabled: \"true\",\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    name: \"web\", \n" +
+                        "    version: \"2.0\",\n" +
+                        "    enabled: false,\n" +
+                        "  }\n" +
+                        "  {\n" +
+                        "    name: \"net\", \n" +
+                        "    version: \"3.0\",\n" +
+                        "    enabled: true,\n" +
+                        "    methods: {\n" +
+                        "       enabled: [ \"evm_snapshot\", \"evm_revert\" ],\n" +
+                        "       disabled: [ \"evm_reset\"]\n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "]\n" +
+                        " }").withFallback(rawConfig));
+        List<ModuleDescription> rpcModules = testSystemProperties.getRpcModules();
 
+        Map<String, ModuleDescription> moduleDescriptionMap = rpcModules.stream()
+                .collect(Collectors.toMap(ModuleDescription::getName, Function.identity()));
+
+        assertTrue(moduleDescriptionMap.containsKey("eth"));
+        ModuleDescription ethModule = moduleDescriptionMap.get("eth");
+        assertEquals("1.0", ethModule.getVersion());
+        assertEquals(true, ethModule.isEnabled());
+        ModuleDescription webModule = moduleDescriptionMap.get("web");
+        assertEquals("2.0", webModule.getVersion());
+        assertEquals(false, webModule.isEnabled());
+        ModuleDescription netModule = moduleDescriptionMap.get("net");
+        assertEquals(2, netModule.getEnabledMethods().size());
+        assertEquals(1, netModule.getDisabledMethods().size());
+    }
     @Test
     void testGetRpcModulesWithObject() {
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
