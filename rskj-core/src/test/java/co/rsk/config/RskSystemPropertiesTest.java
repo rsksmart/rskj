@@ -29,6 +29,7 @@ import org.mockito.Mock;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -130,5 +131,46 @@ class RskSystemPropertiesTest {
                 .collect(Collectors.toList());
 
         assertTrue(enabledModuleNames.stream().allMatch(k -> moduleNameEnabledMap.get(k).get(0).isEnabled()));
+    }
+
+    @Test
+    void testGetRpcModulesWithObject() {
+        TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "rpc.modules = {\n" +
+                        "  eth {\n" +
+                        "    version: \"1.5\",\n" +
+                        "    enabled: \"true\",\n" +
+                        "  },\n" +
+                        "  web {\n" +
+                        "    version: \"2.0\",\n" +
+                        "    enabled: false,\n" +
+                        "  }\n" +
+                        "  net {\n" +
+                        "    version: \"3.0\",\n" +
+                        "    enabled: true,\n" +
+                        "    methods: {\n" +
+                        "       enabled: [ \"evm_snapshot\", \"evm_revert\" ],\n" +
+                        "       disabled: [ \"evm_reset\"]\n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}\n" +
+                        " }").withFallback(rawConfig));
+
+        List<ModuleDescription> rpcModules = testSystemProperties.getRpcModules();
+
+        Map<String, ModuleDescription> moduleDescriptionMap = rpcModules.stream()
+                .collect(Collectors.toMap(ModuleDescription::getName, Function.identity()));
+
+        assertTrue(moduleDescriptionMap.containsKey("eth"));
+        ModuleDescription ethModule = moduleDescriptionMap.get("eth");
+        assertEquals("1.5", ethModule.getVersion());
+        assertEquals(true, ethModule.isEnabled());
+        ModuleDescription webModule = moduleDescriptionMap.get("web");
+        assertEquals("2.0", webModule.getVersion());
+        assertEquals(false, webModule.isEnabled());
+        ModuleDescription netModule = moduleDescriptionMap.get("net");
+        assertEquals(2, netModule.getEnabledMethods().size());
+        assertEquals(1, netModule.getDisabledMethods().size());
     }
 }
