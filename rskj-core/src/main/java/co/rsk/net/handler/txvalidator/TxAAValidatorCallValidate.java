@@ -21,7 +21,7 @@ import java.math.BigInteger;
 public class TxAAValidatorCallValidate implements TxValidatorStep {
 
     private static final Logger logger = LoggerFactory.getLogger("txpendingvalidator");
-    private static final byte[] MAX_GAS_LIMIT = BigInteger.valueOf(30000).toByteArray();
+    private static final byte[] MAX_GAS_LIMIT = BigInteger.valueOf(60000).toByteArray();
 
     private final Constants constants;
     private final ActivationConfig activationConfig;
@@ -59,7 +59,7 @@ public class TxAAValidatorCallValidate implements TxValidatorStep {
         if ("0x1626ba7e".equals(response)) {
             return TransactionValidationResult.ok();
         }
-        return TransactionValidationResult.withError("AA Validation call error:" + response);
+        return TransactionValidationResult.withError("AA Validation call error: Bad response = " + response);
     }
 
 }
