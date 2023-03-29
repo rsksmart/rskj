@@ -227,7 +227,7 @@ public class TransactionExecutor {
             logger.info("Reverted validation AA transaction: {}", reason.get());
             return false;
         }
-        if (response == null || !"0x1626ba7e".equals(response.substring(0, 10))) {
+        if (response == null || !AATransactionABI.MAGIC_SUCCESS.equals(response.substring(0, 10))) {
             return false;
         }
         return true;

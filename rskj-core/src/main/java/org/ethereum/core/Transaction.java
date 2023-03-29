@@ -114,7 +114,7 @@ public class Transaction {
     protected Transaction(byte[] rawData) {
         final boolean typed = Hex.toHexString(new byte[]{rawData[0]}).compareTo(TYPED) < 0;
         this.type = typed ? rawData[0] : LEGACY_TYPE;
-        final byte[] txdata = typed ? Arrays.copyOfRange(rawData,1, rawData.length) : rawData;
+        final byte[] txdata = typed ? Arrays.copyOfRange(rawData, 1, rawData.length) : rawData;
         RLPList transaction = RLP.decodeList(txdata);
         if (transaction.size() != 9) {
             throw new IllegalArgumentException("A transaction must have exactly 9 elements, but it has: " + transaction.size());
@@ -507,13 +507,14 @@ public class Transaction {
         if (this.rawRlpEncoding == null) {
             // Since EIP-155 use chainId for v
             if (chainId == 0) {
-                this.rawRlpEncoding = encode(null, null, null);
+                this.rawRlpEncoding = encode(null, null, null, EMPTY_BYTE_ARRAY);
             } else {
                 byte[] v = RLP.encodeByte(chainId);
                 byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
                 byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                byte[] rawsignature = EMPTY_BYTE_ARRAY;
 
-                this.rawRlpEncoding = encode(v, r, s);
+                this.rawRlpEncoding = encode(v, r, s, rawsignature);
             }
         }
 
@@ -528,7 +529,7 @@ public class Transaction {
         return rlpEncode().length;
     }
 
-    private byte[] encode(byte[] v, byte[] r, byte[] s) {
+    private byte[] encode(byte[] v, byte[] r, byte[] s, byte[] rawsignature) {
         // parse null as 0 for nonce
         byte[] toEncodeNonce;
         if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
@@ -546,7 +547,7 @@ public class Transaction {
             // TODO check AA tx format
             byte[] toChainId = RLP.encodeElement(new byte[]{this.chainId});
             byte[] toEncodeFrom = RLP.encodeRskAddress(this.sender);
-            byte[] toEncodeSignature = RLP.encodeElement(this.rawsignature);
+            byte[] toEncodeSignature = RLP.encodeElement(rawsignature);
             return Bytes.concat(new byte[]{AA_TYPE}, RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
                     toEncodeReceiveAddress, toEncodeValue, toEncodeData, toChainId, toEncodeFrom, toEncodeSignature));
         }
@@ -638,24 +639,20 @@ public class Transaction {
     @java.lang.SuppressWarnings("squid:S2384")
     private byte[] rlpEncode() {
         if (this.rlpEncoding == null) {
-            byte[] v = null;
-            byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-            byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-            if(this.getType() == AA_TYPE){
-                this.rlpEncoding = encode(v, r, s);
-            }else {
-                if (this.signature != null) {
-                    v = RLP.encodeByte((byte) (chainId == 0 ? signature.getV() : (signature.getV() - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
-                    r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getR()));
-                    s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getS()));
-                } else {
-                    v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
-                    r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-                    s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-                }
-
-                this.rlpEncoding = encode(v, r, s);
+            byte[] v;
+            byte[] r;
+            byte[] s;
+            if (this.signature != null) {
+                v = RLP.encodeByte((byte) (chainId == 0 ? signature.getV() : (signature.getV() - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
+                r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getR()));
+                s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getS()));
+            } else {
+                v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
+                r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
             }
+
+            this.rlpEncoding = encode(v, r, s, this.rawsignature);
         }
 
         return this.rlpEncoding;

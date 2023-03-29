@@ -56,7 +56,7 @@ public class TxAAValidatorCallValidate implements TxValidatorStep {
         }
         String response = HexUtils.toUnformattedJsonHex(result.getHReturn());
         logger.info("TxAAValidatorCallValidate response:", response);
-        if ("0x1626ba7e".equals(response)) {
+        if (AATransactionABI.MAGIC_SUCCESS.equals(response.substring(0, 10))) {
             return TransactionValidationResult.ok();
         }
         return TransactionValidationResult.withError("AA Validation call error: Bad response = " + response);

@@ -17,6 +17,8 @@ import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
 
 public class AATransactionABI extends DynamicStruct {
 
+    public static final String MAGIC_SUCCESS = "0x0aee9f17";
+
     public AATransactionABI(byte txType, String sender, String receiver, byte[] gasLimit, BigInteger gasPrice, byte[] nonce,
                             BigInteger value, byte[] data, byte[] rawsignature) {
         super(
