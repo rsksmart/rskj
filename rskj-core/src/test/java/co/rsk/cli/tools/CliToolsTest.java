@@ -20,6 +20,7 @@ package co.rsk.cli.tools;
 import co.rsk.NodeRunner;
 import co.rsk.RskContext;
 import co.rsk.cli.PicoCliToolRskContextAware;
+import co.rsk.cli.exceptions.PicocliBadResultException;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
@@ -561,34 +562,23 @@ class CliToolsTest {
         assertEquals("main", thread.getName());
 
         // check happy flow of bootstrap node start
-        ArgumentCaptor<Thread> threadCaptor = ArgumentCaptor.forClass(Thread.class);
         NodeRunner runner = mock(NodeRunner.class);
         RskContext ctx = mock(RskContext.class);
         doReturn(runner).when(ctx).getNodeRunner();
         PreflightChecksUtils preflightChecks = mock(PreflightChecksUtils.class);
-        Runtime runtime = mock(Runtime.class);
-        Object syncObjInstance = mock(Object.class);
-        NodeStopper nodeStopper = mock(NodeStopper.class);
 
-        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, syncObjInstance, nodeStopper);
+        StartBootstrap.runBootstrapNode(ctx, preflightChecks);
 
         verify(preflightChecks, times(1)).runChecks();
         verify(runner, times(1)).run();
-        verify(runtime, times(1)).addShutdownHook(threadCaptor.capture());
-        verify(syncObjInstance, times(1)).wait();
-        assertEquals("stopper", threadCaptor.getValue().getName());
 
         // check unhappy flow of bootstrap node start
         doThrow(new RuntimeException()).when(preflightChecks).runChecks();
 
-        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, syncObjInstance, nodeStopper);
+        Assertions.assertThrows(PicocliBadResultException.class, () -> StartBootstrap.runBootstrapNode(ctx, preflightChecks));
 
         verify(preflightChecks, times(2)).runChecks();
         verify(runner, times(1)).run();
-        verify(runtime, times(1)).addShutdownHook(any());
-        verify(syncObjInstance, times(1)).wait();
-        verify(ctx, times(1)).close();
-        verify(nodeStopper, times(1)).stop(1);
     }
 
     @Test

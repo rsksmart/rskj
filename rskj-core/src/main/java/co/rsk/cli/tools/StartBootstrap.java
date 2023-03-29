@@ -23,7 +23,6 @@ import co.rsk.cli.exceptions.PicocliBadResultException;
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.discovery.UDPServer;
-import co.rsk.util.NodeStopper;
 import co.rsk.util.PreflightChecksUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,11 +60,7 @@ public class StartBootstrap implements Callable<Integer> {
         setUpThread(Thread.currentThread());
 
         try (RskContext ctx = new BootstrapRskContext(args)) {
-            int result = new CommandLine(new StartBootstrap(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
-
-            if (result != 0) {
-                throw new PicocliBadResultException(result);
-            }
+            new CommandLine(new StartBootstrap(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
         }
     }
 
@@ -73,47 +68,42 @@ public class StartBootstrap implements Callable<Integer> {
     public Integer call() throws IOException {
         PreflightChecksUtils preflightChecks = new PreflightChecksUtils(ctx);
         Runtime runtime = Runtime.getRuntime();
-        NodeStopper nodeStopper = System::exit;
 
-        runBootstrapNode(ctx, preflightChecks, runtime, syncObj, nodeStopper);
+        // subscribe to shutdown hook
+        runtime.addShutdownHook(new Thread(() -> {
+            synchronized (syncObj) {
+                ctx.close();
+                syncObj.notifyAll();
+            }
+        }, "stopper"));
+
+        runBootstrapNode(ctx, preflightChecks);
+
+        synchronized (syncObj) {
+            try {
+                if (!ctx.isClosed()) {
+                    syncObj.wait();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
 
         return 0;
     }
 
-    static void runBootstrapNode(@Nonnull RskContext ctx,
-                                 @Nonnull PreflightChecksUtils preflightChecks,
-                                 @Nonnull Runtime runtime,
-                                 @Nonnull Object syncObjInstance,
-                                 @Nonnull NodeStopper nodeStopper) {
+    static void runBootstrapNode(@Nonnull RskContext ctx, @Nonnull PreflightChecksUtils preflightChecks) {
         try {
             // make preflight checks
             preflightChecks.runChecks();
 
-            // subscribe to shutdown hook
-            runtime.addShutdownHook(new Thread(() -> {
-                synchronized (syncObjInstance) {
-                    ctx.close();
-                    syncObjInstance.notify();
-                }
-            }, "stopper"));
-
             // start node runner
             NodeRunner runner = ctx.getNodeRunner();
             runner.run();
-
-            synchronized (syncObjInstance) {
-                try {
-                    if (!ctx.isClosed()) {
-                        syncObjInstance.wait();
-                    }
-                } catch (InterruptedException e) { /* ignore */ }
-            }
         } catch (Exception e) {
             logger.error("Main thread of RSK bootstrap node crashed", e);
 
-            ctx.close();
-
-            nodeStopper.stop(1);
+            throw new PicocliBadResultException(1);
         }
     }
 
