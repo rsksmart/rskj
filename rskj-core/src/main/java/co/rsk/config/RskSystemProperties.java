@@ -22,6 +22,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueType;
 import org.ethereum.config.Constants;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Account;
@@ -252,40 +254,15 @@ public class RskSystemProperties extends SystemProperties {
             return modules;
         }
 
-        List<? extends ConfigObject> list = configFromFiles.getObjectList("rpc.modules");
-
-        for (ConfigObject configObject : list) {
-            Config configElement = configObject.toConfig();
-            String name = configElement.getString("name");
-            String version = configElement.getString("version");
-            boolean enabled = configElement.getBoolean("enabled");
-            long timeout = 0;
-            Map<String, Long> methodTimeoutMap = new HashMap<>();
-
-            if (configElement.hasPath("timeout")) {
-                timeout = configElement.getLong("timeout");
-            }
-
-            if (configElement.hasPath("methods.timeout")) {
-                fetchMethodTimeout(configElement, methodTimeoutMap);
-            }
-
-            List<String> enabledMethods = null;
-            List<String> disabledMethods = null;
-
-            if (configElement.hasPath("methods.enabled")) {
-                enabledMethods = configElement.getStringList("methods.enabled");
-            }
-
-            if (configElement.hasPath("methods.disabled")) {
-                disabledMethods = configElement.getStringList("methods.disabled");
-            }
-
-            modules.add(new ModuleDescription(name, version, enabled, enabledMethods, disabledMethods, timeout, methodTimeoutMap));
+        ConfigValue modulesConfig = configFromFiles.getValue("rpc.modules");
+        if (modulesConfig.valueType() == ConfigValueType.LIST) {
+            List<? extends ConfigObject> list = configFromFiles.getObjectList("rpc.modules");
+            modules = getModulesFromListFormat(list);
+        } else {
+            ConfigObject configObject = configFromFiles.getObject("rpc.modules");
+            modules = getModulesFromObjectFormat(configObject);
         }
-
         this.moduleDescriptions = modules;
-
         return modules;
     }
 
