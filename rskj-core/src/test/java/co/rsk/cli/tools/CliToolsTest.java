@@ -567,23 +567,26 @@ class CliToolsTest {
         doReturn(runner).when(ctx).getNodeRunner();
         PreflightChecksUtils preflightChecks = mock(PreflightChecksUtils.class);
         Runtime runtime = mock(Runtime.class);
+        Object syncObjInstance = mock(Object.class);
         NodeStopper nodeStopper = mock(NodeStopper.class);
 
-        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, syncObjInstance, nodeStopper);
 
         verify(preflightChecks, times(1)).runChecks();
         verify(runner, times(1)).run();
         verify(runtime, times(1)).addShutdownHook(threadCaptor.capture());
+        verify(syncObjInstance, times(1)).wait();
         assertEquals("stopper", threadCaptor.getValue().getName());
 
         // check unhappy flow of bootstrap node start
         doThrow(new RuntimeException()).when(preflightChecks).runChecks();
 
-        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, syncObjInstance, nodeStopper);
 
         verify(preflightChecks, times(2)).runChecks();
         verify(runner, times(1)).run();
         verify(runtime, times(1)).addShutdownHook(any());
+        verify(syncObjInstance, times(1)).wait();
         verify(ctx, times(1)).close();
         verify(nodeStopper, times(1)).stop(1);
     }

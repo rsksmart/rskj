@@ -49,6 +49,8 @@ public class StartBootstrap implements Callable<Integer> {
 
     private static final Logger logger = LoggerFactory.getLogger("bootstrap");
 
+    private static final Object syncObj = new Object();
+
     private final RskContext ctx;
 
     public StartBootstrap(RskContext ctx) {
@@ -73,24 +75,39 @@ public class StartBootstrap implements Callable<Integer> {
         Runtime runtime = Runtime.getRuntime();
         NodeStopper nodeStopper = System::exit;
 
-        runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+        runBootstrapNode(ctx, preflightChecks, runtime, syncObj, nodeStopper);
+
         return 0;
     }
 
     static void runBootstrapNode(@Nonnull RskContext ctx,
                                  @Nonnull PreflightChecksUtils preflightChecks,
                                  @Nonnull Runtime runtime,
+                                 @Nonnull Object syncObjInstance,
                                  @Nonnull NodeStopper nodeStopper) {
         try {
             // make preflight checks
             preflightChecks.runChecks();
 
             // subscribe to shutdown hook
-            runtime.addShutdownHook(new Thread(ctx::close, "stopper"));
+            runtime.addShutdownHook(new Thread(() -> {
+                synchronized (syncObjInstance) {
+                    ctx.close();
+                    syncObjInstance.notify();
+                }
+            }, "stopper"));
 
             // start node runner
             NodeRunner runner = ctx.getNodeRunner();
             runner.run();
+
+            synchronized (syncObjInstance) {
+                try {
+                    if (!ctx.isClosed()) {
+                        syncObjInstance.wait();
+                    }
+                } catch (InterruptedException e) { /* ignore */ }
+            }
         } catch (Exception e) {
             logger.error("Main thread of RSK bootstrap node crashed", e);
 
