@@ -51,6 +51,7 @@ public class RskSystemProperties extends SystemProperties {
 
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
+    private static final String RPC_MODULES_PATH = "rpc.modules";
     private static final int CHUNK_SIZE = 192;
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
@@ -250,16 +251,16 @@ public class RskSystemProperties extends SystemProperties {
 
         List<ModuleDescription> modules = new ArrayList<>();
 
-        if (!configFromFiles.hasPath("rpc.modules")) {
+        if (!configFromFiles.hasPath(RPC_MODULES_PATH)) {
             return modules;
         }
 
-        ConfigValue modulesConfig = configFromFiles.getValue("rpc.modules");
+        ConfigValue modulesConfig = configFromFiles.getValue(RPC_MODULES_PATH);
         if (modulesConfig.valueType() == ConfigValueType.LIST) {
-            List<? extends ConfigObject> list = configFromFiles.getObjectList("rpc.modules");
+            List<? extends ConfigObject> list = configFromFiles.getObjectList(RPC_MODULES_PATH);
             modules = getModulesFromListFormat(list);
         } else {
-            ConfigObject configObject = configFromFiles.getObject("rpc.modules");
+            ConfigObject configObject = configFromFiles.getObject(RPC_MODULES_PATH);
             modules = getModulesFromObjectFormat(configObject);
         }
         this.moduleDescriptions = modules;
