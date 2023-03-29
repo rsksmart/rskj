@@ -289,6 +289,53 @@ public class RskSystemProperties extends SystemProperties {
         return modules;
     }
 
+    private List<ModuleDescription> getModulesFromObjectFormat(ConfigObject modulesConfigObject) {
+        List<ModuleDescription> modules = new ArrayList<>();
+
+        for (String configKey : modulesConfigObject.keySet()) {
+            String name = configKey;
+            Config configElement = ((ConfigObject) modulesConfigObject.get(configKey)).toConfig();
+            modules.add(getModule(configElement, name));
+        }
+        return modules;
+    }
+
+    private List<ModuleDescription> getModulesFromListFormat(List<? extends ConfigObject> list) {
+        List<ModuleDescription> modules = new ArrayList<>();
+        for (ConfigObject configObject : list) {
+            Config configElement = configObject.toConfig();
+            String name = configElement.getString("name");
+            modules.add(getModule(configElement, name));
+        }
+        return modules;
+    }
+    private ModuleDescription getModule(Config configElement, String name) {
+
+        String version = configElement.getString("version");
+        boolean enabled = configElement.getBoolean("enabled");
+        List<String> enabledMethods = null;
+        List<String> disabledMethods = null;
+        int timeout = 0;
+        Map<String, Long> methodTimeoutMap = new HashMap<>();
+
+
+        if (configElement.hasPath("timeout")) {
+            timeout = configElement.getInt("timeout");
+        }
+
+        if (configElement.hasPath("methodTimeout")) {
+            fetchMethodTimeout(configElement, methodTimeoutMap);
+        }
+
+        if (configElement.hasPath("methods.enabled")) {
+            enabledMethods = configElement.getStringList("methods.enabled");
+        }
+
+        if (configElement.hasPath("methods.disabled")) {
+            disabledMethods = configElement.getStringList("methods.disabled");
+        }
+        return new ModuleDescription(name, version, enabled, enabledMethods, disabledMethods, timeout, methodTimeoutMap);
+    }
     public boolean hasMessageRecorderEnabled() {
         return getBoolean("messages.recorder.enabled", false);
     }
