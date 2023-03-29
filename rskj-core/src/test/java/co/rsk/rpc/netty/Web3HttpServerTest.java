@@ -68,7 +68,8 @@ class Web3HttpServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, new TestSystemProperties());
+        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(1).rpcModules(filteredModules).build();
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
 
@@ -114,7 +115,8 @@ class Web3HttpServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, new TestSystemProperties());
+        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(1).rpcModules(filteredModules).build();
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
 
@@ -160,7 +162,8 @@ class Web3HttpServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, new TestSystemProperties());
+        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(1).rpcModules(filteredModules).build();
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
 
@@ -328,7 +331,8 @@ class Web3HttpServerTest {
 
         TestSystemProperties testSystemProperties = decorator == null ? new TestSystemProperties() : new TestSystemProperties(decorator);
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", rpcAddress, rpcHost);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 5, testSystemProperties);
+        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(5).rpcModules(filteredModules).build();
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
         try {

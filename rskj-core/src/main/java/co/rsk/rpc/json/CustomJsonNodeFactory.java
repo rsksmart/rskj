@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 public class CustomJsonNodeFactory extends JsonNodeFactory {
 
+    private static final long serialVersionUID = -2302736616665818410L;
     private final int limit;
 
     public CustomJsonNodeFactory(int limit) {

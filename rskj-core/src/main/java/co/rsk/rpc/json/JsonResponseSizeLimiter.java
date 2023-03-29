@@ -35,7 +35,7 @@ public class JsonResponseSizeLimiter {
         try {
             return limiter.getJsonLength();
         } catch (JsonProcessingException jsonProcessingException) {
-            throw RskJsonRpcRequestException.invalidParamError("Couldn't process Json Object");
+            throw RskJsonRpcRequestException.invalidParamError("Couldn't process Json Object:  " + jsonProcessingException.getMessage());
         }
     }
 

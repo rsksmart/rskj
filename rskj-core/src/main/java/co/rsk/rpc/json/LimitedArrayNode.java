@@ -5,7 +5,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import java.util.Objects;
+
 public class LimitedArrayNode extends ArrayNode {
+    private static final long serialVersionUID = -8179092382531296699L;
+
     private final int maxLimit;
     private int totalAdded = 0;
 
@@ -29,6 +33,26 @@ public class LimitedArrayNode extends ArrayNode {
             }
         }
         return super.add(node);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o){
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()){
+            return false;
+        }
+        if (!super.equals(o)){
+            return false;
+        }
+        LimitedArrayNode jsonNodes = (LimitedArrayNode) o;
+        return maxLimit == jsonNodes.maxLimit && totalAdded == jsonNodes.totalAdded;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), maxLimit, totalAdded);
     }
 
     private boolean isLimited() {

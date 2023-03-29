@@ -17,13 +17,24 @@
  */
 package co.rsk.rpc.netty;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.rpc.ModuleDescription;
+import co.rsk.util.JacksonParserUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.googlecode.jsonrpc4j.ErrorResolver;
+import com.squareup.okhttp.*;
+import com.squareup.okhttp.ws.WebSocket;
+import com.squareup.okhttp.ws.WebSocketCall;
+import com.squareup.okhttp.ws.WebSocketListener;
+import okio.Buffer;
+import org.ethereum.rpc.Web3;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -33,36 +44,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
-import co.rsk.util.JacksonParserUtil;
-import com.googlecode.jsonrpc4j.ErrorResolver;
-import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import org.ethereum.rpc.Web3;
-import org.hamcrest.core.Is;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
-import com.squareup.okhttp.ResponseBody;
-import com.squareup.okhttp.ws.WebSocket;
-import com.squareup.okhttp.ws.WebSocketCall;
-import com.squareup.okhttp.ws.WebSocketListener;
-
-import co.rsk.config.TestSystemProperties;
-import co.rsk.rpc.ModuleDescription;
-import okio.Buffer;
-import org.mockito.Mockito;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class Web3WebSocketServerTest {
 
@@ -132,7 +121,8 @@ class Web3WebSocketServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, testSystemProperties);
+        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(1).rpcModules(filteredModules).build();
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
         int maxFrameSize = testSystemProperties.rpcWebSocketMaxFrameSize();
         int maxAggregatedFrameSize = testSystemProperties.rpcWebSocketMaxAggregatedFrameSize();
@@ -253,7 +243,8 @@ class Web3WebSocketServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, testSystemProperties);
+        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(1).rpcModules(filteredModules).build();
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
         int maxFrameSize = testSystemProperties.rpcWebSocketMaxFrameSize();
         int maxAggregatedFrameSize = testSystemProperties.rpcWebSocketMaxAggregatedFrameSize();
@@ -363,7 +354,8 @@ class Web3WebSocketServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, testSystemProperties);
+        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(1).rpcModules(filteredModules).build();
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
         int maxFrameSize = 9_999_999;
         int maxAggregatedFrameSize = 9_999_999;
@@ -466,7 +458,8 @@ class Web3WebSocketServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 5, testSystemProperties);
+        JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder().maxBatchRequestsSize(1).rpcModules(filteredModules).build();
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
         int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
         int maxFrameSize = testSystemProperties.rpcWebSocketMaxFrameSize();
         int maxAggregatedFrameSize = testSystemProperties.rpcWebSocketMaxAggregatedFrameSize();

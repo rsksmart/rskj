@@ -18,10 +18,8 @@
 
 package co.rsk.rpc.netty;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
-import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.exception.JsonRpcRequestPayloadException;
 import co.rsk.rpc.exception.JsonRpcResponseLimitException;
 import co.rsk.util.JacksonParserUtil;
@@ -56,14 +54,14 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final JsonRpcBasicServer jsonRpcServer;
     private final long defaultTimeout;
 
-    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize, RskSystemProperties rskSystemProperties) {
-        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), rskSystemProperties.getRpcModules(), rskSystemProperties.getRpcMaxResponseSize());
+    public JsonRpcWeb3ServerHandler(Web3 service, JsonRpcWeb3ServerProperties jsonRpcWeb3ServerProperties) {
+        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), jsonRpcWeb3ServerProperties.getRpcModules(), jsonRpcWeb3ServerProperties.getRpcMaxResponseSize());
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
-        interceptors.add(new JsonRpcRequestValidatorInterceptor(maxBatchRequestsSize));
+        interceptors.add(new JsonRpcRequestValidatorInterceptor(jsonRpcWeb3ServerProperties.getMaxBatchRequestsSize()));
         jsonRpcServer.setInterceptorList(interceptors);
-        jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
+        jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(jsonRpcWeb3ServerProperties.getRpcModules()));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
-        this.defaultTimeout = rskSystemProperties.getRpcTimeout();
+        this.defaultTimeout = jsonRpcWeb3ServerProperties.getRpcTimeout();
     }
 
     @Override

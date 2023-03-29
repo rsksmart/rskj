@@ -51,33 +51,35 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
         String method = Optional.ofNullable(node.get("method")).map(JsonNode::asText).orElse("");
 
         String[] methodParts = method.split("_");
-
-        if (methodParts.length < 2) {
-            return super.handleJsonNodeRequest(node);
-        }
-
-        String moduleName = methodParts[0];
-
-        Optional<ModuleDescription> optModule = modules.stream()
-                .filter(m -> m.getName().equals(moduleName))
-                .findFirst();
-
-        long timeout = optModule
-                .map(m -> m.getTimeout(method))
-                .orElse(0L);
-
         JsonResponse response;
+        if (methodParts.length >= 2) {
 
-        if (timeout <= 0) {
-            response = super.handleJsonNodeRequest(node);
-            ExecTimeoutContext.checkIfExpired();
 
-        } else {
-            try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout)) {
+            String moduleName = methodParts[0];
+
+            Optional<ModuleDescription> optModule = modules.stream()
+                    .filter(m -> m.getName().equals(moduleName))
+                    .findFirst();
+
+            long timeout = optModule
+                    .map(m -> m.getTimeout(method))
+                    .orElse(0L);
+
+
+            if (timeout <= 0) {
                 response = super.handleJsonNodeRequest(node);
                 ExecTimeoutContext.checkIfExpired();
+
+            } else {
+                try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout)) {
+                    response = super.handleJsonNodeRequest(node);
+                    ExecTimeoutContext.checkIfExpired();
+                }
             }
+        } else {
+            response = super.handleJsonNodeRequest(node);
         }
+
         if (responseLimit > 0) {
             JsonResponseSizeLimiter.getSizeInBytesWithLimit(response.getResponse(), responseLimit);
         }

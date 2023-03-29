@@ -1954,12 +1954,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private JsonRpcWeb3ServerHandler getJsonRpcWeb3ServerHandler() {
         if (jsonRpcWeb3ServerHandler == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(
-                    getWeb3(),
-                    getRskSystemProperties().getRpcModules(),
-                    rskSystemProperties.getMaxBatchRequestsSize(),
-                    getRskSystemProperties()
-            );
+            JsonRpcWeb3ServerProperties jsonRpcWeb3ServerProperties = JsonRpcWeb3ServerProperties.builder()
+                    .rpcModules(rskSystemProperties.getRpcModules())
+                    .maxBatchRequestsSize(rskSystemProperties.getMaxBatchRequestsSize())
+                    .rpcMaxResponseSize(rskSystemProperties.getRpcMaxResponseSize())
+                    .rpcTimeout(rskSystemProperties.getRpcTimeout())
+                    .build();
+
+            jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(getWeb3(), jsonRpcWeb3ServerProperties);
         }
 
         return jsonRpcWeb3ServerHandler;
