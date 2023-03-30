@@ -301,7 +301,7 @@ public class RskSystemProperties extends SystemProperties {
             timeout = configElement.getInt("timeout");
         }
 
-        if (configElement.hasPath("methodTimeout")) {
+        if (configElement.hasPath("methods.timeout")) {
             fetchMethodTimeout(configElement, methodTimeoutMap);
         }
 
