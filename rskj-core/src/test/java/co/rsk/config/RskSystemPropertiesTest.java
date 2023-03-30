@@ -146,6 +146,7 @@ class RskSystemPropertiesTest {
                         "    name: \"web\", \n" +
                         "    version: \"2.0\",\n" +
                         "    enabled: false,\n" +
+                        "    timeout: 1000,\n" +
                         "  }\n" +
                         "  {\n" +
                         "    name: \"net\", \n" +
@@ -154,6 +155,7 @@ class RskSystemPropertiesTest {
                         "    methods: {\n" +
                         "       enabled: [ \"evm_snapshot\", \"evm_revert\" ],\n" +
                         "       disabled: [ \"evm_reset\"]\n" +
+                        "       timeout: { \"eth_getBlockByHash\" = 5000}\n" +
                         "    }\n" +
                         "  }\n" +
                         "]\n" +
@@ -170,9 +172,11 @@ class RskSystemPropertiesTest {
         ModuleDescription webModule = moduleDescriptionMap.get("web");
         assertEquals("2.0", webModule.getVersion());
         assertEquals(false, webModule.isEnabled());
+        assertEquals(1000, webModule.getTimeout());
         ModuleDescription netModule = moduleDescriptionMap.get("net");
         assertEquals(2, netModule.getEnabledMethods().size());
         assertEquals(1, netModule.getDisabledMethods().size());
+        assertEquals(5000, netModule.getMethodTimeout("eth_getBlockByHash"));
     }
     @Test
     void testGetRpcModulesWithObject() {
@@ -190,9 +194,11 @@ class RskSystemPropertiesTest {
                         "  net {\n" +
                         "    version: \"3.0\",\n" +
                         "    enabled: true,\n" +
+                        "    timeout: 9000,\n" +
                         "    methods: {\n" +
                         "       enabled: [ \"evm_snapshot\", \"evm_revert\" ],\n" +
                         "       disabled: [ \"evm_reset\"]\n" +
+                        "       timeout: { \"eth_getBlockByHash\" = 30000}\n" +
                         "    }\n" +
                         "  }\n" +
                         "}\n" +
@@ -213,5 +219,7 @@ class RskSystemPropertiesTest {
         ModuleDescription netModule = moduleDescriptionMap.get("net");
         assertEquals(2, netModule.getEnabledMethods().size());
         assertEquals(1, netModule.getDisabledMethods().size());
+        assertEquals(9000, netModule.getTimeout());
+        assertEquals(30000, netModule.getMethodTimeout("eth_getBlockByHash"));
     }
 }
