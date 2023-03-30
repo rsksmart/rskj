@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -215,9 +216,9 @@ public class BridgeTestIntegration {
 
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmation() throws IOException, VMException {
-        BtcTransaction tx1 = createTransaction(2, Coin.valueOf(150));
-        BtcTransaction tx2 = createTransaction(3, Coin.valueOf(200));
-        BtcTransaction tx3 = createTransaction(4, Coin.valueOf(250));
+        BtcTransaction tx1 = createTransaction(2, bridgeConstants.getMinimumPegoutTxValueInSatoshis());
+        BtcTransaction tx2 = createTransaction(3, bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN));
+        BtcTransaction tx3 = createTransaction(4, bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN).add(Coin.MILLICOIN));
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -271,9 +272,9 @@ public class BridgeTestIntegration {
 
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException, VMException {
-        BtcTransaction tx1 = createTransaction(2, Coin.valueOf(150));
-        BtcTransaction tx2 = createTransaction(3, Coin.valueOf(200));
-        BtcTransaction tx3 = createTransaction(4, Coin.valueOf(250));
+        BtcTransaction tx1 = createTransaction(2, bridgeConstants.getMinimumPegoutTxValueInSatoshis());
+        BtcTransaction tx2 = createTransaction(3, bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN));
+        BtcTransaction tx3 = createTransaction(4, bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN).add(Coin.MILLICOIN));
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -3292,11 +3293,11 @@ public class BridgeTestIntegration {
         return new SimpleBtcTransaction(networkParameters, hash);
     }
 
-    private BtcTransaction createTransaction(int toPk, Coin value) {
+    /*private BtcTransaction createTransaction(int toPk, Coin value) {
         return createTransaction(toPk, value, BtcECKey.fromPrivate(BigInteger.valueOf(123456)));
-    }
+    }*/
 
-    private BtcTransaction createUniqueTransaction(int toPk, Coin value) {
+    private BtcTransaction createTransaction(int toPk, Coin value) {
         return createTransaction(toPk, value, new BtcECKey());
     }
 
@@ -3304,7 +3305,7 @@ public class BridgeTestIntegration {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BtcTransaction input = new BtcTransaction(params);
 
-        input.addOutput(Coin.FIFTY_COINS, btcECKey.toAddress(params));
+        input.addOutput(Coin.COIN, btcECKey.toAddress(params));
 
         Address to = BtcECKey.fromPrivate(BigInteger.valueOf(toPk)).toAddress(params);
 
