@@ -46,7 +46,7 @@ class BlockRelayValidatorTest {
         Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
-        verify(blockValidator, never()).isValid(any());
+        verify(blockValidator, never()).isValid(any(), null);
         verify(blockParentValidator, never()).isValid(any(), any());
     }
 
@@ -54,14 +54,14 @@ class BlockRelayValidatorTest {
     void blockValidatorCheck() {
         Block block = mock(Block.class);
 
-        when(blockValidator.isValid(any())).thenReturn(false);
+        when(blockValidator.isValid(any(), null)).thenReturn(false);
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
         Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
-        verify(blockValidator).isValid(any());
+        verify(blockValidator).isValid(any(), null);
         verify(blockParentValidator, never()).isValid(any(), any());
     }
 
@@ -73,7 +73,7 @@ class BlockRelayValidatorTest {
 
         when(block.getParentHash()).thenReturn(parentHash);
         when(blockStore.getBlockByHash(any())).thenReturn(parentBlock);
-        when(blockValidator.isValid(any())).thenReturn(true);
+        when(blockValidator.isValid(any(), null)).thenReturn(true);
         when(blockParentValidator.isValid(any(), any())).thenReturn(false);
 
         boolean actualResult = blockRelayValidator.isValid(block);
@@ -81,7 +81,7 @@ class BlockRelayValidatorTest {
         Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
-        verify(blockValidator).isValid(any());
+        verify(blockValidator).isValid(any(), null);
         verify(blockParentValidator).isValid(any(), any());
     }
 
@@ -93,7 +93,7 @@ class BlockRelayValidatorTest {
 
         when(block.getParentHash()).thenReturn(parentHash);
         when(blockStore.getBlockByHash(any())).thenReturn(parentBlock);
-        when(blockValidator.isValid(any())).thenReturn(true);
+        when(blockValidator.isValid(any(), null)).thenReturn(true);
         when(blockParentValidator.isValid(any(), any())).thenReturn(true);
 
         boolean actualResult = blockRelayValidator.isValid(block);
@@ -101,7 +101,7 @@ class BlockRelayValidatorTest {
         Assertions.assertTrue(actualResult);
 
         verify(block).isGenesis();
-        verify(blockValidator).isValid(any());
+        verify(blockValidator).isValid(any(), null);
         verify(blockParentValidator).isValid(any(), any());
     }
 }

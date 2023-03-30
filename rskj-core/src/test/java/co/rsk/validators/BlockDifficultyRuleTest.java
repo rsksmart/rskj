@@ -56,7 +56,7 @@ class BlockDifficultyRuleTest {
         whenCalculatedDifficulty(452);
         whenBlockDifficulty(452);
 
-        Assertions.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent, null));
     }
 
     @Test
@@ -64,7 +64,7 @@ class BlockDifficultyRuleTest {
         whenCalculatedDifficulty(452);
         whenBlockDifficulty(999);
 
-        Assertions.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent, null));
     }
 
     private void whenBlockDifficulty(int difficulty) {

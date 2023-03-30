@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import org.ethereum.core.Block;
 
 /**
@@ -26,5 +27,5 @@ import org.ethereum.core.Block;
 @FunctionalInterface
 public interface BlockValidationRule {
 
-    boolean isValid(Block block);
+    boolean isValid(Block block, BlockExecutor blockExecutor);
 }

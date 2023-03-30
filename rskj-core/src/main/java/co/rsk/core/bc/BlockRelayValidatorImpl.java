@@ -66,7 +66,7 @@ public class BlockRelayValidatorImpl implements BlockValidator {
             return false;
         }
 
-        if (!blockValidator.isValid(block)) {
+        if (!blockValidator.isValid(block, null)) {
             return false;
         }
 

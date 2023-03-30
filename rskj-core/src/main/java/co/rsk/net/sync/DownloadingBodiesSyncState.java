@@ -126,7 +126,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
             return;
         }
 
-        if (!blockValidationRule.isValid(block)) {
+        if (!blockValidationRule.isValid(block, null)) {
             handleInvalidBody(peer, header);
             return;
         }

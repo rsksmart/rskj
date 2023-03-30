@@ -587,7 +587,7 @@ class TransactionModuleTest {
                 config.getActivationConfig(),
                 repositoryLocator,
                 this.transactionExecutorFactory,
-                config.isRemascEnabled());
+                config.isRemascEnabled(), false, false);
 
         MinerServer minerServer = new MinerServerImpl(
                 config,

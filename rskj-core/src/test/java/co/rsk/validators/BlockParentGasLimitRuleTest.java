@@ -70,7 +70,7 @@ class BlockParentGasLimitRuleTest {
         whenGasLimit(parentHeader, gasLimitParent);
         whenGasLimit(blockHeader, gasLimit);
 
-        Assertions.assertEquals(valid, rule.isValid(block, parent));
+        Assertions.assertEquals(valid, rule.isValid(block, parent, null));
     }
 
     private void whenGasLimitBoundDivisor(int gasLimitBoundDivisor) {

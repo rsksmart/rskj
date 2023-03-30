@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -48,7 +49,7 @@ public class BlockRootValidationRule implements BlockValidationRule {
     }
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, block.getNumber());
         byte[] blockTxRootHash = block.getTxTrieRoot();
         byte[] txListRootHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskip126Enabled);

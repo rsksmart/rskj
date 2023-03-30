@@ -299,7 +299,7 @@ public class MinerManagerTest {
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {
         @Override
-        public boolean isValid(Block block) {
+        public boolean isValid(Block block, BlockExecutor blockExecutor) {
             return true;
         }
     }

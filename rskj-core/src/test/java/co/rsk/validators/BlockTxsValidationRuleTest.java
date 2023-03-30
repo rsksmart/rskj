@@ -64,7 +64,7 @@ class BlockTxsValidationRuleTest {
 
         Block block = block(transaction(sender, 42));
 
-        Assertions.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent, null));
     }
 
     @Test
@@ -74,7 +74,7 @@ class BlockTxsValidationRuleTest {
 
         Block block = block(transaction(sender, 41));
 
-        Assertions.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent, null));
     }
 
     @Test
@@ -84,7 +84,7 @@ class BlockTxsValidationRuleTest {
 
         Block block = block(transaction(sender, 43));
 
-        Assertions.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent, null));
     }
 
     @Test
@@ -96,7 +96,7 @@ class BlockTxsValidationRuleTest {
 
         Block block = block(transaction(sender1, 64), transaction(sender2, 64));
 
-        Assertions.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent, null));
     }
 
     @Test
@@ -106,7 +106,7 @@ class BlockTxsValidationRuleTest {
 
         Block block = block(transaction(sender, 42), transaction(sender, 43));
 
-        Assertions.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent, null));
     }
 
     @Test
@@ -116,7 +116,7 @@ class BlockTxsValidationRuleTest {
 
         Block block = block(transaction(sender, 42), transaction(sender, 44));
 
-        Assertions.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent, null));
     }
 
     @Test
@@ -126,7 +126,7 @@ class BlockTxsValidationRuleTest {
 
         Block block = block(transaction(sender, 42), transaction(sender, 42));
 
-        Assertions.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent, null));
     }
 
     private void initialNonce(RskAddress sender, int nonce) {

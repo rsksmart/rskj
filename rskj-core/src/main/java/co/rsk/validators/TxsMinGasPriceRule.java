@@ -19,6 +19,7 @@
 package co.rsk.validators;
 
 import co.rsk.core.Coin;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -35,7 +36,7 @@ public class TxsMinGasPriceRule implements BlockValidationRule {
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         List<Transaction> txs = block.getTransactionsList();
         if(block.getMinimumGasPrice() == null) {
             logger.warn("Could not retrieve block min gas priceß");

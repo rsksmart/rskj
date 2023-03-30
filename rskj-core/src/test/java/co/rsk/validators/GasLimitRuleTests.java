@@ -48,18 +48,18 @@ class GasLimitRuleTests {
     @Test // pass rule
     void gasLimitGreaterThanMinimumGasLimit() {
         Mockito.when(blockHeader.getGasLimit()).thenReturn(DataWord.valueOf(3000000 + 1).getData());
-        assertTrue(rule.isValid(block));
+        assertTrue(rule.isValid(block, null));
     }
 
     @Test // pass rule
     void gasLimitEqualMinimumGasLimit() {
         Mockito.when(blockHeader.getGasLimit()).thenReturn(DataWord.valueOf(3000000).getData());
-        assertTrue(rule.isValid(block));
+        assertTrue(rule.isValid(block, null));
     }
 
     @Test // no pass rule
     void gasLimitLessThanMinimumGasLimit() {
         Mockito.when(blockHeader.getGasLimit()).thenReturn(DataWord.valueOf(3000000 - 1).getData());
-        assertFalse(rule.isValid(block));
+        assertFalse(rule.isValid(block, null));
     }
 }

@@ -77,7 +77,7 @@ class BlockTxsMaxGasPriceRuleTest {
         // lenient to avoid "unnecessary Mockito stubbing", if ever called
         lenient().when(block.getTransactionsList()).thenReturn(ImmutableList.of(txLessGasPriceThanCap, txMoreGasPriceThanCap));
 
-        Assertions.assertTrue(validator.isValid(block));
+        Assertions.assertTrue(validator.isValid(block, null));
     }
 
     @Test
@@ -89,13 +89,13 @@ class BlockTxsMaxGasPriceRuleTest {
         when(txLessGasPriceThanCap.getGasPrice()).thenReturn(Coin.valueOf(GAS_PRICE_CAP - 1));
         when(block.getTransactionsList()).thenReturn(ImmutableList.of(txLessGasPriceThanCap));
 
-        Assertions.assertTrue(validator.isValid(block)); // valid up until here, no tx surpassing cap
+        Assertions.assertTrue(validator.isValid(block, null)); // valid up until here, no tx surpassing cap
 
         Transaction txMoreGasPriceThanCap = Mockito.mock(Transaction.class);
         // lenient to avoid "unnecessary Mockito stubbing", if ever called
         when(txMoreGasPriceThanCap.getGasPrice()).thenReturn(Coin.valueOf(GAS_PRICE_CAP + 1_000_000_000_000L));
         when(block.getTransactionsList()).thenReturn(ImmutableList.of(txLessGasPriceThanCap, txMoreGasPriceThanCap));
 
-        Assertions.assertFalse(validator.isValid(block)); // now invalid up due to txMoreGasPriceThanCap
+        Assertions.assertFalse(validator.isValid(block, null)); // now invalid up due to txMoreGasPriceThanCap
     }
 }

@@ -1,5 +1,6 @@
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -14,7 +15,7 @@ public class BlockUnclesHashValidationRule implements BlockValidationRule {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         byte[] unclesHeader = block.getHeader().getUnclesHash();
         byte[] unclesBlock = HashUtil.keccak256(BlockHeader.getUnclesEncoded(block.getUncleList()));
 

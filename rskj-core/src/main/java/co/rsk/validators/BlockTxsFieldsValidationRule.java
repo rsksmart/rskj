@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -39,7 +40,7 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
     }
 
     @Override
-    public boolean isValid(Block block, Block parent) {
+    public boolean isValid(Block block, Block parent, BlockExecutor blockExecutor) {
         if (block == null) {
             logger.warn("BlockTxsFieldsValidationRule - block is null");
             return false;

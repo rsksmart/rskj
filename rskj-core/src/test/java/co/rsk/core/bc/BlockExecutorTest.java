@@ -1416,7 +1416,7 @@ public class BlockExecutorTest {
                         new PrecompiledContracts(cfg, bridgeSupportFactory, signatureCache),
                         signatureCache
                 ),
-                cfg.isRemascEnabled());
+                cfg.isRemascEnabled(), false, false);
     }
 
     public static class TestObjects {

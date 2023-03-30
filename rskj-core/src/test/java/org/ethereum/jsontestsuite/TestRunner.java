@@ -167,7 +167,7 @@ public class TestRunner {
                         config.getActivationConfig(),
                         new RepositoryLocator(trieStore, stateRootHandler),
                         transactionExecutorFactory,
-                        config.isRemascEnabled()),
+                        config.isRemascEnabled(), false, false),
                 stateRootHandler
         );
 

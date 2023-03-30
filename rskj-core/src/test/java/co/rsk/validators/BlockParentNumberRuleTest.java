@@ -57,7 +57,7 @@ class BlockParentNumberRuleTest {
         whenBlockNumber(parentHeader, 451);
         whenBlockNumber(blockHeader, blockNumber);
 
-        Assertions.assertEquals(validity, rule.isValid(block, parent));
+        Assertions.assertEquals(validity, rule.isValid(block, parent, null));
     }
 
     private void whenBlockNumber(BlockHeader header, long number) {

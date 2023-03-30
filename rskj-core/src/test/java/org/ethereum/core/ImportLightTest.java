@@ -89,7 +89,7 @@ class ImportLightTest {
                         config.getActivationConfig(),
                         repositoryLocator,
                         transactionExecutorFactory,
-                        config.isRemascEnabled()),
+                        config.isRemascEnabled(), false, false),
                 stateRootHandler
         );
 

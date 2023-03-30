@@ -21,6 +21,7 @@ package co.rsk.validators;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.bc.BlockExecutor;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
@@ -59,7 +60,7 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule, 
     }
 
     @Override
-    public boolean isValid(Block block, Block parent) {
+    public boolean isValid(Block block, Block parent, BlockExecutor blockExecutor) {
         return isValid(block.getHeader(), parent);
     }
 }

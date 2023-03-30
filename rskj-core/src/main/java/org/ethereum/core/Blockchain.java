@@ -76,4 +76,10 @@ public interface Blockchain {
     List<BlockInformation> getBlocksInformationByNumber(long number);
 
     boolean hasBlockInSomeBlockchain(byte[] hash);
+
+    int getNumTxPreTC();
+
+    int getExecutedTransactions();
+
+    int getReceipts();
 }

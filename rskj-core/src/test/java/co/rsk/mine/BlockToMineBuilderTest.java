@@ -113,7 +113,7 @@ class BlockToMineBuilderTest {
             BlockResult expectedResult = mock(BlockResult.class);
             ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
 
-            when(validationRules.isValid(any())).thenReturn(false);
+            when(validationRules.isValid(any(), null)).thenReturn(false);
             when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
 
             blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
@@ -129,7 +129,7 @@ class BlockToMineBuilderTest {
         Consumer<BlockHeader> test = (parent) -> {
             BlockResult expectedResult = mock(BlockResult.class);
             ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
-            when(validationRules.isValid(any())).thenReturn(true);
+            when(validationRules.isValid(any(), null)).thenReturn(true);
             when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
 
             blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
@@ -149,7 +149,7 @@ class BlockToMineBuilderTest {
         when(parent.getGasLimit()).thenReturn(new byte[0]);
         when(parent.getMinimumGasPrice()).thenReturn(mock(Coin.class));
 
-        when(validationRules.isValid(any())).thenReturn(true);
+        when(validationRules.isValid(any(), null)).thenReturn(true);
 
         BlockResult expectedResult = mock(BlockResult.class);
         ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);

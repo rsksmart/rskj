@@ -27,6 +27,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.util.FormatUtils;
 import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -37,6 +38,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -93,6 +99,9 @@ public class BlockChainImpl implements Blockchain {
 
     private final BlockExecutor blockExecutor;
     private boolean noValidation;
+    private int numTxPreTC;
+    private int executedTransactions;
+    private int receipts;
 
     public BlockChainImpl(BlockStore blockStore,
                           ReceiptStore receiptStore,
@@ -101,6 +110,9 @@ public class BlockChainImpl implements Blockchain {
                           BlockValidator blockValidator,
                           BlockExecutor blockExecutor,
                           StateRootHandler stateRootHandler) {
+        this.numTxPreTC = 0;
+        this.executedTransactions = 0;
+        this.receipts = 0;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.listener = listener;
@@ -132,6 +144,7 @@ public class BlockChainImpl implements Blockchain {
      */
     @Override
     public ImportResult tryToConnect(Block block) {
+        long startPreInternalTryToConnect = System.nanoTime();
         this.lock.readLock().lock();
 
         try {
@@ -155,7 +168,9 @@ public class BlockChainImpl implements Blockchain {
                 synchronized (connectLock) {
                     logger.trace("Start try connect");
                     long saveTime = System.nanoTime();
+                    long endPreInternalTryToConnect = System.nanoTime();
                     ImportResult result = internalTryToConnect(block);
+                    long startPostInternalTryToConnect = System.nanoTime();
                     long totalTime = System.nanoTime() - saveTime;
                     String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(totalTime);
 
@@ -164,6 +179,32 @@ public class BlockChainImpl implements Blockchain {
                     }
                     else {
                         logger.info("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
+                    }
+                    long endPostInternalTryToConnect = System.nanoTime();
+
+                    if (!blockExecutor.isMetrics()) {
+                        String playOrGenerate = blockExecutor.isPlay()? "play" : "generate";
+                        String filePath_times = blockExecutor.getFilePath_timesSplitted();
+                        long blockNumber = block.getNumber();
+                        boolean isRskip144Actived = blockExecutor.getActivationConfig().isActive(ConsensusRule.RSKIP144, blockNumber);
+
+                        Path file_times = Paths.get(filePath_times);
+                        String header_times = "playOrGenerate,rskip144,moment,bnumber,time\r";
+                        String data_times_pre = playOrGenerate + "," + isRskip144Actived + ",preInternalConnect," + blockNumber + "," + (endPreInternalTryToConnect - startPreInternalTryToConnect) + "\r";
+                        String data_times_post = playOrGenerate + "," + isRskip144Actived + ",postInternalConnect," + blockNumber + "," + (endPostInternalTryToConnect - startPostInternalTryToConnect) + "\r";
+
+                        try {
+                            FileWriter myWriter_times = new FileWriter(filePath_times, true);
+
+                            if (!Files.exists(file_times) || Files.size(file_times) == 0) {
+                                myWriter_times.write(header_times);
+                            }
+                            myWriter_times.write(data_times_pre);
+                            myWriter_times.write(data_times_post);
+                            myWriter_times.close();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
 
                     return result;
@@ -187,6 +228,7 @@ public class BlockChainImpl implements Blockchain {
     private ImportResult internalTryToConnect(Block block) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BEFORE_BLOCK_EXEC);
 
+        long startCheckExistenceOfBlock = System.nanoTime();
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
                 !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
@@ -210,6 +252,9 @@ public class BlockChainImpl implements Blockchain {
         Block parent;
         BlockDifficulty parentTotalDifficulty;
 
+        long endCheckExistenceOfBlock = System.nanoTime();
+        long startCheckParentBlock = System.nanoTime();
+
         // Incoming block is child of current best block
         if (bestBlock == null || bestBlock.isParentOf(block)) {
             parent = bestBlock;
@@ -232,7 +277,8 @@ public class BlockChainImpl implements Blockchain {
                 return ImportResult.NO_PARENT;
             }
         }
-
+        long endCheckParentBlock = System.nanoTime();
+        long startCheckBlockValidity = System.nanoTime();
         // Validate incoming block before its processing
         if (!isValid(block)) {
             long blockNumber = block.getNumber();
@@ -244,18 +290,27 @@ public class BlockChainImpl implements Blockchain {
 
         profiler.stop(metric);
         BlockResult result = null;
+        long endCheckBlockValidity = System.nanoTime();
 
+        long startResultValidation = 0;
+        long endResultValidation = 0;
+        long startRegisterResult = 0;
+        long endRegisterResult = 0;
         if (parent != null) {
             long saveTime = System.nanoTime();
             logger.trace("execute start");
+            numTxPreTC = block.getTransactionsList().size();
+            result = blockExecutor.execute(null, 0, block, parent.getHeader(), false, noValidation,
+                    true);
+            executedTransactions = result.getExecutedTransactions().size();
+            receipts = result.getTransactionReceipts().size();
 
-            result = blockExecutor.execute(null, 0, block, parent.getHeader(), false, noValidation, true);
-
+            startResultValidation = System.nanoTime();
             logger.trace("execute done");
 
             metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
             boolean isValid = noValidation ? true : blockExecutor.validate(block, result);
-
+            endResultValidation = System.nanoTime();
             logger.trace("validate done");
 
             if (!isValid) {
@@ -267,7 +322,7 @@ public class BlockChainImpl implements Blockchain {
 
             long totalTime = System.nanoTime() - saveTime;
             String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(totalTime);
-
+            startRegisterResult = System.nanoTime();
             if (BlockUtils.tooMuchProcessTime(totalTime)) {
                 logger.warn("block: num: [{}] hash: [{}], executed after: [{}]seconds", block.getNumber(), block.getPrintableHash(), timeInSeconds);
             }
@@ -277,6 +332,7 @@ public class BlockChainImpl implements Blockchain {
 
             // the block is valid at this point
             stateRootHandler.register(block.getHeader(), result.getFinalState());
+            endRegisterResult = System.nanoTime();
             profiler.stop(metric);
         }
 
@@ -286,6 +342,7 @@ public class BlockChainImpl implements Blockchain {
         logger.trace("TD: updated to {}", totalDifficulty);
 
         // It is the new best block
+        long startRebranching = System.nanoTime();
         if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, status.getTotalDifficulty(),block, bestBlock)) {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
                 logger.trace("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
@@ -293,19 +350,28 @@ public class BlockChainImpl implements Blockchain {
                         status.getTotalDifficulty(), totalDifficulty);
                 blockStore.reBranch(block);
             }
-
+            long endRebranching = System.nanoTime();
             logger.trace("Start switchToBlockChain");
+            long startSwitchToBlockchain = System.nanoTime();
             switchToBlockChain(block, totalDifficulty);
+            long endSwitchToBlockchain = System.nanoTime();
             logger.trace("Start saveReceipts");
+            long startSaveReceipts = System.nanoTime();
             saveReceipts(block, result);
+            long endSaveReceipts = System.nanoTime();
             logger.trace("Start processBest");
+            long startProcessBest = System.nanoTime();
             processBest(block);
+            long endProcessBest = System.nanoTime();
             logger.trace("Start onBestBlock");
+            long startOnBestBlock = System.nanoTime();
             onBestBlock(block, result);
+            long endOnBestBlock = System.nanoTime();
             logger.trace("Start onBlock");
+            long startOnBlock = System.nanoTime();
             onBlock(block, result);
+            long endOnBlock = System.nanoTime();
             logger.trace("Start flushData");
-
             logger.trace("Better block {} {}", block.getNumber(), block.getPrintableHash());
 
             logger.debug("block added to the blockChain: index: [{}]", block.getNumber());
@@ -314,6 +380,50 @@ public class BlockChainImpl implements Blockchain {
             }
 
             profiler.stop(metric);
+
+            String playOrGenerate = blockExecutor.isPlay()? "play" : "generate";
+
+            if (!blockExecutor.isMetrics()) {
+                String filePath_times = blockExecutor.getFilePath_timesSplitted();
+                Path file_times = Paths.get(filePath_times);
+                String header_times = "playOrGenerate,rskip144,moment,bnumber,time\r";
+                long blockNumber = block.getNumber();
+                boolean rskip144Active = blockExecutor.getActivationConfig().isActive(ConsensusRule.RSKIP144, blockNumber);
+                String existenceOfBlock_times = playOrGenerate+","+ rskip144Active +",checkExistenceOfBlock,"+ blockNumber +","+(endCheckExistenceOfBlock-startCheckExistenceOfBlock)+ "\r";
+                String checkParentBlock_times = playOrGenerate+","+ rskip144Active +",checkParentBlock,"+ blockNumber +","+(endCheckParentBlock-startCheckParentBlock)+ "\r";
+                String checkBlockValidty_times = playOrGenerate+","+ rskip144Active +",checkBlockValidty,"+ blockNumber +","+(endCheckBlockValidity-startCheckBlockValidity)+ "\r";
+                String resultValidation_times = playOrGenerate+","+ rskip144Active +",resultValidation,"+ blockNumber +","+(endResultValidation-startResultValidation)+ "\r";
+                String registerResult_times = playOrGenerate+","+ rskip144Active +",registerResult,"+ blockNumber +","+(endRegisterResult-startRegisterResult)+ "\r";
+                String rebranching_times = playOrGenerate+","+ rskip144Active +",rebranching,"+ blockNumber +","+(endRebranching-startRebranching)+ "\r";
+                String switchToBlockchain_times = playOrGenerate+","+ rskip144Active +",switchToBlockchain,"+ blockNumber +","+(endSwitchToBlockchain-startSwitchToBlockchain)+ "\r";
+                String saveReceipts_times = playOrGenerate+","+ rskip144Active +",saveReceipts,"+ blockNumber +","+(endSaveReceipts-startSaveReceipts)+ "\r";
+                String processBest_times = playOrGenerate+","+ rskip144Active +",processBest,"+ blockNumber +","+(endProcessBest-startProcessBest)+ "\r";
+                String onBestBlock_times = playOrGenerate+","+ rskip144Active +",onBestBlock,"+ blockNumber +","+(endOnBestBlock-startOnBestBlock)+ "\r";
+                String onBlock_times = playOrGenerate+","+ rskip144Active +",onBlock,"+ blockNumber +","+(endOnBlock-startOnBlock)+ "\r";
+
+                try {
+                    FileWriter myWriter_times = new FileWriter(filePath_times, true);
+
+                    if (!Files.exists(file_times) || Files.size(file_times) == 0) {
+                        myWriter_times.write(header_times);
+                    }
+                    myWriter_times.write(existenceOfBlock_times);
+                    myWriter_times.write(checkParentBlock_times);
+                    myWriter_times.write(checkBlockValidty_times);
+                    myWriter_times.write(resultValidation_times);
+                    myWriter_times.write(registerResult_times);
+                    myWriter_times.write(rebranching_times);
+                    myWriter_times.write(switchToBlockchain_times);
+                    myWriter_times.write(saveReceipts_times);
+                    myWriter_times.write(processBest_times);
+                    myWriter_times.write(onBestBlock_times);
+                    myWriter_times.write(onBlock_times);
+                    myWriter_times.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
             return ImportResult.IMPORTED_BEST;
         }
         // It is not the new best block
@@ -474,11 +584,39 @@ public class BlockChainImpl implements Blockchain {
             return;
         }
 
-        if (result.getTransactionReceipts().isEmpty()) {
+        long startGetTxReceipt = System.nanoTime();
+        List<TransactionReceipt> transactionReceipts = result.getTransactionReceipts();
+        int numberOfReceipts = transactionReceipts.size();
+        if (transactionReceipts.isEmpty()) {
             return;
         }
+        long endGetTxReceipt = System.nanoTime();
+        long startSaveReceipts = System.nanoTime();
+        receiptStore.saveMultiple(block.getHash().getBytes(), transactionReceipts);
+        long endSaveReceipts = System.nanoTime();
 
-        receiptStore.saveMultiple(block.getHash().getBytes(), result.getTransactionReceipts());
+        String filePath_sr = blockExecutor.getFilePath_timesSplitted_sr();
+        String header_sr = "playOrGenerate,rskip144,moment,bnumber,time,receipts\r";
+        Path file_sr = Paths.get(filePath_sr);
+        String playOrGenerate = blockExecutor.isPlay() ? "play" : "generate";
+        long blockNumber = block.getNumber();
+        boolean isRskip144Active = blockExecutor.getActivationConfig().isActive(ConsensusRule.RSKIP144, blockNumber);
+
+        try {
+            FileWriter myWriter;
+            if (!Files.exists(file_sr)) {
+                myWriter = new FileWriter(filePath_sr, true);
+                myWriter.write(header_sr);
+            } else {
+                myWriter = new FileWriter(filePath_sr,true);
+            }
+            myWriter.write(playOrGenerate +","+ isRskip144Active +","+"getTxReceipts"+","+ blockNumber +","+(endGetTxReceipt-startGetTxReceipt)+","+ numberOfReceipts +"\r");
+            myWriter.write(playOrGenerate +","+ isRskip144Active +","+"saveMultipleReceipts"+","+ blockNumber +","+(endSaveReceipts-startSaveReceipts)+","+ numberOfReceipts+"\r");
+            myWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     private void processBest(final Block block) {
@@ -507,5 +645,20 @@ public class BlockChainImpl implements Blockchain {
         boolean validation =  blockValidator.isValid(block);
         profiler.stop(metric);
         return validation;
+    }
+
+    @Override
+    public int getNumTxPreTC() {
+        return numTxPreTC;
+    }
+
+    @Override
+    public int getExecutedTransactions() {
+        return executedTransactions;
+    }
+
+    @Override
+    public int getReceipts() {
+        return receipts;
     }
 }

@@ -192,7 +192,7 @@ public class BlockToMineBuilder {
         Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, false);
 
         // TODO(nacho): The validation rules should accept a list of uncles and we should never build invalid blocks.
-        if (validationRules.isValid(newBlock)) {
+        if (validationRules.isValid(newBlock, null)) {
             return newBlock;
         }
 

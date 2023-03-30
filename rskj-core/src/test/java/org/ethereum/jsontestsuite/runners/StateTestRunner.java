@@ -163,7 +163,7 @@ public class StateTestRunner {
                                 precompiledContracts,
                                 new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                         ),
-                        config.isRemascEnabled()),
+                        config.isRemascEnabled(), false, false),
                 stateRootHandler
         );
 

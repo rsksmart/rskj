@@ -18,10 +18,17 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,14 +53,37 @@ public class BlockParentCompositeRule implements BlockParentDependantValidationR
     }
 
     @Override
-    public boolean isValid(Block block, Block parent) {
+    public boolean isValid(Block block, Block parent, BlockExecutor blockExecutor) {
         final String shortHash = block.getPrintableHash();
         long number = block.getNumber();
         logger.debug("Validating block {} {}", shortHash, number);
         for(BlockParentDependantValidationRule rule : this.rules) {
             logger.debug("Validation rule {}", rule.getClass().getSimpleName());
+            long startIsValid = System.nanoTime();
+            boolean valid = rule.isValid(block, parent, blockExecutor);
+            long endIsValid = System.nanoTime();
 
-            if(!rule.isValid(block, parent)) {
+            if (!blockExecutor.isMetrics()) {
+                String name = rule.getClass().getSimpleName();
+                String filePath_times = blockExecutor.getFilePath_timesValidity();
+                Path file_times = Paths.get(filePath_times);
+                String header_times = "playOrGenerate,rskip144,moment,bnumber,time\r";
+                String validationStage_times = (blockExecutor.isPlay()?"play":"generate")+","+blockExecutor.getActivationConfig().isActive(ConsensusRule.RSKIP144, block.getNumber())+","+name+","+block.getNumber()+","+(endIsValid-startIsValid)+ "\r";
+
+                try {
+                    FileWriter myWriter_times = new FileWriter(filePath_times, true);
+
+                    if (!Files.exists(file_times) || Files.size(file_times) == 0) {
+                        myWriter_times.write(header_times);
+                    }
+                    myWriter_times.write(validationStage_times);
+                    myWriter_times.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            if(!valid) {
                 logger.warn("Error Validating block {} {}", shortHash, number);
                 return false;
             }

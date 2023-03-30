@@ -82,8 +82,8 @@ class BlockChainImplInvalidTest {
                 return new BlockValidatorImpl(
                         getBlockStore(),
                         getBlockParentDependantValidationRule(),
-                        getBlockValidationRule()
-                );
+                        getBlockValidationRule(),
+                        null);
             }
         };
         blockChain = objects.getBlockchain();

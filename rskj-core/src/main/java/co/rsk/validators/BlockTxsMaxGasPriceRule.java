@@ -19,6 +19,7 @@
 package co.rsk.validators;
 
 import co.rsk.core.Coin;
+import co.rsk.core.bc.BlockExecutor;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -41,7 +42,7 @@ public class BlockTxsMaxGasPriceRule implements BlockValidationRule {
     }
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         boolean isRskip252Enabled = activationConfig.isActive(ConsensusRule.RSKIP252, block.getNumber());
         if (!isRskip252Enabled) {
             return true;

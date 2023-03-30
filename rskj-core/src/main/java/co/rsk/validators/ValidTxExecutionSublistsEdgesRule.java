@@ -1,5 +1,6 @@
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
@@ -17,7 +18,7 @@ public class ValidTxExecutionSublistsEdgesRule implements BlockValidationRule {
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         short[] edges = block.getHeader().getTxExecutionSublistsEdges();
 
         if (edges == null || edges.length == 0) {
