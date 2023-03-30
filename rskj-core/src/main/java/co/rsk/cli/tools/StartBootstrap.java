@@ -58,46 +58,43 @@ public class StartBootstrap implements Callable<Integer> {
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
 
-        try (RskContext ctx = new BootstrapRskContext(args)) {
-            int result = new CommandLine(new StartBootstrap(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
+        RskContext ctx = null;
+        try {
+            ctx = new BootstrapRskContext(args);
 
-            if (result != 0) {
-                throw new PicocliBadResultException(result);
+            new CommandLine(new StartBootstrap(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
+        } catch (Exception e) {
+            logger.error("Main thread of RSK bootstrap node crashed", e);
+
+            if (ctx != null) {
+                ctx.close();
             }
+
+            System.exit(1);
         }
     }
 
     @Override
-    public Integer call() throws IOException {
+    public Integer call() throws Exception {
         PreflightChecksUtils preflightChecks = new PreflightChecksUtils(ctx);
         Runtime runtime = Runtime.getRuntime();
-        NodeStopper nodeStopper = System::exit;
 
-        runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+        runBootstrapNode(ctx, preflightChecks, runtime);
         return 0;
     }
 
     static void runBootstrapNode(@Nonnull RskContext ctx,
                                  @Nonnull PreflightChecksUtils preflightChecks,
-                                 @Nonnull Runtime runtime,
-                                 @Nonnull NodeStopper nodeStopper) {
-        try {
-            // make preflight checks
-            preflightChecks.runChecks();
+                                 @Nonnull Runtime runtime) throws Exception {
+        // make preflight checks
+        preflightChecks.runChecks();
 
-            // subscribe to shutdown hook
-            runtime.addShutdownHook(new Thread(ctx::close, "stopper"));
+        // subscribe to shutdown hook
+        runtime.addShutdownHook(new Thread(ctx::close, "stopper"));
 
-            // start node runner
-            NodeRunner runner = ctx.getNodeRunner();
-            runner.run();
-        } catch (Exception e) {
-            logger.error("Main thread of RSK bootstrap node crashed", e);
-
-            ctx.close();
-
-            nodeStopper.stop(1);
-        }
+        // start node runner
+        NodeRunner runner = ctx.getNodeRunner();
+        runner.run();
     }
 
     static void setUpThread(@Nonnull Thread thread) {
