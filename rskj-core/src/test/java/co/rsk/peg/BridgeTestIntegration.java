@@ -3293,10 +3293,6 @@ public class BridgeTestIntegration {
         return new SimpleBtcTransaction(networkParameters, hash);
     }
 
-    /*private BtcTransaction createTransaction(int toPk, Coin value) {
-        return createTransaction(toPk, value, BtcECKey.fromPrivate(BigInteger.valueOf(123456)));
-    }*/
-
     private BtcTransaction createTransaction(int toPk, Coin value) {
         return createTransaction(toPk, value, new BtcECKey());
     }
