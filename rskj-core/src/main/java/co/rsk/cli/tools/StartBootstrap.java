@@ -19,18 +19,15 @@ package co.rsk.cli.tools;
 
 import co.rsk.NodeRunner;
 import co.rsk.RskContext;
-import co.rsk.cli.exceptions.PicocliBadResultException;
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.discovery.UDPServer;
-import co.rsk.util.NodeStopper;
 import co.rsk.util.PreflightChecksUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
