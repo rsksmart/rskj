@@ -35,6 +35,7 @@ import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.util.NodeStopper;
+import co.rsk.util.PreflightCheckException;
 import co.rsk.util.PreflightChecksUtils;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -567,9 +568,8 @@ class CliToolsTest {
         doReturn(runner).when(ctx).getNodeRunner();
         PreflightChecksUtils preflightChecks = mock(PreflightChecksUtils.class);
         Runtime runtime = mock(Runtime.class);
-        NodeStopper nodeStopper = mock(NodeStopper.class);
 
-        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime);
 
         verify(preflightChecks, times(1)).runChecks();
         verify(runner, times(1)).run();
@@ -577,15 +577,13 @@ class CliToolsTest {
         assertEquals("stopper", threadCaptor.getValue().getName());
 
         // check unhappy flow of bootstrap node start
-        doThrow(new RuntimeException()).when(preflightChecks).runChecks();
+        doThrow(new PreflightCheckException("")).when(preflightChecks).runChecks();
 
-        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+        Assertions.assertThrows(PreflightCheckException.class, () -> StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime));
 
         verify(preflightChecks, times(2)).runChecks();
         verify(runner, times(1)).run();
         verify(runtime, times(1)).addShutdownHook(any());
-        verify(ctx, times(1)).close();
-        verify(nodeStopper, times(1)).stop(1);
     }
 
     @Test
