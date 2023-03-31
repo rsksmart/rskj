@@ -1,6 +1,8 @@
 package co.rsk.validators;
 
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +17,22 @@ import org.slf4j.LoggerFactory;
 public class ValidTxExecutionSublistsEdgesRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
+    private final ActivationConfig activationConfig;
+
+    public ValidTxExecutionSublistsEdgesRule(ActivationConfig activationConfig) {
+        this.activationConfig = activationConfig;
+    }
+
 
     @Override
     public boolean isValid(Block block) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber())) {
+            return true;
+        }
+
         short[] edges = block.getHeader().getTxExecutionSublistsEdges();
 
-        if (edges == null || edges.length == 0) {
+        if (edges.length == 0) {
             return true;
         }
 
