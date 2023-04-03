@@ -38,7 +38,7 @@ public class BlockCache {
     private static final Logger logger = LoggerFactory.getLogger("testiago");
 
     public BlockCache(int cacheSize) {
-        this.cacheSize = cacheSize / 2;
+        this.cacheSize = cacheSize;
         this.frequentBlockMap = new MaxSizeHashMap<>(this.cacheSize, true);
         this.recentBlockMap = new MaxSizeHashMap<>(this.cacheSize, false);
     }
