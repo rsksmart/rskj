@@ -81,17 +81,17 @@ class Web3WebSocketServerTest {
 
     @Test
     void smokeTest() throws Exception {
-        smokeTest(getJsonRpcDummyMessage("value"));
+        smokeTest(getJsonRpcDummyMessage("value"), 9991);
     }
 
     @Test
     void smokeTestWithBigJson() throws Exception {
-        smokeTest(getJsonRpcBigMessage());
+        smokeTest(getJsonRpcBigMessage(), 9992);
     }
 
     @Test
     void smokeTestWithBigJsonUsingAnotherServerPath() throws Exception {
-        smokeTest(getJsonRpcBigMessage(), "/");
+        smokeTest(getJsonRpcBigMessage(), "/", 9993);
     }
 
     @AfterEach
@@ -126,7 +126,7 @@ class Web3WebSocketServerTest {
         String mockResult = "output";
         when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
 
-        int randomPort = 9998;
+        int randomPort = 9995;
 
         TestSystemProperties testSystemProperties = new TestSystemProperties();
 
@@ -247,7 +247,7 @@ class Web3WebSocketServerTest {
         String mockResult = "output";
         when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
 
-        int randomPort = 9998;
+        int randomPort = 9994;
 
         TestSystemProperties testSystemProperties = new TestSystemProperties();
 
@@ -357,7 +357,7 @@ class Web3WebSocketServerTest {
         String mockResult = "output";
         when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
 
-        int randomPort = 9998;
+        int randomPort = 9996;
 
         TestSystemProperties testSystemProperties = new TestSystemProperties();
 
@@ -451,16 +451,16 @@ class Web3WebSocketServerTest {
         }
     }
 
-    private void smokeTest(byte[] msg) throws Exception {
-        smokeTest(msg, "/websocket");
+    private void smokeTest(byte[] msg, Integer port) throws Exception {
+        smokeTest(msg, "/websocket", port);
     }
 
-    private void smokeTest(byte[] msg, String serverPath) throws Exception {
+    private void smokeTest(byte[] msg, String serverPath, Integer port) throws Exception {
         Web3 web3Mock = mock(Web3.class);
         String mockResult = "output";
         when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
 
-        int randomPort = 9998;
+        int randomPort = Optional.ofNullable(port).orElse(9998);
 
         TestSystemProperties testSystemProperties = new TestSystemProperties();
 
