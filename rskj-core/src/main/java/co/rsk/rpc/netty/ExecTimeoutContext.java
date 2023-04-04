@@ -18,17 +18,13 @@
 
 package co.rsk.rpc.netty;
 
+import co.rsk.rpc.exception.JsonRpcTimeoutError;
+
 import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Set;
 
 public class ExecTimeoutContext implements AutoCloseable {
-
-    public static class TimeoutException extends RuntimeException {
-        public TimeoutException(String message) {
-            super(message);
-        }
-    }
 
     private static final ThreadLocal<Set<ExecTimeoutContext>> sExecTimeoutContext = new ThreadLocal<>();
     private final long expirationTimeInMillis;
@@ -80,7 +76,7 @@ public class ExecTimeoutContext implements AutoCloseable {
         long currentTimeInMillis = System.currentTimeMillis();
 
         if (currentTimeInMillis > execTimeoutContext.expirationTimeInMillis) {
-            throw new TimeoutException("Execution has expired.");
+            throw new JsonRpcTimeoutError("Execution has expired.");
         }
     }
 

@@ -21,7 +21,8 @@ package co.rsk.rpc.netty;
 import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.exception.JsonRpcRequestPayloadException;
-import co.rsk.rpc.exception.JsonRpcResponseLimitException;
+import co.rsk.rpc.exception.JsonRpcResponseLimitError;
+import co.rsk.rpc.exception.JsonRpcTimeoutError;
 import co.rsk.util.JacksonParserUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -42,8 +43,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
-
 @ChannelHandler.Sharable
 public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBufHolder> {
 
@@ -53,25 +52,26 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
     private final long defaultTimeout;
+    private final int maxResponseSize;
 
     public JsonRpcWeb3ServerHandler(Web3 service, JsonRpcWeb3ServerProperties jsonRpcWeb3ServerProperties) {
-        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), jsonRpcWeb3ServerProperties.getRpcModules(), jsonRpcWeb3ServerProperties.getRpcMaxResponseSize());
+        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), jsonRpcWeb3ServerProperties.getRpcModules());
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new JsonRpcRequestValidatorInterceptor(jsonRpcWeb3ServerProperties.getMaxBatchRequestsSize()));
         jsonRpcServer.setInterceptorList(interceptors);
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(jsonRpcWeb3ServerProperties.getRpcModules()));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
         this.defaultTimeout = jsonRpcWeb3ServerProperties.getRpcTimeout();
+        this.maxResponseSize = jsonRpcWeb3ServerProperties.getRpcMaxResponseSize();
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder request) throws Exception {
         ByteBuf responseContent = Unpooled.buffer();
         int responseCode;
-
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
-
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain());
+             ResponseSizeLimitContext rslCtx = ResponseSizeLimitContext.createResponseSizeContext(maxResponseSize)) {
             if (defaultTimeout <= 0) {
                 responseCode = jsonRpcServer.handleRequest(is, os);
             } else {
@@ -91,14 +91,14 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             int errorCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
             responseContent = buildErrorContent(errorCode, stackOverflowErrorMsg);
             responseCode = errorCode;
-        } catch (ExecTimeoutContext.TimeoutException e) {
+        } catch (JsonRpcTimeoutError e) {
             LOGGER.error(e.getMessage(), e);
-            int errorCode = INTERNAL_ERROR.code;
+            int errorCode = JsonRpcTimeoutError.ERROR_CODE;
             responseContent = buildErrorContent(errorCode, e.getMessage());
             responseCode = errorCode;
-        } catch (JsonRpcResponseLimitException limitEx) {
+        } catch (JsonRpcResponseLimitError limitEx) {
             LOGGER.error(limitEx.getMessage(), limitEx);
-            int errorCode = JsonRpcResponseLimitException.ERROR_CODE;
+            int errorCode = JsonRpcResponseLimitError.ERROR_CODE;
             responseContent = buildErrorContent(errorCode, limitEx.getMessage());
             responseCode = errorCode;
         } catch (Exception e) {

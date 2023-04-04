@@ -1,6 +1,6 @@
 package co.rsk.rpc.json;
 
-import co.rsk.rpc.exception.JsonRpcResponseLimitException;
+import co.rsk.rpc.exception.JsonRpcResponseLimitError;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -100,7 +100,7 @@ public class JsonResponseSizeLimiter {
     }
 
     private void limitReached() {
-        throw new JsonRpcResponseLimitException(max);
+        throw new JsonRpcResponseLimitError(max);
     }
 
 }

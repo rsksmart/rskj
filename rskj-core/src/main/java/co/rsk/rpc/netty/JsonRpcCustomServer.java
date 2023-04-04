@@ -19,8 +19,6 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.rpc.ModuleDescription;
-import co.rsk.rpc.json.CustomJsonNodeFactory;
-import co.rsk.rpc.json.JsonResponseSizeLimiter;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -34,11 +32,9 @@ import java.util.Optional;
 
 public class JsonRpcCustomServer extends JsonRpcBasicServer {
     private final List<ModuleDescription> modules;
-    private final int responseLimit;
 
-    public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules, int responseLimit) {
-        super(getObjectMapper(responseLimit), handler, remoteInterface);
-        this.responseLimit = responseLimit;
+    public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules) {
+        super(new ObjectMapper(), handler, remoteInterface);
         this.modules = new ArrayList<>(modules);
     }
 
@@ -53,23 +49,16 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
         String[] methodParts = method.split("_");
         JsonResponse response;
         if (methodParts.length >= 2) {
-
-
             String moduleName = methodParts[0];
-
-            Optional<ModuleDescription> optModule = modules.stream()
+            long timeout = modules.stream()
                     .filter(m -> m.getName().equals(moduleName))
-                    .findFirst();
-
-            long timeout = optModule
-                    .map(m -> m.getTimeout(method))
+                    .findFirst()
+                    .map(ModuleDescription::getTimeout)
                     .orElse(0L);
-
 
             if (timeout <= 0) {
                 response = super.handleJsonNodeRequest(node);
                 ExecTimeoutContext.checkIfExpired();
-
             } else {
                 try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout)) {
                     response = super.handleJsonNodeRequest(node);
@@ -80,18 +69,7 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
             response = super.handleJsonNodeRequest(node);
         }
 
-        if (responseLimit > 0) {
-            JsonResponseSizeLimiter.getSizeInBytesWithLimit(response.getResponse(), responseLimit);
-        }
-
+        ResponseSizeLimitContext.addResponse(response.getResponse());
         return response;
-    }
-
-    private static ObjectMapper getObjectMapper(int maxSize) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        if (maxSize > 0) {
-            objectMapper.setNodeFactory(new CustomJsonNodeFactory(maxSize));
-        }
-        return objectMapper;
     }
 }

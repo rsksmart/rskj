@@ -1,7 +1,7 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.rpc.ModuleDescription;
-import co.rsk.rpc.exception.JsonRpcResponseLimitException;
+import co.rsk.rpc.exception.JsonRpcResponseLimitError;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonResponse;
@@ -35,7 +35,7 @@ class JsonRpcCustomServerTest {
 
 
         ServiceInterface handler = mock(ServiceInterface.class);
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, ServiceInterface.class, modules, -1);
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, ServiceInterface.class, modules);
         JsonNode expectedResponse = objectMapper.readTree(response);
 
         when(handler.testMethod(anyString())).thenReturn(expectedResponse.get("result"));
@@ -49,12 +49,14 @@ class JsonRpcCustomServerTest {
         String jsonRequest = getTestRequest();
         String response = getTestResponse();
         JsonNode request = objectMapper.readTree(jsonRequest);
-
         ServiceInterface handler = mock(ServiceInterface.class);
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, ServiceInterface.class, modules, response.getBytes(StandardCharsets.UTF_8).length/2);
+        ResponseSizeLimitContext.createResponseSizeContext(response.getBytes(StandardCharsets.UTF_8).length/2);
+
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, ServiceInterface.class, modules);
+
         JsonNode expectedResponse = objectMapper.readTree(response);
         when(handler.testMethod(anyString())).thenReturn(expectedResponse.get("result"));
-        assertThrows(JsonRpcResponseLimitException.class, () -> jsonRpcCustomServer.handleJsonNodeRequest(request));
+        assertThrows(JsonRpcResponseLimitError.class, () -> jsonRpcCustomServer.handleJsonNodeRequest(request));
     }
 
     private String getTestResponse() {
