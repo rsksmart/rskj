@@ -42,7 +42,6 @@ import org.slf4j.MDC;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
@@ -51,7 +50,6 @@ import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
 
@@ -91,11 +89,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private volatile ExecState state = ExecState.CREATED;
 
-    private long cleanMsgTimestamp;
-
     private static class ReceivedPeerMessageKey {
-        final NodeID peerID;
-        final Keccak256 msgHash;
+        private final NodeID peerID;
+        private final Keccak256 msgHash;
 
         private ReceivedPeerMessageKey(@Nonnull NodeID peerID, @Nonnull Keccak256 msgHash) {
             this.peerID = Objects.requireNonNull(peerID);
@@ -132,7 +128,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.syncProcessor = syncProcessor;
         this.transactionGateway = transactionGateway;
         this.statusResolver = statusResolver;
-        this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
         this.queue = new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
         this.bannedMiners = Collections.unmodifiableSet(
@@ -236,25 +231,24 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             return true;
         }
 
+        long currentTime = System.currentTimeMillis();
+
         synchronized (receivedPeerMessages) {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
-                logger.trace("Cleaning {} messages from rlp queue", receivedPeerMessages.size());
-                receivedPeerMessages.clear();
-                cleanMsgTimestamp = currentTime;
-            }
+            logger.trace("Cleaning {} messages from rlp queue", receivedPeerMessages.size());
+            receivedPeerMessages.entrySet()
+                    .stream()
+                    .filter(entry -> currentTime - entry.getValue() > RECEIVED_MESSAGES_CACHE_DURATION)
+                    .forEach(entry -> receivedPeerMessages.remove(entry.getKey()));
         }
 
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         ReceivedPeerMessageKey receivedPeerMessageKey = new ReceivedPeerMessageKey(sender.getPeerNodeID(), encodedMessage);
 
+        this.receivedPeerMessages.put(receivedPeerMessageKey, currentTime);
+
         if (receivedPeerMessages.containsKey(receivedPeerMessageKey)) {
             reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
             return false;
-        }
-
-        if (Stream.of(MessageType.BLOCK_MESSAGE, MessageType.TRANSACTIONS).anyMatch(t -> message.getMessageType() == t)) {
-            this.receivedPeerMessages.put(receivedPeerMessageKey, Instant.now().getEpochSecond());
         }
 
         return true;
