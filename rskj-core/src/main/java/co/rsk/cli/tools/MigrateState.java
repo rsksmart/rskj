@@ -40,6 +40,8 @@ import java.util.concurrent.Callable;
  * For maximum performance, disable the state cache by adding the argument:
  * -Xcache.states.max-elements=0
  */
+@CommandLine.Command(name = "migratestate", mixinStandardHelpOptions = true, version = "migratestate 1.0",
+        description = "The entry point for migrate state tool")
 public class MigrateState implements Callable<Integer> {
 
     @CommandLine.Option(names = {"-cmd", "--command"}, description = "Commands:\n\n" +
