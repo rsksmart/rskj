@@ -30,6 +30,7 @@ import co.rsk.net.messages.MessageVisitor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
+import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.TraceUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.HashUtil;
@@ -41,8 +42,12 @@ import org.slf4j.MDC;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -67,7 +72,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final PeerScoringManager peerScoringManager;
 
     private final StatusResolver statusResolver;
-    private final Map<Peer, Set<Keccak256>> receivedPeerMessages = new ConcurrentHashMap<>();
+    private final Map<ReceivedPeerMessageKey, Long> receivedPeerMessages = new MaxSizeHashMap<>(MAX_NUMBER_OF_MESSAGES_CACHED, true);
 
     private final Set<RskAddress> bannedMiners;
 
@@ -88,16 +93,39 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private long cleanMsgTimestamp;
 
+    private static class ReceivedPeerMessageKey {
+        final NodeID peerID;
+        final Keccak256 msgHash;
+
+        private ReceivedPeerMessageKey(@Nonnull NodeID peerID, @Nonnull Keccak256 msgHash) {
+            this.peerID = Objects.requireNonNull(peerID);
+            this.msgHash = Objects.requireNonNull(msgHash);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ReceivedPeerMessageKey that = (ReceivedPeerMessageKey) o;
+            return peerID.equals(that.peerID) && msgHash.equals(that.msgHash);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(peerID, msgHash);
+        }
+    }
+
     /**
      * Creates a new node message handler.
      */
     public NodeMessageHandler(RskSystemProperties config,
-            BlockProcessor blockProcessor,
-            SyncProcessor syncProcessor,
-            @Nullable ChannelManager channelManager,
-            @Nullable TransactionGateway transactionGateway,
-            @Nullable PeerScoringManager peerScoringManager,
-            StatusResolver statusResolver) {
+                              BlockProcessor blockProcessor,
+                              SyncProcessor syncProcessor,
+                              @Nullable ChannelManager channelManager,
+                              @Nullable TransactionGateway transactionGateway,
+                              @Nullable PeerScoringManager peerScoringManager,
+                              StatusResolver statusResolver) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
@@ -137,7 +165,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         // receivedMessages and logger are thread-safe
         // cleanMsgTimestamp is a long replaced by the next value, we don't care
         // enough about the precision of the value it takes
-        cleanExpiredMessages();
         tryAddMessage(sender, message, nodeMsgTraceInfo);
         logger.trace("End post message (queue size {})", this.queue.size());
     }
@@ -161,9 +188,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private boolean controlMessageIngress(Peer sender, Message message, double score) {
         return
                 allowByScore(score) &&
-                allowByMessageCount(sender) &&
-                allowByMinerNotBanned(sender, message) &&
-                allowByMessageUniqueness(sender, message); // prevent repeated is the most expensive and MUST be the last
+                        allowByMessageCount(sender) &&
+                        allowByMinerNotBanned(sender, message) &&
+                        allowByMessageUniqueness(sender, message); // prevent repeated is the most expensive and MUST be the last
 
     }
 
@@ -205,21 +232,29 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      * record event if message is repeated
      */
     private boolean allowByMessageUniqueness(Peer sender, Message message) {
+        if (message.getMessageType() != MessageType.BLOCK_MESSAGE && message.getMessageType() != MessageType.TRANSACTIONS) {
+            return true;
+        }
+
+        synchronized (receivedPeerMessages) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
+                logger.trace("Cleaning {} messages from rlp queue", receivedPeerMessages.size());
+                receivedPeerMessages.clear();
+                cleanMsgTimestamp = currentTime;
+            }
+        }
+
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
+        ReceivedPeerMessageKey receivedPeerMessageKey = new ReceivedPeerMessageKey(sender.getPeerNodeID(), encodedMessage);
 
-        Set<Keccak256> receivedMessages = this.receivedPeerMessages.computeIfAbsent(sender, k -> Collections.synchronizedSet(new HashSet<>()));
-
-        if (receivedMessages.contains(encodedMessage)) {
+        if (receivedPeerMessages.containsKey(receivedPeerMessageKey)) {
             reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
             return false;
         }
 
         if (Stream.of(MessageType.BLOCK_MESSAGE, MessageType.TRANSACTIONS).anyMatch(t -> message.getMessageType() == t)) {
-            if (receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
-                receivedMessages.clear();
-            }
-
-            receivedMessages.add(encodedMessage);
+            this.receivedPeerMessages.put(receivedPeerMessageKey, Instant.now().getEpochSecond());
         }
 
         return true;
@@ -236,15 +271,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         if (!messageAdded) {
             messageCounter.decrement(sender);
             logger.warn("Unexpected path. Is message queue bounded now?");
-        }
-    }
-
-    private void cleanExpiredMessages() {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
-            logger.trace("Cleaning {} messages from rlp queue", receivedPeerMessages.values().stream().mapToLong(Set::size).sum());
-            receivedPeerMessages.clear();
-            cleanMsgTimestamp = currentTime;
         }
     }
 
