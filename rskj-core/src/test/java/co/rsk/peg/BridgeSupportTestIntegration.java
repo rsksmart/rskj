@@ -410,10 +410,10 @@ public class BridgeSupportTestIntegration {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
         Assertions.assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
         // Check value sent to user is 10 BTC minus fee
-        Assertions.assertEquals(Coin.valueOf(999962800L), provider.getReleaseTransactionSet().getEntries().iterator().next().getBtcTransaction().getOutput(0).getValue());
+        Assertions.assertEquals(Coin.valueOf(999962800L), provider.getPegoutsWaitingForConfirmations().getEntries().iterator().next().getBtcTransaction().getOutput(0).getValue());
         // Check the wallet has been emptied
         Assertions.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
@@ -492,8 +492,8 @@ public class BridgeSupportTestIntegration {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
         Assertions.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
         // Check the wallet has not been emptied
         Assertions.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
     }
@@ -573,8 +573,8 @@ public class BridgeSupportTestIntegration {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
         Assertions.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
         // Check the wallet has not been emptied
         Assertions.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
     }
@@ -596,7 +596,7 @@ public class BridgeSupportTestIntegration {
                 .thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue())
                 .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
+        when(provider.getPegoutsWaitingForConfirmations())
                 .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(provider.getOldFederation())
                 .thenReturn(oldFederation);
@@ -741,8 +741,8 @@ public class BridgeSupportTestIntegration {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
         Assertions.assertEquals(LIMIT_MONETARY_BASE.subtract(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600))), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600)), repository.getBalance(BridgeSupport.BURN_ADDRESS));
         // Check the wallet has been emptied
@@ -775,9 +775,9 @@ public class BridgeSupportTestIntegration {
             tx3.addInput(txs.getOutput(0));
             tx3.getInput(0).disconnect();
             tx3.addOutput(Coin.COIN, new BtcECKey());
-            provider0.getReleaseTransactionSet().add(tx1, 1L);
-            provider0.getReleaseTransactionSet().add(tx2, 1L);
-            provider0.getReleaseTransactionSet().add(tx3, 1L);
+            provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
+            provider0.getPegoutsWaitingForConfirmations().add(tx2, 1L);
+            provider0.getPegoutsWaitingForConfirmations().add(tx3, 1L);
 
             provider0.save();
 
@@ -825,8 +825,8 @@ public class BridgeSupportTestIntegration {
             BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
             Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-            Assertions.assertEquals(2, provider2.getReleaseTransactionSet().getEntries().size());
-            Assertions.assertEquals(1, provider2.getRskTxsWaitingForSignatures().size());
+            Assertions.assertEquals(2, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+            Assertions.assertEquals(1, provider2.getPegoutsWaitingForSignatures().size());
         }
     }
 
@@ -942,7 +942,7 @@ public class BridgeSupportTestIntegration {
 
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
     }
 
     @Test
@@ -975,7 +975,7 @@ public class BridgeSupportTestIntegration {
 
         Assertions.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
         Assertions.assertEquals(1, provider2.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
     }
 
     @Test
@@ -1031,8 +1031,8 @@ public class BridgeSupportTestIntegration {
 
         Assertions.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
@@ -1063,8 +1063,8 @@ public class BridgeSupportTestIntegration {
 
         Assertions.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
@@ -1095,8 +1095,8 @@ public class BridgeSupportTestIntegration {
 
         Assertions.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
@@ -1127,8 +1127,8 @@ public class BridgeSupportTestIntegration {
 
         Assertions.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
@@ -1228,8 +1228,8 @@ public class BridgeSupportTestIntegration {
         Assertions.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
 
         Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
@@ -1331,8 +1331,8 @@ public class BridgeSupportTestIntegration {
         Assertions.assertEquals(Coin.COIN, provider2.getNewFederationBtcUTXOs().get(0).getValue());
 
         Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
@@ -1697,8 +1697,8 @@ public class BridgeSupportTestIntegration {
         Assertions.assertEquals(Coin.COIN.multiply(3), provider2.getOldFederationBtcUTXOs().get(1).getValue());
 
         Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider2.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider2.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
         Assertions.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());
         Assertions.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx3.getHash()).isPresent());

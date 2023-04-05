@@ -706,7 +706,7 @@ class BridgeSupportFlyoverTest {
         when(provider.getLockingCap()).thenReturn(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-        when(provider.getReleaseTransactionSet()).thenReturn(pegoutsWaitingForConfirmations);
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         Address userRefundBtcAddress = createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
         Address lpBtcAddress = createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -812,13 +812,13 @@ class BridgeSupportFlyoverTest {
         );
 
         if (result.longValue() == FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value() || result.longValue() == FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()){
-            List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+            List<BtcTransaction> pegoutsWaitingForConfirmationsEntries = provider.getPegoutsWaitingForConfirmations().getEntries()
                 .stream()
                 .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
                 .collect(Collectors.toList());
 
-            assertEquals(1, releaseTxs.size());
-            BtcTransaction releaseTx = releaseTxs.get(0);
+            assertEquals(1, pegoutsWaitingForConfirmationsEntries.size());
+            BtcTransaction releaseTx = pegoutsWaitingForConfirmationsEntries.get(0);
             Assertions.assertEquals(1, releaseTx.getOutputs().size());
 
             Coin amountSent = BridgeUtils.getAmountSentToAddresses(activations,
@@ -1810,7 +1810,7 @@ class BridgeSupportFlyoverTest {
         provider.setLockingCap(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-        doReturn(pegoutsWaitingForConfirmations).when(provider).getReleaseTransactionSet();
+        doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
         Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -2004,7 +2004,7 @@ class BridgeSupportFlyoverTest {
         provider.setLockingCap(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-        doReturn(pegoutsWaitingForConfirmations).when(provider).getReleaseTransactionSet();
+        doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
         Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -2197,7 +2197,7 @@ class BridgeSupportFlyoverTest {
         provider.setLockingCap(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-        doReturn(pegoutsWaitingForConfirmations).when(provider).getReleaseTransactionSet();
+        doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
         Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -2364,7 +2364,7 @@ class BridgeSupportFlyoverTest {
         provider.setLockingCap(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-        doReturn(pegoutsWaitingForConfirmations).when(provider).getReleaseTransactionSet();
+        doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
         Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -2870,7 +2870,7 @@ class BridgeSupportFlyoverTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-        when(provider.getReleaseTransactionSet()).thenReturn(pegoutsWaitingForConfirmations);
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         BtcLockSender btcLockSender = mock(BtcLockSender.class);
         BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
@@ -2956,7 +2956,7 @@ class BridgeSupportFlyoverTest {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseTransactionSet()).thenReturn(pegoutsWaitingForConfirmations);
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
         when(provider.isFlyoverDerivationHashUsed(any(), any())).thenReturn(false);
 
         BtcLockSender btcLockSender = mock(BtcLockSender.class);

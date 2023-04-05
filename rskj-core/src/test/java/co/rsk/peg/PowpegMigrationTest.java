@@ -227,11 +227,11 @@ class PowpegMigrationTest {
         assertNull(bridgeSupport.getRetiringFederationAddress());
 
         // Update collections should not trigger migration
-        assertTrue(bridgeStorageProvider.getReleaseTransactionSet().getEntries().isEmpty());
+        assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
         Transaction updateCollectionsTx = mock(Transaction.class);
         when(updateCollectionsTx.getHash()).thenReturn(Keccak256.ZERO_HASH);
         bridgeSupport.updateCollections(updateCollectionsTx);
-        assertTrue(bridgeStorageProvider.getReleaseTransactionSet().getEntries().isEmpty());
+        assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
 
         // peg-in after committing new fed
         testPegins(
@@ -298,11 +298,11 @@ class PowpegMigrationTest {
 
         if (bridgeConstants.getFundsMigrationAgeSinceActivationBegin() > 0) {
             // No migration yet
-            assertTrue(bridgeStorageProvider.getReleaseTransactionSet().getEntries().isEmpty());
+            assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
             updateCollectionsTx = mock(Transaction.class);
             when(updateCollectionsTx.getHash()).thenReturn(Keccak256.ZERO_HASH);
             bridgeSupport.updateCollections(updateCollectionsTx);
-            assertTrue(bridgeStorageProvider.getReleaseTransactionSet().getEntries().isEmpty());
+            assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
         }
 
         // Trying to create a new powpeg again should fail
@@ -362,7 +362,7 @@ class PowpegMigrationTest {
         attemptToCreateNewFederation(bridgeSupport, bridgeConstants, -3);
 
         // Migration should start !
-        assertTrue(bridgeStorageProvider.getReleaseTransactionSet().getEntries().isEmpty());
+        assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
 
         // This might not be true if the transaction exceeds the max bitcoin transaction size!!!
         int expectedMigrations = activations.isActive(ConsensusRule.RSKIP294) ?
@@ -378,10 +378,10 @@ class PowpegMigrationTest {
 
         assertEquals(
             expectedMigrations,
-            bridgeStorageProvider.getReleaseTransactionSet().getEntries().size()
+            bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size()
         );
 
-        for (PegoutsWaitingForConfirmations.Entry entry : bridgeStorageProvider.getReleaseTransactionSet().getEntries()) {
+        for (PegoutsWaitingForConfirmations.Entry entry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
             BtcTransaction pegout = entry.getBtcTransaction();
             // This would fail if we were to implement UTXO expansion at some point
             assertEquals(1, pegout.getOutputs().size());
@@ -436,7 +436,7 @@ class PowpegMigrationTest {
 
         assertEquals(
             expectedMigrations + newlyAddedUtxos,
-            bridgeStorageProvider.getReleaseTransactionSet().getEntries().size()
+            bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size()
         );
 
         verifyPegouts(bridgeStorageProvider);
@@ -555,7 +555,7 @@ class PowpegMigrationTest {
         Federation activeFederation = bridgeStorageProvider.getNewFederation();
         Federation retiringFederation = bridgeStorageProvider.getOldFederation();
 
-        for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getReleaseTransactionSet().getEntries()) {
+        for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
             BtcTransaction pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
             for (TransactionInput input : pegoutBtcTransaction.getInputs()) {
                 // Each input should contain the right scriptsig
@@ -610,7 +610,7 @@ class PowpegMigrationTest {
         Address pegoutRecipientAddress = pegoutRecipientKey.toAddress(bridgeConstants.getBtcParams());
         co.rsk.core.Coin peggedOutAmount = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
 
-        int existingPegouts = bridgeStorageProvider.getReleaseTransactionSet().getEntries().size();
+        int existingPegouts = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size();
 
         Transaction pegoutTx = Transaction.builder()
             .chainId((byte) 1)
@@ -655,13 +655,13 @@ class PowpegMigrationTest {
         // Verify there is one more pegout request
         assertEquals(
             existingPegouts + 1,
-            bridgeStorageProvider.getReleaseTransactionSet().getEntries().size()
+            bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size()
         );
 
         // The last pegout is the one just created
         PegoutsWaitingForConfirmations.Entry lastPegout = null;
         Iterator<PegoutsWaitingForConfirmations.Entry> collectionItr = bridgeStorageProvider
-            .getReleaseTransactionSet()
+            .getPegoutsWaitingForConfirmations()
             .getEntries()
             .stream()
             .iterator();
@@ -712,7 +712,7 @@ class PowpegMigrationTest {
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
             .build();
 
-        int confirmedPegouts = bridgeStorageProvider.getRskTxsWaitingForSignatures().size();
+        int confirmedPegouts = bridgeStorageProvider.getPegoutsWaitingForSignatures().size();
 
         // Confirm all existing pegouts
         for (int i = 0; i < existingPegouts + 1; i++) {
@@ -721,10 +721,10 @@ class PowpegMigrationTest {
         }
         bridgeSupport.save();
 
-        assertTrue(bridgeStorageProvider.getReleaseTransactionSet().getEntries().isEmpty());
+        assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
         assertEquals(
             confirmedPegouts + existingPegouts + 1,
-            bridgeStorageProvider.getRskTxsWaitingForSignatures().size()
+            bridgeStorageProvider.getPegoutsWaitingForSignatures().size()
         );
     }
 

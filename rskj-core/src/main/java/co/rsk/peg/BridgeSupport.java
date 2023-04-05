@@ -1009,7 +1009,7 @@ public class BridgeSupport {
         Address activeFederationAddress,
         List<UTXO> availableUTXOs) throws IOException {
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getReleaseTransactionSet();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
         BtcTransaction btcTx = createResult.getLeft();
         List<UTXO> selectedUTXOs = createResult.getRight();
@@ -1064,7 +1064,7 @@ public class BridgeSupport {
             activeFederationWallet = getActiveFederationWallet(true);
             pegoutRequests = provider.getReleaseRequestQueue();
             availableUTXOs = getActiveFederationBtcUTXOs();
-            pegoutsWaitingForConfirmations = provider.getReleaseTransactionSet();
+            pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         } catch (IOException e) {
             logger.error("Unexpected error accessing storage while attempting to process pegout requests", e);
             return;
@@ -1227,8 +1227,8 @@ public class BridgeSupport {
         final PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
 
         try {
-            pegoutsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
-            pegoutsWaitingForConfirmations = provider.getReleaseTransactionSet();
+            pegoutsWaitingForSignatures = provider.getPegoutsWaitingForSignatures();
+            pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         } catch (IOException e) {
             logger.error("Unexpected error accessing storage while attempting to process confirmed pegouts", e);
             return;
@@ -1367,7 +1367,7 @@ public class BridgeSupport {
             return;
         }
 
-        BtcTransaction btcTx = provider.getRskTxsWaitingForSignatures().get(new Keccak256(rskTxHash));
+        BtcTransaction btcTx = provider.getPegoutsWaitingForSignatures().get(new Keccak256(rskTxHash));
         if (btcTx == null) {
             logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", new Keccak256(rskTxHash));
             return;
@@ -1474,7 +1474,7 @@ public class BridgeSupport {
 
         if (BridgeUtils.hasEnoughSignatures(btcContext, btcTx)) {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
-            provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
+            provider.getPegoutsWaitingForSignatures().remove(new Keccak256(rskTxHash));
 
             eventLogger.logReleaseBtc(btcTx, rskTxHash);
         } else if (logger.isDebugEnabled()) {
@@ -1492,7 +1492,7 @@ public class BridgeSupport {
      * @return a StateForFederator serialized in RLP
      */
     public byte[] getStateForBtcReleaseClient() throws IOException {
-        StateForFederator stateForFederator = new StateForFederator(provider.getRskTxsWaitingForSignatures());
+        StateForFederator stateForFederator = new StateForFederator(provider.getPegoutsWaitingForSignatures());
         return stateForFederator.getEncoded();
     }
 
@@ -3134,10 +3134,10 @@ public class BridgeSupport {
         ReleaseTransactionBuilder.BuildResult buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
         if (buildReturnResult.getResponseCode() == ReleaseTransactionBuilder.Response.SUCCESS) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                provider.getReleaseTransactionSet().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber(), rskTxHash);
+                provider.getPegoutsWaitingForConfirmations().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber(), rskTxHash);
                 eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), buildReturnResult.getBtcTx(), totalAmount);
             } else {
-                provider.getReleaseTransactionSet().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber());
+                provider.getPegoutsWaitingForConfirmations().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber());
             }
             logger.info("Rejecting peg-in tx built Successfully: Refund to address: {}. RskTxHash: {}. Value {}.", btcRefundAddress, rskTxHash, totalAmount);
         } else {

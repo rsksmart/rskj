@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
-import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -177,7 +176,7 @@ public class BridgeTestIntegration {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
-        provider0.getReleaseTransactionSet().add(tx1, 1L, PegTestUtils.createHash3(0));
+        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L, PegTestUtils.createHash3(0));
         provider0.save();
 
         track.commit();
@@ -225,9 +224,9 @@ public class BridgeTestIntegration {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock(0));
 
-        provider0.getReleaseTransactionSet().add(tx1, 1L);
-        provider0.getReleaseTransactionSet().add(tx2, 2L);
-        provider0.getReleaseTransactionSet().add(tx3, 3L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx3, 3L);
 
         provider0.save();
 
@@ -266,8 +265,8 @@ public class BridgeTestIntegration {
         //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
-        Assertions.assertEquals(3, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
     }
 
     @Test
@@ -281,9 +280,9 @@ public class BridgeTestIntegration {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock(0));
 
-        provider0.getReleaseTransactionSet().add(tx1, 1L);
-        provider0.getReleaseTransactionSet().add(tx2, 2L);
-        provider0.getReleaseTransactionSet().add(tx3, 3L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx3, 3L);
 
         provider0.save();
 
@@ -325,8 +324,8 @@ public class BridgeTestIntegration {
         // reusing same storage configuration as the height doesn't affect storage configurations for releases.
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
-        Assertions.assertEquals(2, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertEquals(1, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
     }
 
     @Test

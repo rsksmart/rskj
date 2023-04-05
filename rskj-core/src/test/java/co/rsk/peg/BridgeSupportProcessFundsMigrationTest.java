@@ -199,7 +199,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(provider.getOldFederation()).thenReturn(oldFederation);
         when(provider.getNewFederation()).thenReturn(newFederation);
 
@@ -228,12 +228,12 @@ class BridgeSupportProcessFundsMigrationTest {
         Transaction updateCollectionsTx = buildUpdateCollectionsTransaction();
         bridgeSupport.updateCollections(updateCollectionsTx);
 
-        Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146) ? 1 : 0, provider.getReleaseTransactionSet().getEntriesWithHash().size());
+        Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
+        Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146) ? 1 : 0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
 
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             // Should have been logged with the migrated UTXO
-            PegoutsWaitingForConfirmations.Entry entry = (PegoutsWaitingForConfirmations.Entry) provider.getReleaseTransactionSet()
+            PegoutsWaitingForConfirmations.Entry entry = (PegoutsWaitingForConfirmations.Entry) provider.getPegoutsWaitingForConfirmations()
                 .getEntriesWithHash()
                 .toArray()[0];
             verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(

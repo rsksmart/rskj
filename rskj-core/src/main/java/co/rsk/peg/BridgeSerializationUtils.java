@@ -666,16 +666,16 @@ public class BridgeSerializationUtils {
         return entries;
     }
 
-    // A ReleaseTransactionSet is serialized as follows:
+    // A PegoutsWaitingForConfirmations is serialized as follows:
     // [btctx_1, height_1, ..., btctx_n, height_n]
     // with btctx_i being the bitcoin serialization of each btc tx
     // and height_i the RLP-encoded biginteger corresponding to each height
     // To preserve order amongst different implementations of sets,
     // entries are first sorted on the lexicographical order of the
     // serialized btc transaction bytes
-    // (see ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR)
-    public static byte[] serializeReleaseTransactionSet(PegoutsWaitingForConfirmations set) {
-        List<PegoutsWaitingForConfirmations.Entry> entries = set.getEntriesWithoutHash().stream().collect(Collectors.toList());
+    // (see PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR)
+    public static byte[] serializePegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations) {
+        List<PegoutsWaitingForConfirmations.Entry> entries = pegoutsWaitingForConfirmations.getEntriesWithoutHash().stream().collect(Collectors.toList());
         entries.sort(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR);
 
         byte[][] bytes = new byte[entries.size() * 2][];
@@ -689,8 +689,8 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static byte[] serializeReleaseTransactionSetWithTxHash(PegoutsWaitingForConfirmations set) {
-        List<PegoutsWaitingForConfirmations.Entry> entries = new ArrayList<>(set.getEntriesWithHash());
+    public static byte[] serializePegoutsWaitingForConfirmationsWithTxHash(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations) {
+        List<PegoutsWaitingForConfirmations.Entry> entries = new ArrayList<>(pegoutsWaitingForConfirmations.getEntriesWithHash());
         entries.sort(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR);
 
         byte[][] bytes = new byte[entries.size() * 3][];
@@ -705,11 +705,11 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static PegoutsWaitingForConfirmations deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
-        return deserializeReleaseTransactionSet(data, networkParameters, false);
+    public static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmations(byte[] data, NetworkParameters networkParameters) {
+        return deserializePegoutsWaitingForConfirmations(data, networkParameters, false);
     }
 
-    public static PegoutsWaitingForConfirmations deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
+    public static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmations(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
         if (data == null || data.length == 0) {
             return new PegoutsWaitingForConfirmations(new HashSet<>());
         }
@@ -719,14 +719,14 @@ public class BridgeSerializationUtils {
 
         // Must have an even number of items
         if (rlpList.size() % elementsMultipleCount != 0) {
-            throw new RuntimeException(String.format("Invalid serialized ReleaseTransactionSet. Expected a multiple of %d number of elements, but got %d", elementsMultipleCount, rlpList.size()));
+            throw new RuntimeException(String.format("Invalid serialized pegoutsWaitingForConfirmations. Expected a multiple of %d number of elements, but got %d", elementsMultipleCount, rlpList.size()));
         }
 
-        return hasTxHash ? deserializeReleaseTransactionSetWithTxHash(rlpList, networkParameters) : deserializeReleaseTransactionSetWithoutTxHash(rlpList, networkParameters);
+        return hasTxHash ? deserializePegoutWaitingForConfirmationsWithTxHash(rlpList, networkParameters) : deserializePegoutsWaitingForConfirmationsWithoutTxHash(rlpList, networkParameters);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeReleaseTransactionSet
-    private static PegoutsWaitingForConfirmations deserializeReleaseTransactionSetWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+    // For the serialization format, see BridgeSerializationUtils::serializePegoutsWaitingForConfirmations
+    private static PegoutsWaitingForConfirmations deserializePegoutsWaitingForConfirmationsWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
         Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>();
 
         int n = rlpList.size() / 2;
@@ -742,7 +742,7 @@ public class BridgeSerializationUtils {
         return new PegoutsWaitingForConfirmations(entries);
     }
 
-    private static PegoutsWaitingForConfirmations deserializeReleaseTransactionSetWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+    private static PegoutsWaitingForConfirmations deserializePegoutWaitingForConfirmationsWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
         Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>();
 
         int n = rlpList.size() / 3;
