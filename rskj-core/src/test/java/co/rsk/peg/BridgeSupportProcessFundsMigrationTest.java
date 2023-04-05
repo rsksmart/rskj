@@ -199,7 +199,7 @@ class BridgeSupportProcessFundsMigrationTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(provider.getOldFederation()).thenReturn(oldFederation);
         when(provider.getNewFederation()).thenReturn(newFederation);
 
@@ -233,12 +233,12 @@ class BridgeSupportProcessFundsMigrationTest {
 
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             // Should have been logged with the migrated UTXO
-            ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet()
+            PegoutsWaitingForConfirmations.Entry entry = (PegoutsWaitingForConfirmations.Entry) provider.getReleaseTransactionSet()
                 .getEntriesWithHash()
                 .toArray()[0];
             verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
                 updateCollectionsTx.getHash().getBytes(),
-                entry.getPegoutCreationBtcTx(),
+                entry.getBtcTransaction(),
                 Coin.COIN
             );
         } else {

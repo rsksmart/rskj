@@ -1009,7 +1009,7 @@ public class BridgeSupport {
         Address activeFederationAddress,
         List<UTXO> availableUTXOs) throws IOException {
 
-        ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getReleaseTransactionSet();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
         BtcTransaction btcTx = createResult.getLeft();
         List<UTXO> selectedUTXOs = createResult.getRight();
@@ -1024,7 +1024,7 @@ public class BridgeSupport {
             Coin amountMigrated = selectedUTXOs.stream()
                 .map(UTXO::getValue)
                 .reduce(Coin.ZERO, Coin::add);
-            releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTxHash);
+            pegoutsWaitingForConfirmations.add(btcTx, rskExecutionBlock.getNumber(), rskTxHash);
             // Log the Release request
             logger.debug(
                 "[migrateFunds] release requested. rskTXHash: {}, btcTxHash: {}, amount: {}",
@@ -1034,7 +1034,7 @@ public class BridgeSupport {
             );
             eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTx, amountMigrated);
         } else {
-            releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+            pegoutsWaitingForConfirmations.add(btcTx, rskExecutionBlock.getNumber());
         }
 
         // Mark UTXOs as spent
@@ -1057,7 +1057,7 @@ public class BridgeSupport {
         final Wallet activeFederationWallet;
         final ReleaseRequestQueue pegoutRequests;
         final List<UTXO> availableUTXOs;
-        final ReleaseTransactionSet pegoutsWaitingForConfirmations;
+        final PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
 
         try {
             // (any of these could fail and would invalidate both the tx build and utxo selection, so treat as atomic)
@@ -1088,7 +1088,7 @@ public class BridgeSupport {
 
     private void addToPegoutsWaitingForConfirmations(
         BtcTransaction generatedTransaction,
-        ReleaseTransactionSet pegoutWaitingForConfirmations,
+        PegoutsWaitingForConfirmations pegoutWaitingForConfirmations,
         Keccak256 pegoutCreationRskTxHash,
         Coin amount
     ) {
@@ -1110,7 +1110,7 @@ public class BridgeSupport {
         ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
         List<UTXO> availableUTXOs,
-        ReleaseTransactionSet pegoutsWaitingForConfirmations,
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet
     ) {
         pegoutRequests.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry pegoutRequest) -> {
@@ -1149,7 +1149,7 @@ public class BridgeSupport {
         ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
         List<UTXO> availableUTXOs,
-        ReleaseTransactionSet pegoutsWaitingForConfirmations,
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet,
         Transaction rskTx) {
         long currentBlockNumber = rskExecutionBlock.getNumber();
@@ -1224,7 +1224,7 @@ public class BridgeSupport {
      */
     private void processConfirmedPegouts(Transaction rskTx) {
         final Map<Keccak256, BtcTransaction> pegoutsWaitingForSignatures;
-        final ReleaseTransactionSet pegoutsWaitingForConfirmations;
+        final PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
 
         try {
             pegoutsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
@@ -1241,7 +1241,7 @@ public class BridgeSupport {
         // TODO: dependant upon this. That is the reason we
         // TODO: add only one btc transaction at a time
         // TODO: (at least at this stage).
-        Optional<ReleaseTransactionSet.Entry> nextPegoutWithEnoughConfirmations = pegoutsWaitingForConfirmations
+        Optional<PegoutsWaitingForConfirmations.Entry> nextPegoutWithEnoughConfirmations = pegoutsWaitingForConfirmations
             .getNextPegoutWithEnoughConfirmations(
                 rskExecutionBlock.getNumber(),
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations()
@@ -1251,7 +1251,7 @@ public class BridgeSupport {
             return;
         }
 
-        ReleaseTransactionSet.Entry confirmedPegout = nextPegoutWithEnoughConfirmations.get();
+        PegoutsWaitingForConfirmations.Entry confirmedPegout = nextPegoutWithEnoughConfirmations.get();
 
         Keccak256 txWaitingForSignatureKey = getPegoutWaitingForSignatureKey(rskTx, confirmedPegout);
         if (activations.isActive(ConsensusRule.RSKIP375)){
@@ -1267,15 +1267,15 @@ public class BridgeSupport {
             checkIfEntryExistsInPegoutsWaitingForSignatures(txWaitingForSignatureKey, pegoutsWaitingForSignatures);
         }
 
-        pegoutsWaitingForSignatures.put(txWaitingForSignatureKey, confirmedPegout.getPegoutCreationBtcTx());
+        pegoutsWaitingForSignatures.put(txWaitingForSignatureKey, confirmedPegout.getBtcTransaction());
         pegoutsWaitingForConfirmations.removeEntry(confirmedPegout);
 
         if(activations.isActive(ConsensusRule.RSKIP326)) {
-            eventLogger.logPegoutConfirmed(confirmedPegout.getPegoutCreationBtcTx().getHash(), confirmedPegout.getPegoutCreationRskBlockNumber());
+            eventLogger.logPegoutConfirmed(confirmedPegout.getBtcTransaction().getHash(), confirmedPegout.getPegoutCreationRskBlockNumber());
         }
     }
 
-    private Keccak256 getPegoutWaitingForSignatureKey(Transaction rskTx, ReleaseTransactionSet.Entry confirmedPegout) {
+    private Keccak256 getPegoutWaitingForSignatureKey(Transaction rskTx, PegoutsWaitingForConfirmations.Entry confirmedPegout) {
         if (activations.isActive(ConsensusRule.RSKIP375)){
             return confirmedPegout.getPegoutCreationRskTxHash();
         }

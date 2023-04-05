@@ -413,7 +413,7 @@ public class BridgeSupportTestIntegration {
         Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
         Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         // Check value sent to user is 10 BTC minus fee
-        Assertions.assertEquals(Coin.valueOf(999962800L), provider.getReleaseTransactionSet().getEntries().iterator().next().getPegoutCreationBtcTx().getOutput(0).getValue());
+        Assertions.assertEquals(Coin.valueOf(999962800L), provider.getReleaseTransactionSet().getEntries().iterator().next().getBtcTransaction().getOutput(0).getValue());
         // Check the wallet has been emptied
         Assertions.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
@@ -597,7 +597,7 @@ public class BridgeSupportTestIntegration {
         when(provider.getReleaseRequestQueue())
                 .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getReleaseTransactionSet())
-                .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+                .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(provider.getOldFederation())
                 .thenReturn(oldFederation);
         when(provider.getNewFederation())

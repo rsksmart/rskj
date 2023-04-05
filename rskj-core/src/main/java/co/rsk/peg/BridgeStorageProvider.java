@@ -70,7 +70,7 @@ public class BridgeStorageProvider {
     // and are removed from rskTxsWaitingForSignatures.
     // key = rsk tx hash, value = btc tx
     private ReleaseRequestQueue releaseRequestQueue;
-    private ReleaseTransactionSet releaseTransactionSet;
+    private PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
     private SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures;
 
     private List<UTXO> newFederationBtcUTXOs;
@@ -265,37 +265,37 @@ public class BridgeStorageProvider {
         }
     }
 
-    public ReleaseTransactionSet getReleaseTransactionSet() throws IOException {
-        if (releaseTransactionSet != null) {
-            return releaseTransactionSet;
+    public PegoutsWaitingForConfirmations getReleaseTransactionSet() throws IOException {
+        if (pegoutsWaitingForConfirmations != null) {
+            return pegoutsWaitingForConfirmations;
         }
 
-        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>(getFromRepository(RELEASE_TX_SET,
+        Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>(getFromRepository(RELEASE_TX_SET,
                 data -> BridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters).getEntries()));
 
         if (!activations.isActive(RSKIP146)) {
-            releaseTransactionSet = new ReleaseTransactionSet(entries);
-            return releaseTransactionSet;
+            pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
+            return pegoutsWaitingForConfirmations;
         }
 
         entries.addAll(getFromRepository(
                 RELEASE_TX_SET_WITH_TXHASH,
                 data -> BridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters, true).getEntries()));
 
-        releaseTransactionSet = new ReleaseTransactionSet(entries);
+        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
 
-        return releaseTransactionSet;
+        return pegoutsWaitingForConfirmations;
     }
 
     public void saveReleaseTransactionSet() {
-        if (releaseTransactionSet == null) {
+        if (pegoutsWaitingForConfirmations == null) {
             return;
         }
 
-        safeSaveToRepository(RELEASE_TX_SET, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSet);
+        safeSaveToRepository(RELEASE_TX_SET, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializeReleaseTransactionSet);
 
         if (activations.isActive(RSKIP146)) {
-            safeSaveToRepository(RELEASE_TX_SET_WITH_TXHASH, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSetWithTxHash);
+            safeSaveToRepository(RELEASE_TX_SET_WITH_TXHASH, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializeReleaseTransactionSetWithTxHash);
         }
     }
 

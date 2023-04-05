@@ -381,8 +381,8 @@ class PowpegMigrationTest {
             bridgeStorageProvider.getReleaseTransactionSet().getEntries().size()
         );
 
-        for (ReleaseTransactionSet.Entry entry : bridgeStorageProvider.getReleaseTransactionSet().getEntries()) {
-            BtcTransaction pegout = entry.getPegoutCreationBtcTx();
+        for (PegoutsWaitingForConfirmations.Entry entry : bridgeStorageProvider.getReleaseTransactionSet().getEntries()) {
+            BtcTransaction pegout = entry.getBtcTransaction();
             // This would fail if we were to implement UTXO expansion at some point
             assertEquals(1, pegout.getOutputs().size());
             assertEquals(
@@ -555,8 +555,8 @@ class PowpegMigrationTest {
         Federation activeFederation = bridgeStorageProvider.getNewFederation();
         Federation retiringFederation = bridgeStorageProvider.getOldFederation();
 
-        for (ReleaseTransactionSet.Entry pegoutEntry : bridgeStorageProvider.getReleaseTransactionSet().getEntries()) {
-            BtcTransaction pegoutBtcTransaction = pegoutEntry.getPegoutCreationBtcTx();
+        for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getReleaseTransactionSet().getEntries()) {
+            BtcTransaction pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
             for (TransactionInput input : pegoutBtcTransaction.getInputs()) {
                 // Each input should contain the right scriptsig
                 List<ScriptChunk> inputScriptChunks = input.getScriptSig().getChunks();
@@ -659,8 +659,8 @@ class PowpegMigrationTest {
         );
 
         // The last pegout is the one just created
-        ReleaseTransactionSet.Entry lastPegout = null;
-        Iterator<ReleaseTransactionSet.Entry> collectionItr = bridgeStorageProvider
+        PegoutsWaitingForConfirmations.Entry lastPegout = null;
+        Iterator<PegoutsWaitingForConfirmations.Entry> collectionItr = bridgeStorageProvider
             .getReleaseTransactionSet()
             .getEntries()
             .stream()
@@ -669,12 +669,12 @@ class PowpegMigrationTest {
             lastPegout = collectionItr.next();
         }
 
-        if (lastPegout == null || lastPegout.getPegoutCreationBtcTx() == null) {
+        if (lastPegout == null || lastPegout.getBtcTransaction() == null) {
             fail("Couldn't find the recently created pegout in the release transaction set");
         }
 
         // Verify the recipients are the expected ones
-        for (TransactionOutput output : lastPegout.getPegoutCreationBtcTx().getOutputs()) {
+        for (TransactionOutput output : lastPegout.getBtcTransaction().getOutputs()) {
             switch (output.getScriptPubKey().getScriptType()) {
                 case P2PKH: // Output for the pegout receiver
                     assertEquals(

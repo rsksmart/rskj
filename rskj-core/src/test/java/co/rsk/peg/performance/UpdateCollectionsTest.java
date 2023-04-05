@@ -32,7 +32,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.ReleaseRequestQueue;
-import co.rsk.peg.ReleaseTransactionSet;
+import co.rsk.peg.PegoutsWaitingForConfirmations;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -233,7 +233,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             Random rnd = new Random(numCases);
             SortedMap<Keccak256, BtcTransaction> txsWaitingForSignatures;
-            ReleaseTransactionSet txSet;
+            PegoutsWaitingForConfirmations txSet;
 
             try {
                 txsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();

@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  *
  * @author Ariel Mendelzon
  */
-public class ReleaseTransactionSet {
+public class PegoutsWaitingForConfirmations {
     public static class Entry {
         // Compares entries using the lexicographical order of the btc tx's serialized bytes
         public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
@@ -40,24 +40,24 @@ public class ReleaseTransactionSet {
 
             @Override
             public int compare(Entry e1, Entry e2) {
-                return comparator.compare(e1.getPegoutCreationBtcTx().bitcoinSerialize(), e2.getPegoutCreationBtcTx().bitcoinSerialize());
+                return comparator.compare(e1.getBtcTransaction().bitcoinSerialize(), e2.getBtcTransaction().bitcoinSerialize());
             }
         };
 
-        private BtcTransaction pegoutCreationBtcTx;
+        private BtcTransaction btcTransaction;
         private Long pegoutCreationRskBlockNumber;
         private Keccak256 pegoutCreationRskTxHash;
 
-        public Entry(BtcTransaction pegoutCreationBtcTx, Long pegoutCreationRskBlockNumber, Keccak256 pegoutCreationRskTxHash) {
-            this.pegoutCreationBtcTx = pegoutCreationBtcTx;
+        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber, Keccak256 pegoutCreationRskTxHash) {
+            this.btcTransaction = btcTransaction;
             this.pegoutCreationRskBlockNumber = pegoutCreationRskBlockNumber;
             this.pegoutCreationRskTxHash = pegoutCreationRskTxHash;
         }
 
-        public Entry(BtcTransaction pegoutCreationBtcTx, Long pegoutCreationRskBlockNumber) { this(pegoutCreationBtcTx, pegoutCreationRskBlockNumber, null); }
+        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber) { this(btcTransaction, pegoutCreationRskBlockNumber, null); }
 
-        public BtcTransaction getPegoutCreationBtcTx() {
-            return pegoutCreationBtcTx;
+        public BtcTransaction getBtcTransaction() {
+            return btcTransaction;
         }
 
         public Long getPegoutCreationRskBlockNumber() {
@@ -73,18 +73,18 @@ public class ReleaseTransactionSet {
             }
 
             Entry otherEntry = (Entry) o;
-            return otherEntry.getPegoutCreationBtcTx().equals(getPegoutCreationBtcTx());
+            return otherEntry.getBtcTransaction().equals(getBtcTransaction());
          }
 
         @Override
         public int hashCode() {
-            return Objects.hash(getPegoutCreationBtcTx());
+            return Objects.hash(getBtcTransaction());
         }
     }
 
     private Set<Entry> entries;
 
-    public ReleaseTransactionSet(Set<Entry> entries) {
+    public PegoutsWaitingForConfirmations(Set<Entry> entries) {
         this.entries = new HashSet<>(entries);
     }
 

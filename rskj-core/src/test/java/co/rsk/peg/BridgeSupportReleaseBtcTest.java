@@ -652,7 +652,7 @@ class BridgeSupportReleaseBtcTest {
             .thenReturn(new ReleaseRequestQueue(Arrays.asList(
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN),
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN))));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
@@ -689,7 +689,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
         when(provider.getReleaseRequestQueue()).thenReturn(pegoutRequests);
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         Coin totalValue = pegoutRequests.getEntries()
             .stream()
@@ -714,7 +714,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
 
-        BtcTransaction generatedTransaction = provider.getReleaseTransactionSet().getEntries().iterator().next().getPegoutCreationBtcTx();
+        BtcTransaction generatedTransaction = provider.getReleaseTransactionSet().getEntries().iterator().next().getBtcTransaction();
 
         verify(provider, times(1)).getNextPegoutHeight();
         verify(provider, times(1)).setNextPegoutHeight(any(Long.class));
@@ -740,7 +740,7 @@ class BridgeSupportReleaseBtcTest {
                 Arrays.asList(
                     new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.MILLICOIN),
                     new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.MILLICOIN))));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
@@ -767,7 +767,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNextPegoutHeight()).thenReturn(Optional.of(100L));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(100L);
@@ -807,7 +807,7 @@ class BridgeSupportReleaseBtcTest {
                     new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN),
                     new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN),
                     new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN))));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withActivations(activationMock)
@@ -835,7 +835,7 @@ class BridgeSupportReleaseBtcTest {
 
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(600)));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withActivations(activationMock)
@@ -871,7 +871,7 @@ class BridgeSupportReleaseBtcTest {
         when(provider.getReleaseRequestQueue()).thenReturn(
             new ReleaseRequestQueue(Collections.singletonList(
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(700)))));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withActivations(activationMock)
@@ -899,7 +899,7 @@ class BridgeSupportReleaseBtcTest {
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(700)),
             new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(700)))));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withActivations(activationMock)
@@ -936,7 +936,7 @@ class BridgeSupportReleaseBtcTest {
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
         when(provider.getReleaseRequestQueue())
             .thenReturn(pegoutRequests);
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
@@ -983,7 +983,7 @@ class BridgeSupportReleaseBtcTest {
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
         when(provider.getReleaseRequestQueue())
             .thenReturn(pegoutRequests);
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
@@ -1016,7 +1016,7 @@ class BridgeSupportReleaseBtcTest {
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(4)),
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(3)),
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(2)))));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
@@ -1049,7 +1049,7 @@ class BridgeSupportReleaseBtcTest {
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(5)),
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(4)),
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(3)))));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
@@ -1085,7 +1085,7 @@ class BridgeSupportReleaseBtcTest {
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(5)),
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(4)),
                 new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN.multiply(3)))));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getReleaseTransactionSet()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)

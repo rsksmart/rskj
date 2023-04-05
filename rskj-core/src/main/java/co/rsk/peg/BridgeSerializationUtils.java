@@ -674,30 +674,30 @@ public class BridgeSerializationUtils {
     // entries are first sorted on the lexicographical order of the
     // serialized btc transaction bytes
     // (see ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR)
-    public static byte[] serializeReleaseTransactionSet(ReleaseTransactionSet set) {
-        List<ReleaseTransactionSet.Entry> entries = set.getEntriesWithoutHash().stream().collect(Collectors.toList());
-        entries.sort(ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR);
+    public static byte[] serializeReleaseTransactionSet(PegoutsWaitingForConfirmations set) {
+        List<PegoutsWaitingForConfirmations.Entry> entries = set.getEntriesWithoutHash().stream().collect(Collectors.toList());
+        entries.sort(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR);
 
         byte[][] bytes = new byte[entries.size() * 2][];
         int n = 0;
 
-        for (ReleaseTransactionSet.Entry entry : entries) {
-            bytes[n++] = RLP.encodeElement(entry.getPegoutCreationBtcTx().bitcoinSerialize());
+        for (PegoutsWaitingForConfirmations.Entry entry : entries) {
+            bytes[n++] = RLP.encodeElement(entry.getBtcTransaction().bitcoinSerialize());
             bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getPegoutCreationRskBlockNumber()));
         }
 
         return RLP.encodeList(bytes);
     }
 
-    public static byte[] serializeReleaseTransactionSetWithTxHash(ReleaseTransactionSet set) {
-        List<ReleaseTransactionSet.Entry> entries = new ArrayList<>(set.getEntriesWithHash());
-        entries.sort(ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR);
+    public static byte[] serializeReleaseTransactionSetWithTxHash(PegoutsWaitingForConfirmations set) {
+        List<PegoutsWaitingForConfirmations.Entry> entries = new ArrayList<>(set.getEntriesWithHash());
+        entries.sort(PegoutsWaitingForConfirmations.Entry.BTC_TX_COMPARATOR);
 
         byte[][] bytes = new byte[entries.size() * 3][];
         int n = 0;
 
-        for (ReleaseTransactionSet.Entry entry : entries) {
-            bytes[n++] = RLP.encodeElement(entry.getPegoutCreationBtcTx().bitcoinSerialize());
+        for (PegoutsWaitingForConfirmations.Entry entry : entries) {
+            bytes[n++] = RLP.encodeElement(entry.getBtcTransaction().bitcoinSerialize());
             bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getPegoutCreationRskBlockNumber()));
             bytes[n++] = RLP.encodeElement(entry.getPegoutCreationRskTxHash().getBytes());
         }
@@ -705,13 +705,13 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
+    public static PegoutsWaitingForConfirmations deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
         return deserializeReleaseTransactionSet(data, networkParameters, false);
     }
 
-    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
+    public static PegoutsWaitingForConfirmations deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
         if (data == null || data.length == 0) {
-            return new ReleaseTransactionSet(new HashSet<>());
+            return new PegoutsWaitingForConfirmations(new HashSet<>());
         }
 
         int elementsMultipleCount = hasTxHash ? 3 : 2;
@@ -726,8 +726,8 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeReleaseTransactionSet
-    private static ReleaseTransactionSet deserializeReleaseTransactionSetWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
-        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
+    private static PegoutsWaitingForConfirmations deserializeReleaseTransactionSetWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+        Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>();
 
         int n = rlpList.size() / 2;
         for (int k = 0; k < n; k++) {
@@ -736,14 +736,14 @@ public class BridgeSerializationUtils {
 
             long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
-            entries.add(new ReleaseTransactionSet.Entry(tx, height));
+            entries.add(new PegoutsWaitingForConfirmations.Entry(tx, height));
         }
 
-        return new ReleaseTransactionSet(entries);
+        return new PegoutsWaitingForConfirmations(entries);
     }
 
-    private static ReleaseTransactionSet deserializeReleaseTransactionSetWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
-        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
+    private static PegoutsWaitingForConfirmations deserializeReleaseTransactionSetWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+        Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>();
 
         int n = rlpList.size() / 3;
         for (int k = 0; k < n; k++) {
@@ -753,10 +753,10 @@ public class BridgeSerializationUtils {
             long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
             Keccak256 rskTxHash = new Keccak256(rlpList.get(k * 3 + 2).getRLPData());
 
-            entries.add(new ReleaseTransactionSet.Entry(tx, height, rskTxHash));
+            entries.add(new PegoutsWaitingForConfirmations.Entry(tx, height, rskTxHash));
         }
 
-        return new ReleaseTransactionSet(entries);
+        return new PegoutsWaitingForConfirmations(entries);
     }
 
     public static byte[] serializeInteger(Integer value) {
