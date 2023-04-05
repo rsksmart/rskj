@@ -244,12 +244,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         ReceivedPeerMessageKey receivedPeerMessageKey = new ReceivedPeerMessageKey(sender.getPeerNodeID(), encodedMessage);
 
-        this.receivedPeerMessages.put(receivedPeerMessageKey, currentTime);
-
         if (receivedPeerMessages.containsKey(receivedPeerMessageKey)) {
             reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
+            this.receivedPeerMessages.put(receivedPeerMessageKey, currentTime);
             return false;
         }
+
+        this.receivedPeerMessages.put(receivedPeerMessageKey, currentTime);
 
         return true;
     }
