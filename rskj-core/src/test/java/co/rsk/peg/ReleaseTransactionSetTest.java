@@ -139,6 +139,9 @@ class ReleaseTransactionSetTest {
         Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getPegoutCreationBtcTx().equals(createTransaction(2, Coin.valueOf(150)))).count());
         set.add(createTransaction(2, Coin.valueOf(150)), 23L);
         Assertions.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
+        int size = set.getEntries().size();
+        set.add(createTransaction(2, Coin.valueOf(150)), 23L);
+        Assertions.assertEquals(set.getEntries().size(), size);
         Assertions.assertFalse(set.getEntries().contains(new ReleaseTransactionSet.Entry(createUniqueTransaction(2, Coin.valueOf(150)), 23L)));
         Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getPegoutCreationBtcTx().equals(createTransaction(2, Coin.valueOf(150)))).count());
     }

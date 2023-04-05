@@ -1086,7 +1086,7 @@ public class BridgeSupport {
         }
     }
 
-    private void addPegoutBtcTxToPegoutWaitingForConfirmationsSet(
+    private void addToPegoutsWaitingForConfirmations(
         BtcTransaction generatedTransaction,
         ReleaseTransactionSet pegoutWaitingForConfirmations,
         Keccak256 pegoutCreationRskTxHash,
@@ -1133,7 +1133,7 @@ public class BridgeSupport {
             }
 
             BtcTransaction generatedTransaction = result.getBtcTx();
-            addPegoutBtcTxToPegoutWaitingForConfirmationsSet(generatedTransaction, pegoutsWaitingForConfirmations, pegoutRequest.getRskTxHash(), pegoutRequest.getAmount());
+            addToPegoutsWaitingForConfirmations(generatedTransaction, pegoutsWaitingForConfirmations, pegoutRequest.getRskTxHash(), pegoutRequest.getAmount());
 
             // Mark UTXOs as spent
             List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
@@ -1190,7 +1190,7 @@ public class BridgeSupport {
                 logger.info("[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}", result.getBtcTx().getHash(), result.getResponseCode());
 
                 BtcTransaction generatedTransaction = result.getBtcTx();
-                addPegoutBtcTxToPegoutWaitingForConfirmationsSet(generatedTransaction, pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
+                addToPegoutsWaitingForConfirmations(generatedTransaction, pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
 
                 // Remove batched requests from the queue after successfully batching pegouts
                 pegoutRequests.removeEntries(pegoutEntries);
@@ -1251,12 +1251,12 @@ public class BridgeSupport {
             return;
         }
 
-        ReleaseTransactionSet.Entry entry = nextPegoutWithEnoughConfirmations.get();
+        ReleaseTransactionSet.Entry confirmedPegout = nextPegoutWithEnoughConfirmations.get();
 
-        Keccak256 txWaitingForSignatureKey = getPegoutWaitingForSignatureKey(rskTx, entry);
+        Keccak256 txWaitingForSignatureKey = getPegoutWaitingForSignatureKey(rskTx, confirmedPegout);
         if (activations.isActive(ConsensusRule.RSKIP375)){
             /*
-             This check aims to prevent entry overriding. Currently, we do not accept more than one peg-out
+             This check aims to prevent confirmedPegout overriding. Currently, we do not accept more than one peg-out
              confirmation in the same update collections, but if in the future we do, then only one peg-out would be
              kept in the map, since the key used in the RSK tx hash that calls updateCollections would override the
              last one, thus resulting in losing funds. For this reason, we add this check that will alert anyone by
@@ -1267,23 +1267,23 @@ public class BridgeSupport {
             checkIfEntryExistsInPegoutsWaitingForSignatures(txWaitingForSignatureKey, pegoutsWaitingForSignatures);
         }
 
-        pegoutsWaitingForSignatures.put(txWaitingForSignatureKey, entry.getPegoutCreationBtcTx());
-        pegoutsWaitingForConfirmations.removeEntry(entry);
+        pegoutsWaitingForSignatures.put(txWaitingForSignatureKey, confirmedPegout.getPegoutCreationBtcTx());
+        pegoutsWaitingForConfirmations.removeEntry(confirmedPegout);
 
         if(activations.isActive(ConsensusRule.RSKIP326)) {
-            eventLogger.logPegoutConfirmed(entry.getPegoutCreationBtcTx().getHash(), entry.getPegoutCreationRskBlockNumber());
+            eventLogger.logPegoutConfirmed(confirmedPegout.getPegoutCreationBtcTx().getHash(), confirmedPegout.getPegoutCreationRskBlockNumber());
         }
     }
 
-    private Keccak256 getPegoutWaitingForSignatureKey(Transaction rskTx, ReleaseTransactionSet.Entry entry) {
+    private Keccak256 getPegoutWaitingForSignatureKey(Transaction rskTx, ReleaseTransactionSet.Entry confirmedPegout) {
         if (activations.isActive(ConsensusRule.RSKIP375)){
-            return entry.getPegoutCreationRskTxHash();
+            return confirmedPegout.getPegoutCreationRskTxHash();
         }
         // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
         if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
             // The pegout waiting for confirmations may have been created prior to the Consensus Rule activation
             // therefore it won't have a rskTxHash value, fallback to this transaction's hash
-            return entry.getPegoutCreationRskTxHash() == null ? rskTx.getHash() : entry.getPegoutCreationRskTxHash();
+            return confirmedPegout.getPegoutCreationRskTxHash() == null ? rskTx.getHash() : confirmedPegout.getPegoutCreationRskTxHash();
         }
         return rskTx.getHash();
     }
@@ -1294,7 +1294,7 @@ public class BridgeSupport {
                 "An entry for the given rskTxHash %s already exists. Entry overriding is not allowed for pegoutsWaitingForSignatures map.",
                 rskTxHash
             );
-            logger.error("[checkIfEntryExistsInTxsWaitingForSignatures] {}", message);
+            logger.error("[checkIfEntryExistsInPegoutsWaitingForSignatures] {}", message);
             throw new IllegalStateException(message);
         }
     }
