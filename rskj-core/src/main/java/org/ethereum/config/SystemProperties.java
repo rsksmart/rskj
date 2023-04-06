@@ -33,7 +33,6 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.KeyValueDataSourcesEnum;
-import org.ethereum.datasource.KeyValueDataSourcesEnum;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;

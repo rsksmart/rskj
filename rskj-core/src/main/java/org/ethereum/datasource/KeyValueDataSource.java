@@ -76,15 +76,9 @@ public interface KeyValueDataSource extends DataSource {
         String databaseDir = datasourcePath.getParent().toString();
         String fullDbDir = datasourcePath.toAbsolutePath().toString();
 
-        DbKind defaultKind = KeyValueDataSource.getDefaultKind(
-                rskSystemProperties.databaseKind(),
-                databaseDir,
-                rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled()
-        );
         boolean shouldGenerateDbKindFile = KeyValueDataSource.validateDbKind(
                 kind, fullDbDir,
-                rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled(),
-                defaultKind
+                rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled()
         );
 
         KeyValueDataSource ds;
@@ -193,10 +187,6 @@ public interface KeyValueDataSource extends DataSource {
     }
 
     static boolean validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
-        return validateDbKind(currentDbKind, databaseDir, databaseReset, DbKind.LEVEL_DB);
-    }
-
-    static boolean validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset, DbKind defaultKind) {
         if (databaseReset) {
             return true;
         }
@@ -214,7 +204,7 @@ public interface KeyValueDataSource extends DataSource {
             return true;
         }
 
-        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir, defaultKind);
+        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir, currentDbKind);
 
         if (prevDbKind != currentDbKind) {
             LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
