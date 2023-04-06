@@ -70,13 +70,16 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final PeerScoringManager peerScoringManager;
 
     private final StatusResolver statusResolver;
-    private final Map<ReceivedPeerMessageKey, Long> receivedPeerMessages = new MaxSizeHashMap<>(MAX_NUMBER_OF_MESSAGES_CACHED, true);
+    private final Map<ReceivedPeerMessageKey, Long> receivedPeerMessages =
+            Collections.synchronizedMap(new MaxSizeHashMap<>(MAX_NUMBER_OF_MESSAGES_CACHED, true));
 
     private final Set<RskAddress> bannedMiners;
 
     private final Thread thread;
 
     private final PriorityBlockingQueue<MessageTask> queue;
+
+    private long receivedMsgsCacheDuration = RECEIVED_MESSAGES_CACHE_DURATION;
 
     private final MessageCounter messageCounter = new MessageCounter();
     private final int messageQueueMaxSize;
@@ -137,6 +140,28 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.thread = new Thread(this, "message handler");
     }
 
+    @VisibleForTesting
+    NodeMessageHandler(RskSystemProperties config,
+                       BlockProcessor blockProcessor,
+                       SyncProcessor syncProcessor,
+                       @Nullable ChannelManager channelManager,
+                       @Nullable TransactionGateway transactionGateway,
+                       @Nullable PeerScoringManager peerScoringManager,
+                       StatusResolver statusResolver,
+                       long receivedMsgsCacheDuration) {
+        this(
+                config,
+                blockProcessor,
+                syncProcessor,
+                channelManager,
+                transactionGateway,
+                peerScoringManager,
+                statusResolver
+        );
+
+        this.receivedMsgsCacheDuration = receivedMsgsCacheDuration;
+    }
+
     /**
      * processMessage processes a RSK Message, doing the appropriate action based on the message type.
      *
@@ -158,8 +183,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
         // There's an obvious race condition here, but fear not.
         // receivedMessages and logger are thread-safe
-        // cleanMsgTimestamp is a long replaced by the next value, we don't care
-        // enough about the precision of the value it takes
         tryAddMessage(sender, message, nodeMsgTraceInfo);
         logger.trace("End post message (queue size {})", this.queue.size());
     }
@@ -237,7 +260,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             logger.trace("Cleaning {} messages from rlp queue", receivedPeerMessages.size());
             receivedPeerMessages.entrySet()
                     .stream()
-                    .filter(entry -> currentTime - entry.getValue() > RECEIVED_MESSAGES_CACHE_DURATION)
+                    .filter(entry -> currentTime - entry.getValue() > receivedMsgsCacheDuration)
                     .forEach(entry -> receivedPeerMessages.remove(entry.getKey()));
         }
 
