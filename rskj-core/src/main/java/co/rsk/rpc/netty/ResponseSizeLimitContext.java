@@ -44,13 +44,6 @@ public class ResponseSizeLimitContext implements AutoCloseable {
         return ctx;
     }
 
-    public static void addResponseSize(int size) {
-        ResponseSizeLimitContext ctx = accumulatedResponseSize.get();
-        if (ctx != null) {
-            ctx.add(size);
-        }
-    }
-
     public static void addResponse(JsonNode response) {
         ResponseSizeLimitContext ctx = accumulatedResponseSize.get();
         if (ctx != null) {
