@@ -102,6 +102,7 @@ public class BlockChainImpl implements Blockchain {
     private int numTxPreTC;
     private int executedTransactions;
     private int receipts;
+    private int totalReceipts;
 
     public BlockChainImpl(BlockStore blockStore,
                           ReceiptStore receiptStore,
@@ -113,6 +114,7 @@ public class BlockChainImpl implements Blockchain {
         this.numTxPreTC = 0;
         this.executedTransactions = 0;
         this.receipts = 0;
+        this.totalReceipts = 0;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.listener = listener;
@@ -130,6 +132,14 @@ public class BlockChainImpl implements Blockchain {
     @Override
     public long getSize() {
         return status.getBestBlock().getNumber() + 1;
+    }
+
+    public BlockStore getBlockStore() {
+        return blockStore;
+    }
+
+    public ReceiptStore getReceiptStore() {
+        return receiptStore;
     }
 
     /**
@@ -304,6 +314,7 @@ public class BlockChainImpl implements Blockchain {
                     true);
             executedTransactions = result.getExecutedTransactions().size();
             receipts = result.getTransactionReceipts().size();
+            totalReceipts += result.getTransactionReceipts().size();
 
             startResultValidation = System.nanoTime();
             logger.trace("execute done");
@@ -660,5 +671,9 @@ public class BlockChainImpl implements Blockchain {
     @Override
     public int getReceipts() {
         return receipts;
+    }
+
+    public int getTotalReceipts() {
+        return totalReceipts;
     }
 }

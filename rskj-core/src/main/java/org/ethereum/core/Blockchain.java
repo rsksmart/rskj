@@ -22,6 +22,8 @@ package org.ethereum.core;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.db.BlockInformation;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 
 import javax.annotation.Nullable;
@@ -82,4 +84,10 @@ public interface Blockchain {
     int getExecutedTransactions();
 
     int getReceipts();
+
+    int getTotalReceipts();
+
+    ReceiptStore getReceiptStore();
+
+    BlockStore getBlockStore();
 }
