@@ -50,11 +50,9 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
         JsonResponse response;
         if (methodParts.length >= 2) {
             String moduleName = methodParts[0];
-            long timeout = modules.stream()
-                    .filter(m -> m.getName().equals(moduleName))
-                    .findFirst()
-                    .map(ModuleDescription::getTimeout)
-                    .orElse(0L);
+            String methodName = methodParts[1];
+
+            long timeout = getTimeout(moduleName, methodName);
 
             if (timeout <= 0) {
                 response = super.handleJsonNodeRequest(node);
@@ -71,5 +69,21 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
 
         ResponseSizeLimitContext.addResponse(response.getResponse());
         return response;
+    }
+
+    private long getTimeout(String moduleName, String methodName) {
+        ModuleDescription moduleDescription =  modules.stream()
+                .filter(m -> m.getName().equals(moduleName))
+                .findFirst()
+                .orElse(null);
+        if(moduleDescription == null) {
+            return 0;
+        }
+        Long methodTimeout = moduleDescription.getMethodTimeout(methodName);
+        if(methodTimeout != null) {
+            return methodTimeout;
+        }
+
+        return moduleDescription.getTimeout();
     }
 }
