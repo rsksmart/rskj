@@ -99,6 +99,7 @@ public class TransactionExecutor {
     private final SignatureCache signatureCache;
 
     private boolean localCall = false;
+    private boolean precompiledContractHasBeenCalledFlag = false;
 
     private boolean postponeFeePayment;
 
@@ -322,6 +323,7 @@ public class TransactionExecutor {
         this.subtraces = new ArrayList<>();
 
         if (precompiledContract != null) {
+            this.precompiledContractHasBeenCalledFlag = true;
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
             profiler.stop(metric);
@@ -438,6 +440,11 @@ public class TransactionExecutor {
             program.spendGas(tx.transactionCost(constants, activations, signatureCache), "TRANSACTION COST");
 
             vm.play(program);
+
+            // This line checks whether the invoked smart contract calls a Precompiled contract.
+            // This flag is then taken by the Parallel transaction handler, if the tx calls a precompiled contract,
+            // it should be executed sequentially.
+            precompiledContractHasBeenCalledFlag |= program.precompiledContractHasBeenCalled();
 
             result = program.getResult();
             gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
@@ -690,4 +697,8 @@ public class TransactionExecutor {
     }
 
     public Coin getPaidFees() { return paidFees; }
+
+    public boolean precompiledContractHasBeenCalled() {
+        return this.precompiledContractHasBeenCalledFlag;
+    }
 }

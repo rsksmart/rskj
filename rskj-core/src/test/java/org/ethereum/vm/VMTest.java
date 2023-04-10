@@ -3356,6 +3356,50 @@ public abstract class VMTest {
         }
     }
 
+    @Test
+    void whenProgramIsInitializedPrecompiledCalledShouldBeFalse() {
+        Program program = getProgram(new byte[]{});
+        Assertions.assertFalse(program.precompiledContractHasBeenCalled());
+    }
+
+    @Test
+    void ifATxCallsAPrecompiledContractPrecompiledContractHasBeenCalledShouldBeTrue() {
+        program = getProgram(compile("PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x01" +
+                " PUSH1 0x00" +
+                " PUSH1 0x01" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                " PUSH4 0x005B8D80" +
+                " CALL"
+        ));
+        vm.steps(program, Long.MAX_VALUE);
+        Assertions.assertTrue(program.precompiledContractHasBeenCalled());
+        Assertions.assertFalse(program.getResult().isRevert());
+    }
+
+    @Test
+    void ifATxCallsANonPrecompiledContractPrecompiledContractHasBeenCalledShouldBeFalse() {
+        invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
+
+        program = getProgram(compile("PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x01" + //out size
+                " PUSH1 0x00" + //out off
+                " PUSH1 0x01" + //in size
+                " PUSH1 0x00" + //in off
+                " PUSH1 0x00" +
+                " PUSH20 0x" + invoke.getContractAddress() +
+                " PUSH4 0x005B8D80" +
+                " CALL"
+        ));
+        vm.steps(program, Long.MAX_VALUE);
+        Assertions.assertFalse(program.precompiledContractHasBeenCalled());
+        Assertions.assertFalse(program.getResult().isRevert());
+    }
+
     private VM getSubject() {
         return new VM(vmConfig, precompiledContracts);
     }

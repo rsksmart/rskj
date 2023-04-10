@@ -25,17 +25,27 @@ import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import com.typesafe.config.ConfigValueFactory;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.GasCost;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 import java.util.List;
 
+import static co.rsk.core.bc.transactionexecutor.PrecompiledContractHasBeenCalledTest.PROXY_SMART_CONTRACT_BYTECODE;
+import static co.rsk.core.bc.transactionexecutor.PrecompiledContractHasBeenCalledTest.PROXY_TO_PROXY_SMART_CONTRACT_BYTECODE;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 class ParallelExecutionStateTest {
+
+    public static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
+
     private World createWorld(int rskip144) {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
@@ -46,8 +56,8 @@ class ParallelExecutionStateTest {
         return world;
     }
 
-    private World createWorldAndProcess(String dsl, int rskip144) throws DslProcessorException {
-        World world = createWorld(rskip144);
+    private World createWorldAndProcess(String dsl, int rskip144ActivationHeight) throws DslProcessorException {
+        World world = createWorld(rskip144ActivationHeight);
 
         DslParser parser = new DslParser(dsl);
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -817,5 +827,254 @@ class ParallelExecutionStateTest {
         Assertions.assertEquals(3000000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
         Assertions.assertEquals(4, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[] { 1, 2 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenATxCallsAPrecompiledItShouldGoToSequential() throws DslProcessorException {
+        World parallel = this.createWorldAndProcess(
+                "account_new acc1 10000000\n" +
+                "transaction_build tx01\n" +
+                "    sender acc1\n" +
+                "    receiverAddress " + PrecompiledContracts.IDENTITY_ADDR +"\n"+
+                "    data " + "1234" + "\n" +
+                "    gas 2500000\n" +
+                "    build\n" +
+                "\n" +
+                "block_build b01\n" +
+                "    parent g00\n" +
+                "    transactions tx01\n" +
+                "    build\n" +
+                "\n" +
+                "block_connect b01\n" +
+                "\n" +
+                "assert_best b01\n" +
+                "assert_tx_success tx01\n" +
+                "\n", 0);
+
+        Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenATxSendsValueToAPrecompiledItShouldGoToSequential() throws DslProcessorException {
+        World parallel = this.createWorldAndProcess(
+                "account_new acc1 10000000\n" +
+                        "transaction_build tx01\n" +
+                        "    sender acc1\n" +
+                        "    receiverAddress " + PrecompiledContracts.IDENTITY_ADDR +"\n"+
+                        "    value 1000\n" +
+                        "    gas 2500000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_build b01\n" +
+                        "    parent g00\n" +
+                        "    transactions tx01\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_connect b01\n" +
+                        "\n" +
+                        "assert_best b01\n" +
+                        "assert_tx_success tx01\n" +
+                        "\n", 0);
+
+        Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenATxCallsAPrecompiledThatThrowsAnExceptionShouldGoToSequential() throws DslProcessorException {
+        // TX01 throws an exception, though, there is no way to check from out of the execution if the precompiled contract call has failed.
+        World parallel = this.createWorldAndProcess(
+                "account_new acc1 10000000\n" +
+                        "transaction_build tx01\n" +
+                        "    sender acc1\n" +
+                        "    receiverAddress " + PrecompiledContracts.BRIDGE_ADDR +"\n"+
+                        "    data " + "e674f5e80000000000000000000000000000000000000000000000000000000001000006" + "\n" +
+                        "    gas 2500000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_build b01\n" +
+                        "    parent g00\n" +
+                        "    transactions tx01\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_connect b01\n" +
+                        "\n" +
+                        "assert_best b01\n" +
+                        "assert_tx_success tx01\n" +
+                        "\n", 0);
+
+        Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenATxCallsAContractThatCallsAPrecompiledShouldGoToSequential() throws DslProcessorException {
+        World parallel = this.createWorldAndProcess(
+                "account_new acc1 10000000\n" +
+                        "transaction_build tx01\n" +
+                        "    sender acc1\n" +
+                        "    receiverAddress 00\n" +
+                        "    data " + PROXY_SMART_CONTRACT_BYTECODE + PrecompiledContracts.IDENTITY_ADDR + "\n" +
+                        "    gas 1200000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "transaction_build tx02\n" +
+                        "    sender acc1\n" +
+                        "    contract tx01\n" +
+                        "    data " + "688c62c5000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000145b38da6a701c568545dcfcb03fcb875f56beddc4000000000000000000000000" + "\n" +
+                        "    nonce 1\n" +
+                        "    gas 2500000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_build b01\n" +
+                        "    parent g00\n" +
+                        "    transactions tx01 tx02\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_connect b01\n" +
+                        "\n" +
+                        "assert_best b01\n" +
+                        "assert_tx_success tx01\n" +
+                        "assert_tx_success tx02\n" +
+                        "\n", 0);
+
+        Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenATxCallsAContractThatCallsAPrecompiledAndRevertsShouldGoToSequential() throws DslProcessorException {
+        World parallel = this.createWorldAndProcess(
+                "account_new acc1 10000000\n" +
+                        "transaction_build tx01\n" +
+                        "    sender acc1\n" +
+                        "    receiverAddress 00\n" +
+                        "    data " + PROXY_SMART_CONTRACT_BYTECODE + PrecompiledContracts.BRIDGE_ADDR + "\n" +
+                        "    gas 1200000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "transaction_build tx02\n" +
+                        "    sender acc1\n" +
+                        "    contract tx01\n" +
+                        "    data " + "688c62c500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000024e674f5e8000000000000000000000000000000000000000000000000000000000100000600000000000000000000000000000000000000000000000000000000" + "\n" +
+                        "    nonce 1\n" +
+                        "    gas 2500000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_build b01\n" +
+                        "    parent g00\n" +
+                        "    transactions tx01 tx02\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_connect b01\n" +
+                        "\n" +
+                        "assert_best b01\n" +
+                        "assert_tx_success tx01\n" +
+                        "\n", 0);
+
+        Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(FAILED_STATUS, parallel.getTransactionReceiptByName("tx02").getStatus());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenAnInternalTxCallsAContractThatCallsAPrecompiledShouldGoToSequential() throws DslProcessorException {
+        World parallel = createWorld(0);
+        WorldDslProcessor processor = new WorldDslProcessor(parallel);
+        String dsl = deployProxyTo(PrecompiledContracts.IDENTITY_ADDR);
+        DslParser parser = new DslParser(dsl);
+        processor.processCommands(parser);
+
+        Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+
+        RskAddress proxyContract = new RskAddress(HashUtil.calcNewAddr(parallel.getAccountByName("acc1").getAddress().getBytes(), BigInteger.ZERO.toByteArray()));
+        String dataInputToCallProxyToProxyThatReverts = "688c62c5000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000145fd6eb55d12e759a21c09ef703fe0cba1dc9d88d000000000000000000000000";
+        String transactionAssertions = "assert_tx_success tx02\n" +
+                "assert_tx_success tx03\n" +
+                "\n";
+        String dslNext =
+                deployProxyToProxyCallAContractAndAssert(proxyContract, dataInputToCallProxyToProxyThatReverts, transactionAssertions);
+
+        DslParser parserNext = new DslParser(dslNext);
+        processor.processCommands(parserNext);
+        Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenAnInternalTxCallsAContractThatCallsAPrecompiledAndRevertsShouldGoToSequential() throws DslProcessorException {
+        World parallel = createWorld(0);
+        WorldDslProcessor processor = new WorldDslProcessor(parallel);
+        String dsl = deployProxyTo(PrecompiledContracts.BRIDGE_ADDR);
+        DslParser parser = new DslParser(dsl);
+        processor.processCommands(parser);
+
+        Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+
+        RskAddress proxyContract = new RskAddress(HashUtil.calcNewAddr(parallel.getAccountByName("acc1").getAddress().getBytes(), BigInteger.ZERO.toByteArray()));
+        String dataInputToCallProxyToProxy = "688c62c500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000024e674f5e8000000000000000000000000000000000000000000000000000000000100000600000000000000000000000000000000000000000000000000000000";
+        String transactionAssertions = "assert_tx_success tx02\n" +
+                "\n";
+
+        String dslNext =
+                deployProxyToProxyCallAContractAndAssert(proxyContract, dataInputToCallProxyToProxy, transactionAssertions);
+
+        DslParser parserNext = new DslParser(dslNext);
+        processor.processCommands(parserNext);
+        Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(FAILED_STATUS, parallel.getTransactionReceiptByName("tx03").getStatus());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    private static String deployProxyToProxyCallAContractAndAssert(RskAddress proxyContract, String dataInputToCallProxyToProxyThatReverts, String transactionAssertions) {
+        return "transaction_build tx02\n" +
+                "    sender acc1\n" +
+                "    receiverAddress 00\n" +
+                "    data " + PROXY_TO_PROXY_SMART_CONTRACT_BYTECODE + proxyContract + "\n" +
+                "    nonce 1\n" +
+                "    gas 1200000\n" +
+                "    build\n" +
+                "\n" +
+                "transaction_build tx03\n" +
+                "    sender acc1\n" +
+                "    contract tx02\n" +
+                "    data " + dataInputToCallProxyToProxyThatReverts + "\n" +
+                "    nonce 2\n" +
+                "    gas 2500000\n" +
+                "    build\n" +
+                "\n" +
+                "block_build b02\n" +
+                "    parent b01\n" +
+                "    transactions tx02 tx03\n" +
+                "    build\n" +
+                "\n" +
+                "block_connect b02\n" +
+                "\n" +
+                "assert_best b02\n" +
+                transactionAssertions;
+    }
+
+    private static String deployProxyTo(RskAddress address) {
+        return "account_new acc1 10000000\n" +
+                "transaction_build tx01\n" +
+                "    sender acc1\n" +
+                "    receiverAddress 00\n" +
+                "    data " + PROXY_SMART_CONTRACT_BYTECODE + address + "\n" +
+                "    gas 1200000\n" +
+                "    build\n" +
+                "\n" +
+                "block_build b01\n" +
+                "    parent g00\n" +
+                "    transactions tx01\n" +
+                "    build\n" +
+                "\n" +
+                "block_connect b01\n" +
+                "\n" +
+                "assert_best b01\n" +
+                "assert_tx_success tx01\n" +
+                "\n";
     }
 }

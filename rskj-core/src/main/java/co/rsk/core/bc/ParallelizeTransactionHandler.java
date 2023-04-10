@@ -71,6 +71,23 @@ public class ParallelizeTransactionHandler {
         return Optional.of(sequentialSublist.getGasUsed());
     }
 
+    // Unlike the smart contracts execution, Precompiled contracts persist the changes in the repository when they
+    // complete the execution. So, there is no way for the ParallelTransactionHandler to track the keys if the execution
+    // fails since the Precompiled contract rolls back the repository.
+    // Therefore, the tx is added to the sequential sublist to avoid possible race conditions.
+    public Optional<Long> addTxSentToPrecompiledContract(Transaction tx, long gasUsedByTx) {
+        TransactionSublist sequentialSublist = getSequentialSublist();
+
+        if (!sublistHasAvailableGas(tx, sequentialSublist)) {
+            return Optional.empty();
+        }
+
+        sequentialSublist.addTransaction(tx, gasUsedByTx);
+        addNewKeysToMaps(tx.getSender(), sequentialSublist, new HashSet<>(), new HashSet<>());
+
+        return Optional.of(sequentialSublist.getGasUsed());
+    }
+
     public long getGasUsedIn(Short sublistId) {
 
         if (sublistId < 0 || sublistId >= sublists.size()) {
