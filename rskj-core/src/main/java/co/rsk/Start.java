@@ -17,9 +17,11 @@
  */
 package co.rsk;
 
+import co.rsk.cli.PicoNewParser;
 import co.rsk.util.PreflightChecksUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
 
@@ -33,7 +35,29 @@ public class Start {
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
 
+        PicoNewParser picoNewParser = new PicoNewParser();
+        CommandLine cmd = new CommandLine(picoNewParser);
+
+        try {
+            CommandLine.ParseResult parseResult = cmd.parseArgs(args);
+
+            if (cmd.isUsageHelpRequested()) {
+                cmd.usage(System.out);
+                return;
+            }
+
+            if (cmd.isVersionHelpRequested()) {
+                cmd.printVersionHelp(System.out);
+                return;
+            }
+        } catch (CommandLine.ParameterException ex) {
+            System.err.println(ex.getMessage());
+            cmd.usage(System.err);
+            System.exit(1);
+        }
+
         RskContext ctx = null;
+
         try {
             ctx = new RskContext(args);
 
@@ -48,6 +72,7 @@ public class Start {
             System.exit(1);
         }
     }
+
 
     static void runNode(@Nonnull Runtime runtime, @Nonnull PreflightChecksUtils preflightChecks, @Nonnull RskContext ctx) throws Exception {
         preflightChecks.runChecks();
