@@ -25,7 +25,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 
 /**
  * Created by mario on 12/12/16.
@@ -44,9 +48,24 @@ public class RemascConfigFactory {
     public RemascConfig createRemascConfig(String config) {
         RemascConfig remascConfig;
 
+        logger.info("createRemascConfig config = {} ", config);
+        logger.info("createRemascConfig configPath = {} ", configPath);
+
         try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(this.configPath)) {
-            JsonNode node = JacksonParserUtil.readTree(mapper, is);
+            String sis = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
+                    .lines()
+                    .collect(Collectors.joining("\n"));
+
+            logger.info("createRemascConfig sis = {} ", sis);
+
+            JsonNode node = JacksonParserUtil.readTree(mapper, sis);
+
+            logger.info("createRemascConfig node = {} ", node);
+            logger.info("createRemascConfig node.get(config) = {} ", node.get(config));
+
             remascConfig = JacksonParserUtil.treeToValue(mapper, node.get(config), RemascConfig.class);
+
+            logger.info("createRemascConfig remascConfig = {} ", remascConfig);
         } catch (Exception ex) {
             logger.error("Error reading REMASC configuration[{}]: {}", config, ex);
             throw new RemascException("Error reading REMASC configuration[" + config + "]: ", ex);
