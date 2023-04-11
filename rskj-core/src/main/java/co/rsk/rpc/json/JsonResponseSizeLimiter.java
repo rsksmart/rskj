@@ -72,12 +72,12 @@ public class JsonResponseSizeLimiter {
         int fieldSeparatorCount = fields.hasNext() ? -1 : 0;
         while (fields.hasNext()) {
             fieldSeparatorCount++;
-            getFieldLength(fields.next());
+            handleField(fields.next());
         }
         sumAndCheck(BRACKETS_SIZE_IN_BYTES + (COMMA_SIZE * fieldSeparatorCount));
     }
 
-    private void getFieldLength(Map.Entry<String, JsonNode> field) throws JsonProcessingException {
+    private void handleField(Map.Entry<String, JsonNode> field) throws JsonProcessingException {
         JsonNode value = field.getValue();
         if (value.isObject() || value.isArray()) {
             addLength(value);
