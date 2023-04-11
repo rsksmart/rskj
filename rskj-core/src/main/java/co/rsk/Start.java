@@ -39,7 +39,7 @@ public class Start {
         CommandLine cmd = new CommandLine(picoNewParser);
 
         try {
-            CommandLine.ParseResult parseResult = cmd.parseArgs(args);
+            cmd.parseArgs(args);
 
             if (cmd.isUsageHelpRequested()) {
                 cmd.usage(System.out);
@@ -57,7 +57,6 @@ public class Start {
         }
 
         RskContext ctx = null;
-
         try {
             ctx = new RskContext(args);
 
@@ -72,6 +71,7 @@ public class Start {
             System.exit(1);
         }
     }
+
 
 
     static void runNode(@Nonnull Runtime runtime, @Nonnull PreflightChecksUtils preflightChecks, @Nonnull RskContext ctx) throws Exception {
