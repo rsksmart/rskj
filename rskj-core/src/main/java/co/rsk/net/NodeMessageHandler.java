@@ -259,9 +259,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         synchronized (receivedPeerMessages) {
             logger.trace("Cleaning {} messages from rlp queue", receivedPeerMessages.size());
             receivedPeerMessages.entrySet()
-                    .stream()
-                    .filter(entry -> currentTime - entry.getValue() > receivedMsgsCacheDuration)
-                    .forEach(entry -> receivedPeerMessages.remove(entry.getKey()));
+                    .removeIf(entry -> currentTime - entry.getValue() > receivedMsgsCacheDuration);
         }
 
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
