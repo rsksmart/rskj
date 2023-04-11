@@ -147,8 +147,8 @@ class BridgeStorageProviderTest {
 
         assertTrue(repository.isContract(contractAddress));
         assertNotNull(repository.getStorageBytes(contractAddress, RELEASE_REQUEST_QUEUE.getKey()));
-        assertNotNull(repository.getStorageBytes(contractAddress, PEGOUTS_WAITING_FOR_CONFIRMATIONS_KEY.getKey()));
-        assertNotNull(repository.getStorageBytes(contractAddress, PEGOUTS_WAITING_FOR_SIGNATURES_KEY.getKey()));
+        assertNotNull(repository.getStorageBytes(contractAddress, PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()));
+        assertNotNull(repository.getStorageBytes(contractAddress, PEGOUTS_WAITING_FOR_SIGNATURES.getKey()));
         assertNotNull(repository.getStorageBytes(contractAddress, NEW_FEDERATION_BTC_UTXOS_KEY.getKey()));
         assertNotNull(repository.getStorageBytes(contractAddress, OLD_FEDERATION_BTC_UTXOS_KEY.getKey()));
 
@@ -1694,7 +1694,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void getReleaseTransactionSet_before_rskip_146_activation() throws IOException {
+    void getPegoutsWaitingForConfirmations_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"),
             config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
@@ -1703,7 +1703,7 @@ class BridgeStorageProviderTest {
             new PegoutsWaitingForConfirmations.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
         ));
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_KEY.getKey())))
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey())))
                 .then((InvocationOnMock invocation) ->
                         BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet)));
 
@@ -1716,7 +1716,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void getReleaseTransactionSet_after_rskip_146_activation() throws IOException {
+    void getPegoutsWaitingForConfirmations_after_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -1732,7 +1732,7 @@ class BridgeStorageProviderTest {
 
         Repository repositoryMock = mock(Repository.class);
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_KEY.getKey())))
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey())))
                 .thenReturn(BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet)));
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"),
@@ -1750,7 +1750,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveReleaseTransactionSet_before_rskip_146_activations() throws IOException {
+    void savePegoutsWaitingForConfirmations_before_rskip_146_activations() throws IOException {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
@@ -1765,16 +1765,16 @@ class BridgeStorageProviderTest {
             Set<PegoutsWaitingForConfirmations.Entry> entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), networkParameters).getEntries();
             Assertions.assertEquals(oldEntriesSet, entries);
             return true;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_KEY.getKey()), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
 
         storageProvider.savePegoutsWaitingForConfirmations();
 
-        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_KEY.getKey()), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
         verify(repositoryMock, never()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY.getKey()), any(byte[].class));
     }
 
     @Test
-    void saveReleaseTransactionSet_after_rskip_146_activations() throws IOException {
+    void savePegoutsWaitingForConfirmations_after_rskip_146_activations() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -1788,7 +1788,7 @@ class BridgeStorageProviderTest {
 
         Repository repositoryMock = mock(Repository.class);
 
-        when(repositoryMock.getStorageBytes(any(),eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_KEY.getKey()))).
+        when(repositoryMock.getStorageBytes(any(),eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()))).
                 thenReturn(BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet)));
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activations);
@@ -1802,7 +1802,7 @@ class BridgeStorageProviderTest {
             Set<PegoutsWaitingForConfirmations.Entry> entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), networkParameters).getEntries();
             Assertions.assertEquals(entries, oldEntriesSet);
             return true;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_KEY.getKey()), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
 
         doAnswer((i) -> {
             Set<PegoutsWaitingForConfirmations.Entry> entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), networkParameters, true).getEntries();
@@ -1812,7 +1812,7 @@ class BridgeStorageProviderTest {
 
         storageProvider.savePegoutsWaitingForConfirmations();
 
-        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_KEY.getKey()), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
         verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY.getKey()), any(byte[].class));
         Assertions.assertEquals(2, storageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
     }

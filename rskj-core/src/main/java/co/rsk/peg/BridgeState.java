@@ -90,7 +90,7 @@ public class BridgeState {
         return releaseRequestQueue;
     }
 
-    public PegoutsWaitingForConfirmations getReleaseTransactionSet() {
+    public PegoutsWaitingForConfirmations getPegoutsWaitingForConfirmations() {
         return pegoutsWaitingForConfirmations;
     }
 
@@ -106,7 +106,7 @@ public class BridgeState {
                 ", activeFederationBtcUTXOs=" + activeFederationBtcUTXOs + "\n" +
                 ", rskTxsWaitingForSignatures=" + rskTxsWaitingForSignatures + "\n" +
                 ", releaseRequestQueue=" + releaseRequestQueue + "\n" +
-                ", releaseTransactionSet=" + pegoutsWaitingForConfirmations + "\n" +
+                ", pegoutsWaitingForConfirmations=" + pegoutsWaitingForConfirmations + "\n" +
                 '}';
     }
 
@@ -125,13 +125,13 @@ public class BridgeState {
                 BridgeSerializationUtils.serializeReleaseRequestQueueWithTxHash(releaseRequestQueue):
                 BridgeSerializationUtils.serializeReleaseRequestQueue(releaseRequestQueue);
         byte[] rlpReleaseRequestQueue = RLP.encodeElement(serializedReleaseRequestQueue);
-        byte[] serializedReleaseTransactionSet = shouldUsePapyrusEncoding(this.activations) ?
+        byte[] serializedPegoutWaitingForConfirmations = shouldUsePapyrusEncoding(this.activations) ?
                 BridgeSerializationUtils.serializePegoutsWaitingForConfirmationsWithTxHash(pegoutsWaitingForConfirmations):
                 BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations);
-        byte[] rlpReleaseTransactionSet = RLP.encodeElement(serializedReleaseTransactionSet);
+        byte[] rlpRPegoutWaitingForConfirmations = RLP.encodeElement(serializedPegoutWaitingForConfirmations);
         byte[] rlpNextPegoutCreationBlockNumber = RLP.encodeElement(BridgeSerializationUtils.serializeLong(nextPegoutCreationBlockNumber));
 
-        return RLP.encodeList(rlpBtcBlockchainBestChainHeight, rlpActiveFederationBtcUTXOs, rlpRskTxsWaitingForSignatures, rlpReleaseRequestQueue, rlpReleaseTransactionSet, rlpNextPegoutCreationBlockNumber);
+        return RLP.encodeList(rlpBtcBlockchainBestChainHeight, rlpActiveFederationBtcUTXOs, rlpRskTxsWaitingForSignatures, rlpReleaseRequestQueue, rlpRPegoutWaitingForConfirmations, rlpNextPegoutCreationBlockNumber);
     }
 
     public static BridgeState create(BridgeConstants bridgeConstants, byte[] data, @Nullable ActivationConfig.ForBlock activations) throws IOException {
@@ -145,8 +145,8 @@ public class BridgeState {
         SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(rskTxsWaitingForSignaturesBytes, bridgeConstants.getBtcParams(), false);
         byte[] releaseRequestQueueBytes = rlpList.get(3).getRLPData();
         ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(BridgeSerializationUtils.deserializeReleaseRequestQueue(releaseRequestQueueBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations)));
-        byte[] releaseTransactionSetBytes = rlpList.get(4).getRLPData();
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(releaseTransactionSetBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations));
+        byte[] pegoutsWaitingForConfirmationsBytes = rlpList.get(4).getRLPData();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(pegoutsWaitingForConfirmationsBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations));
         byte[] nextPegoutCreationBlockNumberBytes = rlpList.get(5).getRLPData();
         long nextPegoutCreationBlockNumber = BridgeSerializationUtils.deserializeOptionalLong(nextPegoutCreationBlockNumberBytes).orElse(0L);
 

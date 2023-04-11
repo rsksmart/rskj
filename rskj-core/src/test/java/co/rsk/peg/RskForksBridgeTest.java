@@ -437,19 +437,19 @@ class RskForksBridgeTest {
         BridgeState stateForDebugging = callGetStateForDebuggingTx();
         if (ReleaseTransactionState.WAITING_FOR_SELECTION.equals(state)) {
             Assertions.assertEquals(1, stateForDebugging.getReleaseRequestQueue().getEntries().size());
-            Assertions.assertEquals(0, stateForDebugging.getReleaseTransactionSet().getEntries().size());
+            Assertions.assertEquals(0, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries().size());
             Assertions.assertEquals(0, stateForDebugging.getRskTxsWaitingForSignatures().size());
         } else if (ReleaseTransactionState.WAITING_FOR_SIGNATURES.equals(state)) {
             Assertions.assertEquals(0, stateForDebugging.getReleaseRequestQueue().getEntries().size());
-            Assertions.assertEquals(0, stateForDebugging.getReleaseTransactionSet().getEntries().size());
+            Assertions.assertEquals(0, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries().size());
             Assertions.assertEquals(1, stateForDebugging.getRskTxsWaitingForSignatures().size());
         } else if (ReleaseTransactionState.WAITING_FOR_CONFIRMATIONS.equals(state)) {
             Assertions.assertEquals(0, stateForDebugging.getReleaseRequestQueue().getEntries().size());
-            Assertions.assertEquals(1, stateForDebugging.getReleaseTransactionSet().getEntries().size());
+            Assertions.assertEquals(1, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries().size());
             Assertions.assertEquals(0, stateForDebugging.getRskTxsWaitingForSignatures().size());
         } else if (ReleaseTransactionState.NO_TX.equals(state)) {
             Assertions.assertEquals(0, stateForDebugging.getReleaseRequestQueue().getEntries().size());
-            Assertions.assertEquals(0, stateForDebugging.getReleaseTransactionSet().getEntries().size());
+            Assertions.assertEquals(0, stateForDebugging.getPegoutsWaitingForConfirmations().getEntries().size());
             Assertions.assertEquals(0, stateForDebugging.getRskTxsWaitingForSignatures().size());
         }
     }

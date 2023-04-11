@@ -270,7 +270,7 @@ public class BridgeStorageProvider {
             return pegoutsWaitingForConfirmations;
         }
 
-        Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>(getFromRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS_KEY,
+        Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>(getFromRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS,
                 data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters).getEntries()));
 
         if (!activations.isActive(RSKIP146)) {
@@ -292,7 +292,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS_KEY, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmations);
+        safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmations);
 
         if (activations.isActive(RSKIP146)) {
             safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmationsWithTxHash);
@@ -305,7 +305,7 @@ public class BridgeStorageProvider {
         }
 
         pegoutsWaitingForSignatures = getFromRepository(
-            PEGOUTS_WAITING_FOR_SIGNATURES_KEY,
+            PEGOUTS_WAITING_FOR_SIGNATURES,
                 data -> BridgeSerializationUtils.deserializeMap(data, networkParameters, false)
         );
         return pegoutsWaitingForSignatures;
@@ -316,7 +316,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(PEGOUTS_WAITING_FOR_SIGNATURES_KEY, pegoutsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
+        safeSaveToRepository(PEGOUTS_WAITING_FOR_SIGNATURES, pegoutsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
     }
 
     public Federation getNewFederation() {
