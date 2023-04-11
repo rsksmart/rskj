@@ -593,7 +593,8 @@ public class BlockExecutor {
 
         int txindex = 0;
 
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()));
+        long sublistGasLimit = GasCost.toGas(block.getGasLimit()) / 2;
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), sublistGasLimit, sublistGasLimit);
 
         for (Transaction tx : transactionsList) {
             loggingApplyBlockToTx(block, i);
