@@ -73,12 +73,15 @@ public class PegoutsWaitingForConfirmations {
             }
 
             Entry otherEntry = (Entry) o;
-            return otherEntry.getBtcTransaction().equals(getBtcTransaction());
-         }
+            return otherEntry.getBtcTransaction().equals(getBtcTransaction()) &&
+                otherEntry.getPegoutCreationRskBlockNumber().equals(getPegoutCreationRskBlockNumber()) &&
+                (otherEntry.getPegoutCreationRskTxHash() == null && getPegoutCreationRskTxHash() == null ||
+                    otherEntry.getPegoutCreationRskTxHash() != null && otherEntry.getPegoutCreationRskTxHash().equals(getPegoutCreationRskTxHash()));
+        }
 
         @Override
         public int hashCode() {
-            return Objects.hash(getBtcTransaction());
+            return Objects.hash(getBtcTransaction(), getPegoutCreationRskBlockNumber());
         }
     }
 
@@ -105,7 +108,9 @@ public class PegoutsWaitingForConfirmations {
     }
 
     public void add(BtcTransaction transaction, Long blockNumber, Keccak256 rskTxHash) {
-        entries.add(new Entry(transaction, blockNumber, rskTxHash));
+        if (entries.stream().noneMatch(e -> e.getBtcTransaction().equals(transaction))) {
+            entries.add(new Entry(transaction, blockNumber, rskTxHash));
+        }
     }
 
     /**
