@@ -155,8 +155,8 @@ class ParallelExecutionStateTest {
     private final String readDataWithRevert = "e2033a13000000000000000000000000000000000000000000000000000000000000000a";
     // updateWithRevert(10)
     private final String updateByTenWithRevert = "1b892f87000000000000000000000000000000000000000000000000000000000000000a";
-    // wasteGas(2000000, 0, 0)
-    private final String wasteTwoMillionGas = "34b0919300000000000000000000000000000000000000000000000000000000001e848000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    // wasteGas(1000000, 0, 0)
+    private final String wasteOneMillionGas = "34b0919300000000000000000000000000000000000000000000000000000000000f4d4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     // wasteGas(100000, 0, 0)
     private final String wasteHundredThousandGas = "34b0919300000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     // wasteGas(100000, 1, 1)
@@ -165,12 +165,12 @@ class ParallelExecutionStateTest {
     private final String writeToY = "34b0919300000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002";
     // wasteGas(100000, 1, 2)
     private final String writeToXAndY = "34b0919300000000000000000000000000000000000000000000000000000000000186a000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002";
-    // wasteGas(2000000, 1, 1)
-    private final String writeToXWastingGas = "34b0919300000000000000000000000000000000000000000000000000000000001e848000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001";
-    // wasteGas(2000000, 2, 2)
-    private final String writeToYWastingGas = "34b0919300000000000000000000000000000000000000000000000000000000001e848000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002";
-    // wasteGas(2000000, 1, 2)
-    private final String writeToXAndYWastingGas = "34b0919300000000000000000000000000000000000000000000000000000000001e848000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002";
+    // wasteGas(1000000, 1, 1)
+    private final String writeToXWastingGas = "34b0919300000000000000000000000000000000000000000000000000000000000f4d4000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001";
+    // wasteGas(1000000, 2, 2)
+    private final String writeToYWastingGas = "34b0919300000000000000000000000000000000000000000000000000000000000f4d4000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002";
+    // wasteGas(1000000, 1, 2)
+    private final String writeToXAndYWastingGas = "34b0919300000000000000000000000000000000000000000000000000000000000f4d4000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002";
 
     // substrings for dsl text
     private final String createThreeAccounts = "account_new acc1 10000000\n" +
@@ -618,15 +618,15 @@ class ParallelExecutionStateTest {
         World parallel = this.createWorldAndProcess(skeleton("transaction_build tx02\n" +
                 "    sender acc1\n" +
                 "    contract tx01\n" +
-                "    data " + wasteTwoMillionGas + "\n" +
-                "    gas 2700000\n" +
+                "    data " + wasteOneMillionGas + "\n" +
+                "    gas 1500000\n" +
                 "    build\n" +
                 "\n" +
                 "transaction_build tx03\n" +
                 "    sender acc2\n" +
                 "    contract tx01\n" +
-                "    data " + wasteTwoMillionGas + "\n" +
-                "    gas 2500000\n" +
+                "    data " + wasteOneMillionGas + "\n" +
+                "    gas 1500000\n" +
                 "    build\n" +
                 "\n", true), 0);
 
@@ -643,16 +643,16 @@ class ParallelExecutionStateTest {
                 "transaction_build tx02\n" +
                 "    sender acc1\n" +
                 "    contract tx01\n" +
-                "    data " + wasteTwoMillionGas + "\n" +
-                "    gas 2500000\n" +
+                "    data " + wasteOneMillionGas + "\n" +
+                "    gas 1500000\n" +
                 "    nonce 0\n" +
                 "    build\n" +
                 "\n" +
                 "transaction_build tx03\n" +
                 "    sender acc1\n" +
                 "    contract tx01\n" +
-                "    data " + wasteTwoMillionGas + "\n" +
-                "    gas 2500000\n" +
+                "    data " + wasteOneMillionGas + "\n" +
+                "    gas 1500000\n" +
                 "    nonce 1\n" +
                 "    build\n" +
                 "\n" + // goes to sequential
@@ -738,21 +738,21 @@ class ParallelExecutionStateTest {
                 "    sender acc1\n" +
                 "    contract tx01\n" +
                 "    data " + writeToXWastingGas + "\n" +
-                "    gas 2500000\n" +
+                "    gas 1500000\n" +
                 "    build\n" +
                 "\n" +
                 "transaction_build tx03\n" +
                 "    sender acc2\n" +
                 "    contract tx01\n" +
                 "    data " + writeToYWastingGas + "\n" +
-                "    gas 2500000\n" +
+                "    gas 1500000\n" +
                 "    build\n" +
                 "\n" + // goes to sequential
                 "transaction_build tx04\n" +
                 "    sender acc4\n" +
                 "    contract tx01\n" +
                 "    data " + writeToXAndYWastingGas + "\n" +
-                "    gas 2500000\n" +
+                "    gas 1500000\n" +
                 "    build\n" +
                 "\n" +
                 "block_build b02\n" +
@@ -784,14 +784,14 @@ class ParallelExecutionStateTest {
                 "    sender acc1\n" +
                 "    contract tx01\n" +
                 "    data " + writeToXWastingGas + "\n" +
-                "    gas 2500000\n" +
+                "    gas 1500000\n" +
                 "    build\n" +
                 "\n" +
                 "transaction_build tx03\n" +
                 "    sender acc1\n" +
                 "    contract tx01\n" +
                 "    data " + writeToXWastingGas + "\n" +
-                "    gas 2500000\n" +
+                "    gas 1500000\n" +
                 "    nonce 1\n" +
                 "    build\n" +
                 "\n" + // goes to sequential
@@ -837,7 +837,7 @@ class ParallelExecutionStateTest {
                 "    sender acc1\n" +
                 "    receiverAddress " + PrecompiledContracts.IDENTITY_ADDR +"\n"+
                 "    data " + "1234" + "\n" +
-                "    gas 2500000\n" +
+                "    gas 1000000\n" +
                 "    build\n" +
                 "\n" +
                 "block_build b01\n" +
@@ -863,7 +863,7 @@ class ParallelExecutionStateTest {
                         "    sender acc1\n" +
                         "    receiverAddress " + PrecompiledContracts.IDENTITY_ADDR +"\n"+
                         "    value 1000\n" +
-                        "    gas 2500000\n" +
+                        "    gas 1000000\n" +
                         "    build\n" +
                         "\n" +
                         "block_build b01\n" +
@@ -890,7 +890,7 @@ class ParallelExecutionStateTest {
                         "    sender acc1\n" +
                         "    receiverAddress " + PrecompiledContracts.BRIDGE_ADDR +"\n"+
                         "    data " + "e674f5e80000000000000000000000000000000000000000000000000000000001000006" + "\n" +
-                        "    gas 2500000\n" +
+                        "    gas 1000000\n" +
                         "    build\n" +
                         "\n" +
                         "block_build b01\n" +
@@ -924,7 +924,7 @@ class ParallelExecutionStateTest {
                         "    contract tx01\n" +
                         "    data " + "688c62c5000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000145b38da6a701c568545dcfcb03fcb875f56beddc4000000000000000000000000" + "\n" +
                         "    nonce 1\n" +
-                        "    gas 2500000\n" +
+                        "    gas 1000000\n" +
                         "    build\n" +
                         "\n" +
                         "block_build b01\n" +
@@ -959,7 +959,7 @@ class ParallelExecutionStateTest {
                         "    contract tx01\n" +
                         "    data " + "688c62c500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000024e674f5e8000000000000000000000000000000000000000000000000000000000100000600000000000000000000000000000000000000000000000000000000" + "\n" +
                         "    nonce 1\n" +
-                        "    gas 2500000\n" +
+                        "    gas 1000000\n" +
                         "    build\n" +
                         "\n" +
                         "block_build b01\n" +
@@ -1043,7 +1043,7 @@ class ParallelExecutionStateTest {
                 "    contract tx02\n" +
                 "    data " + dataInputToCallProxyToProxyThatReverts + "\n" +
                 "    nonce 2\n" +
-                "    gas 2500000\n" +
+                "    gas 1000000\n" +
                 "    build\n" +
                 "\n" +
                 "block_build b02\n" +

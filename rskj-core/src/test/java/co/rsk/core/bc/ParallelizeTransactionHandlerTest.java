@@ -54,17 +54,17 @@ public class ParallelizeTransactionHandlerTest {
         Account sender5 = new AccountBuilder().name("sender5").build();
         byte[] aKey = {1, 2, 3};
         byte[] aDifferentKey = {1, 2, 3, 4};
-        int blockGasLimit = 6800000;
+        int sublistGasLimit = 3400000;
         long gasUsedByTx = 16000;
-        long biggestGasLimitPossibleInSublists = blockGasLimit - 1;
+        long biggestGasLimitPossibleInSublists = sublistGasLimit - 1;
 
         aWrappedKey = new ByteArrayWrapper(aKey);
         sublists = 2;
         sequentialSublistNumber = sublists;
-        handler = new ParallelizeTransactionHandler(sublists, blockGasLimit);
-        tx = new TransactionBuilder().nonce(1).sender(sender).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx+1)).build();
-        tx2 = new TransactionBuilder().nonce(1).sender(sender2).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx+2)).build();
-        tx3 = new TransactionBuilder().nonce(1).sender(sender3).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx+3)).build();
+        handler = new ParallelizeTransactionHandler(sublists, sublistGasLimit, sublistGasLimit);
+        tx = new TransactionBuilder().nonce(1).sender(sender).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
+        tx2 = new TransactionBuilder().nonce(1).sender(sender2).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
+        tx3 = new TransactionBuilder().nonce(1).sender(sender3).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         bigTx = new TransactionBuilder().nonce(1).sender(sender4).gasLimit(BigInteger.valueOf(biggestGasLimitPossibleInSublists)).value(BigInteger.valueOf(1)).build();
         bigTx2 = new TransactionBuilder().nonce(1).sender(sender5).gasLimit(BigInteger.valueOf(biggestGasLimitPossibleInSublists)).value(BigInteger.valueOf(1)).build();
         aDifferentWrappedKey = new ByteArrayWrapper(aDifferentKey);
@@ -859,7 +859,7 @@ public class ParallelizeTransactionHandlerTest {
 
         AccountBuilder accountBuilder = new AccountBuilder();
 
-        ParallelizeTransactionHandler handler = new ParallelizeTransactionHandler((short) 2, 1000);
+        ParallelizeTransactionHandler handler = new ParallelizeTransactionHandler((short) 2, 1000, 1000);
 
         // write X with 800
         handler.addTransaction(

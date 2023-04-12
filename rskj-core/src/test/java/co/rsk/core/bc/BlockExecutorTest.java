@@ -489,17 +489,15 @@ public class BlockExecutorTest {
 
         doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
-        short[] expectedEdges = new short[]{1};
         Block parent = blockchain.getBestBlock();
         long expectedAccumulatedGas = 21000L;
 
         Block block = getBlockWithNIndependentTransactions(1, BigInteger.valueOf(expectedAccumulatedGas), false);
-        List<Transaction> txs = block.getTransactionsList();
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
-        Assertions.assertEquals(txs, blockResult.getExecutedTransactions());
+        Assertions.assertEquals(block.getTransactionsList(), blockResult.getExecutedTransactions());
         Assertions.assertEquals(expectedAccumulatedGas, blockResult.getGasUsed());
-        Assertions.assertArrayEquals(expectedEdges, blockResult.getTxEdges());
+        Assertions.assertArrayEquals(new short[]{1}, blockResult.getTxEdges());
 
         List<TransactionReceipt> transactionReceipts = blockResult.getTransactionReceipts();
         for (TransactionReceipt receipt: transactionReceipts) {
@@ -515,31 +513,32 @@ public class BlockExecutorTest {
         }
         doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
-        long expectedGasUsed = 0L;
-        long expectedAccumulatedGas = 21000L;
-        int txNumber = 12;
+        long txGasLimit = 21000L;
         short[] expectedEdges = new short[]{3, 6, 9, 12};
         Block parent = blockchain.getBestBlock();
-        Block block = getBlockWithNIndependentTransactions(txNumber, BigInteger.valueOf(expectedAccumulatedGas), false);
+        int numberOfTxs = 12;
+
+        Block block = getBlockWithNIndependentTransactions(numberOfTxs, BigInteger.valueOf(txGasLimit), false);
         List<Transaction> txs = block.getTransactionsList();
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
         Assertions.assertEquals(txs.size(), blockResult.getExecutedTransactions().size());
         Assertions.assertTrue(txs.containsAll(blockResult.getExecutedTransactions()));
         Assertions.assertArrayEquals(expectedEdges, blockResult.getTxEdges());
-        Assertions.assertEquals(expectedAccumulatedGas*txNumber, blockResult.getGasUsed());
+        Assertions.assertEquals(txGasLimit * numberOfTxs, blockResult.getGasUsed());
 
         List<TransactionReceipt> transactionReceipts = blockResult.getTransactionReceipts();
         long accumulatedGasUsed = 0L;
         short i = 0;
         short edgeIndex = 0;
         for (TransactionReceipt receipt: transactionReceipts) {
-            if ((edgeIndex < expectedEdges.length) && (i == expectedEdges[edgeIndex])) {
+            boolean isFromADifferentSublist = (edgeIndex < expectedEdges.length) && (i == expectedEdges[edgeIndex]);
+            if (isFromADifferentSublist) {
                 edgeIndex++;
-                accumulatedGasUsed = expectedGasUsed;
+                accumulatedGasUsed = 0L;
             }
 
-            accumulatedGasUsed += expectedAccumulatedGas;
+            accumulatedGasUsed += txGasLimit;
             Assertions.assertEquals(accumulatedGasUsed, GasCost.toGas(receipt.getCumulativeGas()));
             i++;
         }
@@ -549,19 +548,18 @@ public class BlockExecutorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void executeBigIndependentTxsSequentiallyTheLastOneShouldGoToSequential(boolean activeRskip144) {
+    void whenParallelSublistsAreFullTheLastTxShouldGoToSequential(boolean activeRskip144) {
         if (!activeRskip144) {
             return;
         }
         doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = blockchain.getBestBlock();
-        long blockGasLimit = GasCost.toGas(parent.getGasLimit());
         int gasLimit = 21000;
-        int transactionNumber = (int) (blockGasLimit/gasLimit);
-        short[] expectedEdges = new short[]{(short) transactionNumber, (short) (transactionNumber*2), (short) (transactionNumber*3), (short) (transactionNumber*4)};
+        int numberOfTransactions = (int) (getSublistGaslimit(parent)/gasLimit);
+        short[] expectedEdges = new short[]{(short) numberOfTransactions, (short) (numberOfTransactions*2), (short) (numberOfTransactions*3), (short) (numberOfTransactions*4)};
         int transactionsInSequential = 1;
-        Block block = getBlockWithNIndependentTransactions(transactionNumber * Constants.getTransactionExecutionThreads() + transactionsInSequential, BigInteger.valueOf(gasLimit), false);
+        Block block = getBlockWithNIndependentTransactions(numberOfTransactions * Constants.getTransactionExecutionThreads() + transactionsInSequential, BigInteger.valueOf(gasLimit), false);
         List<Transaction> transactionsList = block.getTransactionsList();
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
@@ -596,15 +594,14 @@ public class BlockExecutorTest {
         doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = blockchain.getBestBlock();
-        long blockGasLimit = GasCost.toGas(parent.getGasLimit());
         int gasLimit = 21000;
-        int transactionNumberToFillParallelSublist = (int) (blockGasLimit / gasLimit);
+        int transactionNumberToFillParallelSublist = (int) (getSublistGaslimit(parent) / gasLimit);
         int transactionsInSequential = 1;
         int totalTxsNumber = transactionNumberToFillParallelSublist * Constants.getTransactionExecutionThreads() + transactionsInSequential;
         Block block = getBlockWithNIndependentTransactions(totalTxsNumber, BigInteger.valueOf(gasLimit), false);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
-        Assertions.assertEquals(gasLimit*totalTxsNumber, blockResult.getGasUsed());
+        Assertions.assertEquals(gasLimit * totalTxsNumber, blockResult.getGasUsed());
     }
 
     @ParameterizedTest
@@ -616,14 +613,13 @@ public class BlockExecutorTest {
         doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = blockchain.getBestBlock();
-        long blockGasLimit = GasCost.toGas(parent.getGasLimit());
         int gasLimit = 21000;
-        int transactionNumberToFillParallelSublist = (int) (blockGasLimit / gasLimit);
+        int transactionNumberToFillParallelSublist = (int) (getSublistGaslimit(parent) / gasLimit);
         int totalNumberOfSublists = Constants.getTransactionExecutionThreads() + 1;
         int totalTxs = (transactionNumberToFillParallelSublist) * totalNumberOfSublists + 1;
         Block block = getBlockWithNIndependentTransactions(totalTxs, BigInteger.valueOf(gasLimit), false);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
-        Assertions.assertEquals(totalTxs, blockResult.getExecutedTransactions().size() + 1);
+        Assertions.assertEquals(totalTxs - 1, blockResult.getExecutedTransactions().size());
     }
 
     @ParameterizedTest
@@ -636,12 +632,12 @@ public class BlockExecutorTest {
         doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = blockchain.getBestBlock();
-        long blockGasLimit = GasCost.toGas(parent.getGasLimit());
         int gasLimit = 21000;
-        int transactionNumberToFillASublist = (int) (blockGasLimit / gasLimit);
+        int transactionNumberToFillASublist = (int) (getSublistGaslimit(parent) / gasLimit);
         int totalNumberOfSublists = Constants.getTransactionExecutionThreads() + 1;
-        int expectedNumberOfTx = transactionNumberToFillASublist* totalNumberOfSublists + 1;
-        Block block = getBlockWithNIndependentTransactions(transactionNumberToFillASublist * totalNumberOfSublists, BigInteger.valueOf(gasLimit), true);
+        int expectedNumberOfTx = transactionNumberToFillASublist * totalNumberOfSublists + 1;
+
+        Block block = getBlockWithNIndependentTransactions(expectedNumberOfTx, BigInteger.valueOf(gasLimit), true);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
         Assertions.assertEquals(expectedNumberOfTx, blockResult.getExecutedTransactions().size());
     }
@@ -944,6 +940,10 @@ public class BlockExecutorTest {
         Assertions.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
+    private static long getSublistGaslimit(Block parent) {
+        return GasCost.toGas(parent.getGasLimit()) / 2;
+    }
+
     private static TestObjects generateBlockWithOneTransaction(Boolean activeRskip144, boolean rskip126IsActive) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
@@ -1152,8 +1152,8 @@ public class BlockExecutorTest {
                 );
     }
 
-    private Block getBlockWithNIndependentTransactions(int txNumber, BigInteger txGasLimit, boolean withRemasc) {
-        int nAccounts = txNumber * 2;
+    private Block getBlockWithNIndependentTransactions(int numberOfTxs, BigInteger txGasLimit, boolean withRemasc) {
+        int nAccounts = numberOfTxs * 2;
         Repository track = repository.startTracking();
         List<Account> accounts = new LinkedList<>();
 
@@ -1166,12 +1166,12 @@ public class BlockExecutorTest {
 
         List<Transaction> txs = new LinkedList<>();
 
-        for (int i = 0; i < txNumber; i++) {
+        for (int i = 0; i < numberOfTxs; i++) {
             Transaction tx = Transaction.builder()
                     .nonce(BigInteger.ZERO)
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(txGasLimit)
-                    .destination(accounts.get(i + txNumber).getAddress())
+                    .destination(accounts.get(i + numberOfTxs).getAddress())
                     .chainId(CONFIG.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();

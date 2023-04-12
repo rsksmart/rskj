@@ -36,6 +36,7 @@ transaction_build tx01
 block_build b01
     parent g00
     transactions tx01
+    gasLimit 6500000
     build
 
 block_connect b01
@@ -51,7 +52,7 @@ transaction_build tx02
     contract tx01   # created in tx01
     value 0
     data d96a094a0000000000000000000000000000000000000000000000000000000000000000
-    gas 6400000
+    gas 2000000
     build
 
 block_build b02
