@@ -396,6 +396,7 @@ public class BridgeSupport {
 
         Context.propagate(btcContext);
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
+        logger.debug("[registerBtcTransaction][rsk tx {}] Processing btc tx {}", rskTx.getHash(), btcTxHash);
 
         try {
             // Check the tx was not already processed
@@ -410,6 +411,7 @@ public class BridgeSupport {
 
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
             btcTx.verify();
+            logger.debug("[registerBtcTransaction][rsk tx {}] Btc tx hash without witness {}", rskTx.getHash(), btcTx.getHash(false));
 
             // Check again that the tx was not already processed but making sure to use the txid (no witness)
             if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
@@ -428,13 +430,14 @@ public class BridgeSupport {
                     processMigration(btcTx, btcTxHash);
                     break;
                 default:
-                    String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTxHash)
-                    logger.warn("[registerBtcTransaction] {}", message);
+                    String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTxHash);
+                    logger.warn("[registerBtcTransaction][rsk tx {}] {}", rskTx.getHash(), message);
                     panicProcessor.panic("btclock", message);
             }
         } catch (RegisterBtcTransactionException e) {
             logger.warn(
-                "[registerBtcTransaction] Could not register transaction {}. Message: {}",
+                "[registerBtcTransaction][rsk tx {}] Could not register transaction {}. Message: {}",
+                rskTx.getHash(),
                 btcTxHash,
                 e.getMessage()
             );
