@@ -378,8 +378,8 @@ public class BridgeSupport {
     }
 
     /**
-     * In case of a lock tx: Transfers some SBTCs to the sender of the btc tx and keeps track of the new UTXOs available for spending.
-     * In case of a release tx: Keeps track of the change UTXOs, now available for spending.
+     * In case of a peg-in tx: Transfers some RBTCs to the sender of the btc tx and keeps track of the new UTXOs available for spending.
+     * In case of a peg-out tx: Keeps track of the change UTXOs, now available for spending.
      * @param rskTx The RSK transaction
      * @param btcTxSerialized The raw BTC tx
      * @param height The height of the BTC block that contains the tx
@@ -387,8 +387,13 @@ public class BridgeSupport {
      * @throws BlockStoreException
      * @throws IOException
      */
-    public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized)
-            throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    public void registerBtcTransaction(
+        Transaction rskTx,
+        byte[] btcTxSerialized,
+        int height,
+        byte[] pmtSerialized
+    ) throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+
         Context.propagate(btcContext);
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
@@ -423,12 +428,16 @@ public class BridgeSupport {
                     processMigration(btcTx, btcTxHash);
                     break;
                 default:
-                    logger.warn("[registerBtcTransaction] This is not a lock, a release nor a migration tx {}", btcTx);
-                    panicProcessor.panic("btclock", "This is not a lock, a release nor a migration tx " + btcTx);
+                    String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTxHash)
+                    logger.warn("[registerBtcTransaction] {}", message);
+                    panicProcessor.panic("btclock", message);
             }
         } catch (RegisterBtcTransactionException e) {
-            logger.warn("[registerBtcTransaction] Could not register transaction {}. Message: {}", btcTxHash,
-                    e.getMessage());
+            logger.warn(
+                "[registerBtcTransaction] Could not register transaction {}. Message: {}",
+                btcTxHash,
+                e.getMessage()
+            );
         }
     }
 
