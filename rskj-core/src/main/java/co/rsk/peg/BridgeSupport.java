@@ -456,6 +456,7 @@ public class BridgeSupport {
         /** Special case to migrate funds from an old federation               **/
         /************************************************************************/
         if (activations.isActive(ConsensusRule.RSKIP199) && txIsFromOldFederation(btcTx)) {
+            logger.debug("[getTransactionType][btc tx {}] is from the old federation, treated as a migration", btcTx.getHash());
             return TxType.MIGRATION;
         }
 
@@ -467,6 +468,7 @@ public class BridgeSupport {
             bridgeConstants,
             activations
         )) {
+            logger.debug("[getTransactionType][btc tx {}] is a peg-in", btcTx.getHash());
             return TxType.PEGIN;
         }
 
@@ -479,13 +481,16 @@ public class BridgeSupport {
             bridgeConstants,
             activations
         )) {
+            logger.debug("[getTransactionType][btc tx {}] is a migration transaction", btcTx.getHash());
             return TxType.MIGRATION;
         }
 
         if (BridgeUtils.isPegOutTx(btcTx, getLiveFederations(), activations)) {
+            logger.debug("[getTransactionType][btc tx {}] is a peg-out", btcTx.getHash());
             return TxType.PEGOUT;
         }
 
+        logger.debug("[getTransactionType][btc tx {}] is neither a peg-in, peg-out, nor migration", btcTx.getHash());
         return TxType.UNKNOWN;
     }
 
