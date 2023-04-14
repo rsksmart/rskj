@@ -1296,6 +1296,358 @@ class BridgeUtilsTest {
     }
 
     @Test
+    void testIsMigrationTx_sending_funds_from_retired_p2sh_fed_to_active_p2sh_fed() {
+        NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
+        Context btcContext = new Context(networkParameters);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        List<BtcECKey> retiredFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fc01")),
+            BtcECKey.fromPrivate(Hex.decode("fc02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation retiredFederation = new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams(),
+            bridgeConstantsMainnet.getErpFedPubKeysList(),
+            bridgeConstantsMainnet.getErpFedActivationDelay(),
+            activations
+        );
+
+        List<BtcECKey> activeFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation activeFederation = new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams(),
+            bridgeConstantsMainnet.getErpFedPubKeysList(),
+            bridgeConstantsMainnet.getErpFedActivationDelay(),
+            activations
+        );
+
+        Address activeFederationAddress = activeFederation.getAddress();
+
+        BtcTransaction migrationTx = new BtcTransaction(networkParameters);
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
+        TransactionInput migrationTxInput = new TransactionInput(
+            networkParameters,
+            migrationTx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        migrationTx.addInput(migrationTxInput);
+        signWithNecessaryKeys(retiredFederation, retiredFederationKeys, migrationTxInput, migrationTx);
+
+        assertFalse(BridgeUtils.isMigrationTx(
+            migrationTx,
+            activeFederation,
+            null,
+            retiredFederation.getP2SHScript(),
+            btcContext,
+            bridgeConstantsMainnet,
+            activations
+        ));
+
+        assertTrue(BridgeUtils.isMigrationTx(
+            migrationTx,
+            activeFederation,
+            null,
+            retiredFederation.getStandardP2SHScript(),
+            btcContext,
+            bridgeConstantsMainnet,
+            activations
+        ));
+    }
+
+    @Test
+    void testIsMigrationTx_sending_funds_from_retiring_p2sh_fed_to_active_p2sh_fed() {
+        NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
+        Context btcContext = new Context(networkParameters);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        List<BtcECKey> retiringFed = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fc01")),
+            BtcECKey.fromPrivate(Hex.decode("fc02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation retiringFederation = new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(retiringFed),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams(),
+            bridgeConstantsMainnet.getErpFedPubKeysList(),
+            bridgeConstantsMainnet.getErpFedActivationDelay(),
+            activations
+        );
+
+        List<BtcECKey> activeFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation activeFederation = new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams(),
+            bridgeConstantsMainnet.getErpFedPubKeysList(),
+            bridgeConstantsMainnet.getErpFedActivationDelay(),
+            activations
+        );
+
+        Address activeFederationAddress = activeFederation.getAddress();
+
+        BtcTransaction migrationTx = new BtcTransaction(networkParameters);
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
+        TransactionInput migrationTxInput = new TransactionInput(
+            networkParameters,
+            migrationTx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        migrationTx.addInput(migrationTxInput);
+        signWithNecessaryKeys(retiringFederation, retiringFed, migrationTxInput, migrationTx);
+
+        assertTrue(BridgeUtils.isMigrationTx(
+            migrationTx,
+            activeFederation,
+            retiringFederation,
+            null,
+            btcContext,
+            bridgeConstantsMainnet,
+            activations
+        ));
+    }
+
+    @Test
+    void testIsMigrationTx_sending_funds_from_retired_standard_fed_to_active_p2sh_fed() {
+        NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
+        Context btcContext = new Context(networkParameters);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        List<BtcECKey> retiredFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fc01")),
+            BtcECKey.fromPrivate(Hex.decode("fc02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation retiredFederation = new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams()
+        );
+
+        List<BtcECKey> activeFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation activeFederation = new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams(),
+            bridgeConstantsMainnet.getErpFedPubKeysList(),
+            bridgeConstantsMainnet.getErpFedActivationDelay(),
+            activations
+        );
+
+        Address activeFederationAddress = activeFederation.getAddress();
+
+        BtcTransaction migrationTx = new BtcTransaction(networkParameters);
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
+        TransactionInput migrationTxInput = new TransactionInput(
+            networkParameters,
+            migrationTx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        migrationTx.addInput(migrationTxInput);
+        signWithNecessaryKeys(retiredFederation, retiredFederationKeys, migrationTxInput, migrationTx);
+
+        assertTrue(BridgeUtils.isMigrationTx(
+            migrationTx,
+            activeFederation,
+            null,
+            retiredFederation.getStandardP2SHScript(),
+            btcContext,
+            bridgeConstantsMainnet,
+            activations
+        ));
+    }
+
+    @Test
+    void testIsMigrationTx_sending_funds_from_retiring_standard_fed_to_active_p2sh_fed() {
+        NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
+        Context btcContext = new Context(networkParameters);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        List<BtcECKey> retiringFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fc01")),
+            BtcECKey.fromPrivate(Hex.decode("fc02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation retiringFederation = new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams()
+        );
+
+        List<BtcECKey> activeFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation activeFederation = new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams(),
+            bridgeConstantsMainnet.getErpFedPubKeysList(),
+            bridgeConstantsMainnet.getErpFedActivationDelay(),
+            activations
+        );
+
+        Address activeFederationAddress = activeFederation.getAddress();
+
+        BtcTransaction migrationTx = new BtcTransaction(networkParameters);
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
+        TransactionInput migrationTxInput = new TransactionInput(
+            networkParameters,
+            migrationTx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        migrationTx.addInput(migrationTxInput);
+        signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx);
+
+        assertTrue(BridgeUtils.isMigrationTx(
+            migrationTx,
+            activeFederation,
+            null,
+            retiringFederation.getStandardP2SHScript(),
+            btcContext,
+            bridgeConstantsMainnet,
+            activations
+        ));
+    }
+
+    @Test
+    void testIsMigrationTx_sending_funds_from_retired_standard_fed_to_active_standard_fed() {
+        NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
+        Context btcContext = new Context(networkParameters);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        List<BtcECKey> retiredFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fc01")),
+            BtcECKey.fromPrivate(Hex.decode("fc02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation retiredFederation = new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams()
+        );
+
+        List<BtcECKey> activeFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation activeFederation = new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams()
+        );
+
+        Address activeFederationAddress = activeFederation.getAddress();
+
+        BtcTransaction migrationTx = new BtcTransaction(networkParameters);
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
+        TransactionInput migrationTxInput = new TransactionInput(
+            networkParameters,
+            migrationTx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        migrationTx.addInput(migrationTxInput);
+        signWithNecessaryKeys(retiredFederation, retiredFederationKeys, migrationTxInput, migrationTx);
+
+        assertTrue(BridgeUtils.isMigrationTx(
+            migrationTx,
+            activeFederation,
+            null,
+            retiredFederation.getStandardP2SHScript(),
+            btcContext,
+            bridgeConstantsMainnet,
+            activations
+        ));
+    }
+
+    @Test
+    void testIsMigrationTx_sending_funds_from_retiring_standard_fed_to_active_standard_fed() {
+        NetworkParameters networkParameters = bridgeConstantsMainnet.getBtcParams();
+        Context btcContext = new Context(networkParameters);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        List<BtcECKey> retiringFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fc01")),
+            BtcECKey.fromPrivate(Hex.decode("fc02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation retiringFederation = new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams()
+        );
+
+        List<BtcECKey> activeFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        Federation activeFederation = new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            1L,
+            bridgeConstantsMainnet.getBtcParams()
+        );
+
+        Address activeFederationAddress = activeFederation.getAddress();
+
+        BtcTransaction migrationTx = new BtcTransaction(networkParameters);
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
+        TransactionInput migrationTxInput = new TransactionInput(
+            networkParameters,
+            migrationTx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        migrationTx.addInput(migrationTxInput);
+        signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx);
+
+        assertTrue(BridgeUtils.isMigrationTx(
+            migrationTx,
+            activeFederation,
+            retiringFederation,
+            null,
+            btcContext,
+            bridgeConstantsMainnet,
+            activations
+        ));
+    }
+
+    @Test
     void testIsMigrationTx() {
         Context btcContext = new Context(networkParameters);
 
