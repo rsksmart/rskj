@@ -1475,6 +1475,16 @@ class BridgeUtilsTest {
             migrationTx,
             activeFederation,
             null,
+            retiredFederation.getP2SHScript(),
+            btcContext,
+            bridgeConstantsMainnet,
+            activations
+        ));
+
+        assertTrue(BridgeUtils.isMigrationTx(
+            migrationTx,
+            activeFederation,
+            null,
             retiredFederation.getStandardP2SHScript(),
             btcContext,
             bridgeConstantsMainnet,
@@ -1531,8 +1541,8 @@ class BridgeUtilsTest {
         assertTrue(BridgeUtils.isMigrationTx(
             migrationTx,
             activeFederation,
+            retiringFederation,
             null,
-            retiringFederation.getStandardP2SHScript(),
             btcContext,
             bridgeConstantsMainnet,
             activations

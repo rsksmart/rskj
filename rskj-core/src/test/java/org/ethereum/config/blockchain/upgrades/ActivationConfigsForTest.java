@@ -163,6 +163,8 @@ public class ActivationConfigsForTest {
     private static List<ConsensusRule> getFingerroot500Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(Arrays.asList(
+            ConsensusRule.RSKIP252,
+            ConsensusRule.RSKIP326,
             ConsensusRule.RSKIP374,
             ConsensusRule.RSKIP375,
             ConsensusRule.RSKIP377
