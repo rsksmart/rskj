@@ -83,6 +83,7 @@ public enum ConsensusRule {
     RSKIP374("rskip374"),
     RSKIP375("rskip375"),
     RSKIP377("rskip377"),
+    RSKIP383("rskip383"),
     ;
 
     private String configKey;
