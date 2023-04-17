@@ -1,9 +1,11 @@
 plugins {
     id 'application'
+    id "me.champeau.jmh" version "0.7.0"
 }
 
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
+apply plugin: 'me.champeau.jmh'
 
 testing {
     suites {
@@ -166,6 +168,10 @@ ext {
 // WARN: consider different setups and sure to not use GPG elements without checksums or without signature file
 // in the remote repository (see https://github.com/gradle/gradle/security/advisories/GHSA-j6wc-xfg8-jx2j)
 dependencies {
+    jmh 'org.web3j:core:5.0.0'
+
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
+
     implementation "${libs.nettyLib}"
     implementation "${libs.spongyCastleLib}"
     implementation "${libs.bouncyCastleLib}"
