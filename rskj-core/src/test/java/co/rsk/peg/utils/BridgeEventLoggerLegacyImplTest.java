@@ -269,7 +269,7 @@ class BridgeEventLoggerLegacyImplTest {
         }
 
         // Assert new federation activation block number
-        Assertions.assertEquals(15L + constantsMock.getFederationActivationAge(), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
+        Assertions.assertEquals(15L + constantsMock.getFederationActivationAge(activations), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
     }
 
     @Test

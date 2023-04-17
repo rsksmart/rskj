@@ -278,7 +278,7 @@ class PowpegMigrationTest {
 
         // Move the required blocks ahead for the new powpeg to become active
         // (overriding block number to ensure we don't move beyond the activation phase)
-        blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge();
+        blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activations);
         Block activationBlock = mock(Block.class);
         doReturn(blockNumber).when(activationBlock).getNumber();
 

@@ -184,10 +184,10 @@ class BridgeSupportProcessFundsMigrationTest {
 
         long federationCreationBlockNumber = 5L;
         long federationInMigrationAgeHeight = federationCreationBlockNumber +
-            bridgeConstants.getFederationActivationAge() +
+            bridgeConstants.getFederationActivationAge(activations) +
             bridgeConstants.getFundsMigrationAgeSinceActivationBegin() + 1;
         long federationPastMigrationAgeHeight = federationCreationBlockNumber +
-            bridgeConstants.getFederationActivationAge() +
+            bridgeConstants.getFederationActivationAge(activations) +
             bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations) + 1;
 
         Federation newFederation = new Federation(

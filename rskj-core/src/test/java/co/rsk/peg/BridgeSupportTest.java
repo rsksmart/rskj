@@ -6675,7 +6675,7 @@ class BridgeSupportTest {
         Block block = mock(Block.class);
         // Set block right after the migration should start
         long blockNumber = newFed.getCreationBlockNumber() +
-            bridgeConstantsRegtest.getFederationActivationAge() +
+            bridgeConstantsRegtest.getFederationActivationAge(activations) +
             bridgeConstantsRegtest.getFundsMigrationAgeSinceActivationBegin() +
             1;
         when(block.getNumber()).thenReturn(blockNumber);
@@ -7237,7 +7237,7 @@ class BridgeSupportTest {
             track,
             executionBlock,
             new Context(constants.getBtcParams()),
-            new FederationSupport(constants, provider, executionBlock),
+            new FederationSupport(constants, provider, executionBlock, activations),
             blockStoreFactory,
             activations,
             signatureCache
