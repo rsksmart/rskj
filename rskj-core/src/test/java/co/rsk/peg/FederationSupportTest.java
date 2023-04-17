@@ -21,6 +21,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
@@ -43,18 +44,20 @@ class FederationSupportTest {
     private BridgeConstants bridgeConstants;
     private BridgeStorageProvider provider;
     private Block executionBlock;
-
+    private ActivationConfig.ForBlock activations;
 
     @BeforeEach
     void setUp() {
         provider = mock(BridgeStorageProvider.class);
         bridgeConstants = mock(BridgeConstants.class);
         executionBlock = mock(Block.class);
+        activations = mock(ActivationConfig.ForBlock.class);
 
         federationSupport = new FederationSupport(
             bridgeConstants,
             provider,
-            executionBlock
+            executionBlock,
+            activations
         );
     }
 
@@ -88,7 +91,7 @@ class FederationSupportTest {
         when(provider.getNewFederation()).thenReturn(newFederation);
         when(provider.getOldFederation()).thenReturn(oldFederation);
         when(executionBlock.getNumber()).thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge()).thenReturn(10L);
+        when(bridgeConstants.getFederationActivationAge(activations)).thenReturn(10L);
 
         assertThat(federationSupport.getActiveFederation(), is(oldFederation));
     }
@@ -101,7 +104,7 @@ class FederationSupportTest {
         when(provider.getNewFederation()).thenReturn(newFederation);
         when(provider.getOldFederation()).thenReturn(oldFederation);
         when(executionBlock.getNumber()).thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge()).thenReturn(10L);
+        when(bridgeConstants.getFederationActivationAge(activations)).thenReturn(10L);
 
         assertThat(federationSupport.getActiveFederation(), is(newFederation));
     }

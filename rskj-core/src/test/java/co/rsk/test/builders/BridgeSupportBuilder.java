@@ -99,7 +99,7 @@ public class BridgeSupportBuilder {
             repository,
             executionBlock,
             new Context(bridgeConstants.getBtcParams()),
-            new FederationSupport(bridgeConstants, provider, executionBlock),
+            new FederationSupport(bridgeConstants, provider, executionBlock, activations),
             btcBlockStoreFactory,
             activations,
             signatureCache

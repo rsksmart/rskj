@@ -67,7 +67,7 @@ public class BridgeSupportFactory {
             activations
         );
 
-        FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock);
+        FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock, activations);
 
         BridgeEventLogger eventLogger;
         if (logs == null) {
