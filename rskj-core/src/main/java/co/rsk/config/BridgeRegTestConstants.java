@@ -90,6 +90,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
             AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
         );
 
+        federationActivationAgeLegacy = 10L;
         federationActivationAge = 10L;
 
         fundsMigrationAgeSinceActivationBegin = 15L;
