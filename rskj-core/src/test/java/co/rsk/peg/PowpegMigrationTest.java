@@ -31,6 +31,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -543,6 +545,29 @@ class PowpegMigrationTest {
             false,
             true
         );
+
+        if (oldPowPegFederationType == FederationType.erp || newPowPegFederationType == FederationType.erp){
+            return;
+        }
+
+        Optional<Script> lastRetiredFederationP2SHScriptOptional = bridgeStorageProvider.getLastRetiredFederationP2SHScript();
+        assertTrue(lastRetiredFederationP2SHScriptOptional.isPresent());
+        Script lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScriptOptional.get();
+
+        if (activations.isActive(ConsensusRule.RSKIP377)){
+            if (oldPowPegFederationType == FederationType.p2sh){
+                assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
+            }
+            assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+        } else {
+            if (oldPowPegFederationType == FederationType.p2sh){
+                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
+                assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+            } else {
+                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
+                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+            }
+        }
     }
 
     private void verifyPegouts(BridgeStorageProvider bridgeStorageProvider) throws IOException {
