@@ -1601,6 +1601,16 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet,
             activations
         ));
+
+        assertTrue(BridgeUtils.isMigrationTx(
+            migrationTx,
+            activeFederation,
+            null,
+            retiredFederation.getP2SHScript(),
+            btcContext,
+            bridgeConstantsMainnet,
+            activations
+        ));
     }
 
     @Test
