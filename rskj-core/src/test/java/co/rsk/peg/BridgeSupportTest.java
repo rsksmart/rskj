@@ -1081,32 +1081,32 @@ class BridgeSupportTest {
         Assertions.assertEquals(0, provider.getOldFederationBtcUTXOs().size());
 
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(3, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntriesWithHash().size());
+        Assertions.assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
 
-        List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+        List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .collect(Collectors.toList());
 
         // First release tx should correspond to the 5 BTC lock tx
-        BtcTransaction releaseTx = releaseTxs.get(0);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(Coin.COIN.multiply(5).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(srcKey1.toAddress(btcRegTestParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
-        Assertions.assertEquals(1, releaseTx.getInputs().size());
-        Assertions.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assertions.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
+        BtcTransaction pegoutBtcTx = pegoutBtcTxs.get(0);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(Coin.COIN.multiply(5).subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(srcKey1.toAddress(btcRegTestParams), pegoutBtcTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
+        Assertions.assertEquals(1, pegoutBtcTx.getInputs().size());
+        Assertions.assertEquals(tx1.getHash(), pegoutBtcTx.getInput(0).getOutpoint().getHash());
+        Assertions.assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
         assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
 
         // Second release tx should correspond to the 7 (3+4) BTC lock tx
-        releaseTx = releaseTxs.get(1);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(Coin.COIN.multiply(7).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(srcKey3.toAddress(btcRegTestParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
-        Assertions.assertEquals(2, releaseTx.getInputs().size());
-        List<TransactionOutPoint> releaseOutpoints = releaseTx.getInputs().stream().map(TransactionInput::getOutpoint).sorted(Comparator.comparing(TransactionOutPoint::getIndex)).collect(Collectors.toList());
+        pegoutBtcTx = pegoutBtcTxs.get(1);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(Coin.COIN.multiply(7).subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(srcKey3.toAddress(btcRegTestParams), pegoutBtcTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
+        Assertions.assertEquals(2, pegoutBtcTx.getInputs().size());
+        List<TransactionOutPoint> releaseOutpoints = pegoutBtcTx.getInputs().stream().map(TransactionInput::getOutpoint).sorted(Comparator.comparing(TransactionOutPoint::getIndex)).collect(Collectors.toList());
         Assertions.assertEquals(tx3.getHash(), releaseOutpoints.get(0).getHash());
         Assertions.assertEquals(tx3.getHash(), releaseOutpoints.get(1).getHash());
         Assertions.assertEquals(0, releaseOutpoints.get(0).getIndex());
@@ -1114,16 +1114,16 @@ class BridgeSupportTest {
         assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx3.getHash()).isPresent());
 
         // Third release tx should correspond to the 10 BTC lock tx
-        releaseTx = releaseTxs.get(2);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(Coin.COIN.multiply(10).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(srcKey2.toAddress(btcRegTestParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
-        Assertions.assertEquals(1, releaseTx.getInputs().size());
-        Assertions.assertEquals(tx2.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assertions.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
+        pegoutBtcTx = pegoutBtcTxs.get(2);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(Coin.COIN.multiply(10).subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(srcKey2.toAddress(btcRegTestParams), pegoutBtcTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
+        Assertions.assertEquals(1, pegoutBtcTx.getInputs().size());
+        Assertions.assertEquals(tx2.getHash(), pegoutBtcTx.getInput(0).getOutpoint().getHash());
+        Assertions.assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
         assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());
 
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
     }
 
@@ -1252,55 +1252,55 @@ class BridgeSupportTest {
         Assertions.assertEquals(0, provider.getOldFederationBtcUTXOs().size());
 
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assertions.assertEquals(3, provider.getReleaseTransactionSet().getEntriesWithHash().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
+        Assertions.assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
 
-        List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+        List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .collect(Collectors.toList());
 
         // First release tx should correspond to the 5 BTC lock tx
-        BtcTransaction releaseTx = releaseTxs.get(0);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(Coin.COIN.multiply(5).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(srcKey1.toAddress(btcRegTestParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
-        Assertions.assertEquals(1, releaseTx.getInputs().size());
-        Assertions.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assertions.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
+        BtcTransaction pegoutBtcTx = pegoutBtcTxs.get(0);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(Coin.COIN.multiply(5).subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(srcKey1.toAddress(btcRegTestParams), pegoutBtcTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
+        Assertions.assertEquals(1, pegoutBtcTx.getInputs().size());
+        Assertions.assertEquals(tx1.getHash(), pegoutBtcTx.getInput(0).getOutpoint().getHash());
+        Assertions.assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
         assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
         // First Rsk tx corresponds to this release
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(rskTx1.getHash().getBytes(), releaseTx, Coin.COIN.multiply(5));
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(rskTx1.getHash().getBytes(), pegoutBtcTx, Coin.COIN.multiply(5));
 
         // Second release tx should correspond to the 7 (3+4) BTC lock tx
-        releaseTx = releaseTxs.get(1);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(Coin.COIN.multiply(7).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(srcKey3.toAddress(btcRegTestParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
-        Assertions.assertEquals(2, releaseTx.getInputs().size());
-        List<TransactionOutPoint> releaseOutpoints = releaseTx.getInputs().stream().map(TransactionInput::getOutpoint).sorted(Comparator.comparing(TransactionOutPoint::getIndex)).collect(Collectors.toList());
+        pegoutBtcTx = pegoutBtcTxs.get(1);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(Coin.COIN.multiply(7).subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(srcKey3.toAddress(btcRegTestParams), pegoutBtcTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
+        Assertions.assertEquals(2, pegoutBtcTx.getInputs().size());
+        List<TransactionOutPoint> releaseOutpoints = pegoutBtcTx.getInputs().stream().map(TransactionInput::getOutpoint).sorted(Comparator.comparing(TransactionOutPoint::getIndex)).collect(Collectors.toList());
         Assertions.assertEquals(tx3.getHash(), releaseOutpoints.get(0).getHash());
         Assertions.assertEquals(tx3.getHash(), releaseOutpoints.get(1).getHash());
         Assertions.assertEquals(0, releaseOutpoints.get(0).getIndex());
         Assertions.assertEquals(1, releaseOutpoints.get(1).getIndex());
         assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx3.getHash()).isPresent());
         // third Rsk tx corresponds to this release
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(rskTx3.getHash().getBytes(), releaseTx, Coin.COIN.multiply(7));
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(rskTx3.getHash().getBytes(), pegoutBtcTx, Coin.COIN.multiply(7));
 
         // Third release tx should correspond to the 10 BTC lock tx
-        releaseTx = releaseTxs.get(2);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(Coin.COIN.multiply(10).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(srcKey2.toAddress(btcRegTestParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
-        Assertions.assertEquals(1, releaseTx.getInputs().size());
-        Assertions.assertEquals(tx2.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assertions.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
+        pegoutBtcTx = pegoutBtcTxs.get(2);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(Coin.COIN.multiply(10).subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(srcKey2.toAddress(btcRegTestParams), pegoutBtcTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
+        Assertions.assertEquals(1, pegoutBtcTx.getInputs().size());
+        Assertions.assertEquals(tx2.getHash(), pegoutBtcTx.getInput(0).getOutpoint().getHash());
+        Assertions.assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
         assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());
         // Second Rsk tx corresponds to this release
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(rskTx2.getHash().getBytes(), releaseTx, Coin.COIN.multiply(10));
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(rskTx2.getHash().getBytes(), pegoutBtcTx, Coin.COIN.multiply(10));
 
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
     }
 
     @Test
@@ -1429,8 +1429,8 @@ class BridgeSupportTest {
             .thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
-            .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getPegoutsWaitingForConfirmations())
+            .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(provider.getOldFederation())
             .thenReturn(oldFederation);
         when(provider.getNewFederation())
@@ -1465,8 +1465,8 @@ class BridgeSupportTest {
 
         bridgeSupport.updateCollections(tx);
 
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntriesWithHash().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
 
         verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
     }
@@ -1492,8 +1492,8 @@ class BridgeSupportTest {
             .thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
-            .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getPegoutsWaitingForConfirmations())
+            .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(provider.getOldFederation())
             .thenReturn(oldFederation);
         when(provider.getNewFederation())
@@ -1529,11 +1529,11 @@ class BridgeSupportTest {
 
         bridgeSupport.updateCollections(tx);
 
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntriesWithHash().size());
-        ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntriesWithHash().toArray()[0];
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
+        PegoutsWaitingForConfirmations.Entry entry = (PegoutsWaitingForConfirmations.Entry) provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().toArray()[0];
         // Should have been logged with the migrated UTXO
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(tx.getHash().getBytes(), entry.getTransaction(), Coin.COIN);
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(tx.getHash().getBytes(), entry.getBtcTransaction(), Coin.COIN);
     }
 
     @Test
@@ -1557,8 +1557,8 @@ class BridgeSupportTest {
             .thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
-            .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getPegoutsWaitingForConfirmations())
+            .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(provider.getOldFederation())
             .thenReturn(oldFederation);
         when(provider.getNewFederation())
@@ -1593,8 +1593,8 @@ class BridgeSupportTest {
 
         bridgeSupport.updateCollections(tx);
 
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntriesWithHash().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
 
         verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
     }
@@ -1620,8 +1620,8 @@ class BridgeSupportTest {
             .thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
-            .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getPegoutsWaitingForConfirmations())
+            .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(provider.getOldFederation())
             .thenReturn(oldFederation);
         when(provider.getNewFederation())
@@ -1656,11 +1656,11 @@ class BridgeSupportTest {
 
         bridgeSupport.updateCollections(tx);
 
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntriesWithHash().size());
-        ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntriesWithHash().toArray()[0];
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
+        PegoutsWaitingForConfirmations.Entry entry = (PegoutsWaitingForConfirmations.Entry) provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().toArray()[0];
         // Should have been logged with the migrated UTXO
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(tx.getHash().getBytes(), entry.getTransaction(), Coin.COIN);
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(tx.getHash().getBytes(), entry.getBtcTransaction(), Coin.COIN);
     }
 
     @Test
@@ -1684,8 +1684,8 @@ class BridgeSupportTest {
             .thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
-            .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getPegoutsWaitingForConfirmations())
+            .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(provider.getOldFederation())
             .thenReturn(oldFederation);
         when(provider.getNewFederation())
@@ -1747,8 +1747,8 @@ class BridgeSupportTest {
             .thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
-            .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getPegoutsWaitingForConfirmations())
+            .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(provider.getOldFederation())
             .thenReturn(oldFederation);
         when(provider.getNewFederation())
@@ -1808,11 +1808,11 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
-        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L)); // no rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L)); // no rsk tx hash
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(2L);
@@ -1836,8 +1836,8 @@ class BridgeSupportTest {
             .build();
         bridgeSupport.updateCollections(tx);
 
-        assertEquals(btcTx, provider.getRskTxsWaitingForSignatures().get(tx.getHash()));
-        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
     }
 
     @Test
@@ -1850,12 +1850,12 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         long rskBlockNumber = 1L;
-        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, rskBlockNumber)); // no rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, rskBlockNumber)); // no rsk tx hash
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(2L);
@@ -1896,12 +1896,12 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         long rskBlockNumber = 1L;
-        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, rskBlockNumber)); // no rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, rskBlockNumber)); // no rsk tx hash
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(2L);
@@ -1942,9 +1942,9 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(new HashSet<>()));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>()));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(2L);
@@ -1985,11 +1985,11 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
-        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L)); // no rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L)); // no rsk tx hash
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(2L);
@@ -2013,8 +2013,8 @@ class BridgeSupportTest {
             .build();
         bridgeSupport.updateCollections(tx);
 
-        assertEquals(btcTx, provider.getRskTxsWaitingForSignatures().get(tx.getHash()));
-        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
     }
 
     @Test
@@ -2027,12 +2027,12 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         Keccak256 rskTxHash = Keccak256.ZERO_HASH;
-        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L, rskTxHash)); // HAS rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L, rskTxHash)); // HAS rsk tx hash
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(2L);
@@ -2056,8 +2056,8 @@ class BridgeSupportTest {
             .build();
         bridgeSupport.updateCollections(tx);
 
-        assertEquals(btcTx, provider.getRskTxsWaitingForSignatures().get(rskTxHash));
-        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(rskTxHash));
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
     }
 
     @Test
@@ -2071,12 +2071,12 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         Keccak256 rskTxHash = Keccak256.ZERO_HASH;
-        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L, rskTxHash)); // HAS rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L, rskTxHash)); // HAS rsk tx hash
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(2L);
@@ -2100,8 +2100,8 @@ class BridgeSupportTest {
             .build();
         bridgeSupport.updateCollections(tx);
 
-        assertEquals(btcTx, provider.getRskTxsWaitingForSignatures().get(tx.getHash()));
-        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
     }
 
     private static Stream<BridgeConstants> provideBridgeConstants() {
@@ -2117,12 +2117,12 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         Keccak256 pegoutCreationRskTxHash = Keccak256.ZERO_HASH;
-        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L, pegoutCreationRskTxHash));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L, pegoutCreationRskTxHash));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(2L + bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations());
@@ -2146,9 +2146,9 @@ class BridgeSupportTest {
             .build();
         bridgeSupport.updateCollections(tx);
 
-        assertNull(provider.getRskTxsWaitingForSignatures().get(tx.getHash()));
-        assertEquals(btcTx, provider.getRskTxsWaitingForSignatures().get(pegoutCreationRskTxHash));
-        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        assertNull(provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
+        assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(pegoutCreationRskTxHash));
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
     }
 
     @ParameterizedTest
@@ -2161,10 +2161,10 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTxNewEntryValue = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         Keccak256 pegoutCreationRskTxHash = Keccak256.ZERO_HASH;
-        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTxNewEntryValue, 1L, pegoutCreationRskTxHash));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTxNewEntryValue, 1L, pegoutCreationRskTxHash));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
 
         Block executionBlock = mock(Block.class);
@@ -2191,17 +2191,17 @@ class BridgeSupportTest {
         TreeMap<Keccak256, BtcTransaction> txsWaitingForSignatures = new TreeMap<>();
         BtcTransaction existingBtcTxEntryValue = mock(BtcTransaction.class);
         txsWaitingForSignatures.put(tx.getHash(), existingBtcTxEntryValue);
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(txsWaitingForSignatures);
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(txsWaitingForSignatures);
 
         bridgeSupport.updateCollections(tx);
 
-        BtcTransaction updatedBtcTxEntryValue = provider.getRskTxsWaitingForSignatures().get(tx.getHash());
+        BtcTransaction updatedBtcTxEntryValue = provider.getPegoutsWaitingForSignatures().get(tx.getHash());
 
         assertEquals(btcTxNewEntryValue, updatedBtcTxEntryValue);
         assertNotEquals(existingBtcTxEntryValue, updatedBtcTxEntryValue);
-        assertNull(provider.getRskTxsWaitingForSignatures().get(pegoutCreationRskTxHash));
-        assertEquals(1, provider.getRskTxsWaitingForSignatures().size());
-        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        assertNull(provider.getPegoutsWaitingForSignatures().get(pegoutCreationRskTxHash));
+        assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
+        assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
     }
 
     @Test()
@@ -2216,16 +2216,16 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmations = new HashSet<>();
         Keccak256 pegoutCreationRskTxHash = Keccak256.ZERO_HASH;
-        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L, pegoutCreationRskTxHash));
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        pegoutsWaitingForConfirmations.add(new PegoutsWaitingForConfirmations.Entry(btcTx, 1L, pegoutCreationRskTxHash));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
 
         TreeMap<Keccak256, BtcTransaction> txsWaitingForSignatures = new TreeMap<>();
 
         txsWaitingForSignatures.put(pegoutCreationRskTxHash, btcTx);
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(txsWaitingForSignatures);
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(txsWaitingForSignatures);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(2L);
@@ -2330,8 +2330,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertFalse(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -2419,8 +2419,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(amountToLock, provider.getNewFederationBtcUTXOs().get(0).getValue());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -2507,8 +2507,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(amountToLock, provider.getNewFederationBtcUTXOs().get(0).getValue());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -2589,23 +2589,23 @@ class BridgeSupportTest {
         Assertions.assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskAddress));
         Assertions.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
 
-        List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+        List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .collect(Collectors.toList());
 
         // First release tx should correspond to the 5 BTC lock tx
-        BtcTransaction releaseTx = releaseTxs.get(0);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(amountToLock.subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(btcAddress, releaseTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
-        Assertions.assertEquals(1, releaseTx.getInputs().size());
-        Assertions.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assertions.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        BtcTransaction pegoutBtcTx = pegoutBtcTxs.get(0);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(amountToLock.subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(btcAddress, pegoutBtcTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
+        Assertions.assertEquals(1, pegoutBtcTx.getInputs().size());
+        Assertions.assertEquals(tx1.getHash(), pegoutBtcTx.getInput(0).getOutpoint().getHash());
+        Assertions.assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -2690,8 +2690,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(Coin.COIN.multiply(5), provider.getNewFederationBtcUTXOs().get(0).getValue());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -2768,8 +2768,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertFalse(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -2860,8 +2860,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(amountToLock, provider.getNewFederationBtcUTXOs().get(0).getValue());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -2941,23 +2941,23 @@ class BridgeSupportTest {
         Assertions.assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskAddress));
         Assertions.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
 
-        List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+        List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
             .collect(Collectors.toList());
 
         // First release tx should correspond to the 5 BTC lock tx
-        BtcTransaction releaseTx = releaseTxs.get(0);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(amountToLock.subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(btcAddress, releaseTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
-        Assertions.assertEquals(1, releaseTx.getInputs().size());
-        Assertions.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assertions.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        BtcTransaction pegoutBtcTx = pegoutBtcTxs.get(0);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(amountToLock.subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(btcAddress, pegoutBtcTx.getOutput(0).getAddressFromP2PKHScript(btcRegTestParams));
+        Assertions.assertEquals(1, pegoutBtcTx.getInputs().size());
+        Assertions.assertEquals(tx1.getHash(), pegoutBtcTx.getInput(0).getOutpoint().getHash());
+        Assertions.assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -3034,8 +3034,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertFalse(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -3110,22 +3110,22 @@ class BridgeSupportTest {
         Assertions.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
 
-        List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+        List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .collect(Collectors.toList());
 
         // First release tx should correspond to the 5 BTC lock tx
-        BtcTransaction releaseTx = releaseTxs.get(0);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(amountToLock.subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(btcAddress, releaseTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams));
-        Assertions.assertEquals(1, releaseTx.getInputs().size());
-        Assertions.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assertions.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        BtcTransaction pegoutBtcTx = pegoutBtcTxs.get(0);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(amountToLock.subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(btcAddress, pegoutBtcTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams));
+        Assertions.assertEquals(1, pegoutBtcTx.getInputs().size());
+        Assertions.assertEquals(tx1.getHash(), pegoutBtcTx.getInput(0).getOutpoint().getHash());
+        Assertions.assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -3203,8 +3203,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertFalse(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -3284,22 +3284,22 @@ class BridgeSupportTest {
         Assertions.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
 
-        List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+        List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .collect(Collectors.toList());
 
         // First release tx should correspond to the 5 BTC lock tx
-        BtcTransaction releaseTx = releaseTxs.get(0);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(amountToLock.subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(btcAddress, releaseTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams));
-        Assertions.assertEquals(1, releaseTx.getInputs().size());
-        Assertions.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assertions.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        BtcTransaction pegoutBtcTx = pegoutBtcTxs.get(0);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(amountToLock.subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(btcAddress, pegoutBtcTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams));
+        Assertions.assertEquals(1, pegoutBtcTx.getInputs().size());
+        Assertions.assertEquals(tx1.getHash(), pegoutBtcTx.getInput(0).getOutpoint().getHash());
+        Assertions.assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -3478,8 +3478,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(amountToLock, provider.getNewFederationBtcUTXOs().get(0).getValue());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash(false)).isPresent());
     }
 
@@ -3843,8 +3843,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(amountToLock, provider.getNewFederationBtcUTXOs().get(0).getValue());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash(true)).isPresent());
     }
 
@@ -3950,8 +3950,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(amountToLock, provider.getNewFederationBtcUTXOs().get(0).getValue());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash(true)).isPresent());
     }
 
@@ -4065,8 +4065,8 @@ class BridgeSupportTest {
         Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(amountToLock, provider.getNewFederationBtcUTXOs().get(0).getValue());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash(true)).isPresent());
     }
 
@@ -4166,22 +4166,22 @@ class BridgeSupportTest {
         Assertions.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
 
-        List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+        List<BtcTransaction> pegoutBtcTxs = provider.getPegoutsWaitingForConfirmations().getEntries()
             .stream()
-            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .collect(Collectors.toList());
 
         // First release tx should correspond to the 5 BTC lock tx
-        BtcTransaction releaseTx = releaseTxs.get(0);
-        Assertions.assertEquals(1, releaseTx.getOutputs().size());
-        MatcherAssert.assertThat(amountToLock.subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assertions.assertEquals(btcAddressFromBtcLockSender, releaseTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams));
-        Assertions.assertEquals(1, releaseTx.getInputs().size());
-        Assertions.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assertions.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
-        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        BtcTransaction pegoutBtcTx = pegoutBtcTxs.get(0);
+        Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+        MatcherAssert.assertThat(amountToLock.subtract(pegoutBtcTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assertions.assertEquals(btcAddressFromBtcLockSender, pegoutBtcTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams));
+        Assertions.assertEquals(1, pegoutBtcTx.getInputs().size());
+        Assertions.assertEquals(tx1.getHash(), pegoutBtcTx.getInput(0).getOutpoint().getHash());
+        Assertions.assertEquals(0, pegoutBtcTx.getInput(0).getOutpoint().getIndex());
+        Assertions.assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         Assertions.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
@@ -5677,11 +5677,11 @@ class BridgeSupportTest {
         );
 
         // Create a tx from the Fed to a random btc address
-        BtcTransaction releaseTx1 = new BtcTransaction(btcRegTestParams);
-        releaseTx1.addOutput(Coin.COIN, randomAddress);
+        BtcTransaction pegoutBtcTx = new BtcTransaction(btcRegTestParams);
+        pegoutBtcTx.addOutput(Coin.COIN, randomAddress);
         TransactionInput releaseInput1 = new TransactionInput(
             btcRegTestParams,
-            releaseTx1,
+            pegoutBtcTx,
             new byte[]{},
             new TransactionOutPoint(
                 btcRegTestParams,
@@ -5690,14 +5690,14 @@ class BridgeSupportTest {
             )
         );
 
-        releaseTx1.addInput(releaseInput1);
+        pegoutBtcTx.addInput(releaseInput1);
 
         // Sign it using the Federation members
         Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
         Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(federation);
         releaseInput1.setScriptSig(inputScript);
 
-        Sha256Hash sighash = releaseTx1.hashForSignature(
+        Sha256Hash sighash = pegoutBtcTx.hashForSignature(
             0,
             redeemScript,
             BtcTransaction.SigHash.ALL,
@@ -5722,7 +5722,7 @@ class BridgeSupportTest {
         }
         releaseInput1.setScriptSig(inputScript);
 
-        Assertions.assertEquals(TxType.PEGOUT, bridgeSupport.getTransactionType(releaseTx1));
+        Assertions.assertEquals(TxType.PEGOUT, bridgeSupport.getTransactionType(pegoutBtcTx));
     }
 
     @Test
@@ -6191,8 +6191,8 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
-        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
         when(btcLockSenderProvider.tryGetBtcLockSender(btcTx)).thenReturn(Optional.empty());
@@ -6216,7 +6216,7 @@ class BridgeSupportTest {
         } catch (Exception e) {
             // Assert
             Assertions.assertTrue(e instanceof RegisterBtcTransactionException);
-            Assertions.assertEquals(0, releaseTransactionSet.getEntries().size());
+            Assertions.assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
         }
     }
 
@@ -6241,8 +6241,8 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
-        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(
             TxSenderAddressType.P2PKH,
@@ -6272,12 +6272,12 @@ class BridgeSupportTest {
         } catch (Exception ex) {
             // Assert
             Assertions.assertTrue(ex instanceof RegisterBtcTransactionException);
-            Assertions.assertEquals(1, releaseTransactionSet.getEntries().size());
+            Assertions.assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
 
             // Check rejection tx input was created from btc tx and sent to the btc refund address indicated by the user
             boolean successfulRejection = false;
-            for (ReleaseTransactionSet.Entry e : releaseTransactionSet.getEntries()) {
-                BtcTransaction refundTx = e.getTransaction();
+            for (PegoutsWaitingForConfirmations.Entry e : pegoutsWaitingForConfirmations.getEntries()) {
+                BtcTransaction refundTx = e.getBtcTransaction();
                 if (refundTx.getInput(0).getOutpoint().getHash() == btcTx.getHash() &&
                     refundTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams).equals(btcSenderAddress)) {
                     successfulRejection = true;
@@ -6579,8 +6579,8 @@ class BridgeSupportTest {
         when(lockWhitelist.isWhitelistedFor(eq(btcAddress), any(Coin.class), any(int.class))).thenReturn(isWhitelisted);
         when(provider.getLockWhitelist()).thenReturn(lockWhitelist);
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
-        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         if (mockLockingCap) {
             when(provider.getLockingCap()).thenReturn(Coin.COIN.multiply(1));
@@ -6604,12 +6604,12 @@ class BridgeSupportTest {
         bridgeSupport.processPegIn(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
 
         // Assert
-        Assertions.assertEquals(1, releaseTransactionSet.getEntries().size());
+        Assertions.assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
 
         // Check rejection tx input was created from btc tx
         boolean successfulRejection = false;
-        for (ReleaseTransactionSet.Entry e : releaseTransactionSet.getEntries()) {
-            if (e.getTransaction().getInput(0).getOutpoint().getHash() == btcTx.getHash()) {
+        for (PegoutsWaitingForConfirmations.Entry e : pegoutsWaitingForConfirmations.getEntries()) {
+            if (e.getBtcTransaction().getInput(0).getOutpoint().getHash() == btcTx.getHash()) {
                 successfulRejection = true;
                 break;
             }
@@ -6692,9 +6692,9 @@ class BridgeSupportTest {
             );
         }
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(Collections.emptySet());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(Collections.emptySet());
         BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
-        when(bridgeStorageProvider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
         when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(new ArrayList<>()));
         when(bridgeStorageProvider.getNewFederation()).thenReturn(newFed);
         when(bridgeStorageProvider.getOldFederation()).thenReturn(oldFed);
@@ -6711,7 +6711,7 @@ class BridgeSupportTest {
         // until the expected number is reached
         for (int i = 0; i < expectedTransactions; i++) {
             bridgeSupport.updateCollections(mock(Transaction.class));
-            Assertions.assertEquals(i+1, releaseTransactionSet.getEntries().size());
+            Assertions.assertEquals(i+1, pegoutsWaitingForConfirmations.getEntries().size());
         }
         Assertions.assertTrue(utxosToMigrate.isEmpty()); // Migrated UTXOs are removed from the list
 
@@ -6733,8 +6733,8 @@ class BridgeSupportTest {
             remainingUtxos -= expectedSize;
         }
 
-        releaseTransactionSet.getEntries().forEach(e -> {
-            Integer inputsSize = e.getTransaction().getInputs().size();
+        pegoutsWaitingForConfirmations.getEntries().forEach(e -> {
+            Integer inputsSize = e.getBtcTransaction().getInputs().size();
             expectedInputSizes.remove(inputsSize);
         });
 
@@ -6941,8 +6941,8 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
-        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         when(provider.getLockingCap()).thenReturn(Coin.COIN.multiply(1));
 
@@ -6974,14 +6974,14 @@ class BridgeSupportTest {
         // Assert
         if (lockSenderAddressType == TxSenderAddressType.UNKNOWN && !btcRefundAddress.isPresent()) {
             // Unknown sender and no refund address. Can't refund
-            Assertions.assertEquals(0, releaseTransactionSet.getEntries().size());
+            Assertions.assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
         } else {
-            Assertions.assertEquals(1, releaseTransactionSet.getEntries().size());
+            Assertions.assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
 
             // Check rejection tx input was created from btc tx and sent to the btc refund address indicated by the user
             boolean successfulRejection = false;
-            for (ReleaseTransactionSet.Entry e : releaseTransactionSet.getEntries()) {
-                BtcTransaction refundTx = e.getTransaction();
+            for (PegoutsWaitingForConfirmations.Entry e : pegoutsWaitingForConfirmations.getEntries()) {
+                BtcTransaction refundTx = e.getBtcTransaction();
                 if (refundTx.getInput(0).getOutpoint().getHash() == btcTx.getHash() &&
                     refundTx.getOutput(0).getScriptPubKey().getToAddress(btcRegTestParams).equals(btcRefundAddress.get())) {
                     successfulRejection = true;
@@ -7174,16 +7174,16 @@ class BridgeSupportTest {
 
         if (!shouldLock) {
             // Release tx should have been created directly to the signatures stack
-            BtcTransaction releaseTx = provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction();
-            Assertions.assertNotNull(releaseTx);
+            BtcTransaction pegoutBtcTx = provider.getPegoutsWaitingForConfirmations().getEntries().iterator().next().getBtcTransaction();
+            Assertions.assertNotNull(pegoutBtcTx);
             // returns the funds to the sender
-            Assertions.assertEquals(1, releaseTx.getOutputs().size());
-            Assertions.assertEquals(address, releaseTx.getOutputs().get(0).getAddressFromP2PKHScript(bridgeConstants.getBtcParams()));
-            Assertions.assertEquals(lockValue, releaseTx.getOutputs().get(0).getValue().add(releaseTx.getFee()));
+            Assertions.assertEquals(1, pegoutBtcTx.getOutputs().size());
+            Assertions.assertEquals(address, pegoutBtcTx.getOutputs().get(0).getAddressFromP2PKHScript(bridgeConstants.getBtcParams()));
+            Assertions.assertEquals(lockValue, pegoutBtcTx.getOutputs().get(0).getValue().add(pegoutBtcTx.getFee()));
             // Uses the same UTXO(s)
-            Assertions.assertEquals(newUtxos, releaseTx.getInputs().size());
+            Assertions.assertEquals(newUtxos, pegoutBtcTx.getInputs().size());
             for (int i = 0; i < newUtxos; i++) {
-                TransactionInput input = releaseTx.getInput(i);
+                TransactionInput input = pegoutBtcTx.getInput(i);
                 Assertions.assertEquals(tx.getHash(), input.getOutpoint().getHash());
                 Assertions.assertEquals(i, input.getOutpoint().getIndex());
             }

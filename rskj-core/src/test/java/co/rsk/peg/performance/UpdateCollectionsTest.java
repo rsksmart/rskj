@@ -32,7 +32,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.ReleaseRequestQueue;
-import co.rsk.peg.ReleaseTransactionSet;
+import co.rsk.peg.PegoutsWaitingForConfirmations;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -85,7 +85,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         maxReleaseRequests = 100;
         minMilliReleaseBtc = 10;
         maxMilliReleaseBtc = 2000;
-        updateCollections_buildReleaseTxs(stats, 100);
+        updateCollections_buildPegoutsWaitingForConfirmations(stats, 100);
 
         minTxsWaitingForSigs = 0;
         maxTxsWaitingForSigs = 10;
@@ -119,7 +119,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         maxReleaseRequests = 100;
         minMilliReleaseBtc = 10;
         maxMilliReleaseBtc = 2000;
-        updateCollections_buildReleaseTxsForBatchingPegouts(stats, 100);
+        updateCollections_buildPegoutWaitingForConfirmationsForBatchingPegouts(stats, 100);
 
         minTxsWaitingForSigs = 0;
         maxTxsWaitingForSigs = 10;
@@ -164,7 +164,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void updateCollections_buildReleaseTxs(ExecutionStats stats, int numCases) throws IOException, VMException {
+    private void updateCollections_buildPegoutsWaitingForConfirmations(ExecutionStats stats, int numCases) throws IOException, VMException {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         final BridgeStorageProvider[] providerArrayWrapper = new BridgeStorageProvider[1];
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
@@ -233,16 +233,16 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             Random rnd = new Random(numCases);
             SortedMap<Keccak256, BtcTransaction> txsWaitingForSignatures;
-            ReleaseTransactionSet txSet;
+            PegoutsWaitingForConfirmations txSet;
 
             try {
-                txsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
+                txsWaitingForSignatures = provider.getPegoutsWaitingForSignatures();
             } catch (Exception e) {
                 throw new RuntimeException("Unable to gather txs waiting for signatures");
             }
 
             try {
-                txSet = provider.getReleaseTransactionSet();
+                txSet = provider.getPegoutsWaitingForConfirmations();
             } catch (Exception e) {
                 throw new RuntimeException("Unable to gather release tx set");
             }
@@ -274,7 +274,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         HeightProvider heightProvider = (int executionIndex) -> Helper.randomInRange(minHeight, maxHeight);
 
         executeAndAverage(
-            "updateCollections-releaseTxs",
+            "updateCollections-pegoutsWaitingForConfirmations",
             numCases,
             abiEncoder,
             storageInitializer,
@@ -284,7 +284,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void updateCollections_buildReleaseTxsForBatchingPegouts(ExecutionStats stats, int numCases) throws IOException, VMException {
+    private void updateCollections_buildPegoutWaitingForConfirmationsForBatchingPegouts(ExecutionStats stats, int numCases) throws IOException, VMException {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             Random rnd = new Random(numCases);
