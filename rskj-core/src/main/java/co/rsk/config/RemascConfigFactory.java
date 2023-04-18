@@ -38,32 +38,37 @@ public class RemascConfigFactory {
     private static final Logger logger = LoggerFactory.getLogger("RemascConfigFactory");
 
     private ObjectMapper mapper;
-    private String configPath;
+    private final JsonNode configNode;
 
     public RemascConfigFactory(String remascConfigFile) {
         this.mapper = new ObjectMapper();
-        this.configPath = remascConfigFile;
+        logger.info("RemascConfigFactory remascConfigFile = {} ", remascConfigFile);
+
+        try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(remascConfigFile)) {
+            String sis = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
+                    .lines()
+                    .collect(Collectors.joining("\n"));
+
+            logger.info("RemascConfigFactory sis = {} ", sis);
+
+            configNode = JacksonParserUtil.readTree(mapper, sis);
+
+            logger.info("RemascConfigFactory node = {} ", configNode);
+        } catch (Exception ex) {
+            logger.error("Error reading REMASC", ex);
+            throw new RemascException("Error reading REMASC [" + remascConfigFile + "]: ", ex);
+        }
     }
 
     public RemascConfig createRemascConfig(String config) {
         RemascConfig remascConfig;
 
         logger.info("createRemascConfig config = {} ", config);
-        logger.info("createRemascConfig configPath = {} ", configPath);
 
-        try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(this.configPath)) {
-            String sis = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
-                    .lines()
-                    .collect(Collectors.joining("\n"));
+        try {
+            logger.info("createRemascConfig node.get(config) = {} ", configNode.get(config));
 
-            logger.info("createRemascConfig sis = {} ", sis);
-
-            JsonNode node = JacksonParserUtil.readTree(mapper, sis);
-
-            logger.info("createRemascConfig node = {} ", node);
-            logger.info("createRemascConfig node.get(config) = {} ", node.get(config));
-
-            remascConfig = JacksonParserUtil.treeToValue(mapper, node.get(config), RemascConfig.class);
+            remascConfig = JacksonParserUtil.treeToValue(mapper, configNode.get(config), RemascConfig.class);
 
             logger.info("createRemascConfig remascConfig = {} ", remascConfig);
         } catch (Exception ex) {

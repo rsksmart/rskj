@@ -59,8 +59,7 @@ class RemascConfigFactoryTest {
 
     @Test
     void createRemascConfigInvalidFile() {
-        RemascConfigFactory factory = new RemascConfigFactory("NotAFile");
-        Assertions.assertThrows(RemascException.class, () -> factory.createRemascConfig("testnet"));
+        Assertions.assertThrows(RemascException.class, () -> new RemascConfigFactory("NotAFile"));
     }
 
     @Test
