@@ -19,6 +19,7 @@ package co.rsk;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.cli.CliArgs;
+import co.rsk.cli.RskjCli;
 import co.rsk.config.*;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
@@ -254,21 +255,30 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private volatile boolean closed;
 
+
+    private final RskjCli rskjCli;
+
+
     /***** Constructors ***********************************************************************************************/
 
     public RskContext(String[] args) {
-        this(args, false);
+        this(new RskjCli(), args, false);
     }
 
     public RskContext(String[] args, boolean ignoreUnmatchedArgs) {
-        this(new CliArgs.Parser<>(
+        this(new RskjCli(), args, ignoreUnmatchedArgs);
+    }
+
+    private RskContext(RskjCli rskjCli, String[] args, boolean ignoreUnmatchedArgs) {
+        this(rskjCli, new CliArgs.Parser<>(
                 NodeCliOptions.class,
                 NodeCliFlags.class,
                 ignoreUnmatchedArgs
         ).parse(args));
     }
 
-    private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
+    private RskContext(RskjCli rskjCli, CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
+        this.rskjCli = Objects.requireNonNull(rskjCli, "RskjCli must not be null");
         this.cliArgs = cliArgs;
         initializeNativeLibs();
     }

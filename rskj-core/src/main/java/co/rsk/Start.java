@@ -17,9 +17,11 @@
  */
 package co.rsk;
 
+import co.rsk.cli.RskjCli;
 import co.rsk.util.PreflightChecksUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
 
@@ -30,8 +32,17 @@ public class Start {
 
     private static final Logger logger = LoggerFactory.getLogger("start");
 
+
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
+
+        RskjCli rskjCli = new RskjCli();
+        CommandLine commandLine = new CommandLine(rskjCli);
+        int exitCode = commandLine.execute(args);
+
+        if (exitCode != 0 || rskjCli.isVersionRequested() || rskjCli.isUsageRequested()) {
+            System.exit(exitCode);
+        }
 
         RskContext ctx = null;
         try {
@@ -48,6 +59,9 @@ public class Start {
             System.exit(1);
         }
     }
+
+
+
 
     static void runNode(@Nonnull Runtime runtime, @Nonnull PreflightChecksUtils preflightChecks, @Nonnull RskContext ctx) throws Exception {
         preflightChecks.runChecks();
