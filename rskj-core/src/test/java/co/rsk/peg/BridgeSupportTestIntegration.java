@@ -3750,8 +3750,9 @@ public class BridgeSupportTestIntegration {
         when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         when(constantsMock.getFederationChangeAuthorizer()).thenReturn(bridgeConstants.getFederationChangeAuthorizer());
 
-        long federationActivationAge = bridgeConstants.getFederationActivationAge(activationsBeforeForks);
-        when(constantsMock.getFederationActivationAge(activationsBeforeForks)).thenReturn(federationActivationAge);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
+        when(constantsMock.getFederationActivationAge(any())).thenReturn(federationActivationAge);
 
         class FederationHolder {
             private PendingFederation pendingFederation;
