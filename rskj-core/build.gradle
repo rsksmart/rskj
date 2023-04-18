@@ -1,11 +1,24 @@
 plugins {
     id 'application'
-    id "me.champeau.jmh" version "0.7.0"
 }
 
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
-apply plugin: 'me.champeau.jmh'
+
+configurations {
+    jmh
+}
+
+sourceSets {
+    jmh {
+        java {
+            srcDirs = ['src/jmh/java']
+        }
+        resources {
+            srcDirs = ['src/jmh/resources']
+        }
+    }
+}
 
 test {
     useJUnitPlatform()
@@ -115,6 +128,11 @@ ext {
             rskLllVer      : '0.0.2',
     ]
 
+    jmhLibVersions = [
+            jmh: "1.36",
+            web3j: "4.9.8",
+    ]
+
     testLibs = [
             junitLib                : "org.junit.jupiter:junit-jupiter-engine:${testLibVersions.junitVer}",
             junitParams             : "org.junit.jupiter:junit-jupiter-params:${testLibVersions.junitVer}",
@@ -128,14 +146,21 @@ ext {
 
             rskLllLib               : "co.rsk:lll-compiler:${testLibVersions.rskLllVer}",
     ]
+
+    jmhLibs = [
+            jmhCore                 : "org.openjdk.jmh:jmh-core:${jmhLibVersions.jmh}",
+            jmhAnnotations          : "org.openjdk.jmh:jmh-generator-annprocess:${jmhLibVersions.jmh}",
+            web3jCore               : "org.web3j:core:${jmhLibVersions.web3j}",
+    ]
+
 }
 
 // WARN: consider different setups and sure to not use GPG elements without checksums or without signature file
 // in the remote repository (see https://github.com/gradle/gradle/security/advisories/GHSA-j6wc-xfg8-jx2j)
 dependencies {
-    jmh 'org.web3j:core:5.0.0'
-
-    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
+    jmhImplementation "${jmhLibs.jmhCore}"
+    jmhImplementation "${jmhLibs.web3jCore}"
+    jmhAnnotationProcessor "${jmhLibs.jmhAnnotations}"
 
     implementation "${libs.nettyLib}"
     implementation "${libs.spongyCastleLib}"
@@ -271,6 +296,16 @@ task fatJar(type: Jar, dependsOn: jar) {
     with jar
 }
 
+task jmhJar(type: Jar) {
+    from sourceSets.jmh.output
+    archiveClassifier = 'jmh'
+}
+
+task jmhE2e(type: JavaExec) {
+    classpath = sourceSets.jmh.runtimeClasspath
+    mainClass = 'co.rsk.jmh.web3.BenchmarkWeb3RunnerE2E'
+}
+
 tasks.withType(Tar) {
     compression = Compression.GZIP
     archiveExtension.set('tar.gz')
@@ -286,6 +321,7 @@ artifacts {
     }
     archives fatJar
     archives distTar
+    archives jmhJar
 }
 
 static def gitCurrentBranch() {
