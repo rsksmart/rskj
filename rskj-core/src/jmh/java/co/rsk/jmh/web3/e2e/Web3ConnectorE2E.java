@@ -71,17 +71,17 @@ public class Web3ConnectorE2E implements Web3Connector {
         }
     }
 
-    @Override
-    public String ethSendRawTransaction() throws HttpRpcException {
-        String tx = "";
-        try {
-            Request<?, EthSendTransaction> request = web3j.ethSendRawTransaction(tx);
-            EthSendTransaction response = request.send();
-            return response.getTransactionHash();
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
-        }
-    }
+//    @Override
+//    public String ethSendRawTransaction() throws HttpRpcException {
+//        String tx = "";
+//        try {
+//            Request<?, EthSendTransaction> request = web3j.ethSendRawTransaction(tx);
+//            EthSendTransaction response = request.send();
+//            return response.getTransactionHash();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            throw new HttpRpcException(e.getMessage());
+//        }
+//    }
 
 }
