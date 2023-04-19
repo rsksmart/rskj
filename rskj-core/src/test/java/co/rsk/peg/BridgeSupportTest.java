@@ -64,6 +64,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -6911,6 +6912,112 @@ class BridgeSupportTest {
             .build();
 
         assertEquals(Coin.ZERO, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
+    }
+
+    private static Stream<Arguments> fedProvider() {
+        BridgeRegTestConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
+            PegTestUtils.createRandomBtcECKeys(7)
+        );
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP385)).thenReturn(true);
+
+        return Stream.of(
+            Arguments.of(activations, bridgeConstantsRegtest.getGenesisFederation()),
+            Arguments.of(activations, new P2shErpFederation(
+                members,
+                Instant.now(),
+                1L,
+                bridgeConstantsRegtest.getBtcParams(),
+                bridgeConstantsRegtest.getErpFedPubKeysList(),
+                bridgeConstantsRegtest.getErpFedActivationDelay(),
+                activations
+            ))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("fedProvider")
+    void getEstimatedFeesForNextPegOutEvent_zero_pegouts_after_RSKIP385(ActivationConfig.ForBlock activations, Federation federation) throws IOException {
+        // Arrange
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        when(provider.getReleaseRequestQueueSize()).thenReturn(0);
+        when(provider.getNewFederation()).thenReturn(federation);
+
+        Coin feePerKB = Coin.MILLICOIN;
+        when(provider.getFeePerKb()).thenReturn(feePerKB);
+
+        // Act
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withProvider(provider)
+            .withActivations(activations)
+            .build();
+
+        // Assert
+        int outputs = 1 + 2; // N + 2 outputs
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, bridgeConstantsRegtest.getGenesisFederation(), 2, outputs);
+
+        Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
+
+        assertEquals(expected, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
+    }
+
+    @ParameterizedTest
+    @MethodSource("fedProvider")
+    void getEstimatedFeesForNextPegOutEvent_one_pegout_after_RSKIP385(ActivationConfig.ForBlock activations, Federation federation) throws IOException {
+        // Arrange
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        int pegoutsCount = 1;
+        when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutsCount);
+        when(provider.getNewFederation()).thenReturn(federation);
+
+        Coin feePerKB = Coin.MILLICOIN;
+        when(provider.getFeePerKb()).thenReturn(feePerKB);
+
+        // Act
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withProvider(provider)
+            .withActivations(activations)
+            .build();
+
+        // Assert
+        int outputs = pegoutsCount + 2; // N + 2 outputs
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, bridgeConstantsRegtest.getGenesisFederation(), 2, outputs);
+
+        Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
+
+        assertEquals(expected, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
+    }
+
+    @ParameterizedTest
+    @MethodSource("fedProvider")
+    void getEstimatedFeesForNextPegOutEvent_multiple_pegouts_after_RSKIP385(ActivationConfig.ForBlock activations, Federation federation) throws IOException {
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        int pegoutRequestsCount = 150;
+        when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutRequestsCount);
+        when(provider.getNewFederation()).thenReturn(federation);
+
+        Coin feePerKB = Coin.MILLICOIN;
+        when(provider.getFeePerKb()).thenReturn(feePerKB);
+
+        // Act
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withProvider(provider)
+            .withActivations(activations)
+            .build();
+
+        // Assert
+        int outputs = pegoutRequestsCount + 2; // N + 2 outputs
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, bridgeConstantsRegtest.getGenesisFederation(), 2, outputs);
+
+        Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
+
+        assertEquals(expected, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
     }
 
     private void assertRefundInProcessPegInVersion1(
