@@ -6944,7 +6944,8 @@ class BridgeSupportTest {
         // Arrange
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        when(provider.getReleaseRequestQueueSize()).thenReturn(0);
+        int pegoutRequestsCount = 0;
+        when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutRequestsCount);
         when(provider.getNewFederation()).thenReturn(federation);
 
         Coin feePerKB = Coin.MILLICOIN;
@@ -6957,8 +6958,8 @@ class BridgeSupportTest {
             .build();
 
         // Assert
-        int outputs = 1 + 2; // N + 2 outputs
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, bridgeConstantsRegtest.getGenesisFederation(), 2, outputs);
+        int outputs = pegoutRequestsCount + 2; // N + 2 outputs
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
 
         Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
 
@@ -6986,7 +6987,7 @@ class BridgeSupportTest {
 
         // Assert
         int outputs = pegoutsCount + 2; // N + 2 outputs
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, bridgeConstantsRegtest.getGenesisFederation(), 2, outputs);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
 
         Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
 
@@ -7013,7 +7014,7 @@ class BridgeSupportTest {
 
         // Assert
         int outputs = pegoutRequestsCount + 2; // N + 2 outputs
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, bridgeConstantsRegtest.getGenesisFederation(), 2, outputs);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
 
         Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
 
