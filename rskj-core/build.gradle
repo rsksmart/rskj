@@ -343,7 +343,38 @@ task jmhJar(type: Jar) {
     archiveClassifier = 'jmh'
 }
 
-task jmhE2e(type: JavaExec) {
+task jmh(type: JavaExec) {
+    classpath = sourceSets.jmh.runtimeClasspath
+    mainClass = 'org.openjdk.jmh.Main'
+
+    def defaultResultDir = "${buildDir}/reports/jmh"
+    mkdir defaultResultDir
+
+    def customArgs = []
+    // provide -PjmhArgs="<regular jmh parameters format>", ie: -PjmhArgs="-p suite=e2e -p host=http://localhost:4444 co.rsk.jmh.web3.BenchmarkWeb3"
+    if (project.hasProperty('jmhArgs')) {
+        customArgs = jmhArgs.split("\\s+")
+    }
+    // provide named parameters subset, ie: -Pbenchmark="co.rsk.jmh.web3.BenchmarkWeb3" -Psuite="e2e" -Phost="http://localhost:4444"
+    else if (project.hasProperty('benchmark') && project.hasProperty('suite')) {
+        customArgs = [
+                "-p", "suite=${project.getProperty("suite")}",
+                "-rff", "${defaultResultDir}/result.txt"
+        ]
+
+        // optional
+        if (project.hasProperty('host')) {
+            customArgs << "-p" << "host=${project.getProperty("host")}"
+        }
+
+        // must be last
+        customArgs << "${project.getProperty("benchmark")}"
+    }
+
+    args(customArgs)
+}
+
+task testJmhE2e(type: JavaExec) {
     classpath = sourceSets.jmh.runtimeClasspath
     mainClass = 'co.rsk.jmh.web3.BenchmarkWeb3RunnerE2E'
 }
