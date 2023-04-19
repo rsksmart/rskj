@@ -24,6 +24,8 @@ import org.openjdk.jmh.annotations.*;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
+// TODO(iago) create README.md with run modes, Gradle tasks, etc.
+
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @BenchmarkMode(Mode.AverageTime) // TODO(iago) check more modes
 @Warmup(iterations = 1, time = 1)
@@ -40,10 +42,6 @@ public class BenchmarkWeb3 {
         private static final String SUITE_E2E = "e2e";
 
         private static final String SUITE_INTEGRATION = "int";
-
-        // TODO(iago) add these params to a README.md
-
-        // TODO(iago) add instructions to create and run jar to a README.md
 
         @Param({PARAM_DEFAULT_NONE})
         public String suite;
