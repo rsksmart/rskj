@@ -29,6 +29,10 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -38,7 +42,7 @@ public class RemascConfigFactory {
     private static final Logger logger = LoggerFactory.getLogger("RemascConfigFactory");
 
     private ObjectMapper mapper;
-    private final JsonNode configNode;
+    private final Map<String, RemascConfig> remascConfigMap = new ConcurrentHashMap<>();
 
     public RemascConfigFactory(String remascConfigFile) {
         this.mapper = new ObjectMapper();
@@ -51,31 +55,44 @@ public class RemascConfigFactory {
 
             logger.info("RemascConfigFactory sis = {} ", sis);
 
-            configNode = JacksonParserUtil.readTree(mapper, sis);
+            JsonNode configNode = JacksonParserUtil.readTree(mapper, sis);
 
             logger.info("RemascConfigFactory node = {} ", configNode);
+
+            Iterator<String> fieldNames = configNode.fieldNames();
+
+            logger.info("RemascConfigFactory fieldNames = {} ", fieldNames);
+
+            fieldNames.forEachRemaining(field -> remascConfigMap.put(field, this.fetchRemascConfigMap(field, configNode)));
+
+            logger.info("RemascConfigFactory remascConfigMap = {} ", remascConfigMap);
         } catch (Exception ex) {
             logger.error("Error reading REMASC", ex);
             throw new RemascException("Error reading REMASC [" + remascConfigFile + "]: ", ex);
         }
     }
 
-    public RemascConfig createRemascConfig(String config) {
+    private RemascConfig fetchRemascConfigMap(String config, JsonNode configNode) {
         RemascConfig remascConfig;
 
-        logger.info("createRemascConfig config = {} ", config);
+        logger.info("fetchRemascConfigMap config = {} ", config);
 
         try {
-            logger.info("createRemascConfig node.get(config) = {} ", configNode.get(config));
+            logger.info("fetchRemascConfigMap node.get(config) = {} ", configNode.get(config));
 
             remascConfig = JacksonParserUtil.treeToValue(mapper, configNode.get(config), RemascConfig.class);
 
-            logger.info("createRemascConfig remascConfig = {} ", remascConfig);
+            logger.info("fetchRemascConfigMap remascConfig = {} ", remascConfig);
         } catch (Exception ex) {
             logger.error("Error reading REMASC configuration[{}]: {}", config, ex);
             throw new RemascException("Error reading REMASC configuration[" + config + "]: ", ex);
         }
 
         return remascConfig;
+    }
+
+    public RemascConfig createRemascConfig(String config) {
+        return Optional.ofNullable(remascConfigMap.get(config))
+                .orElseThrow(() -> new RemascException("Error reading REMASC configuration[" + config + "]"));
     }
 }
