@@ -30,6 +30,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
     private final Map<Integer, TransactionReceipt> receipts;
     private final Map<Keccak256, ProgramResult> transactionResults;
     private final ProgramTraceProcessor programTraceProcessor;
+    private long sublistGasLimit;
     private final boolean remascEnabled;
     private long totalGas;
     private int i;
@@ -53,7 +54,8 @@ public class TransactionListExecutor implements Callable<Boolean> {
             @Nullable ProgramTraceProcessor programTraceProcessor,
             int firstTxIndex,
             Coin totalPaidFees,
-            boolean remascEnabled) {
+            boolean remascEnabled,
+            long sublistGasLimit) {
         this.block = block;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.track = track;
@@ -72,6 +74,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
         this.i = firstTxIndex;
         this.totalPaidFees = totalPaidFees;
         this.remascEnabled = remascEnabled;
+        this.sublistGasLimit = sublistGasLimit;
     }
 
     @Override
@@ -95,8 +98,8 @@ public class TransactionListExecutor implements Callable<Boolean> {
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts,
-                    true
-            );
+                    true,
+                    sublistGasLimit);
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {

@@ -434,6 +434,7 @@ public class BlockExecutor {
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.getTransactionExecutionThreads());
         ExecutorCompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
         List<TransactionListExecutor> transactionListExecutors = new ArrayList<>();
+        long sublistGasLimit = getSublistGasLimit(block);
 
         short start = 0;
 
@@ -456,7 +457,8 @@ public class BlockExecutor {
                     programTraceProcessor,
                     start,
                     Coin.ZERO,
-                    remascEnabled
+                    remascEnabled,
+                    sublistGasLimit
             );
             completionService.submit(txListExecutor);
             transactionListExecutors.add(txListExecutor);
@@ -530,7 +532,8 @@ public class BlockExecutor {
                 programTraceProcessor,
                 start,
                 totalPaidFees,
-                remascEnabled
+                remascEnabled,
+                sublistGasLimit
         );
         Boolean success = txListExecutor.call();
         if (!Boolean.TRUE.equals(success)) {
@@ -593,8 +596,9 @@ public class BlockExecutor {
 
         int txindex = 0;
 
-        long sublistGasLimit = GasCost.toGas(block.getGasLimit()) / 2;
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), sublistGasLimit, sublistGasLimit);
+        int transactionExecutionThreads = Constants.getTransactionExecutionThreads();
+        long sublistGasLimit = getSublistGasLimit(block);
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) transactionExecutionThreads, sublistGasLimit);
 
         for (Transaction tx : transactionsList) {
             loggingApplyBlockToTx(block, i);
@@ -609,7 +613,8 @@ public class BlockExecutor {
                     false,
                     0,
                     deletedAccounts,
-                    true
+                    true,
+                    sublistGasLimit
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
@@ -690,6 +695,10 @@ public class BlockExecutor {
         profiler.stop(metric);
         logger.trace("End executeForMining.");
         return result;
+    }
+
+    private static long getSublistGasLimit(Block block) {
+        return GasCost.toGas(block.getGasLimit()) / 2;
     }
 
     private void registerExecutedTx(ProgramTraceProcessor programTraceProcessor, boolean vmTrace, List<Transaction> executedTransactions, Transaction tx, TransactionExecutor txExecutor) {

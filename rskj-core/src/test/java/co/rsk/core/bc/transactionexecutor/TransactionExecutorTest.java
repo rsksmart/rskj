@@ -100,9 +100,13 @@ class TransactionExecutorTest {
 
     @Test
     void testInitHandlesFreeTransactionsOK() {
-
         BlockTxSignatureCache blockTxSignatureCache = mock(BlockTxSignatureCache.class);
         Transaction transaction = mock(Transaction.class);
+        // paperwork: transaction has high gas limit, execution block has normal gas limit
+        // and the nonces are okey
+        when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(4000000).toByteArray());
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
+
         TransactionExecutor txExecutor = new TransactionExecutor(
                 constants, activationConfig, transaction, txIndex, rskAddress,
                 repository, blockStore, receiptStore, blockFactory,
@@ -111,11 +115,6 @@ class TransactionExecutorTest {
                 blockTxSignatureCache
         );
 
-
-        // paperwork: transaction has high gas limit, execution block has normal gas limit
-        // and the nonces are okey
-        when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(4000000).toByteArray());
-        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
         when(repository.getNonce(transaction.getSender())).thenReturn(BigInteger.valueOf(1L));
         when(transaction.getNonce()).thenReturn(BigInteger.valueOf(1L).toByteArray());
         // more paperwork, the receiver is just someone
