@@ -93,13 +93,15 @@ public class BenchmarkWeb3 {
         }
     }
 
-//    @Benchmark
-//    public void ethSendRawTransaction(ExecutionPlan plan) throws BenchmarkWeb3Exception {
-//        String txHash = plan.web3Connector.ethSendRawTransaction();
-//        if (plan.logEnabled) {
-//            System.out.println("ethSendRawTransaction response: " + txHash);
-//        }
-//    }
+    @Benchmark
+    public void ethSendRawTransaction(ExecutionPlan plan) throws BenchmarkWeb3Exception {
+        // TODO this has to be reviewed to consider tx nonce, etc.
+        String rawTx = (String) plan.properties.get("rawTx");
+        String txHash = plan.web3Connector.ethSendRawTransaction(rawTx);
+        if (plan.logEnabled) {
+            logger.info("ethSendRawTransaction response: {}", txHash);
+        }
+    }
 
     public enum Suites {
         // performing actual RPC calls to a running node (this node should be disconnected from other nodes, etc.)
