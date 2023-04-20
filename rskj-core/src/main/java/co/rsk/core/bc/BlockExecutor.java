@@ -698,7 +698,7 @@ public class BlockExecutor {
     }
 
     private static long getSublistGasLimit(Block block) {
-        return GasCost.toGas(block.getGasLimit()) / 2;
+        return GasCost.toGas(block.getGasLimit()) / (Constants.getTransactionExecutionThreads()+1);
     }
 
     private void registerExecutedTx(ProgramTraceProcessor programTraceProcessor, boolean vmTrace, List<Transaction> executedTransactions, Transaction tx, TransactionExecutor txExecutor) {

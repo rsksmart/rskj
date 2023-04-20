@@ -990,7 +990,7 @@ public class BlockExecutorTest {
     }
 
     private static long getSublistGaslimit(Block parent) {
-        return GasCost.toGas(parent.getGasLimit()) / 2;
+        return GasCost.toGas(parent.getGasLimit()) / (Constants.getTransactionExecutionThreads() + 1);
     }
 
     private static TestObjects generateBlockWithOneTransaction(Boolean activeRskip144, boolean rskip126IsActive) {

@@ -27,6 +27,7 @@ transaction_build callCodeSizeChecker
 
 block_build b01
     parent g00
+    gasLimit 7500000
     transactions createCreatorAndRun
     build
 
@@ -34,6 +35,7 @@ block_connect b01
 
 block_build b02
     parent b01
+    gasLimit 7500000
     transactions runSuicider callCodeSizeChecker
     build
 

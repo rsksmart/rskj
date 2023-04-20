@@ -98,12 +98,12 @@ public class TransactionExecutor {
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
     private final SignatureCache signatureCache;
-    private long sublistGasLimit;
+    private final long sublistGasLimit;
 
     private boolean localCall = false;
     private boolean precompiledContractHasBeenCalledFlag = false;
 
-    private boolean postponeFeePayment;
+    private final boolean postponeFeePayment;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,

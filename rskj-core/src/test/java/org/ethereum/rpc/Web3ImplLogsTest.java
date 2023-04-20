@@ -111,11 +111,10 @@ class Web3ImplLogsTest {
     private static final String ONE_TOPIC = "0000000000000000000000000000000000000000000000000000000000000001";
     private static final String INCREMENT_METHOD_SIGNATURE = "371303c0";
     private static final String GET_VALUE_METHOD_SIGNATURE = "20965255";
-    private static final String TRACKED_TEST_BLOCK_HASH = "0x1d3137d39f8467053020d1521019d23d33e3a03e92f296f4a0e8ed12b2891ae7";
+    private static final String TRACKED_TEST_BLOCK_HASH = "0x00ed383312dfc27d0ff0b85632ac24380a32ce511bb6bcb776d5812f35d4d157";
     private static final String UNTRACKED_TEST_BLOCK_HASH = "0xdea168a4f74e51a3eeb6d72b049c4fc7bc750dd51f13a3afa4fee4bece0e85eb";
     private final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockChain;
-	private MiningMainchainView mainchainView;
     private RepositoryLocator repositoryLocator;
     private TransactionPool transactionPool;
     private Ethereum eth;
@@ -134,7 +133,6 @@ class Web3ImplLogsTest {
         blockChain = factory.getBlockchain();
         blockStore = factory.getBlockStore();
         trieStore = factory.getTrieStore();
-        mainchainView = factory.getMiningMainchainView();
         repositoryLocator = factory.getRepositoryLocator();
         transactionPool = factory.getTransactionPool();
         eth = factory.getRsk();
@@ -1287,7 +1285,7 @@ class Web3ImplLogsTest {
     } */
         return new TransactionBuilder()
                 .sender(acc1)
-                .gasLimit(BigInteger.valueOf(1000000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
                 .data(compiled_0_4_11)
                 .build();
@@ -1329,7 +1327,7 @@ contract main {
 
         return new TransactionBuilder()
                 .sender(acc1)
-                .gasLimit(BigInteger.valueOf(1000000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
                 .data(compiledLogExample)
                 .build();
@@ -1359,7 +1357,7 @@ contract caller {
         String compiledCaller = "606060405234610000576040516020806101f8833981016040528080519060200190919050505b8073ffffffffffffffffffffffffffffffffffffffff1663195977a66130396040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b156100005760325a03f115610000575050507f2012ef02e82e91abf55727cc31c3b6e3375003aa9e879f855db72d9e78822c40607b6040518082815260200191505060405180910390a15b505b610111806100e76000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063e60c2d4414603c575b6000565b34600057606a600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050606c565b005b8073ffffffffffffffffffffffffffffffffffffffff1663195977a661303a6040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1560005760325a03f1156000575050505b505600a165627a7a72305820f8bc730651ba568de3f84a81088f94a8701c5c41f732d5c7a447077ee40f97a80029";
         return new TransactionBuilder()
                 .sender(acc1)
-                .gasLimit(BigInteger.valueOf(1000000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
                 .data( compiledCaller + address)
                 .nonce(1)
@@ -1377,7 +1375,7 @@ contract caller {
         return new TransactionBuilder()
                 .sender(acc1)
                 .receiverAddress(receiverAddress)
-                .gasLimit(BigInteger.valueOf(1000000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
                 .data(ByteUtil.toHexString(func.encode("0x" + address)))
                 .nonce(2)

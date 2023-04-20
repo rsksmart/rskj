@@ -98,6 +98,7 @@ transaction_build tx03
 
 block_build b01
     parent g00
+    gasLimit 10000000
     transactions tx01 tx02 tx03
     build
 
@@ -113,13 +114,13 @@ transaction_build tx04
     receiverAddress 27444fbce96cb2d27b94e116d1506d7739c05862
     value 0
     data d96a094a0000000000000000000000000000000000000000000000000000000000000000
-    gas 2000000
+    gas 500000
     build
 
 block_build b02
     parent b01
     transactions tx04
-    gasLimit 6500000
+    gasLimit 10000000
     build
 
 block_connect b02
@@ -140,7 +141,7 @@ transaction_build tx05
 block_build b03
     parent b02
     transactions tx05
-    gasLimit 6500000
+    gasLimit 10000000
     build
 
 block_connect b03

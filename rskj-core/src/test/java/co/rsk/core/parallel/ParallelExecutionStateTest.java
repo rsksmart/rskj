@@ -183,11 +183,12 @@ class ParallelExecutionStateTest {
                     "    sender acc3\n" +
                     "    receiverAddress 00\n" +
                     "    data " + creationData + "\n" +
-                    "    gas 1200000\n" +
+                    "    gas 500000\n" +
                     "    build\n" +
                     "\n" +
                     "block_build b01\n" +
                     "    parent g00\n" +
+                    "    gasLimit 7500000\n" +
                     "    transactions tx01\n" +
                     "    build\n" +
                     "\n" +
@@ -268,7 +269,7 @@ class ParallelExecutionStateTest {
                 "    sender acc3\n" +
                 "    receiverAddress 00\n" +
                 "    data " + getProxyCreationCode(readWriteAddress) + "\n" +
-                "    gas 1200000\n" +
+                "    gas 600000\n" +
                 "    nonce 1\n" +
                 "    build\n" +
                 "\n" +
@@ -571,6 +572,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "block_build b01\n" +
                 "    parent g00\n" +
+                "    gasLimit 10000000\n" +
                 "    transactions tx01 tx02\n" +
                 "    build\n" +
                 "\n" +
@@ -602,6 +604,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "block_build b01\n" +
                 "    parent g00\n" +
+                "    gasLimit 7500000\n" +
                 "    transactions tx01 tx02\n" +
                 "    build\n" +
                 "\n" +
@@ -630,7 +633,7 @@ class ParallelExecutionStateTest {
                 "    build\n" +
                 "\n", true), 0);
 
-        Assertions.assertEquals(3000000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
+        Assertions.assertEquals(7500000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
         Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[] { 1 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
@@ -677,7 +680,7 @@ class ParallelExecutionStateTest {
                 "assert_tx_success tx04\n" +
                 "\n", 0);
 
-        Assertions.assertEquals(3000000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
+        Assertions.assertEquals(7500000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
         Assertions.assertEquals(3, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[] { 1 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
@@ -723,7 +726,7 @@ class ParallelExecutionStateTest {
                 "assert_tx_success tx04\n" +
                 "\n", 0);
 
-        Assertions.assertEquals(3000000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
+        Assertions.assertEquals(7500000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
         Assertions.assertEquals(3, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[] { 1, 2 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
@@ -769,7 +772,7 @@ class ParallelExecutionStateTest {
                 "assert_tx_success tx04\n" +
                 "\n", 0);
 
-        Assertions.assertEquals(3000000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
+        Assertions.assertEquals(7500000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
         Assertions.assertEquals(3, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[] { 1, 2 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
@@ -824,7 +827,7 @@ class ParallelExecutionStateTest {
                 "assert_tx_success tx05\n" +
                 "\n", 0);
 
-        Assertions.assertEquals(3000000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
+        Assertions.assertEquals(7500000L, GasCost.toGas(parallel.getBlockChain().getBestBlock().getHeader().getGasLimit()));
         Assertions.assertEquals(4, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[] { 1, 2 }, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
@@ -842,6 +845,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "block_build b01\n" +
                 "    parent g00\n" +
+                "    gasLimit 7500000\n" +
                 "    transactions tx01\n" +
                 "    build\n" +
                 "\n" +
@@ -868,6 +872,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
+                        "    gasLimit 7500000\n" +
                         "    transactions tx01\n" +
                         "    build\n" +
                         "\n" +
@@ -895,6 +900,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
+                        "    gasLimit 7500000\n" +
                         "    transactions tx01\n" +
                         "    build\n" +
                         "\n" +
@@ -929,6 +935,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
+                        "    gasLimit 7500000\n" +
                         "    transactions tx01 tx02\n" +
                         "    build\n" +
                         "\n" +
@@ -964,6 +971,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "block_build b01\n" +
                         "    parent g00\n" +
+                        "    gasLimit 7500000\n" +
                         "    transactions tx01 tx02\n" +
                         "    build\n" +
                         "\n" +
@@ -1068,6 +1076,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "block_build b01\n" +
                 "    parent g00\n" +
+                "    gasLimit 7500000\n" +
                 "    transactions tx01\n" +
                 "    build\n" +
                 "\n" +
