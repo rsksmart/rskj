@@ -79,14 +79,13 @@ public class ShowInfo extends PicoCliToolRskContextAware {
 
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore;
-        long blockNumber = -1;
         Block block;
 
         if (command == Command.STATESIZES) {
             trieStore = ctx.getTrieStore();
             System.out.println("block number,size");
 
-            for (blockNumber = 1_600_000; blockNumber <= 4_300_000; blockNumber += 50_000) {
+            for (blockNumber = 1_600_000L; blockNumber <= 4_300_000; blockNumber += 50_000) {
 
                 block = blockStore.getChainBlockByNumber(blockNumber);
                 Optional<Trie> otrie = trieStore.retrieve(block.getStateRoot());
@@ -122,7 +121,7 @@ public class ShowInfo extends PicoCliToolRskContextAware {
             block = blockStore.getBestBlock();
             root = block.getStateRoot();
             trieStore = ctx.getTrieStore();
-            System.out.println("best block " + blockNumber);
+            System.out.println("best block " + block.getNumber());
             System.out.println("State root: " + Hex.toHexString(root));
             showState(root, trieStore);
         } else {
