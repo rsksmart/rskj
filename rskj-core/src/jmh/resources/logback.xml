@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- For assistance related to logback-translator or configuration  -->
+<!-- files in general, please contact the logback user mailing list -->
+<!-- at http://www.qos.ch/mailman/listinfo/logback-user             -->
+<!--                                                                -->
+<!-- For professional support please see                            -->
+<!--    http://www.qos.ch/shop/products/professionalSupport         -->
+<!--                                                                -->
+<configuration debug="false" scan="true" scanPeriod="3600 seconds">
+
+    <!-- Stdout appender -->
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <Target>System.out</Target>
+        <encoder>
+            <Pattern>
+                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''}  %m%n
+            </Pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${logging.stdout:-OFF}</level>
+        </filter>
+    </appender>
+
+    <!-- File appender -->
+    <appender name="FILE-AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${HOME}/logs/jmh.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!-- we use the replace pattern to allow wrapping mdc keys in [] while avoiding outputting an empty [] if none -->
+            <Pattern>
+                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''}  %m%n
+            </Pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${HOME}/logs/jmh-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${logging:-TRACE}</level>
+        </filter>
+    </appender>
+
+    <!-- Root logger -->
+    <root level="DEBUG">
+        <appender-ref ref="stdout"/>
+        <appender-ref ref="FILE-AUDIT"/>
+    </root>
+
+</configuration>
