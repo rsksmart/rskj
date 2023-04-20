@@ -160,7 +160,11 @@ ext {
 dependencies {
     jmhImplementation "${jmhLibs.jmhCore}"
     jmhImplementation "${jmhLibs.web3jCore}"
+    jmhImplementation "${libs.slf4jApiLib}"
     jmhAnnotationProcessor "${jmhLibs.jmhAnnotations}"
+    jmhRuntimeOnly "${libs.log4jOverSlf4jLib}"
+    jmhRuntimeOnly "${libs.logbackCoreLib}"
+    jmhRuntimeOnly "${libs.logbackClassicLib}"
 
     implementation "${libs.nettyLib}"
     implementation "${libs.spongyCastleLib}"
@@ -308,12 +312,12 @@ task jmh(type: JavaExec) {
 
     classpath = sourceSets.jmh.runtimeClasspath
 
-    // provide -PjmhArgs="<regular jmh parameters format>", ie: -PjmhArgs="-p suite=e2e -p host=http://localhost:4444 co.rsk.jmh.web3.BenchmarkWeb3"
+    // provide -PjmhArgs="<regular jmh parameters format>", ie: -PjmhArgs="-wi 5 -i 5 -f 1 -p suite=e2e -p host=http://localhost:4444 co.rsk.jmh.web3.BenchmarkWeb3"
     if (project.hasProperty('jmhArgs')) {
         mainClass = 'org.openjdk.jmh.Main'
         args(jmhArgs.split("\\s+"))
     }
-    // provide predefined Benchmark Runner task, ie: BenchmarkWeb3RunnerE2E, and optionally other known parameters
+    // provide predefined Benchmark Runner task and optionally other known parameters, ie: -Pbenchmark=BenchmarkWeb3E2ERunner -Phost=http://localhost:4444 -Pnetwork=regtest
     else if (project.hasProperty('benchmark')) {
         mainClass = "co.rsk.jmh.runners.${project.getProperty("benchmark")}"
 

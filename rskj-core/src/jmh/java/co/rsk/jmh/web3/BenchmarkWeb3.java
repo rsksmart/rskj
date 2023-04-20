@@ -21,21 +21,22 @@ package co.rsk.jmh.web3;
 import co.rsk.jmh.ConfigHelper;
 import co.rsk.jmh.web3.e2e.Web3ConnectorE2E;
 import org.openjdk.jmh.annotations.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-// TODO(iago) create README.md with run modes, Gradle tasks, etc.
-// TODO(iago) add a proper logger?
-
-// these are default values, can be overriden via CLI or Runner parameters
+// annotated fields at class, method or field level are providing default values that can be overriden via CLI or Runner parameters
 @BenchmarkMode({Mode.SingleShotTime})
 @Warmup(iterations = 1, batchSize = 5)
 @Measurement(iterations = 100, batchSize = 5)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Timeout(time = 20)
 public class BenchmarkWeb3 {
+
+    private static final Logger logger = LoggerFactory.getLogger(BenchmarkWeb3.class);
 
     @State(Scope.Benchmark)
     public static class ExecutionPlan {
@@ -49,7 +50,7 @@ public class BenchmarkWeb3 {
         @Param("http://localhost:4444")
         public String host;
 
-        @Param("false")
+        @Param("true")
         public boolean logEnabled;
 
         private Web3ConnectorE2E web3Connector;
@@ -80,7 +81,7 @@ public class BenchmarkWeb3 {
 
         BigInteger balance = plan.web3Connector.ethGetBalance(address, "latest");
         if (plan.logEnabled) {
-            System.out.println("ethGetBalance response: " + balance);
+            logger.info("ethGetBalance response: {}", balance);
         }
     }
 
@@ -88,7 +89,7 @@ public class BenchmarkWeb3 {
     public void ethBlockNumber(ExecutionPlan plan) throws BenchmarkWeb3Exception {
         String blockNumber = plan.web3Connector.ethBlockNumber();
         if (plan.logEnabled) {
-            System.out.println("ethBlockNumber response: " + blockNumber);
+            logger.info("ethBlockNumber response: {}", blockNumber);
         }
     }
 
