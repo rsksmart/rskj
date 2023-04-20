@@ -16,8 +16,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.jmh.web3;
+package co.rsk.jmh.runners;
 
+import co.rsk.jmh.web3.BenchmarkWeb3;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -25,19 +28,23 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class BenchmarkWeb3RunnerE2E {
+public class BenchmarkWeb3E2ERunner {
 
     public static void main(String[] args) throws Exception {
         Path resultDir = Paths.get(System.getProperty("user.dir"), "build", "reports", "jmh");
         resultDir.toFile().mkdirs();
 
         Options opt = new OptionsBuilder()
-                .threads(1)
-                .param("suite", "e2e")
-                .param("host", "http://localhost:4444")
-                .result(resultDir + "/result_test.txt")
+                .include(BenchmarkWeb3.class.getName())
+                .param("suite", BenchmarkWeb3.Suites.E2E.name())
+                .param("host", ParamsHelper.getRequired("host", args))
+                .param("network", ParamsHelper.getRequired("network", args))
+                .mode(Mode.SingleShotTime)
+                .forks(0) // we don't need forks when benchmarking an external project/JVM
+                .warmupIterations(1) // for RPC calls usually one warmup call is enough
+                .result(resultDir + "/result_web3_e2e.csv")
+                .resultFormat(ResultFormatType.CSV)
                 .shouldFailOnError(true)
-                .forks(1)
                 .build();
 
         new Runner(opt).run();
