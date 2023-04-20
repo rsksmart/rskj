@@ -336,11 +336,6 @@ task jmh(type: JavaExec) {
 
 }
 
-task testJmhE2e(type: JavaExec) {
-    classpath = sourceSets.jmh.runtimeClasspath
-    mainClass = 'BenchmarkWeb3RunnerE2E'
-}
-
 tasks.withType(Tar) {
     compression = Compression.GZIP
     archiveExtension.set('tar.gz')
