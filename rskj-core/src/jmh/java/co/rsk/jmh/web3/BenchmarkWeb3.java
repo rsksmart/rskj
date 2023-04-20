@@ -18,50 +18,57 @@
 
 package co.rsk.jmh.web3;
 
+import co.rsk.jmh.ConfigHelper;
 import co.rsk.jmh.web3.e2e.Web3ConnectorE2E;
 import org.openjdk.jmh.annotations.*;
 
 import java.math.BigInteger;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 // TODO(iago) create README.md with run modes, Gradle tasks, etc.
+// TODO(iago) add a proper logger?
 
+// these are default values, can be overriden via CLI or Runner parameters
+@BenchmarkMode({Mode.SingleShotTime})
+@Warmup(iterations = 1, batchSize = 5)
+@Measurement(iterations = 100, batchSize = 5)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@BenchmarkMode(Mode.AverageTime) // TODO(iago) check more modes
-@Warmup(iterations = 1, time = 1)
-@Measurement(iterations = 1, time = 1)
 @Timeout(time = 20)
 public class BenchmarkWeb3 {
-
-    // to ensure we are explicitly providing a value when running
-    private static final String PARAM_DEFAULT_NONE = "-1";
 
     @State(Scope.Benchmark)
     public static class ExecutionPlan {
 
-        private static final String SUITE_E2E = "e2e";
+        @Param("regtest")
+        public String network;
 
-        private static final String SUITE_INTEGRATION = "int";
+        @Param({"E2E"})
+        public Suites suite;
 
-        @Param({PARAM_DEFAULT_NONE})
-        public String suite;
-
-        @Param({PARAM_DEFAULT_NONE})
+        @Param("http://localhost:4444")
         public String host;
 
-        @Param({"false"})
+        @Param("false")
         public boolean logEnabled;
 
         private Web3ConnectorE2E web3Connector;
 
-        @Setup(Level.Invocation)
+        private Properties properties;
+
+        @Setup(Level.Trial)
         public void setUp() throws BenchmarkWeb3Exception {
-            if (SUITE_E2E.equals(suite)) {
-                web3Connector = Web3ConnectorE2E.create(host);
-            } else if (SUITE_INTEGRATION.equals(suite)) {
-                throw new UnsupportedOperationException("Not implemented yet");
-            } else {
-                throw new BenchmarkWeb3Exception("Unknown suite: " + suite);
+            properties = ConfigHelper.build(network);
+
+            switch (suite) {
+                case E2E:
+                    web3Connector = Web3ConnectorE2E.create(host);
+                    break;
+                case INT:
+                case UNIT:
+                    throw new BenchmarkWeb3Exception("Suite not implemented yet: " + suite);
+                default:
+                    throw new BenchmarkWeb3Exception("Unknown suite: " + suite);
             }
         }
 
@@ -69,8 +76,9 @@ public class BenchmarkWeb3 {
 
     @Benchmark
     public void ethGetBalance(ExecutionPlan plan) throws BenchmarkWeb3Exception {
-        // TODO(iago) think the best way to set up params like addresses so it always work
-        BigInteger balance = plan.web3Connector.ethGetBalance("0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826", "latest");
+        String address = (String) plan.properties.get("address");
+
+        BigInteger balance = plan.web3Connector.ethGetBalance(address, "latest");
         if (plan.logEnabled) {
             System.out.println("ethGetBalance response: " + balance);
         }
@@ -91,5 +99,20 @@ public class BenchmarkWeb3 {
 //            System.out.println("ethSendRawTransaction response: " + txHash);
 //        }
 //    }
+
+    public enum Suites {
+        // performing actual RPC calls to a running node (this node should be disconnected from other nodes, etc.)
+        E2E,
+
+        // TODO:
+        //  calling org.ethereum.rpc.Web3Impl.Web3Impl methods directly, this will require spinning un a potentially
+        //  simplified RSKj node with a RskContext and some preloaded data
+        INT,
+
+        // TODO:
+        // calling org.ethereum.rpc.Web3Impl.Web3Impl methods directly to unitarily benchmark them, potentially mocking
+        // any dependency that is not relevant for the measurement
+        UNIT
+    }
 
 }
