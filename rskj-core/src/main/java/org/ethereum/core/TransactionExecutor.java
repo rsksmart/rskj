@@ -108,20 +108,6 @@ public class TransactionExecutor {
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
-            boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
-            SignatureCache signatureCache) {
-        this(constants, activationConfig, tx, txindex, coinbase,
-                track, blockStore, receiptStore, blockFactory,
-                programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
-                remascEnabled, precompiledContracts, deletedAccounts,
-                signatureCache, false, GasCost.toGas(executionBlock.getGasLimit()));
-    }
-    // TODO(JULI): set the sublist gas limit as the whole block is wrong. However, this method is just used for testing.
-
-    public TransactionExecutor(
-            Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
-            Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheContainer, VmConfig vmConfig,
             boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
             SignatureCache signatureCache, boolean postponeFeePayment, long sublistGasLimit) {
