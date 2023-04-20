@@ -28,6 +28,6 @@ public interface Web3Connector {
 
     String ethBlockNumber() throws HttpRpcException;
 
-    // String ethSendRawTransaction() throws HttpRpcException;
+    String ethSendRawTransaction(String rawTx) throws HttpRpcException;
 
 }

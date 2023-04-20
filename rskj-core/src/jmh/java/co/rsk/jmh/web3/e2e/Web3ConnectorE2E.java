@@ -24,6 +24,7 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.http.HttpService;
 
 import java.io.IOException;
@@ -70,17 +71,16 @@ public class Web3ConnectorE2E implements Web3Connector {
         }
     }
 
-//    @Override
-//    public String ethSendRawTransaction() throws HttpRpcException {
-//        String tx = "";
-//        try {
-//            Request<?, EthSendTransaction> request = web3j.ethSendRawTransaction(tx);
-//            EthSendTransaction response = request.send();
-//            return response.getTransactionHash();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            throw new HttpRpcException(e.getMessage());
-//        }
-//    }
+    @Override
+    public String ethSendRawTransaction(String rawTx) throws HttpRpcException {
+        try {
+            Request<?, EthSendTransaction> request = web3j.ethSendRawTransaction(rawTx);
+            EthSendTransaction response = request.send();
+            return response.getTransactionHash();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
 
 }
