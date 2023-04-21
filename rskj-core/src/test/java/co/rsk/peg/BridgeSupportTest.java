@@ -6914,41 +6914,138 @@ class BridgeSupportTest {
         assertEquals(Coin.ZERO, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
     }
 
-    private static Stream<Arguments> fedProvider() {
+    private static Coin calculateFee(
+        ActivationConfig.ForBlock activations,
+        Federation federation,
+        Coin feePerKB,
+        int pegoutRequestsCount)
+    {
+        int outputs = pegoutRequestsCount + 2; // N + 2 outputs
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
+        return feePerKB.multiply(pegoutTxSize).divide(1000);
+    }
+
+    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider() {
+        Coin feePerKB = Coin.MILLICOIN;
+
         BridgeRegTestConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
         );
 
+        Federation standardFed = bridgeConstantsRegtest.getGenesisFederation();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP385)).thenReturn(true);
 
+        int pegoutsCount = 0;
+        Coin expectedFee = calculateFee(activations, standardFed, feePerKB, pegoutsCount);
+
+        // active fed is standard and pegoutRequestsCount is equal to zero
+        Arguments whenFedStandardAndZeroPegoutRequests = Arguments.of(
+            activations,
+            standardFed,
+            feePerKB,
+            pegoutsCount,
+            expectedFee
+        );
+
+        pegoutsCount = 1;
+        expectedFee = calculateFee(activations, standardFed, feePerKB, pegoutsCount);
+
+        // active fed is standard and pegoutRequestsCount is equal to one
+        Arguments whenFedStandardAndOnePegoutRequests = Arguments.of(
+            activations,
+            standardFed,
+            feePerKB,
+            pegoutsCount,
+            expectedFee
+        );
+
+        pegoutsCount = 150;
+        expectedFee = calculateFee(activations, standardFed, feePerKB, pegoutsCount);
+
+        // active fed is standard and there are many pegout requests
+        Arguments whenFedStandardAndManyPegoutRequests = Arguments.of(
+            activations,
+            standardFed,
+            feePerKB,
+            pegoutsCount,
+            expectedFee
+        );
+
+        Federation p2shFed = new P2shErpFederation(
+            members,
+            Instant.now(),
+            1L,
+            bridgeConstantsRegtest.getBtcParams(),
+            bridgeConstantsRegtest.getErpFedPubKeysList(),
+            bridgeConstantsRegtest.getErpFedActivationDelay(),
+            activations
+        );
+
+        pegoutsCount = 0;
+        expectedFee = calculateFee(activations, p2shFed, feePerKB, pegoutsCount);
+
+        // active fed is p2sh and there are zero pegout requests
+        Arguments whenFedP2shAndZeroPegoutRequests = Arguments.of(
+            activations,
+            p2shFed,
+            feePerKB,
+            pegoutsCount,
+            expectedFee
+        );
+
+        pegoutsCount = 1;
+        expectedFee = calculateFee(activations, p2shFed, feePerKB, pegoutsCount);
+
+        // active fed is p2sh and there is one pegout request
+        Arguments whenFedP2shAndOnePegoutRequests = Arguments.of(
+            activations,
+            p2shFed,
+            feePerKB,
+            pegoutsCount,
+            expectedFee
+        );
+
+        pegoutsCount = 150;
+        expectedFee = calculateFee(activations, p2shFed, feePerKB, pegoutsCount);
+
+        // active fed is p2sh and there are many pegout requests
+        Arguments whenFedP2shAndManyPegoutRequests = Arguments.of(
+            activations,
+            p2shFed,
+            feePerKB,
+            pegoutsCount,
+            expectedFee
+        );
+
         return Stream.of(
-            Arguments.of(activations, bridgeConstantsRegtest.getGenesisFederation()),
-            Arguments.of(activations, new P2shErpFederation(
-                members,
-                Instant.now(),
-                1L,
-                bridgeConstantsRegtest.getBtcParams(),
-                bridgeConstantsRegtest.getErpFedPubKeysList(),
-                bridgeConstantsRegtest.getErpFedActivationDelay(),
-                activations
-            ))
+            whenFedStandardAndZeroPegoutRequests,
+            whenFedStandardAndOnePegoutRequests,
+            whenFedStandardAndManyPegoutRequests,
+            whenFedP2shAndZeroPegoutRequests,
+            whenFedP2shAndOnePegoutRequests,
+            whenFedP2shAndManyPegoutRequests
         );
     }
 
     @ParameterizedTest
-    @MethodSource("fedProvider")
-    void getEstimatedFeesForNextPegOutEvent_zero_pegouts_after_RSKIP385(ActivationConfig.ForBlock activations, Federation federation) throws IOException {
+    @MethodSource("getEstimatedFeesForNextPegOutEventArgsProvider")
+    void getEstimatedFeesForNextPegOutEvent_zero_pegouts_after_RSKIP385(
+        ActivationConfig.ForBlock activations,
+        Federation federation,
+        Coin feePerKB,
+        int pegoutRequestsCount,
+        Coin expectedEstimatedFee
+
+    ) throws IOException {
         // Arrange
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        int pegoutRequestsCount = 0;
         when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutRequestsCount);
         when(provider.getNewFederation()).thenReturn(federation);
 
-        Coin feePerKB = Coin.MILLICOIN;
         when(provider.getFeePerKb()).thenReturn(feePerKB);
 
         // Act
@@ -6958,67 +7055,7 @@ class BridgeSupportTest {
             .build();
 
         // Assert
-        int outputs = pegoutRequestsCount + 2; // N + 2 outputs
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
-
-        Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
-
-        assertEquals(expected, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
-    }
-
-    @ParameterizedTest
-    @MethodSource("fedProvider")
-    void getEstimatedFeesForNextPegOutEvent_one_pegout_after_RSKIP385(ActivationConfig.ForBlock activations, Federation federation) throws IOException {
-        // Arrange
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-
-        int pegoutsCount = 1;
-        when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutsCount);
-        when(provider.getNewFederation()).thenReturn(federation);
-
-        Coin feePerKB = Coin.MILLICOIN;
-        when(provider.getFeePerKb()).thenReturn(feePerKB);
-
-        // Act
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withProvider(provider)
-            .withActivations(activations)
-            .build();
-
-        // Assert
-        int outputs = pegoutsCount + 2; // N + 2 outputs
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
-
-        Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
-
-        assertEquals(expected, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
-    }
-
-    @ParameterizedTest
-    @MethodSource("fedProvider")
-    void getEstimatedFeesForNextPegOutEvent_multiple_pegouts_after_RSKIP385(ActivationConfig.ForBlock activations, Federation federation) throws IOException {
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-
-        int pegoutRequestsCount = 150;
-        when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutRequestsCount);
-        when(provider.getNewFederation()).thenReturn(federation);
-
-        Coin feePerKB = Coin.MILLICOIN;
-        when(provider.getFeePerKb()).thenReturn(feePerKB);
-
-        // Act
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withProvider(provider)
-            .withActivations(activations)
-            .build();
-
-        // Assert
-        int outputs = pegoutRequestsCount + 2; // N + 2 outputs
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
-
-        Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
-
-        assertEquals(expected, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
+        assertEquals(expectedEstimatedFee, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
     }
 
     private void assertRefundInProcessPegInVersion1(
