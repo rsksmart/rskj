@@ -3,7 +3,7 @@ We are using JMH library to perform our benchmarking. Please check [JMH Repo](ht
 
 # Building Benchmarks
 
-The Gradle task `jmhJar` is used to build the benchmark code, simply run it with `./gradlew jmhJar`. Jar is also built when building the whole project `./gradlew fatJar`.
+The Gradle task `jmhJar` is used to build the benchmark code, simply run it with `./gradlew jmhJar`.
 
 # Running Benchmarks
 
