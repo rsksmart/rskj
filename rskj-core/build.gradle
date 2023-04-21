@@ -393,7 +393,6 @@ artifacts {
     }
     archives fatJar
     archives distTar
-    archives jmhJar
 }
 
 static def gitCurrentBranch() {
