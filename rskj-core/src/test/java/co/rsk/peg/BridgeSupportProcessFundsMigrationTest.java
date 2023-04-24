@@ -12,6 +12,7 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.Assertions;
@@ -138,6 +139,12 @@ class BridgeSupportProcessFundsMigrationTest {
     }
 
     @Test
+    void processFundsMigration_in_migration_age_after_fingerroot_activation_mainnet() throws IOException {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, true);
+    }
+
+    @Test
     void processFundsMigration_past_migration_age_before_rskip_146_activation_mainnet() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
@@ -173,6 +180,12 @@ class BridgeSupportProcessFundsMigrationTest {
         test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, false);
     }
 
+    @Test
+    void processFundsMigration_past_migration_age_after_fingerroot_activation_mainnet() throws IOException {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, false);
+    }
+
     private void test_processFundsMigration(
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,
@@ -181,13 +194,19 @@ class BridgeSupportProcessFundsMigrationTest {
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
         Federation oldFederation = bridgeConstants.getGenesisFederation();
+        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
+
+        long expectedFederationActivationAge = activations.isActive(ConsensusRule.RSKIP383)? 120L: 60L;
+        if (bridgeConstants instanceof BridgeMainNetConstants){
+            expectedFederationActivationAge = activations.isActive(ConsensusRule.RSKIP383)? 40320L: 18500L;
+        }
+        Assertions.assertEquals(expectedFederationActivationAge, federationActivationAge);
 
         long federationCreationBlockNumber = 5L;
-        long federationInMigrationAgeHeight = federationCreationBlockNumber +
-            bridgeConstants.getFederationActivationAge(activations) +
+        long federationInMigrationAgeHeight = federationCreationBlockNumber + federationActivationAge +
             bridgeConstants.getFundsMigrationAgeSinceActivationBegin() + 1;
         long federationPastMigrationAgeHeight = federationCreationBlockNumber +
-            bridgeConstants.getFederationActivationAge(activations) +
+            federationActivationAge +
             bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations) + 1;
 
         Federation newFederation = new Federation(
