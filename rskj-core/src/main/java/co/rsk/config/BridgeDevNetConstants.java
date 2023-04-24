@@ -105,7 +105,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
         );
 
         federationActivationAgeLegacy = 10L;
-        federationActivationAge = 10L;
+        federationActivationAge = 20L;
 
         fundsMigrationAgeSinceActivationBegin = 15L;
         fundsMigrationAgeSinceActivationEnd = 100L;
