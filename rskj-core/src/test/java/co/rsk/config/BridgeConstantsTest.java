@@ -69,8 +69,8 @@ class BridgeConstantsTest {
     private static Stream<Arguments> generatorFederationActivationAge() {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), false),
-            Arguments.of(BridgeTestNetConstants.getInstance(), true),
-            Arguments.of(BridgeRegTestConstants.getInstance(), true)
+            Arguments.of(BridgeTestNetConstants.getInstance(), false),
+            Arguments.of(BridgeRegTestConstants.getInstance(), false)
         );
     }
 
