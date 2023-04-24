@@ -20,6 +20,7 @@ package co.rsk.config;
 
 import co.rsk.remasc.RemascException;
 import co.rsk.util.JacksonParserUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -63,7 +64,10 @@ public class RemascConfigFactory {
 
             logger.info("RemascConfigFactory fieldNames = {} ", fieldNames);
 
-            fieldNames.forEachRemaining(field -> remascConfigMap.put(field, this.fetchRemascConfigMap(field, configNode)));
+            while (fieldNames.hasNext()) {
+                String fieldName = fieldNames.next();
+                remascConfigMap.put(fieldName, this.fetchRemascConfigMap(fieldName, configNode));
+            }
 
             logger.info("RemascConfigFactory remascConfigMap = {} ", remascConfigMap);
         } catch (Exception ex) {
@@ -72,21 +76,16 @@ public class RemascConfigFactory {
         }
     }
 
-    private RemascConfig fetchRemascConfigMap(String config, JsonNode configNode) {
+    private RemascConfig fetchRemascConfigMap(String config, JsonNode configNode) throws JsonProcessingException {
         RemascConfig remascConfig;
 
         logger.info("fetchRemascConfigMap config = {} ", config);
 
-        try {
-            logger.info("fetchRemascConfigMap node.get(config) = {} ", configNode.get(config));
+        logger.info("fetchRemascConfigMap node.get(config) = {} ", configNode.get(config));
 
-            remascConfig = JacksonParserUtil.treeToValue(mapper, configNode.get(config), RemascConfig.class);
+        remascConfig = JacksonParserUtil.treeToValue(mapper, configNode.get(config), RemascConfig.class);
 
-            logger.info("fetchRemascConfigMap remascConfig = {} ", remascConfig);
-        } catch (Exception ex) {
-            logger.error("Error reading REMASC configuration[{}]: {}", config, ex);
-            throw new RemascException("Error reading REMASC configuration[" + config + "]: ", ex);
-        }
+        logger.info("fetchRemascConfigMap remascConfig = {} ", remascConfig);
 
         return remascConfig;
     }
