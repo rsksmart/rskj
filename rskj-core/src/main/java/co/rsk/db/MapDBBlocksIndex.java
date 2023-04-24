@@ -18,6 +18,7 @@
 
 package co.rsk.db;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.mapdb.DB;
@@ -59,7 +60,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
         // Max block number initialization assumes an index without gap
         if (!metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) {
             long maxBlockNumber = (long) index.size() - 1;
-            metadata.put(MAX_BLOCK_NUMBER_KEY,  ByteUtil.longToBytes(maxBlockNumber));
+            metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(maxBlockNumber));
         }
     }
 
@@ -111,6 +112,33 @@ public class MapDBBlocksIndex implements BlocksIndex {
         }
 
         index.put(blockNumber, blocks);
+    }
+
+    @Override
+    public void removeBlock(long blockNumber, Keccak256 blockHash) {
+        if (!index.containsKey(blockNumber)) {
+            return;
+        }
+
+        List<IndexedBlockStore.BlockInfo> binfos = index.get(blockNumber);
+
+        if (binfos == null) {
+            return;
+        }
+
+        List<IndexedBlockStore.BlockInfo> toremove = new ArrayList<>();
+
+        for (IndexedBlockStore.BlockInfo binfo : binfos) {
+            if (binfo.getHash().equals(blockHash)) {
+                toremove.add(binfo);
+            }
+        }
+        binfos.removeAll(toremove);
+        if (binfos.isEmpty()) {
+            index.remove(blockNumber);
+        } else {
+            index.put(blockNumber, binfos);
+        }
     }
 
     @Override
