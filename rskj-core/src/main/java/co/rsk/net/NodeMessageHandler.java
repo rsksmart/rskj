@@ -70,8 +70,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final PeerScoringManager peerScoringManager;
 
     private final StatusResolver statusResolver;
-    private final Map<ReceivedPeerMessageKey, Long> receivedPeerMessages =
-            Collections.synchronizedMap(new MaxSizeHashMap<>(MAX_NUMBER_OF_MESSAGES_CACHED, true));
+    private final Map<ReceivedPeerMessageKey, Long> receivedPeerMessages = new MaxSizeHashMap<>(MAX_NUMBER_OF_MESSAGES_CACHED, true);
 
     private final Set<RskAddress> bannedMiners;
 
@@ -256,22 +255,22 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
         long currentTime = System.currentTimeMillis();
 
-        synchronized (receivedPeerMessages) {
-            logger.trace("Cleaning {} messages from rlp queue", receivedPeerMessages.size());
-            receivedPeerMessages.entrySet()
-                    .removeIf(entry -> currentTime - entry.getValue() > receivedMsgsCacheDuration);
-        }
-
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         ReceivedPeerMessageKey receivedPeerMessageKey = new ReceivedPeerMessageKey(sender.getPeerNodeID(), encodedMessage);
 
-        if (receivedPeerMessages.containsKey(receivedPeerMessageKey)) {
-            reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
-            this.receivedPeerMessages.put(receivedPeerMessageKey, currentTime);
-            return false;
-        }
+        synchronized (receivedPeerMessages) {
+            if (receivedPeerMessages.containsKey(receivedPeerMessageKey)) {
+                reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
+                this.receivedPeerMessages.put(receivedPeerMessageKey, currentTime);
+                return false;
+            }
 
-        this.receivedPeerMessages.put(receivedPeerMessageKey, currentTime);
+            logger.trace("Cleaning {} messages from rlp queue", receivedPeerMessages.size());
+            receivedPeerMessages.entrySet()
+                    .removeIf(entry -> currentTime - entry.getValue() > receivedMsgsCacheDuration);
+
+            this.receivedPeerMessages.put(receivedPeerMessageKey, currentTime);
+        }
 
         return true;
     }
