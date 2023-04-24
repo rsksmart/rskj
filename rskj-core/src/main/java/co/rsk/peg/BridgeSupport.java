@@ -2707,7 +2707,7 @@ public class BridgeSupport {
         int pegoutRequestsCount = getQueuedPegoutsCount();
 
         if (!activations.isActive(ConsensusRule.RSKIP385) &&
-                (!activations.isActive(RSKIP271) || pegoutRequestsCount == 0)) {
+                (!activations.isActive(ConsensusRule.RSKIP271) || pegoutRequestsCount == 0)) {
             return Coin.ZERO;
         }
 
