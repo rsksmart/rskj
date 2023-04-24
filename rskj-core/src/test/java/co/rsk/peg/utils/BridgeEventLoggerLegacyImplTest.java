@@ -26,6 +26,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.util.RLP;
@@ -45,6 +46,8 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -105,7 +108,7 @@ class BridgeEventLoggerLegacyImplTest {
     void testLogUpdateCollectionsAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         Transaction anyTx = any();
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(anyTx));
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(anyTx));
     }
 
     @Test
@@ -147,7 +150,7 @@ class BridgeEventLoggerLegacyImplTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         BtcECKey federatorPublicKey = new BtcECKey();
         byte[] bytes = rskTxHash.getBytes();
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(federatorPublicKey, btcTxMock, bytes));
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(federatorPublicKey, btcTxMock, bytes));
     }
 
     @Test
@@ -185,7 +188,7 @@ class BridgeEventLoggerLegacyImplTest {
 
         // Act
         byte[] bytes = rskTxHash.getBytes();
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtc(btcTxMock, bytes));
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtc(btcTxMock, bytes));
     }
 
     @Test
@@ -273,12 +276,61 @@ class BridgeEventLoggerLegacyImplTest {
     }
 
     @Test
+    void testLogCommitFederationAfterFingerroot() {
+        BridgeConstants constants = BridgeRegTestConstants.getInstance();
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(constants, activations, eventLogs, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        // Setup parameters for test method call
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getTimestamp()).thenReturn(15005L);
+        when(executionBlock.getNumber()).thenReturn(15L);
+
+        List<BtcECKey> oldFederationKeys = Arrays.asList(
+            BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
+            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
+            BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
+            BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49"))
+        );
+
+        List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
+
+        Federation oldFederation = new Federation(oldFederationMembers,
+            Instant.ofEpochMilli(15005L), 15L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+
+        List<BtcECKey> newFederationKeys = Arrays.asList(
+            BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
+            BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
+            BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
+        );
+
+        List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
+
+        Federation newFederation = new Federation(
+            newFederationMembers,
+            Instant.ofEpochMilli(5005L),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        // Act
+        Exception exception = assertThrows(DeprecatedMethodCallException.class, () -> {
+            eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
+        });
+
+        String expectedMessage = "Calling BrigeEventLoggerLegacyImpl.logCommitFederation method after RSKIP146 activation";
+        String actualMessage = exception.getMessage();
+
+        assertTrue(actualMessage.contains(expectedMessage));
+    }
+
+    @Test
     void testLogCommitFederationAfterRskip146() {
         // Setup event logger
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         // Act
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class)));
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class)));
     }
 
     /**********************************
