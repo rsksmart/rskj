@@ -6914,17 +6914,6 @@ class BridgeSupportTest {
         assertEquals(Coin.ZERO, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
     }
 
-    private static Coin calculateFee(
-        ActivationConfig.ForBlock activations,
-        Federation federation,
-        Coin feePerKB,
-        int pegoutRequestsCount)
-    {
-        int outputs = pegoutRequestsCount + 2; // N + 2 outputs
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
-        return feePerKB.multiply(pegoutTxSize).divide(1000);
-    }
-
     private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider() {
         Coin feePerKB = Coin.MILLICOIN;
 
@@ -7125,11 +7114,7 @@ class BridgeSupportTest {
             whenFedP2shAndManyPegoutRequestsPostRSKIP385
         );
 
-//        Stream<Arguments> postRskip385 = Stream.of(
-//
-//        );
         return Stream.concat(preRskip385, postRskip385);
-        //return postRskip385;
     }
 
     @ParameterizedTest
