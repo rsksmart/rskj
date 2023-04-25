@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -203,6 +204,7 @@ class BridgeEventLoggerImplTest {
 
     @Test
     void logCommitFederation() {
+        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
         // Setup parameters for test method call
         Block executionBlock = mock(Block.class);
         when(executionBlock.getTimestamp()).thenReturn(15005L);
@@ -251,6 +253,7 @@ class BridgeEventLoggerImplTest {
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
         long newFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activations);
+
         Object[] data = new Object[]{
             oldFederationFlatPubKeys,
             oldFederationBtcAddress,
@@ -258,75 +261,31 @@ class BridgeEventLoggerImplTest {
             newFederationBtcAddress,
             newFedActivationBlockNumber
         };
-        assertEvent(eventLogs, 0, BridgeEvents.COMMIT_FEDERATION.getEvent(), new Object[]{}, data);
+
+        CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION.getEvent();
+        Object[] topics = {};
+        assertEvent(eventLogs, 0, event, topics, data);
+
+        final LogInfo log = eventLogs.get(0);
+        Object[] decodeEventData = event.decodeEventData(log.getData());
+        long loggedFedActivationBlockNumber = ((BigInteger) decodeEventData[4]).longValue();
+
+        // assert fed activation has different values before and after RSKIP383 respectively
+        ActivationConfig.ForBlock activationsAfterRSKIP383 = mock(ActivationConfig.ForBlock.class);
+        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
+
+        long hopNewFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activationsAfterRSKIP383);
+        assertNotEquals(loggedFedActivationBlockNumber, hopNewFedActivationBlockNumber);
+        assertNotEquals(newFedActivationBlockNumber, hopNewFedActivationBlockNumber);
+
+        // assert fed activation value for RSKIP383 is being properly logged
+        assertEquals(loggedFedActivationBlockNumber, newFedActivationBlockNumber);
     }
 
     @Test
-    void logCommitFederation_hop() {
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
-        // Setup parameters for test method call
-        Block executionBlock = mock(Block.class);
-        when(executionBlock.getTimestamp()).thenReturn(15005L);
-        when(executionBlock.getNumber()).thenReturn(15L);
-
-        List<BtcECKey> oldFederationKeys = Arrays.asList(
-            BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
-            BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
-            BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49"))
-        );
-
-        List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
-
-        Federation oldFederation = new Federation(
-            oldFederationMembers,
-            Instant.ofEpochMilli(15005L),
-            15L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
-
-        List<BtcECKey> newFederationKeys = Arrays.asList(
-            BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
-            BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
-            BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
-        );
-
-        List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
-
-        Federation newFederation = new Federation(
-            newFederationMembers,
-            Instant.ofEpochMilli(5005L),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
-
-        // Act
-        eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
-
-        commonAssertLogs(eventLogs);
-
-        assertTopics(1, eventLogs);
-        // Assert log data
-        long federationActivationAge = CONSTANTS.getFederationActivationAge(activations);
-        byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
-        String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
-        byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
-        String newFederationBtcAddress = newFederation.getAddress().toBase58();
-        long newFedActivationBlockNumber = executionBlock.getNumber() + federationActivationAge;
-        Object[] data = new Object[]{
-            oldFederationFlatPubKeys,
-            oldFederationBtcAddress,
-            newFederationFlatPubKeys,
-            newFederationBtcAddress,
-            newFedActivationBlockNumber
-        };
-        assertEvent(eventLogs, 0, BridgeEvents.COMMIT_FEDERATION.getEvent(), new Object[]{}, data);
-        Assertions.assertEquals(federationActivationAge, 10L);
-    }
-
-    @Test
-    void logCommitFederation_fingerroot() {
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+    void logCommitFederation_after_RSKIP383() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(CONSTANTS, activations, eventLogs, signatureCache);
 
         // Setup parameters for test method call
@@ -379,6 +338,7 @@ class BridgeEventLoggerImplTest {
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
         long newFedActivationBlockNumber = executionBlock.getNumber() + federationActivationAge;
+
         Object[] data = new Object[]{
             oldFederationFlatPubKeys,
             oldFederationBtcAddress,
@@ -386,8 +346,24 @@ class BridgeEventLoggerImplTest {
             newFederationBtcAddress,
             newFedActivationBlockNumber
         };
-        assertEvent(eventLogs, 0, BridgeEvents.COMMIT_FEDERATION.getEvent(), new Object[]{}, data);
-        Assertions.assertEquals(federationActivationAge, 20L);
+        CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION.getEvent();
+        Object[] topics = {};
+        assertEvent(eventLogs, 0, event, topics, data);
+
+        final LogInfo log = eventLogs.get(0);
+        Object[] decodeEventData = event.decodeEventData(log.getData());
+        long loggedFedActivationBlockNumber = ((BigInteger) decodeEventData[4]).longValue();
+
+        // assert fed activation has different values before and after fingerroot respectively
+        ActivationConfig.ForBlock activationsBeforeRSKIP383 = mock(ActivationConfig.ForBlock.class);
+        when(activationsBeforeRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
+
+        long hopNewFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activationsBeforeRSKIP383);
+        assertNotEquals(loggedFedActivationBlockNumber, hopNewFedActivationBlockNumber);
+        assertNotEquals(newFedActivationBlockNumber, hopNewFedActivationBlockNumber);
+
+        // assert fed activation value for fingerroot is being properly logged
+        assertEquals(loggedFedActivationBlockNumber, newFedActivationBlockNumber);
     }
 
     @Test
