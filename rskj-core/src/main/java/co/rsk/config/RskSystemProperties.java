@@ -22,6 +22,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueType;
 import org.ethereum.config.Constants;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Account;
@@ -49,6 +51,7 @@ public class RskSystemProperties extends SystemProperties {
 
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
+    private static final String RPC_MODULES_PATH = "rpc.modules";
     private static final int CHUNK_SIZE = 192;
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
@@ -248,47 +251,69 @@ public class RskSystemProperties extends SystemProperties {
 
         List<ModuleDescription> modules = new ArrayList<>();
 
-        if (!configFromFiles.hasPath("rpc.modules")) {
+        if (!configFromFiles.hasPath(RPC_MODULES_PATH)) {
             return modules;
         }
 
-        List<? extends ConfigObject> list = configFromFiles.getObjectList("rpc.modules");
-
-        for (ConfigObject configObject : list) {
-            Config configElement = configObject.toConfig();
-            String name = configElement.getString("name");
-            String version = configElement.getString("version");
-            boolean enabled = configElement.getBoolean("enabled");
-            long timeout = 0;
-            Map<String, Long> methodTimeoutMap = new HashMap<>();
-
-            if (configElement.hasPath("timeout")) {
-                timeout = configElement.getLong("timeout");
-            }
-
-            if (configElement.hasPath("methods.timeout")) {
-                fetchMethodTimeout(configElement, methodTimeoutMap);
-            }
-
-            List<String> enabledMethods = null;
-            List<String> disabledMethods = null;
-
-            if (configElement.hasPath("methods.enabled")) {
-                enabledMethods = configElement.getStringList("methods.enabled");
-            }
-
-            if (configElement.hasPath("methods.disabled")) {
-                disabledMethods = configElement.getStringList("methods.disabled");
-            }
-
-            modules.add(new ModuleDescription(name, version, enabled, enabledMethods, disabledMethods, timeout, methodTimeoutMap));
+        ConfigValue modulesConfig = configFromFiles.getValue(RPC_MODULES_PATH);
+        if (modulesConfig.valueType() == ConfigValueType.LIST) {
+            List<? extends ConfigObject> list = configFromFiles.getObjectList(RPC_MODULES_PATH);
+            modules = getModulesFromListFormat(list);
+        } else {
+            ConfigObject configObject = configFromFiles.getObject(RPC_MODULES_PATH);
+            modules = getModulesFromObjectFormat(configObject);
         }
-
         this.moduleDescriptions = modules;
-
         return modules;
     }
 
+    private List<ModuleDescription> getModulesFromObjectFormat(ConfigObject modulesConfigObject) {
+        List<ModuleDescription> modules = new ArrayList<>();
+
+        for (String configKey : modulesConfigObject.keySet()) {
+            String name = configKey;
+            Config configElement = ((ConfigObject) modulesConfigObject.get(configKey)).toConfig();
+            modules.add(getModule(configElement, name));
+        }
+        return modules;
+    }
+
+    private List<ModuleDescription> getModulesFromListFormat(List<? extends ConfigObject> list) {
+        List<ModuleDescription> modules = new ArrayList<>();
+        for (ConfigObject configObject : list) {
+            Config configElement = configObject.toConfig();
+            String name = configElement.getString("name");
+            modules.add(getModule(configElement, name));
+        }
+        return modules;
+    }
+    private ModuleDescription getModule(Config configElement, String name) {
+
+        String version = configElement.getString("version");
+        boolean enabled = configElement.getBoolean("enabled");
+        List<String> enabledMethods = null;
+        List<String> disabledMethods = null;
+        int timeout = 0;
+        Map<String, Long> methodTimeoutMap = new HashMap<>();
+
+
+        if (configElement.hasPath("timeout")) {
+            timeout = configElement.getInt("timeout");
+        }
+
+        if (configElement.hasPath("methods.timeout")) {
+            fetchMethodTimeout(configElement, methodTimeoutMap);
+        }
+
+        if (configElement.hasPath("methods.enabled")) {
+            enabledMethods = configElement.getStringList("methods.enabled");
+        }
+
+        if (configElement.hasPath("methods.disabled")) {
+            disabledMethods = configElement.getStringList("methods.disabled");
+        }
+        return new ModuleDescription(name, version, enabled, enabledMethods, disabledMethods, timeout, methodTimeoutMap);
+    }
     public boolean hasMessageRecorderEnabled() {
         return getBoolean("messages.recorder.enabled", false);
     }

@@ -197,6 +197,9 @@ public class ConfigLoader {
                 ConfigValue expectedEntryValue = expectedObject.get(actualEntryKey);
                 String entryKeyPath = prefix + actualEntryKey;
                 if (expectedEntryValue == null) {
+                    expectedEntryValue = expectedObject.get("<fallback>");
+                }
+                if (expectedEntryValue == null) {
                     logger.warn("Unexpected config value {} for key path `{}`. See expected.conf for the expected settings", actualEntryValue, entryKeyPath);
                     valid = false;
                 } else {
