@@ -548,6 +548,24 @@ public class BlockExecutorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
+    void gasUsedShouldNeverSurprassBlockGasLimit(boolean activeRskip144) {
+        if (!activeRskip144) {
+            return;
+        }
+
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
+        Block parent = blockchain.getBestBlock();
+        int gasLimit = 21000;
+        int transactionNumberToFillParallelSublist = (int) (getSublistGaslimit(parent) / gasLimit);
+        int totalNumberOfSublists = Constants.getTransactionExecutionThreads() + 1;
+        int totalTxs = (transactionNumberToFillParallelSublist) * totalNumberOfSublists + 1;
+        Block block = getBlockWithNIndependentTransactions(totalTxs, BigInteger.valueOf(gasLimit), false);
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+        Assertions.assertFalse(block.getGasUsed() > GasCost.toGas(block.getGasLimit()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
     void whenParallelSublistsAreFullTheLastTxShouldGoToSequential(boolean activeRskip144) {
         if (!activeRskip144) {
             return;
