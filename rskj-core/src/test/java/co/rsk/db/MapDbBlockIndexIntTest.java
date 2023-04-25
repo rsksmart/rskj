@@ -28,8 +28,8 @@ class MapDbBlockIndexIntTest {
         Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("block1", 32));
         Keccak256 hash2 = new Keccak256(TestUtils.generateBytes("block2", 32));
         List<IndexedBlockStore.BlockInfo> blockInfoList = new ArrayList<>();
-        blockInfoList.add(getBlockInfo(hash1, true));
-        blockInfoList.add(getBlockInfo(hash2, false));
+        blockInfoList.add(getBlockInfo(hash1));
+        blockInfoList.add(getBlockInfo(hash2));
         mapDBBlocksIndex.putBlocks(1, blockInfoList);
         mapDBBlocksIndex.removeBlock(1L, hash1);
         List<IndexedBlockStore.BlockInfo> savedBlockInfos = mapDBBlocksIndex.getBlocksByNumber(1L);
@@ -41,13 +41,13 @@ class MapDbBlockIndexIntTest {
     void removeBlock_byNumber_removeFromIndexIfEmpty() {
         Keccak256 hash1 = new Keccak256(TestUtils.generateBytes("block1", 32));
         List<IndexedBlockStore.BlockInfo> blockInfoList = new ArrayList<>();
-        blockInfoList.add(getBlockInfo(hash1, true));
+        blockInfoList.add(getBlockInfo(hash1));
         mapDBBlocksIndex.putBlocks(1, blockInfoList);
         mapDBBlocksIndex.removeBlock(1L, hash1);
         assertFalse(mapDBBlocksIndex.contains(1L));
     }
 
-    private IndexedBlockStore.BlockInfo getBlockInfo(Keccak256 hash, boolean mainChain) {
+    private IndexedBlockStore.BlockInfo getBlockInfo(Keccak256 hash) {
         IndexedBlockStore.BlockInfo blockInfo = new IndexedBlockStore.BlockInfo();
         blockInfo.setMainChain(true);
         blockInfo.setHash(hash.getBytes());
