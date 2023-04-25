@@ -30,6 +30,7 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.mockito.ArgumentCaptor;
@@ -275,12 +276,53 @@ class PowpegMigrationTest {
         /*
           Activation phase
          */
-
         // Move the required blocks ahead for the new powpeg to become active
         // (overriding block number to ensure we don't move beyond the activation phase)
         blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activations);
         Block activationBlock = mock(Block.class);
         doReturn(blockNumber).when(activationBlock).getNumber();
+
+        // assuming fed activation age after rskip383 is greater than legacy fed activation age, we can check that new fed
+        // should not be active at the legacy activation age when RSKIP383 is active
+
+        if (activations.isActive(ConsensusRule.RSKIP383)){
+            ActivationConfig.ForBlock activationsBeforeRSKIP383 = mock(ActivationConfig.ForBlock.class);
+            when(activationsBeforeRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
+
+            long beforeRskip383blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activationsBeforeRSKIP383);
+            Assertions.assertTrue(blockNumber > beforeRskip383blockNumber);
+
+            Block beforeRskip383ActivationBlock = mock(Block.class);
+            doReturn(beforeRskip383blockNumber).when(beforeRskip383ActivationBlock).getNumber();
+
+            bridgeSupport = new BridgeSupportBuilder()
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(beforeRskip383ActivationBlock)
+                .withActivations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .build();
+
+            // New active powpeg and retiring powpeg
+            assertNotEquals(newPowPegAddress, bridgeSupport.getFederationAddress());
+            assertEquals(oldPowPegAddress, bridgeSupport.getFederationAddress());
+            assertNotEquals(oldPowPegAddress, bridgeSupport.getRetiringFederationAddress());
+        } else {
+            ActivationConfig.ForBlock activationsAfterRSKIP383 = mock(ActivationConfig.ForBlock.class);
+            when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
+
+            long afterRskip383blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activationsAfterRSKIP383);
+
+            // assert fed activation age is different before and after RSKIP383
+            assertNotEquals(blockNumber, afterRskip383blockNumber);
+            Assertions.assertTrue(blockNumber < afterRskip383blockNumber);
+        }
+
+
+
 
         bridgeSupport = new BridgeSupportBuilder()
             .withProvider(bridgeStorageProvider)
