@@ -19,9 +19,12 @@
 package co.rsk.jmh.web3;
 
 import co.rsk.jmh.web3.e2e.HttpRpcException;
+import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.Transaction;
+import org.web3j.protocol.core.methods.response.EthLog;
 
 import java.math.BigInteger;
+import java.util.List;
 
 public interface Web3Connector {
 
@@ -36,4 +39,16 @@ public interface Web3Connector {
     String ethSendTransaction(Transaction transaction) throws HttpRpcException;
 
     BigInteger ethEstimateGas(Transaction transaction) throws HttpRpcException;
+
+    List<EthLog.LogResult> ethGetLogs(DefaultBlockParameter fromBlock, DefaultBlockParameter toBlock, String address) throws HttpRpcException;
+
+    List<EthLog.LogResult> ethGetLogs(String blockHash) throws HttpRpcException;
+
+    String ethNewFilter(DefaultBlockParameter fromBlock, DefaultBlockParameter toBlock, String address) throws HttpRpcException;
+
+    String ethNewFilter(String blockHash) throws HttpRpcException;
+
+    List<EthLog.LogResult> ethGetFilterChanges(BigInteger filterId) throws HttpRpcException;
+
+    List<EthLog.LogResult> ethGetFilterLogs(BigInteger filterId) throws HttpRpcException;
 }

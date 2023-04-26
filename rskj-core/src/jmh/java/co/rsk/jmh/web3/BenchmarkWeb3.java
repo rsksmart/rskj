@@ -23,6 +23,7 @@ import co.rsk.jmh.web3.e2e.Web3ConnectorE2E;
 import co.rsk.jmh.web3.factory.TransactionFactory;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.BenchmarkParams;
+import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.Transaction;
 
 import java.math.BigInteger;
@@ -140,6 +141,60 @@ public class BenchmarkWeb3 {
     }
 
     @Benchmark
+    @Timeout(time = 60)
+    public void ethGetLogsByBlockHash(BasePlan plan) throws BenchmarkWeb3Exception {
+        String blockHash = (String) plan.properties.get("getLogs.blockHash");
+        plan.web3Connector.ethGetLogs(blockHash);
+    }
+
+    @Benchmark
+    @Timeout(time = 60)
+    public void ethGetLogsByBlockRange(BasePlan plan) throws BenchmarkWeb3Exception {
+        String fromBlock = (String) plan.properties.get("getLogs.fromBlock");
+        String toBlock = (String) plan.properties.get("getLogs.toBlock");
+        String address = (String) plan.properties.get("getLogs.ethLogAddress");
+
+        DefaultBlockParameter fromDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(fromBlock));
+        DefaultBlockParameter toDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(toBlock));
+
+        plan.web3Connector.ethGetLogs(fromDefaultBlockParameter, toDefaultBlockParameter, address);
+    }
+
+    @Benchmark
+    @Timeout(time = 60)
+    public void ethNewFilterByBlockHash(BasePlan plan) throws BenchmarkWeb3Exception {
+        String blockHash = (String) plan.properties.get("getLogs.blockHash");
+        plan.web3Connector.ethNewFilter(blockHash);
+    }
+
+    @Benchmark
+    @Timeout(time = 60)
+    public void ethNewFilterByBlockRange(BasePlan plan) throws BenchmarkWeb3Exception {
+        String fromBlock = (String) plan.properties.get("getLogs.fromBlock");
+        String toBlock = (String) plan.properties.get("getLogs.toBlock");
+        String address = (String) plan.properties.get("getLogs.address");
+
+        DefaultBlockParameter fromDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(fromBlock));
+        DefaultBlockParameter toDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(toBlock));
+
+        plan.web3Connector.ethNewFilter(fromDefaultBlockParameter, toDefaultBlockParameter, address);
+    }
+
+    @Benchmark
+    @Timeout(time = 60)
+    public void ethGetFilterChanges(BasePlan plan) throws BenchmarkWeb3Exception {
+        String result = generateNewFilterId(plan);
+        plan.web3Connector.ethGetFilterChanges(new BigInteger(result.replace("0x", ""), 16));
+    }
+
+    @Benchmark
+    @Timeout(time = 60)
+    public void ethGetFilterLogs(BasePlan plan) throws BenchmarkWeb3Exception {
+        String result = generateNewFilterId(plan);
+        plan.web3Connector.ethGetFilterLogs(new BigInteger(result.replace("0x", ""), 16));
+    }
+
+    @Benchmark
     @Warmup(iterations = 3, batchSize = TRANSACTION_BATCH_SIZE)
     @Measurement(iterations = 10, batchSize = TRANSACTION_BATCH_SIZE)
     public void ethSendTransaction_VT(TransactionPlan plan) throws BenchmarkWeb3Exception {
@@ -166,6 +221,11 @@ public class BenchmarkWeb3 {
     @Benchmark
     public void ethEstimateGas(BasePlan plan) throws BenchmarkWeb3Exception {
         plan.web3Connector.ethEstimateGas(plan.transactionForEstimation);
+    }
+
+    private String generateNewFilterId(BasePlan plan) throws BenchmarkWeb3Exception {
+        String blockHash = (String) plan.properties.get("getLogs.blockHash");
+        return Optional.ofNullable(plan.web3Connector.ethNewFilter(blockHash)).orElse("");
     }
 
     public enum Suites {
