@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.ethereum.TestUtils.waitFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -51,7 +51,8 @@ class JsonRpcCustomServerTest {
         String response = "test_method_response";
         JsonNode request = objectMapper.readTree(FIRST_METHOD_REQUEST);
         Web3Test handler = mock(Web3Test.class);
-        ResponseSizeLimitContext.createResponseSizeContext(response.getBytes(StandardCharsets.UTF_8).length / 2);
+        //expected response would be {"jsonrpc":"2.0","id":1,"result":"test_method_response"} with 58 bytes
+        ResponseSizeLimitContext.createResponseSizeContext(57);
         jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, modules);
 
         when(handler.test_first(anyString())).thenReturn(response);
@@ -63,12 +64,11 @@ class JsonRpcCustomServerTest {
     void testHandleJsonNodeRequest_WithMethodModule() throws Exception {
         JsonNode request = objectMapper.readTree(SECOND_METHOD_REQUEST);
         Web3Test handler = mock(Web3Test.class);
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(0,125));
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(0, 125));
         String response = "test_method_response";
 
-        when(handler.test_second(anyString(), anyString())).thenReturn(response);
-        when(handler.test_second(anyString(), anyString())).thenAnswer(invocation -> {
-            Thread.sleep(250);
+        when(handler.test_second("param", "param2")).thenAnswer(invocation -> {
+           waitFor(150);
             return response;
         });
 
@@ -83,7 +83,7 @@ class JsonRpcCustomServerTest {
         jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(125, 0));
 
         when(handler.test_second(anyString(), anyString())).thenAnswer(invocation -> {
-            Thread.sleep(250);
+            waitFor(150);
             return "second_method_response";
         });
 
@@ -97,16 +97,18 @@ class JsonRpcCustomServerTest {
         jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(500, 100));
         String response = "test_method_response";
 
-        when(handler.test_second(anyString(), anyString())).thenAnswer(invocation -> {
-            Thread.sleep(250);
+        when(handler.test_second("param", "param2")).thenAnswer(invocation -> {
+            waitFor(300);
             return response;
         });
 
         JsonResponse actualResponse = jsonRpcCustomServer.handleJsonNodeRequest(request);
-        assertEquals(response, actualResponse.getResponse().get("result").asText());    }
+        assertEquals(response, actualResponse.getResponse().get("result").asText());
+    }
 
 
-    @Test //The timeout is applied per method and not per request
+    @Test
+        //The timeout is applied per method and not per request
     void testHandleJsonNodeRequest_WithMethodTimeout_BatchRequest_OK() throws Exception {
         long timeoutPerMethod = 550;
         long sleepTimePerRequest = 300;
@@ -137,14 +139,14 @@ class JsonRpcCustomServerTest {
         JsonNode request = objectMapper.readTree(jsonRequest);
         Web3Test handler = mock(Web3Test.class);
 
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(timeoutPerMethod,0));
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(timeoutPerMethod, 0));
 
         when(handler.test_second(anyString(), anyString())).thenAnswer(invocation -> {
-            Thread.sleep(sleepTimePerRequest);
+            waitFor(sleepTimePerRequest);
             return response;
         });
         JsonResponse requestResponse = jsonRpcCustomServer.handleJsonNodeRequest(request);
-        verify(handler,times(2)).test_second(anyString(), anyString());
+        verify(handler, times(2)).test_second(anyString(), anyString());
         requestResponse.getResponse().forEach(jsonNode -> assertEquals(response, jsonNode.get("result").asText()));
     }
 
@@ -177,20 +179,21 @@ class JsonRpcCustomServerTest {
         JsonNode request = objectMapper.readTree(jsonRequest);
         Web3Test handler = mock(Web3Test.class);
 
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(timeoutPerMethod,0));
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(timeoutPerMethod, 0));
 
         when(handler.test_second(anyString(), anyString())).thenAnswer(invocation -> {
-            Thread.sleep(sleepTimePerRequest);
+            waitFor(sleepTimePerRequest);
             return response;
         });
         assertThrows(JsonRpcTimeoutError.class, () -> jsonRpcCustomServer.handleJsonNodeRequest(request));
         //The second request should not be executed
-        verify(handler,times(1)).test_second(anyString(), anyString());
+        verify(handler, times(1)).test_second(anyString(), anyString());
     }
 
 
     public interface Web3Test {
         String test_first(String param1);
+
         String test_second(String param1, String param2);
 
     }
@@ -210,6 +213,5 @@ class JsonRpcCustomServerTest {
 
         return modules;
     }
-
 
 }

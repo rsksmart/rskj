@@ -30,6 +30,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.Function;
 
+import static org.ethereum.TestUtils.waitFor;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -283,7 +284,7 @@ class Web3HttpServerTest {
             modules.add(configElement);
 
             return rawConfig.withValue("rpc.modules", ConfigValueFactory.fromAnyRef(modules))
-                    .withValue("rpc.timeout",  ConfigValueFactory.fromAnyRef(10_000_000_000L));
+                    .withValue("rpc.timeout", ConfigValueFactory.fromAnyRef(10_000_000_000L));
         };
 
         String mockResult = "{\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\"}}";
@@ -310,7 +311,8 @@ class Web3HttpServerTest {
     void testMaxResponseSize() throws Exception {
         Web3 web3Mock = Mockito.mock(Web3.class);
         String mockResult = getMediumJsonResponse();
-        int responseSize = mockResult.getBytes().length * 2 - 1;
+        JsonNode jsonMockResult = OBJECT_MAPPER.readTree(mockResult);
+        int responseSize = jsonMockResult.toString().getBytes().length * 2  - 1;
 
 
         Mockito.when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
@@ -422,7 +424,7 @@ class Web3HttpServerTest {
         String mockResult = "response output";
         final long expectedTimeoutPerRequest = 500;
         Mockito.when(web3Mock.web3_sha3(anyString())).thenAnswer(invocation -> {
-            Thread.sleep(expectedTimeoutPerRequest);
+            waitFor(expectedTimeoutPerRequest);
             return mockResult;
         });
         CorsConfiguration mockCorsConfiguration = Mockito.mock(CorsConfiguration.class);
@@ -476,9 +478,9 @@ class Web3HttpServerTest {
     void testResponseTimeoutException_stopsBatch() throws Exception {
         Web3 web3Mock = Mockito.mock(Web3.class);
         String mockResult = "response output";
-        final long expectedTimeoutPerRequest = 500;
+        final long expectedTimeoutPerRequest = 300;
         Mockito.when(web3Mock.web3_sha3(anyString())).thenAnswer(invocation -> {
-            Thread.sleep(expectedTimeoutPerRequest);
+            waitFor(expectedTimeoutPerRequest);
             return mockResult;
         });
 
@@ -492,7 +494,7 @@ class Web3HttpServerTest {
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
         JsonRpcWeb3ServerProperties properties = JsonRpcWeb3ServerProperties.builder()
                 .rpcModules(filteredModules)
-                .rpcTimeout(expectedTimeoutPerRequest / 2)
+                .rpcTimeout(200)
                 .build();
 
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, properties);
