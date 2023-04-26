@@ -51,8 +51,8 @@ class JsonRpcCustomServerTest {
         String response = "test_method_response";
         JsonNode request = objectMapper.readTree(FIRST_METHOD_REQUEST);
         Web3Test handler = mock(Web3Test.class);
-        //expected response would be {"jsonrpc":"2.0","id":1,"result":"test_method_response"} with 58 bytes
-        ResponseSizeLimitContext.createResponseSizeContext(57);
+        //expected response would be {"jsonrpc":"2.0","id":1,"result":"test_method_response"} with 56 bytes
+        ResponseSizeLimitContext.createResponseSizeContext(55);
         jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, modules);
 
         when(handler.test_first(anyString())).thenReturn(response);
