@@ -22,12 +22,14 @@ import co.rsk.jmh.web3.Web3Connector;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
+import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.*;
 import org.web3j.protocol.http.HttpService;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.List;
 
 public class Web3ConnectorE2E implements Web3Connector {
 
@@ -118,4 +120,77 @@ public class Web3ConnectorE2E implements Web3Connector {
         }
     }
 
+    @Override
+    public List<EthLog.LogResult> ethGetLogs(DefaultBlockParameter fromBlock, DefaultBlockParameter toBlock, String address) throws HttpRpcException {
+        EthFilter filter = new EthFilter(fromBlock, toBlock, address);
+
+        return ethGetLogs(filter);
+    }
+
+    @Override
+    public List<EthLog.LogResult> ethGetLogs(String blockHash) throws HttpRpcException {
+        EthFilter filter = new EthFilter(blockHash);
+
+        return ethGetLogs(filter);
+    }
+
+    @Override
+    public String ethNewFilter(DefaultBlockParameter fromBlock, DefaultBlockParameter toBlock, String address) throws HttpRpcException {
+        EthFilter filter = new EthFilter(fromBlock, toBlock, address);
+
+        return ethNewFilter(filter);
+    }
+
+    @Override
+    public String ethNewFilter(String blockHash) throws HttpRpcException {
+        EthFilter filter = new EthFilter(blockHash);
+
+        return ethNewFilter(filter);
+    }
+
+    @Override
+    public List<EthLog.LogResult> ethGetFilterChanges(BigInteger filterId) throws HttpRpcException {
+        try {
+            Request<?, EthLog> request = web3j.ethGetFilterChanges(filterId);
+            EthLog response = request.send();
+            return response.getLogs();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<EthLog.LogResult> ethGetFilterLogs(BigInteger filterId) throws HttpRpcException {
+        try {
+            Request<?, EthLog> request = web3j.ethGetFilterLogs(filterId);
+            EthLog response = request.send();
+            return response.getLogs();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    private List<EthLog.LogResult> ethGetLogs(EthFilter filter) throws HttpRpcException {
+        try {
+            Request<?, EthLog> request = web3j.ethGetLogs(filter);
+            EthLog response = request.send();
+            return response.getLogs();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    private String ethNewFilter(EthFilter filter) throws HttpRpcException {
+        try {
+            Request<?, org.web3j.protocol.core.methods.response.EthFilter> request = web3j.ethNewFilter(filter);
+            org.web3j.protocol.core.methods.response.EthFilter response = request.send();
+            return response.getResult();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
 }
