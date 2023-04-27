@@ -283,7 +283,6 @@ class PowpegMigrationTest {
 
         // assuming fed activation age after rskip383 is greater than legacy fed activation age, we can check that new fed
         // should not be active at the legacy activation age when RSKIP383 is active
-
         if (activations.isActive(ConsensusRule.RSKIP383)){
             ActivationConfig.ForBlock activationsBeforeRSKIP383 = mock(ActivationConfig.ForBlock.class);
             when(activationsBeforeRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(false);

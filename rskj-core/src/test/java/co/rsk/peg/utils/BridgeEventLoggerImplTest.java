@@ -25,7 +25,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -35,6 +34,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -202,9 +203,10 @@ class BridgeEventLoggerImplTest {
         assertEvent(eventLogs, 0, BridgeEvents.RELEASE_BTC.getEvent(), new Object[]{rskTxHash.getBytes()}, new Object[]{btcTx.bitcoinSerialize()});
     }
 
-    @Test
-    void logCommitFederation() {
-        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void logCommitFederation(boolean isRSKIP383Active) {
+        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(isRSKIP383Active);
         // Setup parameters for test method call
         Block executionBlock = mock(Block.class);
         when(executionBlock.getTimestamp()).thenReturn(15005L);
@@ -270,16 +272,25 @@ class BridgeEventLoggerImplTest {
         Object[] decodeEventData = event.decodeEventData(log.getData());
         long loggedFedActivationBlockNumber = ((BigInteger) decodeEventData[4]).longValue();
 
-        // assert fed activation has different values before and after RSKIP383 respectively
-        ActivationConfig.ForBlock activationsAfterRSKIP383 = mock(ActivationConfig.ForBlock.class);
-        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
-
-        long hopNewFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activationsAfterRSKIP383);
-        assertNotEquals(loggedFedActivationBlockNumber, hopNewFedActivationBlockNumber);
-        assertNotEquals(newFedActivationBlockNumber, hopNewFedActivationBlockNumber);
-
-        // assert fed activation value for RSKIP383 is being properly logged
         assertEquals(loggedFedActivationBlockNumber, newFedActivationBlockNumber);
+
+        // assert fed activation has different values before and after RSKIP383 respectively
+        if (isRSKIP383Active){
+            ActivationConfig.ForBlock activationsBeforeRSKIP383 = mock(ActivationConfig.ForBlock.class);
+            when(activationsBeforeRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
+
+            long beforeRSKIP383fedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activationsBeforeRSKIP383);
+            assertNotEquals(loggedFedActivationBlockNumber, beforeRSKIP383fedActivationBlockNumber);
+            assertNotEquals(newFedActivationBlockNumber, beforeRSKIP383fedActivationBlockNumber);
+        } else {
+            // assert fed activation has different values before and after RSKIP383 respectively
+            ActivationConfig.ForBlock activationsAfterRSKIP383 = mock(ActivationConfig.ForBlock.class);
+            when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
+
+            long afterRSKIP383FedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activationsAfterRSKIP383);
+            assertNotEquals(loggedFedActivationBlockNumber, afterRSKIP383FedActivationBlockNumber);
+            assertNotEquals(newFedActivationBlockNumber, afterRSKIP383FedActivationBlockNumber);
+        }
     }
 
     @Test
