@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package co.rsk.jsonrpc;
 
 import java.util.Objects;
@@ -28,6 +29,8 @@ public class JsonRpcError implements JsonRpcResultOrError {
 	public static final int METHOD_NOT_FOUND = -32601;
 	public static final int INVALID_PARAMS = -32602;
 	public static final int INTERNAL_ERROR = -32603;
+	public static final int RESPONSE_LIMIT_ERROR = -32011;
+
 
 	private final int code;
 	private final String message;

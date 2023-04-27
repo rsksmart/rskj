@@ -18,11 +18,11 @@
 
 package co.rsk.rpc.netty;
 
+import co.rsk.jsonrpc.JsonRpcError;
 import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.exception.JsonRpcRequestPayloadException;
-import co.rsk.rpc.exception.JsonRpcResponseLimitError;
-import co.rsk.rpc.exception.JsonRpcTimeoutError;
+import co.rsk.rpc.exception.JsonRpcThrowableError;
 import co.rsk.util.JacksonParserUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -91,15 +91,11 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             int errorCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
             responseContent = buildErrorContent(errorCode, stackOverflowErrorMsg);
             responseCode = errorCode;
-        } catch (JsonRpcTimeoutError e) {
+        } catch (JsonRpcThrowableError e) {
             LOGGER.error(e.getMessage(), e);
-            int errorCode = JsonRpcTimeoutError.ERROR_CODE;
-            responseContent = buildErrorContent(errorCode, e.getMessage());
-            responseCode = errorCode;
-        } catch (JsonRpcResponseLimitError limitEx) {
-            LOGGER.error(limitEx.getMessage(), limitEx);
-            int errorCode = JsonRpcResponseLimitError.ERROR_CODE;
-            responseContent = buildErrorContent(errorCode, limitEx.getMessage());
+            JsonRpcError error = e.getErrorResponse();
+            int errorCode = error.getCode();
+            responseContent = buildErrorContent(errorCode, error.getMessage());
             responseCode = errorCode;
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";

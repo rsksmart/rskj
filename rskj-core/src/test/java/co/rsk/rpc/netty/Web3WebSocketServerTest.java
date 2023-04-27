@@ -18,8 +18,8 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.jsonrpc.JsonRpcError;
 import co.rsk.rpc.ModuleDescription;
-import co.rsk.rpc.exception.JsonRpcResponseLimitError;
 import co.rsk.util.JacksonParserUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -308,7 +308,7 @@ class Web3WebSocketServerTest {
             public void onMessage(ResponseBody message) throws IOException {
                 JsonNode jsonRpcResponse = JacksonParserUtil.readTree(OBJECT_MAPPER, message.bytes());
 
-                Assertions.assertEquals(JsonRpcResponseLimitError.ERROR_CODE,jsonRpcResponse.get("error").get("code").asInt());
+                Assertions.assertEquals(JsonRpcError.RESPONSE_LIMIT_ERROR,jsonRpcResponse.get("error").get("code").asInt());
                 message.close();
                 wsAsyncResultLatch.countDown();
             }

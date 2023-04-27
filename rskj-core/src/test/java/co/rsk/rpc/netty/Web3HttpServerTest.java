@@ -1,10 +1,9 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.jsonrpc.JsonRpcError;
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.ModuleDescription;
-import co.rsk.rpc.exception.JsonRpcResponseLimitError;
-import co.rsk.rpc.exception.JsonRpcTimeoutError;
 import co.rsk.util.JacksonParserUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -359,7 +358,7 @@ class Web3HttpServerTest {
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-        Assertions.assertEquals(JsonRpcResponseLimitError.ERROR_CODE, jsonRpcResponse.get("error").get("code").asInt());
+        Assertions.assertEquals(JsonRpcError.RESPONSE_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
         verify(web3Mock, times(2)).web3_sha3(anyString());
     }
 
@@ -414,7 +413,7 @@ class Web3HttpServerTest {
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-        Assertions.assertEquals(JsonRpcResponseLimitError.ERROR_CODE, jsonRpcResponse.get("error").get("code").asInt());
+        Assertions.assertEquals(JsonRpcError.RESPONSE_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
         verify(web3Mock, times(1)).web3_sha3(anyString());
     }
 
@@ -470,7 +469,7 @@ class Web3HttpServerTest {
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-        Assertions.assertEquals(JsonRpcTimeoutError.ERROR_CODE, jsonRpcResponse.get("error").get("code").asInt());
+        Assertions.assertEquals(JsonRpcError.RESPONSE_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
         verify(web3Mock, times(2)).web3_sha3(anyString());
     }
 
@@ -527,7 +526,7 @@ class Web3HttpServerTest {
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-        Assertions.assertEquals(JsonRpcTimeoutError.ERROR_CODE, jsonRpcResponse.get("error").get("code").asInt());
+        Assertions.assertEquals(JsonRpcError.RESPONSE_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
         verify(web3Mock, times(1)).web3_sha3(anyString());
     }
 

@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,16 +20,14 @@ package co.rsk.rpc.exception;
 
 import co.rsk.jsonrpc.JsonRpcError;
 
-public class JsonRpcResponseLimitError extends JsonRpcThrowableError {
-    private static final String ERROR_MSG_WITH_LIMIT = "Response size limit exceeded. Max response size %d bytes";
-    private static final long serialVersionUID = 3145337981628533511L;
+public class JsonRpcInternalError extends JsonRpcThrowableError {
+    private static final long serialVersionUID = -8262236056893980419L;
 
-    public JsonRpcResponseLimitError(int  max) {
-        super(String.format(ERROR_MSG_WITH_LIMIT, max));
+    public JsonRpcInternalError(String msg) {
+        super(msg);
     }
 
-    @Override
     public JsonRpcError getErrorResponse() {
-        return new JsonRpcError(JsonRpcError.RESPONSE_LIMIT_ERROR, getMessage());
+        return new JsonRpcError(JsonRpcError.INTERNAL_ERROR, "Internal error. check logs for more details.");
     }
 }
