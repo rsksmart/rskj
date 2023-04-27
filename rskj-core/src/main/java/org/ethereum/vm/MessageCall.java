@@ -96,7 +96,7 @@ public class MessageCall {
         this.inDataSize = inDataSize;
     }
 
-    public MessageCall(MsgType type, DataWord gas, DataWord codeAddress,
+    MessageCall(MsgType type, DataWord gas, DataWord codeAddress,
                        DataWord endowment, DataWord inDataOffs, DataWord inDataSize,
                        DataWord outDataOffs, DataWord outDataSize) {
         this(type, gas, codeAddress, endowment, inDataOffs, inDataSize);

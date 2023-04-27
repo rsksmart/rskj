@@ -176,13 +176,7 @@ public class EthModule
     }
 
     protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {
-        long estimatedGas = reversibleExecutionResult.getMaxGasUsed();
-
-        if (reversibleExecutionResult.isCallWithValuePerformed()) {
-            estimatedGas += GasCost.STIPEND_CALL;
-        }
-
-        return HexUtils.toQuantityJsonHex(estimatedGas);
+        return HexUtils.toQuantityJsonHex(reversibleExecutionResult.getEstimatedGas());
     }
 
     @Override

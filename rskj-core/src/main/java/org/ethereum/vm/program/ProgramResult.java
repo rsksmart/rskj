@@ -63,8 +63,8 @@ public class ProgramResult {
     private List<CallCreate> callCreateList;
 
     // estimateGas fields
-    private long maxGasUsed = 0; // sometimes the estimatedGas matches the maximum gasUsed
-    private boolean movingGasToCallee; // this will happen when there's no more gas left than expected from the child call
+    private long gasNeeded = 0;
+    private boolean movingGasToCallee;
     private boolean callWithValuePerformed; // this will happen for VT CALLs
     private long gasUsedBeforeRefunds = 0; // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
 
@@ -76,6 +76,7 @@ public class ProgramResult {
         this.callWithValuePerformed = callWithValuePerformed;
     }
 
+    @VisibleForTesting
     public boolean isCallWithValuePerformed() {
         return callWithValuePerformed;
     }
@@ -84,13 +85,26 @@ public class ProgramResult {
         gasUsed = 0;
     }
 
-    public long getMaxGasUsed() {
-        return maxGasUsed;
+    public long getEstimatedGas() {
+        // max gas used = gas needed = estimated gas
+        long estimatedGas = gasNeeded;
+
+        // TODO(iago) after this PR changes, I think this is longer required, confirm before closing PR
+        if (callWithValuePerformed) {
+            estimatedGas += GasCost.STIPEND_CALL;
+        }
+
+        return estimatedGas;
+    }
+
+    @VisibleForTesting
+    public long getGasNeeded() {
+        return gasNeeded;
     }
 
     public void spendGas(long gas) {
         gasUsed = GasCost.add(gasUsed, gas);
-        maxGasUsed = Math.max(gasUsed, maxGasUsed);
+        gasNeeded = Math.max(gasUsed, gasNeeded);
     }
 
     public void setRevert() {
@@ -103,7 +117,9 @@ public class ProgramResult {
 
     public void refundGas(long gas) {
         if (movingGasToCallee) {
-            maxGasUsed = GasCost.subtract(maxGasUsed, gas);
+            movingGasToCallee(false);
+            // refund made after passing gas to callee must be subtracted from needed gas
+            gasNeeded = GasCost.subtract(gasNeeded, gas);
         }
         gasUsed = GasCost.subtract(gasUsed, gas);
     }
@@ -294,7 +310,7 @@ public class ProgramResult {
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
             addDeductedRefund(another.deductedRefund);
-            this.maxGasUsed = Math.max(this.maxGasUsed, another.getMaxGasUsed());
+            this.gasNeeded = Math.max(this.gasNeeded, another.gasNeeded);
             this.movingGasToCallee = this.movingGasToCallee || another.movingGasToCallee;
             this.callWithValuePerformed = this.callWithValuePerformed || another.callWithValuePerformed;
         }

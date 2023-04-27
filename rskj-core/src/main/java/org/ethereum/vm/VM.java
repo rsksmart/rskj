@@ -1487,11 +1487,12 @@ public class VM {
         PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
 
         if (precompiledContract != null) {
-
             program.callToPrecompiledAddress(msg, precompiledContract);
         } else {
             program.callToAddress(msg);
         }
+
+        program.getResult().movingGasToCallee(false);
 
         program.step();
     }
@@ -1533,12 +1534,12 @@ public class VM {
         // the callee will receive less gas than the parent expected.
         long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
 
+        program.getResult().movingGasToCallee(calleeGas > 0);
+
         if (computeGas) {
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
 
-            program.getResult().movingGasToCallee(calleeGas > 0);
-            
             if (!value.isZero()) {
                 program.getResult().setCallWithValuePerformed(true);
             }
