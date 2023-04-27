@@ -262,7 +262,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     public RskContext(String[] args, boolean ignoreUnmatchedArgs) {
         this(new CliArgs.Parser<>(
                 NodeCliOptions.class,
-                NodeCliFlags.class
+                NodeCliFlags.class,
+                ignoreUnmatchedArgs
         ).parse(args));
     }
 
