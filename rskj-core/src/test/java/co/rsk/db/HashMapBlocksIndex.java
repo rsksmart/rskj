@@ -75,21 +75,21 @@ public class HashMapBlocksIndex implements BlocksIndex {
             return;
         }
 
-        List<IndexedBlockStore.BlockInfo> binfos = index.get(blockNumber);
+        List<IndexedBlockStore.BlockInfo> blockInfoList = index.get(blockNumber);
 
-        if (binfos == null) {
+        if (blockInfoList == null) {
             return;
         }
 
-        List<IndexedBlockStore.BlockInfo> toremove = new ArrayList<>();
+        List<IndexedBlockStore.BlockInfo> toRemove = new ArrayList<>();
 
-        for (IndexedBlockStore.BlockInfo binfo : binfos) {
-            if (binfo.getHash().equals(blockHash)) {
-                toremove.add(binfo);
+        for (IndexedBlockStore.BlockInfo bInfo : blockInfoList) {
+            if (bInfo.getHash().equals(blockHash)) {
+                toRemove.add(bInfo);
             }
         }
-        binfos.removeAll(toremove);
-        if (binfos.isEmpty()) {
+        blockInfoList.removeAll(toRemove);
+        if (blockInfoList.isEmpty()) {
             index.remove(blockNumber);
         }
     }

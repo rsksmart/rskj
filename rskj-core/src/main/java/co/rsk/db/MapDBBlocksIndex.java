@@ -116,28 +116,24 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     @Override
     public void removeBlock(long blockNumber, Keccak256 blockHash) {
-        if (!index.containsKey(blockNumber)) {
+        List<IndexedBlockStore.BlockInfo> blockInfoList = index.get(blockNumber);
+
+        if (blockInfoList == null) {
             return;
         }
 
-        List<IndexedBlockStore.BlockInfo> binfos = index.get(blockNumber);
+        List<IndexedBlockStore.BlockInfo> toRemove = new ArrayList<>();
 
-        if (binfos == null) {
-            return;
-        }
-
-        List<IndexedBlockStore.BlockInfo> toremove = new ArrayList<>();
-
-        for (IndexedBlockStore.BlockInfo binfo : binfos) {
-            if (binfo.getHash().equals(blockHash)) {
-                toremove.add(binfo);
+        for (IndexedBlockStore.BlockInfo bInfo : blockInfoList) {
+            if (bInfo.getHash().equals(blockHash)) {
+                toRemove.add(bInfo);
             }
         }
-        binfos.removeAll(toremove);
-        if (binfos.isEmpty()) {
+        blockInfoList.removeAll(toRemove);
+        if (blockInfoList.isEmpty()) {
             index.remove(blockNumber);
         } else {
-            index.put(blockNumber, binfos);
+            index.put(blockNumber, blockInfoList);
         }
     }
 
