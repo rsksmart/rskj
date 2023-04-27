@@ -70,36 +70,27 @@ class BridgeConstantsTest {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), false),
             Arguments.of(BridgeTestNetConstants.getInstance(), false),
-            Arguments.of(BridgeRegTestConstants.getInstance(), false)
+            Arguments.of(BridgeRegTestConstants.getInstance(), false),
+            Arguments.of(BridgeMainNetConstants.getInstance(), true),
+            Arguments.of(BridgeTestNetConstants.getInstance(), true),
+            Arguments.of(BridgeRegTestConstants.getInstance(), true)
         );
     }
 
     @ParameterizedTest()
     @MethodSource("generatorFederationActivationAge")
-    void test_getFederationActivationAge(BridgeConstants bridgeConstants, boolean fieldsHasSameValue) {
+    void test_getFederationActivationAge(BridgeConstants bridgeConstants, boolean isRSKIP383Active) {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-
+        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(isRSKIP383Active);
         // Act
         long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
 
         // assert
-        assertEquals(federationActivationAge, bridgeConstants.federationActivationAgeLegacy);
-        assertEquals(fieldsHasSameValue,  federationActivationAge == bridgeConstants.federationActivationAge);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("generatorFederationActivationAge")
-    void test_getFederationActivationAge_post_RSKIP383(BridgeConstants bridgeConstants, boolean fieldsHasSameValue) {
-        // Arrange
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
-
-        // Act
-        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
-
-        // assert
-        assertEquals(federationActivationAge, bridgeConstants.federationActivationAge);
-        assertEquals(fieldsHasSameValue,  federationActivationAge == bridgeConstants.federationActivationAgeLegacy);
+        if (isRSKIP383Active){
+            assertEquals(bridgeConstants.federationActivationAge, federationActivationAge);
+        } else {
+            assertEquals(bridgeConstants.federationActivationAgeLegacy, federationActivationAge);
+        }
     }
 }
