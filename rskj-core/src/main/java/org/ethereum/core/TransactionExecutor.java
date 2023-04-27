@@ -77,7 +77,7 @@ public class TransactionExecutor {
     private final PrecompiledContracts precompiledContracts;
     private final boolean enableRemasc;
     private String executionError = "";
-    private final long gasUsedInTheContainer;
+    private final long gasUsed;
     private Coin paidFees;
 
     private final ProgramInvokeFactory programInvokeFactory;
@@ -108,7 +108,7 @@ public class TransactionExecutor {
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheContainer, VmConfig vmConfig,
+            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsed, VmConfig vmConfig,
             boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
             SignatureCache signatureCache, boolean postponeFeePayment, long sublistGasLimit) {
         this.constants = constants;
@@ -124,7 +124,7 @@ public class TransactionExecutor {
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.executionBlock = executionBlock;
-        this.gasUsedInTheContainer = gasUsedInTheContainer;
+        this.gasUsed = gasUsed;
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
         this.enableRemasc = remascEnabled;
@@ -163,9 +163,9 @@ public class TransactionExecutor {
         }
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        long containerGasLimit = activations.isActive(RSKIP144)? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
+        long gasLimit = activations.isActive(RSKIP144)? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
 
-        if (!gasIsValid(txGasLimit, containerGasLimit)) {
+        if (!gasIsValid(txGasLimit, gasLimit)) {
             return false;
         }
 
@@ -253,7 +253,7 @@ public class TransactionExecutor {
         // which is used on some stress tests, but its far from being practical
         // as the current gas limit on blocks is 6.8M... several orders of magnitude
         // less than the theoretical max gas on blocks.
-        long cumulativeGas = GasCost.add(txGasLimit, gasUsedInTheContainer);
+        long cumulativeGas = GasCost.add(txGasLimit, gasUsed);
 
         boolean cumulativeGasReached = cumulativeGas > curContainerGasLimit || cumulativeGas == GasCost.MAX_GAS;
         if (cumulativeGasReached) {
@@ -494,7 +494,7 @@ public class TransactionExecutor {
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
-            long totalGasUsed = GasCost.add(gasUsedInTheContainer, getGasUsed());
+            long totalGasUsed = GasCost.add(gasUsed, getGasUsed());
             receipt.setCumulativeGas(totalGasUsed);
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
