@@ -6825,7 +6825,7 @@ class BridgeSupportTest {
             preRSKIP271_activations
         );
 
-        Stream<Arguments> preRskip385 = Stream.of(
+        Stream<Arguments> preRskip271 = Stream.of(
             // active fed is standard and pegoutRequestsCount is equal to zero
             Arguments.of(
                 preRSKIP271_activations,
@@ -6869,7 +6869,7 @@ class BridgeSupportTest {
                 Coin.valueOf(0L)
             )
         );
-        return preRskip385;
+        return preRskip271;
     }
 
     private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP385(BridgeRegTestConstants bridgeConstantsRegtest) {
