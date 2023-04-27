@@ -20,21 +20,12 @@ package co.rsk.config;
 
 import co.rsk.remasc.RemascException;
 import co.rsk.util.JacksonParserUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Created by mario on 12/12/16.
@@ -43,55 +34,24 @@ public class RemascConfigFactory {
     private static final Logger logger = LoggerFactory.getLogger("RemascConfigFactory");
 
     private ObjectMapper mapper;
-    private final Map<String, RemascConfig> remascConfigMap = new ConcurrentHashMap<>();
+    private String configPath;
 
     public RemascConfigFactory(String remascConfigFile) {
         this.mapper = new ObjectMapper();
-        logger.info("RemascConfigFactory remascConfigFile = {} ", remascConfigFile);
-
-        try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(remascConfigFile)) {
-            String sis = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
-                    .lines()
-                    .collect(Collectors.joining("\n"));
-
-            logger.info("RemascConfigFactory sis = {} ", sis);
-
-            JsonNode configNode = JacksonParserUtil.readTree(mapper, sis);
-
-            logger.info("RemascConfigFactory node = {} ", configNode);
-
-            Iterator<String> fieldNames = configNode.fieldNames();
-
-            logger.info("RemascConfigFactory fieldNames = {} ", fieldNames);
-
-            while (fieldNames.hasNext()) {
-                String fieldName = fieldNames.next();
-                remascConfigMap.put(fieldName, this.fetchRemascConfigMap(fieldName, configNode));
-            }
-
-            logger.info("RemascConfigFactory remascConfigMap = {} ", remascConfigMap);
-        } catch (Exception ex) {
-            logger.error("Error reading REMASC", ex);
-            throw new RemascException("Error reading REMASC [" + remascConfigFile + "]: ", ex);
-        }
-    }
-
-    private RemascConfig fetchRemascConfigMap(String config, JsonNode configNode) throws JsonProcessingException {
-        RemascConfig remascConfig;
-
-        logger.info("fetchRemascConfigMap config = {} ", config);
-
-        logger.info("fetchRemascConfigMap node.get(config) = {} ", configNode.get(config));
-
-        remascConfig = JacksonParserUtil.treeToValue(mapper, configNode.get(config), RemascConfig.class);
-
-        logger.info("fetchRemascConfigMap remascConfig = {} ", remascConfig);
-
-        return remascConfig;
+        this.configPath = remascConfigFile;
     }
 
     public RemascConfig createRemascConfig(String config) {
-        return Optional.ofNullable(remascConfigMap.get(config))
-                .orElseThrow(() -> new RemascException("Error reading REMASC configuration[" + config + "]"));
+        RemascConfig remascConfig;
+
+        try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(this.configPath)) {
+            JsonNode node = JacksonParserUtil.readTree(mapper, is);
+            remascConfig = JacksonParserUtil.treeToValue(mapper, node.get(config), RemascConfig.class);
+        } catch (Exception ex) {
+            logger.error("Error reading REMASC configuration[{}]: {}", config, ex);
+            throw new RemascException("Error reading REMASC configuration[" + config + "]: ", ex);
+        }
+
+        return remascConfig;
     }
 }
