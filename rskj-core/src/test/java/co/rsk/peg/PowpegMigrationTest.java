@@ -32,7 +32,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;

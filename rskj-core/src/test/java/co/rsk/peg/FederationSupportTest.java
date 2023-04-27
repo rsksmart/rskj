@@ -21,7 +21,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
-import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -91,42 +90,42 @@ class FederationSupportTest {
         assertThat(federationSupport.getActiveFederation(), is(newFederation));
     }
 
-    @Test
-    void whenOldAndNewFederationArePresentReturnOldFederationByActivationAge() {
-        Federation newFederation = getNewFakeFederation(75);
-        Federation oldFederation = getNewFakeFederation(0);
-
-        when(provider.getNewFederation()).thenReturn(newFederation);
-        when(provider.getOldFederation()).thenReturn(oldFederation);
-        when(executionBlock.getNumber()).thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge(activations)).thenReturn(10L);
-
-        assertThat(federationSupport.getActiveFederation(), is(oldFederation));
-    }
-
-    private static Stream<Arguments> provideTestArguments() {
-        BridgeConstants bridgeConstants = BridgeTestNetConstants.getInstance();
+    private static Stream<Arguments> fedActivationArguments() {
+        BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
         ActivationConfig.ForBlock hop = ActivationConfigsForTest.hop400().forBlock(0);
         ActivationConfig.ForBlock fingerroot = ActivationConfigsForTest.fingerroot500().forBlock(0);
 
         return Stream.of(
-            Arguments.of(hop, 65, 0, 80L, false),
-            Arguments.of(hop, 65, 0, 65+bridgeConstants.getFederationActivationAge(hop), true),
-            Arguments.of(fingerroot, 65, 0, 80L, false),
-            Arguments.of(fingerroot, 65, 0, 65+bridgeConstants.getFederationActivationAge(fingerroot), true)
+            Arguments.of(bridgeTestNetConstants, hop, false),
+            Arguments.of(bridgeTestNetConstants, hop, true),
+            Arguments.of(bridgeTestNetConstants, fingerroot, false),
+            Arguments.of(bridgeTestNetConstants, fingerroot, true),
+            Arguments.of(bridgeMainnetConstants, hop, false),
+            Arguments.of(bridgeMainnetConstants, hop, true),
+            Arguments.of(bridgeMainnetConstants, fingerroot, false),
+            Arguments.of(bridgeMainnetConstants, fingerroot, true)
         );
     }
 
 
     @ParameterizedTest
-    @MethodSource("provideTestArguments")
-    void whenOldAndNewFederationArePresentReturnNewFederationByActivationAge(
+    @MethodSource("fedActivationArguments")
+    void whenOldAndNewFederationArePresentReturnActiveFederationByActivationAge(
+        BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,
-        int newFedCreationBlockNumber,
-        int oldFedCreationBlockNumber,
-        long currentBlockNumber,
-        boolean newFedExpectedToBeActive)
-    {
+        boolean newFedExpectedToBeActive
+    ) {
+        int newFedCreationBlockNumber = 65;
+        int oldFedCreationBlockNumber = 0;
+        long currentBlockNumber = newFedCreationBlockNumber + bridgeConstants.getFederationActivationAge(activations);
+
+        if (newFedExpectedToBeActive) {
+            currentBlockNumber++;
+        } else {
+            currentBlockNumber--;
+        }
+
         // Arrange
         Federation newFederation = getNewFakeFederation(newFedCreationBlockNumber);
         Federation oldFederation = getNewFakeFederation(oldFedCreationBlockNumber);
@@ -137,8 +136,6 @@ class FederationSupportTest {
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(currentBlockNumber);
-
-        BridgeConstants bridgeConstants = BridgeTestNetConstants.getInstance();
 
         FederationSupport federationSupport = new FederationSupport(
             bridgeConstants,
@@ -154,7 +151,7 @@ class FederationSupportTest {
         if (newFedExpectedToBeActive){
             assertThat(activeFederation, is(newFederation));
         } else {
-            assertThat(federationSupport.getActiveFederation(), is(oldFederation));
+            assertThat(activeFederation, is(oldFederation));
         }
     }
 
