@@ -1537,9 +1537,7 @@ public class VM {
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
 
-            // when there's less gas than expected from the child call,
-            // the estimateGas will be given by gasUsed + deductedRefunds instead of maxGasUsed
-            program.getResult().movedRemainingGasToChild(calleeGas == remainingGas);
+            program.getResult().movingGasToCallee(calleeGas > 0);
             
             if (!value.isZero()) {
                 program.getResult().setCallWithValuePerformed(true);
