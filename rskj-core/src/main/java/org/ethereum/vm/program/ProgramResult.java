@@ -105,6 +105,9 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
+        if (movedRemainingGasToChild) {
+            maxGasUsed = GasCost.subtract(maxGasUsed, gas);
+        }
         gasUsed = GasCost.subtract(gasUsed, gas);
     }
 

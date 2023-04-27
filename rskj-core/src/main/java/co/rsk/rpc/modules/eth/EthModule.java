@@ -176,9 +176,7 @@ public class EthModule
     }
 
     protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {
-        long estimatedGas = reversibleExecutionResult.getMovedRemainingGasToChild() ?
-                reversibleExecutionResult.getGasUsed() + reversibleExecutionResult.getDeductedRefund() :
-                reversibleExecutionResult.getMaxGasUsed();
+        long estimatedGas = reversibleExecutionResult.getMaxGasUsed();
 
         if (reversibleExecutionResult.isCallWithValuePerformed()) {
             estimatedGas += GasCost.STIPEND_CALL;

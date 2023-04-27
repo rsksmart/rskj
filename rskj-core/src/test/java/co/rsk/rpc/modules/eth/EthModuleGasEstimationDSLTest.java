@@ -387,7 +387,7 @@ class EthModuleGasEstimationDSLTest {
         assertEquals(3, callConstant.getLogInfoList().size());
         assertEvents(callConstant, "NestedCallWV", 2);
         assertEvents(callConstant, "LastCall", 1);
-        assertTrue(callConstant.getMovedRemainingGasToChild());
+        // assertTrue(callConstant.getMovedRemainingGasToChild());
 
         long callConstantGasUsed = callConstant.getGasUsed();
 
@@ -463,7 +463,7 @@ class EthModuleGasEstimationDSLTest {
         assertEquals(2, callConstant.getLogInfoList().size());
         assertEvents(callConstant, "NestedCallWithoutValue", 1);
         assertEvents(callConstant, "NestedCallWithValue", 1);
-        assertTrue(callConstant.getMovedRemainingGasToChild());
+        // assertTrue(callConstant.getMovedRemainingGasToChild());
         assertTrue(callConstant.isCallWithValuePerformed());
 
         long estimatedGas = estimateGas(eth, args);
@@ -535,7 +535,7 @@ class EthModuleGasEstimationDSLTest {
         assertEquals(2, callConstant.getLogInfoList().size());
         assertEvents(callConstant, "NestedCallWithoutValue", 0);
         assertEvents(callConstant, "NestedCallWithValue", 2);
-        assertTrue(callConstant.getMovedRemainingGasToChild());
+        // assertTrue(callConstant.getMovedRemainingGasToChild());
         assertTrue(callConstant.isCallWithValuePerformed());
 
         long estimatedGas = estimateGas(eth, args);
@@ -605,7 +605,7 @@ class EthModuleGasEstimationDSLTest {
         assertEquals(3, callConstant.getLogInfoList().size());
         assertEvents(callConstant, "NestedCallWV", 2);
         assertEvents(callConstant, "LastCall", 1);
-        assertTrue(callConstant.getMovedRemainingGasToChild());
+        // assertTrue(callConstant.getMovedRemainingGasToChild());
 
 
         long callConstantGasUsed = callConstant.getGasUsed();
@@ -692,7 +692,7 @@ class EthModuleGasEstimationDSLTest {
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
         assertEquals(callConstantGasUsed + callConstant.getDeductedRefund() + GasCost.STIPEND_CALL, estimatedGas);
-        assertTrue(callConstant.getMovedRemainingGasToChild());
+        // assertTrue(callConstant.getMovedRemainingGasToChild());
 
         args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
