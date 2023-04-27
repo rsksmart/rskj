@@ -287,40 +287,26 @@ class PowpegMigrationTest {
             ActivationConfig.ForBlock activationsBeforeRSKIP383 = mock(ActivationConfig.ForBlock.class);
             when(activationsBeforeRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
 
-            long beforeRskip383blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activationsBeforeRSKIP383);
-            Assertions.assertTrue(blockNumber > beforeRskip383blockNumber);
+            long fedActivationBlockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activationsBeforeRSKIP383);
+            Assertions.assertTrue(blockNumber > fedActivationBlockNumber);
 
-            Block beforeRskip383ActivationBlock = mock(Block.class);
-            doReturn(beforeRskip383blockNumber).when(beforeRskip383ActivationBlock).getNumber();
+            Block fedActivationBlock = mock(Block.class);
+            doReturn(fedActivationBlockNumber).when(fedActivationBlock).getNumber();
 
             bridgeSupport = new BridgeSupportBuilder()
                 .withProvider(bridgeStorageProvider)
                 .withRepository(repository)
                 .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(beforeRskip383ActivationBlock)
+                .withExecutionBlock(fedActivationBlock)
                 .withActivations(activations)
                 .withBridgeConstants(bridgeConstants)
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withPeginInstructionsProvider(new PeginInstructionsProvider())
                 .build();
 
-            // New active powpeg and retiring powpeg
-            assertNotEquals(newPowPegAddress, bridgeSupport.getFederationAddress());
+            assertEquals(newPowPegAddress, bridgeSupport.getRetiringFederationAddress());
             assertEquals(oldPowPegAddress, bridgeSupport.getFederationAddress());
-            assertNotEquals(oldPowPegAddress, bridgeSupport.getRetiringFederationAddress());
-        } else {
-            ActivationConfig.ForBlock activationsAfterRSKIP383 = mock(ActivationConfig.ForBlock.class);
-            when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
-
-            long afterRskip383blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activationsAfterRSKIP383);
-
-            // assert fed activation age is different before and after RSKIP383
-            assertNotEquals(blockNumber, afterRskip383blockNumber);
-            Assertions.assertTrue(blockNumber < afterRskip383blockNumber);
         }
-
-
-
 
         bridgeSupport = new BridgeSupportBuilder()
             .withProvider(bridgeStorageProvider)
