@@ -218,7 +218,7 @@ class BridgeSupportProcessFundsMigrationTest {
         test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, false);
     }
 
-    private static Stream<Arguments> processFundMigrationArgProvider() {
+    private static Stream<Arguments> processFundMigrationArgsProvider() {
         BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
         BridgeTestNetConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
 
@@ -286,7 +286,7 @@ class BridgeSupportProcessFundsMigrationTest {
     }
 
     @ParameterizedTest
-    @MethodSource("processFundMigrationArgProvider")
+    @MethodSource("processFundMigrationArgsProvider")
     void test_processFundsMigration(
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,

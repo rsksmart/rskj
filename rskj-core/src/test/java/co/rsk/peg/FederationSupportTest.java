@@ -90,27 +90,27 @@ class FederationSupportTest {
         assertThat(federationSupport.getActiveFederation(), is(newFederation));
     }
 
-    private static Stream<Arguments> fedActivationArguments() {
+    private static Stream<Arguments> fedActivationAgeTestArgs() {
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
         BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-        ActivationConfig.ForBlock hop = ActivationConfigsForTest.hop400().forBlock(0);
-        ActivationConfig.ForBlock fingerroot = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
 
         return Stream.of(
-            Arguments.of(bridgeTestNetConstants, hop, false),
-            Arguments.of(bridgeTestNetConstants, hop, true),
-            Arguments.of(bridgeTestNetConstants, fingerroot, false),
-            Arguments.of(bridgeTestNetConstants, fingerroot, true),
-            Arguments.of(bridgeMainnetConstants, hop, false),
-            Arguments.of(bridgeMainnetConstants, hop, true),
-            Arguments.of(bridgeMainnetConstants, fingerroot, false),
-            Arguments.of(bridgeMainnetConstants, fingerroot, true)
+            Arguments.of(bridgeTestNetConstants, hopActivations, false),
+            Arguments.of(bridgeTestNetConstants, hopActivations, true),
+            Arguments.of(bridgeTestNetConstants, fingerrootActivations, false),
+            Arguments.of(bridgeTestNetConstants, fingerrootActivations, true),
+            Arguments.of(bridgeMainnetConstants, hopActivations, false),
+            Arguments.of(bridgeMainnetConstants, hopActivations, true),
+            Arguments.of(bridgeMainnetConstants, fingerrootActivations, false),
+            Arguments.of(bridgeMainnetConstants, fingerrootActivations, true)
         );
     }
 
 
     @ParameterizedTest
-    @MethodSource("fedActivationArguments")
+    @MethodSource("fedActivationAgeTestArgs")
     void whenOldAndNewFederationArePresentReturnActiveFederationByActivationAge(
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,
