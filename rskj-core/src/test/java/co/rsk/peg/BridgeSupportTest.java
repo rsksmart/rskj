@@ -2109,6 +2109,7 @@ class BridgeSupportTest {
     private static Stream<BridgeConstants> provideBridgeConstants() {
         return Stream.of(BridgeRegTestConstants.getInstance(), BridgeTestNetConstants.getInstance(), BridgeMainNetConstants.getInstance());
     }
+
     @ParameterizedTest
     @MethodSource("provideBridgeConstants")
     void rskTxWaitingForSignature_uses_pegoutCreation_rskTxHash_after_rskip_375_activation(BridgeConstants bridgeConstants) throws IOException {
