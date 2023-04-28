@@ -66,6 +66,16 @@ class BridgeSupportProcessFundsMigrationTest {
     }
 
     @Test
+    void processFundsMigration_in_migration_age_after_rskip383_activation_testnet() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
+        test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, true);
+    }
+
+    @Test
     void processFundsMigration_past_migration_age_before_rskip_146_activation_testnet() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
@@ -260,6 +270,13 @@ class BridgeSupportProcessFundsMigrationTest {
 
         Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
         Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146) ? 1 : 0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
+
+        if (!inMigrationAge){
+            verify(provider, times(1)).setOldFederation(null);
+            Assertions.assertTrue(sufficientUTXOsForMigration.isEmpty());
+        } else {
+            verify(provider, never()).setOldFederation(null);
+        }
 
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             // Should have been logged with the migrated UTXO

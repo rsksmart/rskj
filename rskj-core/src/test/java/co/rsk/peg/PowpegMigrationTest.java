@@ -287,25 +287,25 @@ class PowpegMigrationTest {
             ActivationConfig.ForBlock activationsBeforeRSKIP383 = mock(ActivationConfig.ForBlock.class);
             when(activationsBeforeRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
 
-            long fedActivationBlockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activationsBeforeRSKIP383);
-            Assertions.assertTrue(blockNumber > fedActivationBlockNumber);
+            long legacyFedActivationBlockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activationsBeforeRSKIP383);
+            Assertions.assertTrue(blockNumber > legacyFedActivationBlockNumber);
 
-            Block fedActivationBlock = mock(Block.class);
-            doReturn(fedActivationBlockNumber).when(fedActivationBlock).getNumber();
+            Block legacyFedActivationBlock = mock(Block.class);
+            doReturn(legacyFedActivationBlockNumber).when(legacyFedActivationBlock).getNumber();
 
             bridgeSupport = new BridgeSupportBuilder()
                 .withProvider(bridgeStorageProvider)
                 .withRepository(repository)
                 .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(fedActivationBlock)
+                .withExecutionBlock(legacyFedActivationBlock)
                 .withActivations(activations)
                 .withBridgeConstants(bridgeConstants)
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withPeginInstructionsProvider(new PeginInstructionsProvider())
                 .build();
 
-            assertEquals(newPowPegAddress, bridgeSupport.getRetiringFederationAddress());
             assertEquals(oldPowPegAddress, bridgeSupport.getFederationAddress());
+            assertNull(bridgeSupport.getRetiringFederation());
         }
 
         bridgeSupport = new BridgeSupportBuilder()
