@@ -16,6 +16,9 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -23,6 +26,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -213,7 +218,76 @@ class BridgeSupportProcessFundsMigrationTest {
         test_processFundsMigration(BridgeMainNetConstants.getInstance(), activations, false);
     }
 
-    private void test_processFundsMigration(
+    private static Stream<Arguments> processFundMigrationArgProvider() {
+        BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+        BridgeTestNetConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
+
+        ActivationConfig.ForBlock activationsBeforeRSKIP146 = mock(ActivationConfig.ForBlock.class);
+
+        Stream<Arguments> beforeRskip146Tests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, activationsBeforeRSKIP146, false),
+            Arguments.of(bridgeTestNetConstants, activationsBeforeRSKIP146, true),
+            Arguments.of(bridgeMainNetConstants, activationsBeforeRSKIP146, false),
+            Arguments.of(bridgeMainNetConstants, activationsBeforeRSKIP146, true)
+        );
+
+        ActivationConfig.ForBlock activationsAfterRSKIP146 = mock(ActivationConfig.ForBlock.class);
+        when(activationsAfterRSKIP146.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+
+        Stream<Arguments> afterRskip146Tests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP146, false),
+            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP146, true),
+            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP146, false),
+            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP146, true)
+        );
+
+        ActivationConfig.ForBlock activationsAfterRSKIP357 = mock(ActivationConfig.ForBlock.class);
+        when(activationsAfterRSKIP357.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activationsAfterRSKIP357.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+
+        Stream<Arguments> afterRskip357Tests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP357, false),
+            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP357, true),
+            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP357, false),
+            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP357, true)
+        );
+
+        ActivationConfig.ForBlock activationsAfterRSKIP374 = mock(ActivationConfig.ForBlock.class);
+        when(activationsAfterRSKIP374.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activationsAfterRSKIP374.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activationsAfterRSKIP374.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+
+        Stream<Arguments> afterRskip374Tests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP374, false),
+            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP374, true),
+            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP374, false),
+            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP374, true)
+        );
+
+        ActivationConfig.ForBlock activationsAfterRSKIP383 = mock(ActivationConfig.ForBlock.class);
+        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
+
+        Stream<Arguments> afterRskip383Tests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP383, false),
+            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP383, true),
+            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP383, false),
+            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP383, true)
+        );
+        return Stream.of(
+            beforeRskip146Tests,
+            afterRskip146Tests,
+            afterRskip357Tests,
+            afterRskip374Tests,
+            afterRskip383Tests
+        ).flatMap(Function.identity());
+    }
+
+    @ParameterizedTest
+    @MethodSource("processFundMigrationArgProvider")
+    void test_processFundsMigration(
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,
         boolean inMigrationAge
@@ -271,9 +345,9 @@ class BridgeSupportProcessFundsMigrationTest {
         Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
         Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146) ? 1 : 0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
 
+        Assertions.assertTrue(sufficientUTXOsForMigration.isEmpty());
         if (!inMigrationAge){
             verify(provider, times(1)).setOldFederation(null);
-            Assertions.assertTrue(sufficientUTXOsForMigration.isEmpty());
         } else {
             verify(provider, never()).setOldFederation(null);
         }
