@@ -64,13 +64,8 @@ public class ProgramResult {
 
     // estimateGas fields
     private long gasNeeded = 0;
-    private boolean movingGasToCallee;
     private boolean callWithValuePerformed; // this will happen for VT CALLs
     private long gasUsedBeforeRefunds = 0; // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
-
-    public void movingGasToCallee(boolean moved) {
-        this.movingGasToCallee = moved;
-    }
 
     public void setCallWithValuePerformed(boolean callWithValuePerformed) {
         this.callWithValuePerformed = callWithValuePerformed;
@@ -98,16 +93,17 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
-        if (movingGasToCallee) {
-            movingGasToCallee = false;
+        // NOTE: this gasNeeded corrections could be even more accurate if we consider that for calls with value that
+        // move 0 gas to callee (that is, just stipend) do not need to perform any refund, but logic gets more complex
+        // while estimation is reduced but just a bit
 
-            // refund made after passing gas to callee can be deducted from as it is not needed (and we allow internal calls even if specified < remaining)
-            gasNeeded = GasCost.subtract(gasNeeded, gas);
+        // generally, refund made after passing gas to callee can be deducted from needed gas as we allow internal
+        // calls even if specified < remaining  but... (1)
+        gasNeeded = GasCost.subtract(gasNeeded, gas);
 
-            // if internal call is providing a value we must take stipend into account and add it after previous subtraction
-            if (callWithValuePerformed) {
-                gasNeeded = GasCost.add(gasNeeded, GasCost.STIPEND_CALL);
-            }
+        // (1) ... if internal call provides a value we must take stipend into account and consider it as needed gas
+        if (callWithValuePerformed) {
+            gasNeeded = GasCost.add(gasNeeded, GasCost.STIPEND_CALL);
         }
 
         gasUsed = GasCost.subtract(gasUsed, gas);
@@ -300,7 +296,6 @@ public class ProgramResult {
             addFutureRefund(another.getFutureRefund());
             addDeductedRefund(another.deductedRefund);
             this.gasNeeded = Math.max(this.gasNeeded, another.gasNeeded);
-            // this.movingGasToCallee program-specific, therefore not merging
             this.callWithValuePerformed = this.callWithValuePerformed || another.callWithValuePerformed;
         }
     }

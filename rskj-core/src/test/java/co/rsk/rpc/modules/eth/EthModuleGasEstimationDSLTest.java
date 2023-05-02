@@ -132,7 +132,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Estimate the gas to use
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(33428, estimatedGas);
+        assertEquals(33469, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -323,7 +323,7 @@ class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(38471, estimatedGas);
+        assertEquals(38512, estimatedGas);
 
         assertTrue(estimatedGas > callConstantGasUsed);
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
@@ -590,7 +590,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Estimate the gas to use
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(34910, estimatedGas);
+        assertEquals(34951, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
