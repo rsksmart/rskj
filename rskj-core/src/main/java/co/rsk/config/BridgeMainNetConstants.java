@@ -93,7 +93,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
             AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
-        federationActivationAge = 18500L;
+        federationActivationAgeLegacy = 18500L;
+        federationActivationAge = 40320L;
 
         fundsMigrationAgeSinceActivationBegin = 0L;
         fundsMigrationAgeSinceActivationEnd = 10585L;

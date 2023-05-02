@@ -38,13 +38,15 @@ public class RemascFederationProvider {
             BridgeConstants bridgeConstants,
             Repository repository,
             Block processingBlock) {
+
+        ActivationConfig.ForBlock activations = activationConfig.forBlock(processingBlock.getNumber());
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                activationConfig.forBlock(processingBlock.getNumber())
+                activations
         );
-        this.federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock);
+        this.federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock, activations);
     }
 
     public int getFederationSize() {

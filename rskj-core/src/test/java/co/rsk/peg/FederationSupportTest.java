@@ -20,17 +20,25 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.config.BridgeTestNetConstants;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,18 +51,20 @@ class FederationSupportTest {
     private BridgeConstants bridgeConstants;
     private BridgeStorageProvider provider;
     private Block executionBlock;
-
+    private ActivationConfig.ForBlock activations;
 
     @BeforeEach
     void setUp() {
         provider = mock(BridgeStorageProvider.class);
         bridgeConstants = mock(BridgeConstants.class);
         executionBlock = mock(Block.class);
+        activations = mock(ActivationConfig.ForBlock.class);
 
         federationSupport = new FederationSupport(
             bridgeConstants,
             provider,
-            executionBlock
+            executionBlock,
+            activations
         );
     }
 
@@ -80,30 +90,69 @@ class FederationSupportTest {
         assertThat(federationSupport.getActiveFederation(), is(newFederation));
     }
 
-    @Test
-    void whenOldAndNewFederationArePresentReturnOldFederationByActivationAge() {
-        Federation newFederation = getNewFakeFederation(75);
-        Federation oldFederation = getNewFakeFederation(0);
+    private static Stream<Arguments> fedActivationAgeTestArgs() {
+        BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
 
-        when(provider.getNewFederation()).thenReturn(newFederation);
-        when(provider.getOldFederation()).thenReturn(oldFederation);
-        when(executionBlock.getNumber()).thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge()).thenReturn(10L);
-
-        assertThat(federationSupport.getActiveFederation(), is(oldFederation));
+        return Stream.of(
+            Arguments.of(bridgeTestNetConstants, hopActivations, false),
+            Arguments.of(bridgeTestNetConstants, hopActivations, true),
+            Arguments.of(bridgeTestNetConstants, fingerrootActivations, false),
+            Arguments.of(bridgeTestNetConstants, fingerrootActivations, true),
+            Arguments.of(bridgeMainnetConstants, hopActivations, false),
+            Arguments.of(bridgeMainnetConstants, hopActivations, true),
+            Arguments.of(bridgeMainnetConstants, fingerrootActivations, false),
+            Arguments.of(bridgeMainnetConstants, fingerrootActivations, true)
+        );
     }
 
-    @Test
-    void whenOldAndNewFederationArePresentReturnNewFederationByActivationAge() {
-        Federation newFederation = getNewFakeFederation(65);
-        Federation oldFederation = getNewFakeFederation(0);
 
+    @ParameterizedTest
+    @MethodSource("fedActivationAgeTestArgs")
+    void whenOldAndNewFederationArePresentReturnActiveFederationByActivationAge(
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        boolean newFedExpectedToBeActive
+    ) {
+        int newFedCreationBlockNumber = 65;
+        int oldFedCreationBlockNumber = 0;
+        long currentBlockNumber = newFedCreationBlockNumber + bridgeConstants.getFederationActivationAge(activations);
+
+        if (newFedExpectedToBeActive) {
+            currentBlockNumber++;
+        } else {
+            currentBlockNumber--;
+        }
+
+        // Arrange
+        Federation newFederation = getNewFakeFederation(newFedCreationBlockNumber);
+        Federation oldFederation = getNewFakeFederation(oldFedCreationBlockNumber);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNewFederation()).thenReturn(newFederation);
         when(provider.getOldFederation()).thenReturn(oldFederation);
-        when(executionBlock.getNumber()).thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge()).thenReturn(10L);
 
-        assertThat(federationSupport.getActiveFederation(), is(newFederation));
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(currentBlockNumber);
+
+        FederationSupport federationSupport = new FederationSupport(
+            bridgeConstants,
+            provider,
+            executionBlock,
+            activations
+        );
+
+        // Act
+        Federation activeFederation = federationSupport.getActiveFederation();
+
+        // Assert
+        if (newFedExpectedToBeActive){
+            assertThat(activeFederation, is(newFederation));
+        } else {
+            assertThat(activeFederation, is(oldFederation));
+        }
     }
 
     @Test

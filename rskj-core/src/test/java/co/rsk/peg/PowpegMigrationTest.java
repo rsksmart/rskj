@@ -30,8 +30,8 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
@@ -275,12 +275,38 @@ class PowpegMigrationTest {
         /*
           Activation phase
          */
-
         // Move the required blocks ahead for the new powpeg to become active
         // (overriding block number to ensure we don't move beyond the activation phase)
-        blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge();
+        blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activations);
         Block activationBlock = mock(Block.class);
         doReturn(blockNumber).when(activationBlock).getNumber();
+
+        // assuming fed activation age after rskip383 is greater than legacy fed activation age, we can check that new fed
+        // should not be active at the legacy activation age when RSKIP383 is active
+        if (activations.isActive(ConsensusRule.RSKIP383)){
+            ActivationConfig.ForBlock activationsBeforeRSKIP383 = mock(ActivationConfig.ForBlock.class);
+            when(activationsBeforeRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
+
+            long legacyFedActivationBlockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activationsBeforeRSKIP383);
+            Assertions.assertTrue(blockNumber > legacyFedActivationBlockNumber);
+
+            Block legacyFedActivationBlock = mock(Block.class);
+            doReturn(legacyFedActivationBlockNumber).when(legacyFedActivationBlock).getNumber();
+
+            bridgeSupport = new BridgeSupportBuilder()
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(legacyFedActivationBlock)
+                .withActivations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .build();
+
+            assertEquals(oldPowPegAddress, bridgeSupport.getFederationAddress());
+            assertNull(bridgeSupport.getRetiringFederation());
+        }
 
         bridgeSupport = new BridgeSupportBuilder()
             .withProvider(bridgeStorageProvider)

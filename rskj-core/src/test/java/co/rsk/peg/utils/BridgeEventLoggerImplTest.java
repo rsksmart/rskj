@@ -34,6 +34,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -44,6 +46,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -200,8 +203,10 @@ class BridgeEventLoggerImplTest {
         assertEvent(eventLogs, 0, BridgeEvents.RELEASE_BTC.getEvent(), new Object[]{rskTxHash.getBytes()}, new Object[]{btcTx.bitcoinSerialize()});
     }
 
-    @Test
-    void logCommitFederation() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void logCommitFederation(boolean isRSKIP383Active) {
+        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(isRSKIP383Active);
         // Setup parameters for test method call
         Block executionBlock = mock(Block.class);
         when(executionBlock.getTimestamp()).thenReturn(15005L);
@@ -249,7 +254,8 @@ class BridgeEventLoggerImplTest {
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
-        long newFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge();
+        long newFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activations);
+
         Object[] data = new Object[]{
             oldFederationFlatPubKeys,
             oldFederationBtcAddress,
@@ -257,7 +263,32 @@ class BridgeEventLoggerImplTest {
             newFederationBtcAddress,
             newFedActivationBlockNumber
         };
-        assertEvent(eventLogs, 0, BridgeEvents.COMMIT_FEDERATION.getEvent(), new Object[]{}, data);
+
+        CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION.getEvent();
+        Object[] topics = {};
+        assertEvent(eventLogs, 0, event, topics, data);
+
+        final LogInfo log = eventLogs.get(0);
+        Object[] decodeEventData = event.decodeEventData(log.getData());
+        long loggedFedActivationBlockNumber = ((BigInteger) decodeEventData[4]).longValue();
+
+        assertEquals(loggedFedActivationBlockNumber, newFedActivationBlockNumber);
+
+        // assert fed activation has different values before and after RSKIP383 respectively
+        if (isRSKIP383Active){
+            ActivationConfig.ForBlock activationsForLegacyFedActivationAge = mock(ActivationConfig.ForBlock.class);
+            when(activationsForLegacyFedActivationAge.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
+
+            long legacyFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activationsForLegacyFedActivationAge);
+
+            assertNotEquals(loggedFedActivationBlockNumber, legacyFedActivationBlockNumber);
+        } else {
+            ActivationConfig.ForBlock activationsForDefaultFedActivationAge = mock(ActivationConfig.ForBlock.class);
+            when(activationsForDefaultFedActivationAge.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
+
+            long defaultFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activationsForDefaultFedActivationAge);
+            assertNotEquals(loggedFedActivationBlockNumber, defaultFedActivationBlockNumber);
+        }
     }
 
     @Test

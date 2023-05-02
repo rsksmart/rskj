@@ -20,6 +20,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.config.BridgeConstants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 
 import javax.annotation.Nullable;
@@ -34,11 +35,13 @@ public class FederationSupport {
     private final BridgeStorageProvider provider;
     private final BridgeConstants bridgeConstants;
     private final Block executionBlock;
+    private final ActivationConfig.ForBlock activations;
 
-    public FederationSupport(BridgeConstants bridgeConstants, BridgeStorageProvider provider, Block executionBlock) {
+    public FederationSupport(BridgeConstants bridgeConstants, BridgeStorageProvider provider, Block executionBlock, ActivationConfig.ForBlock activations) {
         this.provider = provider;
         this.bridgeConstants = bridgeConstants;
         this.executionBlock = executionBlock;
+        this.activations = activations;
     }
 
     /**
@@ -226,6 +229,6 @@ public class FederationSupport {
 
     private boolean shouldFederationBeActive(Federation federation) {
         long federationAge = executionBlock.getNumber() - federation.getCreationBlockNumber();
-        return federationAge >= bridgeConstants.getFederationActivationAge();
+        return federationAge >= bridgeConstants.getFederationActivationAge(activations);
     }
 }
