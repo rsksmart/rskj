@@ -159,13 +159,13 @@ class BridgeSupportProcessFundsMigrationTest {
         bridgeSupport.updateCollections(updateCollectionsTx);
 
         Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
-        Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146) ? 1 : 0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
+        Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 1 : 0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
 
         Assertions.assertTrue(sufficientUTXOsForMigration.isEmpty());
-        if (!inMigrationAge){
-            verify(provider, times(1)).setOldFederation(null);
-        } else {
+        if (inMigrationAge){
             verify(provider, never()).setOldFederation(null);
+        } else {
+            verify(provider, times(1)).setOldFederation(null);
         }
 
         if (activations.isActive(ConsensusRule.RSKIP146)) {
