@@ -93,10 +93,6 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
-        // NOTE: this gasNeeded corrections could be even more accurate if we consider that for calls with value that
-        // move 0 gas to callee (that is, just stipend) do not need to perform any refund, but logic gets more complex
-        // while estimation is reduced but just a bit
-
         // generally, refund made after passing gas to callee can be deducted from needed gas as we allow internal
         // calls even if specified < remaining  but... (1)
         gasNeeded = GasCost.subtract(gasNeeded, gas);
