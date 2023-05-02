@@ -1492,8 +1492,6 @@ public class VM {
             program.callToAddress(msg);
         }
 
-        program.getResult().movingGasToCallee(false);
-
         program.step();
     }
 
@@ -1534,15 +1532,12 @@ public class VM {
         // the callee will receive less gas than the parent expected.
         long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
 
-        program.getResult().movingGasToCallee(calleeGas > 0);
-
         if (computeGas) {
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
 
-            if (!value.isZero()) {
-                program.getResult().setCallWithValuePerformed(true);
-            }
+            program.getResult().movingGasToCallee(true);
+            program.getResult().setCallWithValuePerformed(!value.isZero());
         }
 
         if (isLogEnabled) {

@@ -76,29 +76,11 @@ public class ProgramResult {
         this.callWithValuePerformed = callWithValuePerformed;
     }
 
-    @VisibleForTesting
-    public boolean isCallWithValuePerformed() {
-        return callWithValuePerformed;
-    }
-
     public void clearUsedGas() {
         gasUsed = 0;
     }
 
     public long getEstimatedGas() {
-        // max gas used = gas needed = estimated gas
-        long estimatedGas = gasNeeded;
-
-        // TODO(iago) after this PR changes, I think this is longer required, confirm before closing PR
-        if (callWithValuePerformed) {
-            estimatedGas += GasCost.STIPEND_CALL;
-        }
-
-        return estimatedGas;
-    }
-
-    @VisibleForTesting
-    public long getGasNeeded() {
         return gasNeeded;
     }
 
@@ -116,11 +98,19 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
+        // flag created in case we have other immediate refunds not related with internal calls
         if (movingGasToCallee) {
-            movingGasToCallee(false);
-            // refund made after passing gas to callee must be subtracted from needed gas
+            movingGasToCallee = false; // reset for subsequent calls & merge
+
+            // refund made after passing gas to callee can be deducted from as it is not needed (and we allow internal calls even if specified < remaining)
             gasNeeded = GasCost.subtract(gasNeeded, gas);
+
+            // if internal call is providing a value we must take stipend into account and add it after previous subtraction
+            if (callWithValuePerformed) {
+                gasNeeded = GasCost.add(gasNeeded, GasCost.STIPEND_CALL);
+            }
         }
+
         gasUsed = GasCost.subtract(gasUsed, gas);
     }
 
