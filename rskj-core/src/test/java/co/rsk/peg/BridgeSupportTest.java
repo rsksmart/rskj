@@ -6804,12 +6804,12 @@ class BridgeSupportTest {
         assertEquals(2, bridgeSupport.getQueuedPegoutsCount());
     }
 
-    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP271(BridgeRegTestConstants bridgeConstantsRegtest) {
+    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP271(BridgeConstants bridgeConstants) {
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
         );
 
-        Federation standardFed = bridgeConstantsRegtest.getGenesisFederation();
+        Federation standardFed = bridgeConstants.getGenesisFederation();
 
         ActivationConfig.ForBlock preRSKIP271_activations = mock(ActivationConfig.ForBlock.class);
         when(preRSKIP271_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
@@ -6819,9 +6819,9 @@ class BridgeSupportTest {
             members,
             Instant.now(),
             1L,
-            bridgeConstantsRegtest.getBtcParams(),
-            bridgeConstantsRegtest.getErpFedPubKeysList(),
-            bridgeConstantsRegtest.getErpFedActivationDelay(),
+            bridgeConstants.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(),
             preRSKIP271_activations
         );
 
@@ -6872,12 +6872,12 @@ class BridgeSupportTest {
         return preRskip271;
     }
 
-    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP385(BridgeRegTestConstants bridgeConstantsRegtest) {
+    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP385(BridgeConstants bridgeConstants) {
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
         );
 
-        Federation standardFed = bridgeConstantsRegtest.getGenesisFederation();
+        Federation standardFed = bridgeConstants.getGenesisFederation();
 
         ActivationConfig.ForBlock preRSKIP385_activations = mock(ActivationConfig.ForBlock.class);
         when(preRSKIP385_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
@@ -6887,9 +6887,9 @@ class BridgeSupportTest {
             members,
             Instant.now(),
             1L,
-            bridgeConstantsRegtest.getBtcParams(),
-            bridgeConstantsRegtest.getErpFedPubKeysList(),
-            bridgeConstantsRegtest.getErpFedActivationDelay(),
+            bridgeConstants.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(),
             preRSKIP385_activations
         );
 
@@ -6906,14 +6906,14 @@ class BridgeSupportTest {
                 preRSKIP385_activations,
                 standardFed,
                 1,
-                Coin.valueOf(68600L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 237000L: 68600L)
             ),
             // active fed is standard and there are many pegout requests
             Arguments.of(
                 preRSKIP385_activations,
                 standardFed,
                 150,
-                Coin.valueOf(545400L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 713800L: 545400L)
             ),
             // active fed is p2sh and there are zero pegout requests
             Arguments.of(
@@ -6927,25 +6927,25 @@ class BridgeSupportTest {
                 preRSKIP385_activations,
                 p2shFed,
                 1,
-                Coin.valueOf(161200L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 154600L: 161200L)
             ),
             // active fed is p2sh and there are many pegout requests
             Arguments.of(
                 preRSKIP385_activations,
                 p2shFed,
                 150,
-                Coin.valueOf(638000L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 631400L: 638000L)
             )
         );
         return preRskip385;
     }
 
-    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_post_RSKIP385(BridgeRegTestConstants bridgeConstantsRegtest) {
+    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_post_RSKIP385(BridgeConstants bridgeConstants) {
         ActivationConfig.ForBlock postRSKIP385_activations = mock(ActivationConfig.ForBlock.class);
         when(postRSKIP385_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
         when(postRSKIP385_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(true);
 
-        Federation standardFed = bridgeConstantsRegtest.getGenesisFederation();
+        Federation standardFed = bridgeConstants.getGenesisFederation();
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
         );
@@ -6954,9 +6954,9 @@ class BridgeSupportTest {
             members,
             Instant.now(),
             1L,
-            bridgeConstantsRegtest.getBtcParams(),
-            bridgeConstantsRegtest.getErpFedPubKeysList(),
-            bridgeConstantsRegtest.getErpFedActivationDelay(),
+            bridgeConstants.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(),
             postRSKIP385_activations
         );
 
@@ -6966,42 +6966,42 @@ class BridgeSupportTest {
                 postRSKIP385_activations,
                 standardFed,
                 0,
-                Coin.valueOf(65400L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 233800L: 65400L)
             ),
             // active fed is standard and pegoutRequestsCount is equal to one
             Arguments.of(
                 postRSKIP385_activations,
                 standardFed,
                 1,
-                Coin.valueOf(68600L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 237000L: 68600L)
             ),
             // active fed is standard and there are many pegout requests
             Arguments.of(
                 postRSKIP385_activations,
                 standardFed,
                 150,
-                Coin.valueOf(545400L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 713800L: 545400L)
             ),
             // active fed is p2sh and there are zero pegout requests
             Arguments.of(
                 postRSKIP385_activations,
                 p2shFed,
                 0,
-                Coin.valueOf(158000L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 151400L: 158000L)
             ),
             // active fed is p2sh and there is one pegout request
             Arguments.of(
                 postRSKIP385_activations,
                 p2shFed,
                 1,
-                Coin.valueOf(161200L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 154600L: 161200L)
             ),
             // active fed is p2sh and there are many pegout requests
             Arguments.of(
                 postRSKIP385_activations,
                 p2shFed,
                 150,
-                Coin.valueOf(638000L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 631400L: 638000L)
             )
         );
         return postRskip385;
@@ -7010,11 +7010,24 @@ class BridgeSupportTest {
     private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider() {
         BridgeRegTestConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
 
-        Stream<Arguments> preRskip271 = getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP271(bridgeConstantsRegtest);
-        Stream<Arguments> preRskip385 = getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP385(bridgeConstantsRegtest);
-        Stream<Arguments> postRskip385 = getEstimatedFeesForNextPegOutEventArgsProvider_post_RSKIP385(bridgeConstantsRegtest);
+        Stream<Arguments> preRskip271RegTest = getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP271(bridgeConstantsRegtest);
+        Stream<Arguments> preRskip385RegTest = getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP385(bridgeConstantsRegtest);
+        Stream<Arguments> postRskip385Regtest = getEstimatedFeesForNextPegOutEventArgsProvider_post_RSKIP385(bridgeConstantsRegtest);
 
-        return Stream.of(preRskip271, preRskip385, postRskip385).flatMap(Function.identity());
+        BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+
+        Stream<Arguments> preRskip271Mainnet = getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP271(bridgeMainNetConstants);
+        Stream<Arguments> preRskip385Mainnet = getEstimatedFeesForNextPegOutEventArgsProvider_pre_RSKIP385(bridgeMainNetConstants);
+        Stream<Arguments> postRskip385Mainnet = getEstimatedFeesForNextPegOutEventArgsProvider_post_RSKIP385(bridgeMainNetConstants);
+
+        return Stream.of(
+            preRskip271RegTest,
+            preRskip385RegTest,
+            postRskip385Regtest,
+            preRskip271Mainnet,
+            preRskip385Mainnet,
+            postRskip385Mainnet
+        ).flatMap(Function.identity());
     }
 
     @ParameterizedTest
