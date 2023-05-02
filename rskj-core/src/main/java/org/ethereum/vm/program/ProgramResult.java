@@ -98,9 +98,8 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
-        // flag created in case we have other immediate refunds not related with internal calls
         if (movingGasToCallee) {
-            movingGasToCallee = false; // reset for subsequent calls & merge
+            movingGasToCallee = false;
 
             // refund made after passing gas to callee can be deducted from as it is not needed (and we allow internal calls even if specified < remaining)
             gasNeeded = GasCost.subtract(gasNeeded, gas);
@@ -301,7 +300,7 @@ public class ProgramResult {
             addFutureRefund(another.getFutureRefund());
             addDeductedRefund(another.deductedRefund);
             this.gasNeeded = Math.max(this.gasNeeded, another.gasNeeded);
-            this.movingGasToCallee = this.movingGasToCallee || another.movingGasToCallee;
+            // this.movingGasToCallee program-specific, therefore not merging
             this.callWithValuePerformed = this.callWithValuePerformed || another.callWithValuePerformed;
         }
     }

@@ -1536,8 +1536,11 @@ public class VM {
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
 
-            program.getResult().movingGasToCallee(true);
-            program.getResult().setCallWithValuePerformed(!value.isZero());
+            boolean callWithValue = !value.isZero();
+            program.getResult().setCallWithValuePerformed(callWithValue);
+
+            boolean movingGasToCallee = !callWithValue || specifiedGasPlusMin > minimumTransferGas;
+            program.getResult().movingGasToCallee(movingGasToCallee);
         }
 
         if (isLogEnabled) {
