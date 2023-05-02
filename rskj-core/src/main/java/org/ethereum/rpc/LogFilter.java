@@ -18,54 +18,45 @@
 
 package org.ethereum.rpc;
 
-import java.util.Collection;
-import java.util.List;
-
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.jsonrpc.JsonRpcError;
+import co.rsk.logfilter.BlocksBloom;
+import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.rpc.netty.ExecTimeoutContext;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Bloom;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
+import co.rsk.util.HexUtils;
+import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.LogInfo;
 
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
-import co.rsk.logfilter.BlocksBloom;
-import co.rsk.logfilter.BlocksBloomStore;
-import co.rsk.util.HexUtils;
-
 import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Created by ajlopez on 17/01/2018.
  */
 public class LogFilter extends Filter {
-    class LogFilterEvent extends FilterEvent {
-        private final LogFilterElement el;
 
-        LogFilterEvent(LogFilterElement el) {
-            this.el = el;
-        }
+    private final AddressesTopicsFilter addressesTopicsFilter;
+    private final boolean fromLatestBlock;
+    private final boolean toLatestBlock;
+    private final Blockchain blockchain;
+    private final long maxBlocksToQuery;
 
-        @Override
-        public LogFilterElement getJsonEventObject() {
-            return el;
-        }
+    @Deprecated
+    public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock) {
+        this(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock, 0, 0);
     }
 
-    private AddressesTopicsFilter addressesTopicsFilter;
-    private boolean fromLatestBlock;
-    private boolean toLatestBlock;
-    private final Blockchain blockchain;
-
-    public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock) {
+    private LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock, long maxBlocksToQuery, long maxLogsToReturn) {
+        super(maxLogsToReturn);
         this.addressesTopicsFilter = addressesTopicsFilter;
         this.blockchain = blockchain;
         this.fromLatestBlock = fromLatestBlock;
         this.toLatestBlock = toLatestBlock;
+        this.maxBlocksToQuery = maxBlocksToQuery;
     }
 
     void onLogMatch(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
@@ -107,8 +98,7 @@ public class LogFilter extends Filter {
         if (this.fromLatestBlock) {
             this.clearEvents();
             onBlock(b, false);
-        }
-        else if (this.toLatestBlock) {
+        } else if (this.toLatestBlock) {
             onBlock(b, false);
         }
     }
@@ -118,9 +108,12 @@ public class LogFilter extends Filter {
         //empty method
     }
 
-    public static LogFilter fromFilterRequest(FilterRequest fr, Blockchain blockchain, BlocksBloomStore blocksBloomStore) throws Exception {
-        RskAddress[] addresses;
+    public static LogFilter fromFilterRequest(FilterRequest fr, Blockchain blockchain, BlocksBloomStore blocksBloomStore) {
+        return fromFilterRequest(fr, blockchain, blocksBloomStore, 0L, 0L);
+    }
 
+    public static LogFilter fromFilterRequest(FilterRequest fr, Blockchain blockchain, BlocksBloomStore blocksBloomStore, Long maxBlocksToQuery, Long maxBlocksToReturn) {
+        RskAddress[] addresses;
         // Now, there is an array of array of topics
         // first level are topic filters by position
         // second level contains OR topic filters for that position
@@ -128,9 +121,9 @@ public class LogFilter extends Filter {
         Topic[][] topics;
 
         if (fr.getAddress() instanceof String) {
-            addresses = new RskAddress[] { new RskAddress(HexUtils.stringHexToByteArray((String) fr.getAddress())) };
+            addresses = new RskAddress[]{new RskAddress(HexUtils.stringHexToByteArray((String) fr.getAddress()))};
         } else if (fr.getAddress() instanceof Collection<?>) {
-            Collection<?> iterable = (Collection<?>)fr.getAddress();
+            Collection<?> iterable = (Collection<?>) fr.getAddress();
 
             addresses = iterable.stream()
                     .filter(String.class::isInstance)
@@ -138,8 +131,7 @@ public class LogFilter extends Filter {
                     .map(HexUtils::stringHexToByteArray)
                     .map(RskAddress::new)
                     .toArray(RskAddress[]::new);
-        }
-        else {
+        } else {
             addresses = new RskAddress[0];
         }
 
@@ -152,11 +144,11 @@ public class LogFilter extends Filter {
                 if (topic == null) {
                     topics[nt] = new Topic[0];
                 } else if (topic instanceof String) {
-                    topics[nt] = new Topic[] { new Topic((String) topic) };
+                    topics[nt] = new Topic[]{new Topic((String) topic)};
                 } else if (topic instanceof Collection<?>) {
                     // TODO list of topics as topic with OR logic
 
-                    Collection<?> iterable = (Collection<?>)topic;
+                    Collection<?> iterable = (Collection<?>) topic;
 
                     topics[nt] = iterable.stream()
                             .filter(String.class::isInstance)
@@ -166,8 +158,7 @@ public class LogFilter extends Filter {
                             .toArray(Topic[]::new);
                 }
             }
-        }
-        else {
+        } else {
             topics = null;
         }
 
@@ -191,7 +182,19 @@ public class LogFilter extends Filter {
         boolean fromLatestBlock = "latest".equalsIgnoreCase(fr.getFromBlock());
         boolean toLatestBlock = "latest".equalsIgnoreCase(fr.getToBlock());
 
-        LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock);
+        if (maxBlocksToQuery == null) {
+            maxBlocksToQuery = 0L;
+        }
+        if (maxBlocksToReturn == null) {
+            maxBlocksToReturn = 0L;
+        }
+
+        LogFilter filter = new LogFilterBuilder(addressesTopicsFilter, blockchain)
+                .fromLatestBlock(fromLatestBlock)
+                .toLatestBlock(toLatestBlock)
+                .maxBlocksToQuery(maxBlocksToQuery)
+                .maxBlocksToReturn(maxBlocksToReturn)
+                .build();
 
         retrieveHistoricalData(fr, blockchain, filter, blocksBloomStore);
 
@@ -202,7 +205,7 @@ public class LogFilter extends Filter {
      * Cannot use both blockHash and fromBlock/toBlock filters, according to EIP-234
      */
     private static void validateFilterRequestParameters(FilterRequest fr) {
-        if (fr.getBlockHash() != null && (fr.getFromBlock() != null  || fr.getToBlock() != null)) {
+        if (fr.getBlockHash() != null && (fr.getFromBlock() != null || fr.getToBlock() != null)) {
             throw RskJsonRpcRequestException.invalidParamError("Cannot specify both blockHash and fromBlock/toBlock");
         }
     }
@@ -241,6 +244,8 @@ public class LogFilter extends Filter {
     }
 
     private static void processBlocks(Block fromBlock, Block toBlock, LogFilter filter, Blockchain blockchain, BlocksBloomStore blocksBloomStore) {
+        filter.checkLimit(fromBlock.getNumber(), toBlock.getNumber());
+
         final long bestBlockNumber = blockchain.getBestBlock().getNumber();
 
         BlocksBloom bloomAccumulator = null;
@@ -316,5 +321,74 @@ public class LogFilter extends Filter {
 
     private static boolean isBlockWord(String id) {
         return "latest".equalsIgnoreCase(id) || "pending".equalsIgnoreCase(id) || "earliest".equalsIgnoreCase(id);
+    }
+
+    private void checkLimit(long from, long to) {
+        long totalToQuery = to - from;
+        if (this.maxBlocksToQuery == 0 || totalToQuery == 0) {
+            return;
+        }
+        if (totalToQuery > this.maxBlocksToQuery) {
+            throw new RskJsonRpcRequestException(JsonRpcError.MAX_ETH_GET_LOGS_LIMIT, "Cannot query more than " + this.maxBlocksToQuery + " blocks at once");
+        }
+    }
+
+    //Builder pattern class
+    //Builder pattern class
+
+    public static class LogFilterBuilder {
+
+        private final AddressesTopicsFilter addressesTopicsFilter;
+        private final Blockchain blockchain;
+        private boolean fromLatestBlock;
+        private boolean toLatestBlock;
+        private long maxBlocksToQuery;
+        private long maxBlocksToReturn;
+
+        public LogFilterBuilder(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain) {
+            this.addressesTopicsFilter = addressesTopicsFilter;
+            this.blockchain = blockchain;
+            this.fromLatestBlock = false;
+            this.toLatestBlock = false;
+            this.maxBlocksToQuery = 0;
+            this.maxBlocksToReturn = 0;
+        }
+
+        public LogFilterBuilder fromLatestBlock(boolean fromLatestBlock) {
+            this.fromLatestBlock = fromLatestBlock;
+            return this;
+        }
+
+        public LogFilterBuilder toLatestBlock(boolean toLatestBlock) {
+            this.toLatestBlock = toLatestBlock;
+            return this;
+        }
+
+        public LogFilterBuilder maxBlocksToQuery(long maxBlocksToQuery) {
+            this.maxBlocksToQuery = maxBlocksToQuery;
+            return this;
+        }
+
+        public LogFilterBuilder maxBlocksToReturn(long maxBlocksToReturn) {
+            this.maxBlocksToReturn = maxBlocksToReturn;
+            return this;
+        }
+
+        public LogFilter build() {
+            return new LogFilter(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock, maxBlocksToQuery, maxBlocksToReturn);
+        }
+    }
+
+    static class LogFilterEvent implements FilterEvent {
+        private final LogFilterElement el;
+
+        LogFilterEvent(LogFilterElement el) {
+            this.el = el;
+        }
+
+        @Override
+        public LogFilterElement getJsonEventObject() {
+            return el;
+        }
     }
 }

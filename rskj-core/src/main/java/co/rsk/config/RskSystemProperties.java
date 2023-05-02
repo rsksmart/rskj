@@ -33,12 +33,7 @@ import org.ethereum.crypto.HashUtil;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by ajlopez on 3/3/2016.
@@ -57,6 +52,9 @@ public class RskSystemProperties extends SystemProperties {
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final String RPC_MODULES_PATH = "rpc.modules";
+    private static final String RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY = "rpc.eth_getLogs.maxBlocksToQuery";
+    private static final String RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN = "rpc.eth_getLogs.maxLogsToReturn";
+
     private static final int CHUNK_SIZE = 192;
 
     public static final String PROPERTY_SYNC_TOP_BEST = "sync.topBest";
@@ -294,6 +292,7 @@ public class RskSystemProperties extends SystemProperties {
         }
         return modules;
     }
+
     private ModuleDescription getModule(Config configElement, String name) {
 
         String version = configElement.getString("version");
@@ -321,6 +320,7 @@ public class RskSystemProperties extends SystemProperties {
         }
         return new ModuleDescription(name, version, enabled, enabledMethods, disabledMethods, timeout, methodTimeoutMap);
     }
+
     public boolean hasMessageRecorderEnabled() {
         return getBoolean("messages.recorder.enabled", false);
     }
@@ -458,6 +458,14 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean rpcZeroSignatureIfRemasc() {
         return configFromFiles.getBoolean("rpc.zeroSignatureIfRemasc");
+    }
+
+    public long getRpcEthGetLogsMaxBlockToQuery() {
+        return configFromFiles.getLong(RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY);
+    }
+
+    public long getRpcEthGetLogsMaxLogsToReturn() {
+        return configFromFiles.getLong(RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN);
     }
 
     public double getTopBest() {
