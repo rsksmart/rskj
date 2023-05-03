@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2023 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -53,70 +53,53 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class CliToolsIntegrationTest {
-    private String projectPath;
     private String buildLibsPath;
     private String jarName;
     private String databaseDir;
     private String bloomsDbDir;
-    private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final int port = 9999;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private String[] baseArgs;
-    private LinkedList<String> lnkListBaseArgs;
     private String strBaseArgs;
-    private String integrationTestResourcesPath;
-    private String logbackXmlFile;
-    private String rskConfFile;
     private String baseJavaCmd;
 
 
-    class CustomProcess {
-        private final Process process;
+    static class CustomProcess {
         private final String input;
-        private final String errors;
 
-        public CustomProcess(Process process, String input, String errors) {
-            this.process = process;
+        public CustomProcess(String input) {
             this.input = input;
-            this.errors = errors;
-        }
-
-        public Process getProcess() {
-            return process;
         }
 
         public String getInput() {
             return input;
         }
 
-        public String getErrors() {
-            return errors;
-        }
     }
 
     @TempDir
     private Path tempDir;
 
     private String getProcStreamAsString(InputStream in) throws IOException {
-        byte bytesAvailable[] = new byte[in.available()];
+        byte[] bytesAvailable = new byte[in.available()];
         in.read(bytesAvailable, 0, bytesAvailable.length);
         return new String(bytesAvailable);
     }
 
     @BeforeEach
     public void setup() throws IOException {
-        projectPath = System.getProperty("user.dir");
+        String projectPath = System.getProperty("user.dir");
         buildLibsPath = String.format("%s/build/libs", projectPath);
-        integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
-        logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
-        rskConfFile = String.format("%s/integration-test-rskj.conf", integrationTestResourcesPath);
+        String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
+        String logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
+        String rskConfFile = String.format("%s/integration-test-rskj.conf", integrationTestResourcesPath);
         Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath));
         jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
                 .map(p -> p.getFileName().toString())
                 .filter(fn -> fn.endsWith("-all.jar"))
                 .findFirst()
                 .get();
-        Path databaseDirPath =  tempDir.resolve("database");
+        Path databaseDirPath = tempDir.resolve("database");
         databaseDir = databaseDirPath.toString();
         bloomsDbDir = databaseDirPath.resolve("blooms").toString();
         baseArgs = new String[]{
@@ -125,7 +108,6 @@ class CliToolsIntegrationTest {
                 "-Xkeyvalue.datasource=leveldb",
                 String.format("-Xrpc.providers.web.http.port=%s", port)
         };
-        lnkListBaseArgs = Stream.of(baseArgs).collect(Collectors.toCollection(LinkedList::new));
         strBaseArgs = String.join(" ", baseArgs);
         baseJavaCmd = String.format("java %s %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile), String.format("-Drsk.conf.file=%s", rskConfFile));
     }
@@ -139,7 +121,6 @@ class CliToolsIntegrationTest {
 
         proc.waitFor(timeout, timeUnit);
         String procInput = getProcStreamAsString(proc.getInputStream());
-        String procErrors = getProcStreamAsString(proc.getErrorStream());
 
         if (beforeDestroyFn != null) {
             beforeDestroyFn.accept(proc);
@@ -147,19 +128,7 @@ class CliToolsIntegrationTest {
 
         proc.destroy();
 
-        return new CustomProcess(proc, procInput, procErrors);
-    }
-
-    private String getHashFromLog(List<String> logLines, int logIndex) {
-        List<String> hashes = logLines.stream().filter(l -> l.contains("[miner client]") && l.contains("blockHash"))
-                .map(this::getHashFromLog)
-                .collect(Collectors.toList());
-
-        return logIndex < 0 ? hashes.get(hashes.size() - 1) : hashes.get(logIndex);
-    }
-
-    private String getHashFromLog(String log) {
-        return log.split("\\[blockHash=")[1].split(", blockHeight")[0];
+        return new CustomProcess(procInput);
     }
 
     private Response getBestBlock() throws IOException {
@@ -247,7 +216,7 @@ class CliToolsIntegrationTest {
         JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
         JsonNode transactionsNode = jsonRpcResponse.get(0).get("result").get("transactions");
 
-        Long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
+        long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
 
         File blocksFile = tempDir.resolve("blocks.txt").toFile();
         Files.deleteIfExists(Paths.get(blocksFile.getAbsolutePath()));
@@ -259,7 +228,7 @@ class CliToolsIntegrationTest {
 
         List<String> exportedBlocksLines = Files.readAllLines(Paths.get(blocksFile.getAbsolutePath()));
         String exportedBlocksLine = exportedBlocksLines.stream()
-                .filter(l -> l.split(",")[0].equals(blockNumber.toString()))
+                .filter(l -> l.split(",")[0].equals(String.valueOf(blockNumber)))
                 .findFirst()
                 .get();
         String[] exportedBlocksLineParts = exportedBlocksLine.split(",");
@@ -281,7 +250,7 @@ class CliToolsIntegrationTest {
         Optional<Trie> optionalTrie = rskContext.getTrieStore().retrieve(block.getStateRoot());
         byte[] bMessage = optionalTrie.get().toMessage();
         String strMessage = ByteUtil.toHexString(bMessage);
-        Long blockNumber = block.getNumber();
+        long blockNumber = block.getNumber();
 
         rskContext.close();
 
@@ -323,7 +292,7 @@ class CliToolsIntegrationTest {
         JsonNode result = jsonRpcResponse.get(0).get("result");
         JsonNode transactionsNode = result.get("transactions");
 
-        Long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
+        long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
 
         cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ShowStateInfo --block %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, strBaseArgs);
         CustomProcess showStateInfoProc = runCommand(cmd, 1, TimeUnit.MINUTES);
@@ -356,7 +325,7 @@ class CliToolsIntegrationTest {
         JsonNode result = jsonRpcResponse.get(0).get("result");
         JsonNode transactionsNode = result.get("transactions");
 
-        Long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
+        long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
 
         cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExecuteBlocks --fromBlock 0 --toBlock %s %s", baseJavaCmd, buildLibsPath, jarName, blockNumber, strBaseArgs);
         runCommand(cmd, 1, TimeUnit.MINUTES);
@@ -434,7 +403,7 @@ class CliToolsIntegrationTest {
 
         RskContext rskContext = new RskContext(baseArgs);
 
-        Long maxNumber = rskContext.getBlockStore().getMaxNumber();
+        long maxNumber = rskContext.getBlockStore().getMaxNumber();
 
         rskContext.close();
 
@@ -452,7 +421,7 @@ class CliToolsIntegrationTest {
         Optional<Trie> optionalTrie = rskContext.getTrieStore().retrieve(block.getStateRoot());
         byte[] bMessage = optionalTrie.get().toMessage();
         String strMessage = ByteUtil.toHexString(bMessage);
-        Long blockNumber = block.getNumber();
+        long blockNumber = block.getNumber();
 
         rskContext.close();
 
@@ -519,7 +488,7 @@ class CliToolsIntegrationTest {
             parentHash = blockHash;
         }
 
-        Long maxNumber = rskContext.getBlockStore().getMaxNumber();
+        long maxNumber = rskContext.getBlockStore().getMaxNumber();
 
         rskContext.close();
 
@@ -528,7 +497,7 @@ class CliToolsIntegrationTest {
 
         rskContext = new RskContext(baseArgs);
 
-        Long maxNumberAfterRewind = rskContext.getBlockStore().getMaxNumber();
+        long maxNumberAfterRewind = rskContext.getBlockStore().getMaxNumber();
 
         rskContext.close();
 
