@@ -49,6 +49,7 @@ import java.util.*;
 
 import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP174;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -76,7 +77,7 @@ public class TransactionExecutor {
     private final PrecompiledContracts precompiledContracts;
     private final boolean enableRemasc;
     private String executionError = "";
-    private final long gasUsedInTheBlock;
+    private final long gasUsed;
     private Coin paidFees;
 
     private final ProgramInvokeFactory programInvokeFactory;
@@ -97,31 +98,19 @@ public class TransactionExecutor {
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
     private final SignatureCache signatureCache;
+    private final long sublistGasLimit;
 
     private boolean localCall = false;
     private boolean precompiledContractHasBeenCalledFlag = false;
 
-    private boolean postponeFeePayment;
+    private final boolean postponeFeePayment;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
+            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsed, VmConfig vmConfig,
             boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
-            SignatureCache signatureCache) {
-        this(constants, activationConfig, tx, txindex, coinbase,
-                track, blockStore, receiptStore, blockFactory,
-                programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
-                remascEnabled, precompiledContracts, deletedAccounts,
-                signatureCache, false);
-    }
-
-    public TransactionExecutor(
-            Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
-            Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
-            boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
-            SignatureCache signatureCache, boolean postponeFeePayment) {
+            SignatureCache signatureCache, boolean postponeFeePayment, long sublistGasLimit) {
         this.constants = constants;
         this.signatureCache = signatureCache;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
@@ -135,12 +124,13 @@ public class TransactionExecutor {
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.executionBlock = executionBlock;
-        this.gasUsedInTheBlock = gasUsedInTheBlock;
+        this.gasUsed = gasUsed;
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
         this.enableRemasc = remascEnabled;
         this.deletedAccounts = new HashSet<>(deletedAccounts);
         this.postponeFeePayment = postponeFeePayment;
+        this.sublistGasLimit = sublistGasLimit;
     }
 
     /**
@@ -173,9 +163,9 @@ public class TransactionExecutor {
         }
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
+        long gasLimit = activations.isActive(RSKIP144)? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
 
-        if (!gasIsValid(txGasLimit, curBlockGasLimit)) {
+        if (!gasIsValid(txGasLimit, gasLimit)) {
             return false;
         }
 
@@ -257,18 +247,18 @@ public class TransactionExecutor {
         return true;
     }
 
-    private boolean gasIsValid(long txGasLimit, long curBlockGasLimit) {
-        // if we've passed the curBlockGas limit we must stop exec
+    private boolean gasIsValid(long txGasLimit, long curContainerGasLimit) {
+        // if we've passed the curContainerGasLimit limit we must stop exec
         // cumulativeGas being equal to GasCost.MAX_GAS is a border condition
         // which is used on some stress tests, but its far from being practical
         // as the current gas limit on blocks is 6.8M... several orders of magnitude
         // less than the theoretical max gas on blocks.
-        long cumulativeGas = GasCost.add(txGasLimit, gasUsedInTheBlock);
+        long cumulativeGas = GasCost.add(txGasLimit, gasUsed);
 
-        boolean cumulativeGasReached = cumulativeGas > curBlockGasLimit || cumulativeGas == GasCost.MAX_GAS;
+        boolean cumulativeGasReached = cumulativeGas > curContainerGasLimit || cumulativeGas == GasCost.MAX_GAS;
         if (cumulativeGasReached) {
-            execError(String.format("Too much gas used in this block: available in block: %s tx sent: %s",
-                    curBlockGasLimit - txGasLimit,
+            execError(String.format("Too much gas used in this block or sublist(RSKIP144): available in sublist: %s tx sent: %s",
+                    curContainerGasLimit - txGasLimit,
                     txGasLimit));
             return false;
         }
@@ -504,7 +494,7 @@ public class TransactionExecutor {
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
-            long totalGasUsed = GasCost.add(gasUsedInTheBlock, getGasUsed());
+            long totalGasUsed = GasCost.add(gasUsed, getGasUsed());
             receipt.setCumulativeGas(totalGasUsed);
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());

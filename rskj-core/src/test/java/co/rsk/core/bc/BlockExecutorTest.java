@@ -548,6 +548,24 @@ public class BlockExecutorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
+    void gasUsedShouldNeverSurprassBlockGasLimit(boolean activeRskip144) {
+        if (!activeRskip144) {
+            return;
+        }
+
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
+        Block parent = blockchain.getBestBlock();
+        int gasLimit = 21000;
+        int transactionNumberToFillParallelSublist = (int) (getSublistGaslimit(parent) / gasLimit);
+        int totalNumberOfSublists = Constants.getTransactionExecutionThreads() + 1;
+        int totalTxs = (transactionNumberToFillParallelSublist) * totalNumberOfSublists + 1;
+        Block block = getBlockWithNIndependentTransactions(totalTxs, BigInteger.valueOf(gasLimit), false);
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+        Assertions.assertFalse(block.getGasUsed() > GasCost.toGas(block.getGasLimit()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
     void whenParallelSublistsAreFullTheLastTxShouldGoToSequential(boolean activeRskip144) {
         if (!activeRskip144) {
             return;
@@ -697,10 +715,59 @@ public class BlockExecutorTest {
         BlockResult result = executor.execute(null, 0, pBlock, parent.getHeader(), true, false, true);
         Assertions.assertEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
     }
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void whenExecuteATxWithGasLimitExceedingSublistGasLimitShouldNotBeInlcuded(boolean activeRskip144) {
+        if (!activeRskip144) {
+            return;
+        }
+        doReturn(activeRskip144).when(activationConfig).isActive(eq(ConsensusRule.RSKIP144), anyLong());
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
+        Block parent = blockchain.getBestBlock();
+
+
+        Repository track = repository.startTracking();
+        Account sender = createAccount("sender", track, Coin.valueOf(6000000));
+        Account receiver = createAccount("receiver", track, Coin.valueOf(6000000));
+
+        track.commit();
+        parent.setStateRoot(repository.getRoot());
+
+        List<Transaction> txs = new LinkedList<>();
+        Transaction tx = Transaction.builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(parent.getGasLimit())
+                .destination(receiver.getAddress())
+                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx.sign(sender.getEcKey().getPrivKeyBytes());
+        txs.add(tx);
+        List<BlockHeader> uncles = new ArrayList<>();
+
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlock(
+                        parent,
+                        txs,
+                        uncles,
+                        1,
+                        null,
+                        parent.getGasLimit(),
+                        parent.getCoinbase(),
+                        new short[]{1}
+                );
+
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+        Assertions.assertEquals(0, blockResult.getExecutedTransactions().size());
+
+        BlockResult result = executor.execute(null, 0, block, parent.getHeader(), true, false, true);
+        Assertions.assertEquals(0, result.getExecutedTransactions().size());
+    }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void ifThereIsACollisionBetweenParallelAndSequentialSublistsItShouldNotBeConsidered(boolean activeRskip144) {
+    void ifThereIsACollisionBetweenParallelAndSequentialSublistsTxShouldNotBeConsidered(boolean activeRskip144) {
         if (!activeRskip144) {
             return;
         }
@@ -941,7 +1008,7 @@ public class BlockExecutorTest {
     }
 
     private static long getSublistGaslimit(Block parent) {
-        return GasCost.toGas(parent.getGasLimit()) / 2;
+        return GasCost.toGas(parent.getGasLimit()) / (Constants.getTransactionExecutionThreads() + 1);
     }
 
     private static TestObjects generateBlockWithOneTransaction(Boolean activeRskip144, boolean rskip126IsActive) {

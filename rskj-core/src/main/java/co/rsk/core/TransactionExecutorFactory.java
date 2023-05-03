@@ -24,6 +24,7 @@ import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
@@ -66,6 +67,7 @@ public class TransactionExecutorFactory {
             long totalGasUsed) {
         return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, 0, new HashSet<>());
     }
+    // TODO(JULI): newInstance calls a second newInstance hardcoding Postpone payment fees and sublist gas limit as block.gasLimit()
 
     public TransactionExecutor newInstance(
             Transaction tx,
@@ -77,7 +79,8 @@ public class TransactionExecutorFactory {
             boolean vmTrace,
             int vmTraceOptions,
             Set<DataWord> deletedAccounts,
-            boolean postponeFeePayment) {
+            boolean postponeFeePayment,
+            long sublistGasLimit) {
         // Tracing configuration is scattered across different files (VM, DetailedProgramTrace, etc.) and
         // TransactionExecutor#extractTrace doesn't work when called independently.
         // It would be great to decouple from VmConfig#vmTrace, but sadly that's a major refactor we can't do now.
@@ -111,7 +114,8 @@ public class TransactionExecutorFactory {
                 precompiledContracts,
                 deletedAccounts,
                 blockTxSignatureCache,
-                postponeFeePayment
+                postponeFeePayment,
+                sublistGasLimit
         );
     }
 
@@ -125,6 +129,7 @@ public class TransactionExecutorFactory {
             boolean vmTrace,
             int vmTraceOptions,
             Set<DataWord> deletedAccounts) {
-        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, vmTrace, vmTraceOptions, deletedAccounts, false);
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, vmTrace, vmTraceOptions, deletedAccounts, false, GasCost.toGas(block.getGasLimit()));
     }
+    // TODO(JULI): set the sublist gas limit as the whole block is wrong. However, this method is just used either when RSKIP144 is deactivated or for testing.
 }

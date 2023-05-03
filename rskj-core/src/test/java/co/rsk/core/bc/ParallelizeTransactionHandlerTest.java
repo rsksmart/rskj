@@ -61,7 +61,7 @@ public class ParallelizeTransactionHandlerTest {
         aWrappedKey = new ByteArrayWrapper(aKey);
         sublists = 2;
         sequentialSublistNumber = sublists;
-        handler = new ParallelizeTransactionHandler(sublists, sublistGasLimit, sublistGasLimit);
+        handler = new ParallelizeTransactionHandler(sublists, sublistGasLimit);
         tx = new TransactionBuilder().nonce(1).sender(sender).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx2 = new TransactionBuilder().nonce(1).sender(sender2).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx3 = new TransactionBuilder().nonce(1).sender(sender3).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
@@ -859,7 +859,7 @@ public class ParallelizeTransactionHandlerTest {
 
         AccountBuilder accountBuilder = new AccountBuilder();
 
-        ParallelizeTransactionHandler handler = new ParallelizeTransactionHandler((short) 2, 1000, 1000);
+        ParallelizeTransactionHandler handler = new ParallelizeTransactionHandler((short) 2, 1000);
 
         // write X with 800
         handler.addTransaction(
