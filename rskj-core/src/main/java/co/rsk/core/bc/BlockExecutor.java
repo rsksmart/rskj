@@ -364,7 +364,7 @@ public class BlockExecutor {
 
             registerExecutedTx(programTraceProcessor, vmTrace, executedTransactions, tx, txExecutor);
 
-            long gasUsed = txExecutor.getGasUsed();
+            long gasUsed = txExecutor.getGasConsumed();
             totalGasUsed += gasUsed;
 
             totalPaidFees = addTotalPaidFees(totalPaidFees, txExecutor);
@@ -633,7 +633,7 @@ public class BlockExecutor {
                     parallelizeTransactionHandler,
                     tx,
                     tx.isRemascTransaction(txindex, transactionsList.size()),
-                    txExecutor.getGasUsed(),
+                    txExecutor.getGasConsumed(),
                     txExecutor.precompiledContractHasBeenCalled());
 
             if (!acceptInvalidTransactions && !sublistGasAccumulated.isPresent()) {
@@ -648,7 +648,7 @@ public class BlockExecutor {
 
             registerTxExecutedForMiningAfterRSKIP144(readWrittenKeysTracker, tx, txExecutor);
 
-            long gasUsed = txExecutor.getGasUsed();
+            long gasUsed = txExecutor.getGasConsumed();
             totalGasUsed += gasUsed;
             totalPaidFees = addTotalPaidFees(totalPaidFees, txExecutor);
 

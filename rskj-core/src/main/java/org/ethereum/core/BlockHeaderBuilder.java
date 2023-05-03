@@ -337,19 +337,21 @@ public class BlockHeaderBuilder {
             txExecutionSublistsEdges = new short[0];
         }
 
-        if (activationConfig.getHeaderVersion(number) == 0x1) return new BlockHeaderV1(
-                parentHash, unclesHash, coinbase,
-                stateRoot, txTrieRoot, receiptTrieRoot,
-                logsBloom, difficulty, number,
-                gasLimit, gasUsed, timestamp, extraData, paidFees,
-                bitcoinMergedMiningHeader,
-                bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction,
-                mergedMiningForkDetectionData,
-                minimumGasPrice, uncleCount,
-                false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false
-        );
+        if (activationConfig.getHeaderVersion(number) == 0x1) {
+            return new BlockHeaderV1(
+                    parentHash, unclesHash, coinbase,
+                    stateRoot, txTrieRoot, receiptTrieRoot,
+                    logsBloom, difficulty, number,
+                    gasLimit, gasUsed, timestamp, extraData, paidFees,
+                    bitcoinMergedMiningHeader,
+                    bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction,
+                    mergedMiningForkDetectionData,
+                    minimumGasPrice, uncleCount,
+                    false, useRskip92Encoding,
+                    includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false
+            );
+        }
 
         return new BlockHeaderV0(
                 parentHash, unclesHash, coinbase,

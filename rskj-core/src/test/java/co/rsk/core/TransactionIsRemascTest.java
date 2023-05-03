@@ -28,7 +28,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TransactionIsRemascTest {
+class TransactionIsRemascTest {
     int txPosition = 6;
     int txsSize = 7;
     RskAddress destination = PrecompiledContracts.REMASC_ADDR;

@@ -48,10 +48,6 @@ public abstract class BlockHeader {
     /* RSKIP 351 */
     public abstract byte getVersion();
     public abstract BlockHeaderExtension getExtension();
-    public abstract void setExtension(BlockHeaderExtension extension);
-
-    // contains the logs bloom or the hash of the extension depending on version
-    public byte[] getExtensionData() { return this.extensionData; }
 
     // fields from block header extension
     public abstract byte[] getLogsBloom();
@@ -173,6 +169,11 @@ public abstract class BlockHeader {
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
     }
+
+    public abstract void setExtension(BlockHeaderExtension extension);
+
+    // contains the logs bloom or the hash of the extension depending on version
+    public byte[] getExtensionData() { return this.extensionData; }
 
     @VisibleForTesting
     public boolean isSealed() {

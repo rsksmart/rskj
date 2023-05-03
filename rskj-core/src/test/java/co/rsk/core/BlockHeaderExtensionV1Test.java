@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-public class BlockHeaderExtensionV1Test {
+class BlockHeaderExtensionV1Test {
     private static short[] EDGES = new short[] { 1, 2, 3, 4 };
 
     @Test
-    public void createWithLogsBloomAndEdges() {
+    void createWithLogsBloomAndEdges() {
         byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
         logsBloom[0] = 0x01;
         logsBloom[1] = 0x02;
@@ -25,7 +25,7 @@ public class BlockHeaderExtensionV1Test {
     }
 
     @Test
-    public void setLogsBloom() {
+    void setLogsBloom() {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
 
         byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
@@ -41,7 +41,7 @@ public class BlockHeaderExtensionV1Test {
 
 
     @Test
-    public void setEdges() {
+    void setEdges() {
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(new byte[32], EDGES);
 
         short[] edges = new short[] { 5, 6, 7, 8};
@@ -52,7 +52,7 @@ public class BlockHeaderExtensionV1Test {
     }
 
     @Test
-    public void hashIncludesLogsBloom() {
+    void hashIncludesLogsBloom() {
         byte[] logsBloom1 = new byte[Bloom.BLOOM_BYTES];
         logsBloom1[0] = 0x01;
         logsBloom1[1] = 0x02;
@@ -71,7 +71,7 @@ public class BlockHeaderExtensionV1Test {
     }
 
     @Test
-    public void hashIncludesEdges() {
+    void hashIncludesEdges() {
         byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
         logsBloom[0] = 0x01;
         logsBloom[1] = 0x02;
@@ -86,7 +86,7 @@ public class BlockHeaderExtensionV1Test {
     }
 
     @Test
-    public void encodeDecode() {
+    void encodeDecode() {
         byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
         logsBloom[0] = 0x01;
         logsBloom[1] = 0x02;

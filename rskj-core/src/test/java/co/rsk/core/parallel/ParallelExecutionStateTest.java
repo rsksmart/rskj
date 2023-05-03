@@ -311,8 +311,8 @@ class ParallelExecutionStateTest {
         Assertions.assertNotNull(world.getRepository().getCode(proxyAddress));
 
         List<Transaction> txList = world.getBlockChain().getBestBlock().getTransactionsList();
-        Assertions.assertTrue(proxyAddress.equals(txList.get(0).getReceiveAddress()));
-        Assertions.assertTrue(proxyAddress.equals(txList.get(0).getReceiveAddress()));
+        Assertions.assertEquals(proxyAddress, txList.get(0).getReceiveAddress());
+        Assertions.assertEquals(proxyAddress, txList.get(0).getReceiveAddress());
 
         return world;
     }

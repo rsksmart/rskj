@@ -161,7 +161,7 @@ class BlockToMineBuilderTest {
     }
 
     @Test
-    public void buildBlockBeforeUMMActivation() {
+    void buildBlockBeforeUMMActivation() {
         when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(false);
         when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(false);
         Block actualBlock = this.prepareForActivationTest();
@@ -169,7 +169,7 @@ class BlockToMineBuilderTest {
     }
 
     @Test
-    public void buildBlockAfterUMMActivation() {
+    void buildBlockAfterUMMActivation() {
         when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(true);
         when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(false);
         Block actualBlock = this.prepareForActivationTest();
@@ -177,14 +177,14 @@ class BlockToMineBuilderTest {
     }
 
     @Test
-    public void buildBlockBeforeRskip351() {
+    void buildBlockBeforeRskip351() {
         when(activationConfig.getHeaderVersion(501L)).thenReturn((byte) 0x0);
         Block actualBlock = this.prepareForActivationTest();
         assertEquals(0, actualBlock.getHeader().getVersion());
     }
 
     @Test
-    public void buildBlockAfterRskip351() {
+    void buildBlockAfterRskip351() {
         when(activationConfig.getHeaderVersion(501L)).thenReturn((byte) 0x1);
         Block actualBlock = this.prepareForActivationTest();
         assertEquals(1, actualBlock.getHeader().getVersion());

@@ -14,7 +14,7 @@ import org.mockito.Mockito;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-public class BlockHeaderV1Test {
+class BlockHeaderV1Test {
     private BlockHeaderV1 createBlockHeader(byte[] logsBloom) {
         return new BlockHeaderV1(
                 PegTestUtils.createHash3().getBytes(),

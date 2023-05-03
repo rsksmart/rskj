@@ -45,13 +45,13 @@ public class ParallelizeTransactionHandler {
     public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
         TransactionSublist sublistCandidate = getSublistCandidates(tx, newReadKeys, newWrittenKeys);
 
-        if (!sublistHasAvailableGas(tx, sublistCandidate)) {
+        if (sublistDoesNotHaveEnoughGas(tx, sublistCandidate)) {
             if (sublistCandidate.isSequential()) {
                 return Optional.empty();
             }
             sublistCandidate = getSequentialSublist();
 
-            if (!sublistHasAvailableGas(tx, sublistCandidate)) {
+            if (sublistDoesNotHaveEnoughGas(tx, sublistCandidate)) {
                 return Optional.empty();
             }
         }
@@ -61,8 +61,8 @@ public class ParallelizeTransactionHandler {
         return Optional.of(sublistCandidate.getGasUsed());
     }
 
-    private boolean sublistHasAvailableGas(Transaction tx, TransactionSublist sublistCandidate) {
-        return sublistCandidate.hasGasAvailable(GasCost.toGas(tx.getGasLimit()));
+    private boolean sublistDoesNotHaveEnoughGas(Transaction tx, TransactionSublist sublistCandidate) {
+        return !sublistCandidate.hasGasAvailable(GasCost.toGas(tx.getGasLimit()));
     }
 
     public Optional<Long> addRemascTransaction(Transaction tx, long gasUsedByTx) {
@@ -78,7 +78,7 @@ public class ParallelizeTransactionHandler {
     public Optional<Long> addTxSentToPrecompiledContract(Transaction tx, long gasUsedByTx) {
         TransactionSublist sequentialSublist = getSequentialSublist();
 
-        if (!sublistHasAvailableGas(tx, sequentialSublist)) {
+        if (sublistDoesNotHaveEnoughGas(tx, sequentialSublist)) {
             return Optional.empty();
         }
 
@@ -216,14 +216,14 @@ public class ParallelizeTransactionHandler {
 
             // write - read
             if (sublistsHavingReadFromKey.containsKey(newWrittenKey)) {
-                Set<TransactionSublist> sublists = sublistsHavingReadFromKey.get(newWrittenKey);
-                if (sublists.size() > 1) {
+                Set<TransactionSublist> setOfsublists = sublistsHavingReadFromKey.get(newWrittenKey);
+                if (setOfsublists.size() > 1) {
                     // there is a write-read collision with multiple sublists
                     return getSequentialSublist();
                 }
 
                 // there is only one colluded sublist
-                TransactionSublist sublist = getNextSublist(sublists);
+                TransactionSublist sublist = getNextSublist(setOfsublists);
                 if (!sublistCandidate.isPresent()) {
                     // if there is no candidate, take the colluded sublist
                     sublistCandidate = Optional.of(sublist);

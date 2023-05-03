@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-public class BlockHeaderV0Test {
+class BlockHeaderV0Test {
     private BlockHeaderV0 createBlockHeader(byte[] logsBloom, short[] edges) {
         return new BlockHeaderV0(
                 PegTestUtils.createHash3().getBytes(),

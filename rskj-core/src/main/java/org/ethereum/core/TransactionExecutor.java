@@ -77,7 +77,7 @@ public class TransactionExecutor {
     private final PrecompiledContracts precompiledContracts;
     private final boolean enableRemasc;
     private String executionError = "";
-    private final long gasUsed;
+    private final long gasConsumed;
     private Coin paidFees;
 
     private final ProgramInvokeFactory programInvokeFactory;
@@ -108,7 +108,7 @@ public class TransactionExecutor {
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsed, VmConfig vmConfig,
+            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasConsumed, VmConfig vmConfig,
             boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
             SignatureCache signatureCache, boolean postponeFeePayment, long sublistGasLimit) {
         this.constants = constants;
@@ -124,7 +124,7 @@ public class TransactionExecutor {
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.executionBlock = executionBlock;
-        this.gasUsed = gasUsed;
+        this.gasConsumed = gasConsumed;
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
         this.enableRemasc = remascEnabled;
@@ -253,7 +253,7 @@ public class TransactionExecutor {
         // which is used on some stress tests, but its far from being practical
         // as the current gas limit on blocks is 6.8M... several orders of magnitude
         // less than the theoretical max gas on blocks.
-        long cumulativeGas = GasCost.add(txGasLimit, gasUsed);
+        long cumulativeGas = GasCost.add(txGasLimit, gasConsumed);
 
         boolean cumulativeGasReached = cumulativeGas > curContainerGasLimit || cumulativeGas == GasCost.MAX_GAS;
         if (cumulativeGasReached) {
@@ -494,11 +494,11 @@ public class TransactionExecutor {
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
-            long totalGasUsed = GasCost.add(gasUsed, getGasUsed());
+            long totalGasUsed = GasCost.add(gasConsumed, getGasConsumed());
             receipt.setCumulativeGas(totalGasUsed);
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
-            receipt.setGasUsed(getGasUsed());
+            receipt.setGasUsed(getGasConsumed());
             receipt.setStatus(executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS);
         }
         return receipt;
@@ -587,7 +587,7 @@ public class TransactionExecutor {
 
         long gasRefund = refundGas();
 
-        result.setGasUsed(getGasUsed());
+        result.setGasUsed(getGasConsumed());
 
         TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
 
@@ -679,7 +679,7 @@ public class TransactionExecutor {
         return result;
     }
 
-    public long getGasUsed() {
+    public long getGasConsumed() {
         if (activations.isActive(ConsensusRule.RSKIP136)) {
             return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), gasLeftover);
         }

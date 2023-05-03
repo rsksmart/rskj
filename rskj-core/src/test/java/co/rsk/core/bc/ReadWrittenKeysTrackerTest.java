@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class ReadWrittenKeysTrackerTest {
+class ReadWrittenKeysTrackerTest {
 
     private IReadWrittenKeysTracker tracker;
     private IReadWrittenKeysTracker dummyTracker;

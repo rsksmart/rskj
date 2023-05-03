@@ -15,7 +15,7 @@ import java.util.List;
 import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.ArgumentMatchers.any;
 
-public class ValidTxExecutionSublistsEdgesTest {
+class ValidTxExecutionSublistsEdgesTest {
 
     private BlockHeader blockHeader;
     private Block block;

@@ -148,21 +148,21 @@ public class RepositoryTrackingTest {
     }
 
     @Test
-    public void tracksReadAndWriteOnAddBalanceOfNonExistent () {
+    void tracksReadAndWriteOnAddBalanceOfNonExistent () {
         repository.addBalance(COW, Coin.valueOf(1));
 
         assertRepositoryHasSize(1, 1);
     }
 
     @Test
-    public void tracksReadAndWriteOnAddBalanceZeroOfNonExistent () {
+    void tracksReadAndWriteOnAddBalanceZeroOfNonExistent () {
         repository.addBalance(COW, Coin.valueOf(0));
 
         assertRepositoryHasSize(1, 1);
     }
 
     @Test
-    public void tracksReadAndWriteOnAddBalanceOfExistent () {
+    void tracksReadAndWriteOnAddBalanceOfExistent () {
         repository.addBalance(COW, Coin.valueOf(1));
 
         tracker.clear();
@@ -173,7 +173,7 @@ public class RepositoryTrackingTest {
     }
 
     @Test
-    public void doesntTrackWriteOnAddBalanceZeroOfExistent () {
+    void doesntTrackWriteOnAddBalanceZeroOfExistent () {
         repository.addBalance(COW, Coin.valueOf(1));
 
         tracker.clear();

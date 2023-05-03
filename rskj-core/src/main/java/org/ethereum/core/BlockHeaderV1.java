@@ -10,14 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class BlockHeaderV1 extends BlockHeader {
-    @Override
-    public byte getVersion() { return 0x1; }
-
     private BlockHeaderExtensionV1 extension;
-    @Override
-    public BlockHeaderExtensionV1 getExtension() { return this.extension; }
-    @Override
-    public void setExtension(BlockHeaderExtension extension) { this.extension = (BlockHeaderExtensionV1) extension; }
 
     public BlockHeaderV1(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                          byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty,
@@ -41,6 +34,13 @@ public class BlockHeaderV1 extends BlockHeader {
         }
 
     }
+    @Override
+    public byte getVersion() { return 0x1; }
+
+    @Override
+    public BlockHeaderExtensionV1 getExtension() { return this.extension; }
+    @Override
+    public void setExtension(BlockHeaderExtension extension) { this.extension = (BlockHeaderExtensionV1) extension; }
 
     @VisibleForTesting
     public static byte[] createExtensionData(byte[] extensionHash) {

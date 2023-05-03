@@ -8,7 +8,9 @@ public interface BlockHeaderExtension {
 
     static BlockHeaderExtension fromEncoded(RLPList encoded) {
         byte version = encoded.get(0).getRLPData()[0];
-        if (version == 0x1) return BlockHeaderExtensionV1.fromEncoded(encoded.getRLPData());
+        if (version == 0x1) {
+            return BlockHeaderExtensionV1.fromEncoded(encoded.getRLPData());
+        }
         return null;
     }
 }

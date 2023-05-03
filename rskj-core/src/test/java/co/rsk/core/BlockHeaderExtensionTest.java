@@ -10,7 +10,7 @@ import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class BlockHeaderExtensionTest {
+class BlockHeaderExtensionTest {
     @Test
     public void decodeV1() {
         byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
@@ -31,7 +31,7 @@ public class BlockHeaderExtensionTest {
     }
 
     @Test
-    public void invalidDecode() {
+    void invalidDecode() {
         byte version = 0;
         byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
         short[] edges = { 1, 2, 3, 4 };

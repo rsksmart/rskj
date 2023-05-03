@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.LongAccumulator;
 
 /**
  * Created by Sergio on 18/07/2016.
@@ -123,7 +122,7 @@ public class MinerHelper {
 
             executor.executeTransaction();
 
-            long gasUsed = executor.getGasUsed();
+            long gasUsed = executor.getGasConsumed();
             Coin paidFees = executor.getPaidFees();
             totalGasUsed += gasUsed;
             totalPaidFees = totalPaidFees.add(paidFees);

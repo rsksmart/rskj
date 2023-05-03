@@ -122,7 +122,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
             logger.trace("tx[{}] executed", i + 1);
             logger.trace("track commit");
 
-            long txGasUsed = txExecutor.getGasUsed();
+            long txGasUsed = txExecutor.getGasConsumed();
             totalGasUsed += txGasUsed;
 
             addPaidFeesToToal(txExecutor);

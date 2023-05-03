@@ -32,7 +32,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 
-public class ParallelizeTransactionHandlerTest {
+class ParallelizeTransactionHandlerTest {
 
     private short sublists;
     private ParallelizeTransactionHandler handler;

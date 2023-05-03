@@ -516,14 +516,14 @@ class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithVersion0WithNoRskip351() {
+    void createsHeaderWithVersion0WithNoRskip351() {
         // RSKIP351 = -1
         BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)).build();
         assertEquals((byte) 0x0, header.getVersion());
     }
 
     @Test
-    public void createsHeaderWithVersion0BeforeRskip351() {
+    void createsHeaderWithVersion0BeforeRskip351() {
         // RSKIP351 > header number
         ActivationConfig activationConfig = Mockito.mock(ActivationConfig.class);
         when(activationConfig.getHeaderVersion(geq(2))).thenReturn((byte) 0x0);
@@ -532,7 +532,7 @@ class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createHeaderWithVersion1AfterRskip351() {
+    void createHeaderWithVersion1AfterRskip351() {
         // RSKIP351 = 0
         BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.all()).build();
         assertEquals((byte) 0x1, header.getVersion());
