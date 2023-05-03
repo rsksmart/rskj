@@ -29,6 +29,7 @@ import org.bouncycastle.util.Pack;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Objects;
 
 /**
  * Support class for constructing integrated encryption cipher
@@ -243,9 +244,7 @@ public class EthereumIESEngine
             k2A = k2;
         }
         mac.init(new KeyParameter(k2A));
-        if(iv != null) {
-            mac.update(iv, 0, iv.length);
-        }
+        mac.update(Objects.requireNonNull(iv), 0, iv.length);
         mac.update(c, 0, c.length);
         if (p2 != null)
         {
@@ -357,9 +356,7 @@ public class EthereumIESEngine
             k2A = k2;
         }
         mac.init(new KeyParameter(k2A));
-        if(iv != null) {
-            mac.update(iv, 0, iv.length);
-        }
+        mac.update(Objects.requireNonNull(iv), 0, iv.length);
         mac.update(inEnc, inOff + v.length, inLen - v.length - t2.length);
 
         if (p2 != null)

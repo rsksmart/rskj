@@ -62,19 +62,12 @@ public class ECIESCoder {
         ByteArrayInputStream is = new ByteArrayInputStream(cipher);
         byte[] ephemBytes = new byte[2*((CURVE.getCurve().getFieldSize()+7)/8) + 1];
 
-        if(is.read(ephemBytes) < 0){
-            throw new IOException(UNEXPECTED_CIPHER_LENGTH_EXCEPTION);
-        }
+        is.read(ephemBytes);
         ECPoint ephem = CURVE.getCurve().decodePoint(ephemBytes);
         byte[] iv = new byte[KEY_SIZE /8];
-
-        if(is.read(iv) < 0){
-            throw new IOException(UNEXPECTED_CIPHER_LENGTH_EXCEPTION);
-        }
+        is.read(iv);
         byte[] cipherBody = new byte[is.available()];
-        if(is.read(cipherBody) < 0){
-            throw new IOException(UNEXPECTED_CIPHER_LENGTH_EXCEPTION);
-        }
+        is.read(cipherBody);
 
         plaintext = decrypt(ephem, privKey, iv, cipherBody, macData);
 
