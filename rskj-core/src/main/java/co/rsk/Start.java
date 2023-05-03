@@ -17,7 +17,7 @@
  */
 package co.rsk;
 
-import co.rsk.cli.RskjCli;
+import co.rsk.cli.RskCli;
 import co.rsk.util.PreflightChecksUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,11 +36,11 @@ public class Start {
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
 
-        RskjCli rskjCli = new RskjCli();
-        CommandLine commandLine = new CommandLine(rskjCli);
+        RskCli rskCli = new RskCli();
+        CommandLine commandLine = new CommandLine(rskCli);
         int exitCode = commandLine.execute(args);
 
-        if (exitCode != 0 || rskjCli.isVersionRequested() || rskjCli.isUsageRequested()) {
+        if (exitCode != 0 || rskCli.isVersionRequested() || rskCli.isUsageRequested()) {
             System.exit(exitCode);
         }
 
