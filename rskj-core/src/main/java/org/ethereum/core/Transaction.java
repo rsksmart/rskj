@@ -30,6 +30,7 @@ import co.rsk.util.ListArrayUtil;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
@@ -204,7 +205,11 @@ public class Transaction {
         long nonZeroes = this.nonZeroDataBytes();
         long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
 
-        return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
+        return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * getTxNoZeroData(activations);
+    }
+
+    private static long getTxNoZeroData(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIPXXX)? GasCost.TX_NO_ZERO_DATA : GasCost.TX_NO_ZERO_DATA_EIP2028;
     }
 
     public void verify(SignatureCache signatureCache) {
