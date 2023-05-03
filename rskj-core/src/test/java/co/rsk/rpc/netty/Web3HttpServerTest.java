@@ -286,7 +286,7 @@ class Web3HttpServerTest {
                     .withValue("rpc.timeout", ConfigValueFactory.fromAnyRef(10_000_000_000L));
         };
 
-        String mockResult = "{\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\"}}";
+        String mockResult = "{\"error\":{\"code\":-32011,\"message\":\"Execution has expired.\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
     }
 
@@ -358,7 +358,7 @@ class Web3HttpServerTest {
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-        Assertions.assertEquals(JsonRpcError.RESPONSE_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
+        Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
         verify(web3Mock, times(2)).web3_sha3(anyString());
     }
 
@@ -413,7 +413,7 @@ class Web3HttpServerTest {
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-        Assertions.assertEquals(JsonRpcError.RESPONSE_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
+        Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
         verify(web3Mock, times(1)).web3_sha3(anyString());
     }
 
@@ -469,7 +469,7 @@ class Web3HttpServerTest {
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-        Assertions.assertEquals(JsonRpcError.RESPONSE_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
+        Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
         verify(web3Mock, times(2)).web3_sha3(anyString());
     }
 
@@ -526,7 +526,7 @@ class Web3HttpServerTest {
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
-        Assertions.assertEquals(JsonRpcError.RESPONSE_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
+        Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR, jsonRpcResponse.get("error").get("code").asInt());
         verify(web3Mock, times(1)).web3_sha3(anyString());
     }
 

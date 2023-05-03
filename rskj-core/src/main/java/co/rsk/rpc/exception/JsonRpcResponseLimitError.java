@@ -31,6 +31,6 @@ public class JsonRpcResponseLimitError extends JsonRpcThrowableError {
 
     @Override
     public JsonRpcError getErrorResponse() {
-        return new JsonRpcError(JsonRpcError.RESPONSE_LIMIT_ERROR, getMessage());
+        return new JsonRpcError(JsonRpcError.RPC_LIMIT_ERROR, getMessage());
     }
 }

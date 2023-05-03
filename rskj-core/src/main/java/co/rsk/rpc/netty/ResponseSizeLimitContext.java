@@ -19,10 +19,11 @@
 
 package co.rsk.rpc.netty;
 
-import co.rsk.rpc.exception.JsonRpcInternalError;
+import co.rsk.jsonrpc.JsonRpcError;
 import co.rsk.rpc.exception.JsonRpcResponseLimitError;
 import co.rsk.rpc.json.JsonResponseSizeLimiter;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 public class ResponseSizeLimitContext implements AutoCloseable {
 
@@ -63,8 +64,8 @@ public class ResponseSizeLimitContext implements AutoCloseable {
             return createEmptyContext();
         }
         ResponseSizeLimitContext existingContext = accumulatedResponseSize.get();
-        if(existingContext != null) {
-            throw new JsonRpcInternalError("ResponseSizeLimitContext already exists");
+        if (existingContext != null) {
+            throw new RskJsonRpcRequestException(JsonRpcError.INTERNAL_ERROR, "ResponseSizeLimitContext already exists");
         }
         ResponseSizeLimitContext ctx = new ResponseSizeLimitContext(limit);
         accumulatedResponseSize.set(ctx);

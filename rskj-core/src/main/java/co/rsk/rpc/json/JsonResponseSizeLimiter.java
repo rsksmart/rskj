@@ -20,11 +20,8 @@
 package co.rsk.rpc.json;
 
 import co.rsk.rpc.exception.JsonRpcResponseLimitError;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -37,12 +34,10 @@ public class JsonResponseSizeLimiter {
     private int acc = 0;
     private final int max;
     private final JsonNode root;
-    private final ObjectMapper objectMapper;
 
     private JsonResponseSizeLimiter(int max, JsonNode root) {
         this.max = max;
         this.root = root;
-        this.objectMapper = new ObjectMapper();
     }
 
     public static int getSizeInBytesWithLimit(JsonNode node, int limit) {
@@ -50,19 +45,15 @@ public class JsonResponseSizeLimiter {
             return 0;
         }
         JsonResponseSizeLimiter limiter = new JsonResponseSizeLimiter(limit, node);
-        try {
-            return limiter.getJsonLength();
-        } catch (JsonProcessingException jsonProcessingException) {
-            throw RskJsonRpcRequestException.invalidParamError("Couldn't process Json Object:  " + jsonProcessingException.getMessage());
-        }
+        return limiter.getJsonLength();
     }
 
-    private int getJsonLength() throws JsonProcessingException {
+    private int getJsonLength() {
         addLength(root);
         return acc;
     }
 
-    private void addLength(JsonNode jsonNode) throws JsonProcessingException {
+    private void addLength(JsonNode jsonNode) {
         if (jsonNode.isArray()) {
             handleArray((ArrayNode) jsonNode);
         } else if (jsonNode.isValueNode()) {
@@ -72,11 +63,11 @@ public class JsonResponseSizeLimiter {
         }
     }
 
-    private void handleValueNode(JsonNode node) throws JsonProcessingException {
-        sumAndCheck(objectMapper.writeValueAsBytes(node).length);
+    private void handleValueNode(JsonNode node) {
+        sumAndCheck(node.toString().getBytes().length);
     }
 
-    private void handleArray(ArrayNode arrayNode) throws JsonProcessingException {
+    private void handleArray(ArrayNode arrayNode) {
         Iterator<JsonNode> elements = arrayNode.elements();
         int eleNo = elements.hasNext() ? -1 : 0;
         while (elements.hasNext()) {
@@ -86,7 +77,7 @@ public class JsonResponseSizeLimiter {
         sumAndCheck(eleNo + BRACKETS_SIZE_IN_BYTES);
     }
 
-    private void handleObject(JsonNode rootNode) throws JsonProcessingException {
+    private void handleObject(JsonNode rootNode) {
         Iterator<Map.Entry<String, JsonNode>> fields = rootNode.fields();
         int fieldSeparatorCount = fields.hasNext() ? -1 : 0;
         while (fields.hasNext()) {
@@ -96,13 +87,13 @@ public class JsonResponseSizeLimiter {
         sumAndCheck(BRACKETS_SIZE_IN_BYTES + (COMMA_SIZE * fieldSeparatorCount));
     }
 
-    private void handleField(Map.Entry<String, JsonNode> field) throws JsonProcessingException {
+    private void handleField(Map.Entry<String, JsonNode> field) {
         JsonNode value = field.getValue();
         if (value.isObject() || value.isArray()) {
             addLength(value);
             sumAndCheck(field.getKey().getBytes().length + JSON_FIELD_MISSING_SYMBOLS);
         } else {
-            sumAndCheck(objectMapper.writeValueAsBytes(field).length - BRACKETS_SIZE_IN_BYTES);
+            sumAndCheck(field.getValue().toString().getBytes().length + field.getKey().getBytes().length + JSON_FIELD_MISSING_SYMBOLS);
         }
     }
 

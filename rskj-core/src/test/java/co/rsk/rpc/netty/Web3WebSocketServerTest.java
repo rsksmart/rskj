@@ -308,7 +308,7 @@ class Web3WebSocketServerTest {
             public void onMessage(ResponseBody message) throws IOException {
                 JsonNode jsonRpcResponse = JacksonParserUtil.readTree(OBJECT_MAPPER, message.bytes());
 
-                Assertions.assertEquals(JsonRpcError.RESPONSE_LIMIT_ERROR,jsonRpcResponse.get("error").get("code").asInt());
+                Assertions.assertEquals(JsonRpcError.RPC_LIMIT_ERROR,jsonRpcResponse.get("error").get("code").asInt());
                 message.close();
                 wsAsyncResultLatch.countDown();
             }
