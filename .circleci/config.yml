@@ -34,7 +34,7 @@ jobs:
           command: |
             ./configure.sh
             ./gradlew --no-daemon dependencies
-            ./gradlew --no-daemon --stacktrace build -x test -x integrationTest
+            ./gradlew --no-daemon --stacktrace build -x test
       - persist_to_workspace:
           root: .
           paths:
@@ -60,7 +60,7 @@ jobs:
             else
               extra_flags="-Dsonar.branch.name=master"
             fi
-            ./gradlew sonarqube --no-daemon -x build -x test -x integrationTest \
+            ./gradlew sonarqube --no-daemon -x build -x test \
                 $extra_flags \
                 -Dsonar.organization=rsksmart \
                 -Dsonar.host.url="$SONAR_URL" \

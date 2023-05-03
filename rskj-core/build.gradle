@@ -49,10 +49,6 @@ tasks.withType(Javadoc) {
     options.addStringOption('Xdoclint:none', '-quiet')
 }
 
-tasks.named('check') {
-    dependsOn testing.suites.integrationTest
-}
-
 repositories {
     mavenCentral()
     maven {
