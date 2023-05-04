@@ -1,27 +1,23 @@
 package co.rsk.cli;
 
+import co.rsk.NodeRunner;
+import co.rsk.config.NodeCliFlags;
+import co.rsk.config.NodeCliOptions;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = "rskj", mixinStandardHelpOptions = true, version = "RSKJ Node 4.5.0",
         description = "RSKJ blockchain node implementation in Java")
 public class RskCli {
-    @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true, description = "Display version info")
-    private boolean versionRequested;
-    @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "Display this help message")
-    private boolean usageRequested;
 
+    // CLI FLAGS
+    // db flags
     @CommandLine.Option(names = {"-r", "--reset"}, description = "Reset the database")
     private boolean dbReset;
 
-    @CommandLine.Option(names = {"--rpccors"}, description = "Set RPC CORS")
-    private String rpcCors;
-
-    @CommandLine.Option(names = {"--base-path"}, description = "Set base path")
-    private String basePath;
-
-    @CommandLine.Option(names = {"--db-import"}, description = "Import database")
+    @CommandLine.Option(names = {"--import"}, description = "Import database")
     private String dbImport;
 
+    // config flags
     @CommandLine.Option(names = {"--verify-config"}, description = "Verify configuration")
     private boolean verifyConfig;
 
@@ -31,6 +27,7 @@ public class RskCli {
     @CommandLine.Option(names = {"--skip-java-check"}, description = "Skip Java version check")
     private boolean skipJavaCheck;
 
+    // network
     @CommandLine.Option(names = {"--testnet"}, description = "Use testnet configuration")
     private boolean networkTestnet;
 
@@ -43,18 +40,21 @@ public class RskCli {
     @CommandLine.Option(names = {"--main"}, description = "Use mainnet configuration")
     private boolean networkMainnet;
 
+    // CLI OPTIONS
+    // TODO: add parameter processing
+    @CommandLine.Option(names = {"-rpccors"}, description = "Set RPC CORS")
+    private String rpcCors;
+    // TODO: add parameter processing
+    @CommandLine.Option(names = {"-base-path"}, description = "Set base path")
+    private String basePath;
+    private NodeRunner runner;
+
+    public void setRunner(NodeRunner runner) {
+        this.runner = runner;
+    }
+
     public void run() {
-        // logic to handle options and flags
+
     }
-
-    public boolean isVersionRequested() {
-        return versionRequested;
-    }
-
-    public boolean isUsageRequested() {
-        return usageRequested;
-    }
-
-
 
 }
