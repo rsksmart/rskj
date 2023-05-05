@@ -22,9 +22,8 @@ import co.rsk.jmh.web3.Web3Connector;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
-import org.web3j.protocol.core.methods.response.EthBlockNumber;
-import org.web3j.protocol.core.methods.response.EthGetBalance;
-import org.web3j.protocol.core.methods.response.EthSendTransaction;
+import org.web3j.protocol.core.methods.request.Transaction;
+import org.web3j.protocol.core.methods.response.*;
 import org.web3j.protocol.http.HttpService;
 
 import java.io.IOException;
@@ -45,6 +44,18 @@ public class Web3ConnectorE2E implements Web3Connector {
             connector = new Web3ConnectorE2E(host);
         }
         return connector;
+    }
+
+    @Override
+    public BigInteger ethGetTransactionCount(String address) throws HttpRpcException {
+        try {
+            Request<?, EthGetTransactionCount> request = web3j.ethGetTransactionCount(address, DefaultBlockParameter.valueOf("latest"));
+            EthGetTransactionCount response = request.send();
+            return response.getTransactionCount();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
     }
 
     @Override
@@ -77,6 +88,30 @@ public class Web3ConnectorE2E implements Web3Connector {
             Request<?, EthSendTransaction> request = web3j.ethSendRawTransaction(rawTx);
             EthSendTransaction response = request.send();
             return response.getTransactionHash();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    @Override
+    public String ethSendTransaction(Transaction transaction) throws HttpRpcException {
+        try {
+            Request<?, EthSendTransaction> request = web3j.ethSendTransaction(transaction);
+            EthSendTransaction response = request.send();
+            return response.getTransactionHash();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    @Override
+    public BigInteger ethEstimateGas(Transaction transaction) throws HttpRpcException {
+        try {
+            Request<?, EthEstimateGas> request = web3j.ethEstimateGas(transaction);
+            EthEstimateGas response = request.send();
+            return response.getAmountUsed();
         } catch (IOException e) {
             e.printStackTrace();
             throw new HttpRpcException(e.getMessage());
