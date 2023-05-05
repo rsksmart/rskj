@@ -5,6 +5,8 @@ import co.rsk.config.NodeCliFlags;
 import co.rsk.config.NodeCliOptions;
 import picocli.CommandLine;
 
+import java.util.EnumSet;
+
 @CommandLine.Command(name = "rskj", mixinStandardHelpOptions = true, version = "RSKJ Node 4.5.0",
         description = "RSKJ blockchain node implementation in Java")
 public class RskCli {
@@ -41,12 +43,13 @@ public class RskCli {
     private boolean networkMainnet;
 
     // CLI OPTIONS
-    // TODO: add parameter processing
     @CommandLine.Option(names = {"-rpccors"}, description = "Set RPC CORS")
     private String rpcCors;
-    // TODO: add parameter processing
+
     @CommandLine.Option(names = {"-base-path"}, description = "Set base path")
     private String basePath;
+
+
     private NodeRunner runner;
 
     public void setRunner(NodeRunner runner) {
@@ -56,5 +59,51 @@ public class RskCli {
     public void run() {
 
     }
+//    public CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
+//        return
+//    }
+    private EnumSet<NodeCliFlags> getFlags() {
+        EnumSet<NodeCliFlags> activatedFlags = EnumSet.noneOf(NodeCliFlags.class);
+
+        if (dbReset) {
+            activatedFlags.add(NodeCliFlags.DB_RESET);
+        }
+
+        if (dbImport != null) {
+            activatedFlags.add(NodeCliFlags.DB_IMPORT);
+        }
+
+        if (verifyConfig) {
+            activatedFlags.add(NodeCliFlags.VERIFY_CONFIG);
+        }
+
+        if (printSystemInfo) {
+            activatedFlags.add(NodeCliFlags.PRINT_SYSTEM_INFO);
+        }
+
+        if (skipJavaCheck) {
+            activatedFlags.add(NodeCliFlags.SKIP_JAVA_CHECK);
+        }
+
+        if (networkTestnet) {
+            activatedFlags.add(NodeCliFlags.NETWORK_TESTNET);
+        }
+
+        if (networkRegtest) {
+            activatedFlags.add(NodeCliFlags.NETWORK_REGTEST);
+        }
+
+        if (networkDevnet) {
+            activatedFlags.add(NodeCliFlags.NETWORK_DEVNET);
+        }
+
+        if (networkMainnet) {
+            activatedFlags.add(NodeCliFlags.NETWORK_MAINNET);
+        }
+
+        return activatedFlags;
+    }
+
+
 
 }
