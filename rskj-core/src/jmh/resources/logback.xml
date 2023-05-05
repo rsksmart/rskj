@@ -38,7 +38,7 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>${logging:-TRACE}</level>
+            <level>${logging:-OFF}</level> <!-- add a level to enable logging and see web3j logs -->
         </filter>
     </appender>
 
