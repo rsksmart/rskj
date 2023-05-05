@@ -39,8 +39,8 @@ public class BenchmarkWeb3E2ERunner {
                 .param("suite", BenchmarkWeb3.Suites.E2E.name())
                 .param("host", ParamsHelper.getRequired("host", args))
                 .param("network", ParamsHelper.getRequired("network", args))
-                .mode(Mode.SingleShotTime)
-                .forks(0) // we don't need forks when benchmarking an external project/JVM
+                .mode(Mode.SingleShotTime) // we cannot flood the server with http requests
+                .forks(2)
                 .warmupIterations(1) // for RPC calls usually one warmup call is enough
                 .result(resultDir + "/result_web3_e2e.csv")
                 .resultFormat(ResultFormatType.CSV)
