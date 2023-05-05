@@ -15,18 +15,18 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.config;
 
 import co.rsk.cli.CliArgs;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -105,6 +105,32 @@ class RskSystemPropertiesTest {
         assertEquals(12, bloomNumberOfConfirmations);
         assertTrue(expectedConfig.hasPath(configKeyCaptorForHasPath.getValue()));
         assertTrue(expectedConfig.hasPath(configKeyCaptorForGetInt.getValue()));
+    }
+
+    @Test
+    void testCorrectRestServerProperties() throws UnknownHostException {
+        // Check rest server properties
+        TestSystemProperties config = new TestSystemProperties();
+
+        assertTrue(config.isRestServerEnabled());
+        assertEquals(4446, config.getRestServerPort());
+        assertEquals(InetAddress.getByName("localhost"), config.getRestServerBindAddress());
+
+        // Check rest server modules' properties
+        assertTrue(config.isHealthCheckModuleEnabled());
+    }
+
+    @Test
+    void testBorderCasesForRestServerProperties() {
+        TestSystemPropertiesV2 config = new TestSystemPropertiesV2("test-border-cases-rskj.conf");
+        RskSystemProperties rskSystemProperties = config.getRskSystemProperties();
+
+        try {
+            rskSystemProperties.getRestServerBindAddress();
+            fail("RskConfigurationException should be thrown");
+        } catch (RskConfigurationException e) {
+            assertEquals("Invalid REST Server bind address l0c4lh0st", e.getMessage());
+        }
     }
 
     @Test
