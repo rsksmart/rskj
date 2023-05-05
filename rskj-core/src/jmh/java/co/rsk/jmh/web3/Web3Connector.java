@@ -19,10 +19,13 @@
 package co.rsk.jmh.web3;
 
 import co.rsk.jmh.web3.e2e.HttpRpcException;
+import org.web3j.protocol.core.methods.request.Transaction;
 
 import java.math.BigInteger;
 
 public interface Web3Connector {
+
+    BigInteger ethGetTransactionCount(String address) throws HttpRpcException;
 
     BigInteger ethGetBalance(String address, String block) throws HttpRpcException;
 
@@ -30,4 +33,7 @@ public interface Web3Connector {
 
     String ethSendRawTransaction(String rawTx) throws HttpRpcException;
 
+    String ethSendTransaction(Transaction transaction) throws HttpRpcException;
+
+    BigInteger ethEstimateGas(Transaction transaction) throws HttpRpcException;
 }
