@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 // annotated fields at class, method or field level are providing default values that can be overriden via CLI or Runner parameters
 @BenchmarkMode({Mode.SingleShotTime})
 @Warmup(iterations = 5, batchSize = 5)
-@Measurement(iterations = 100, batchSize = 5)
+@Measurement(iterations = 20, batchSize = 5)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Timeout(time = 20)
 public class BenchmarkWeb3 {
