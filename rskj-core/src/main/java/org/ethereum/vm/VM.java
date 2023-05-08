@@ -1536,7 +1536,9 @@ public class VM {
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
 
-            program.getResult().setCallWithValuePerformed(!value.isZero());
+            if (!value.isZero()) {
+                program.getResult().setCallWithValuePerformed(true);
+            }
         }
 
         if (isLogEnabled) {

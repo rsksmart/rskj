@@ -132,7 +132,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Estimate the gas to use
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(33469, estimatedGas);
+        assertEquals(33514, estimatedGas); // different from master
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -323,7 +323,7 @@ class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(38512, estimatedGas);
+        assertEquals(38557, estimatedGas); // different from master
 
         assertTrue(estimatedGas > callConstantGasUsed);
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
@@ -396,7 +396,7 @@ class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(48008, estimatedGas);
+        assertEquals(48841, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -468,7 +468,7 @@ class EthModuleGasEstimationDSLTest {
         assertEvents(callConstant, "NestedCallWithValue", 1);
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(38640, estimatedGas);
+        assertEquals(39459, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -537,7 +537,7 @@ class EthModuleGasEstimationDSLTest {
         assertEvents(callConstant, "NestedCallWithValue", 2);
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(47842, estimatedGas);
+        assertEquals(48674, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -590,7 +590,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Estimate the gas to use
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(34951, estimatedGas);
+        assertEquals(34996, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -669,7 +669,7 @@ class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(83377, estimatedGas);
+        assertEquals(84210, estimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
@@ -744,7 +744,7 @@ class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(83367, estimatedGas);
+        assertEquals(84200, estimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 

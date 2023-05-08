@@ -76,6 +76,11 @@ public class ProgramResult {
     }
 
     public long getEstimatedGas() {
+        if (callWithValuePerformed) {
+            // just need to add stipend once
+            return GasCost.add(gasNeeded, GasCost.STIPEND_CALL);
+        }
+
         return gasNeeded;
     }
 
@@ -93,14 +98,7 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
-        // generally, refund made after passing gas to callee can be deducted from needed gas as we allow internal
-        // calls even if specified < remaining  but... (1)
         gasNeeded = GasCost.subtract(gasNeeded, gas);
-
-        // (1) ... if internal call provides a value we must take stipend into account and consider it as needed gas
-        if (callWithValuePerformed) {
-            gasNeeded = GasCost.add(gasNeeded, GasCost.STIPEND_CALL);
-        }
 
         gasUsed = GasCost.subtract(gasUsed, gas);
     }
