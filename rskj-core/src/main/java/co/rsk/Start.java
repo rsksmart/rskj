@@ -39,15 +39,14 @@ public class Start {
         RskCli rskCli = new RskCli();
         CommandLine commandLine = new CommandLine(rskCli);
         int exitCode = commandLine.execute(args);
-
-        if (exitCode != 0 || rskCli.isVersionRequested() || rskCli.isUsageRequested()) {
+//|| rskCli.isVersionRequested() || rskCli.isUsageRequested(
+        if (exitCode != 0 ) {
             System.exit(exitCode);
         }
 
         RskContext ctx = null;
         try {
-            ctx = new RskContext(args);
-
+            ctx = new RskContext(rskCli);
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);

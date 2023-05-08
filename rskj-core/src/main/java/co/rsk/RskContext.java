@@ -261,20 +261,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     /***** Constructors ***********************************************************************************************/
 
-    public RskContext(String[] args) {
-        this(new RskCli(), args, false);
-    }
-
-    public RskContext(String[] args, boolean ignoreUnmatchedArgs) {
-        this(new RskCli(), args, ignoreUnmatchedArgs);
-    }
-
-    private RskContext(RskCli rskCli, String[] args, boolean ignoreUnmatchedArgs) {
-        this(rskCli, new CliArgs.Parser<>(
-                NodeCliOptions.class,
-                NodeCliFlags.class,
-                ignoreUnmatchedArgs
-        ).parse(args));
+    public RskContext(RskCli rskCli) {
+        this(rskCli, rskCli.getCliArgs());
     }
 
     private RskContext(RskCli rskCli, CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {

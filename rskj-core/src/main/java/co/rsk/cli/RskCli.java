@@ -59,9 +59,10 @@ public class RskCli {
     public void run() {
 
     }
-//    public CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
-//        return
-//    }
+    public CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
+        // TODO: implement this method watching ConfigLoader.getConfigFromCliArgs()
+        return null;
+    }
     private EnumSet<NodeCliFlags> getFlags() {
         EnumSet<NodeCliFlags> activatedFlags = EnumSet.noneOf(NodeCliFlags.class);
 
