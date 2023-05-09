@@ -79,11 +79,11 @@ class JsonRpcMethodFilterTest {
         disabledMethods.add("evm_reset");
         disabledMethods.add("evm_increaseTime");
 
-        ModuleDescription enabledModule = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
+        ModuleDescription enabledModule = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods, 0, new HashMap<>());
 
         List<ModuleDescription> modules = new ArrayList<>();
 
-        ModuleDescription disabledModule = new ModuleDescription("eth", "1.0", false, null, null);
+        ModuleDescription disabledModule = new ModuleDescription("eth", "1.0", false, null, null, 0, new HashMap<>());
 
         modules.add(enabledModule);
         modules.add(disabledModule);

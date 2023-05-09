@@ -1,0 +1,23 @@
+{
+  "name": "sco_bannedAddresses",
+  "summary": "Returns the list of banned addresses and blocks of addresses",
+  "description": "Returns the list of banned addresses and blocks of addresses",
+  "params": [],
+  "result": {
+    "name": "addresses or blocks",
+    "description": "Banned addresses or blocks",
+    "schema": {
+      "$ref": "#/components/schemas/IPAddresses"
+    }
+  },
+  "examples": [
+    {
+      "name": "example",
+      "params": [],
+      "result": {
+        "name": "address",
+        "value": ["192.168.51.1", "192.168.51.1/16"]
+      }
+    }
+  ]
+}

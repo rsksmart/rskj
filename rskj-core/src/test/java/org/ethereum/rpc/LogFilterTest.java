@@ -19,14 +19,26 @@
 package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
+import co.rsk.logfilter.BlocksBloomStore;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.BlockBuilder;
+import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.util.HexUtils;
+import org.ethereum.TestUtils;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.math.BigInteger;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by ajlopez on 17/01/2018.
@@ -120,4 +132,74 @@ class LogFilterTest {
         Assertions.assertNotNull(result);
         Assertions.assertEquals(1, result.length);
     }
+
+    @Test
+    void testFromFilterRequest() throws Exception {
+        RskTestFactory factory = new RskTestFactory();
+        Blockchain blockchain = factory.getBlockchain();
+        BlockStore blockStore = factory.getBlockStore();
+        BlocksBloomStore blocksBloomStore = factory.getBlocksBloomStore();
+        TestUtils.setInternalState(blocksBloomStore, "noBlocks", 2);
+        TestUtils.setInternalState(blocksBloomStore, "noConfirmations", 1);
+        RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
+
+        BlockBuilder blockBuilder = new BlockBuilder(blockchain, null, blockStore)
+                .trieStore(factory.getTrieStore());
+
+        Account acc1 = new AccountBuilder(blockchain,blockStore,repositoryLocator)
+                .name("acc1").balance(Coin.valueOf(10000000)).build();
+
+        Block genesis = blockchain.getBlockByNumber(0);
+        Block block1 = addBlockToBlockchain(genesis, acc1, blockBuilder, blockchain);
+        Block block2 = addBlockToBlockchain(block1, acc1, blockBuilder, blockchain);
+        Block block3 = addBlockToBlockchain(block2, acc1, blockBuilder, blockchain);
+
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+
+        // nothing bloomed before request
+        assertFalse(blocksBloomStore.hasBlockNumber(genesis.getNumber()));
+        assertFalse(blocksBloomStore.hasBlockNumber(block1.getNumber()));
+        assertFalse(blocksBloomStore.hasBlockNumber(block2.getNumber()));
+        assertFalse(blocksBloomStore.hasBlockNumber(block3.getNumber()));
+
+        LogFilter logFilter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore);
+
+        List<Filter.FilterEvent> result = logFilter.getEventsInternal();
+        Assertions.assertEquals(3, result.size());
+
+        // block1 bloomed after call (enough confirmations and complete bloom)
+        assertTrue(blocksBloomStore.hasBlockNumber(genesis.getNumber()));
+        assertTrue(blocksBloomStore.hasBlockNumber(block1.getNumber()));
+        // blocks 2 not bloomed after call because the bloom was not complete (1 out of 2 blocks) since block 3 is not confirmed
+        assertFalse(blocksBloomStore.hasBlockNumber(block2.getNumber()));
+        // blocks 3 not bloomed after call because it is not confirmed
+        assertFalse(blocksBloomStore.hasBlockNumber(block3.getNumber()));
+
+        fr = new FilterRequest();
+        fr.setFromBlock(HexUtils.toQuantityJsonHex(block1.getNumber()));
+        fr.setToBlock(HexUtils.toQuantityJsonHex(block2.getNumber()));
+
+        logFilter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore);
+        result = logFilter.getEventsInternal();
+        Assertions.assertEquals(2, result.size());
+    }
+
+    public static Block addBlockToBlockchain(Block parent, Account account, BlockBuilder blockBuilder, Blockchain blockchain) {
+        final String compiled_0_4_11 = "6060604052341561000c57fe5b5b60466000819055507f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad16000546040518082815260200191505060405180910390a15b5b61014e8061005f6000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632096525514610046578063371303c01461006c575bfe5b341561004e57fe5b61005661007e565b6040518082815260200191505060405180910390f35b341561007457fe5b61007c6100c2565b005b60007f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b6000546040518082815260200191505060405180910390a160005490505b90565b60006000815460010191905081905550600160026000548115156100e257fe5b061415157f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad6000546040518082815260200191505060405180910390a25b5600a165627a7a7230582092c7b2c0483b85227396e18149993b33243059af0f3bd0364f1dc36b8bbbcdae0029";
+
+        Transaction tx = new TransactionBuilder()
+                .nonce(parent.getNumber()) // just to increase nonce
+                .sender(account)
+                .gasLimit(BigInteger.valueOf(1000000))
+                .gasPrice(BigInteger.ONE)
+                .data(compiled_0_4_11)
+                .build();
+
+        Block block = blockBuilder.parent(parent).transactions(Collections.singletonList(tx)).build();
+        assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block));
+
+        return block;
+    }
+
 }

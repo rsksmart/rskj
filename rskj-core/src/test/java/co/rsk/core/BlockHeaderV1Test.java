@@ -19,7 +19,7 @@ class BlockHeaderV1Test {
         return new BlockHeaderV1(
                 PegTestUtils.createHash3().getBytes(),
                 HashUtil.keccak256(RLP.encodeList()),
-                new RskAddress(TestUtils.randomAddress().getBytes()),
+                new RskAddress(TestUtils.generateAddress("coinbase").getBytes()),
                 HashUtil.EMPTY_TRIE_HASH,
                 "tx_trie_root".getBytes(),
                 HashUtil.EMPTY_TRIE_HASH,
@@ -48,14 +48,14 @@ class BlockHeaderV1Test {
 
     @Test
     void createsAnExtensionWithGivenData() {
-        byte[] bloom = TestUtils.randomBytes(256);
+        byte[] bloom = TestUtils.generateBytes("bloom", 256);
         BlockHeaderV1 header = createBlockHeader(bloom);
         Assertions.assertArrayEquals(bloom, header.getExtension().getLogsBloom());
     }
 
     @Test
     void setsExtension() {
-        byte[] bloom = TestUtils.randomBytes(256);
+        byte[] bloom = TestUtils.generateBytes("bloom", 256);
         short[] edges = new short[]{ 1, 2, 3, 4 };
         BlockHeaderV1 header = createBlockHeader(bloom);
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(bloom, edges);
@@ -65,7 +65,7 @@ class BlockHeaderV1Test {
 
     @Test
     void setsLogsBloomToExtension() {
-        byte[] bloom = TestUtils.randomBytes(256);
+        byte[] bloom = TestUtils.generateBytes("bloom", 256);
         BlockHeaderV1 header = createBlockHeader(new byte[]{});
         header.setLogsBloom(bloom);
         Assertions.assertArrayEquals(bloom, header.getExtension().getLogsBloom());
@@ -73,7 +73,7 @@ class BlockHeaderV1Test {
 
     @Test
     void logsBloomFieldEncoded() {
-        byte[] bloom = TestUtils.randomBytes(256);
+        byte[] bloom = TestUtils.generateBytes("bloom", 256);
         BlockHeaderV1 header = createBlockHeader(bloom);
         RLPList extensionDataRLP = RLP.decodeList(header.getExtensionData());
 
@@ -84,21 +84,17 @@ class BlockHeaderV1Test {
         Assertions.assertArrayEquals(header.getExtension().getHash(), extensionHash);
     }
 
-    BlockHeaderV1 encodedHeaderWithRandomLogsBloom() {
-        return createBlockHeader(TestUtils.randomBytes(256));
-    }
-
     @Test
     void logsBloomFieldEncodedIncludesExtensionHash() {
-        BlockHeaderV1 header = encodedHeaderWithRandomLogsBloom();
+        BlockHeaderV1 header = createBlockHeader(TestUtils.generateBytes("bloom", 256));
         BlockHeaderExtensionV1 extension = Mockito.mock(BlockHeaderExtensionV1.class);
-        byte[] hash = TestUtils.randomBytes(32);
+        byte[] hash = TestUtils.generateHash("hash").getBytes();
         Mockito.when(extension.getHash()).thenReturn(hash);
         header.setExtension(extension);
 
-        BlockHeaderV1 otherHeader = encodedHeaderWithRandomLogsBloom();
+        BlockHeaderV1 otherHeader = createBlockHeader(TestUtils.generateBytes("otherBloom", 256));
         BlockHeaderExtensionV1 otherExtension = Mockito.mock(BlockHeaderExtensionV1.class);
-        byte[] otherHash = TestUtils.randomBytes(32);
+        byte[] otherHash = TestUtils.generateHash("otherHash").getBytes();
         Mockito.when(otherExtension.getHash()).thenReturn(otherHash);
         otherHeader.setExtension(otherExtension);
 

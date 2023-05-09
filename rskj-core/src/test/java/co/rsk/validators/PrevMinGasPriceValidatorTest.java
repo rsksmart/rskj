@@ -34,7 +34,7 @@ class PrevMinGasPriceValidatorTest {
 
     private static final Coin BLOCK_MGP = Coin.valueOf(1050L);
     private static final Coin PARENT_BLOCK_MGP = Coin.valueOf(1000L);
-    private static final byte[] PARENT_HASH = TestUtils.randomBytes(32);
+    private static final byte[] PARENT_HASH = TestUtils.generateBytes(PrevMinGasPriceValidatorTest.class,"parentHash",32);
 
     @Test
     void noParentBlock() {

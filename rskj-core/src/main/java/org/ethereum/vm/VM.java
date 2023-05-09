@@ -22,6 +22,7 @@ package org.ethereum.vm;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.rpc.netty.ExecTimeoutContext;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
@@ -2004,6 +2005,8 @@ public class VM {
         try {
 
             for(long s=0;s<steps;s++) {
+                ExecTimeoutContext.checkIfExpired();
+
                 if (program.isStopped()) {
                     break;
                 }

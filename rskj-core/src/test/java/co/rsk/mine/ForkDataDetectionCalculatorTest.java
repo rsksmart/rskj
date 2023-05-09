@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,10 +34,9 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -242,10 +242,10 @@ class ForkDataDetectionCalculatorTest {
         BlockHeader header =  mock(BlockHeader.class);
         when(header.isGenesis()).thenReturn(Boolean.TRUE);
         when(header.getNumber()).thenReturn(Long.valueOf(0));
-        byte[] rawBlockHash = getRandomHash();
-        Keccak256 blockHash = new Keccak256(rawBlockHash);
+
+        Keccak256 blockHash = TestUtils.generateHash("rawBH");
         when(header.getHash()).thenReturn(blockHash);
-        byte[] randomHash = getRandomHash();
+        byte[] randomHash = TestUtils.generateBytes("rh",32);
         when(header.getBitcoinMergedMiningHeader()).thenReturn(randomHash);
 
         Block block = mock(Block.class);
@@ -258,8 +258,7 @@ class ForkDataDetectionCalculatorTest {
     private Block createBlock(long number, Keccak256 parentHash, long bitcoinBlockTime){
         BlockHeader header =  mock(BlockHeader.class);
         when(header.getNumber()).thenReturn(number);
-        byte[] rawBlockHash = getRandomHash();
-        Keccak256 blockHash = new Keccak256(rawBlockHash);
+        Keccak256 blockHash = TestUtils.generateHash("rawBH");
         when(header.getHash()).thenReturn(blockHash);
         when(header.getParentHash()).thenReturn(parentHash);
         byte[] bitcoinHeader = getBtcBlock(bitcoinBlockTime).cloneAsHeader().bitcoinSerialize();
@@ -270,14 +269,6 @@ class ForkDataDetectionCalculatorTest {
         when(block.getBitcoinMergedMiningHeader()).thenReturn(bitcoinHeader);
 
         return block;
-    }
-
-    private byte[] getRandomHash() {
-        byte[] byteArray = new byte[32];
-
-        new Random().nextBytes(byteArray);
-
-        return byteArray;
     }
 
     private BtcBlock getBtcBlock(long blockTime) {

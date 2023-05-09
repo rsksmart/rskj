@@ -55,7 +55,7 @@ class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerformanceTes
     private ExecutionStats estimateToBase58Check(int times, EnvironmentBuilder environmentBuilder) throws VMException {
         String name = function.name;
         ExecutionStats stats = new ExecutionStats(name);
-        Random rnd = new Random();
+        Random rnd = new Random(times);
         int[] versions = new int[] {
                 // Testnet and mainnet pubkey hash and script hash only
                 // See https://en.bitcoin.it/wiki/Base58Check_encoding for details

@@ -82,7 +82,7 @@ public class BlocksBloomProcessor {
     private long fromBlock(long blockNumber) {
         long fromBlock;
         if (this.blocksBloomInProcess == null) {
-            this.blocksBloomInProcess = new BlocksBloom();
+            this.blocksBloomInProcess = BlocksBloom.createEmpty();
             fromBlock = this.blocksBloomStore.firstNumberInRange(blockNumber);
         }
         else {
@@ -103,7 +103,7 @@ public class BlocksBloomProcessor {
         Bloom bloom = bloomByBlockNumber(blockNumber);
 
         if (this.blocksBloomInProcess == null) {
-            this.blocksBloomInProcess = new BlocksBloom();
+            this.blocksBloomInProcess = BlocksBloom.createEmpty();
         }
 
         this.blocksBloomInProcess.addBlockBloom(blockNumber, bloom);

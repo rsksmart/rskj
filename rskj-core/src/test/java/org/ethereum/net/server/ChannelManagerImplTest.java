@@ -26,21 +26,25 @@ import co.rsk.net.NodeID;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeManager;
 import org.ethereum.sync.SyncPool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.LongSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Roman Mandeleil
@@ -84,7 +88,7 @@ class ChannelManagerImplTest {
 
         Channel peer = spy(new Channel(null, null, nodeManager, null, null, null, remoteId));
         peer.setInetSocketAddress(new InetSocketAddress("127.0.0.1",5554));
-        peer.setNode(new NodeID(HashUtil.randomPeerId()).getID());
+        peer.setNode(new NodeID(TestUtils.generatePeerId("peer")).getID());
         when(peer.isProtocolsInitialized()).thenReturn(true);
         when(peer.isActive()).thenReturn(true);
         when(peer.isUsingNewProtocol()).thenReturn(true);
@@ -112,7 +116,7 @@ class ChannelManagerImplTest {
     @Test
     void broadcastTransactions_broadcastToAllActivePeers() {
         final Transaction transaction = mock(Transaction.class);
-        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        when(transaction.getHash()).thenReturn(TestUtils.generateHash("txHash"));
         final List<Transaction> transactions = Collections.singletonList(transaction);
         final Map<NodeID,Channel> activePeers = peersForTests(2);
         final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
@@ -127,11 +131,11 @@ class ChannelManagerImplTest {
     @Test
     void broadcastTransactions_skipSender() {
         final Transaction transaction = mock(Transaction.class);
-        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        when(transaction.getHash()).thenReturn(TestUtils.generateHash("txHash"));
         final List<Transaction> transactions = Collections.singletonList(transaction);
         final Map<NodeID,Channel> activePeers = peersForTests(2);
         final Channel sender = mock(Channel.class);
-        when(sender.getNodeId()).thenReturn(new NodeID(HashUtil.randomPeerId()));
+        when(sender.getNodeId()).thenReturn(new NodeID(TestUtils.generatePeerId("sender")));
         activePeers.put(sender.getNodeId(), sender);
         final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
         channelManager.setActivePeers(activePeers);
@@ -145,7 +149,7 @@ class ChannelManagerImplTest {
     @Test
     void broadcastTransaction_broadcastToAllActivePeers() {
         final Transaction transaction = mock(Transaction.class);
-        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        when(transaction.getHash()).thenReturn(TestUtils.generateHash("txHash"));
         final Map<NodeID,Channel> activePeers = peersForTests(2);
         final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
         channelManager.setActivePeers(activePeers);
@@ -164,10 +168,33 @@ class ChannelManagerImplTest {
 
         for(int i  = 0; i < count; i++) {
             Channel peer = mock(Channel.class);
-            when(peer.getNodeId()).thenReturn(new NodeID(HashUtil.randomPeerId()));
+            when(peer.getNodeId()).thenReturn(new NodeID(TestUtils.generatePeerId("peer"+i)));
             peers.put(peer.getNodeId(),peer);
         }
 
         return peers;
+    }
+
+    @Test
+    void testLogActivePeers() {
+        final Map<NodeID,Channel> activePeers = peersForTests(2);
+        final ChannelManagerImpl channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+        channelManager.setActivePeers(activePeers);
+
+        Logger logger = mock(Logger.class);
+        TestUtils.setFinalStatic(channelManager, "logger", logger);
+        when(logger.isDebugEnabled()).thenReturn(true);
+
+        LongSupplier timeLastLoggedPeersSupplier = () -> TestUtils.getInternalState(channelManager, "timeLastLoggedPeers");
+
+        // not enough time passed to log peers again, timeLastLoggedPeers should remain intact
+        long timeLastLoggedPeers = timeLastLoggedPeersSupplier.getAsLong();
+        channelManager.logActivePeers(System.currentTimeMillis());
+        Assertions.assertEquals(timeLastLoggedPeers, timeLastLoggedPeersSupplier.getAsLong());
+
+        // fake time passed for peers to be logged, timeLastLoggedPeers should be updated
+        long runTime = System.currentTimeMillis() + Duration.ofSeconds(61).toMillis();
+        channelManager.logActivePeers(runTime);
+        Assertions.assertEquals(runTime, timeLastLoggedPeersSupplier.getAsLong());
     }
 }

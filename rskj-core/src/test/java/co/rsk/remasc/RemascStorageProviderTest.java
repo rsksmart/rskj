@@ -25,12 +25,16 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.*;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -85,17 +89,11 @@ class RemascStorageProviderTest {
         return chain;
     }
 
-    private RskAddress randomAddress() {
-        byte[] bytes = new byte[20];
 
-        new Random().nextBytes(bytes);
-
-        return new RskAddress(bytes);
-    }
 
     @Test
     void getDefautRewardBalance() {
-        RskAddress accountAddress = randomAddress();
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -105,7 +103,7 @@ class RemascStorageProviderTest {
 
     @Test
     void setAndGetRewardBalance() {
-        RskAddress accountAddress = randomAddress();
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -116,8 +114,8 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void setSaveRetrieveAndGetRewardBalance() throws IOException {
-        RskAddress accountAddress = randomAddress();
+    void setSaveRetrieveAndGetRewardBalance() {
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -133,7 +131,7 @@ class RemascStorageProviderTest {
 
     @Test
     void getDefautBurnedBalance() {
-        RskAddress accountAddress = randomAddress();
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -143,7 +141,7 @@ class RemascStorageProviderTest {
 
     @Test
     void setAndGetBurnedBalance() {
-        RskAddress accountAddress = randomAddress();
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -154,8 +152,8 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void setSaveRetrieveAndGetBurnedBalance() throws IOException {
-        RskAddress accountAddress = randomAddress();
+    void setSaveRetrieveAndGetBurnedBalance() {
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -171,7 +169,7 @@ class RemascStorageProviderTest {
 
     @Test
     void getDefaultBrokenSelectionRule() {
-        RskAddress accountAddress = randomAddress();
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -181,7 +179,7 @@ class RemascStorageProviderTest {
 
     @Test
     void setAndGetBrokenSelectionRule() {
-        RskAddress accountAddress = randomAddress();
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -192,8 +190,8 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void setSaveRetrieveAndGetBrokenSelectionRule() throws IOException {
-        RskAddress accountAddress = randomAddress();
+    void setSaveRetrieveAndGetBrokenSelectionRule() {
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -417,7 +415,7 @@ class RemascStorageProviderTest {
         long lowGasPrice = 1L;
         long minerFee = 21000;
 
-        RskAddress coinbase = randomAddress();
+        RskAddress coinbase = TestUtils.generateAddress("coinbase");
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
         RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)

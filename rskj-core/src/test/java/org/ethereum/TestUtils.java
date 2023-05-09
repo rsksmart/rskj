@@ -19,7 +19,6 @@
 
 package org.ethereum;
 
-import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 
@@ -35,18 +34,25 @@ import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Assertions;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.*;
 
 
@@ -55,50 +61,39 @@ public final class TestUtils {
     private TestUtils() {
     }
 
-    // Fix the Random object to make tests more deterministic. Each new Random object
-    // created gets a seed xores with system nanoTime.
-    // Alse it reduces the time to get the random in performance tests
-    static Random aRandom;
-
-    static public Random getRandom() {
-        if (aRandom == null)
-            aRandom = new Random();
-        return aRandom;
+    public static DataWord generateDataWord() {
+        return DataWord.valueOf(generateBytes(DataWord.class.hashCode(), 32));
     }
 
-    public static byte[] randomBytes(int length) {
-        byte[] result = new byte[length];
-        getRandom().nextBytes(result);
-        return result;
+    public static RskAddress generateAddress(String discriminator) {
+        return new RskAddress(generateBytes(TestUtils.class, discriminator, 20));
     }
 
-    public static short[] randomShortArray(int length) {
+    public static Keccak256 generateHash(String discriminator) {
+        return new Keccak256(generateBytes(TestUtils.class, discriminator, 32));
+    }
+
+    public static short[] randomShortArray(@Nonnull String discriminator, int length) {
         short[] result = new short[length];
-        byte[] bytes = new byte[length * 2];
-        getRandom().nextBytes(bytes);
+        byte[] bytes = generateBytes(TestUtils.class, discriminator, length * 2);
         ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(result);
         return result;
     }
 
-    public static BigInteger randomBigInteger(int maxSizeBytes) {
-        return new BigInteger(maxSizeBytes * 8, getRandom());
+    public static Long generateLong(@Nonnull String discriminator) {
+        return new Random(discriminator.hashCode()).nextLong();
     }
 
-    public static Coin randomCoin(int decimalZeros, int maxValue) {
-        return new Coin(BigInteger.TEN.pow(decimalZeros).multiply(
-                BigInteger.valueOf(getRandom().nextInt(maxValue))));
+    public static Integer generateInt(@Nonnull String discriminator){
+        return new Random(discriminator.hashCode()).nextInt();
     }
 
-    public static DataWord randomDataWord() {
-        return DataWord.valueOf(randomBytes(32));
+    public static Integer generateInt(@Nonnull String discriminator, int bound){
+        return new Random(discriminator.hashCode()).nextInt(bound);
     }
 
-    public static RskAddress randomAddress() {
-        return new RskAddress(randomBytes(20));
-    }
-
-    public static Keccak256 randomHash() {
-        return new Keccak256(randomBytes(32));
+    public static ECKey generateECKey(@Nonnull String discriminator) {
+        return new ECKey(new SecureRandom(discriminator.getBytes()));
     }
 
     public static DB createMapDB(String testDBDir) {
@@ -123,17 +118,17 @@ public final class TestUtils {
         byte[] lastHash = startParentHash;
         long lastIndex = startNumber;
 
-
+        Random random = new Random(blockFactory.hashCode());
         for (int i = 0; i < length; ++i) {
 
-            byte[] difficutly = new BigInteger(8, new Random()).toByteArray();
-            byte[] newHash = HashUtil.randomHash();
+            byte[] difficutly = new BigInteger(8, random).toByteArray();
+            byte[] newHash = generateBytes("newHash", 32);
 
             BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                     .setParentHash(lastHash)
                     .setUnclesHash(newHash)
                     .setCoinbase(RskAddress.nullAddress())
-                    .setStateRoot(HashUtil.randomHash())
+                    .setStateRoot(generateBytes("newHeader", 32))
                     .setDifficultyFromBytes(difficutly)
                     .setNumber(lastIndex)
                     .build();
@@ -164,6 +159,16 @@ public final class TestUtils {
         return StringUtils.leftPad(s, n, '0');
     }
 
+    public static InetAddress generateIpAddressV4(@Nonnull String discriminator) throws UnknownHostException {
+        byte[] bytes = TestUtils.generateBytes(discriminator, 4);
+        return InetAddress.getByAddress(bytes);
+    }
+
+    public static InetAddress generateIpAddressV6(@Nonnull String discriminator) throws UnknownHostException {
+        byte[] bytes = TestUtils.generateBytes(discriminator, 16);
+        return InetAddress.getByAddress(bytes);
+    }
+
     public static byte[] concat(byte[] first, byte[] second) {
         byte[] result = Arrays.copyOf(first, first.length + second.length);
         System.arraycopy(second, 0, result, first.length, second.length);
@@ -181,6 +186,21 @@ public final class TestUtils {
         Assertions.assertNotNull(thrownException);
         Assertions.assertEquals(thrownException.getClass(), c);
         return c.cast(thrownException);
+    }
+
+    public static <T, V> void setFinalStatic(T instance, String fieldName, V value) {
+        try {
+            Field field = getPrivateField(instance, fieldName);
+            field.setAccessible(true);
+
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+            field.set(null, value);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new WhiteboxException("Could not set private static field", e);
+        }
     }
 
     public static <T, V> void setInternalState(T instance, String fieldName, V value) {
@@ -232,9 +252,8 @@ public final class TestUtils {
     /**
      * Generates a deterministic byte[], of requested length, for the provided seed
      *
-     * @param seed Seed to generate result from
+     * @param seed   Seed to generate result from
      * @param length Expected result length
-     *
      * @return the deterministic generated byte[]
      */
     public static byte[] generateBytes(long seed, int length) {
@@ -246,14 +265,40 @@ public final class TestUtils {
     /**
      * Generates a deterministic byte[], of requested length, for the given class and discriminator
      *
-     * @param clazz Class to generate a value for. hashCode() is applied to this parameter to obtain a seed.
+     * @param clazz         Class to generate a value for. hashCode() is applied to this parameter to obtain a seed.
      * @param discriminator String to differentiate this usage from others within the same class, method, etc. hashCode() is applied to this parameter to obtain a salt.
-     * @param length Expected result length
-     *
+     * @param length        Expected result length
      * @return the deterministic generated byte[]
      */
     public static byte[] generateBytes(Class<?> clazz, String discriminator, int length) {
         long seedWithSalt = 31L * clazz.getName().hashCode() + discriminator.hashCode();
         return generateBytes(seedWithSalt, length);
+    }
+
+    public static byte[] generateBytes(@Nonnull String discriminator, @Nonnull int length) {
+        return generateBytes(TestUtils.class, discriminator, length);
+    }
+
+    public static byte[] generateBytesFromRandom(@Nonnull Random random, @Nonnull int size) {
+        byte[] byteArray = new byte[size];
+        random.nextBytes(byteArray);
+        return byteArray;
+    }
+
+    /**
+     * @return generates random peer id for the HelloMessage
+     */
+    public static byte[] generatePeerId(@Nonnull String discriminator) {
+        Random random = new SecureRandom(discriminator.getBytes());
+        byte[] peerIdBytes = new BigInteger(512, random).toByteArray();
+
+        final String peerId;
+        if (peerIdBytes.length > 64) {
+            peerId = ByteUtil.toHexString(peerIdBytes, 1, 64);
+        } else {
+            peerId = ByteUtil.toHexString(peerIdBytes);
+        }
+
+        return Hex.decode(peerId);
     }
 }

@@ -37,6 +37,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -264,11 +267,12 @@ class TransactionExecutorTest {
         TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(transaction, txIndex++, executionBlock.getCoinbase(), repository, executionBlock, 0L);
         assertTrue(txExecutor.executeTransaction());
 
+        Random random = new Random(TransactionExecutorTest.class.hashCode());
         for (int i = 0; i < MAX_CACHE_SIZE; i++) {
             if (i == MAX_CACHE_SIZE - 1) {
                 assertNotNull(blockTxSignatureCache.getSender(transaction));
             }
-            sender = new RskAddress(TestUtils.randomAddress().getBytes());
+            sender = new RskAddress(TestUtils.generateBytesFromRandom(random,20));
             mockRepositoryForAnAccountWithBalance(sender, 68000L);
             when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
 

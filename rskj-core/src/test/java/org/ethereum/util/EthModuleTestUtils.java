@@ -54,7 +54,8 @@ public class EthModuleTestUtils {
                 null,
                 null,
                 world.getBridgeSupportFactory(),
-                config.getGasEstimationCap());
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
     }
 
     public static EthModuleGasEstimation buildBasicEthModuleForGasEstimation(World world) {
@@ -72,7 +73,8 @@ public class EthModuleTestUtils {
                 null,
                 null,
                 world.getBridgeSupportFactory(),
-                config.getGasEstimationCap());
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
     }
 
     private static TransactionExecutorFactory buildBasicExecutorFactory(World world, TestSystemProperties config) {
@@ -92,10 +94,10 @@ public class EthModuleTestUtils {
                                       TransactionPool transactionPool, ReversibleTransactionExecutor reversibleTransactionExecutor,
                                       ExecutionBlockRetriever executionBlockRetriever, RepositoryLocator repositoryLocator,
                                       EthModuleWallet ethModuleWallet, EthModuleTransaction ethModuleTransaction,
-                                      BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap) {
+                                      BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap) {
             super(bridgeConstants, chainId, blockchain, transactionPool, reversibleTransactionExecutor,
                     executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
-                    bridgeSupportFactory, gasEstimationCap);
+                    bridgeSupportFactory, gasEstimationCap, gasCap);
         }
 
         private ProgramResult estimationResult;

@@ -1,0 +1,7 @@
+{
+  "NodeId": {
+    "title": "Node Id",
+    "type": "string",
+    "description": "Hex representing Node Id"
+  }
+}

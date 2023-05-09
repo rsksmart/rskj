@@ -1,0 +1,82 @@
+{
+  "PeerScoring": {
+    "title": "peer scoring",
+    "type": "object",
+    "description": "Object defining peer scoring",
+    "properties": {
+      "successfulHandshakes": {
+        "title": "successfulHandshakes",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "failedHandshakes": {
+        "title": "failedHandshakes",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "invalidNetworks": {
+        "title": "invalidNetworks",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "repeatedMessages": {
+        "title": "repeatedMessages",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "validBlocks": {
+        "title": "validBlocks",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "validTransactions": {
+        "title": "validTransactions",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "invalidBlocks": {
+        "title": "invalidBlocks",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "invalidTransactions": {
+        "title": "invalidTransactions",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "invalidMessages": {
+        "title": "invalidMessages",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "timeoutMessages": {
+        "title": "timeoutMessages",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "unexpectedMessages": {
+        "title": "unexpectedMessages",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "invalidHeader": {
+        "title": "invalidHeader",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "score": {
+        "title": "score",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "punishments": {
+        "title": "punishments",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "goodReputation": {
+        "title": "goodReputation",
+        "type": "boolean"
+      },
+      "punishedUntil": {
+        "title": "punishedUntil",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "id": {
+        "title": "peer identifier",
+        "$ref": "#/components/schemas/NodeId"
+      },
+      "type": {
+        "title": "type",
+        "type": "string",
+        "description": "Either 'node' or 'address' depending on what the system is using to score the peer"
+      }
+    }
+  }
+}

@@ -118,7 +118,7 @@ public class IndexBlooms implements Callable<Integer> {
 
         for (long blockNum = blockRange.fromBlockNumber; blockNum <= blockRange.toBlockNumber; blockNum++) {
             if (blocksBloomStore.firstNumberInRange(blockNum) == blockNum) {
-                auxiliaryBlocksBloom = new BlocksBloom();
+                auxiliaryBlocksBloom = BlocksBloom.createEmpty();
             }
 
             if (auxiliaryBlocksBloom == null) {

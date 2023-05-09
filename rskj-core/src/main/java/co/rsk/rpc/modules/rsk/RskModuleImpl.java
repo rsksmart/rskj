@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import co.rsk.util.NodeStopper;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -30,14 +31,30 @@ public class RskModuleImpl implements RskModule {
     private final ReceiptStore receiptStore;
     private final Web3InformationRetriever web3InformationRetriever;
 
+    private final NodeStopper nodeStopper;
+
     public RskModuleImpl(Blockchain blockchain,
                          BlockStore blockStore,
                          ReceiptStore receiptStore,
-                         Web3InformationRetriever web3InformationRetriever) {
+                         Web3InformationRetriever web3InformationRetriever,
+                         NodeStopper nodeStopper) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.web3InformationRetriever = web3InformationRetriever;
+        this.nodeStopper = nodeStopper;
+    }
+
+    public RskModuleImpl(Blockchain blockchain,
+                         BlockStore blockStore,
+                         ReceiptStore receiptStore,
+                         Web3InformationRetriever web3InformationRetriever) {
+        this(blockchain, blockStore, receiptStore, web3InformationRetriever, System::exit);
+    }
+
+    @Override
+    public void shutdown() {
+        nodeStopper.stop(0);
     }
 
     @Override

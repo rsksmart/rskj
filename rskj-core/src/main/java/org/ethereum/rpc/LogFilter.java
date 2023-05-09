@@ -19,7 +19,9 @@
 package org.ethereum.rpc;
 
 import java.util.Collection;
+import java.util.List;
 
+import co.rsk.rpc.netty.ExecTimeoutContext;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Bloom;
@@ -34,6 +36,8 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.util.HexUtils;
+
+import javax.annotation.Nullable;
 
 /**
  * Created by ajlopez on 17/01/2018.
@@ -68,29 +72,33 @@ public class LogFilter extends Filter {
         add(new LogFilterEvent(new LogFilterElement(logInfo, b, txIndex, tx, logIdx)));
     }
 
-    void onTransaction(Transaction tx, Block b, int txIndex) {
-        TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash().getBytes());
+    void onTransaction(Transaction tx, Block block, int txIndex, boolean reverseLogIdxOrder) {
+        TransactionInfo txInfo = blockchain.getTransactionInfoByBlock(tx, block.getHash().getBytes());
         TransactionReceipt receipt = txInfo.getReceipt();
 
         LogFilterElement[] logs = new LogFilterElement[receipt.getLogInfoList().size()];
 
         for (int i = 0; i < logs.length; i++) {
-            LogInfo logInfo = receipt.getLogInfoList().get(i);
+            int logIdx = reverseLogIdxOrder ? logs.length - i - 1 : i;
+
+            LogInfo logInfo = receipt.getLogInfoList().get(logIdx);
 
             if (addressesTopicsFilter.matchesExactly(logInfo)) {
-                onLogMatch(logInfo, b, txIndex, receipt.getTransaction(), i);
+                onLogMatch(logInfo, block, txIndex, receipt.getTransaction(), logIdx);
             }
         }
     }
 
-    void onBlock(Block b) {
-        if (addressesTopicsFilter.matchBloom(new Bloom(b.getLogBloom()))) {
-            int txIdx = 0;
+    void onBlock(Block block, boolean reverseTxOrder) {
+        if (!addressesTopicsFilter.matchBloom(new Bloom(block.getLogBloom()))) {
+            return;
+        }
 
-            for (Transaction tx : b.getTransactionsList()) {
-                onTransaction(tx, b, txIdx);
-                txIdx++;
-            }
+        List<Transaction> txs = block.getTransactionsList();
+
+        for (int i = 0; i < txs.size(); i++) {
+            int txIdx = reverseTxOrder ? txs.size() - i - 1 : i;
+            onTransaction(txs.get(txIdx), block, txIdx, reverseTxOrder);
         }
     }
 
@@ -98,10 +106,10 @@ public class LogFilter extends Filter {
     public void newBlockReceived(Block b) {
         if (this.fromLatestBlock) {
             this.clearEvents();
-            onBlock(b);
+            onBlock(b, false);
         }
         else if (this.toLatestBlock) {
-            onBlock(b);
+            onBlock(b, false);
         }
     }
 
@@ -200,7 +208,6 @@ public class LogFilter extends Filter {
     }
 
     private static void retrieveHistoricalData(FilterRequest fr, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) {
-
         if (fr.getBlockHash() != null) {
             processSingleBlockByHash(fr.getBlockHash(), blockchain, filter, blocksBloomStore);
             return;
@@ -217,10 +224,9 @@ public class LogFilter extends Filter {
             // need to add historical data
             blockTo = blockTo == null ? blockchain.getBestBlock() : blockTo;
 
-            processBlocks(blockFrom.getNumber(), blockTo.getNumber(), filter, blockchain, blocksBloomStore);
-        }
-        else if ("latest".equalsIgnoreCase(fr.getFromBlock())) {
-            filter.onBlock(blockchain.getBestBlock());
+            processBlocks(blockFrom, blockTo, filter, blockchain, blocksBloomStore);
+        } else if ("latest".equalsIgnoreCase(fr.getFromBlock())) {
+            filter.onBlock(blockchain.getBestBlock(), false);
         }
     }
 
@@ -231,47 +237,81 @@ public class LogFilter extends Filter {
             return;
         }
 
-        long blockNumber = blockByHash.getNumber();
-        processBlocks(blockNumber, blockNumber, filter, blockchain, blocksBloomStore);
+        processBlocks(blockByHash, blockByHash, filter, blockchain, blocksBloomStore);
     }
 
-    private static void processBlocks(long fromBlockNumber, long toBlockNumber, LogFilter filter, Blockchain blockchain, BlocksBloomStore blocksBloomStore) {
-        BlocksBloom auxiliaryBlocksBloom = null;
-        long bestBlockNumber = blockchain.getBestBlock().getNumber();
+    private static void processBlocks(Block fromBlock, Block toBlock, LogFilter filter, Blockchain blockchain, BlocksBloomStore blocksBloomStore) {
+        final long bestBlockNumber = blockchain.getBestBlock().getNumber();
 
-        for (long blockNum = fromBlockNumber; blockNum <= toBlockNumber; blockNum++) {
-            boolean isConfirmedBlock = blockNum <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
+        BlocksBloom bloomAccumulator = null;
 
-            if (isConfirmedBlock) {
-                if (blocksBloomStore.firstNumberInRange(blockNum) == blockNum) {
-                    if (blocksBloomStore.hasBlockNumber(blockNum)) {
-                        BlocksBloom blocksBloom = blocksBloomStore.getBlocksBloomByNumber(blockNum);
+        Block block = toBlock;
+        long blockNumber = block.getNumber();
+        Keccak256 blockHash = block.getHash();
 
-                        if (!filter.addressesTopicsFilter.matchBloom(blocksBloom.getBloom())) {
-                            blockNum = blocksBloomStore.lastNumberInRange(blockNum);
-                            continue;
-                        }
-                    }
+        boolean skippingToNumber = false;
 
-                    auxiliaryBlocksBloom = new BlocksBloom();
-                }
+        do {
+            ExecTimeoutContext.checkIfExpired();
 
-                Block block = blockchain.getBlockByNumber(blockNum);
+            boolean isConfirmedBlock = blockNumber <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
 
-                if (auxiliaryBlocksBloom != null) {
-                    auxiliaryBlocksBloom.addBlockBloom(blockNum, new Bloom(block.getLogBloom()));
-                }
-
-                if (auxiliaryBlocksBloom != null && blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
-                    blocksBloomStore.addBlocksBloom(auxiliaryBlocksBloom);
-                }
-
-                filter.onBlock(block);
+            BlocksBloom blocksBloom = isConfirmedBlock ? blocksBloomStore.getBlocksBloomByNumber(blockNumber) : null;
+            if (canSkipByBloom(blocksBloom, filter)) {
+                blockNumber = blocksBloomStore.firstNumberInRange(blockNumber) - 1;
+                skippingToNumber = true;
+                continue;
             }
-            else {
-                filter.onBlock(blockchain.getBlockByNumber(blockNum));
+
+            if (skippingToNumber) {
+                block = blockchain.getBlockByNumber(blockNumber);
+            } else {
+                // redundant on first iter as we already have the block, but it's cached so left like this for code simplicity
+                block = blockchain.getBlockByHash(blockHash.getBytes());
             }
+            skippingToNumber = false;
+
+            // reverseTxOrder=true to process txs in reverse order for later complete list reverse
+            filter.onBlock(block, true);
+
+            boolean hasBloom = blocksBloom != null;
+            if (isConfirmedBlock && !hasBloom) {
+                bloomAccumulator = addBlockBloom(block, bloomAccumulator, blocksBloomStore);
+            }
+
+            blockNumber = blockNumber - 1;
+            blockHash = block.getParentHash();
+        } while (blockNumber >= fromBlock.getNumber());
+
+        // sort in a from-to fashion after looping in reverse order
+        filter.reverseEvents();
+    }
+
+    private static boolean canSkipByBloom(BlocksBloom blocksBloom, LogFilter filter) {
+        return blocksBloom != null && !filter.addressesTopicsFilter.matchBloom(blocksBloom.getBloom());
+    }
+
+    @Nullable
+    private static BlocksBloom addBlockBloom(Block block, BlocksBloom bloomAccumulator, BlocksBloomStore blocksBloomStore) {
+        // reset bloomAccumulator on every confirmed lastInRange block to start a new bloom
+        if (blocksBloomStore.lastNumberInRange(block.getNumber()) == block.getNumber()) {
+            bloomAccumulator = BlocksBloom.createEmptyWithBackwardsAddition();
         }
+
+        // start accumulating blocks the first time a lastInRange block is reached to keep only complete blooms
+        if (bloomAccumulator == null) {
+            return null;
+        }
+
+        bloomAccumulator.addBlockBloom(block.getNumber(), new Bloom(block.getLogBloom()));
+
+        boolean firstInRange = blocksBloomStore.firstNumberInRange(block.getNumber()) == block.getNumber();
+        if (firstInRange) {
+            blocksBloomStore.addBlocksBloom(bloomAccumulator);
+            bloomAccumulator = null;
+        }
+
+        return bloomAccumulator;
     }
 
     private static boolean isBlockWord(String id) {

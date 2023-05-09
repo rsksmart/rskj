@@ -19,11 +19,10 @@
 
 package co.rsk.logfilter;
 
+import org.ethereum.TestUtils;
 import org.ethereum.core.Bloom;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.Random;
 
 /**
  * Created by ajlopez on 19/02/2020.
@@ -31,7 +30,7 @@ import java.util.Random;
 class BlocksBloomEncoderTest {
     @Test
     void encodeDecodeEmptyBlocksBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom();
+        BlocksBloom blocksBloom = BlocksBloom.createEmpty();
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
 
@@ -48,7 +47,7 @@ class BlocksBloomEncoderTest {
 
     @Test
     void encodeDecodeBlocksBloom() {
-        BlocksBloom blocksBloom = new BlocksBloom(0, 100, new Bloom());
+        BlocksBloom blocksBloom = BlocksBloom.createForExisting(0, 100, new Bloom());
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
 
@@ -64,9 +63,8 @@ class BlocksBloomEncoderTest {
 
     @Test
     void encodeDecodeBlocksBloomWithData() {
-        byte[] bloomData = new byte[Bloom.BLOOM_BYTES];
-        (new Random()).nextBytes(bloomData);
-        BlocksBloom blocksBloom = new BlocksBloom(100, 2000, new Bloom(bloomData));
+        byte[] bloomData = TestUtils.generateBytes("bloomData",Bloom.BLOOM_BYTES);
+        BlocksBloom blocksBloom = BlocksBloom.createForExisting(100, 2000, new Bloom(bloomData));
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
 

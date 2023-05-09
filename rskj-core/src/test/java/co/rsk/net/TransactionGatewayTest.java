@@ -42,7 +42,7 @@ class TransactionGatewayTest {
         this.channelManager = mock(ChannelManager.class);
         this.transactionPool = mock(TransactionPool.class);
         this.tx = mock(Transaction.class);
-        when(this.tx.getHash()).thenReturn(TestUtils.randomHash());
+        when(this.tx.getHash()).thenReturn(TestUtils.generateHash("txHash"));
 
         this.gateway = new TransactionGateway(channelManager, transactionPool);
     }

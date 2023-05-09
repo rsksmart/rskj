@@ -17,7 +17,7 @@ class BlockHeaderV0Test {
         return new BlockHeaderV0(
                 PegTestUtils.createHash3().getBytes(),
                 HashUtil.keccak256(RLP.encodeList()),
-                new RskAddress(TestUtils.randomAddress().getBytes()),
+                new RskAddress(TestUtils.generateAddress("coinbase").getBytes()),
                 HashUtil.EMPTY_TRIE_HASH,
                 "tx_trie_root".getBytes(),
                 HashUtil.EMPTY_TRIE_HASH,
@@ -46,23 +46,23 @@ class BlockHeaderV0Test {
     @Test
     void hasNullExtension() {
         short[] edges = new short[]{ 1, 2, 3, 4 };
-        BlockHeaderV0 header = createBlockHeader(TestUtils.randomBytes(256), edges);
+        BlockHeaderV0 header = createBlockHeader(TestUtils.generateBytes("bloom", 256), edges);
         Assertions.assertEquals(null, header.getExtension());
     }
 
     @Test
     void setsExtensionIsVoid() {
         short[] edges = new short[]{ 1, 2, 3, 4 };
-        BlockHeaderV0 header = createBlockHeader(TestUtils.randomBytes(256), edges);
+        BlockHeaderV0 header = createBlockHeader(TestUtils.generateBytes("bloom", 256), edges);
         byte[] bloom = Arrays.copyOf(header.getLogsBloom(), header.getLogsBloom().length);
-        header.setExtension(new BlockHeaderExtensionV1(TestUtils.randomBytes(256), edges));
+        header.setExtension(new BlockHeaderExtensionV1(TestUtils.generateBytes("bloom", 256), edges));
         Assertions.assertEquals(null, header.getExtension());
         Assertions.assertArrayEquals(bloom, header.getLogsBloom());
     }
 
     @Test
     void logsBloomFieldEncoded() {
-        byte[] bloom = TestUtils.randomBytes(256);
+        byte[] bloom = TestUtils.generateBytes("bloom", 256);
         short[] edges = new short[]{ 1, 2, 3, 4 };
         BlockHeaderV0 header = createBlockHeader(bloom, edges);
         byte[] field = header.getExtensionData();

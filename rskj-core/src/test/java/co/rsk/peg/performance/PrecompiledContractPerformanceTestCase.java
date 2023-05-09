@@ -22,6 +22,7 @@ import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.vm.VMPerformanceTest;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -30,14 +31,14 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
-import java.util.Random;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -144,7 +145,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
 
     protected static class Helper {
         public static int randomInRange(int min, int max) {
-            return new Random().nextInt(max - min + 1) + min;
+            return TestUtils.generateInt(Helper.class.toString(), max - min + 1) + min;
         }
 
         public static Transaction buildTx(ECKey sender) {
@@ -174,7 +175,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
         }
 
         public static HeightProvider getRandomHeightProvider(int max) {
-            return (int executionIndex) -> new Random().nextInt(max);
+            return (int executionIndex) -> TestUtils.generateInt(PrecompiledContractPerformanceTest.class.toString() + max, max);
         }
 
         public static HeightProvider getRandomHeightProvider(int min, int max) {

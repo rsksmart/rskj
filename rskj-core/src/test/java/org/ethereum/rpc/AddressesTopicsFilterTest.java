@@ -20,12 +20,11 @@ package org.ethereum.rpc;
 
 import co.rsk.core.RskAddress;
 import co.rsk.test.builders.AccountBuilder;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Account;
 import org.ethereum.core.Bloom;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.Random;
 
 /**
  * Created by ajlopez on 18/01/2018.
@@ -88,11 +87,7 @@ class AddressesTopicsFilterTest {
     }
 
     private static Topic createTopic() {
-        byte[] bytes = new byte[32];
-        Random random = new Random();
-
-        random.nextBytes(bytes);
-
+        byte[] bytes = TestUtils.generateBytes(AddressesTopicsFilterTest.class,"topic",32);
         return new Topic(bytes);
     }
 

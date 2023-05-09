@@ -17,23 +17,16 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.clearInvocations;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-
+import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockFork;
+import co.rsk.core.bc.BlockchainBranchComparator;
+import co.rsk.jsonrpc.JsonRpcMessage;
+import co.rsk.rpc.JsonRpcSerializer;
+import co.rsk.util.HexUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.netty.buffer.ByteBufHolder;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -47,17 +40,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
-import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockFork;
-import co.rsk.core.bc.BlockchainBranchComparator;
-import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.rpc.JsonRpcSerializer;
-import co.rsk.util.HexUtils;
-import io.netty.buffer.ByteBufHolder;
-import io.netty.channel.Channel;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class LogsNotificationEmitterTest {
     private LogsNotificationEmitter emitter;
@@ -124,14 +116,14 @@ class LogsNotificationEmitterTest {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
-        RskAddress logSender = TestUtils.randomAddress();
-        when(params.getAddresses()).thenReturn(new RskAddress[] { logSender });
+        RskAddress logSender = TestUtils.generateAddress("logSender");
+        when(params.getAddresses()).thenReturn(new RskAddress[]{logSender});
         emitter.subscribe(subscriptionId, channel, params);
 
         byte[] log1Data = {0x1};
         byte[] log2Data = {0x2};
-        Block block1 = testBlock(logInfo(logSender, log1Data));
-        Block block2 = testBlock(logInfo(log2Data));
+        Block block1 = testBlock("block1", logInfo(logSender, log1Data));
+        Block block2 = testBlock("block2", logInfo(log2Data));
 
         listener.onBestBlock(block1, null);
         verifyLogsData(log1Data);
@@ -154,8 +146,8 @@ class LogsNotificationEmitterTest {
 
         byte[] log1Data = {0x1};
         byte[] log2Data = {0x2};
-        Block block1 = testBlock(logInfo(log1Data));
-        Block block2 = testBlock(logInfo(log2Data));
+        Block block1 = testBlock("block1", logInfo(log1Data));
+        Block block2 = testBlock("block2", logInfo(log2Data));
 
         listener.onBestBlock(block1, null);
         verifyLogsData(log1Data);
@@ -219,27 +211,31 @@ class LogsNotificationEmitterTest {
     }
 
     private Block testBlock(LogInfo... logInfos) {
-        Transaction transaction = transaction();
-        Block block = block(transaction);
+        return testBlock("singleBock", logInfos);
+    }
+
+    private Block testBlock(String discriminator, LogInfo... logInfos) {
+        Transaction transaction = transaction(discriminator);
+        Block block = block(transaction, discriminator);
         withTransactionInfo(block, transaction, logInfos);
         return block;
     }
 
-    private Block block(Transaction transaction) {
+    private Block block(Transaction transaction, String discriminator) {
         Block block = mock(Block.class);
-        when(block.getHash()).thenReturn(TestUtils.randomHash());
+        when(block.getHash()).thenReturn(TestUtils.generateHash("blockHash" + discriminator));
         when(block.getTransactionsList()).thenReturn(Collections.singletonList(transaction));
         return block;
     }
 
-    private Transaction transaction() {
+    private Transaction transaction(String discriminator) {
         Transaction tx = mock(Transaction.class);
-        when(tx.getHash()).thenReturn(TestUtils.randomHash());
+        when(tx.getHash()).thenReturn(TestUtils.generateHash("txHash" + discriminator));
         return tx;
     }
 
     private LogInfo logInfo(byte... data) {
-        return logInfo(TestUtils.randomAddress(), data);
+        return logInfo(TestUtils.generateAddress(String.valueOf(data.hashCode())), data);
     }
 
     private LogInfo logInfo(final RskAddress logSource, byte... data) {

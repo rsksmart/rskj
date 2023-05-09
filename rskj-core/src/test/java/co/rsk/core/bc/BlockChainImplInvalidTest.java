@@ -35,7 +35,6 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.genesis.GenesisLoader;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -99,7 +98,7 @@ class BlockChainImplInvalidTest {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        block1.getHeader().setTransactionsRoot(HashUtil.randomHash());
+        block1.getHeader().setTransactionsRoot(TestUtils.generateBytes("root",32));
 
         Assertions.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
@@ -109,7 +108,7 @@ class BlockChainImplInvalidTest {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        TestUtils.setInternalState(block1.getHeader(), "unclesHash", HashUtil.randomHash());
+        TestUtils.setInternalState(block1.getHeader(), "unclesHash", TestUtils.generateBytes("uncleHAsh",32));
 
         Assertions.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }

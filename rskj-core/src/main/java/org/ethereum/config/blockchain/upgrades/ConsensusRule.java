@@ -81,7 +81,10 @@ public enum ConsensusRule {
     RSKIP144("rskip144"), // Parallel tx execution
     RSKIP326("rskip326"), // release_request_received event update to use base58 for btcDestinationAddress
     RSKIP353("rskip353"),
-    RSKIP357("rskip357");
+    RSKIP357("rskip357"),
+    RSKIP374("rskip374"),
+    RSKIP375("rskip375"),
+    ;
 
     private String configKey;
 

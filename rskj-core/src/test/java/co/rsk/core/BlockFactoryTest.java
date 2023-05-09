@@ -31,8 +31,9 @@ import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.junit.jupiter.api.BeforeEach;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -129,7 +130,7 @@ class BlockFactoryTest {
     void decodeBlockAfterHeight449AndRskip110On() {
         long number = 457L;
         enableRulesAt(number, RSKIP92, RSKIP110);
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
 
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData, null, null);
 
@@ -180,7 +181,7 @@ class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
         BlockHeader header = createBlockHeader(number, forkDetectionData, null, null);
 
         boolean compressed = false;
@@ -197,7 +198,7 @@ class BlockFactoryTest {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
-        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
         BlockHeader header = createBlockHeader(number, new byte[0], ummRoot, null);
 
         byte[] encodedHeader = header.getEncoded();
@@ -248,7 +249,7 @@ class BlockFactoryTest {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
-        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], ummRoot, null);
 
         byte[] encodedHeader = header.getFullEncoded();
@@ -572,7 +573,7 @@ class BlockFactoryTest {
     void decodeBlockRskip144OnRskipUMMOnAndMergedMiningFields() {
         long number = 500L;
         enableRulesAt(number, RSKIPUMM, RSKIP144);
-        short[] edges = TestUtils.randomShortArray(4);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
 
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0], edges);
 
@@ -590,7 +591,7 @@ class BlockFactoryTest {
     void decodeBlockRskip144OnRskipUMMOnAndNoMergedMiningFields() {
         long number = 500L;
         enableRulesAt(number, RSKIPUMM, RSKIP144);
-        short[] edges = TestUtils.randomShortArray(4);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
 
         BlockHeader header = createBlockHeader(number, new byte[0], new byte[0], edges);
 
@@ -608,7 +609,7 @@ class BlockFactoryTest {
     void decodeBlockRskip144OnRskipUMMOffAndMergedMiningFields() {
         long number = 500L;
         enableRulesAt(number, RSKIP144);
-        short[] edges = TestUtils.randomShortArray(4);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
 
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null, edges);
 
@@ -626,7 +627,7 @@ class BlockFactoryTest {
     void decodeBlockRskip144OnRskipUMMOffAndNoMergedMiningFields() {
         long number = 500L;
         enableRulesAt(number, RSKIP144);
-        short[] edges = TestUtils.randomShortArray(4);
+        short[] edges = TestUtils.randomShortArray("edges", 4);
 
         BlockHeader header = createBlockHeader(number, new byte[0], null, edges);
 
@@ -671,9 +672,9 @@ class BlockFactoryTest {
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
 
         return factory.getBlockHeaderBuilder()
-                .setParentHash(TestUtils.randomHash().getBytes())
+                .setParentHash(TestUtils.generateHash("parentHash"+number).getBytes())
                 .setEmptyUnclesHash()
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.generateAddress("coinbase"+number))
                 .setEmptyStateRoot()
                 .setTxTrieRoot("tx_trie_root".getBytes())
                 .setEmptyLogsBloom()
@@ -707,9 +708,9 @@ class BlockFactoryTest {
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
 
         return factory.getBlockHeaderBuilder()
-                .setParentHash(TestUtils.randomHash().getBytes())
+                .setParentHash(TestUtils.generateHash("hash"+number).getBytes())
                 .setEmptyUnclesHash()
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.generateAddress("coinbase"+number))
                 .setEmptyStateRoot()
                 .setTxTrieRoot("tx_trie_root".getBytes())
                 .setEmptyLogsBloom()

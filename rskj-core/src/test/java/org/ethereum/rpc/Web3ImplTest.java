@@ -54,6 +54,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
+import co.rsk.util.NodeStopper;
 import co.rsk.util.TestContract;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -1200,8 +1201,20 @@ class Web3ImplTest {
         Assertions.assertThrows(org.ethereum.rpc.exception.RskJsonRpcRequestException.class, () -> web3.eth_getBlockByNumber(bnOrId, false));
     }
 
+    @Test
+    void shutdownExitsWithZeroStatusCode() {
+        NodeStopper stopperMock = mock(NodeStopper.class);
+
+        Web3Impl web3 = createWeb3WithStopper(stopperMock);
+
+        web3.rsk_shutdown();
+
+        verify(stopperMock).stop(0);
+    }
+
     void testGetBlockByHash(RskSystemProperties config) {
-        World world = new World(config);
+        World world = new World();
+
         Web3Impl web3 = createWeb3(world);
 
         Block genesis = world.getBlockChain().getBestBlock();
@@ -2402,14 +2415,21 @@ class Web3ImplTest {
     private Web3Impl createWeb3() {
         return createWeb3(
                 Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
-                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache
+                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache, Web3Mocks.getMockNodeStopper()
+        );
+    }
+
+    private Web3Impl createWeb3WithStopper(NodeStopper stopper) {
+        return createWeb3(
+                Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
+                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache, stopper
         );
     }
 
     private Web3Impl createWeb3(Ethereum ethereum) {
         return createWeb3(
                 ethereum, Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
-                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache
+                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache, Web3Mocks.getMockNodeStopper()
         );
     }
 
@@ -2446,7 +2466,8 @@ class Web3ImplTest {
                 null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
-                config.getGasEstimationCap()
+                config.getGasEstimationCap(),
+                config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
@@ -2505,7 +2526,7 @@ class Web3ImplTest {
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
         return createWeb3(
                 eth, world.getBlockChain(), repositoryLocator, transactionPool, world.getBlockStore(),
-                null, new SimpleConfigCapabilities(), receiptStore, signatureCache
+                null, new SimpleConfigCapabilities(), receiptStore, signatureCache, Web3Mocks.getMockNodeStopper()
         );
     }
 
@@ -2528,7 +2549,8 @@ class Web3ImplTest {
                 Web3Mocks.getMockEthereum(), blockChain, repositoryLocator, transactionPool,
                 blockStore, blockProcessor,
                 new SimpleConfigCapabilities(), receiptStore,
-                signatureCache
+                signatureCache,
+                Web3Mocks.getMockNodeStopper()
         );
     }
 
@@ -2541,7 +2563,8 @@ class Web3ImplTest {
             BlockProcessor nodeBlockProcessor,
             ConfigCapabilities configCapabilities,
             ReceiptStore receiptStore,
-            SignatureCache signatureCache) {
+            SignatureCache signatureCache,
+            NodeStopper nodeStopper) {
         ExecutionBlockRetriever executionBlockRetriever = mock(ExecutionBlockRetriever.class);
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
@@ -2559,11 +2582,12 @@ class Web3ImplTest {
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
-                config.getGasEstimationCap()
+                config.getGasEstimationCap(),
+                config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
-        RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever);
+        RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever, nodeStopper);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -2622,7 +2646,8 @@ class Web3ImplTest {
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, null),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
-                config.getGasEstimationCap());
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever);
@@ -2956,5 +2981,27 @@ class Web3ImplTest {
         world.getBlockChain().tryToConnect(block2Canonical);
 
         return block;
+    }
+
+    @Test
+    void transactionReceiptAndResultHasTypeField() {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        Web3Impl web3 = createWeb3(world, receiptStore);
+
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
+        Account acc2 = new AccountBuilder().name("acc2").build();
+        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+        Block block1 = createCanonicalBlock(world, txs);
+
+        String hashString = tx.getHash().toHexString();
+
+        TransactionReceiptDTO txReceipt = web3.eth_getTransactionReceipt(hashString);
+        TransactionResultDTO txResult = web3.eth_getTransactionByHash(hashString);
+
+        assertEquals("0x0", txReceipt.getType());
+        assertEquals("0x0", txResult.getType());
     }
 }

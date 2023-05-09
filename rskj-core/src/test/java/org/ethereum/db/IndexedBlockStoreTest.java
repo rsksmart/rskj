@@ -385,7 +385,7 @@ public abstract class IndexedBlockStoreTest {
     @Test
     @Disabled("leveldb + mapdb, save some load, flush to disk, and check it exist")
     void test4() {
-        BigInteger bi = new BigInteger(32, new Random());
+        BigInteger bi = new BigInteger(32, new Random(IndexedBlockStoreTest.class.hashCode()));
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
 
@@ -529,7 +529,7 @@ public abstract class IndexedBlockStoreTest {
     @Test
     @Disabled("leveldb + mapdb, save part to disk part to cache, and check it exist")
     void test5() {
-        BigInteger bi = new BigInteger(32, new Random());
+        BigInteger bi = new BigInteger(32, new Random(IndexedBlockStoreTest.class.hashCode()));
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
 
@@ -688,7 +688,7 @@ public abstract class IndexedBlockStoreTest {
     @Test // leveldb + mapdb, multi branch, total difficulty test
     @Disabled("Ethereum block format")
     void test6() throws IOException {
-        BigInteger bi = new BigInteger(32, new Random());
+        BigInteger bi = new BigInteger(32, new Random(IndexedBlockStoreTest.class.hashCode()));
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
 
@@ -791,7 +791,7 @@ public abstract class IndexedBlockStoreTest {
     @Test // leveldb + mapdb, multi branch, total re-branch test
     @Disabled("Ethereum block format")
     void test7() throws IOException {
-        BigInteger bi = new BigInteger(32, new Random());
+        BigInteger bi = new BigInteger(32, new Random(IndexedBlockStoreTest.class.hashCode()));
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
 
@@ -843,7 +843,7 @@ public abstract class IndexedBlockStoreTest {
     @Test // leveldb + mapdb, multi branch, total re-branch test
     @Disabled("Ethereum block format")
     void test8() {
-        BigInteger bi = new BigInteger(32, new Random());
+        BigInteger bi = new BigInteger(32, new Random(IndexedBlockStoreTest.class.hashCode()));
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
 
@@ -976,10 +976,11 @@ public abstract class IndexedBlockStoreTest {
                 mock(KeyValueDataSource.class),
                 new HashMapBlocksIndex());
 
+        Random random = new Random(123);
         long blocksToGenerate = 14;
         for (long i = 0; i < blocksToGenerate; i++) {
             Block block = mock(Block.class);
-            Keccak256 blockHash = randomHash();
+            Keccak256 blockHash = new Keccak256(generateBytesFromRandom(random,32));
             when(block.getHash()).thenReturn(blockHash);
             when(block.getNumber()).thenReturn(i);
 

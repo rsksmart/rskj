@@ -19,19 +19,19 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
-import java.time.Instant;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-import org.mockito.Mockito;
 
 class BlockProcessResultTest {
     @Test
@@ -51,11 +51,7 @@ class BlockProcessResultTest {
         Duration processingTime = Duration.ofNanos(123_000_000L);
         Map<Keccak256, ImportResult> connections = new HashMap<>();
 
-        Random random = new Random();
-
-        byte[] bytes = new byte[32];
-        random.nextBytes(bytes);
-        Keccak256 hash = new Keccak256(bytes);
+        Keccak256 hash = TestUtils.generateHash("blockHash");
 
         connections.put(hash, ImportResult.IMPORTED_BEST);
 

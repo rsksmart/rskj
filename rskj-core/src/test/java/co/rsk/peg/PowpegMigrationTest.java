@@ -17,6 +17,7 @@ import co.rsk.trie.Trie;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -1221,7 +1222,7 @@ class PowpegMigrationTest {
     }
 
     private int getRandomInt(int min, int max) {
-        return new Random().nextInt(max - min + 1) + min;
+        return TestUtils.generateInt(PowpegMigrationTest.class.toString() + min, max - min + 1) + min;
     }
 
     private List<UTXO> createRandomUtxos(Address owner) {

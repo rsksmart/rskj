@@ -44,6 +44,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -149,6 +150,7 @@ class RemascTestRunner {
                 ),
                 builder.getConfig().isRemascEnabled());
 
+        Random random = new Random(RemascTestRunner.class.hashCode());
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;
 
@@ -165,7 +167,7 @@ class RemascTestRunner {
             }
 
             for(SiblingElement sibling : siblingsForCurrentHeight) {
-                RskAddress siblingCoinbase = TestUtils.randomAddress();
+                RskAddress siblingCoinbase = new RskAddress(TestUtils.generateBytesFromRandom(random,20));
                 Block mainchainSiblingParent = mainChainBlocks.get(sibling.getHeight() - 1);
                 Block siblingBlock = createBlock(this.genesis, mainchainSiblingParent, PegTestUtils.createHash3(),
                         siblingCoinbase, Collections.emptyList(), minerFee, this.gasPrice, (long) i, this.txValue,
@@ -178,7 +180,7 @@ class RemascTestRunner {
             }
 
             long txNonce = i;
-            RskAddress coinbase = fixedCoinbase != null ? fixedCoinbase : TestUtils.randomAddress();
+            RskAddress coinbase = fixedCoinbase != null ? fixedCoinbase : new RskAddress(TestUtils.generateBytesFromRandom(random,20));;
             Block block = createBlock(this.genesis, this.blockchain.getBestBlock(), PegTestUtils.createHash3(),
                                       coinbase, blockSiblings, minerFee, this.gasPrice, txNonce, this.txValue, this.txSigningKey, null);
             mainChainBlocks.add(block);

@@ -19,11 +19,12 @@
 package co.rsk.net.simples;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
+import org.ethereum.TestUtils;
 import org.junit.jupiter.api.Assertions;
 
 import java.net.InetAddress;
@@ -31,47 +32,37 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class SimplePeer implements Peer {
-    private static Random random = new Random();
     private List<Message> messages = new ArrayList<>();
     private NodeID nodeID;
     private InetAddress address;
 
     public SimplePeer(NodeID nodeID) {
         this.nodeID = nodeID;
-
-        try {
-            byte[] bytes = new byte[32];
-            byte[] addressBytes = new byte[4];
-            random.nextBytes(bytes);
-            this.address = InetAddress.getByAddress(addressBytes);
-        } catch (UnknownHostException e) {
-            Assertions.fail("SimplePeer creation failed");
-        }
+        initAddress();
     }
 
     public SimplePeer() {
-        byte[] bytes = new byte[32];
-        random.nextBytes(bytes);
-        this.nodeID = new NodeID(bytes);
-
-        try {
-            byte[] addressBytes = new byte[4];
-            random.nextBytes(bytes);
-            this.address = InetAddress.getByAddress(addressBytes);
-        } catch (UnknownHostException e) {
-            Assertions.fail("SimplePeer creation failed");
-        }
+        this.nodeID = new NodeID(TestUtils.generateBytes("nodeID",32));
+        initAddress();
     }
 
     public SimplePeer(byte[] nodeID) {
         this.nodeID = new NodeID(nodeID);
+    }
+
+    private void initAddress(){
+        try {
+            byte[] addressBytes = new byte[4];
+            this.address = InetAddress.getByAddress(addressBytes);
+        } catch (UnknownHostException e) {
+            Assertions.fail("SimplePeer creation failed");
+        }
     }
 
     public void sendMessage(Message message) {

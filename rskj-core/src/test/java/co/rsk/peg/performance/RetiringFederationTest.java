@@ -99,13 +99,13 @@ class RetiringFederationTest extends BridgePerformanceTestCase {
     private BridgeStorageProviderInitializer buildInitializer(boolean present) {
         final int minFederators = 10;
         final int maxFederators = 16;
-
+        Random random = new Random(RetiringFederationTest.class.hashCode());
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             if (present) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
                 retiringFederation = new Federation(
                         ActiveFederationTest.getNRandomFederationMembers(numFederators),
-                        Instant.ofEpochMilli(new Random().nextLong()),
+                        Instant.ofEpochMilli(random.nextLong()),
                         Helper.randomInRange(1, 10),
                         networkParameters
                 );

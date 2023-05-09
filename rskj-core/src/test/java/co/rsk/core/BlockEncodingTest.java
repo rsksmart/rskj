@@ -22,7 +22,6 @@ import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
@@ -68,7 +67,7 @@ class BlockEncodingTest {
         FreeBlock fblock = new FreeBlock(
                 PegTestUtils.createHash3().getBytes(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
-                TestUtils.randomAddress().getBytes(),            // coinbase
+                TestUtils.generateAddress("coinbase").getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 BigInteger.ONE.toByteArray(),    // difficulty
                 bigBadByteArray,

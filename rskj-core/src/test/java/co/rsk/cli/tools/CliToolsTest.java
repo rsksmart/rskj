@@ -35,6 +35,7 @@ import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.util.NodeStopper;
+import co.rsk.util.PreflightCheckException;
 import co.rsk.util.PreflightChecksUtils;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -65,6 +66,7 @@ import org.mockito.Mockito;
 import picocli.CommandLine;
 
 import java.io.*;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -73,7 +75,7 @@ import java.util.Optional;
 import java.util.Random;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
-import static org.ethereum.TestUtils.randomHash;
+import static org.ethereum.TestUtils.generateBytesFromRandom;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -86,6 +88,22 @@ class CliToolsTest {
     @TempDir
     private Path tempDir;
 
+    @CommandLine.Command(name = "dummy-tool", mixinStandardHelpOptions = true, version = "1.0", description = "")
+    public static class DummyTool extends PicoCliToolRskContextAware {
+        @CommandLine.Option(names = {"-t", "--target"}, description = "A dummy target", required = true)
+        private String target;
+
+        public static void main(String[] args) {
+            NodeStopper stopperMock = mock(NodeStopper.class);
+            create(MethodHandles.lookup().lookupClass()).execute(args, stopperMock);
+        }
+
+        @Override
+        public Integer call() throws IOException {
+            return 0;
+        }
+    }
+
     @Test
     void exportBlocks() throws IOException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/blocks01.txt");
@@ -93,7 +111,7 @@ class CliToolsTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        File blocksFile = tempDir.resolve( "blocks.txt").toFile();
+        File blocksFile = tempDir.resolve("blocks.txt").toFile();
         String[] args = new String[]{"--fromBlock", "0", "--toBlock", "2", "--file", blocksFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
@@ -369,20 +387,19 @@ class CliToolsTest {
 
     @Test
     void importState() throws IOException {
-        byte[] value = new byte[42];
-        Random random = new Random();
-        random.nextBytes(value);
+        byte[] value = TestUtils.generateBytes(CliToolsTest.class, "value", 42);
+
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(ByteUtil.toHexString(value));
         stringBuilder.append("\n");
 
-        File stateFile = tempDir.resolve( "state.txt").toFile();
+        File stateFile = tempDir.resolve("state.txt").toFile();
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(stateFile))) {
             writer.write(stringBuilder.toString());
         }
 
-        String databaseDir = tempDir.resolve( "db").toAbsolutePath().toString();
+        String databaseDir = tempDir.resolve("db").toAbsolutePath().toString();
         String[] args = new String[]{"--file", stateFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
@@ -408,6 +425,7 @@ class CliToolsTest {
 
     @Test
     void rewindBlocks() {
+        Random random = new Random(100);
         TestSystemProperties config = new TestSystemProperties();
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         KeyValueDataSource keyValueDataSource = new HashMapDB();
@@ -420,13 +438,14 @@ class CliToolsTest {
         int blocksToGenerate = 14;
 
         Keccak256 parentHash = Keccak256.ZERO_HASH;
+
         for (long i = 0; i < blocksToGenerate; i++) {
             Block block = mock(Block.class);
-            Keccak256 blockHash = randomHash();
+            Keccak256 blockHash = new Keccak256(generateBytesFromRandom(random, 32));
             when(block.getHash()).thenReturn(blockHash);
             when(block.getParentHash()).thenReturn(parentHash);
             when(block.getNumber()).thenReturn(i);
-            when(block.getEncoded()).thenReturn(TestUtils.randomBytes(128));
+            when(block.getEncoded()).thenReturn(generateBytesFromRandom(random, 128));
 
             indexedBlockStore.saveBlock(block, ZERO, true);
             parentHash = blockHash;
@@ -513,7 +532,7 @@ class CliToolsTest {
 
     @Test
     void dbMigrate() throws IOException {
-        File nodeIdPropsFile = tempDir.resolve( "nodeId.properties").toFile();
+        File nodeIdPropsFile = tempDir.resolve("nodeId.properties").toFile();
         File dbKindPropsFile = tempDir.resolve(KeyValueDataSource.DB_KIND_PROPERTIES_FILE).toFile();
 
         if (nodeIdPropsFile.createNewFile()) {
@@ -578,9 +597,8 @@ class CliToolsTest {
         doReturn(runner).when(ctx).getNodeRunner();
         PreflightChecksUtils preflightChecks = mock(PreflightChecksUtils.class);
         Runtime runtime = mock(Runtime.class);
-        NodeStopper nodeStopper = mock(NodeStopper.class);
 
-        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime);
 
         verify(preflightChecks, times(1)).runChecks();
         verify(runner, times(1)).run();
@@ -588,15 +606,13 @@ class CliToolsTest {
         assertEquals("stopper", threadCaptor.getValue().getName());
 
         // check unhappy flow of bootstrap node start
-        doThrow(new RuntimeException()).when(preflightChecks).runChecks();
+        doThrow(new PreflightCheckException("")).when(preflightChecks).runChecks();
 
-        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+        Assertions.assertThrows(PreflightCheckException.class, () -> StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime));
 
         verify(preflightChecks, times(2)).runChecks();
         verify(runner, times(1)).run();
         verify(runtime, times(1)).addShutdownHook(any());
-        verify(ctx, times(1)).close();
-        verify(nodeStopper, times(1)).stop(1);
     }
 
     @Test
@@ -710,7 +726,7 @@ class CliToolsTest {
 
         ClassLoader classLoader = this.getClass().getClassLoader();
         File workDir = new File(classLoader.getResource("doc/rpc").getFile());
-        File destFile = tempDir.resolve( "generated_openrpc.json").toFile();
+        File destFile = tempDir.resolve("generated_openrpc.json").toFile();
 
         GenerateOpenRpcDoc generateOpenRpcDocCliTool = new GenerateOpenRpcDoc(
                 version,
@@ -762,5 +778,10 @@ class CliToolsTest {
         dummyTool.execute(new String[]{}, () -> rskContext, stopper);
 
         verify(stopper, times(1)).stop(Mockito.eq(1));
+    }
+
+    @Test
+    void execToolIgnoringArgsShouldNotThrowNoSuchElementException() {
+        Assertions.assertDoesNotThrow(() -> DummyTool.main(new String[]{"--reset", "-t", "dummy-value"}));
     }
 }

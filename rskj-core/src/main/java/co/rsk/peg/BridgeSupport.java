@@ -1251,20 +1251,54 @@ public class BridgeSupport {
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
                 Optional.of(1)
         );
-        if (!txsWithEnoughConfirmations.isEmpty()) {
-            ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
-            // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
-            if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
-                // The release transaction may have been created prior to the Consensus Rule activation
-                // therefore it won't have a rskTxHash value, fallback to this transaction's hash
-                txsWaitingForSignatures.put(entry.getRskTxHash() == null ? rskTx.getHash() : entry.getRskTxHash(), entry.getTransaction());
-            }
-            else {
-                txsWaitingForSignatures.put(rskTx.getHash(), entry.getTransaction());
-            }
-            if(activations.isActive(ConsensusRule.RSKIP326)) {
-                eventLogger.logPegoutConfirmed(entry.getTransaction().getHash(), entry.getRskBlockNumber());
-            }
+        if (txsWithEnoughConfirmations.isEmpty()) {
+            return;
+        }
+
+        ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
+
+        Keccak256 txWaitingForSignatureKey = getTxWaitingForSignatureKey(rskTx, entry);
+        if (activations.isActive(ConsensusRule.RSKIP375)){
+            /*
+             This check aims to prevent entry overriding. Currently, we do not accept more than one peg-out
+             confirmation in the same update collections, but if in the future we do, then only one peg-out would be
+             kept in the map, since the key used in the RSK tx hash that calls updateCollections would override the
+             last one, thus resulting in losing funds. For this reason, we add this check that will alert anyone by
+             throwing an exception during the development/QA phase when any code change introduces a bug allowing two
+             entries to have the same key. So, informing on time the existence of this critical bug to pursue
+             awareness and hint to rethink the changes being added.
+             */
+            checkIfEntryExistsInTxsWaitingForSignatures(txWaitingForSignatureKey, txsWaitingForSignatures);
+        }
+
+        txsWaitingForSignatures.put(txWaitingForSignatureKey, entry.getTransaction());
+
+        if(activations.isActive(ConsensusRule.RSKIP326)) {
+            eventLogger.logPegoutConfirmed(entry.getTransaction().getHash(), entry.getRskBlockNumber());
+        }
+    }
+
+    private Keccak256 getTxWaitingForSignatureKey(Transaction rskTx, ReleaseTransactionSet.Entry entry) {
+        if (activations.isActive(ConsensusRule.RSKIP375)){
+            return entry.getRskTxHash();
+        }
+        // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
+        if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
+            // The release transaction may have been created prior to the Consensus Rule activation
+            // therefore it won't have a rskTxHash value, fallback to this transaction's hash
+            return entry.getRskTxHash() == null ? rskTx.getHash() : entry.getRskTxHash();
+        }
+        return rskTx.getHash();
+    }
+
+    private void checkIfEntryExistsInTxsWaitingForSignatures(Keccak256 rskTxHash, Map<Keccak256, BtcTransaction> txsWaitingForSignatures) {
+        if (txsWaitingForSignatures.containsKey(rskTxHash)) {
+            String message = String.format(
+                "An entry for the given rskTxHash %s already exists. Entry overriding is not allowed for txsWaitingForSignatures map.",
+                rskTxHash
+            );
+            logger.error("[checkIfEntryExistsInTxsWaitingForSignatures] {}", message);
+            throw new IllegalStateException(message);
         }
     }
 

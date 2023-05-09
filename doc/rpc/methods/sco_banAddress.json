@@ -1,0 +1,48 @@
+{
+  "name": "sco_banAddress",
+  "summary": "Adds an address (or block of addresses) to the list of banned addresses",
+  "description": "Adds an address (or block of addresses) to the list of banned addresses.",
+  "params": [
+    {
+      "required": true,
+      "name": "Address or block",
+      "schema": {
+        "$ref": "#/components/schemas/IPAddress"
+      }
+    }
+  ],
+  "result": {
+    "name": "no result",
+    "schema": {
+      "$ref": "#/components/schemas/Null"
+    }
+  },
+  "examples": [
+    {
+      "name": "address",
+      "params": [
+        {
+          "name": "address",
+          "value": "192.168.51.1"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": null
+      }
+    },
+    {
+      "name": "block",
+      "params": [
+        {
+          "name": "address",
+          "value": "192.168.51.1/16"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": null
+      }
+    }
+  ]
+}

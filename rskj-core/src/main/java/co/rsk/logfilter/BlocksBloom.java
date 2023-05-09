@@ -29,19 +29,34 @@ public class BlocksBloom {
     private long fromBlock;
     private long toBlock;
     private boolean empty;
+    private final boolean backwardsAddition;
 
-    public BlocksBloom() {
+    private BlocksBloom(boolean backwardsAddition) {
         this.bloom = new Bloom();
         this.fromBlock = 0;
         this.toBlock = 0;
         this.empty = true;
+        this.backwardsAddition = backwardsAddition;
     }
 
-    public BlocksBloom(long fromBlock, long toBlock, Bloom bloom) {
+    private BlocksBloom(long fromBlock, long toBlock, Bloom bloom) {
         this.bloom = bloom;
         this.fromBlock = fromBlock;
         this.toBlock = toBlock;
         this.empty = false;
+        this.backwardsAddition = false;
+    }
+
+    public static BlocksBloom createEmpty() {
+        return new BlocksBloom(false);
+    }
+
+    public static BlocksBloom createEmptyWithBackwardsAddition() {
+        return new BlocksBloom(true);
+    }
+
+    public static BlocksBloom createForExisting(long fromBlock, long toBlock, Bloom bloom) {
+        return new BlocksBloom(fromBlock, toBlock, bloom);
     }
 
     public Bloom getBloom() { return this.bloom; }
@@ -71,11 +86,11 @@ public class BlocksBloom {
             this.fromBlock = blockNumber;
             this.toBlock = blockNumber;
             this.empty = false;
-        }
-        else if (blockNumber == toBlock + 1) {
+        } else if (backwardsAddition && blockNumber == fromBlock - 1) {
+            this.fromBlock = blockNumber;
+        } else if (!backwardsAddition && blockNumber == toBlock + 1) {
             this.toBlock = blockNumber;
-        }
-        else {
+        } else {
             throw new UnsupportedOperationException("Block out of sequence");
         }
 

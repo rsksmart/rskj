@@ -18,23 +18,25 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import co.rsk.peg.PegTestUtils;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.util.*;
+import java.util.Map;
 
 @Disabled
 class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
@@ -94,7 +96,7 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                 }
 
 
-                Keccak256 rskTxHash = new Keccak256(HashUtil.keccak256(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
+                Keccak256 rskTxHash = TestUtils.generateHash("rskTxHash");
                 txsWaitingForSignatures.put(rskTxHash, releaseTx);
             }
         };

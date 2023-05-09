@@ -24,11 +24,18 @@ import co.rsk.net.Status;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +44,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Created by ajlopez on 5/11/2016.
@@ -349,9 +355,7 @@ class MessageTest {
     @Test
     void encodeDecodeBlockHashResponseMessage() {
         long id = 42;
-        byte[] hash = new byte[32];
-        Random random = new Random();
-        random.nextBytes(hash);
+        byte[] hash = TestUtils.generateBytes("msg",32);
 
         BlockHashResponseMessage message = new BlockHashResponseMessage(id, hash);
 
@@ -371,7 +375,7 @@ class MessageTest {
 
     @Test
     void encodeDecodeBlockHeadersRequestMessage() {
-        byte[] hash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 
         byte[] encoded = message.getEncoded();
@@ -446,7 +450,7 @@ class MessageTest {
 
     @Test
     void encodeDecodeNewBlockHashMessage() {
-        byte[] hash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
         NewBlockHashMessage message = new NewBlockHashMessage(hash);
 
         byte[] encoded = message.getEncoded();

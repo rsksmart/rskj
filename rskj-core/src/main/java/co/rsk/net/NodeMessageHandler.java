@@ -30,7 +30,6 @@ import co.rsk.net.messages.MessageVisitor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
-import co.rsk.util.FormatUtils;
 import co.rsk.util.TraceUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.HashUtil;
@@ -57,6 +56,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
+    private static final int QUEUED_TIME_TO_WARN_LIMIT = 2; // seconds
+    private static final int QUEUED_TIME_TO_WARN_PERIOD = 10; // seconds
+    private static final int PROCESSING_TIME_TO_WARN_LIMIT = 2; // seconds
 
     private final RskSystemProperties config;
     private final BlockProcessor blockProcessor;
@@ -76,6 +78,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private final MessageCounter messageCounter = new MessageCounter();
     private final int messageQueueMaxSize;
+
+    private volatile boolean recentIdleTime = false;
+    private volatile long lastIdleWarn = System.currentTimeMillis();
 
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
@@ -119,21 +124,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     public synchronized void processMessage(final Peer sender, @Nonnull final Message message) {
         messageCounter.decrement(sender);
 
-        long start = System.nanoTime();
         MessageType messageType = message.getMessageType();
         logger.trace("Process message type: {}", messageType);
 
         MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, transactionGateway, peerScoringManager, channelManager, sender);
         message.accept(mv);
-
-        long processTime = System.nanoTime() - start;
-        String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(processTime);
-
-        if ((messageType == MessageType.BLOCK_MESSAGE || messageType == MessageType.BODY_RESPONSE_MESSAGE) && BlockUtils.tooMuchProcessTime(processTime)) {
-            loggerMessageProcess.warn("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
-        } else {
-            loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
-        }
     }
 
     @Override
@@ -230,7 +225,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         return !contains;
     }
 
-    private void addMessage(Peer sender, Message message, double score, NodeMsgTraceInfo nodeMsgTraceInfo) {
+    @VisibleForTesting
+    void addMessage(Peer sender, Message message, double score, NodeMsgTraceInfo nodeMsgTraceInfo) {
         // optimistic increment() to ensure it is called before decrement() on processMessage()
         // there was a race condition on which queue got the new item and decrement() was called before increment() for the same sender
         // also, while queue implementation stays unbounded, offer() will never return false
@@ -299,9 +295,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
                 if (task != null) {
                     addTracingKeys(task.getNodeMsgTraceInfo());
-                    logger.trace("Start task");
+                    long startNanos = System.nanoTime();
+                    logStart(task);
                     this.processMessage(task.getSender(), task.getMessage());
-                    logger.trace("End task");
+                    logEnd(task, startNanos);
                 } else {
                     logger.trace("No task");
                 }
@@ -330,6 +327,39 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
     }
 
+    private void logStart(MessageTask task) {
+        MessageType messageType = task.getMessage().getMessageType();
+
+        if (task.getNodeMsgTraceInfo() == null) {
+            logger.trace("Start {} message task", messageType);
+            return;
+        }
+
+        long taskWaitTimeInSeconds = task.getNodeMsgTraceInfo().getLifeTimeInSeconds();
+        logger.trace("Start {} message task after [{}]s", messageType, taskWaitTimeInSeconds);
+
+        if (taskWaitTimeInSeconds >= QUEUED_TIME_TO_WARN_LIMIT) {
+            logger.debug("Task {} was waiting too much in the queue: [{}]s", messageType, taskWaitTimeInSeconds);
+            recentIdleTime = true;
+        }
+    }
+
+    @VisibleForTesting
+    void logEnd(MessageTask task, long startNanos) {
+        Duration processTime = Duration.ofNanos(System.nanoTime() - startNanos);
+
+        Message message = task.getMessage();
+        boolean isBlockRelated = message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.BODY_RESPONSE_MESSAGE;
+        boolean isBlockSlow = isBlockRelated && BlockUtils.tooMuchProcessTime(processTime.toNanos());
+        boolean isOtherSlow = !isBlockRelated && processTime.getSeconds() > PROCESSING_TIME_TO_WARN_LIMIT;
+
+        if (isBlockSlow || isOtherSlow) {
+            loggerMessageProcess.warn("Message[{}] processing took too much: [{}]s.", message.getMessageType(), processTime.getSeconds());
+        }
+
+        logger.trace("End {} message task after [{}]s", task.getMessage().getMessageType(), processTime.getSeconds());
+    }
+
     private void removeTracingKeys() {
         MDC.remove(TraceUtils.MSG_ID);
         MDC.remove(TraceUtils.SESSION_ID);
@@ -352,6 +382,14 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             channelManager.broadcastStatus(status);
             lastStatusSent = now;
         }
+
+        Duration timeIdleWarn = Duration.ofMillis(now - lastIdleWarn);
+        boolean isTimeToWarnIdle = recentIdleTime && timeIdleWarn.getSeconds() > QUEUED_TIME_TO_WARN_PERIOD;
+        if (isTimeToWarnIdle) {
+            logger.warn("Tasks are waiting too much in the queue: > [{}]s", QUEUED_TIME_TO_WARN_LIMIT);
+            recentIdleTime = false;
+            lastIdleWarn = now;
+        }
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -363,7 +401,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event, message, this.getClass());
     }
 
-    private static class MessageTask {
+    @VisibleForTesting
+    static class MessageTask {
         private final Peer sender;
         private final Message message;
         private final double score;
