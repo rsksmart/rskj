@@ -19,12 +19,14 @@
 package co.rsk.jmh.web3;
 
 import co.rsk.jmh.web3.e2e.HttpRpcException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthLog;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 
 public interface Web3Connector {
 
@@ -52,5 +54,15 @@ public interface Web3Connector {
 
     List<EthLog.LogResult> ethGetFilterLogs(BigInteger filterId) throws HttpRpcException;
 
+    String ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException;
+
     String rskGetRawBlockHeaderByNumber(String bnOrId) throws HttpRpcException;
+
+    JsonNode debugTraceTransaction(String txHash) throws HttpRpcException;
+
+    JsonNode debugTraceTransaction(String txHash, Map<String, String> params) throws HttpRpcException;
+
+    JsonNode debugTraceBlockByHash(String txHash) throws HttpRpcException;
+
+    JsonNode debugTraceBlockByHash(String txHash, Map<String, String> params) throws HttpRpcException;
 }
