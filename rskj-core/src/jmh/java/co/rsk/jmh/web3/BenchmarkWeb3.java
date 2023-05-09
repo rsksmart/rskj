@@ -111,7 +111,7 @@ public class BenchmarkWeb3 {
         public void tearDown() throws InterruptedException {
             // wait for blocks to be mined so nonce is updated
             int blockTimeInSec = Integer.parseInt(properties.getProperty("blockTimeInSec"));
-            long numOfBlocksToWait = 2; // wait for 2 blocks
+            long numOfBlocksToWait = Long.parseLong(properties.getProperty("sendTransaction.blocksToWait"));
             TimeUnit.SECONDS.sleep(blockTimeInSec * numOfBlocksToWait);
         }
 
