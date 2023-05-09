@@ -18,12 +18,15 @@
 
 package co.rsk.jmh.web3.e2e;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.JsonRpc2_0Web3j;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.Response;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 
 public class RskWeb3j extends JsonRpc2_0Web3j {
 
@@ -35,6 +38,22 @@ public class RskWeb3j extends JsonRpc2_0Web3j {
         return new Request<>("rsk_getRawBlockHeaderByNumber", Collections.singletonList(bnOrId), web3jService, RawBlockHeaderByNumberResponse.class);
     }
 
+    public Request<?, GenericJsonResponse> debugTraceTransaction(String txHash) {
+        return new Request<>("debug_traceTransaction", Collections.singletonList(txHash), web3jService, GenericJsonResponse.class);
+    }
+
+    public Request<?, GenericJsonResponse> debugTraceTransaction(String txHash, Map<String, String> params) {
+        return new Request<>("debug_traceTransaction", Arrays.asList(txHash, params), web3jService, GenericJsonResponse.class);
+    }
+
+    public Request<?, GenericJsonResponse> debugTraceBlockByHash(String txHash) {
+        return new Request<>("debug_traceBlockByHash", Collections.singletonList(txHash), web3jService, GenericJsonResponse.class);
+    }
+
+    public Request<?, GenericJsonResponse> debugTraceBlockByHash(String txHash, Map<String, String> params) {
+        return new Request<>("debug_traceBlockByHash", Arrays.asList(txHash, params), web3jService, GenericJsonResponse.class);
+    }
+
     public static class RawBlockHeaderByNumberResponse extends Response<String> {
 
         public String getRawHeader() {
@@ -43,4 +62,11 @@ public class RskWeb3j extends JsonRpc2_0Web3j {
 
     }
 
+    public static class GenericJsonResponse extends Response<JsonNode> {
+
+        public JsonNode getJson() {
+            return getResult();
+        }
+
+    }
 }
