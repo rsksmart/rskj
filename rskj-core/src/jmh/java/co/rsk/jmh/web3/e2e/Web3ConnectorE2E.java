@@ -19,7 +19,6 @@
 package co.rsk.jmh.web3.e2e;
 
 import co.rsk.jmh.web3.Web3Connector;
-import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.request.EthFilter;
@@ -35,10 +34,10 @@ public class Web3ConnectorE2E implements Web3Connector {
 
     private static Web3ConnectorE2E connector;
 
-    private final Web3j web3j;
+    private final RskWeb3j web3j;
 
     private Web3ConnectorE2E(String host) {
-        this.web3j = Web3j.build(new HttpService(host));
+        this.web3j = new RskWeb3j(new HttpService(host));
     }
 
     public static Web3ConnectorE2E create(String host) {
@@ -188,6 +187,18 @@ public class Web3ConnectorE2E implements Web3Connector {
             Request<?, org.web3j.protocol.core.methods.response.EthFilter> request = web3j.ethNewFilter(filter);
             org.web3j.protocol.core.methods.response.EthFilter response = request.send();
             return response.getResult();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    @Override
+    public String rskGetRawBlockHeaderByNumber(String bnOrId) throws HttpRpcException {
+        try {
+            Request<?, RskWeb3j.RawBlockHeaderByNumberResponse> request = web3j.rskGetRawBlockHeaderByNumber(bnOrId);
+            RskWeb3j.RawBlockHeaderByNumberResponse response = request.send();
+            return response.getRawHeader();
         } catch (IOException e) {
             e.printStackTrace();
             throw new HttpRpcException(e.getMessage());
