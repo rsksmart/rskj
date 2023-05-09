@@ -19,6 +19,7 @@
 package co.rsk.jmh.web3.e2e;
 
 import co.rsk.jmh.web3.Web3Connector;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.request.EthFilter;
@@ -29,6 +30,7 @@ import org.web3j.protocol.http.HttpService;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 
 public class Web3ConnectorE2E implements Web3Connector {
 
@@ -194,11 +196,71 @@ public class Web3ConnectorE2E implements Web3Connector {
     }
 
     @Override
+    public String ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException {
+        try {
+            Request<?, EthBlock> request = web3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(blockNumber), false);
+            EthBlock response = request.send();
+            return response.getResult().getHash();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    @Override
     public String rskGetRawBlockHeaderByNumber(String bnOrId) throws HttpRpcException {
         try {
             Request<?, RskWeb3j.RawBlockHeaderByNumberResponse> request = web3j.rskGetRawBlockHeaderByNumber(bnOrId);
             RskWeb3j.RawBlockHeaderByNumberResponse response = request.send();
             return response.getRawHeader();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    @Override
+    public JsonNode debugTraceTransaction(String txHash) throws HttpRpcException {
+        try {
+            Request<?, RskWeb3j.GenericJsonResponse> request = web3j.debugTraceTransaction(txHash);
+            RskWeb3j.GenericJsonResponse response = request.send();
+            return response.getJson();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    @Override
+    public JsonNode debugTraceTransaction(String txHash, Map<String, String> params) throws HttpRpcException {
+        try {
+            Request<?, RskWeb3j.GenericJsonResponse> request = web3j.debugTraceTransaction(txHash, params);
+            RskWeb3j.GenericJsonResponse response = request.send();
+            return response.getJson();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    @Override
+    public JsonNode debugTraceBlockByHash(String txHash) throws HttpRpcException {
+        try {
+            Request<?, RskWeb3j.GenericJsonResponse> request = web3j.debugTraceBlockByHash(txHash);
+            RskWeb3j.GenericJsonResponse response = request.send();
+            return response.getJson();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e.getMessage());
+        }
+    }
+
+    @Override
+    public JsonNode debugTraceBlockByHash(String txHash, Map<String, String> params) throws HttpRpcException {
+        try {
+            Request<?, RskWeb3j.GenericJsonResponse> request = web3j.debugTraceBlockByHash(txHash, params);
+            RskWeb3j.GenericJsonResponse response = request.send();
+            return response.getJson();
         } catch (IOException e) {
             e.printStackTrace();
             throw new HttpRpcException(e.getMessage());
