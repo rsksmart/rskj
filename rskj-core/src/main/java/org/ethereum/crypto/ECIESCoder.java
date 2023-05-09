@@ -35,6 +35,8 @@ import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.ConcatKDFBytesGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -47,7 +49,8 @@ import static org.ethereum.crypto.ECKey.CURVE;
 public class ECIESCoder {
 
     public static final int KEY_SIZE = 128;
-    private static final String UNEXPECTED_CIPHER_LENGTH_EXCEPTION = "Unexpected cipher length";
+    private static final String NO_DATA_WAS_READ_WARNING = "No data was read. It seems end of the stream has been reached.";
+    private static final Logger logger = LoggerFactory.getLogger("ECIESCoder");
 
     private ECIESCoder(){}
 
@@ -62,12 +65,18 @@ public class ECIESCoder {
         ByteArrayInputStream is = new ByteArrayInputStream(cipher);
         byte[] ephemBytes = new byte[2*((CURVE.getCurve().getFieldSize()+7)/8) + 1];
 
-        is.read(ephemBytes);
+        if(is.read(ephemBytes) < 0){
+            logger.warn(NO_DATA_WAS_READ_WARNING);
+        }
         ECPoint ephem = CURVE.getCurve().decodePoint(ephemBytes);
         byte[] iv = new byte[KEY_SIZE /8];
-        is.read(iv);
+        if(is.read(iv) < 0){
+            logger.warn(NO_DATA_WAS_READ_WARNING);
+        }
         byte[] cipherBody = new byte[is.available()];
-        is.read(cipherBody);
+        if(is.read(cipherBody)< 0){
+            logger.warn(NO_DATA_WAS_READ_WARNING);
+        }
 
         plaintext = decrypt(ephem, privKey, iv, cipherBody, macData);
 
