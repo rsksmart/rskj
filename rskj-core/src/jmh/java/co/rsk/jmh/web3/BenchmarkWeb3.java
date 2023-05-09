@@ -223,6 +223,11 @@ public class BenchmarkWeb3 {
         plan.web3Connector.ethEstimateGas(plan.transactionForEstimation);
     }
 
+    @Benchmark
+    public void rskGetRawBlockHeaderByNumber(BasePlan plan) throws BenchmarkWeb3Exception {
+        plan.web3Connector.rskGetRawBlockHeaderByNumber("latest");
+    }
+
     private String generateNewFilterId(BasePlan plan) throws BenchmarkWeb3Exception {
         String blockHash = (String) plan.properties.get("getLogs.blockHash");
         return Optional.ofNullable(plan.web3Connector.ethNewFilter(blockHash)).orElse("");
