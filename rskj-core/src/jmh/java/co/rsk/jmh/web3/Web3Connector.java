@@ -51,4 +51,6 @@ public interface Web3Connector {
     List<EthLog.LogResult> ethGetFilterChanges(BigInteger filterId) throws HttpRpcException;
 
     List<EthLog.LogResult> ethGetFilterLogs(BigInteger filterId) throws HttpRpcException;
+
+    String rskGetRawBlockHeaderByNumber(String bnOrId) throws HttpRpcException;
 }
