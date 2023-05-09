@@ -27,9 +27,7 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.Transaction;
 
 import java.math.BigInteger;
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 // annotated fields at class, method or field level are providing default values that can be overriden via CLI or Runner parameters
@@ -109,10 +107,61 @@ public class BenchmarkWeb3 {
 
         @TearDown(Level.Iteration)
         public void tearDown() throws InterruptedException {
-            // wait for blocks to be mined so nonce is updated
-            int blockTimeInSec = Integer.parseInt(properties.getProperty("blockTimeInSec"));
-            long numOfBlocksToWait = Long.parseLong(properties.getProperty("sendTransaction.blocksToWait"));
-            TimeUnit.SECONDS.sleep(blockTimeInSec * numOfBlocksToWait);
+            waitForBlocks(properties);
+        }
+
+    }
+
+    @State(Scope.Benchmark)
+    public static class DebugPlan extends BasePlan {
+
+        private String transactionVT;
+        private String transactionContractCreation;
+        private String transactionContractCall;
+        private String block;
+
+        private final Map<String, String> debugParams = new HashMap<>();
+
+        @Override
+        @Setup(Level.Trial)
+        public void setUp(BenchmarkParams params) throws BenchmarkWeb3Exception {
+            super.setUp(params);
+
+            String address = properties.getProperty("debug.txFrom");
+
+            long nonce = Optional.ofNullable(web3Connector.ethGetTransactionCount(address))
+                    .map(BigInteger::longValue)
+                    .orElseThrow(() -> new BenchmarkWeb3Exception("Could not get account nonce"));
+
+            transactionVT = properties.getProperty("debug.transactionVT");
+            if (transactionVT == null) {
+                transactionVT = web3Connector.ethSendTransaction(TransactionFactory.buildTransactionVT(properties, BigInteger.valueOf(nonce++)));
+            }
+
+            transactionContractCreation = properties.getProperty("debug.transactionContractCreation");
+            if (transactionContractCreation == null) {
+                transactionContractCreation = web3Connector.ethSendTransaction(TransactionFactory.buildTransactionContractCreation(properties, BigInteger.valueOf(nonce++)));
+            }
+
+            transactionContractCall = properties.getProperty("debug.transactionContractCall");
+            if (transactionContractCall == null) {
+                transactionContractCall = web3Connector.ethSendTransaction(TransactionFactory.buildTransactionContractCall(properties, BigInteger.valueOf(nonce++)));
+            }
+
+            debugParams.put("disableMemory", "true");
+            debugParams.put("disableStack", "true");
+            debugParams.put("disableStorage", "true");
+
+            try {
+                waitForBlocks(properties);
+            } catch (InterruptedException e) { // NOSONAR
+                throw new BenchmarkWeb3Exception("Error waiting for blocks: " + e.getMessage());
+            }
+
+            block = properties.getProperty("debug.block");
+            if (block == null || block.equals("null")) {
+                block = web3Connector.ethGetBlockByNumber(BigInteger.ONE); // naive, valid only for regtest mode
+            }
         }
 
     }
@@ -228,9 +277,56 @@ public class BenchmarkWeb3 {
         plan.web3Connector.rskGetRawBlockHeaderByNumber("latest");
     }
 
+    @Benchmark
+    public void debugTraceTransaction_VT(DebugPlan plan) throws BenchmarkWeb3Exception {
+        plan.web3Connector.debugTraceTransaction(plan.transactionVT);
+    }
+
+    @Benchmark
+    public void debugTraceTransaction_ContractCreation(DebugPlan plan) throws BenchmarkWeb3Exception {
+        plan.web3Connector.debugTraceTransaction(plan.transactionContractCreation);
+    }
+
+    @Benchmark
+    public void debugTraceTransaction_ContractCall(DebugPlan plan) throws BenchmarkWeb3Exception {
+        plan.web3Connector.debugTraceTransaction(plan.transactionContractCall);
+    }
+
+    @Benchmark
+    public void debugTraceTransaction_Params_VT(DebugPlan plan) throws BenchmarkWeb3Exception {
+        plan.web3Connector.debugTraceTransaction(plan.transactionVT, plan.debugParams);
+    }
+
+    @Benchmark
+    public void debugTraceTransaction_Params_ContractCreation(DebugPlan plan) throws BenchmarkWeb3Exception {
+        plan.web3Connector.debugTraceTransaction(plan.transactionContractCreation, plan.debugParams);
+    }
+
+    @Benchmark
+    public void debugTraceTransaction_Params_ContractCall(DebugPlan plan) throws BenchmarkWeb3Exception {
+        plan.web3Connector.debugTraceTransaction(plan.transactionContractCall, plan.debugParams);
+    }
+
+    @Benchmark
+    public void debugTraceBlockByHash(DebugPlan plan) throws BenchmarkWeb3Exception {
+        plan.web3Connector.debugTraceBlockByHash(plan.block);
+    }
+
+    @Benchmark
+    public void debugTraceBlockByHash_Params(DebugPlan plan) throws BenchmarkWeb3Exception {
+        plan.web3Connector.debugTraceBlockByHash(plan.block);
+    }
+
     private String generateNewFilterId(BasePlan plan) throws BenchmarkWeb3Exception {
         String blockHash = (String) plan.properties.get("getLogs.blockHash");
         return Optional.ofNullable(plan.web3Connector.ethNewFilter(blockHash)).orElse("");
+    }
+
+    private static void waitForBlocks(Properties properties) throws InterruptedException {
+        // wait for blocks to be mined so nonce is updated
+        int blockTimeInSec = Integer.parseInt(properties.getProperty("blockTimeInSec"));
+        long numOfBlocksToWait = Long.parseLong(properties.getProperty("blocksToWait"));
+        TimeUnit.SECONDS.sleep(blockTimeInSec * numOfBlocksToWait);
     }
 
     public enum Suites {
