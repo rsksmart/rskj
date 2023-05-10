@@ -18,12 +18,12 @@
 
 package co.rsk.jmh.web3.factory;
 
+import co.rsk.jmh.Config;
 import org.web3j.protocol.core.methods.request.Transaction;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 public class TransactionFactory {
 
@@ -35,7 +35,7 @@ public class TransactionFactory {
         VT, CONTRACT_CREATION, CONTRACT_CALL
     }
 
-    public static List<Transaction> createTransactions(TransactionType transactionType, Properties properties, long startingNonce, long numOfTransactions) {
+    public static List<Transaction> createTransactions(TransactionType transactionType, Config config, long startingNonce, long numOfTransactions) {
         List<Transaction> transactionList = new ArrayList<>();
 
         for (int i = 0; i < numOfTransactions; i++) {
@@ -43,13 +43,13 @@ public class TransactionFactory {
 
             switch (transactionType) {
                 case VT:
-                    transactionList.add(buildTransactionVT(properties, newNonce));
+                    transactionList.add(buildTransactionVT(config, newNonce));
                     break;
                 case CONTRACT_CALL:
-                    transactionList.add(buildTransactionContractCall(properties, newNonce));
+                    transactionList.add(buildTransactionContractCall(config, newNonce));
                     break;
                 case CONTRACT_CREATION:
-                    transactionList.add(buildTransactionContractCreation(properties, newNonce));
+                    transactionList.add(buildTransactionContractCreation(config, newNonce));
                     break;
             }
         }
@@ -57,9 +57,9 @@ public class TransactionFactory {
         return transactionList;
     }
 
-    public static Transaction buildTransactionVT(Properties properties, BigInteger nonce) {
-        String from = properties.getProperty("sendTransaction.from");
-        String to = properties.getProperty("sendTransaction.to");
+    public static Transaction buildTransactionVT(Config config, BigInteger nonce) {
+        String from = config.getString("sendTransaction.from");
+        String to = config.getString("sendTransaction.to");
 
         BigInteger gasLimit = BigInteger.valueOf(21_000);
         BigInteger gasPrice = BigInteger.valueOf(59_240_000);
@@ -67,52 +67,52 @@ public class TransactionFactory {
         BigInteger value = BigInteger.valueOf(70_000);
         String data = null;
 
-        Long chainId = Long.valueOf(properties.getProperty("chainId"));
+        Long chainId = config.getLong("chainId");
 
         return new Transaction(from, nonce, gasPrice, gasLimit, to, value, data, chainId, null, null);
     }
 
-    public static Transaction buildTransactionContractCreation(Properties properties, BigInteger nonce) {
-        String from = properties.getProperty("sendTransaction.from");
+    public static Transaction buildTransactionContractCreation(Config config, BigInteger nonce) {
+        String from = config.getString("sendTransaction.from");
         String to = null; // contract creation
 
         BigInteger gasLimit = BigInteger.valueOf(500_000);
         BigInteger gasPrice = BigInteger.valueOf(59_240_000);
 
-        String data = properties.getProperty("sendTransaction.contract.creation.data");
+        String data = config.getString("sendTransaction.contract.creation.data");
         BigInteger value = BigInteger.ZERO;
 
-        Long chainId = Long.valueOf(properties.getProperty("chainId"));
+        Long chainId = config.getLong("chainId");
 
         return new Transaction(from, nonce, gasPrice, gasLimit, to, value, data, chainId, null, null);
     }
 
-    public static Transaction buildTransactionContractCall(Properties properties, BigInteger nonce) {
-        String from = properties.getProperty("sendTransaction.from");
-        String to = properties.getProperty("sendTransaction.contract.call.to");
+    public static Transaction buildTransactionContractCall(Config config, BigInteger nonce) {
+        String from = config.getString("sendTransaction.from");
+        String to = config.getString("sendTransaction.contract.call.to");
 
         BigInteger gasLimit = BigInteger.valueOf(100_000);
         BigInteger gasPrice = BigInteger.valueOf(59_240_000);
 
-        String data = properties.getProperty("sendTransaction.contract.call.data");
+        String data = config.getString("sendTransaction.contract.call.data");
         BigInteger value = BigInteger.ZERO;
 
-        Long chainId = Long.valueOf(properties.getProperty("chainId"));
+        Long chainId = config.getLong("chainId");
 
         return new Transaction(from, nonce, gasPrice, gasLimit, to, value, data, chainId, null, null);
     }
 
-    public static Transaction buildTransactionEstimation(Properties properties, BigInteger nonce) {
-        String from = properties.getProperty("estimateGas.from");
-        String to = properties.getProperty("estimateGas.to");
+    public static Transaction buildTransactionEstimation(Config config, BigInteger nonce) {
+        String from = config.getString("estimateGas.from");
+        String to = config.getString("estimateGas.to");
 
         BigInteger gasLimit = BigInteger.valueOf(6_800_000);
         BigInteger gasPrice = BigInteger.valueOf(59_240_000);
 
-        String data = properties.getProperty("estimateGas.data");
+        String data = config.getString("estimateGas.data");
         BigInteger value = BigInteger.ZERO;
 
-        Long chainId = Long.valueOf(properties.getProperty("chainId"));
+        Long chainId = config.getLong("chainId");
 
         return new Transaction(from, nonce, gasPrice, gasLimit, to, value, data, chainId, null, null);
     }
