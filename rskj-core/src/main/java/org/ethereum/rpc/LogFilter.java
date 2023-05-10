@@ -333,9 +333,6 @@ public class LogFilter extends Filter {
         }
     }
 
-    //Builder pattern class
-    //Builder pattern class
-
     public static class LogFilterBuilder {
 
         private final AddressesTopicsFilter addressesTopicsFilter;

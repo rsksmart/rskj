@@ -30,6 +30,7 @@ import co.rsk.util.HexUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -191,6 +193,45 @@ class LogFilterTest {
         logFilter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore);
         result = logFilter.getEventsInternal();
         Assertions.assertEquals(2, result.size());
+    }
+
+    @Test
+    void testLogFilterExceptionIsThrownWhenLimitIsReached(){
+        //TODO RskTestFactory is deprecated but RskTestContext is not working in the same way
+        RskTestFactory rskTestContext = new RskTestFactory();
+        Blockchain blockchain = rskTestContext.getBlockchain();
+        BlockStore blockStore = rskTestContext.getBlockStore();
+        BlocksBloomStore blocksBloomStore = rskTestContext.getBlocksBloomStore();
+        TestUtils.setInternalState(blocksBloomStore, "noBlocks", 2);
+        TestUtils.setInternalState(blocksBloomStore, "noConfirmations", 1);
+        RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
+
+        BlockBuilder blockBuilder = new BlockBuilder(blockchain, null, blockStore)
+                .trieStore(rskTestContext.getTrieStore());
+
+        Account acc1 = new AccountBuilder(blockchain,blockStore,repositoryLocator)
+                .name("acc1").balance(Coin.valueOf(10000000)).build();
+
+        createBlocksTo(6,blockBuilder,blockchain,acc1);
+
+        FilterRequest filterRequest = new FilterRequest();
+        //fromBlock nº1
+        filterRequest.setFromBlock("0x1");
+        //to block nº5
+        filterRequest.setToBlock("0x5");
+        //Limit is 3 so exception is expected
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> {
+            LogFilter.fromFilterRequest(filterRequest, blockchain, blocksBloomStore, 3L, 0L);
+        });
+        assertEquals(-32012,ex.getCode());
+    }
+
+    private void createBlocksTo(int blockNumber, BlockBuilder blockBuilder, Blockchain blockchain, Account acc1) {
+
+        Block parent = blockchain.getBlockByNumber(0);
+        for(int i = 0; i<blockNumber; i++) {
+            parent = addBlockToBlockchain(parent, acc1, blockBuilder, blockchain);
+        }
     }
 
     public static Block addBlockToBlockchain(Block parent, Account account, BlockBuilder blockBuilder, Blockchain blockchain) {
