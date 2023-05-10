@@ -22,8 +22,8 @@ import co.rsk.jmh.web3.BenchmarkWeb3Exception;
 
 public class HttpRpcException extends BenchmarkWeb3Exception {
 
-    public HttpRpcException(String error) {
-        super(String.format("RPC call returned error: %s", error));
+    public HttpRpcException(Exception e) {
+        super(String.format("RPC call returned error: %s", e));
     }
 
 }
