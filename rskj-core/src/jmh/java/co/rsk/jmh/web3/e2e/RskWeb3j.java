@@ -55,18 +55,15 @@ public class RskWeb3j extends JsonRpc2_0Web3j {
     }
 
     public static class RawBlockHeaderByNumberResponse extends Response<String> {
-
         public String getRawHeader() {
             return getResult();
         }
-
     }
 
     public static class GenericJsonResponse extends Response<JsonNode> {
-
         public JsonNode getJson() {
             return getResult();
         }
-
     }
+
 }
