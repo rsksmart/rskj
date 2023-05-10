@@ -33,12 +33,15 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class Web3ConnectorE2E implements Web3Connector {
 
     private static Web3ConnectorE2E connector;
 
     private final RskWeb3j web3j;
+
+    private final RskTraceModuleWeb3j traceModuleWeb3j;
 
     private Web3ConnectorE2E(String host) {
         OkHttpClient httpClient = HttpService.getOkHttpClientBuilder()
@@ -48,6 +51,7 @@ public class Web3ConnectorE2E implements Web3Connector {
                 .connectTimeout(Duration.ofSeconds(120))
                 .build();
         this.web3j = new RskWeb3j(new HttpService(host, httpClient));
+        this.traceModuleWeb3j = new RskTraceModuleWeb3j(new HttpService(host));
     }
 
     public static Web3ConnectorE2E create(String host) {
@@ -181,6 +185,31 @@ public class Web3ConnectorE2E implements Web3Connector {
         }
     }
 
+    @Override
+    public RskWeb3j.GenericJsonResponse traceTransaction(String transactionHash) throws HttpRpcException {
+        return sendRequest(() -> traceModuleWeb3j.traceTransaction(transactionHash));
+    }
+
+    @Override
+    public RskWeb3j.GenericJsonResponse traceBlock(String blockHash) throws HttpRpcException {
+        return sendRequest(() -> traceModuleWeb3j.traceBlock(blockHash));
+    }
+
+    @Override
+    public RskWeb3j.GenericJsonResponse traceFilter(String fromBlock, String toBlock) throws HttpRpcException {
+        return sendRequest(() -> traceModuleWeb3j.traceFilter(new RskTraceModuleWeb3j.TraceFilterRequest(fromBlock, toBlock)));
+    }
+
+    @Override
+    public RskWeb3j.GenericJsonResponse traceFilter(String fromBlock, String toBlock, List<String> fromAddresses, List<String> toAddresses) throws HttpRpcException {
+        return sendRequest(() -> traceModuleWeb3j.traceFilter(new RskTraceModuleWeb3j.TraceFilterRequest(fromBlock, toBlock, fromAddresses, toAddresses)));
+    }
+
+    @Override
+    public RskWeb3j.GenericJsonResponse traceGet(String transactionHash, List<String> positions) throws HttpRpcException {
+        return sendRequest(() -> traceModuleWeb3j.traceGet(transactionHash, positions));
+    }
+
     private List<EthLog.LogResult> ethGetLogs(EthFilter filter) throws HttpRpcException {
         try {
             Request<?, EthLog> request = web3j.ethGetLogs(filter);
@@ -197,6 +226,16 @@ public class Web3ConnectorE2E implements Web3Connector {
             Request<?, org.web3j.protocol.core.methods.response.EthFilter> request = web3j.ethNewFilter(filter);
             org.web3j.protocol.core.methods.response.EthFilter response = request.send();
             return response.getResult();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    private RskWeb3j.GenericJsonResponse sendRequest(Supplier<Request<?, RskWeb3j.GenericJsonResponse>> supplier) throws HttpRpcException {
+        try {
+            Request<?, RskWeb3j.GenericJsonResponse> request = supplier.get();
+            return request.send();
         } catch (IOException e) {
             e.printStackTrace();
             throw new HttpRpcException(e);

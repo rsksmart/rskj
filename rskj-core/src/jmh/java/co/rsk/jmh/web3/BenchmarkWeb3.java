@@ -21,12 +21,15 @@ package co.rsk.jmh.web3;
 import co.rsk.jmh.web3.plan.BasePlan;
 import co.rsk.jmh.web3.plan.DebugPlan;
 import co.rsk.jmh.web3.plan.EstimatePlan;
+import co.rsk.jmh.web3.plan.GetLogsPlan;
 import org.openjdk.jmh.annotations.*;
 import org.web3j.protocol.core.DefaultBlockParameter;
 
 import java.math.BigInteger;
-import java.util.Optional;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 // TODO Try maybe some of the methods with org.openjdk.jmh.annotations.Measurement.batchSize, to test simultaneous calls
 
@@ -114,18 +117,14 @@ public class BenchmarkWeb3 {
 
     @Benchmark
     @Timeout(time = 30)
-    public void ethGetFilterChanges(BasePlan plan) throws BenchmarkWeb3Exception {
-        // TODO(reynold) this generateNewFilterId has to be done on the setup
-        String result = generateNewFilterId(plan);
-        plan.getWeb3Connector().ethGetFilterChanges(new BigInteger(result.replace("0x", ""), 16));
+    public void ethGetFilterChanges(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethGetFilterChanges(new BigInteger(plan.getEthFilterId().replace("0x", ""), 16));
     }
 
     @Benchmark
     @Timeout(time = 30)
-    public void ethGetFilterLogs(BasePlan plan) throws BenchmarkWeb3Exception {
-        // TODO(reynold) this generateNewFilterId has to be done on the setup
-        String result = generateNewFilterId(plan);
-        plan.getWeb3Connector().ethGetFilterLogs(new BigInteger(result.replace("0x", ""), 16));
+    public void ethGetFilterLogs(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethGetFilterLogs(new BigInteger(plan.getEthFilterId().replace("0x", ""), 16));
     }
 
     @Benchmark
@@ -186,9 +185,46 @@ public class BenchmarkWeb3 {
         plan.getWeb3Connector().debugTraceBlockByHash(plan.getBlock());
     }
 
-    private String generateNewFilterId(BasePlan plan) throws BenchmarkWeb3Exception {
-        String blockHash = plan.getConfiguration().getString("getLogs.blockHash");
-        return Optional.ofNullable(plan.getWeb3Connector().ethNewFilter(blockHash)).orElse("");
+    @Benchmark
+    public void traceTransaction(BasePlan plan) throws BenchmarkWeb3Exception {
+        String transactionHash = plan.getConfiguration().getString("trace.transactionHash");
+        plan.getWeb3Connector().traceTransaction(transactionHash);
+    }
+
+    @Benchmark
+    public void traceBlock(BasePlan plan) throws BenchmarkWeb3Exception {
+        String blockHash = plan.getConfiguration().getString("trace.blockHash");
+        plan.getWeb3Connector().traceBlock(blockHash);
+    }
+
+    @Benchmark
+    @Timeout(time = 60)
+    public void traceFilterBetweenBlockRange(BasePlan plan) throws BenchmarkWeb3Exception {
+        String fromBlock = plan.getConfiguration().getString("trace.fromBlock");
+        String toBlock = plan.getConfiguration().getString("trace.toBlock");
+        plan.getWeb3Connector().traceFilter(fromBlock, toBlock);
+    }
+
+    @Benchmark
+    @Timeout(time = 60)
+    public void traceFilterBetweenAddresses(BasePlan plan) throws BenchmarkWeb3Exception {
+        String fromBlock = plan.getConfiguration().getString("trace.fromBlock");
+        String toBlock = plan.getConfiguration().getString("trace.toBlock");
+        List<String> fromAddresses = Stream.of(
+                (plan.getConfiguration().getString("trace.fromAddresses"))
+                        .split(",")
+        ).collect(Collectors.toList());
+        List<String> toAddresses = Stream.of(
+                (plan.getConfiguration().getString("trace.toAddresses"))
+                        .split(",")
+        ).collect(Collectors.toList());
+        plan.getWeb3Connector().traceFilter(fromBlock, toBlock, fromAddresses, toAddresses);
+    }
+
+    @Benchmark
+    public void traceGet(BasePlan plan) throws BenchmarkWeb3Exception {
+        String transactionHash = plan.getConfiguration().getString("trace.transactionHash");
+        plan.getWeb3Connector().traceGet(transactionHash, Stream.of("0x0").collect(Collectors.toList()));
     }
 
     public enum Suites {
