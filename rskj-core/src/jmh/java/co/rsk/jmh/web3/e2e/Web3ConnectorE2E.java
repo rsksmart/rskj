@@ -20,6 +20,7 @@ package co.rsk.jmh.web3.e2e;
 
 import co.rsk.jmh.web3.Web3Connector;
 import com.fasterxml.jackson.databind.JsonNode;
+import okhttp3.OkHttpClient;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.request.EthFilter;
@@ -29,6 +30,7 @@ import org.web3j.protocol.http.HttpService;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +41,13 @@ public class Web3ConnectorE2E implements Web3Connector {
     private final RskWeb3j web3j;
 
     private Web3ConnectorE2E(String host) {
-        this.web3j = new RskWeb3j(new HttpService(host));
+        OkHttpClient httpClient = HttpService.getOkHttpClientBuilder()
+                .readTimeout(Duration.ofSeconds(120))
+                .writeTimeout(Duration.ofSeconds(120))
+                .callTimeout(Duration.ofSeconds(120))
+                .connectTimeout(Duration.ofSeconds(120))
+                .build();
+        this.web3j = new RskWeb3j(new HttpService(host, httpClient));
     }
 
     public static Web3ConnectorE2E create(String host) {
@@ -57,7 +65,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getTransactionCount();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -69,7 +77,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getBalance();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -81,7 +89,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getBlockNumber().toString();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -93,7 +101,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getTransactionHash();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -105,7 +113,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getTransactionHash();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -117,7 +125,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getAmountUsed();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -157,7 +165,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getLogs();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -169,7 +177,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getLogs();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -180,7 +188,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getLogs();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -191,7 +199,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getResult();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -203,7 +211,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getResult().getHash();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -215,7 +223,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getRawHeader();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -227,7 +235,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getJson();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -239,7 +247,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getJson();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -251,7 +259,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getJson();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 
@@ -263,7 +271,7 @@ public class Web3ConnectorE2E implements Web3Connector {
             return response.getJson();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HttpRpcException(e.getMessage());
+            throw new HttpRpcException(e);
         }
     }
 }

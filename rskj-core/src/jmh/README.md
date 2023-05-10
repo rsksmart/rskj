@@ -19,13 +19,18 @@ In order to use a Runner, it must be provided as a Gradle parameter with `-Pbenc
 
 Some other useful and optional parameters exist. These arguments will be read by the Runners or loaded by the Benchmarks on those fields annotated with `@Param` and matching name. These parameters are optional at Gradle task level but might be required at Runner/Benchmark level, check them for more info. Current predefined fields are:
 - **host**: specifying a _host_ for those benchmarks that require it (ie: they perform http requests)
-- **network**: specifying a _network_ (_mainet_, _testnet_, _regtest_...) for those benchmarks that require it
+- **config**: specifying a _config_ (see available options under `/resources` folder) for those benchmarks that require it
 
-Example of use: 
+Examples of use: 
 ```
-./gradlew jmh -Pbenchmark=BenchmarkWeb3E2ERunner -Phost=http://localhost:4444 -Pnetwork=regtest
+./gradlew jmh -Pbenchmark=BenchmarkWeb3E2ERunner -Phost=http://localhost:4444 -Pconfig=regtest
 ```
-This example is using the convenient Runner `co.rsk.jmh.runners.BenchmarkWeb3E2ERunner`, providing the host `http://localhost:4444` and the network `regtest` that will be used by the Runners and Benchmarks.
+Uses convenient Runner `co.rsk.jmh.runners.BenchmarkWeb3E2ERunner`, providing the host `http://localhost:4444` and the config `regtest` that will be used by the Runners and Benchmarks.
+
+```
+./gradlew jmh -Pbenchmark=BenchmarkWeb3E2ERunner -Phost=http://localhost:7777 -Pconfig=testnet-3_860_000
+```
+Uses convenient Runner `co.rsk.jmh.runners.BenchmarkWeb3E2ERunner`, providing the host `http://localhost:7777` and the config `testnet-3_860_000` that will be used by the Runners and Benchmarks.
 
 ## Using Gradle task but providing original JMH parameters 
 
