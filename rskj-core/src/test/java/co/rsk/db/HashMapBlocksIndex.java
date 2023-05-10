@@ -88,6 +88,7 @@ public class HashMapBlocksIndex implements BlocksIndex {
                 toRemove.add(bInfo);
             }
         }
+        //Here no any other update is needed as we are modifying the list stored in the map.
         blockInfoList.removeAll(toRemove);
         if (blockInfoList.isEmpty()) {
             index.remove(blockNumber);

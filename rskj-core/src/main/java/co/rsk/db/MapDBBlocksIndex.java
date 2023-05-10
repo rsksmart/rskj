@@ -131,8 +131,10 @@ public class MapDBBlocksIndex implements BlocksIndex {
         }
         blockInfoList.removeAll(toRemove);
         if (blockInfoList.isEmpty()) {
+            //We are not allowing empty list into the index
             index.remove(blockNumber);
         } else {
+            //MapDB does not support update of values in a map so we use the list as a immutable object
             index.put(blockNumber, blockInfoList);
         }
     }
