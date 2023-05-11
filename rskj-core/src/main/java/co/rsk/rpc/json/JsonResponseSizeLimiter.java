@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2023 RSK Labs Ltd.
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -56,15 +56,15 @@ public class JsonResponseSizeLimiter {
     private void addLength(JsonNode jsonNode) {
         if (jsonNode.isArray()) {
             handleArray((ArrayNode) jsonNode);
+        }  else if (jsonNode.isObject()) {
+            handleObject(jsonNode);
         } else if (jsonNode.isValueNode()) {
             handleValueNode(jsonNode);
-        } else {
-            handleObject(jsonNode);
         }
     }
 
     private void handleValueNode(JsonNode node) {
-        sumAndCheck(node.toString().getBytes().length);
+        sumAndCheck(getLength(node));
     }
 
     private void handleArray(ArrayNode arrayNode) {
@@ -91,9 +91,9 @@ public class JsonResponseSizeLimiter {
         JsonNode value = field.getValue();
         if (value.isObject() || value.isArray()) {
             addLength(value);
-            sumAndCheck(field.getKey().getBytes().length + JSON_FIELD_MISSING_SYMBOLS);
+            sumAndCheck(field.getKey().length() + JSON_FIELD_MISSING_SYMBOLS);
         } else {
-            sumAndCheck(field.getValue().toString().getBytes().length + field.getKey().getBytes().length + JSON_FIELD_MISSING_SYMBOLS);
+            sumAndCheck(getLength(value) + field.getKey().length() + JSON_FIELD_MISSING_SYMBOLS);
         }
     }
 
@@ -104,4 +104,11 @@ public class JsonResponseSizeLimiter {
         }
     }
 
+    private int getLength(JsonNode node){
+        if(node.isTextual()){
+            //+2 is related wit the missing quotes
+            return node.asText().length() + 2;
+        }
+        return node.asText().length();
+    }
 }

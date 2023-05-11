@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2023 RSK Labs Ltd.
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -55,7 +55,7 @@ class JsonResponseSizeLimiterTest {
                 new Object[]{"{\"id\":1,\"name\":\"John Doe\",\"age\":30, \"value\": true}", Integer.MAX_VALUE},
                 new Object[]{"{\"fruits\":[\"apple\",\"banana\",\"pear\"]}", Integer.MAX_VALUE},
                 new Object[]{"{\"person\":{\"name\":\"John\",\"age\":30,\"city\":\"New York\"}}", Integer.MAX_VALUE},
-                new Object[]{"{\"id\":1,\"name\":\"John Doe\",\"age\":30,\"fruits\":[\"apple\",\"banana\",\"pear\"],\"address\":{\"street\":\"Main Street\",\"number\":123}}", Integer.MAX_VALUE},
+                new Object[]{"{\"id\":1,\"name\":\"John Doe\",\"age\":30,\"fruits\":[\"apple\",1,false],\"address\":{\"street\":\"Main Street\",\"number\":123}}", Integer.MAX_VALUE},
                 new Object[]{"[\"apple\",\"banana\",\"pear\",10,true]", Integer.MAX_VALUE},
                 new Object[]{"[{\"id\":1,\"name\":\"John Doe\",\"age\":30},{\"id\":2,\"name\":\"John Smith\",\"age\":29}]", Integer.MAX_VALUE}
         );

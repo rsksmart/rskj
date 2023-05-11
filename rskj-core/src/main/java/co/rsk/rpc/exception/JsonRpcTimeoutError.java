@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2023 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,14 +22,14 @@ import co.rsk.jsonrpc.JsonRpcError;
 
 public class JsonRpcTimeoutError extends JsonRpcThrowableError {
     private static final long serialVersionUID = 950001095761882084L;
-
-    public JsonRpcTimeoutError(String  msg) {
-        super(msg);
+    private static final String MSG = "Execution has got timeout out.";
+    public JsonRpcTimeoutError() {
+        super(MSG);
     }
 
     @Override
     public JsonRpcError getErrorResponse() {
-        return new JsonRpcError(JsonRpcError.RPC_LIMIT_ERROR, getMessage());
+        return new JsonRpcError(JsonRpcError.RPC_LIMIT_ERROR, MSG);
     }
 
 }

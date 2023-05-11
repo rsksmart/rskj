@@ -76,7 +76,7 @@ public class ExecTimeoutContext implements AutoCloseable {
         long currentTimeInMillis = System.currentTimeMillis();
 
         if (currentTimeInMillis > execTimeoutContext.expirationTimeInMillis) {
-            throw new JsonRpcTimeoutError("Execution has expired.");
+            throw new JsonRpcTimeoutError();
         }
     }
 
