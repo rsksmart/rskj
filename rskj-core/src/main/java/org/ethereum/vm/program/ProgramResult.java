@@ -63,11 +63,13 @@ public class ProgramResult {
     private List<CallCreate> callCreateList;
 
     // estimateGas fields
-    private long gasNeeded = 0;
     private boolean callWithValuePerformed; // this will happen for VT CALLs
     private long gasUsedBeforeRefunds = 0; // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
 
     public void setCallWithValuePerformed(boolean callWithValuePerformed) {
+        if (this.callWithValuePerformed) {
+            return; // never reset!
+        }
         this.callWithValuePerformed = callWithValuePerformed;
     }
 
@@ -76,17 +78,21 @@ public class ProgramResult {
     }
 
     public long getEstimatedGas() {
+        long estimatedGas = gasUsed;
+
         if (callWithValuePerformed) {
-            // just need to add stipend once
-            return GasCost.add(gasNeeded, GasCost.STIPEND_CALL);
+            estimatedGas = GasCost.add(estimatedGas, GasCost.STIPEND_CALL);
         }
 
-        return gasNeeded;
+        if (deductedRefund > 0) {
+            estimatedGas = GasCost.add(estimatedGas, deductedRefund);
+        }
+
+        return estimatedGas;
     }
 
     public void spendGas(long gas) {
         gasUsed = GasCost.add(gasUsed, gas);
-        gasNeeded = Math.max(gasUsed, gasNeeded);
     }
 
     public void setRevert() {
@@ -98,8 +104,6 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
-        gasNeeded = GasCost.subtract(gasNeeded, gas);
-
         gasUsed = GasCost.subtract(gasUsed, gas);
     }
 
@@ -289,7 +293,6 @@ public class ProgramResult {
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
             addDeductedRefund(another.deductedRefund);
-            this.gasNeeded = Math.max(this.gasNeeded, another.gasNeeded);
             this.callWithValuePerformed = this.callWithValuePerformed || another.callWithValuePerformed;
         }
     }
