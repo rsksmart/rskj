@@ -19,6 +19,7 @@ package co.rsk.cli.tools;
 
 import co.rsk.NodeRunner;
 import co.rsk.RskContext;
+import co.rsk.cli.RskCli;
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.discovery.UDPServer;
@@ -54,11 +55,16 @@ public class StartBootstrap implements Callable<Integer> {
 
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
+        RskCli rskCli = new RskCli();
+        CommandLine commandLine = new CommandLine(rskCli);
+        int exitCode = commandLine.execute(args);
+        if (exitCode != 0 ) {
+            System.exit(exitCode);
+        }
 
         RskContext ctx = null;
         try {
-            ctx = new BootstrapRskContext(args);
-
+            ctx = new BootstrapRskContext(rskCli);
             new CommandLine(new StartBootstrap(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
         } catch (Exception e) {
             logger.error("Main thread of RSK bootstrap node crashed", e);
@@ -104,8 +110,8 @@ public class StartBootstrap implements Callable<Integer> {
      */
     static class BootstrapRskContext extends RskContext {
 
-        BootstrapRskContext(String[] args) {
-            super(args, true);
+        BootstrapRskContext(RskCli rskCli) {
+            super(rskCli);
         }
 
         @Override
