@@ -18,12 +18,14 @@
 package co.rsk.cli;
 
 import co.rsk.RskContext;
+import co.rsk.cli.exceptions.PicocliBadResultException;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.Factory;
 import co.rsk.util.NodeStopper;
 import org.ethereum.datasource.KeyValueDataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -60,7 +62,13 @@ public abstract class CliToolRskContextAware {
     }
 
     public void execute(@Nonnull String[] args, @Nonnull NodeStopper nodeStopper) {
-        execute(args, () -> new RskContext(args, true), nodeStopper);
+        RskCli rskCli = new RskCli();
+        CommandLine commandLine = new CommandLine(rskCli);
+        int exitCode = commandLine.execute(args);
+        if (exitCode != 0) {
+            throw new PicocliBadResultException(exitCode);
+        }
+        execute(args, () -> new RskContext(rskCli), nodeStopper);
     }
 
     public void execute(@Nonnull String[] args, @Nonnull Factory<RskContext> contextFactory, @Nonnull NodeStopper nodeStopper) {

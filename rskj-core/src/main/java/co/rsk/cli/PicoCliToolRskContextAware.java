@@ -36,4 +36,5 @@ public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware 
             throw new PicocliBadResultException(result);
         }
     }
+    // probablemente lo elimine (lo estoy haciendo por mi lado antes)
 }
