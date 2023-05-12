@@ -227,7 +227,7 @@ public class BridgeSupportTestIntegration {
             track,
             null,
             new Context(bridgeConstants.getBtcParams()),
-            new FederationSupport(bridgeConstants, provider, null),
+            new FederationSupport(bridgeConstants, provider, null, activationsBeforeForks),
             btcBlockStoreFactory,
             mock(ActivationConfig.ForBlock.class),
             signatureCache
@@ -3750,8 +3750,9 @@ public class BridgeSupportTestIntegration {
         when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         when(constantsMock.getFederationChangeAuthorizer()).thenReturn(bridgeConstants.getFederationChangeAuthorizer());
 
-        long federationActivationAge = bridgeConstants.getFederationActivationAge();
-        when(constantsMock.getFederationActivationAge()).thenReturn(federationActivationAge);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
+        when(constantsMock.getFederationActivationAge(any())).thenReturn(federationActivationAge);
 
         class FederationHolder {
             private PendingFederation pendingFederation;
@@ -3968,7 +3969,7 @@ public class BridgeSupportTestIntegration {
                 track,
                 executionBlock,
                 new Context(constants.getBtcParams()),
-                new FederationSupport(constants, provider, executionBlock),
+                new FederationSupport(constants, provider, executionBlock, activations),
                 blockStoreFactory,
                 activations,
                 signatureCache

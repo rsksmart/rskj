@@ -2109,6 +2109,7 @@ class BridgeSupportTest {
     private static Stream<BridgeConstants> provideBridgeConstants() {
         return Stream.of(BridgeRegTestConstants.getInstance(), BridgeTestNetConstants.getInstance(), BridgeMainNetConstants.getInstance());
     }
+
     @ParameterizedTest
     @MethodSource("provideBridgeConstants")
     void rskTxWaitingForSignature_uses_pegoutCreation_rskTxHash_after_rskip_375_activation(BridgeConstants bridgeConstants) throws IOException {
@@ -6677,7 +6678,7 @@ class BridgeSupportTest {
         Block block = mock(Block.class);
         // Set block right after the migration should start
         long blockNumber = newFed.getCreationBlockNumber() +
-            bridgeConstantsRegtest.getFederationActivationAge() +
+            bridgeConstantsRegtest.getFederationActivationAge(activations) +
             bridgeConstantsRegtest.getFundsMigrationAgeSinceActivationBegin() +
             1;
         when(block.getNumber()).thenReturn(blockNumber);
@@ -7382,7 +7383,7 @@ class BridgeSupportTest {
             track,
             executionBlock,
             new Context(constants.getBtcParams()),
-            new FederationSupport(constants, provider, executionBlock),
+            new FederationSupport(constants, provider, executionBlock, activations),
             blockStoreFactory,
             activations,
             signatureCache

@@ -104,7 +104,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
             AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
-        federationActivationAge = 10L;
+        federationActivationAgeLegacy = 10L;
+        federationActivationAge = 20L;
 
         fundsMigrationAgeSinceActivationBegin = 15L;
         fundsMigrationAgeSinceActivationEnd = 100L;
