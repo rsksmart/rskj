@@ -184,6 +184,9 @@ public class EthModule
             estimatedGas += GasCost.STIPEND_CALL;
         }
 
+        // ensure not returning blockGasLimit+stipend
+        estimatedGas = Math.min(estimatedGas, gasEstimationCap);
+
         return HexUtils.toQuantityJsonHex(estimatedGas);
     }
 
