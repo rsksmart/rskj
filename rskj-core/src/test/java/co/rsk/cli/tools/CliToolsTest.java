@@ -30,10 +30,16 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.test.World;
+import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.NodeStopper;
 import co.rsk.util.PreflightCheckException;
 import co.rsk.util.PreflightChecksUtils;
@@ -50,10 +56,8 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.datasource.KeyValueDataSourceUtils;
+import org.ethereum.db.*;
 import org.ethereum.util.ByteUtil;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
@@ -69,8 +73,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.generateBytesFromRandom;
@@ -384,7 +390,7 @@ class CliToolsTest {
         importStateCliTool.execute(args, () -> rskContext, stopper);
 
         byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
-        KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
+        KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
         byte[] result = trieDB.get(key);
         trieDB.close();
 
@@ -504,7 +510,7 @@ class CliToolsTest {
     @Test
     void dbMigrate() throws IOException {
         File nodeIdPropsFile = tempDir.resolve("nodeId.properties").toFile();
-        File dbKindPropsFile = tempDir.resolve(KeyValueDataSource.DB_KIND_PROPERTIES_FILE).toFile();
+        File dbKindPropsFile = tempDir.resolve(KeyValueDataSourceUtils.DB_KIND_PROPERTIES_FILE).toFile();
 
         if (nodeIdPropsFile.createNewFile()) {
             FileWriter myWriter = new FileWriter(nodeIdPropsFile);
@@ -754,5 +760,374 @@ class CliToolsTest {
     @Test
     void execToolIgnoringArgsShouldNotThrowNoSuchElementException() {
         Assertions.assertDoesNotThrow(() -> DummyTool.main(new String[]{"--reset", "-t", "dummy-value"}));
+    }
+
+    @Test
+    void test_migrateState_migrateCmd() throws IOException, DslProcessorException {
+        RskSystemProperties rskSystemProperties = new TestSystemProperties();
+        rskSystemProperties.setDataBaseDir(tempDir.toString());
+
+        RskContext ctx = new RskContext(new String[]{"-Xdatabase.dir=" + tempDir.toString()});
+
+        World world = new World(
+                new BlockChainBuilder()
+                        .setConfig(rskSystemProperties)
+                        .setTrieStore(ctx.getTrieStore())
+        );
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+
+        processor.processCommands(parser);
+
+        ctx.close();
+
+        Path stateFilePath = tempDir.resolve("unitrie");
+        Path dstStateFilePath = tempDir.resolve("dst_unitrie");
+        File stateFile = stateFilePath.toFile();
+        File dstStateFile = dstStateFilePath.toFile();
+
+        KeyValueDataSource dsState = KeyValueDataSourceUtils.makeDataSource(stateFilePath, DbKind.LEVEL_DB);
+        Set<ByteArrayWrapper> dsStateKeys = dsState.keys();
+        ByteArrayWrapper root = dsStateKeys.iterator().next();
+        dsState.close();
+
+        MigrateState.main(new String[]{
+                "--command",
+                "migrate",
+                "--root",
+                root.toString(),
+                "--sourceFilePath",
+                stateFile.getAbsolutePath(),
+                "--sourceFileKind",
+                DbKind.LEVEL_DB.name(),
+                "--destinationFilePath",
+                dstStateFile.getAbsolutePath(),
+                "--destinationFileKind",
+                DbKind.LEVEL_DB.name()
+        });
+
+        KeyValueDataSource dsDstState = KeyValueDataSourceUtils.makeDataSource(dstStateFilePath, DbKind.LEVEL_DB);
+        dsState = KeyValueDataSourceUtils.makeDataSource(stateFilePath, DbKind.LEVEL_DB);
+        dsStateKeys = dsState.keys();
+
+        for (ByteArrayWrapper key : dsDstState.keys()) {
+            Assertions.assertTrue(dsStateKeys.contains(key));
+        }
+
+        dsDstState.close();
+        dsState.close();
+    }
+
+    @Test
+    void test_migrateState_copyCmd() throws IOException, DslProcessorException {
+        RskSystemProperties rskSystemProperties = new TestSystemProperties();
+        rskSystemProperties.setDataBaseDir(tempDir.toString());
+
+        RskContext ctx = new RskContext(new String[]{"-Xdatabase.dir=" + tempDir.toString()});
+
+        World world = new World(
+                new BlockChainBuilder()
+                        .setConfig(rskSystemProperties)
+                        .setTrieStore(ctx.getTrieStore())
+        );
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+
+        processor.processCommands(parser);
+
+        ctx.close();
+
+        Path stateFilePath = tempDir.resolve("unitrie");
+        Path dstStateFilePath = tempDir.resolve("dst_unitrie");
+        File stateFile = stateFilePath.toFile();
+        File dstStateFile = dstStateFilePath.toFile();
+
+        MigrateState.main(new String[]{
+                "--command",
+                "copy",
+                "--root",
+                "all",
+                "--sourceFilePath",
+                stateFile.getAbsolutePath(),
+                "--sourceFileKind",
+                DbKind.LEVEL_DB.name(),
+                "--destinationFilePath",
+                dstStateFile.getAbsolutePath(),
+                "--destinationFileKind",
+                DbKind.LEVEL_DB.name()
+        });
+
+        KeyValueDataSource dsDstState = KeyValueDataSourceUtils.makeDataSource(dstStateFilePath, DbKind.LEVEL_DB);
+        KeyValueDataSource dsState = KeyValueDataSourceUtils.makeDataSource(stateFilePath, DbKind.LEVEL_DB);
+
+        Assertions.assertEquals(dsDstState.keys(), dsState.keys());
+
+        dsDstState.close();
+        dsState.close();
+    }
+
+    @Test
+    void test_migrateState_checkCmd() throws IOException, DslProcessorException {
+        RskSystemProperties rskSystemProperties = new TestSystemProperties();
+        rskSystemProperties.setDataBaseDir(tempDir.toString());
+
+        RskContext ctx = new RskContext(new String[]{"-Xdatabase.dir=" + tempDir.toString()});
+
+        World world = new World(
+                new BlockChainBuilder()
+                        .setConfig(rskSystemProperties)
+                        .setTrieStore(ctx.getTrieStore())
+        );
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+
+        processor.processCommands(parser);
+
+        ctx.close();
+
+        Path stateFilePath = tempDir.resolve("unitrie");
+        File stateFile = stateFilePath.toFile();
+
+        KeyValueDataSource dsState = KeyValueDataSourceUtils.makeDataSource(stateFilePath, DbKind.LEVEL_DB);
+        Set<ByteArrayWrapper> dsStateKeys = dsState.keys();
+        ByteArrayWrapper root = dsStateKeys.iterator().next();
+        dsState.close();
+
+        Assertions.assertDoesNotThrow(() -> MigrateState.main(new String[]{
+                "--command",
+                "check",
+                "--root",
+                root.toString(),
+                "--sourceFilePath",
+                stateFile.getAbsolutePath(),
+                "--sourceFileKind",
+                DbKind.LEVEL_DB.name(),
+        }));
+    }
+
+    @Test
+    void test_migrateState_fixCmd() throws IOException, DslProcessorException {
+        RskSystemProperties rskSystemProperties = new TestSystemProperties();
+        rskSystemProperties.setDataBaseDir(tempDir.toString());
+
+        RskContext ctx = new RskContext(new String[]{"-Xdatabase.dir=" + tempDir.toString()});
+
+        World world = new World(
+                new BlockChainBuilder()
+                        .setConfig(rskSystemProperties)
+                        .setTrieStore(ctx.getTrieStore())
+        );
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+
+        processor.processCommands(parser);
+
+        ctx.close();
+
+        Path stateFilePath = tempDir.resolve("unitrie");
+        Path dstStateFilePath = tempDir.resolve("dst_unitrie");
+        File dstStateFile = dstStateFilePath.toFile();
+        File stateFile = stateFilePath.toFile();
+
+        KeyValueDataSource dsState = KeyValueDataSourceUtils.makeDataSource(stateFilePath, DbKind.LEVEL_DB);
+        Set<ByteArrayWrapper> dsStateKeys = dsState.keys();
+        Iterator<ByteArrayWrapper> dsIterator = dsStateKeys.iterator();
+        ByteArrayWrapper root = dsIterator.next();
+        dsState.close();
+
+        MigrateState.main(new String[]{
+                "--command",
+                "copy",
+                "--root",
+                "all",
+                "--sourceFilePath",
+                stateFile.getAbsolutePath(),
+                "--sourceFileKind",
+                DbKind.LEVEL_DB.name(),
+                "--destinationFilePath",
+                dstStateFile.getAbsolutePath(),
+                "--destinationFileKind",
+                DbKind.LEVEL_DB.name()
+        });
+
+        KeyValueDataSource dsDstState = KeyValueDataSourceUtils.makeDataSource(dstStateFilePath, DbKind.LEVEL_DB);
+        TrieStore trieStore = new TrieStoreImpl(dsDstState);
+        trieStore.save(new Trie());
+        trieStore.flush();
+        trieStore.dispose();
+        dsDstState.close();
+
+        MigrateState.main(new String[]{
+                "--command",
+                "fix",
+                "--root",
+                root.toString(),
+                "--sourceFilePath",
+                stateFile.getAbsolutePath(),
+                "--sourceFileKind",
+                DbKind.LEVEL_DB.name(),
+                "--destinationFilePath",
+                dstStateFile.getAbsolutePath(),
+                "--destinationFileKind",
+                DbKind.LEVEL_DB.name()
+        });
+
+        dsDstState = KeyValueDataSourceUtils.makeDataSource(dstStateFilePath, DbKind.LEVEL_DB);
+        dsState = KeyValueDataSourceUtils.makeDataSource(stateFilePath, DbKind.LEVEL_DB);
+
+        Assertions.assertEquals(dsDstState.keys(), dsState.keys());
+
+        dsState.close();
+        dsDstState.close();
+    }
+
+    @Test
+    void test_migrateState_migrate2Cmd() throws IOException, DslProcessorException {
+        RskSystemProperties rskSystemProperties = new TestSystemProperties();
+        rskSystemProperties.setDataBaseDir(tempDir.toString());
+
+        RskContext ctx = new RskContext(new String[]{"-Xdatabase.dir=" + tempDir.toString()});
+
+        World world = new World(
+                new BlockChainBuilder()
+                        .setConfig(rskSystemProperties)
+                        .setTrieStore(ctx.getTrieStore())
+        );
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+
+        processor.processCommands(parser);
+
+        ctx.close();
+
+        Path stateFilePath = tempDir.resolve("unitrie");
+        Path dstStateFilePath = tempDir.resolve("dst_unitrie");
+        Path cacheStateFilePath = tempDir.resolve("cache_unitrie");
+        File cacheStateFile = cacheStateFilePath.toFile();
+        File dstStateFile = dstStateFilePath.toFile();
+        File stateFile = stateFilePath.toFile();
+
+        KeyValueDataSource dsState = KeyValueDataSourceUtils.makeDataSource(stateFilePath, DbKind.LEVEL_DB);
+        Set<ByteArrayWrapper> dsStateKeys = dsState.keys();
+        Iterator<ByteArrayWrapper> dsIterator = dsStateKeys.iterator();
+        ByteArrayWrapper root = dsIterator.next();
+        dsState.close();
+
+        MigrateState.main(new String[]{
+                "--command",
+                "migrate2",
+                "--root",
+                root.toString(),
+                "--sourceFilePath",
+                stateFile.getAbsolutePath(),
+                "--sourceFileKind",
+                DbKind.LEVEL_DB.name(),
+                "--destinationFilePath",
+                dstStateFile.getAbsolutePath(),
+                "--destinationFileKind",
+                DbKind.LEVEL_DB.name(),
+                "--cacheFilePath",
+                cacheStateFile.getAbsolutePath(),
+                "--cacheFileKind",
+                DbKind.LEVEL_DB.name()
+        });
+
+        KeyValueDataSource dsDstState = KeyValueDataSourceUtils.makeDataSource(dstStateFilePath, DbKind.LEVEL_DB);
+        dsState = KeyValueDataSourceUtils.makeDataSource(stateFilePath, DbKind.LEVEL_DB);
+        dsStateKeys = dsState.keys();
+
+        for (ByteArrayWrapper key : dsDstState.keys()) {
+            Assertions.assertTrue(dsStateKeys.contains(key));
+        }
+
+        dsDstState.close();
+        dsState.close();
+    }
+
+    @Test
+    void test_migrateState_valueExistsCmd() throws IOException, DslProcessorException {
+        RskSystemProperties rskSystemProperties = new TestSystemProperties();
+        rskSystemProperties.setDataBaseDir(tempDir.toString());
+
+        RskContext ctx = new RskContext(new String[]{"-Xdatabase.dir=" + tempDir.toString()});
+
+        World world = new World(
+                new BlockChainBuilder()
+                        .setConfig(rskSystemProperties)
+                        .setTrieStore(ctx.getTrieStore())
+        );
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+
+        processor.processCommands(parser);
+
+        ctx.close();
+
+        Path stateFilePath = tempDir.resolve("unitrie");
+        File stateFile = stateFilePath.toFile();
+
+        KeyValueDataSource dsState = KeyValueDataSourceUtils.makeDataSource(stateFilePath, DbKind.LEVEL_DB);
+        Set<ByteArrayWrapper> dsStateKeys = dsState.keys();
+        Iterator<ByteArrayWrapper> dsIterator = dsStateKeys.iterator();
+        ByteArrayWrapper root = dsIterator.next();
+        dsState.close();
+
+        Assertions.assertDoesNotThrow(() -> MigrateState.main(new String[]{
+                "--command",
+                "VALUEEXISTS",
+                "--key",
+                root.toString(),
+                "--sourceFilePath",
+                stateFile.getAbsolutePath(),
+                "--sourceFileKind",
+                DbKind.LEVEL_DB.name()
+        }));
+    }
+
+    @Test
+    void test_migrateState_nodeExistsCmd() throws IOException, DslProcessorException {
+        RskSystemProperties rskSystemProperties = new TestSystemProperties();
+        rskSystemProperties.setDataBaseDir(tempDir.toString());
+
+        RskContext ctx = new RskContext(new String[]{"-Xdatabase.dir=" + tempDir.toString()});
+
+        World world = new World(
+                new BlockChainBuilder()
+                        .setConfig(rskSystemProperties)
+                        .setTrieStore(ctx.getTrieStore())
+        );
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+
+        processor.processCommands(parser);
+
+        ctx.close();
+
+        Path stateFilePath = tempDir.resolve("unitrie");
+        File stateFile = stateFilePath.toFile();
+
+        KeyValueDataSource dsState = KeyValueDataSourceUtils.makeDataSource(stateFilePath, DbKind.LEVEL_DB);
+        Set<ByteArrayWrapper> dsStateKeys = dsState.keys();
+        Iterator<ByteArrayWrapper> dsIterator = dsStateKeys.iterator();
+        ByteArrayWrapper root = dsIterator.next();
+        dsState.close();
+
+        Assertions.assertDoesNotThrow(() -> MigrateState.main(new String[]{
+                "--command",
+                "NODEEXISTS",
+                "--key",
+                root.toString(),
+                "--sourceFilePath",
+                stateFile.getAbsolutePath(),
+                "--sourceFileKind",
+                DbKind.LEVEL_DB.name()
+        }));
     }
 }

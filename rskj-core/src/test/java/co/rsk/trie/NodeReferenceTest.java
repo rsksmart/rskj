@@ -29,6 +29,32 @@ import static org.mockito.Mockito.*;
 class NodeReferenceTest {
 
     @Test
+    public void testGetNode_lazyNodeIsNullLazyHashIsNotNullAndTrieStoreCanRetrieveNodeButKeepDetached_returnsNode() {
+        // Given
+        Keccak256 lazyHashMock = mock(Keccak256.class);
+        byte[] bytesMock = new byte[0];
+        doReturn(bytesMock).when(lazyHashMock).getBytes();
+
+        Trie trieMock = mock(Trie.class);
+
+        TrieStoreImpl trieStoreMock = mock(TrieStoreImpl.class);
+        doReturn(Optional.of(trieMock)).when(trieStoreMock).retrieve(bytesMock);
+
+        NodeReference nodeReference = new NodeReference(trieStoreMock, null, lazyHashMock);
+
+        // When
+        Optional<Trie> result = nodeReference.getNodeDetached();
+
+        // Then
+        assertTrue(result.isPresent());
+        assertFalse(nodeReference.wasLoaded());
+        assertEquals(trieMock, result.get());
+
+        verify(lazyHashMock, times(1)).getBytes();
+        verify(trieStoreMock, times(1)).retrieve(bytesMock);
+    }
+
+    @Test
     void testGetNode_lazyNodeIsNotNull_returnsOptionalOfLazyNode() {
         // Given
         Trie lazyNodeMock = mock(Trie.class);
@@ -75,6 +101,7 @@ class NodeReferenceTest {
         // Then
         assertTrue(result.isPresent());
         assertEquals(trieMock, result.get());
+        assertTrue(nodeReference.wasLoaded());
 
         verify(lazyHashMock, times(1)).getBytes();
         verify(trieStoreMock, times(1)).retrieve(bytesMock);
