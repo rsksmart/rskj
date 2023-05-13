@@ -77,7 +77,7 @@ class RskContextTest {
 
     @Test
     void getCliArgsSmokeTest() {
-        RskTestContext devnetContext = new RskTestContext(new String[] { "--devnet" });
+        RskTestContext devnetContext = new RskTestContext(new String[]{"--devnet"});
         MatcherAssert.assertThat(devnetContext.getCliArgs(), notNullValue());
         MatcherAssert.assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
         devnetContext.close();
@@ -101,7 +101,12 @@ class RskContextTest {
 
         TrieStore trieStore = rskContext.getTrieStore();
         MatcherAssert.assertThat(trieStore, is(instanceOf(TrieStoreImpl.class)));
-        MatcherAssert.assertThat(Files.list(databaseDir.toPath()).count(), is(1L));
+        MatcherAssert.assertThat(
+                Files.list(databaseDir.toPath())
+                        .filter(path -> path.toFile().isDirectory())
+                        .count(),
+                is(1L)
+        );
     }
 
     @Test
@@ -130,7 +135,12 @@ class RskContextTest {
 
         TrieStore trieStore = rskContext.getTrieStore();
         MatcherAssert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
-        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is(numberOfEpochs));
+        MatcherAssert.assertThat(
+                Files.list(testDatabasesDirectory)
+                        .filter(path -> path.toFile().isDirectory())
+                        .count(),
+                is(numberOfEpochs)
+        );
     }
 
     @Test
@@ -145,7 +155,12 @@ class RskContextTest {
 
         TrieStore trieStore = rskContext.getTrieStore();
         MatcherAssert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
-        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is(numberOfEpochs));
+        MatcherAssert.assertThat(
+                Files.list(testDatabasesDirectory)
+                        .filter(path -> path.toFile().isDirectory())
+                        .count(),
+                is(numberOfEpochs)
+        );
         MatcherAssert.assertThat(Files.list(testDatabasesDirectory).noneMatch(p -> p.getFileName().toString().equals("unitrie")), is(true));
     }
 

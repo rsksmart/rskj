@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,7 @@ public interface KeyValueDataSource extends DataSource {
     String DB_KIND_PROPERTIES_FILE = "dbKind.properties";
     String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
     String KEYVALUE_DATASOURCE = "KeyValueDataSource";
+    String KEYVALUE_DATASOURCES_PROP_NAME = "keyvalue.datasources";
 
     @Nullable
     byte[] get(byte[] key);
@@ -69,9 +71,15 @@ public interface KeyValueDataSource extends DataSource {
     void flush();
 
     @Nonnull
-    static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+    static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind, @Nonnull RskSystemProperties rskSystemProperties) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
+        String fullDbDir = datasourcePath.toAbsolutePath().toString();
+
+        boolean shouldGenerateDbKindFile = KeyValueDataSource.validateDbKind(
+                kind, fullDbDir,
+                rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled()
+        );
 
         KeyValueDataSource ds;
         switch (kind) {
@@ -87,24 +95,35 @@ public interface KeyValueDataSource extends DataSource {
 
         ds.init();
 
+        if (shouldGenerateDbKindFile) {
+            KeyValueDataSource.generatedDbKindFile(kind, fullDbDir);
+        }
+
         return ds;
     }
 
-    static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind kind) {
+    static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind kind, @Nonnull RskSystemProperties rskSystemProperties) {
         Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
+
         for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, kind);
+            DbKind originKind = KeyValueDataSource.getDbKindValueFromDbKindFile(originPath.toAbsolutePath().toString(), kind);
+            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, originKind, rskSystemProperties);
             for (ByteArrayWrapper byteArrayWrapper : singleOriginDataSource.keys()) {
                 mergedStores.put(byteArrayWrapper, singleOriginDataSource.get(byteArrayWrapper.getData()));
             }
             singleOriginDataSource.close();
         }
-        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind);
+        DbKind destinationKind = KeyValueDataSource.getDbKindValueFromDbKindFile(destinationPath.toAbsolutePath().toString(), kind);
+        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, destinationKind, rskSystemProperties);
         destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
         destinationDataSource.close();
     }
 
     static DbKind getDbKindValueFromDbKindFile(String databaseDir) {
+        return getDbKindValueFromDbKindFile(databaseDir, DbKind.LEVEL_DB);
+    }
+
+    static DbKind getDbKindValueFromDbKindFile(String databaseDir, DbKind defaultKind) {
         try {
             File file = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
             Properties props = new Properties();
@@ -117,7 +136,7 @@ public interface KeyValueDataSource extends DataSource {
                 return DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME));
             }
 
-            return DbKind.LEVEL_DB;
+            return defaultKind;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -139,7 +158,11 @@ public interface KeyValueDataSource extends DataSource {
         }
     }
 
-    static void validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
+    static DbKind getDefaultKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
+        if (databaseReset) {
+            return currentDbKind;
+        }
+
         File dir = new File(databaseDir);
 
         if (dir.exists() && !dir.isDirectory()) {
@@ -150,19 +173,50 @@ public interface KeyValueDataSource extends DataSource {
         boolean databaseDirExists = dir.exists() && dir.isDirectory();
 
         if (!databaseDirExists || dir.list().length == 0) {
-            KeyValueDataSource.generatedDbKindFile(currentDbKind, databaseDir);
-            return;
+            return currentDbKind;
         }
 
-        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir);
+        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir, currentDbKind);
 
         if (prevDbKind != currentDbKind) {
-            if (databaseReset) {
-                KeyValueDataSource.generatedDbKindFile(currentDbKind, databaseDir);
-            } else {
-                LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
-                throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + ".");
-            }
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
+            throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + " for " + databaseDir + ".");
         }
+
+        return prevDbKind;
+    }
+
+    static boolean validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
+        if (databaseReset) {
+            return true;
+        }
+
+        File dir = new File(databaseDir);
+
+        if (dir.exists() && !dir.isDirectory()) {
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).error("database.dir should be a folder.");
+            throw new IllegalStateException("database.dir should be a folder");
+        }
+
+        boolean databaseDirExists = dir.exists() && dir.isDirectory();
+
+        if (!databaseDirExists || dir.list().length == 0) {
+            return true;
+        }
+
+        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir, currentDbKind);
+
+        if (prevDbKind != currentDbKind) {
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
+            throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + " for " + databaseDir + ".");
+        }
+
+        File dbKindFile = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
+
+        if (!dbKindFile.exists() || !dbKindFile.canRead()) {
+            return true;
+        }
+
+        return false;
     }
 }

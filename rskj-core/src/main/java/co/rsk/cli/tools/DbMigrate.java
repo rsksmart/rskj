@@ -17,10 +17,12 @@
  */
 package co.rsk.cli.tools;
 
+import co.rsk.RskContext;
 import co.rsk.cli.PicoCliToolRskContextAware;
 import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,11 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -48,6 +55,7 @@ import java.util.stream.Stream;
 @CommandLine.Command(name = "db-migrate", mixinStandardHelpOptions = true, version = "db-migrate 1.0",
         description = "Migrates between different databases such as leveldb and rocksdb.")
 public class DbMigrate extends PicoCliToolRskContextAware {
+    private static final int BATCH_SIZE = 10_000;
     private static final Logger logger = LoggerFactory.getLogger(DbMigrate.class);
     private static final String NODE_ID_FILE = "nodeId.properties";
 
@@ -107,6 +115,7 @@ public class DbMigrate extends PicoCliToolRskContextAware {
         }
 
         DbKind sourceDbKind = ctx.getRskSystemProperties().databaseKind();
+        DbKind defaultDbKind = ctx.getRskSystemProperties().databaseKind();
         DbKind targetDbKind = DbKind.ofName(this.targetdb);
 
         if (sourceDbKind == targetDbKind) {
@@ -117,21 +126,43 @@ public class DbMigrate extends PicoCliToolRskContextAware {
             ));
         }
 
-        String sourceDbDir = ctx.getRskSystemProperties().databaseDir();
-        String targetDbDir = sourceDbDir + "_tmp";
+        String sourceDbDir = Paths.get(ctx.getRskSystemProperties().databaseDir()).toFile().getAbsolutePath();
+        String targetDbDir =  sourceDbDir + "_tmp";
 
         logger.info("Preparing to migrate from {} to {}", sourceDbKind.name(), targetDbKind.name());
 
         FileUtil.recursiveDelete(targetDbDir);
 
         try (Stream<Path> databasePaths = Files.list(Paths.get(sourceDbDir))) {
-            databasePaths.filter(path -> path.toFile().isDirectory())
-                    .map(path -> path.getFileName().toString())
-                    .map(dbName -> buildDbMigrationInformation(sourceDbDir, targetDbDir, sourceDbKind, targetDbKind, dbName))
-                    .forEach(this::migrate);
-        }
+            List<Path> paths = databasePaths.collect(Collectors.toList());
 
-        KeyValueDataSource.validateDbKind(targetDbKind, targetDbDir, true);
+            for (Path path : paths) {
+                if (!path.toFile().isDirectory()) {
+                    continue;
+                }
+
+                String fullSourceDbPath = path.toAbsolutePath().toString();
+                String dbName = path.getFileName().toString();
+                String fullTargetDbPath = String.format("%s/%s", targetDbDir, dbName);
+
+                DbKind dbSourceDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(fullSourceDbPath, defaultDbKind);
+
+                if (dbSourceDbKind == targetDbKind) {
+                    File targetDbFolder = new File(targetDbDir);
+                    targetDbFolder.mkdirs();
+                    Files.move(Paths.get(fullSourceDbPath), Paths.get(fullTargetDbPath));
+                    continue;
+                }
+
+                DbMigrationInformation dbMigrationInformation = buildDbMigrationInformation(sourceDbDir, targetDbDir, dbSourceDbKind, targetDbKind, dbName, ctx);
+
+                this.migrate(dbMigrationInformation);
+
+                KeyValueDataSource.generatedDbKindFile(targetDbKind, fullTargetDbPath);
+
+                FileUtil.recursiveDelete(fullSourceDbPath);
+            }
+        }
 
         String nodeIdFilePath = "/" + NODE_ID_FILE;
 
@@ -151,12 +182,13 @@ public class DbMigrate extends PicoCliToolRskContextAware {
             String targetDbDir,
             DbKind sourceDbKind,
             DbKind targetDbKind,
-            String dbName
+            String dbName,
+            RskContext ctx
     ) {
         logger.info("Preparing data sources for db: {}", dbName);
 
-        KeyValueDataSource sourceDataSource = KeyValueDataSource.makeDataSource(Paths.get(sourceDbDir, dbName), sourceDbKind);
-        KeyValueDataSource targetDataSource = KeyValueDataSource.makeDataSource(Paths.get(targetDbDir, dbName), targetDbKind);
+        KeyValueDataSource sourceDataSource = KeyValueDataSource.makeDataSource(Paths.get(sourceDbDir, dbName), sourceDbKind, ctx.getRskSystemProperties());
+        KeyValueDataSource targetDataSource = KeyValueDataSource.makeDataSource(Paths.get(targetDbDir, dbName), targetDbKind, ctx.getRskSystemProperties());
 
         logger.info("Data sources prepared successfully");
         logger.info("Preparing indexes for db: {}", dbName);
@@ -190,13 +222,22 @@ public class DbMigrate extends PicoCliToolRskContextAware {
         logger.info("Migrating data source: {}", sourceKeyValueDataSource.getName());
 
         try (DataSourceKeyIterator iterator = sourceKeyValueDataSource.keyIterator()) {
+            final Map<ByteArrayWrapper, byte[]> bulkDataMap = new HashMap<>();
+
             while (iterator.hasNext()) {
                 byte[] data = iterator.next();
 
-                targetKeyValueDataSource.put(
-                        data,
-                        sourceKeyValueDataSource.get(data)
-                );
+                bulkDataMap.put(new ByteArrayWrapper(data), sourceKeyValueDataSource.get(data));
+
+                if (bulkDataMap.size() > BATCH_SIZE - 1) {
+                    targetKeyValueDataSource.updateBatch(bulkDataMap, new HashSet<>());
+                    bulkDataMap.clear();
+                }
+            }
+
+            if (bulkDataMap.size() > 0) {
+                targetKeyValueDataSource.updateBatch(bulkDataMap, new HashSet<>());
+                bulkDataMap.clear();
             }
         } catch (Exception e) {
             logger.error("An error happened closing DB Key Iterator", e);

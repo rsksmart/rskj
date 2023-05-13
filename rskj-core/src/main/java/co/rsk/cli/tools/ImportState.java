@@ -53,7 +53,7 @@ public class ImportState extends PicoCliToolRskContextAware {
         RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
 
-        KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
+        KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.getStatesDataSource(), ctx.getRskSystemProperties());
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             importState(reader, trieDB);

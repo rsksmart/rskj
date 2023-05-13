@@ -378,13 +378,14 @@ class CliToolsTest {
         doReturn(databaseDir).when(rskSystemProperties).databaseDir();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).getStatesDataSource();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ImportState importStateCliTool = new ImportState();
         importStateCliTool.execute(args, () -> rskContext, stopper);
 
         byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
-        KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
+        KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.getStatesDataSource(), rskSystemProperties);
         byte[] result = trieDB.get(key);
         trieDB.close();
 
@@ -513,6 +514,8 @@ class CliToolsTest {
         }
 
         tempDir.resolve("blocks").toFile().mkdir();
+        tempDir.resolve("blooms").toFile().mkdir();
+        File blocksDbKindPropsFile = tempDir.resolve(String.format("%s/%s", "blocks", KeyValueDataSource.DB_KIND_PROPERTIES_FILE)).toFile();
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -535,20 +538,18 @@ class CliToolsTest {
             reader.close();
         }
 
-        String dbKindPropsFileLine = null;
+        String blocksDbKindPropsFileLine = null;
 
-        if (dbKindPropsFile.exists()) {
-            BufferedReader reader = new BufferedReader(new FileReader(dbKindPropsFile));
+        if (blocksDbKindPropsFile.exists()) {
+            BufferedReader reader = new BufferedReader(new FileReader(blocksDbKindPropsFile));
             reader.readLine();
             reader.readLine();
-            dbKindPropsFileLine = reader.readLine();
+            blocksDbKindPropsFileLine = reader.readLine();
             reader.close();
         }
 
         Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
-        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
-        Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
-        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
+        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", blocksDbKindPropsFileLine);
     }
 
     @Test
