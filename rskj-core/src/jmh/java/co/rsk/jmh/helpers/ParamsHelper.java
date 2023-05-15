@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.jmh.runners;
+package co.rsk.jmh.helpers;
 
 import org.openjdk.jmh.runner.options.CommandLineOptionException;
 import org.openjdk.jmh.runner.options.CommandLineOptions;
@@ -29,7 +29,7 @@ public class ParamsHelper {
     private ParamsHelper() {
     }
 
-    static String getRequired(String name, String[] args) throws CommandLineOptionException {
+    public static String getRequired(String name, String[] args) throws CommandLineOptionException {
         CommandLineOptions commandLine = new CommandLineOptions(args);
         Optional<Collection<String>> paramCol = commandLine.getParameter(name);
 

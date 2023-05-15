@@ -18,357 +18,177 @@
 
 package co.rsk.jmh.web3;
 
-import co.rsk.jmh.Config;
-import co.rsk.jmh.web3.e2e.Web3ConnectorE2E;
-import co.rsk.jmh.web3.factory.TransactionFactory;
+import co.rsk.jmh.web3.plan.BasePlan;
+import co.rsk.jmh.web3.plan.DebugPlan;
+import co.rsk.jmh.web3.plan.EstimatePlan;
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.BenchmarkParams;
 import org.web3j.protocol.core.DefaultBlockParameter;
-import org.web3j.protocol.core.methods.request.Transaction;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+
+// TODO Try maybe some of the methods with org.openjdk.jmh.annotations.Measurement.batchSize, to test simultaneous calls
 
 // annotated fields at class, method or field level are providing default values that can be overriden via CLI or Runner parameters
 @BenchmarkMode({Mode.SingleShotTime})
-@Warmup(iterations = 2, batchSize = 2)
-@Measurement(iterations = 10, batchSize = 10)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Warmup(iterations = 1)
+@Measurement(iterations = 20)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Timeout(time = 10)
 public class BenchmarkWeb3 {
 
-    private static final int TRANSACTION_BATCH_SIZE = 16; // transaction.accountSlots = 16
-
-    @State(Scope.Benchmark)
-    public static class BasePlan {
-
-        @Param("regtest")
-        public String network;
-
-        @Param({"E2E"})
-        public Suites suite;
-
-        @Param("http://localhost:4444")
-        public String host;
-
-        protected Web3ConnectorE2E web3Connector;
-
-        protected Config config;
-
-        private Transaction transactionForEstimation;
-
-        @Setup(Level.Trial)
-        public void setUp(BenchmarkParams params) throws BenchmarkWeb3Exception {
-            config = Config.create(network);
-
-            switch (suite) {
-                case E2E:
-                    web3Connector = Web3ConnectorE2E.create(host);
-                    break;
-                case INT:
-                case UNIT:
-                    throw new BenchmarkWeb3Exception("Suite not implemented yet: " + suite);
-                default:
-                    throw new BenchmarkWeb3Exception("Unknown suite: " + suite);
-            }
-
-            transactionForEstimation = TransactionFactory.buildTransactionEstimation(config, BigInteger.ONE);
-        }
-
-    }
-
-    @State(Scope.Benchmark)
-    public static class TransactionPlan extends BasePlan {
-
-        private Iterator<Transaction> transactionsVT;
-        private Iterator<Transaction> transactionsContractCreation;
-        private Iterator<Transaction> transactionsContractCall;
-
-        @Override
-        @Setup(Level.Iteration)
-        public void setUp(BenchmarkParams params) throws BenchmarkWeb3Exception {
-            super.setUp(params);
-
-            String address = config.getString("sendTransaction.from");
-
-            long nonce = Optional.ofNullable(web3Connector.ethGetTransactionCount(address))
-                    .map(BigInteger::longValue)
-                    .orElseThrow(() -> new BenchmarkWeb3Exception("Could not get account nonce"));
-
-            long warmupIters = (long) params.getWarmup().getCount() * params.getWarmup().getBatchSize();
-            long measurementIters = (long) params.getMeasurement().getCount() * params.getMeasurement().getBatchSize();
-            long numOfTransactions = warmupIters + measurementIters;
-
-            transactionsVT = TransactionFactory.createTransactions(TransactionFactory.TransactionType.VT, config, nonce, numOfTransactions).listIterator();
-            transactionsContractCreation = TransactionFactory.createTransactions(TransactionFactory.TransactionType.CONTRACT_CREATION, config, nonce, numOfTransactions).listIterator();
-            transactionsContractCall = TransactionFactory.createTransactions(TransactionFactory.TransactionType.CONTRACT_CALL, config, nonce, numOfTransactions).listIterator();
-        }
-
-        @TearDown(Level.Iteration)
-        public void tearDown() throws InterruptedException {
-            waitForBlocks(config);
-        }
-
-    }
-
-    @State(Scope.Benchmark)
-    public static class DebugPlan extends BasePlan {
-
-        private String transactionVT;
-        private String transactionContractCreation;
-        private String transactionContractCall;
-        private String block;
-
-        private final Map<String, String> debugParams = new HashMap<>();
-
-        @Override
-        @Setup(Level.Trial)
-        public void setUp(BenchmarkParams params) throws BenchmarkWeb3Exception {
-            super.setUp(params);
-
-            long nonce = 0;
-
-            String address = config.getNullableProperty("debug.txFrom");
-            if (address != null) {
-                nonce = Optional.ofNullable(web3Connector.ethGetTransactionCount(address))
-                        .map(BigInteger::longValue)
-                        .orElseThrow(() -> new BenchmarkWeb3Exception("Could not get account nonce"));
-            }
-
-            transactionVT = config.getNullableProperty("debug.transactionVT");
-            if (transactionVT == null) {
-                transactionVT = web3Connector.ethSendTransaction(TransactionFactory.buildTransactionVT(config, BigInteger.valueOf(nonce++)));
-            }
-
-            transactionContractCreation = config.getNullableProperty("debug.transactionContractCreation");
-            if (transactionContractCreation == null) {
-                transactionContractCreation = web3Connector.ethSendTransaction(TransactionFactory.buildTransactionContractCreation(config, BigInteger.valueOf(nonce++)));
-            }
-
-            transactionContractCall = config.getNullableProperty("debug.transactionContractCall");
-            if (transactionContractCall == null) {
-                transactionContractCall = web3Connector.ethSendTransaction(TransactionFactory.buildTransactionContractCall(config, BigInteger.valueOf(nonce)));
-            }
-
-            debugParams.put("disableMemory", "true");
-            debugParams.put("disableStack", "true");
-            debugParams.put("disableStorage", "true");
-
-            try {
-                waitForBlocks(config);
-            } catch (InterruptedException e) { // NOSONAR
-                throw new BenchmarkWeb3Exception("Error waiting for blocks: " + e.getMessage());
-            }
-
-            block = config.getNullableProperty("debug.block");
-            if (block == null) {
-                block = web3Connector.ethGetBlockByNumber(BigInteger.ONE); // naive, valid only for regtest mode
-            }
-        }
-
-        @TearDown(Level.Trial)
-        public void tearDown() throws InterruptedException {
-            // TODO(iago) revisit this while working on performance
-            TimeUnit.SECONDS.sleep(10); // give node a rest after calling debug methods
-        }
-
-    }
+    private static final int TRANSACTION_ACCOUNT_SLOTS = 16; // transaction.accountSlots = 16
 
     @Benchmark
     public void ethGetBalance(BasePlan plan) throws BenchmarkWeb3Exception {
-        String address = plan.config.getString("address");
-        plan.web3Connector.ethGetBalance(address, "latest");
+        String address = plan.getConfiguration().getString("address");
+        plan.getWeb3Connector().ethGetBalance(address, "latest");
     }
 
     @Benchmark
     public void ethBlockNumber(BasePlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.ethBlockNumber();
+        plan.getWeb3Connector().ethBlockNumber();
     }
 
     @Benchmark
-    @Warmup(iterations = 1, batchSize = 1)
-    @Measurement(iterations = 10, batchSize = TRANSACTION_BATCH_SIZE)
+    @Measurement(iterations = TRANSACTION_ACCOUNT_SLOTS)
     public void ethSendRawTransaction(BasePlan plan) throws BenchmarkWeb3Exception {
         // We have decided to just test this method with a hardcoded tx (no nonce change, etc.) due to the complexity
         // of signing a raw tx (among other), and provided that the code for "sendRawTransaction" and "sendTransaction"
         // is the 90% same but for some previous validations that will be run with provided hardcoded tx
         // transaction nonce "issue" log expected on rskj logs for this call
-        String rawTx = plan.config.getString("sendRawTransaction.tx");
-        plan.web3Connector.ethSendRawTransaction(rawTx);
+        String rawTx = plan.getConfiguration().getString("sendRawTransaction.tx");
+        plan.getWeb3Connector().ethSendRawTransaction(rawTx);
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
     @Timeout(time = 30)
     public void ethGetLogsByBlockHash(BasePlan plan) throws BenchmarkWeb3Exception {
-        String blockHash = plan.config.getString("getLogs.blockHash");
-        plan.web3Connector.ethGetLogs(blockHash);
+        String blockHash = plan.getConfiguration().getString("getLogs.blockHash");
+        plan.getWeb3Connector().ethGetLogs(blockHash);
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
     @Timeout(time = 30)
     public void ethGetLogsByBlockRange(BasePlan plan) throws BenchmarkWeb3Exception {
-        String fromBlock = plan.config.getString("getLogs.fromBlock");
-        String toBlock = plan.config.getString("getLogs.toBlock");
-        String address = plan.config.getString("getLogs.address");
+        String fromBlock = plan.getConfiguration().getString("getLogs.fromBlock");
+        String toBlock = plan.getConfiguration().getString("getLogs.toBlock");
+        String address = plan.getConfiguration().getString("getLogs.address");
 
         DefaultBlockParameter fromDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(fromBlock));
         DefaultBlockParameter toDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(toBlock));
 
-        plan.web3Connector.ethGetLogs(fromDefaultBlockParameter, toDefaultBlockParameter, address);
+        plan.getWeb3Connector().ethGetLogs(fromDefaultBlockParameter, toDefaultBlockParameter, address);
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
     @Timeout(time = 30)
     public void ethGetLogsByBlockRange_NullAddress(BasePlan plan) throws BenchmarkWeb3Exception {
-        String fromBlock = plan.config.getString("getLogs.fromBlock");
-        String toBlock = plan.config.getString("getLogs.toBlock");
+        String fromBlock = plan.getConfiguration().getString("getLogs.fromBlock");
+        String toBlock = plan.getConfiguration().getString("getLogs.toBlock");
 
         DefaultBlockParameter fromDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(fromBlock));
         DefaultBlockParameter toDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(toBlock));
 
-        plan.web3Connector.ethGetLogs(fromDefaultBlockParameter, toDefaultBlockParameter, null);
+        plan.getWeb3Connector().ethGetLogs(fromDefaultBlockParameter, toDefaultBlockParameter, null);
     }
 
     @Benchmark
     public void ethNewFilterByBlockHash(BasePlan plan) throws BenchmarkWeb3Exception {
-        String blockHash = plan.config.getString("getLogs.blockHash");
-        plan.web3Connector.ethNewFilter(blockHash);
+        String blockHash = plan.getConfiguration().getString("getLogs.blockHash");
+        plan.getWeb3Connector().ethNewFilter(blockHash);
     }
 
     @Benchmark
     public void ethNewFilterByBlockRange(BasePlan plan) throws BenchmarkWeb3Exception {
-        String fromBlock = plan.config.getString("getLogs.fromBlock");
-        String toBlock = plan.config.getString("getLogs.toBlock");
-        String address = plan.config.getString("getLogs.address");
+        String fromBlock = plan.getConfiguration().getString("getLogs.fromBlock");
+        String toBlock = plan.getConfiguration().getString("getLogs.toBlock");
+        String address = plan.getConfiguration().getString("getLogs.address");
 
         DefaultBlockParameter fromDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(fromBlock));
         DefaultBlockParameter toDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(toBlock));
 
-        plan.web3Connector.ethNewFilter(fromDefaultBlockParameter, toDefaultBlockParameter, address);
+        plan.getWeb3Connector().ethNewFilter(fromDefaultBlockParameter, toDefaultBlockParameter, address);
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
     @Timeout(time = 30)
     public void ethGetFilterChanges(BasePlan plan) throws BenchmarkWeb3Exception {
         // TODO(reynold) this generateNewFilterId has to be done on the setup
         String result = generateNewFilterId(plan);
-        plan.web3Connector.ethGetFilterChanges(new BigInteger(result.replace("0x", ""), 16));
+        plan.getWeb3Connector().ethGetFilterChanges(new BigInteger(result.replace("0x", ""), 16));
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
     @Timeout(time = 30)
     public void ethGetFilterLogs(BasePlan plan) throws BenchmarkWeb3Exception {
         // TODO(reynold) this generateNewFilterId has to be done on the setup
         String result = generateNewFilterId(plan);
-        plan.web3Connector.ethGetFilterLogs(new BigInteger(result.replace("0x", ""), 16));
+        plan.getWeb3Connector().ethGetFilterLogs(new BigInteger(result.replace("0x", ""), 16));
     }
 
     @Benchmark
-    @Warmup(iterations = 1, batchSize = 1)
-    @Measurement(iterations = 10, batchSize = TRANSACTION_BATCH_SIZE)
-    public void ethSendTransaction_VT(TransactionPlan plan) throws BenchmarkWeb3Exception {
-        Transaction tx = plan.transactionsVT.next();
-        plan.web3Connector.ethSendTransaction(tx);
-    }
-
-    @Benchmark
-    @Warmup(iterations = 1, batchSize = 1)
-    @Measurement(iterations = 10, batchSize = TRANSACTION_BATCH_SIZE)
-    public void ethSendTransaction_ContractCreation(TransactionPlan plan) throws BenchmarkWeb3Exception {
-        Transaction tx = plan.transactionsContractCreation.next();
-        plan.web3Connector.ethSendTransaction(tx);
-    }
-
-    @Benchmark
-    @Warmup(iterations = 1, batchSize = 1)
-    @Measurement(iterations = 10, batchSize = TRANSACTION_BATCH_SIZE)
-    public void ethSendTransaction_ContractCall(TransactionPlan plan) throws BenchmarkWeb3Exception {
-        Transaction tx = plan.transactionsContractCall.next();
-        plan.web3Connector.ethSendTransaction(tx);
-    }
-
-    @Benchmark
-    public void ethEstimateGas(BasePlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.ethEstimateGas(plan.transactionForEstimation);
+    public void ethEstimateGas(EstimatePlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethEstimateGas(plan.getTransactionForEstimation());
     }
 
     @Benchmark
     public void rskGetRawBlockHeaderByNumber(BasePlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.rskGetRawBlockHeaderByNumber("latest");
+        plan.getWeb3Connector().rskGetRawBlockHeaderByNumber("latest");
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
-    @Timeout(time = 60)
+    @Timeout(time = 30)
     public void debugTraceTransaction_VT(DebugPlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.debugTraceTransaction(plan.transactionVT);
+        plan.getWeb3Connector().debugTraceTransaction(plan.getTransactionVT());
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
-    @Timeout(time = 60)
+    @Timeout(time = 30)
     public void debugTraceTransaction_ContractCreation(DebugPlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.debugTraceTransaction(plan.transactionContractCreation);
+        plan.getWeb3Connector().debugTraceTransaction(plan.getTransactionContractCreation());
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
-    @Timeout(time = 60)
+    @Timeout(time = 30)
     public void debugTraceTransaction_ContractCall(DebugPlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.debugTraceTransaction(plan.transactionContractCall);
+        plan.getWeb3Connector().debugTraceTransaction(plan.getTransactionContractCall());
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
-    @Timeout(time = 60)
+    @Timeout(time = 30)
     public void debugTraceTransaction_Params_VT(DebugPlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.debugTraceTransaction(plan.transactionVT, plan.debugParams);
+        plan.getWeb3Connector().debugTraceTransaction(plan.getTransactionVT(), plan.getDebugParams());
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
-    @Timeout(time = 60)
+    @Timeout(time = 30)
     public void debugTraceTransaction_Params_ContractCreation(DebugPlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.debugTraceTransaction(plan.transactionContractCreation, plan.debugParams);
+        plan.getWeb3Connector().debugTraceTransaction(plan.getTransactionContractCreation(), plan.getDebugParams());
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 10) // otherwise, node may become unresponsive
-    @Timeout(time = 60)
+    @Timeout(time = 30)
     public void debugTraceTransaction_Params_ContractCall(DebugPlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.debugTraceTransaction(plan.transactionContractCall, plan.debugParams);
+        plan.getWeb3Connector().debugTraceTransaction(plan.getTransactionContractCall(), plan.getDebugParams());
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 5) // otherwise, node may become unresponsive
-    @Timeout(time = 60)
+    @Timeout(time = 30)
     public void debugTraceBlockByHash(DebugPlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.debugTraceBlockByHash(plan.block);
+        plan.getWeb3Connector().debugTraceBlockByHash(plan.getBlock());
     }
 
     @Benchmark
-    @Measurement(iterations = 5, batchSize = 5) // otherwise, node may become unresponsive
-    @Timeout(time = 60)
+    @Timeout(time = 30)
     public void debugTraceBlockByHash_Params(DebugPlan plan) throws BenchmarkWeb3Exception {
-        plan.web3Connector.debugTraceBlockByHash(plan.block);
+        plan.getWeb3Connector().debugTraceBlockByHash(plan.getBlock());
     }
 
     private String generateNewFilterId(BasePlan plan) throws BenchmarkWeb3Exception {
-        String blockHash = plan.config.getString("getLogs.blockHash");
-        return Optional.ofNullable(plan.web3Connector.ethNewFilter(blockHash)).orElse("");
-    }
-
-    private static void waitForBlocks(Config config) throws InterruptedException {
-        // wait for blocks to be mined so nonce is updated
-        int blockTimeInSec = config.getInt("blockTimeInSec");
-        int numOfBlocksToWait = config.getInt("blocksToWait");
-        TimeUnit.SECONDS.sleep((long) blockTimeInSec * numOfBlocksToWait);
+        String blockHash = plan.getConfiguration().getString("getLogs.blockHash");
+        return Optional.ofNullable(plan.getWeb3Connector().ethNewFilter(blockHash)).orElse("");
     }
 
     public enum Suites {
@@ -385,4 +205,5 @@ public class BenchmarkWeb3 {
         // any dependency that is not relevant for the measurement
         UNIT
     }
+
 }
