@@ -25,12 +25,17 @@ Examples of use:
 ```
 ./gradlew jmh -Pbenchmark=BenchmarkWeb3E2ERunner -Phost=http://localhost:4444 -Pconfig=regtest
 ```
-Uses convenient Runner `co.rsk.jmh.runners.BenchmarkWeb3E2ERunner`, providing the host `http://localhost:4444` and the config `regtest` that will be used by the Runners and Benchmarks.
+Uses convenient Runner `co.rsk.jmh.runners.BenchmarkWeb3E2ERunner`, providing the host `http://localhost:4444` and the config `regtest` that will be used by the Benchmarks.
 
 ```
 ./gradlew jmh -Pbenchmark=BenchmarkWeb3E2ERunner -Phost=http://localhost:7777 -Pconfig=testnet-3_860_000
 ```
-Uses convenient Runner `co.rsk.jmh.runners.BenchmarkWeb3E2ERunner`, providing the host `http://localhost:7777` and the config `testnet-3_860_000` that will be used by the Runners and Benchmarks.
+Uses convenient Runner `co.rsk.jmh.runners.BenchmarkWeb3E2ERunner`, providing the host `http://localhost:7777` and the config `testnet-3_860_000` that will be used by the Benchmarks.
+
+```
+./gradlew jmh -Pbenchmark=BenchmarkWeb3E2ELocalWalletRunner -Phost=http://localhost:4444 -Pconfig=regtest
+```
+Uses convenient Runner `co.rsk.jmh.runners.BenchmarkWeb3E2ELocalWalletRunner`, providing the host `http://localhost:4444` and the config `regtest` that will be used by the Benchmarks.
 
 ## Using Gradle task but providing original JMH parameters 
 

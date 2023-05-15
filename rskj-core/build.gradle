@@ -369,8 +369,8 @@ task jmh(type: JavaExec) {
             customArgs << "-p" << "host=${project.getProperty("host")}"
         }
 
-        if (project.hasProperty('network')) {
-            customArgs << "-p" << "network=${project.getProperty("network")}"
+        if (project.hasProperty('config')) {
+            customArgs << "-p" << "config=${project.getProperty("config")}"
         }
 
         args(customArgs)

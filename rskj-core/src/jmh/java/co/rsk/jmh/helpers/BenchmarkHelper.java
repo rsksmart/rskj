@@ -16,21 +16,22 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.jmh.runners;
+package co.rsk.jmh.helpers;
 
-import co.rsk.jmh.helpers.OptionsHelper;
-import co.rsk.jmh.web3.BenchmarkWeb3;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.options.Options;
+import co.rsk.jmh.Config;
 
-public class BenchmarkWeb3E2ERunner {
+import java.util.concurrent.TimeUnit;
 
-    public static void main(String[] args) throws Exception {
-        Options opt = OptionsHelper.createE2EBuilder(args, "result_web3_e2e.csv")
-                .include(BenchmarkWeb3.class.getName())
-                .build();
+public class BenchmarkHelper {
 
-        new Runner(opt).run();
+    private BenchmarkHelper() {
+    }
+
+    public static void waitForBlocks(Config config) throws InterruptedException {
+        // wait for blocks to be mined so nonce is updated
+        int blockTimeInSec = config.getInt("blockTimeInSec");
+        int numOfBlocksToWait = config.getInt("blocksToWait");
+        TimeUnit.SECONDS.sleep((long) blockTimeInSec * numOfBlocksToWait);
     }
 
 }
