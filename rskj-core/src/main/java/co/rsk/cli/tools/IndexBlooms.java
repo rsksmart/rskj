@@ -18,9 +18,11 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
+import co.rsk.cli.RskCli;
 import co.rsk.cli.exceptions.PicocliBadResultException;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
+import co.rsk.util.PreflightChecksUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
 import org.ethereum.db.BlockStore;
@@ -57,13 +59,24 @@ public class IndexBlooms implements Callable<Integer> {
         this.ctx = ctx;
     }
 
+    // TODO: new context
     public static void main(String[] args) {
-        try (RskContext ctx = new RskContext(args, true)) {
-            int result = new CommandLine(new IndexBlooms(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
+        RskCli rskCli = new RskCli();
+        CommandLine commandLine = new CommandLine(rskCli);
+        int exitCode = commandLine.execute(args);
+        if (exitCode != 0 ) {
+            System.exit(exitCode);
+        }
 
-            if (result != 0) {
-                throw new PicocliBadResultException(result);
+        RskContext ctx = null;
+        try {
+            ctx = new RskContext(rskCli);
+        } catch (Exception e) {
+            logger.error("The RSK node main thread failed, closing program", e);
+            if (ctx != null) {
+                ctx.close();
             }
+            System.exit(1);
         }
     }
 
