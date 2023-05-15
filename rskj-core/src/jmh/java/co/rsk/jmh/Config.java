@@ -31,17 +31,17 @@ public class Config {
         this.properties = (Properties) properties.clone();
     }
 
-    public static Config create(String network) throws IllegalStateException {
-        InputStream inputStream = Config.class.getClassLoader().getResourceAsStream("conf/" + network + ".conf");
+    public static Config create(String name) throws IllegalStateException {
+        InputStream inputStream = Config.class.getClassLoader().getResourceAsStream("conf/" + name + ".conf");
         if (inputStream == null) {
-            throw new IllegalStateException("Config not found for network: " + network);
+            throw new IllegalStateException("Config not found for name: " + name);
         }
 
         Properties props = new Properties();
         try {
             props.load(inputStream);
         } catch (IOException e) { // NOSONAR
-            throw new IllegalStateException("Could not load config for network: " + network);
+            throw new IllegalStateException("Could not load config for name: " + name);
         }
 
         return new Config(props);
