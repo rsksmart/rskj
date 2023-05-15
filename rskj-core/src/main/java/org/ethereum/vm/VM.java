@@ -1542,7 +1542,7 @@ public class VM {
             if (calleeGas == remainingGas) {
                 // in case program has more than one CALL, we cannot simply pass calleeGas == remainingGas or
                 // we could be marking it as false when it was previously set to true
-                program.getResult().movedRemainingGasToChild(true);
+                program.getResult().setMovedRemainingGasToChild();
             }
             
             if (!value.isZero()) {

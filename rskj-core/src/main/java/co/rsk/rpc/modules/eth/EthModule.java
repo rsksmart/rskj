@@ -185,7 +185,10 @@ public class EthModule
         }
 
         // ensure not returning blockGasLimit+stipend
-        estimatedGas = Math.min(estimatedGas, gasEstimationCap);
+        if (estimatedGas > gasEstimationCap) {
+            LOGGER.warn("Estimation {} was bigger than cap {}", estimatedGas, gasEstimationCap);
+            estimatedGas = gasEstimationCap;
+        }
 
         return HexUtils.toQuantityJsonHex(estimatedGas);
     }
