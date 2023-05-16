@@ -18,6 +18,7 @@
 
 package co.rsk.jmh.web3.e2e;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.JsonRpc2_0Web3j;
 import org.web3j.protocol.core.Request;
@@ -29,12 +30,14 @@ import java.util.List;
 public class RskTraceModuleWeb3j extends JsonRpc2_0Web3j {
 
     public static class TraceFilterRequest {
+        @JsonProperty
         private String fromBlock;
+        @JsonProperty
         private String toBlock;
+        @JsonProperty
         private List<String> fromAddress;
+        @JsonProperty
         private List<String> toAddress;
-        private Integer after;
-        private Integer count = 10_000;
 
         public TraceFilterRequest() {
         }
@@ -49,54 +52,6 @@ public class RskTraceModuleWeb3j extends JsonRpc2_0Web3j {
             this.toBlock = toBlock;
             this.fromAddress = fromAddress;
             this.toAddress = toAddress;
-        }
-
-        public void setFromBlock(String fromBlock) {
-            this.fromBlock = fromBlock;
-        }
-
-        public void setToBlock(String toBlock) {
-            this.toBlock = toBlock;
-        }
-
-        public void setFromAddress(List<String> fromAddress) {
-            this.fromAddress = fromAddress;
-        }
-
-        public void setToAddress(List<String> toAddress) {
-            this.toAddress = toAddress;
-        }
-
-        public void setAfter(Integer after) {
-            this.after = after;
-        }
-
-        public void setCount(Integer count) {
-            this.count = count;
-        }
-
-        public String getFromBlock() {
-            return fromBlock;
-        }
-
-        public String getToBlock() {
-            return toBlock;
-        }
-
-        public List<String> getFromAddress() {
-            return this.fromAddress;
-        }
-
-        public List<String> getToAddress() {
-            return toAddress;
-        }
-
-        public Integer getAfter() {
-            return after;
-        }
-
-        public Integer getCount() {
-            return count;
         }
     }
 
