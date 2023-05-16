@@ -25,6 +25,7 @@ import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 import org.openjdk.jmh.runner.options.CommandLineOptionException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -36,8 +37,10 @@ public class OptionsHelper {
     public static ChainedOptionsBuilder createE2EBuilder(String[] args, String reportFileName) throws CommandLineOptionException {
         Path resultDir = Paths.get(System.getProperty("user.dir"), "build", "reports", "jmh");
 
-        // TODO(iago) fix
-        resultDir.toFile().mkdirs();
+        File jmhReportsFolder = resultDir.toFile();
+        if (!jmhReportsFolder.exists() && !jmhReportsFolder.mkdirs()) {
+            throw new IllegalStateException("Cannot create JMH reports folder");
+        }
 
         return new OptionsBuilder()
                 .param("suite", BenchmarkWeb3.Suites.E2E.name())

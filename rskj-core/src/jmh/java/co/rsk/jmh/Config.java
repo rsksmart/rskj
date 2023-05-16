@@ -32,19 +32,17 @@ public class Config {
     }
 
     public static Config create(String name) throws IllegalStateException {
-        InputStream inputStream = Config.class.getClassLoader().getResourceAsStream("conf/" + name + ".conf");
-        if (inputStream == null) {
-            throw new IllegalStateException("Config not found for name: " + name);
-        }
+        try (InputStream inputStream = Config.class.getClassLoader().getResourceAsStream("conf/" + name + ".conf")) {
+            if (inputStream == null) {
+                throw new IllegalStateException("Config not found for name: " + name);
+            }
 
-        Properties props = new Properties();
-        try {
+            Properties props = new Properties();
             props.load(inputStream);
+            return new Config(props);
         } catch (IOException e) { // NOSONAR
             throw new IllegalStateException("Could not load config for name: " + name);
         }
-
-        return new Config(props);
     }
 
     public String getNullableProperty(String key) {
