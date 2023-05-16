@@ -28,30 +28,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
-public class RskWeb3j extends JsonRpc2_0Web3j {
+public class RskModuleWeb3j extends JsonRpc2_0Web3j {
 
-    public RskWeb3j(Web3jService web3jService) {
+    public RskModuleWeb3j(Web3jService web3jService) {
         super(web3jService);
     }
 
     public Request<?, RawBlockHeaderByNumberResponse> rskGetRawBlockHeaderByNumber(String bnOrId) {
         return new Request<>("rsk_getRawBlockHeaderByNumber", Collections.singletonList(bnOrId), web3jService, RawBlockHeaderByNumberResponse.class);
-    }
-
-    public Request<?, GenericJsonResponse> debugTraceTransaction(String txHash) {
-        return new Request<>("debug_traceTransaction", Collections.singletonList(txHash), web3jService, GenericJsonResponse.class);
-    }
-
-    public Request<?, GenericJsonResponse> debugTraceTransaction(String txHash, Map<String, String> params) {
-        return new Request<>("debug_traceTransaction", Arrays.asList(txHash, params), web3jService, GenericJsonResponse.class);
-    }
-
-    public Request<?, GenericJsonResponse> debugTraceBlockByHash(String txHash) {
-        return new Request<>("debug_traceBlockByHash", Collections.singletonList(txHash), web3jService, GenericJsonResponse.class);
-    }
-
-    public Request<?, GenericJsonResponse> debugTraceBlockByHash(String txHash, Map<String, String> params) {
-        return new Request<>("debug_traceBlockByHash", Arrays.asList(txHash, params), web3jService, GenericJsonResponse.class);
     }
 
     public static class RawBlockHeaderByNumberResponse extends Response<String> {

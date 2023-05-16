@@ -22,11 +22,9 @@ import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.core.JsonRpc2_0Web3j;
 import org.web3j.protocol.core.Request;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RskTraceModuleWeb3j extends JsonRpc2_0Web3j {
 
@@ -106,19 +104,19 @@ public class RskTraceModuleWeb3j extends JsonRpc2_0Web3j {
         super(web3jService);
     }
 
-    public Request<?, RskWeb3j.GenericJsonResponse> traceTransaction(String transactionHash) {
-        return new Request<>("trace_transaction", Collections.singletonList(transactionHash), web3jService,  RskWeb3j.GenericJsonResponse.class);
+    public Request<?, RskModuleWeb3j.GenericJsonResponse> traceTransaction(String transactionHash) {
+        return new Request<>("trace_transaction", Collections.singletonList(transactionHash), web3jService,  RskModuleWeb3j.GenericJsonResponse.class);
     }
 
-    public Request<?, RskWeb3j.GenericJsonResponse> traceBlock(String blockHash) {
-        return new Request<>("trace_block", Collections.singletonList(blockHash), web3jService,  RskWeb3j.GenericJsonResponse.class);
+    public Request<?, RskModuleWeb3j.GenericJsonResponse> traceBlock(String blockHash) {
+        return new Request<>("trace_block", Collections.singletonList(blockHash), web3jService,  RskModuleWeb3j.GenericJsonResponse.class);
     }
 
-    public Request<?, RskWeb3j.GenericJsonResponse> traceFilter(TraceFilterRequest request) {
-        return new Request<>("trace_filter", Collections.singletonList(request), web3jService,  RskWeb3j.GenericJsonResponse.class);
+    public Request<?, RskModuleWeb3j.GenericJsonResponse> traceFilter(TraceFilterRequest request) {
+        return new Request<>("trace_filter", Collections.singletonList(request), web3jService,  RskModuleWeb3j.GenericJsonResponse.class);
     }
 
-    public Request<?, RskWeb3j.GenericJsonResponse> traceGet(String transactionHash, List<String> positions) {
-        return new Request<>("trace_get", Arrays.asList(transactionHash, positions), web3jService,  RskWeb3j.GenericJsonResponse.class);
+    public Request<?, RskModuleWeb3j.GenericJsonResponse> traceGet(String transactionHash, List<String> positions) {
+        return new Request<>("trace_get", Arrays.asList(transactionHash, positions), web3jService,  RskModuleWeb3j.GenericJsonResponse.class);
     }
 }
