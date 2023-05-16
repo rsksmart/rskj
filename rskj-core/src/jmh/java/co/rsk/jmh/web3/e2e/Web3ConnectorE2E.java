@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import okhttp3.OkHttpClient;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
+import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.*;
@@ -67,10 +68,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public BigInteger ethGetTransactionCount(String address) throws HttpRpcException {
         try {
-            Request<?, EthGetTransactionCount> request = debugModuleWeb3j.ethGetTransactionCount(address, DefaultBlockParameter.valueOf("latest"));
-            EthGetTransactionCount response = request.send();
+            EthGetTransactionCount response = sendRequest(() -> debugModuleWeb3j.ethGetTransactionCount(address, DefaultBlockParameter.valueOf("latest")));
             return response.getTransactionCount();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -79,10 +79,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public BigInteger ethGetBalance(String address, String block) throws HttpRpcException {
         try {
-            Request<?, EthGetBalance> request = debugModuleWeb3j.ethGetBalance(address, DefaultBlockParameter.valueOf(block));
-            EthGetBalance response = request.send();
+            EthGetBalance response = sendRequest(() -> debugModuleWeb3j.ethGetBalance(address, DefaultBlockParameter.valueOf(block)));
             return response.getBalance();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -91,10 +90,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public String ethBlockNumber() throws HttpRpcException {
         try {
-            Request<?, EthBlockNumber> request = debugModuleWeb3j.ethBlockNumber();
-            EthBlockNumber response = request.send();
+            EthBlockNumber response = sendRequest(debugModuleWeb3j::ethBlockNumber);
             return response.getBlockNumber().toString();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -103,10 +101,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public String ethSendRawTransaction(String rawTx) throws HttpRpcException {
         try {
-            Request<?, EthSendTransaction> request = debugModuleWeb3j.ethSendRawTransaction(rawTx);
-            EthSendTransaction response = request.send();
+            EthSendTransaction response = sendRequest(() -> debugModuleWeb3j.ethSendRawTransaction(rawTx));
             return response.getTransactionHash();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -115,10 +112,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public String ethSendTransaction(Transaction transaction) throws HttpRpcException {
         try {
-            Request<?, EthSendTransaction> request = debugModuleWeb3j.ethSendTransaction(transaction);
-            EthSendTransaction response = request.send();
+            EthSendTransaction response = sendRequest(() -> debugModuleWeb3j.ethSendTransaction(transaction));
             return response.getTransactionHash();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -127,10 +123,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public BigInteger ethEstimateGas(Transaction transaction) throws HttpRpcException {
         try {
-            Request<?, EthEstimateGas> request = debugModuleWeb3j.ethEstimateGas(transaction);
-            EthEstimateGas response = request.send();
+            EthEstimateGas response = sendRequest(() -> debugModuleWeb3j.ethEstimateGas(transaction));
             return response.getAmountUsed();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -167,10 +162,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public List<EthLog.LogResult> ethGetFilterChanges(BigInteger filterId) throws HttpRpcException {
         try {
-            Request<?, EthLog> request = debugModuleWeb3j.ethGetFilterChanges(filterId);
-            EthLog response = request.send();
+            EthLog response = sendRequest(() -> debugModuleWeb3j.ethGetFilterChanges(filterId));
             return response.getLogs();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -179,10 +173,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public List<EthLog.LogResult> ethGetFilterLogs(BigInteger filterId) throws HttpRpcException {
         try {
-            Request<?, EthLog> request = debugModuleWeb3j.ethGetFilterLogs(filterId);
-            EthLog response = request.send();
+            EthLog response = sendRequest(() -> debugModuleWeb3j.ethGetFilterLogs(filterId));
             return response.getLogs();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -215,10 +208,9 @@ public class Web3ConnectorE2E implements Web3Connector {
 
     private List<EthLog.LogResult> ethGetLogs(EthFilter filter) throws HttpRpcException {
         try {
-            Request<?, EthLog> request = debugModuleWeb3j.ethGetLogs(filter);
-            EthLog response = request.send();
+            EthLog response = sendRequest(() -> debugModuleWeb3j.ethGetLogs(filter));
             return response.getLogs();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -226,18 +218,17 @@ public class Web3ConnectorE2E implements Web3Connector {
 
     private String ethNewFilter(EthFilter filter) throws HttpRpcException {
         try {
-            Request<?, org.web3j.protocol.core.methods.response.EthFilter> request = debugModuleWeb3j.ethNewFilter(filter);
-            org.web3j.protocol.core.methods.response.EthFilter response = request.send();
+            org.web3j.protocol.core.methods.response.EthFilter response = sendRequest(() -> debugModuleWeb3j.ethNewFilter(filter));
             return response.getResult();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
     }
 
-    private RskModuleWeb3j.GenericJsonResponse sendRequest(Supplier<Request<?, RskModuleWeb3j.GenericJsonResponse>> supplier) throws HttpRpcException {
+    private <R extends Response<?>> R sendRequest(Supplier<Request<?, R>> supplier) throws HttpRpcException {
         try {
-            Request<?, RskModuleWeb3j.GenericJsonResponse> request = supplier.get();
+            Request<?, R> request = supplier.get();
             return request.send();
         } catch (IOException e) {
             e.printStackTrace();
@@ -248,10 +239,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public String ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException {
         try {
-            Request<?, EthBlock> request = debugModuleWeb3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(blockNumber), false);
-            EthBlock response = request.send();
+            EthBlock response = sendRequest(() -> debugModuleWeb3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(blockNumber), false));
             return response.getResult().getHash();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -260,10 +250,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public String rskGetRawBlockHeaderByNumber(String bnOrId) throws HttpRpcException {
         try {
-            Request<?, RskModuleWeb3j.RawBlockHeaderByNumberResponse> request = rskModuleWeb3j.rskGetRawBlockHeaderByNumber(bnOrId);
-            RskModuleWeb3j.RawBlockHeaderByNumberResponse response = request.send();
+            RskModuleWeb3j.RawBlockHeaderByNumberResponse response = sendRequest(() -> rskModuleWeb3j.rskGetRawBlockHeaderByNumber(bnOrId));
             return response.getRawHeader();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -272,10 +261,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public JsonNode debugTraceTransaction(String txHash) throws HttpRpcException {
         try {
-            Request<?, RskModuleWeb3j.GenericJsonResponse> request = debugModuleWeb3j.debugTraceTransaction(txHash);
-            RskModuleWeb3j.GenericJsonResponse response = request.send();
+            RskModuleWeb3j.GenericJsonResponse response = sendRequest(() -> debugModuleWeb3j.debugTraceTransaction(txHash));
             return response.getJson();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -284,10 +272,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public JsonNode debugTraceTransaction(String txHash, Map<String, String> params) throws HttpRpcException {
         try {
-            Request<?, RskModuleWeb3j.GenericJsonResponse> request = debugModuleWeb3j.debugTraceTransaction(txHash, params);
-            RskModuleWeb3j.GenericJsonResponse response = request.send();
+            RskModuleWeb3j.GenericJsonResponse response = sendRequest(() -> debugModuleWeb3j.debugTraceTransaction(txHash, params));
             return response.getJson();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -296,10 +283,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public JsonNode debugTraceBlockByHash(String txHash) throws HttpRpcException {
         try {
-            Request<?, RskModuleWeb3j.GenericJsonResponse> request = debugModuleWeb3j.debugTraceBlockByHash(txHash);
-            RskModuleWeb3j.GenericJsonResponse response = request.send();
+            RskModuleWeb3j.GenericJsonResponse response = sendRequest(() -> debugModuleWeb3j.debugTraceBlockByHash(txHash));
             return response.getJson();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
@@ -308,10 +294,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public JsonNode debugTraceBlockByHash(String txHash, Map<String, String> params) throws HttpRpcException {
         try {
-            Request<?, RskModuleWeb3j.GenericJsonResponse> request = debugModuleWeb3j.debugTraceBlockByHash(txHash, params);
-            RskModuleWeb3j.GenericJsonResponse response = request.send();
+            RskModuleWeb3j.GenericJsonResponse response = sendRequest(() -> debugModuleWeb3j.debugTraceBlockByHash(txHash, params));
             return response.getJson();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
