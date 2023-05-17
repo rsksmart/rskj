@@ -5,11 +5,16 @@ import co.rsk.config.NodeCliFlags;
 import co.rsk.config.NodeCliOptions;
 import picocli.CommandLine;
 
+import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 @CommandLine.Command(name = "rskj", mixinStandardHelpOptions = true, version = "RSKJ Node 4.5.0",
         description = "RSKJ blockchain node implementation in Java")
-public class RskCli {
+public class RskCli implements Runnable{
 
     // CLI FLAGS
     // db flags
@@ -49,22 +54,10 @@ public class RskCli {
     @CommandLine.Option(names = {"-base-path"}, description = "Set base path")
     private String basePath;
 
-
-    private NodeRunner runner;
-
-    public void setRunner(NodeRunner runner) {
-        this.runner = runner;
-    }
-
-    public void run() {
-
-    }
     public CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
-        // TODO: implement this method watching ConfigLoader.getConfigFromCliArgs()
-        return null;
-    }
-    private EnumSet<NodeCliFlags> getFlags() {
         EnumSet<NodeCliFlags> activatedFlags = EnumSet.noneOf(NodeCliFlags.class);
+        Map<NodeCliOptions, String> activatedOptions = new HashMap<>();
+        Map<String, String> paramValueMap = new HashMap<>();
 
         if (dbReset) {
             activatedFlags.add(NodeCliFlags.DB_RESET);
@@ -72,6 +65,7 @@ public class RskCli {
 
         if (dbImport != null) {
             activatedFlags.add(NodeCliFlags.DB_IMPORT);
+            paramValueMap.put("import", dbImport);
         }
 
         if (verifyConfig) {
@@ -102,9 +96,19 @@ public class RskCli {
             activatedFlags.add(NodeCliFlags.NETWORK_MAINNET);
         }
 
-        return activatedFlags;
+        if (rpcCors != null) {
+            activatedOptions.put(NodeCliOptions.RPC_CORS, rpcCors);
+            paramValueMap.put("rpc-cors", rpcCors);
+        }
+
+        if (basePath != null) {
+            activatedOptions.put(NodeCliOptions.BASE_PATH, basePath);
+            paramValueMap.put("base-path", basePath);
+        }
+        return CliArgs.of(activatedOptions, activatedFlags, paramValueMap);
     }
 
-
-
+    @Override
+    public void run() {
+    }
 }
