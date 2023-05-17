@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import okhttp3.OkHttpClient;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
+import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.*;
@@ -269,6 +270,18 @@ public class Web3ConnectorE2E implements Web3Connector {
             Request<?, RskWeb3j.GenericJsonResponse> request = web3j.debugTraceBlockByHash(txHash, params);
             RskWeb3j.GenericJsonResponse response = request.send();
             return response.getJson();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public Response<EthBlock.Block> ethGetBlockByHash(String blockHash) throws HttpRpcException {
+        try {
+            Request<?, EthBlock> request = web3j.ethGetBlockByHash(blockHash, false);
+            Response<EthBlock.Block> response = request.send();
+            return response;
         } catch (IOException e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
