@@ -20,14 +20,13 @@ package co.rsk.jmh.web3.e2e;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.web3j.protocol.Web3jService;
+import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.JsonRpc2_0Web3j;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.Response;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
 
 public class RskModuleWeb3j extends JsonRpc2_0Web3j {
 
@@ -35,12 +34,28 @@ public class RskModuleWeb3j extends JsonRpc2_0Web3j {
         super(web3jService);
     }
 
-    public Request<?, RskModuleWeb3j.GenericJsonResponse> ethGetBlockByNumber(String blockNumber) {
+    public Request<?, GenericJsonResponse> ethGetBlockByNumber(String blockNumber) {
         return new Request<>("eth_getBlockByNumber", Arrays.asList(blockNumber, true), web3jService, RskModuleWeb3j.GenericJsonResponse.class);
     }
 
     public Request<?, RawBlockHeaderByNumberResponse> rskGetRawBlockHeaderByNumber(String bnOrId) {
         return new Request<>("rsk_getRawBlockHeaderByNumber", Collections.singletonList(bnOrId), web3jService, RawBlockHeaderByNumberResponse.class);
+    }
+
+    public Request<?, GenericJsonResponse> rskGetRawTransactionReceiptByHash(String txHash) {
+        return new Request<>("rsk_getRawTransactionReceiptByHash", Collections.singletonList(txHash), web3jService, GenericJsonResponse.class);
+    }
+
+    public Request<?, GenericJsonResponse> rskGetTransactionReceiptNodesByHash(String blockHash, String txHash){
+        return new Request<>("rsk_getTransactionReceiptNodesByHash", Arrays.asList(blockHash, txHash), web3jService, GenericJsonResponse.class);
+    }
+
+    public Request<?, GenericJsonResponse> rskGetRawBlockHeaderByHash(String blockHash) {
+        return new Request<>("rsk_getRawBlockHeaderByHash", Collections.singletonList(blockHash), web3jService, GenericJsonResponse.class);
+    }
+
+    public Request<?, GenericJsonResponse> rskGetRawBlockHeaderByNumber(DefaultBlockParameter blockNumber) {
+        return new Request<>("rsk_getRawBlockHeaderByNumber", Collections.singletonList(blockNumber.getValue()), web3jService, GenericJsonResponse.class);
     }
 
     public static class RawBlockHeaderByNumberResponse extends Response<String> {
@@ -55,7 +70,7 @@ public class RskModuleWeb3j extends JsonRpc2_0Web3j {
         }
     }
 
-    public Request<?, RskModuleWeb3j.GenericJsonResponse> ethCall(RskModuleWeb3j.EthCallArguments args, String bnOrId) {
+    public Request<?, GenericJsonResponse> ethCall(RskModuleWeb3j.EthCallArguments args, String bnOrId) {
         return new Request<>("eth_call", Arrays.asList(args, bnOrId), web3jService, RskModuleWeb3j.GenericJsonResponse.class);
     }
 

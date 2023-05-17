@@ -23,5 +23,8 @@ public class BenchmarkWeb3Exception extends Exception {
     public BenchmarkWeb3Exception(String message) {
         super(message);
     }
+    public BenchmarkWeb3Exception(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }
