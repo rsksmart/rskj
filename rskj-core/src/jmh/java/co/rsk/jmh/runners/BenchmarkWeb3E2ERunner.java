@@ -20,6 +20,7 @@ package co.rsk.jmh.runners;
 
 import co.rsk.jmh.helpers.OptionsHelper;
 import co.rsk.jmh.web3.BenchmarkWeb3;
+import co.rsk.jmh.web3.BlocksAndTx;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 
@@ -28,6 +29,7 @@ public class BenchmarkWeb3E2ERunner {
     public static void main(String[] args) throws Exception {
         Options opt = OptionsHelper.createE2EBuilder(args, "result_web3_e2e.csv")
                 .include(BenchmarkWeb3.class.getName())
+                .include(BlocksAndTx.class.getName())
                 .build();
 
         new Runner(opt).run();

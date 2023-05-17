@@ -21,10 +21,10 @@ package co.rsk.jmh.web3;
 import co.rsk.jmh.web3.e2e.HttpRpcException;
 import co.rsk.jmh.web3.e2e.RskModuleWeb3j;
 import com.fasterxml.jackson.databind.JsonNode;
-import co.rsk.jmh.web3.e2e.RskDebugModuleWeb3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.request.Transaction;
-import org.web3j.protocol.core.methods.response.EthLog;
+import org.web3j.protocol.core.methods.response.*;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -58,7 +58,7 @@ public interface Web3Connector {
 
     List<EthLog.LogResult> ethGetFilterLogs(BigInteger filterId) throws HttpRpcException;
 
-    String ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException;
+    String ethGetBlockHashByNumber(BigInteger blockNumber) throws HttpRpcException;
 
     RskModuleWeb3j.GenericJsonResponse traceTransaction(String transactionHash) throws HttpRpcException;
 
@@ -72,6 +72,14 @@ public interface Web3Connector {
 
     String rskGetRawBlockHeaderByNumber(String bnOrId) throws HttpRpcException;
 
+    RskModuleWeb3j.GenericJsonResponse rskGetRawTransactionReceiptByHash(String txHash) throws HttpRpcException;
+
+    RskModuleWeb3j.GenericJsonResponse rskGetTransactionReceiptNodesByHash(String blockHash, String txHash) throws HttpRpcException;
+
+    RskModuleWeb3j.GenericJsonResponse rskGetRawBlockHeaderByHash(String blockHash) throws HttpRpcException;
+
+    RskModuleWeb3j.GenericJsonResponse rskGetRawBlockHeaderByNumber(BigInteger blockNumber) throws HttpRpcException;
+
     JsonNode debugTraceTransaction(String txHash) throws HttpRpcException;
 
     JsonNode debugTraceTransaction(String txHash, Map<String, String> params) throws HttpRpcException;
@@ -79,4 +87,32 @@ public interface Web3Connector {
     JsonNode debugTraceBlockByHash(String txHash) throws HttpRpcException;
 
     JsonNode debugTraceBlockByHash(String txHash, Map<String, String> params) throws HttpRpcException;
+
+    Response<EthBlock.Block> ethGetBlockByHash(String blockHash) throws HttpRpcException;
+
+    EthBlock ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException;
+
+    EthBlock ethGetBlockByNumber(BigInteger blockNumber, boolean returnFullTransactionObjects) throws HttpRpcException;
+
+    EthTransaction ethGetTransactionByHash(String txHash) throws HttpRpcException;
+
+    EthTransaction ethGetTransactionByBlockHashAndIndex(String blockHash, int index) throws HttpRpcException;
+
+    EthTransaction ethGetTransactionByBlockNumberAndIndex(BigInteger blockNumber, int index) throws HttpRpcException;
+
+    EthGetTransactionReceipt ethGetTransactionReceipt(String txHash) throws HttpRpcException;
+
+    EthGetTransactionCount ethGetTransactionCount(String address, BigInteger blockNumber) throws HttpRpcException;
+
+    EthGetBlockTransactionCountByHash ethGetTransactionCountByHash(String blockHash) throws HttpRpcException;
+
+    EthGetBlockTransactionCountByNumber ethGetBlockTransactionCountByNumber(BigInteger blockNumber) throws HttpRpcException;
+
+    EthGetUncleCountByBlockHash ethGetUncleCountByBlockHash(String blockHash) throws HttpRpcException;
+
+    EthGetUncleCountByBlockNumber ethGetUncleCountByBlockNumber(BigInteger blockNumber) throws HttpRpcException;
+
+    EthBlock ethGetUncleByBlockHashAndIndex(String blockHash, BigInteger index) throws HttpRpcException;
+
+    EthBlock ethGetUncleByBlockNumberAndIndex(BigInteger blockNumber, BigInteger index) throws HttpRpcException;
 }

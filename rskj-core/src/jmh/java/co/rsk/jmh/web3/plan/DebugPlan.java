@@ -89,7 +89,7 @@ public class DebugPlan extends BasePlan {
 
         block = configuration.getNullableProperty("debug.block");
         if (block == null) {
-            block = web3Connector.ethGetBlockByNumber(BigInteger.ONE); // naive, valid only for regtest mode
+            block = web3Connector.ethGetBlockHashByNumber(BigInteger.ONE); // naive, valid only for regtest mode
         }
     }
 
