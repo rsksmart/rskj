@@ -29,18 +29,14 @@ import javax.annotation.Nonnull;
  * The entrypoint for the RSK full node
  */
 public class Start {
-
     private static final Logger logger = LoggerFactory.getLogger("start");
-
-
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
 
         RskCli rskCli = new RskCli();
         CommandLine commandLine = new CommandLine(rskCli);
         int exitCode = commandLine.execute(args);
-//|| rskCli.isVersionRequested() || rskCli.isUsageRequested(
-        if (exitCode != 0 ) {
+        if (exitCode != 0 || commandLine.isVersionHelpRequested() || commandLine.isUsageHelpRequested()) {
             System.exit(exitCode);
         }
 
@@ -58,9 +54,6 @@ public class Start {
             System.exit(1);
         }
     }
-
-
-
 
     static void runNode(@Nonnull Runtime runtime, @Nonnull PreflightChecksUtils preflightChecks, @Nonnull RskContext ctx) throws Exception {
         preflightChecks.runChecks();
