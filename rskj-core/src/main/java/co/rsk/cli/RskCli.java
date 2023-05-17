@@ -3,6 +3,7 @@ package co.rsk.cli;
 import co.rsk.NodeRunner;
 import co.rsk.config.NodeCliFlags;
 import co.rsk.config.NodeCliOptions;
+import co.rsk.util.VersionProviderUtil;
 import picocli.CommandLine;
 
 import java.lang.reflect.Field;
@@ -11,10 +12,10 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-
-@CommandLine.Command(name = "rskj", mixinStandardHelpOptions = true, version = "RSKJ Node 4.5.0",
+//versionProvider = VersionProviderUtil.class
+@CommandLine.Command(name = "rskj", mixinStandardHelpOptions = true, versionProvider = VersionProviderUtil.class,
         description = "RSKJ blockchain node implementation in Java")
-public class RskCli implements Runnable{
+public class RskCli implements Runnable {
 
     // CLI FLAGS
     // db flags
