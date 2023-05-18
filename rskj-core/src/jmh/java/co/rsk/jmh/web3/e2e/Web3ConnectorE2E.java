@@ -205,15 +205,9 @@ public class Web3ConnectorE2E implements Web3Connector {
     }
 
     @Override
-    public String ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException {
-        try {
-            Request<?, EthBlock> request = web3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(blockNumber), false);
-            EthBlock response = request.send();
-            return response.getResult().getHash();
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new HttpRpcException(e);
-        }
+    public String ethGetBlockHashByNumber(BigInteger blockNumber) throws HttpRpcException {
+        EthBlock response = ethGetBlockByNumber(blockNumber);
+        return response.getResult().getHash();
     }
 
     @Override
@@ -280,11 +274,144 @@ public class Web3ConnectorE2E implements Web3Connector {
     public Response<EthBlock.Block> ethGetBlockByHash(String blockHash) throws HttpRpcException {
         try {
             Request<?, EthBlock> request = web3j.ethGetBlockByHash(blockHash, false);
-            Response<EthBlock.Block> response = request.send();
-            return response;
+            return request.send();
         } catch (IOException e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }
     }
+
+    @Override
+    public EthBlock ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException {
+        try {
+            Request<?, EthBlock> request = web3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(blockNumber), false);
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthTransaction ethGetTransactionByHash(String txHash) throws HttpRpcException {
+        try{
+            Request<?, EthTransaction> request = web3j.ethGetTransactionByHash(txHash);
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+
+    }
+
+    @Override
+    public EthTransaction ethGetTransactionByBlockHashAndIndex(String blockHash, int index) throws HttpRpcException {
+        try{
+            Request<?, EthTransaction> request = web3j.ethGetTransactionByBlockHashAndIndex(blockHash, BigInteger.valueOf(index));
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthTransaction ethGetTransactionByBlockNumberAndIndex(BigInteger blockNumber, int index) throws HttpRpcException {
+        try{
+            Request<?, EthTransaction> request = web3j.ethGetTransactionByBlockNumberAndIndex(DefaultBlockParameter.valueOf(blockNumber), BigInteger.valueOf(index));
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthGetTransactionReceipt ethGetTransactionReceipt(String txHash) throws HttpRpcException {
+        try{
+            Request<?, EthGetTransactionReceipt> request = web3j.ethGetTransactionReceipt(txHash);
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthGetTransactionCount ethGetTransactionCount(String address, BigInteger blockNumber) throws HttpRpcException {
+        try{
+            Request<?, EthGetTransactionCount> request = web3j.ethGetTransactionCount(address, DefaultBlockParameter.valueOf(blockNumber));
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthGetBlockTransactionCountByHash ethGetTransactionCountByHash(String blockHash) throws HttpRpcException {
+        try{
+            Request<?, EthGetBlockTransactionCountByHash> request = web3j.ethGetBlockTransactionCountByHash(blockHash);
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthGetBlockTransactionCountByNumber ethGetBlockTransactionCountByNumber(BigInteger blockNumber) throws HttpRpcException {
+        try{
+            Request<?, EthGetBlockTransactionCountByNumber> request = web3j.ethGetBlockTransactionCountByNumber(DefaultBlockParameter.valueOf(blockNumber));
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthGetUncleCountByBlockHash ethGetUncleCountByBlockHash(String blockHash) throws HttpRpcException {
+        try{
+            Request<?, EthGetUncleCountByBlockHash> request = web3j.ethGetUncleCountByBlockHash(blockHash);
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthGetUncleCountByBlockNumber ethGetUncleCountByBlockNumber(BigInteger blockNumber) throws HttpRpcException {
+        try{
+            Request<?, EthGetUncleCountByBlockNumber> request = web3j.ethGetUncleCountByBlockNumber(DefaultBlockParameter.valueOf(blockNumber));
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthBlock ethGetUncleByBlockHashAndIndex(String blockHash, BigInteger index) throws HttpRpcException {
+        try{
+            Request<?, EthBlock> request = web3j.ethGetUncleByBlockHashAndIndex(blockHash, index);
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthBlock ethGetUncleByBlockNumberAndIndex(BigInteger blockNumber, BigInteger index) throws HttpRpcException {
+        try{
+            Request<?, EthBlock> request = web3j.ethGetUncleByBlockNumberAndIndex(DefaultBlockParameter.valueOf(blockNumber), index);
+            return request.send();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
 }

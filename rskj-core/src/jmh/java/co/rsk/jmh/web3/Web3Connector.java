@@ -23,8 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.request.Transaction;
-import org.web3j.protocol.core.methods.response.EthBlock;
-import org.web3j.protocol.core.methods.response.EthLog;
+import org.web3j.protocol.core.methods.response.*;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -56,7 +55,7 @@ public interface Web3Connector {
 
     List<EthLog.LogResult> ethGetFilterLogs(BigInteger filterId) throws HttpRpcException;
 
-    String ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException;
+    String ethGetBlockHashByNumber(BigInteger blockNumber) throws HttpRpcException;
 
     String rskGetRawBlockHeaderByNumber(String bnOrId) throws HttpRpcException;
 
@@ -69,4 +68,28 @@ public interface Web3Connector {
     JsonNode debugTraceBlockByHash(String txHash, Map<String, String> params) throws HttpRpcException;
 
     Response<EthBlock.Block> ethGetBlockByHash(String blockHash) throws HttpRpcException;
+
+    EthBlock ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException;
+
+    EthTransaction ethGetTransactionByHash(String txHash) throws HttpRpcException;
+
+    EthTransaction ethGetTransactionByBlockHashAndIndex(String blockHash, int index) throws HttpRpcException;
+
+    EthTransaction ethGetTransactionByBlockNumberAndIndex(BigInteger blockNumber, int index) throws HttpRpcException;
+
+    EthGetTransactionReceipt ethGetTransactionReceipt(String txHash) throws HttpRpcException;
+
+    EthGetTransactionCount ethGetTransactionCount(String address, BigInteger blockNumber) throws HttpRpcException;
+
+    EthGetBlockTransactionCountByHash ethGetTransactionCountByHash(String blockHash) throws HttpRpcException;
+
+    EthGetBlockTransactionCountByNumber ethGetBlockTransactionCountByNumber(BigInteger blockNumber) throws HttpRpcException;
+
+    EthGetUncleCountByBlockHash ethGetUncleCountByBlockHash(String blockHash) throws HttpRpcException;
+
+    EthGetUncleCountByBlockNumber ethGetUncleCountByBlockNumber(BigInteger blockNumber) throws HttpRpcException;
+
+    EthBlock ethGetUncleByBlockHashAndIndex(String blockHash, BigInteger index) throws HttpRpcException;
+
+    EthBlock ethGetUncleByBlockNumberAndIndex(BigInteger blockNumber, BigInteger index) throws HttpRpcException;
 }
