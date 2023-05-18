@@ -1426,7 +1426,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 rskSystemProperties.getMaxSkeletonChunks(),
                 rskSystemProperties.getChunkSize(),
                 rskSystemProperties.getMaxRequestedBodies(),
-                rskSystemProperties.getLongSyncLimit());
+                rskSystemProperties.getLongSyncLimit(),
+                rskSystemProperties.getTopBest());
     }
 
     protected synchronized StateRootHandler buildStateRootHandler() {
@@ -1887,9 +1888,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private PeersInformation getPeersInformation() {
         if (peersInformation == null) {
+            SyncConfiguration syncConfiguration = getSyncConfiguration();
+
             peersInformation = new PeersInformation(
                     getChannelManager(),
-                    getSyncConfiguration(),
+                    syncConfiguration,
                     getBlockchain(),
                     getPeerScoringManager());
         }
