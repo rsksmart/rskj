@@ -21,12 +21,25 @@ package co.rsk.jmh.web3.plan;
 import co.rsk.jmh.Config;
 import co.rsk.jmh.web3.BenchmarkWeb3;
 import co.rsk.jmh.web3.BenchmarkWeb3Exception;
+import co.rsk.jmh.web3.e2e.RskDebugModuleWeb3j;
+import co.rsk.jmh.web3.e2e.RskModuleWeb3j;
+import co.rsk.jmh.web3.e2e.RskTraceModuleWeb3j;
 import co.rsk.jmh.web3.e2e.Web3ConnectorE2E;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.OkHttpClient;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.BenchmarkParams;
+import org.web3j.protocol.http.HttpService;
+
+import java.time.Duration;
 
 @State(Scope.Benchmark)
 public class BasePlan {
+    protected final ObjectMapper objectMapper = new ObjectMapper();
+    protected RskDebugModuleWeb3j debugModuleWeb3j;
+    protected RskModuleWeb3j rskModuleWeb3j;
+    protected RskTraceModuleWeb3j traceModuleWeb3j;
 
     @Param("regtest")
     public String config;
@@ -43,11 +56,23 @@ public class BasePlan {
 
     @Setup(Level.Trial)
     public void setUp(BenchmarkParams params) throws BenchmarkWeb3Exception {
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         configuration = Config.create(config);
 
         switch (suite) {
             case E2E:
-                web3Connector = Web3ConnectorE2E.create(host);
+                OkHttpClient httpClient = HttpService.getOkHttpClientBuilder()
+                        .readTimeout(Duration.ofSeconds(120))
+                        .writeTimeout(Duration.ofSeconds(120))
+                        .callTimeout(Duration.ofSeconds(120))
+                        .connectTimeout(Duration.ofSeconds(120))
+                        .build();
+
+                this.debugModuleWeb3j = new RskDebugModuleWeb3j(new HttpService(host, httpClient));
+                this.rskModuleWeb3j = new RskModuleWeb3j(new HttpService(host, httpClient));
+                this.traceModuleWeb3j = new RskTraceModuleWeb3j(new HttpService(host));
+
+                web3Connector = Web3ConnectorE2E.create(host, debugModuleWeb3j, rskModuleWeb3j, traceModuleWeb3j);
                 break;
             case INT:
             case UNIT:
@@ -55,7 +80,6 @@ public class BasePlan {
             default:
                 throw new BenchmarkWeb3Exception("Unknown suite: " + suite);
         }
-
     }
 
     public Web3ConnectorE2E getWeb3Connector() {
@@ -76,5 +100,21 @@ public class BasePlan {
 
     public String getHost() {
         return host;
+    }
+
+    public ObjectMapper getObjectMapper() {
+        return objectMapper;
+    }
+
+    public RskDebugModuleWeb3j getDebugModuleWeb3j() {
+        return debugModuleWeb3j;
+    }
+
+    public RskModuleWeb3j getRskModuleWeb3j() {
+        return rskModuleWeb3j;
+    }
+
+    public RskTraceModuleWeb3j getTraceModuleWeb3j() {
+        return traceModuleWeb3j;
     }
 }

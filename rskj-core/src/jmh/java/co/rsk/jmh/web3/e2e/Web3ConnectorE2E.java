@@ -40,29 +40,34 @@ public class Web3ConnectorE2E implements Web3Connector {
 
     private static Web3ConnectorE2E connector;
 
-    private final RskDebugModuleWeb3j debugModuleWeb3j;
+    private RskDebugModuleWeb3j debugModuleWeb3j;
 
-    private final RskModuleWeb3j rskModuleWeb3j;
+    private RskModuleWeb3j rskModuleWeb3j;
 
-    private final RskTraceModuleWeb3j traceModuleWeb3j;
+    private RskTraceModuleWeb3j traceModuleWeb3j;
 
-    private Web3ConnectorE2E(String host) {
-        OkHttpClient httpClient = HttpService.getOkHttpClientBuilder()
-                .readTimeout(Duration.ofSeconds(120))
-                .writeTimeout(Duration.ofSeconds(120))
-                .callTimeout(Duration.ofSeconds(120))
-                .connectTimeout(Duration.ofSeconds(120))
-                .build();
-        this.debugModuleWeb3j = new RskDebugModuleWeb3j(new HttpService(host, httpClient));
-        this.rskModuleWeb3j = new RskModuleWeb3j(new HttpService(host, httpClient));
-        this.traceModuleWeb3j = new RskTraceModuleWeb3j(new HttpService(host));
+    private Web3ConnectorE2E(String host, RskDebugModuleWeb3j debugModuleWeb3j, RskModuleWeb3j rskModuleWeb3j, RskTraceModuleWeb3j traceModuleWeb3j) {
+        this.debugModuleWeb3j = debugModuleWeb3j;
+        this.rskModuleWeb3j = rskModuleWeb3j;
+        this.traceModuleWeb3j = traceModuleWeb3j;
     }
 
-    public static Web3ConnectorE2E create(String host) {
+    public static Web3ConnectorE2E create(String host, RskDebugModuleWeb3j debugModuleWeb3j, RskModuleWeb3j rskModuleWeb3j, RskTraceModuleWeb3j traceModuleWeb3j) {
         if (connector == null) {
-            connector = new Web3ConnectorE2E(host);
+            connector = new Web3ConnectorE2E(host, debugModuleWeb3j, rskModuleWeb3j, traceModuleWeb3j);
         }
         return connector;
+    }
+
+    @Override
+    public JsonNode ethCall(RskModuleWeb3j.EthCallArguments args, String bnOrId) throws HttpRpcException {
+        try {
+            RskModuleWeb3j.GenericJsonResponse response = sendRequest(() -> rskModuleWeb3j.ethCall(args, bnOrId));
+            return response.getResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
     }
 
     @Override
