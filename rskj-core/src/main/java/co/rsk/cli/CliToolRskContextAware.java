@@ -62,13 +62,7 @@ public abstract class CliToolRskContextAware {
     }
 
     public void execute(@Nonnull String[] args, @Nonnull NodeStopper nodeStopper) {
-        RskCli rskCli = new RskCli();
-        CommandLine commandLine = new CommandLine(rskCli);
-        int exitCode = commandLine.execute(args);
-        if (exitCode != 0) {
-            throw new PicocliBadResultException(exitCode);
-        }
-        execute(args, () -> new RskContext(rskCli), nodeStopper);
+        execute(args, () -> new RskContext(new RskCli()), nodeStopper);
     }
 
     public void execute(@Nonnull String[] args, @Nonnull Factory<RskContext> contextFactory, @Nonnull NodeStopper nodeStopper) {
