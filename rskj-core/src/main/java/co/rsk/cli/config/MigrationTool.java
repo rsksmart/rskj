@@ -30,6 +30,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+// TODO: make it extend from PicoCliRskContextAware?
 @Command(name = "migrate", mixinStandardHelpOptions = true, version = "migrate 1.0",
         description = "Migrates configuration.")
 public class MigrationTool implements Callable<Integer> {

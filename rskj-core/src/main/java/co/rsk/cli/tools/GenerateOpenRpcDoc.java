@@ -17,6 +17,7 @@
  */
 package co.rsk.cli.tools;
 
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.cli.exceptions.PicocliBadResultException;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -38,7 +39,6 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,7 +60,7 @@ import java.util.stream.Stream;
  */
 @CommandLine.Command(name = "gen-rpc-docs", mixinStandardHelpOptions = true, version = "gen-rpc-docs 1.0",
         description = "Generates OpenRPC json doc file by merging a static template with several json files under {workdir}/doc/rpc dir")
-public class GenerateOpenRpcDoc implements Callable<Integer> {
+public class GenerateOpenRpcDoc extends PicoCliToolRskContextAware {
 
     public static final JavaType TEMPLATE_DOC_TYPE = TypeFactory.defaultInstance().constructType(TemplateDoc.class);
     private static final JavaType OBJECT_TYPE = TypeFactory.defaultInstance().constructType(Object.class);
