@@ -17,12 +17,9 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.RskCli;
-import co.rsk.cli.exceptions.PicocliBadResultException;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
-import co.rsk.util.PreflightChecksUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
 import org.ethereum.db.BlockStore;
@@ -32,7 +29,7 @@ import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.concurrent.Callable;
+import java.lang.invoke.MethodHandles;
 
 /**
  * The entry point for indexing block blooms
@@ -40,8 +37,7 @@ import java.util.concurrent.Callable;
  */
 @CommandLine.Command(name = "index-blooms", mixinStandardHelpOptions = true, version = "index-blooms 1.0",
         description = "Indexes blooms for a specific block range")
-public class IndexBlooms implements Callable<Integer> {
-
+public class IndexBlooms extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-fb", "--fromBlock"}, description = "From block number", required = true)
     private String fromBlockNumber;
 
@@ -53,31 +49,8 @@ public class IndexBlooms implements Callable<Integer> {
     private static final String EARLIEST = "earliest";
     private static final String LATEST = "latest";
 
-    private final RskContext ctx;
-
-    public IndexBlooms(RskContext ctx) {
-        this.ctx = ctx;
-    }
-
-    // TODO: new context
     public static void main(String[] args) {
-        RskCli rskCli = new RskCli();
-        CommandLine commandLine = new CommandLine(rskCli);
-        int exitCode = commandLine.execute(args);
-        if (exitCode != 0 ) {
-            System.exit(exitCode);
-        }
-
-        RskContext ctx = null;
-        try {
-            ctx = new RskContext(rskCli);
-        } catch (Exception e) {
-            logger.error("The RSK node main thread failed, closing program", e);
-            if (ctx != null) {
-                ctx.close();
-            }
-            System.exit(1);
-        }
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
