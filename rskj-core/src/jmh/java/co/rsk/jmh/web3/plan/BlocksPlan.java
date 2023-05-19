@@ -1,14 +1,43 @@
 package co.rsk.jmh.web3.plan;
 
+import co.rsk.jmh.web3.BenchmarkWeb3Exception;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.infra.BenchmarkParams;
+
 import java.math.BigInteger;
 
+@State(Scope.Benchmark)
 public class BlocksPlan extends BasePlan {
-    private String blockHash = "0x62c7cf2438a8802475120c7f10d525bc58ba3a41d5072c55236e55d939a7968a";
-    private BigInteger blockNumber = BigInteger.valueOf(3590005);//"0x36c775"
-    private String txHash = "0xb4d65fea7cb717ef609326d8cfcfbfda91d110550038042a92d297839dfd2d25";
-    private int txIndex = 0;
-    private String address = "0xcb46c0ddc60d18efeb0e586c17af6ea36452dae0";
-    private int uncleIndex = 0;
+    private String blockHash;
+    private BigInteger blockNumber;
+    private String txHash;
+    private int txIndex;
+    //TODO get a valid address
+    private String address;
+    private BigInteger uncleIndex;
+
+    @Override
+    @Setup(Level.Trial)
+    public void setUp(BenchmarkParams params) throws BenchmarkWeb3Exception {
+        super.setUp(params);
+        try {
+            initParams();
+        } catch (Exception e) {
+            throw new BenchmarkWeb3Exception("Could not initialize plan. ", e);
+        }
+    }
+
+    private void initParams() {
+        blockHash = configuration.getString("block.hash");
+        blockNumber = BigInteger.valueOf(configuration.getLong("block.number"));
+        txHash = configuration.getString("tx.hash");
+        txIndex = configuration.getInt("tx.index");
+        address = configuration.getString("address");
+        uncleIndex = BigInteger.valueOf(configuration.getInt("uncle.index"));
+    }
 
     public String getBlockHash() {
         return blockHash;
@@ -31,6 +60,6 @@ public class BlocksPlan extends BasePlan {
     }
 
     public BigInteger getUncleIndex() {
-        return BigInteger.valueOf(uncleIndex);
+        return uncleIndex;
     }
 }
