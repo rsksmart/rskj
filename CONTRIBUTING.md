@@ -3,11 +3,11 @@
 ## I don't want to read this whole thing I just have a question!!!
 
 Please **don't file an issue** to ask a question. You'll get faster results by using the resources below.
+* We have a [Developer Web Page](dev.rootstock.io) for resources and documentation about Rootstock. 
+* We have a [Open Slack channel](https://open-rsk-dev.slack.com) for technical questions about Rootstock
+* We have a [Telegram channel](https://t.me/RSKsmartcontracts) and a [Discord Channel](https://discord.gg/fPerbqcWGE) for general questions or discussions about Rootstock and RIF ecosystem. 
 
-* We have a [Gitter channel](https://gitter.im/rsksmart/rskj) for technical questions about RSK
-* We have a [Telegram channel](https://t.me/RSKsmartcontracts) for general questions or discussions about RSK
-
-## How to contribute to RSK
+## How to contribute to Rootstock
 
 These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
