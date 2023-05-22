@@ -19,7 +19,7 @@ public class StateChunkRequestMessage extends MessageWithId {
 
     @Override
     public void accept(MessageVisitor v) {
-
+        v.apply(this);
     }
 
     @Override

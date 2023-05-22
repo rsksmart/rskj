@@ -147,6 +147,10 @@ public class MessageVisitor {
         this.blockProcessor.processBlockHeadersRequest(sender, message.getId(), hash, count);
     }
 
+    public void apply(StateChunkRequestMessage message) {
+        this.blockProcessor.processStateChunkRequest(sender, message.getId(), message.getHash());
+    }
+
     public void apply(BlockHashRequestMessage message) {
         this.blockProcessor.processBlockHashRequest(sender, message.getId(), message.getHeight());
     }
