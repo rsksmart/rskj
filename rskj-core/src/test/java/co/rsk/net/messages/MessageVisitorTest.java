@@ -299,6 +299,20 @@ class MessageVisitorTest {
     }
 
     @Test
+    void stateChunkRequestMessage() {
+        StateChunkRequestMessage message = mock(StateChunkRequestMessage.class);
+        byte[] hash = new byte[]{0x0F};
+
+        when(message.getHash()).thenReturn(hash);
+        when(message.getId()).thenReturn(1L);
+
+        target.apply(message);
+
+        verify(blockProcessor, times(1))
+                .processStateChunkRequest(sender, 1L, hash);
+    }
+
+    @Test
     void blockHashRequestMessage() {
         BlockHashRequestMessage message = mock(BlockHashRequestMessage.class);
 

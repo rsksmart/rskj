@@ -294,6 +294,16 @@ public class NodeBlockProcessor implements BlockProcessor {
         sender.sendMessage(responseMessage);
     }
 
+    /**
+     * @param sender the sender of the SkeletonRequest message.
+     * @param requestId the id of the request.
+     * @param hash hash of the requested state
+     */
+    @Override
+    public void processStateChunkRequest(Peer sender, long requestId, byte[] hash) {
+
+    }
+
     @Override
     public boolean canBeIgnoredForUnclesRewards(long blockNumber) {
         return blockSyncService.canBeIgnoredForUnclesRewards(blockNumber);
