@@ -327,6 +327,27 @@ class MessageTest {
     }
 
     @Test
+    void encodeDecodeStateChunkRequestMessage() {
+        long someId = 42;
+        byte[] hash = TestUtils.generateBytes("msg",32);
+
+        StateChunkRequestMessage message = new StateChunkRequestMessage(someId, hash);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.STATE_CHUNK_REQUEST_MESSAGE, result.getMessageType());
+
+        StateChunkRequestMessage newMessage = (StateChunkRequestMessage) result;
+
+        Assertions.assertEquals(someId, newMessage.getId());
+        Assertions.assertArrayEquals(hash, newMessage.getHash());
+    }
+
+    @Test
     void encodeDecodeBlockHashResponseMessage() {
         long id = 42;
         byte[] hash = TestUtils.generateBytes("msg",32);
