@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
+import java.sql.SQLOutput;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -58,7 +59,7 @@ public class StartBootstrap implements Callable<Integer> {
         RskCli rskCli = new RskCli();
         CommandLine commandLine = new CommandLine(rskCli);
         int exitCode = commandLine.execute(args);
-        if (exitCode != 0 ) {
+        if (exitCode != 0 || commandLine.isVersionHelpRequested() || commandLine.isUsageHelpRequested()) {
             System.exit(exitCode);
         }
 
@@ -68,11 +69,9 @@ public class StartBootstrap implements Callable<Integer> {
             new CommandLine(new StartBootstrap(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
         } catch (Exception e) {
             logger.error("Main thread of RSK bootstrap node crashed", e);
-
             if (ctx != null) {
                 ctx.close();
             }
-
             System.exit(1);
         }
     }
