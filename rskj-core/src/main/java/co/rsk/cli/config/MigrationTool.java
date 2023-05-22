@@ -30,9 +30,8 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-// TODO: make it extend from PicoCliRskContextAware?
-@Command(name = "migrate", mixinStandardHelpOptions = true, version = "migrate 1.0",
-        description = "Migrates configuration.")
+@Command(name = "migrate-config", mixinStandardHelpOptions = true, version = "migrate-config 1.0",
+        description = "Migrates configuration using a mapping properties file")
 public class MigrationTool implements Callable<Integer> {
     @Option(names = {"-i", "--input"}, description = "Input file", required = true)
     private String inputFile;
