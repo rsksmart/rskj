@@ -30,6 +30,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.validator.DifficultyRule;
 import org.slf4j.Logger;
@@ -133,15 +134,6 @@ public class SyncProcessor implements SyncEventsHandler {
         } else {
             notifyUnexpectedMessageToPeerScoring(peer, "skeleton");
         }
-    }
-
-    /**
-     * @param sender the sender of the SkeletonRequest message.
-     * @param requestId the id of the request.
-     * @param hash hash of the requested state
-     */
-    public void processStateChunkRequest(Peer sender, long requestId, byte[] hash) {
-
     }
 
 
