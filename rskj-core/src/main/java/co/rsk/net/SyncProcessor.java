@@ -135,6 +135,16 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
+    /**
+     * @param sender the sender of the SkeletonRequest message.
+     * @param requestId the id of the request.
+     * @param hash hash of the requested state
+     */
+    public void processStateChunkRequest(Peer sender, long requestId, byte[] hash) {
+
+    }
+
+
     public void processBlockHashResponse(Peer peer, BlockHashResponseMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.debug("Process block hash response from node {} hash {}", nodeID, HashUtil.toPrintableHash(message.getHash()));

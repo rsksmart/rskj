@@ -110,11 +110,6 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processStateChunkRequest(Peer sender, long requestId, byte[] hash) {
-
-    }
-
-    @Override
     public boolean canBeIgnoredForUnclesRewards(long blockNumber) {
         return false;
     }
