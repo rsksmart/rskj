@@ -148,7 +148,7 @@ public class MessageVisitor {
     }
 
     public void apply(StateChunkRequestMessage message) {
-        this.blockProcessor.processStateChunkRequest(sender, message.getId(), message.getHash());
+        this.syncProcessor.processStateChunkRequest(sender, message.getId(), message.getHash());
     }
 
     public void apply(BlockHashRequestMessage message) {
