@@ -226,6 +226,23 @@ class LogFilterTest {
         assertEquals(-32012,ex.getCode());
     }
 
+    @Test
+    void addFilter_mustFail_whenLimitIsReached(){
+        int limit = 2;
+        LogFilter filter = new LogFilter.LogFilterBuilder(null, null)
+                .maxBlocksToReturn(limit)
+                .build();
+        assertTrue(filter.getEventsInternal().isEmpty());
+        filter.add(new FilterTest.FilterEventMock());
+        filter.add(new FilterTest.FilterEventMock());
+
+        // the limit is reached
+        assertEquals(limit,filter.getEvents().length);
+
+        FilterTest.FilterEventMock thirdEvent = new FilterTest.FilterEventMock();
+        assertThrows(RskJsonRpcRequestException.class, () -> filter.add(thirdEvent));
+    }
+
     private void createBlocksTo(int blockNumber, BlockBuilder blockBuilder, Blockchain blockchain, Account acc1) {
 
         Block parent = blockchain.getBlockByNumber(0);

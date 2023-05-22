@@ -18,14 +18,16 @@
 
 package org.ethereum.rpc;
 
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FilterTest {
 
@@ -47,21 +49,6 @@ class FilterTest {
 
         Object[] events = filter.getEvents();
         assertArrayEquals(new Object[] { mockEvent1.getJsonEventObject(), mockEvent2.getJsonEventObject(), mockEvent3.getJsonEventObject() }, events);
-    }
-
-    @Test
-    void addFilter_mustFail_whenLimitIsReached(){
-        int limit = 2;
-        Filter filter = new Filter(limit);
-        assertTrue(filter.getEventsInternal().isEmpty());
-        filter.add(new FilterEventMock());
-        filter.add(new FilterEventMock());
-
-        // the limit is reached
-        assertEquals(limit,filter.getEvents().length);
-
-        FilterEventMock thirdEvent = new FilterEventMock();
-        assertThrows(RskJsonRpcRequestException.class, () -> filter.add(thirdEvent));
     }
 
     @Test

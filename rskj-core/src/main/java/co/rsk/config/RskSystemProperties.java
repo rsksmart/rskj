@@ -52,8 +52,8 @@ public class RskSystemProperties extends SystemProperties {
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final String RPC_MODULES_PATH = "rpc.modules";
-    private static final String RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY = "rpc.eth_getLogs.maxBlocksToQuery";
-    private static final String RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN = "rpc.eth_getLogs.maxLogsToReturn";
+    private static final String RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY = "rpc.logs.maxBlocksToQuery";
+    private static final String RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN = "rpc.logs.maxLogsToReturn";
 
     private static final int CHUNK_SIZE = 192;
 

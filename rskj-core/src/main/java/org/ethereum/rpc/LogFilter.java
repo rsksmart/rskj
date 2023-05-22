@@ -44,6 +44,7 @@ public class LogFilter extends Filter {
     private final boolean toLatestBlock;
     private final Blockchain blockchain;
     private final long maxBlocksToQuery;
+    private final long maxLogsToReturn;
 
     @Deprecated
     public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock) {
@@ -51,7 +52,7 @@ public class LogFilter extends Filter {
     }
 
     private LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock, long maxBlocksToQuery, long maxLogsToReturn) {
-        super(maxLogsToReturn);
+        this.maxLogsToReturn = maxLogsToReturn;
         this.addressesTopicsFilter = addressesTopicsFilter;
         this.blockchain = blockchain;
         this.fromLatestBlock = fromLatestBlock;
@@ -91,6 +92,14 @@ public class LogFilter extends Filter {
             int txIdx = reverseTxOrder ? txs.size() - i - 1 : i;
             onTransaction(txs.get(txIdx), block, txIdx, reverseTxOrder);
         }
+    }
+
+    @Override
+    protected synchronized void add(FilterEvent event) {
+        if (maxLogsToReturn > 0 && eventsSize() + 1 > maxLogsToReturn) {
+            throw new RskJsonRpcRequestException(JsonRpcError.MAX_ETH_GET_LOGS_LIMIT, "Filter returned more than " + maxLogsToReturn + " logs.");
+        }
+        super.add(event);
     }
 
     @Override

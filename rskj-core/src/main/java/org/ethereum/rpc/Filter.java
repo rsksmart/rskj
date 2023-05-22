@@ -18,11 +18,9 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.jsonrpc.JsonRpcError;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,15 +36,8 @@ public class Filter {
     private List<FilterEvent> events = new ArrayList<>();
     private int processedEvents = 0;
     private long accessTime = System.currentTimeMillis();
-    private final long maxLogsToReturn;
 
-    public Filter() {
-        this.maxLogsToReturn = 0;
-    }
-
-    public Filter(long maxLogsToReturn) {
-        this.maxLogsToReturn = maxLogsToReturn;
-    }
+    public Filter() {}
 
     public boolean hasExpired(long timeout) {
         long nowTime = System.currentTimeMillis();
@@ -83,9 +74,6 @@ public class Filter {
     }
 
     protected synchronized void add(FilterEvent evt) {
-        if (maxLogsToReturn > 0 && events.size() + 1 > maxLogsToReturn) {
-            throw new RskJsonRpcRequestException(JsonRpcError.MAX_ETH_GET_LOGS_LIMIT, "Filter returned more than " + maxLogsToReturn + " logs.");
-        }
         events.add(evt);
     }
 
@@ -102,5 +90,9 @@ public class Filter {
 
     public interface FilterEvent {
         Object getJsonEventObject();
+    }
+
+    protected int eventsSize() {
+        return events.size();
     }
 }
