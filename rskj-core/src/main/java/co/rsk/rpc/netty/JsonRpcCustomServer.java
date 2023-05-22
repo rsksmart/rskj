@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2023 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -65,6 +65,7 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
             }
         } else {
             response = super.handleJsonNodeRequest(node);
+            ExecTimeoutContext.checkIfExpired();
         }
 
         ResponseSizeLimitContext.addResponse(response.getResponse());
@@ -72,18 +73,13 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
     }
 
     private long getTimeout(String moduleName, String methodName) {
-        ModuleDescription moduleDescription =  modules.stream()
+        ModuleDescription moduleDescription = modules.stream()
                 .filter(m -> m.getName().equals(moduleName))
                 .findFirst()
                 .orElse(null);
-        if(moduleDescription == null) {
+        if (moduleDescription == null) {
             return 0;
         }
-        Long methodTimeout = moduleDescription.getMethodTimeout(methodName);
-        if(methodTimeout != null) {
-            return methodTimeout;
-        }
-
-        return moduleDescription.getTimeout();
+        return moduleDescription.getTimeout(methodName);
     }
 }

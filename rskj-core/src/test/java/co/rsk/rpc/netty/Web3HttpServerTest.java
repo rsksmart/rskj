@@ -259,7 +259,7 @@ class Web3HttpServerTest {
             return rawConfig.withValue("rpc.modules", ConfigValueFactory.fromAnyRef(modules));
         };
 
-        String mockResult = "{\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\"}}";
+        String mockResult = "{\"error\":{\"code\":-32011,\"message\":\"Execution has got timeout out.\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
     }
 
@@ -286,7 +286,7 @@ class Web3HttpServerTest {
                     .withValue("rpc.timeout", ConfigValueFactory.fromAnyRef(10_000_000_000L));
         };
 
-        String mockResult = "{\"error\":{\"code\":-32011,\"message\":\"Execution has expired.\"}}";
+        String mockResult = "{\"error\":{\"code\":-32011,\"message\":\"Execution has got timeout out.\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
     }
 

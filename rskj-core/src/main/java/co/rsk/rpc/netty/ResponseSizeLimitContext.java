@@ -56,7 +56,10 @@ public class ResponseSizeLimitContext implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        accumulatedResponseSize.remove();
+        ResponseSizeLimitContext ctx = accumulatedResponseSize.get();
+        if (ctx == this) {
+            accumulatedResponseSize.remove();
+        }
     }
 
     public static ResponseSizeLimitContext createResponseSizeContext(int limit) {
