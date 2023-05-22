@@ -308,7 +308,7 @@ class MessageVisitorTest {
 
         target.apply(message);
 
-        verify(syncProcessor, times(1))
+        verify(blockProcessor, times(1))
                 .processStateChunkRequest(sender, 1L, hash);
     }
 

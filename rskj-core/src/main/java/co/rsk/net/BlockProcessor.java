@@ -62,6 +62,8 @@ public interface BlockProcessor {
 
     void processSkeletonRequest(Peer sender, long requestId, long startNumber);
 
+    void processStateChunkRequest(Peer sender, long requestId, byte[] hash);
+
     boolean canBeIgnoredForUnclesRewards(long blockNumber);
 
 }
