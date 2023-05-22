@@ -255,10 +255,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private volatile boolean closed;
 
-
-    private final RskCli rskCli;
-
-
     /***** Constructors ***********************************************************************************************/
 
     public RskContext(RskCli rskCli) {
@@ -266,7 +262,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     }
 
     private RskContext(RskCli rskCli, CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
-        this.rskCli = Objects.requireNonNull(rskCli, "RskjCli must not be null");
+        Objects.requireNonNull(rskCli, "RskjCli must not be null");
         this.cliArgs = cliArgs;
         initializeNativeLibs();
     }
@@ -638,9 +634,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     .orElse(new ArrayList<>())
                     .contains("*");
 
-            boolean isWalletEnabled = rskSystemProperties != null && rskSystemProperties.isWalletEnabled();
-
-            if (acceptAnyHost && isWalletEnabled) {
+            if (acceptAnyHost && rskSystemProperties != null && rskSystemProperties.isWalletEnabled()) {
                 logger.warn("It is not recommended to bypass hosts checks, by setting '*' in" +
                         " the host list, and have wallet enabled both together." +
                         " If you bypass hosts check we suggest to have wallet disabled, the same thing" +
@@ -1042,8 +1036,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             internalServices.add(getPeerScoringReporterService());
         }
 
-
-        internalServices.add(getBlockChainFlusher());
+        internalServices.add(new BlockChainFlusher(
+                getRskSystemProperties().flushNumberOfBlocks(),
+                getCompositeEthereumListener(),
+                getTrieStore(),
+                getBlockStore(),
+                getReceiptStore(),
+                getBlocksBloomStore(),
+                getStateRootsStore()));
 
         internalServices.add(getExecutionBlockRetriever());
 
