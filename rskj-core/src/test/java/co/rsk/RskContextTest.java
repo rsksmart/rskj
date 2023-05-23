@@ -37,7 +37,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -53,6 +52,7 @@ import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 class RskContextTest {
@@ -108,7 +108,7 @@ class RskContextTest {
     void shouldBuildSimpleTrieStoreCleaningUpMultiTrieStore() throws IOException {
         doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
 
-        databaseDir.toFile().mkdir();
+        assertTrue(databaseDir.toFile().mkdir());
 
         long preExistingEpochs = 4;
         for (int i = 0; i < preExistingEpochs; i++) {
@@ -151,7 +151,7 @@ class RskContextTest {
         int numberOfEpochs = 3;
         doReturn(false).when(testProperties).databaseReset();
 
-        databaseDir.toFile().mkdir();
+        assertTrue(databaseDir.toFile().mkdir());
 
         doReturn(new GarbageCollectorConfig(true, 1000, numberOfEpochs)).when(testProperties).garbageCollectorConfig();
 
