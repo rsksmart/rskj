@@ -193,6 +193,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private SyncProcessor syncProcessor;
     private BlockSyncService blockSyncService;
     private SyncPool syncPool;
+    private StateRequester stateRequester;
     private Web3 web3;
     private JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
@@ -789,7 +790,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (channelManager == null) {
-            channelManager = new ChannelManagerImpl(getRskSystemProperties(), getSyncPool());
+            channelManager = new ChannelManagerImpl(getRskSystemProperties(), getSyncPool(), getStateRequester());
         }
 
         return channelManager;
@@ -961,6 +962,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         internalServices.add(getChannelManager());
         internalServices.add(getNodeMessageHandler());
         internalServices.add(getPeerServer());
+        internalServices.add(getStateRequester());
         boolean rpcHttpEnabled = getRskSystemProperties().isRpcHttpEnabled();
         boolean rpcWebSocketEnabled = getRskSystemProperties().isRpcWebSocketEnabled();
         boolean bloomServiceEnabled = getRskSystemProperties().bloomServiceEnabled();
@@ -1913,6 +1915,20 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return syncPool;
+    }
+
+    private StateRequester getStateRequester() {
+        if (stateRequester == null) {
+            stateRequester = new StateRequester(
+                    getNodeManager(),
+                    () -> new PeerClient(
+                            getRskSystemProperties(),
+                            getCompositeEthereumListener(),
+                            getEthereumChannelInitializerFactory()
+                    )
+            );
+        }
+        return stateRequester;
     }
 
     private Web3 getWeb3() {
