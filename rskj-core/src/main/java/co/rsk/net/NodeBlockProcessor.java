@@ -99,6 +99,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processNewBlockHashesMessage(final Peer sender, final NewBlockHashesMessage message) {
         message.getBlockIdentifiers().stream()
+                .filter(bi -> !isAdvancedBlock(bi.getNumber()))
                 .map(bi -> new Keccak256(bi.getHash()))
                 .distinct()
                 .filter(b -> !hasBlock(b.getBytes()))
