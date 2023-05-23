@@ -2,14 +2,14 @@ package co.rsk.net.messages;
 
 import org.ethereum.util.RLP;
 
-public class StateChunkRequestMessage extends MessageWithId {
+class StateChunkRequestMessage extends MessageWithId {
 
     private final long id;
     private byte[] hash;
 
     public StateChunkRequestMessage(long id, byte[] hash) {
         this.id = id;
-        this.hash = hash;
+        this.hash = hash.clone();
     }
 
     @Override
