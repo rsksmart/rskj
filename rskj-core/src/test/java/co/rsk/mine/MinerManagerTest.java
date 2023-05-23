@@ -38,7 +38,9 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
@@ -52,6 +54,9 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("squid:S5786") // called from another test
 public class MinerManagerTest {
 
+    @TempDir
+    public Path tempDir;
+
     private static final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockchain;
     private MiningMainchainView miningMainchainView;
@@ -63,7 +68,7 @@ public class MinerManagerTest {
 
     @BeforeEach
     void setup() {
-        RskTestFactory factory = new RskTestFactory(config);
+        RskTestFactory factory = new RskTestFactory(tempDir, config);
         blockchain = factory.getBlockchain();
         miningMainchainView = factory.getMiningMainchainView();
         transactionPool = factory.getTransactionPool();

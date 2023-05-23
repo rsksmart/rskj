@@ -28,15 +28,28 @@ import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 
 class ReversibleTransactionExecutorTest {
 
-    private final RskTestFactory factory = new RskTestFactory();
-    private final ContractRunner contractRunner = new ContractRunner(factory);
-    private final ReversibleTransactionExecutor reversibleTransactionExecutor = factory.getReversibleTransactionExecutor();
+    @TempDir
+    public Path tempDir;
+
+    private RskTestFactory factory;
+    private ContractRunner contractRunner;
+    private ReversibleTransactionExecutor reversibleTransactionExecutor;
+
+    @BeforeEach
+    void setup() {
+        factory = new RskTestFactory(tempDir);
+        contractRunner = new ContractRunner(factory);
+        reversibleTransactionExecutor = factory.getReversibleTransactionExecutor();
+    }
 
     @Test
     void executeTransactionHello() {

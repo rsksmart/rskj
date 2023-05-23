@@ -52,9 +52,11 @@ import org.ethereum.util.RLPList;
 import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,6 +78,9 @@ import static org.mockito.Mockito.*;
  */
 public abstract class MinerServerTest {
 
+    @TempDir
+    public Path tempDir;
+
     private TestSystemProperties config;
     private DifficultyCalculator difficultyCalculator;
     private MiningMainchainView miningMainchainView;
@@ -95,7 +100,7 @@ public abstract class MinerServerTest {
     protected void setUp(TestSystemProperties config) {
         this.config = config;
         this.difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
-        rskTestContext = new RskTestFactory(config) {
+        rskTestContext = new RskTestFactory(tempDir, config) {
             @Override
             protected RepositoryLocator buildRepositoryLocator() {
                 return spy(super.buildRepositoryLocator());

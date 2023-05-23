@@ -30,8 +30,10 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -46,6 +48,9 @@ class BlockResultDTOTest {
 
     private Block block;
     private BlockStore blockStore;
+
+    @TempDir
+    public Path tempDir;
 
     // todo(fedejinich) currently RemascTx(blockNumber) has a bug, thats why I initialize this way
     public static final RemascTransaction REMASC_TRANSACTION = new RemascTransaction(new RemascTransaction(1).getEncoded());
@@ -152,7 +157,7 @@ class BlockResultDTOTest {
     }
 
     private Block buildBlockWithTransactions(List<Transaction> transactions) {
-        RskTestFactory objects = new RskTestFactory() {
+        RskTestFactory objects = new RskTestFactory(tempDir) {
             @Override
             protected GenesisLoader buildGenesisLoader() {
                 return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);

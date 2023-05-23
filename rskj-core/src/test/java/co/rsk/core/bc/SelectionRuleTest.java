@@ -5,7 +5,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -23,9 +25,8 @@ class SelectionRuleTest {
     }
 
     @Test
-    void addBlockTest() {
-        Blockchain blockchain = createBlockchain();
-
+    void addBlockTest(@TempDir Path tempDir) {
+        Blockchain blockchain = createBlockchain(tempDir);
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block lowDifficultyBlock = blockGenerator.createChildBlock(blockchain.getBestBlock(), 0, 1);
@@ -43,8 +44,8 @@ class SelectionRuleTest {
         //Low hash is proved in smallerBlockHashTest
     }
 
-    private static Blockchain createBlockchain() {
-        RskTestFactory factory = new RskTestFactory();
+    private static Blockchain createBlockchain(Path tempDir) {
+        RskTestFactory factory = new RskTestFactory(tempDir);
         return factory.getBlockchain();
     }
 }

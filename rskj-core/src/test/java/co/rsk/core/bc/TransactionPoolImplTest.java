@@ -36,9 +36,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,6 +55,9 @@ import static org.mockito.Mockito.*;
 class TransactionPoolImplTest {
     private static final int MAX_CACHE_SIZE = 6000;
 
+    @TempDir
+    public Path tempDir;
+
     private RskTestContext rskTestContext;
     private Blockchain blockChain;
     private TransactionPoolImpl transactionPool;
@@ -62,7 +67,7 @@ class TransactionPoolImplTest {
 
     @BeforeEach
     void setUp() {
-        rskTestContext = new RskTestContext(new String[]{"--regtest"}) {
+        rskTestContext = new RskTestContext(tempDir, "--regtest") {
             @Override
             protected GenesisLoader buildGenesisLoader() {
                 return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);

@@ -754,6 +754,6 @@ class CliToolsTest {
 
     @Test
     void execToolIgnoringArgsShouldNotThrowNoSuchElementException() {
-        Assertions.assertDoesNotThrow(() -> DummyTool.main(new String[]{"--reset", "-t", "dummy-value"}));
+        Assertions.assertDoesNotThrow(() -> DummyTool.main(new String[]{"-Xdatabase.dir=" + tempDir.resolve("db"), "--reset", "-t", "dummy-value"}));
     }
 }

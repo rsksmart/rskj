@@ -33,8 +33,10 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,6 +46,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * Created by ajlopez on 17/01/2018.
  */
 class LogFilterTest {
+
+    @TempDir
+    public Path tempDir;
+
     @Test
     void noEvents() {
         LogFilter filter = new LogFilter(null, null, false, false);
@@ -70,7 +76,7 @@ class LogFilterTest {
 
     @Test
     void eventAfterBlockWithEvent() {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(tempDir);
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
@@ -91,7 +97,7 @@ class LogFilterTest {
 
     @Test
     void twoEventsAfterTwoBlocksWithEventAndToLatestBlock() {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(tempDir);
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
@@ -113,7 +119,7 @@ class LogFilterTest {
 
     @Test
     void onlyOneEventAfterTwoBlocksWithEventAndFromLatestBlock() {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(tempDir);
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
@@ -135,7 +141,7 @@ class LogFilterTest {
 
     @Test
     void testFromFilterRequest() throws Exception {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(tempDir);
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         BlocksBloomStore blocksBloomStore = factory.getBlocksBloomStore();

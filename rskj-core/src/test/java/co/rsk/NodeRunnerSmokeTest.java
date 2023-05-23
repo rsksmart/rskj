@@ -20,44 +20,56 @@ package co.rsk;
 
 import org.ethereum.util.RskTestContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Path;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NodeRunnerSmokeTest {
+
+    @TempDir
+    public Path tempDir;
+
     @Test
     void mainnetSmokeTest() {
-        RskTestContext rskContext = new RskTestContext(new String[0]);
+        RskTestContext rskContext = new RskTestContext(makeDbArg(tempDir, "mainnet"));
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
     }
 
     @Test
     void testnetSmokeTest() {
-        RskTestContext rskContext = new RskTestContext(new String[] { "--testnet" });
+        RskTestContext rskContext = new RskTestContext(makeDbArg(tempDir, "testnet"), "--testnet");
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
     }
 
     @Test
     void regtestSmokeTest() {
-        RskTestContext rskContext = new RskTestContext(new String[] { "--regtest" });
+        RskTestContext rskContext = new RskTestContext(makeDbArg(tempDir, "regtest"), "--regtest");
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
     }
 
     @Test
     void contextRecreationSmokeTest() {
-        RskTestContext rskContext = new RskTestContext(new String[] { "--regtest" });
+        RskTestContext rskContext = new RskTestContext(makeDbArg(tempDir, "regtest"), "--regtest");
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
         assertTrue(rskContext.isClosed());
 
         // re-create context
-        rskContext = new RskTestContext(new String[] { "--regtest" });
+        rskContext = new RskTestContext(makeDbArg(tempDir, "regtest"), "--regtest");
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
         assertTrue(rskContext.isClosed());
+    }
+
+    private static String makeDbArg(Path dbPath, String dbName) {
+        return "-Xdatabase.dir=" + dbPath.resolve(dbName);
     }
 }
