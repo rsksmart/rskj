@@ -30,7 +30,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.validator.DifficultyRule;
 import org.slf4j.Logger;
