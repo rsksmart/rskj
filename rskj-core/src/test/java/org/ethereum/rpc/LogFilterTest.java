@@ -191,7 +191,7 @@ class LogFilterTest {
         Transaction tx = new TransactionBuilder()
                 .nonce(parent.getNumber()) // just to increase nonce
                 .sender(account)
-                .gasLimit(BigInteger.valueOf(1000000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
                 .data(compiled_0_4_11)
                 .build();
