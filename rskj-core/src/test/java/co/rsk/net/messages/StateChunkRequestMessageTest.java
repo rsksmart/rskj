@@ -10,11 +10,9 @@ public class StateChunkRequestMessageTest {
     @Test
     void createMessage() {
         long someId = 42;
-        byte[] someHash = TestUtils.generateBytes("msg",32);
-        StateChunkRequestMessage message = new StateChunkRequestMessage(someId, someHash);
+        StateChunkRequestMessage message = new StateChunkRequestMessage(someId);
 
         Assertions.assertEquals(someId, message.getId());
-        Assertions.assertArrayEquals(someHash, message.getHash());
         Assertions.assertEquals(MessageType.STATE_CHUNK_REQUEST_MESSAGE, message.getMessageType());
     }
 
@@ -23,7 +21,7 @@ public class StateChunkRequestMessageTest {
         long someId = 42;
         byte[] someHash = TestUtils.generateBytes("msg",32);
 
-        StateChunkRequestMessage message = new StateChunkRequestMessage(someId, someHash);
+        StateChunkRequestMessage message = new StateChunkRequestMessage(someId);
 
         MessageVisitor visitor = mock(MessageVisitor.class);
 

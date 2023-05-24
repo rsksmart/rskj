@@ -5,11 +5,9 @@ import org.ethereum.util.RLP;
 class StateChunkRequestMessage extends MessageWithId {
 
     private final long id;
-    private byte[] hash;
 
-    public StateChunkRequestMessage(long id, byte[] hash) {
+    public StateChunkRequestMessage(long id) {
         this.id = id;
-        this.hash = hash.clone();
     }
 
     @Override
@@ -29,11 +27,6 @@ class StateChunkRequestMessage extends MessageWithId {
 
     @Override
     protected byte[] getEncodedMessageWithoutId() {
-        byte[] rlpHash = RLP.encodeElement(this.hash);
-        return RLP.encodeList(rlpHash);
-    }
-
-    public byte[] getHash() {
-        return this.hash.clone();
+        return RLP.encodeList(RLP.encodeElement(null));
     }
 }

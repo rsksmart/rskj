@@ -260,7 +260,7 @@ public enum MessageType {
             byte[] rlpId = list.get(0).getRLPData();
             byte[] hash = message.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            return new StateChunkRequestMessage(id, hash);
+            return new StateChunkRequestMessage(id);
         }
     };
 
