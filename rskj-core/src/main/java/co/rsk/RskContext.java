@@ -983,10 +983,13 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         internalServices.add(getChannelManager());
         internalServices.add(getNodeMessageHandler());
         internalServices.add(getPeerServer());
-        internalServices.add(getStateRequester());
         boolean rpcHttpEnabled = getRskSystemProperties().isRpcHttpEnabled();
         boolean rpcWebSocketEnabled = getRskSystemProperties().isRpcWebSocketEnabled();
         boolean bloomServiceEnabled = getRskSystemProperties().bloomServiceEnabled();
+
+        if (getRskSystemProperties().isStateRequestsEnabled()) {
+            internalServices.add(getStateRequester());
+        }
 
         if (bloomServiceEnabled) {
             internalServices.add(new BlocksBloomService(getCompositeEthereumListener(), getBlocksBloomStore(), getBlockStore()));
