@@ -55,7 +55,7 @@ class ChannelManagerImplTest {
 
     @Test
     void getNumberOfPeersToSendStatusTo() {
-        ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
+        ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null, null);;
 
         assertEquals(1, channelManagerImpl.getNumberOfPeersToSendStatusTo(1));
         assertEquals(2, channelManagerImpl.getNumberOfPeersToSendStatusTo(2));
@@ -70,7 +70,7 @@ class ChannelManagerImplTest {
 
     @Test
     void blockAddressIsAvailable() throws UnknownHostException {
-        ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
+        ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null, null);;
         Assertions.assertTrue(channelManagerImpl.isAddressBlockAvailable(InetAddress.getLocalHost()));
     }
 
@@ -81,7 +81,7 @@ class ChannelManagerImplTest {
         when(config.networkCIDR()).thenReturn(32);
 
         SyncPool syncPool = mock(SyncPool.class);
-        ChannelManagerImpl channelManager = new ChannelManagerImpl(config, syncPool);
+        ChannelManagerImpl channelManager = new ChannelManagerImpl(config, syncPool, null);
 
         String remoteId = "remoteId";
         NodeManager nodeManager = new NodeManager(null, config);
@@ -104,7 +104,7 @@ class ChannelManagerImplTest {
 
     @Test
     void broadcastBlock() {
-        ChannelManager target = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+        ChannelManager target = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class), null);
 
         Block block = mock(Block.class);
         when(block.getHash()).thenReturn(new Keccak256(new byte[32]));
@@ -119,7 +119,7 @@ class ChannelManagerImplTest {
         when(transaction.getHash()).thenReturn(TestUtils.generateHash("txHash"));
         final List<Transaction> transactions = Collections.singletonList(transaction);
         final Map<NodeID,Channel> activePeers = peersForTests(2);
-        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class), null);
         channelManager.setActivePeers(activePeers);
 
         final Set<NodeID> broadcastedTo = channelManager.broadcastTransactions(transactions, Collections.emptySet());
@@ -137,7 +137,7 @@ class ChannelManagerImplTest {
         final Channel sender = mock(Channel.class);
         when(sender.getNodeId()).thenReturn(new NodeID(TestUtils.generatePeerId("sender")));
         activePeers.put(sender.getNodeId(), sender);
-        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class), null);
         channelManager.setActivePeers(activePeers);
 
         final Set<NodeID> broadcastedNodeIDS = channelManager.broadcastTransactions(transactions, Collections.singleton(sender.getNodeId()));
@@ -151,7 +151,7 @@ class ChannelManagerImplTest {
         final Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(TestUtils.generateHash("txHash"));
         final Map<NodeID,Channel> activePeers = peersForTests(2);
-        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class), null);
         channelManager.setActivePeers(activePeers);
 
         final Set<NodeID> broadcastedTo = channelManager.broadcastTransaction(transaction, Collections.emptySet());
@@ -178,7 +178,7 @@ class ChannelManagerImplTest {
     @Test
     void testLogActivePeers() {
         final Map<NodeID,Channel> activePeers = peersForTests(2);
-        final ChannelManagerImpl channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+        final ChannelManagerImpl channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class), null);
         channelManager.setActivePeers(activePeers);
 
         Logger logger = mock(Logger.class);

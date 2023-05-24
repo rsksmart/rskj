@@ -573,7 +573,7 @@ class TransactionModuleTest {
                                 null,
                                 null,
                                 null
-                        )
+                        ), null
                 ),
                 transactionGateway,
                 compositeEthereumListener,
