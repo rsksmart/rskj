@@ -18,13 +18,13 @@
 
 package co.rsk.jmh.web3;
 
-import co.rsk.jmh.web3.plan.BasePlan;
-import co.rsk.jmh.web3.plan.DebugPlan;
-import co.rsk.jmh.web3.plan.EstimatePlan;
-import co.rsk.jmh.web3.plan.GetLogsPlan;
-import co.rsk.jmh.web3.plan.TransactionPlan;
+import co.rsk.jmh.web3.e2e.RskModuleWeb3j;
+import co.rsk.jmh.web3.plan.*;
 import org.openjdk.jmh.annotations.*;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.methods.response.EthAccounts;
+import org.web3j.protocol.core.methods.response.EthGasPrice;
+import org.web3j.protocol.core.methods.response.EthHashrate;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -260,6 +260,29 @@ public class BenchmarkWeb3 {
         String address = plan.getEthMethodsConfig().getEthGetCodeAddress();
         DefaultBlockParameter defaultBlockParameter = plan.getEthMethodsConfig().getLatestBlock();
         plan.getWeb3Connector().ethGetCode(address, defaultBlockParameter);
+    }
+
+    @Benchmark
+    @Timeout(time = 30)
+    public EthAccounts ethAccounts(BasePlan plan) throws BenchmarkWeb3Exception {
+        return plan.getWeb3Connector().ethAccounts();
+    }
+
+    @Benchmark
+    @Timeout(time = 30)
+    public EthHashrate ethHashrate(BasePlan plan) throws BenchmarkWeb3Exception {
+        return plan.getWeb3Connector().ethHashrate();
+    }
+
+    @Benchmark
+    @Timeout(time = 30)
+    public EthGasPrice ethGasPrice(BasePlan plan) throws BenchmarkWeb3Exception {
+        return plan.getWeb3Connector().ethGasPrice();
+    }
+    @Benchmark
+    @Timeout(time = 30)
+    public RskModuleWeb3j.GenericJsonResponse ethBridgeState(BasePlan plan) throws BenchmarkWeb3Exception {
+        return plan.getWeb3Connector().ethBridgeState();
     }
 
     public enum Suites {
