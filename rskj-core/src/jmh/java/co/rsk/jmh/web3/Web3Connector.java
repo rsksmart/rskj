@@ -94,6 +94,14 @@ public interface Web3Connector {
 
     JsonNode debugTraceBlockByHash(String txHash, Map<String, String> params) throws HttpRpcException;
 
+    EthAccounts ethAccounts() throws HttpRpcException;
+
+    EthHashrate ethHashrate() throws HttpRpcException;
+
+    EthGasPrice ethGasPrice() throws HttpRpcException;
+
+    RskModuleWeb3j.GenericJsonResponse ethBridgeState() throws HttpRpcException;
+
     Response<EthBlock.Block> ethGetBlockByHash(String blockHash) throws HttpRpcException;
 
     EthBlock ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException;
