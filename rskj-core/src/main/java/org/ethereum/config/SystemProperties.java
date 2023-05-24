@@ -194,6 +194,8 @@ public abstract class SystemProperties {
         return constants;
     }
 
+    public boolean isStateRequestsEnabled() { return configFromFiles.getBoolean("peer.stateRequests.enabled");}
+
     public boolean isPeerDiscoveryEnabled() {
         return configFromFiles.getBoolean("peer.discovery.enabled");
     }
