@@ -329,9 +329,8 @@ class MessageTest {
     @Test
     void encodeDecodeStateChunkRequestMessage() {
         long someId = 42;
-        byte[] hash = TestUtils.generateBytes("msg",32);
 
-        StateChunkRequestMessage message = new StateChunkRequestMessage(someId, hash);
+        StateChunkRequestMessage message = new StateChunkRequestMessage(someId);
 
         byte[] encoded = message.getEncoded();
 
@@ -344,7 +343,6 @@ class MessageTest {
         StateChunkRequestMessage newMessage = (StateChunkRequestMessage) result;
 
         Assertions.assertEquals(someId, newMessage.getId());
-        Assertions.assertArrayEquals(hash, newMessage.getHash());
     }
 
     @Test

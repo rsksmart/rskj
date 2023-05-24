@@ -296,7 +296,7 @@ public class NodeBlockProcessor implements BlockProcessor {
 
 
     @Override
-    public void processStateChunkRequest(Peer sender, long requestId, byte[] hash) {
+    public void processStateChunkRequest(Peer sender, long requestId) {
 
     }
 
