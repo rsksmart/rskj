@@ -22,6 +22,7 @@ import co.rsk.jsonrpc.JsonRpcError;
 import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.exception.JsonRpcRequestPayloadException;
+import co.rsk.rpc.exception.JsonRpcResponseLimitError;
 import co.rsk.rpc.exception.JsonRpcThrowableError;
 import co.rsk.util.JacksonParserUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -79,6 +80,9 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
                     responseCode = jsonRpcServer.handleRequest(is, os);
                     ExecTimeoutContext.checkIfExpired();
                 }
+            }
+            if (maxResponseSize > 0 && maxResponseSize < responseContent.readableBytes()) {
+                throw new JsonRpcResponseLimitError(maxResponseSize);
             }
         } catch (JsonRpcRequestPayloadException e) {
             String invalidReqMsg = "Invalid request";
