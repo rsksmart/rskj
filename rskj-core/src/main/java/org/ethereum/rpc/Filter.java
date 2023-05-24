@@ -37,8 +37,6 @@ public class Filter {
     private int processedEvents = 0;
     private long accessTime = System.currentTimeMillis();
 
-    public Filter() {}
-
     public boolean hasExpired(long timeout) {
         long nowTime = System.currentTimeMillis();
 

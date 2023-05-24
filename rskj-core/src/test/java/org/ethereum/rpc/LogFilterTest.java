@@ -56,8 +56,7 @@ class LogFilterTest {
 
     @Test
     void noEvents() {
-        LogFilter filter = new LogFilter(null, null, false, false);
-
+        LogFilter filter = new LogFilter.LogFilterBuilder().build();
         Object[] result = filter.getEvents();
 
         Assertions.assertNotNull(result);
@@ -66,7 +65,7 @@ class LogFilterTest {
 
     @Test
     void noEventsAfterEmptyBlock() {
-        LogFilter filter = new LogFilter(null, null, false, false);
+        LogFilter filter =new LogFilter.LogFilterBuilder().build();
 
         Block block = new BlockGenerator().getBlock(1);
 
@@ -89,7 +88,12 @@ class LogFilterTest {
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
 
-        LogFilter filter = new LogFilter(atfilter, blockchain, false, true);
+        LogFilter filter = new LogFilter.LogFilterBuilder()
+                .addressesTopicsFilter(atfilter)
+                .blockchain(blockchain)
+                .fromLatestBlock(false)
+                .toLatestBlock(true)
+                .build();
 
         filter.newBlockReceived(block);
 
@@ -110,7 +114,12 @@ class LogFilterTest {
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
 
-        LogFilter filter = new LogFilter(atfilter, blockchain, false, true);
+        LogFilter filter = new LogFilter.LogFilterBuilder()
+                .addressesTopicsFilter(atfilter)
+                .blockchain(blockchain)
+                .fromLatestBlock(false)
+                .toLatestBlock(true)
+                .build();
 
         filter.newBlockReceived(block);
         filter.newBlockReceived(block);
@@ -132,8 +141,12 @@ class LogFilterTest {
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
 
-        LogFilter filter = new LogFilter(atfilter, blockchain, true, true);
-
+        LogFilter filter = new LogFilter.LogFilterBuilder()
+                .addressesTopicsFilter(atfilter)
+                .blockchain(blockchain)
+                .fromLatestBlock(true)
+                .toLatestBlock(true)
+                .build();
         filter.newBlockReceived(block);
         filter.newBlockReceived(block);
 
@@ -229,7 +242,7 @@ class LogFilterTest {
     @Test
     void addFilter_mustFail_whenLimitIsReached(){
         int limit = 2;
-        LogFilter filter = new LogFilter.LogFilterBuilder(null, null)
+        LogFilter filter = new LogFilter.LogFilterBuilder()
                 .maxBlocksToReturn(limit)
                 .build();
         assertTrue(filter.getEventsInternal().isEmpty());

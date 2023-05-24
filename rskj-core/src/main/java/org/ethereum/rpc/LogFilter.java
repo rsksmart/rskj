@@ -46,11 +46,6 @@ public class LogFilter extends Filter {
     private final long maxBlocksToQuery;
     private final long maxLogsToReturn;
 
-    @Deprecated
-    public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock) {
-        this(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock, 0, 0);
-    }
-
     private LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock, long maxBlocksToQuery, long maxLogsToReturn) {
         this.maxLogsToReturn = maxLogsToReturn;
         this.addressesTopicsFilter = addressesTopicsFilter;
@@ -198,7 +193,9 @@ public class LogFilter extends Filter {
             maxBlocksToReturn = 0L;
         }
 
-        LogFilter filter = new LogFilterBuilder(addressesTopicsFilter, blockchain)
+        LogFilter filter = new LogFilterBuilder()
+                .addressesTopicsFilter(addressesTopicsFilter)
+                .blockchain(blockchain)
                 .fromLatestBlock(fromLatestBlock)
                 .toLatestBlock(toLatestBlock)
                 .maxBlocksToQuery(maxBlocksToQuery)
@@ -344,20 +341,30 @@ public class LogFilter extends Filter {
 
     public static class LogFilterBuilder {
 
-        private final AddressesTopicsFilter addressesTopicsFilter;
-        private final Blockchain blockchain;
+        private AddressesTopicsFilter addressesTopicsFilter;
+        private Blockchain blockchain;
         private boolean fromLatestBlock;
         private boolean toLatestBlock;
         private long maxBlocksToQuery;
         private long maxBlocksToReturn;
 
-        public LogFilterBuilder(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain) {
-            this.addressesTopicsFilter = addressesTopicsFilter;
-            this.blockchain = blockchain;
+        public LogFilterBuilder() {
+            this.addressesTopicsFilter = null;
+            this.blockchain = null;
             this.fromLatestBlock = false;
             this.toLatestBlock = false;
             this.maxBlocksToQuery = 0;
             this.maxBlocksToReturn = 0;
+        }
+
+        public LogFilterBuilder addressesTopicsFilter(AddressesTopicsFilter addressesTopicsFilter) {
+            this.addressesTopicsFilter = addressesTopicsFilter;
+            return this;
+        }
+
+        public LogFilterBuilder blockchain(Blockchain blockchain) {
+            this.blockchain = blockchain;
+            return this;
         }
 
         public LogFilterBuilder fromLatestBlock(boolean fromLatestBlock) {
