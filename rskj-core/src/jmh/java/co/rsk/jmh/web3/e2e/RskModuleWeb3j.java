@@ -42,6 +42,10 @@ public class RskModuleWeb3j extends JsonRpc2_0Web3j {
         return new Request<>("rsk_getRawBlockHeaderByNumber", Collections.singletonList(bnOrId), web3jService, RawBlockHeaderByNumberResponse.class);
     }
 
+    public Request<?, RskModuleWeb3j.GenericJsonResponse> ethBridgeState() {
+        return new Request<>("eth_bridgeState", Collections.emptyList(), web3jService, RskModuleWeb3j.GenericJsonResponse.class);
+    }
+
     public Request<?, GenericJsonResponse> rskGetRawTransactionReceiptByHash(String txHash) {
         return new Request<>("rsk_getRawTransactionReceiptByHash", Collections.singletonList(txHash), web3jService, GenericJsonResponse.class);
     }
