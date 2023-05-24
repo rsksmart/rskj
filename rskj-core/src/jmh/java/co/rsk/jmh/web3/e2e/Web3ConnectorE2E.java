@@ -381,6 +381,46 @@ public class Web3ConnectorE2E implements Web3Connector {
     }
 
     @Override
+    public EthAccounts ethAccounts() throws HttpRpcException {
+        try {
+            return rskModuleWeb3j.ethAccounts().send();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthHashrate ethHashrate() throws HttpRpcException {
+        try {
+            return rskModuleWeb3j.ethHashrate().send();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public EthGasPrice ethGasPrice() throws HttpRpcException {
+        try {
+            return rskModuleWeb3j.ethGasPrice().send();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public RskModuleWeb3j.GenericJsonResponse ethBridgeState() throws HttpRpcException {
+        try {
+            return rskModuleWeb3j.ethBridgeState().send();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
     public EthBlock ethGetBlockByHash(String blockHash) throws HttpRpcException {
         try {
             Request<?, EthBlock> request = rskModuleWeb3j.ethGetBlockByHash(blockHash, false);
