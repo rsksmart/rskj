@@ -63,6 +63,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     protected final BlockSyncService blockSyncService;
     private List<ByteArrayWrapper> trieKeys;
     private int lastKey;
+    private Block bestBlock;
 
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
@@ -311,7 +312,10 @@ public class NodeBlockProcessor implements BlockProcessor {
 
     @Override
     public void processStateChunkRequest(Peer sender, long requestId) {
-        Block bestBlock = blockchain.getBestBlock();
+        if (bestBlock == null) {
+            bestBlock = blockchain.getBestBlock();
+        }
+
         Optional<Trie> retrieve = trieStore.retrieve(bestBlock.getStateRoot());
 
         if (!retrieve.isPresent()) {
@@ -324,6 +328,7 @@ public class NodeBlockProcessor implements BlockProcessor {
 
         int chunk_size = 10;
         List<ByteArrayWrapper> sublistOfKeys = trieKeys.subList(lastKey, chunk_size);
+        lastKey += chunk_size;
         List<byte[]> trieEncoded = new ArrayList<>();
 
         for (ByteArrayWrapper key: sublistOfKeys
