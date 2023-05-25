@@ -308,7 +308,7 @@ class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
         final SimplePeer sender = new SimplePeer();
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
                 mock(StatusResolver.class));
@@ -361,7 +361,7 @@ class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
         final SimplePeer sender = new SimplePeer();
         final SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain,
@@ -406,7 +406,7 @@ class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null,
                 null, mock(StatusResolver.class));
@@ -441,7 +441,7 @@ class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
 
         NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
                 mock(StatusResolver.class));
@@ -473,7 +473,7 @@ class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, mock(StatusResolver.class));
 
@@ -497,7 +497,7 @@ class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
                 mock(StatusResolver.class));
@@ -532,7 +532,7 @@ class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
 
         NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
                 mock(StatusResolver.class));
@@ -568,7 +568,7 @@ class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
                 mock(StatusResolver.class));
 

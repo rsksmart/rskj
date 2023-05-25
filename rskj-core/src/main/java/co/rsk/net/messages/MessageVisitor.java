@@ -188,6 +188,10 @@ public class MessageVisitor {
         blockProcessor.processNewBlockHashesMessage(sender, message);
     }
 
+    public void apply(StateChunkResponseMessage message) {
+        this.syncProcessor.processStateChunk(sender, message);
+    }
+
     public void apply(TransactionsMessage message) {
         if (blockProcessor.hasBetterBlockToSync()) {
             loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());

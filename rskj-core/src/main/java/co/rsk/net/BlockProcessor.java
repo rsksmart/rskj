@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.net.messages.NewBlockHashesMessage;
+import co.rsk.net.messages.StateChunkResponseMessage;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 

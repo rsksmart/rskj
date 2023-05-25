@@ -19,13 +19,19 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +39,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * NodeBlockProcessor processes blocks to add into a blockchain.
@@ -46,32 +53,39 @@ public class NodeBlockProcessor implements BlockProcessor {
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation;
     private final SyncConfiguration syncConfiguration;
+    private TrieStore trieStore;
+    private RepositoryLocator repositoryLocator;
     // keeps on a map the hashes that belongs to the skeleton
     private final Map <Long, byte[]> skeletonCache = new HashMap<>();
 
     protected final NetBlockStore store;
     // keep tabs on which nodes know which blocks.
     protected final BlockSyncService blockSyncService;
+    private List<ByteArrayWrapper> trieKeys;
+    private int lastKey;
 
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
      *
-     * @param store        A BlockStore to store the blocks that are not ready for the Blockchain.
-     * @param blockchain   The blockchain in which to insert the blocks.
+     * @param store            A BlockStore to store the blocks that are not ready for the Blockchain.
+     * @param blockchain       The blockchain in which to insert the blocks.
      * @param nodeInformation
      * @param blockSyncService
+     * @param trieStore
      */
     public NodeBlockProcessor(
             @Nonnull final NetBlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final BlockSyncService blockSyncService,
-            @Nonnull final SyncConfiguration syncConfiguration) {
+            @Nonnull final SyncConfiguration syncConfiguration,
+            TrieStore trieStore) {
         this.store = store;
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
         this.blockSyncService = blockSyncService;
         this.syncConfiguration = syncConfiguration;
+        this.trieStore = trieStore;
     }
 
     /**
@@ -297,7 +311,30 @@ public class NodeBlockProcessor implements BlockProcessor {
 
     @Override
     public void processStateChunkRequest(Peer sender, long requestId) {
+        Block bestBlock = blockchain.getBestBlock();
+        Optional<Trie> retrieve = trieStore.retrieve(bestBlock.getStateRoot());
 
+        if (!retrieve.isPresent()) {
+            return;
+        }
+
+        Trie trie = retrieve.get();
+        trieKeys = new ArrayList<>(trie.collectKeys(Integer.MAX_VALUE));
+        lastKey = 0;
+
+        int chunk_size = 10;
+        List<ByteArrayWrapper> sublistOfKeys = trieKeys.subList(lastKey, chunk_size);
+        List<byte[]> trieEncoded = new ArrayList<>();
+
+        for (ByteArrayWrapper key: sublistOfKeys
+             ) {
+            byte[] value = trie.get(key.getData());
+            trieEncoded.add(RLP.encodeList(RLP.encodeElement(key.getData()), RLP.encode(value)));
+        }
+
+        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(requestId, RLP.encode(trieEncoded));
+
+        sender.sendMessage(responseMessage);
     }
 
     @Override
