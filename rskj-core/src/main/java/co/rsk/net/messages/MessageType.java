@@ -256,9 +256,7 @@ public enum MessageType {
     STATE_CHUNK_REQUEST_MESSAGE(20) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
-            byte[] hash = message.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             return new StateChunkRequestMessage(id);
         }
