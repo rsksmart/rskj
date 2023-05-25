@@ -312,9 +312,13 @@ public class NodeBlockProcessor implements BlockProcessor {
 
     @Override
     public void processStateChunkRequest(Peer sender, long requestId) {
+        logger.debug("Processing state chunk request from node {}", sender.getPeerNodeID());
+
         if (bestBlock == null) {
             bestBlock = blockchain.getBestBlock();
         }
+        
+        logger.debug("Retreiving trie. Trie store is: {}", trieStore);
 
         Optional<Trie> retrieve = trieStore.retrieve(bestBlock.getStateRoot());
 
@@ -322,14 +326,20 @@ public class NodeBlockProcessor implements BlockProcessor {
             return;
         }
 
+        logger.debug("Trie exists");
+
         Trie trie = retrieve.get();
         trieKeys = new ArrayList<>(trie.collectKeys(Integer.MAX_VALUE));
         lastKey = 0;
 
-        int chunk_size = 10;
+        logger.debug("Getting nodes");
+
+        int chunk_size = 100;
         List<ByteArrayWrapper> sublistOfKeys = trieKeys.subList(lastKey, chunk_size);
         lastKey += chunk_size;
         List<byte[]> trieEncoded = new ArrayList<>();
+
+        logger.debug("Encoding nodes");
 
         for (ByteArrayWrapper key: sublistOfKeys
              ) {
@@ -337,8 +347,11 @@ public class NodeBlockProcessor implements BlockProcessor {
             trieEncoded.add(RLP.encodeList(RLP.encodeElement(key.getData()), RLP.encode(value)));
         }
 
+        logger.debug("Sending message", sender.getPeerNodeID());
+
         StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(requestId, RLP.encode(trieEncoded));
 
+        logger.debug("Sending state chunk request to node {}", sender.getPeerNodeID());
         sender.sendMessage(responseMessage);
     }
 

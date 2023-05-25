@@ -988,6 +988,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         boolean rpcWebSocketEnabled = getRskSystemProperties().isRpcWebSocketEnabled();
         boolean bloomServiceEnabled = getRskSystemProperties().bloomServiceEnabled();
 
+        logger.debug("State requester is {}", getRskSystemProperties().isStateRequestsEnabled());
+
         if (getRskSystemProperties().isStateRequestsEnabled()) {
             internalServices.add(getStateRequester());
         }
@@ -2068,6 +2070,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties(),
                     getNodeBlockProcessor(),
                     getSyncProcessor(),
+                    getStateRequester(),
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),

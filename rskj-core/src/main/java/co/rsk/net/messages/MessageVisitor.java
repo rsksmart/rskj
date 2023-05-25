@@ -46,6 +46,7 @@ public class MessageVisitor {
 
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
+    private final StateRequester stateRequester;
     private final TransactionGateway transactionGateway;
     private final Peer sender;
     private final PeerScoringManager peerScoringManager;
@@ -55,6 +56,7 @@ public class MessageVisitor {
     public MessageVisitor(RskSystemProperties config,
                           BlockProcessor blockProcessor,
                           SyncProcessor syncProcessor,
+                          StateRequester stateRequester,
                           TransactionGateway transactionGateway,
                           PeerScoringManager peerScoringManager,
                           ChannelManager channelManager,
@@ -62,6 +64,7 @@ public class MessageVisitor {
 
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
+        this.stateRequester = stateRequester;
         this.transactionGateway = transactionGateway;
         this.peerScoringManager = peerScoringManager;
         this.channelManager = channelManager;
@@ -189,7 +192,7 @@ public class MessageVisitor {
     }
 
     public void apply(StateChunkResponseMessage message) {
-        this.syncProcessor.processStateChunk(sender, message);
+        this.stateRequester.processStateChunk(sender, message);
     }
 
     public void apply(TransactionsMessage message) {
