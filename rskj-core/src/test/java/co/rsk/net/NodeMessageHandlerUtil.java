@@ -39,7 +39,7 @@ public class NodeMessageHandlerUtil {
                 DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
                 mock(EthereumListener.class));
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
 
         return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
     }
@@ -59,7 +59,7 @@ public class NodeMessageHandlerUtil {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
         ProofOfWorkRule blockValidationRule = new ProofOfWorkRule(config);
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);

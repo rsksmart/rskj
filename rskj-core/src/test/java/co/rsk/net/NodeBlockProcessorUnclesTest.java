@@ -156,6 +156,6 @@ class NodeBlockProcessorUnclesTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
-        return new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
+        return new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration, null);
     }
 }
