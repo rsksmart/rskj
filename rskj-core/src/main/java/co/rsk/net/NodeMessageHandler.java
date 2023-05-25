@@ -63,7 +63,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final RskSystemProperties config;
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
-    private final StateRequester stateRequester;
+    private final SnapshotProcessor snapshotProcessor;
     private final ChannelManager channelManager;
     private final TransactionGateway transactionGateway;
     private final PeerScoringManager peerScoringManager;
@@ -96,7 +96,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     public NodeMessageHandler(RskSystemProperties config,
             BlockProcessor blockProcessor,
             SyncProcessor syncProcessor,
-            StateRequester stateRequester,
+            SnapshotProcessor snapshotProcessor,
             @Nullable ChannelManager channelManager,
             @Nullable TransactionGateway transactionGateway,
             @Nullable PeerScoringManager peerScoringManager,
@@ -105,7 +105,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
-        this.stateRequester = stateRequester;
+        this.snapshotProcessor = snapshotProcessor;
         this.transactionGateway = transactionGateway;
         this.statusResolver = statusResolver;
         this.cleanMsgTimestamp = System.currentTimeMillis();
@@ -130,7 +130,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         MessageType messageType = message.getMessageType();
         logger.trace("Process message type: {}", messageType);
 
-        MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, stateRequester, transactionGateway, peerScoringManager, channelManager, sender);
+        MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor,
+                                               snapshotProcessor, transactionGateway, peerScoringManager, channelManager, sender);
         message.accept(mv);
     }
 

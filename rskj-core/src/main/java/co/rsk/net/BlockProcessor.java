@@ -19,7 +19,6 @@
 package co.rsk.net;
 
 import co.rsk.net.messages.NewBlockHashesMessage;
-import co.rsk.net.messages.StateChunkResponseMessage;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
@@ -63,8 +62,5 @@ public interface BlockProcessor {
 
     void processSkeletonRequest(Peer sender, long requestId, long startNumber);
 
-    void processStateChunkRequest(Peer sender, long requestId);
-
     boolean canBeIgnoredForUnclesRewards(long blockNumber);
-
 }

@@ -67,7 +67,7 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
                                    @Nonnull BlockSyncService blockSyncService, @Nonnull SyncConfiguration syncConfiguration,
                                    @Nonnull BlockValidator blockHeaderValidator, @Nonnull BlockValidator blockValidator,
                                    @Nullable Listener listener) {
-        super(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
+        super(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         this.blockHeaderValidator = blockHeaderValidator;
         this.blockValidator = blockValidator;
         this.listener = listener;

@@ -193,7 +193,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private SyncProcessor syncProcessor;
     private BlockSyncService blockSyncService;
     private SyncPool syncPool;
-    private StateRequester stateRequester;
+    private SnapshotProcessor snapshotProcessor;
     private Web3 web3;
     private JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
@@ -621,8 +621,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                         getBlockchain(),
                         getBlockNodeInformation(),
                         getBlockSyncService(),
-                        getSyncConfiguration(),
-                        getTrieStore()
+                        getSyncConfiguration()
                 );
             }
         }
@@ -794,7 +793,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (channelManager == null) {
-            channelManager = new ChannelManagerImpl(getRskSystemProperties(), getSyncPool(), getStateRequester());
+            channelManager = new ChannelManagerImpl(getRskSystemProperties(), getSyncPool(), getSnapshotProcessor());
         }
 
         return channelManager;
@@ -988,10 +987,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         boolean rpcWebSocketEnabled = getRskSystemProperties().isRpcWebSocketEnabled();
         boolean bloomServiceEnabled = getRskSystemProperties().bloomServiceEnabled();
 
-        logger.debug("State requester is {}", getRskSystemProperties().isStateRequestsEnabled());
+        logger.debug("State requester is {}", getRskSystemProperties().isSnapshotSyncEnabled());
 
-        if (getRskSystemProperties().isStateRequestsEnabled()) {
-            internalServices.add(getStateRequester());
+        if (getRskSystemProperties().isSnapshotSyncEnabled()) {
+            internalServices.add(getSnapshotProcessor());
         }
 
         if (bloomServiceEnabled) {
@@ -1938,10 +1937,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return syncPool;
     }
 
-    private StateRequester getStateRequester() {
-        if (stateRequester == null) {
-            stateRequester = new StateRequester(
+    private SnapshotProcessor getSnapshotProcessor() {
+        if (snapshotProcessor == null) {
+            snapshotProcessor = new SnapshotProcessor(
                     getNodeManager(),
+                    getBlockchain(),
+                    getTrieStore(),
                     () -> new PeerClient(
                             getRskSystemProperties(),
                             getCompositeEthereumListener(),
@@ -1949,7 +1950,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     )
             );
         }
-        return stateRequester;
+        return snapshotProcessor;
     }
 
     private Web3 getWeb3() {
@@ -2070,7 +2071,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties(),
                     getNodeBlockProcessor(),
                     getSyncProcessor(),
-                    getStateRequester(),
+                    getSnapshotProcessor(),
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),
