@@ -135,21 +135,6 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
-    public void processStateChunk(Peer peer, StateChunkResponseMessage message) {
-        logger.debug("Process state chunk response from node {}", peer.getPeerNodeID());
-        peersInformation.getOrRegisterPeer(peer);
-
-        long messageId = message.getId();
-        MessageType messageType = message.getMessageType();
-        if (isPending(messageId, messageType)) {
-            removePendingMessage(messageId, messageType);
-            peer.sendMessage(new StateChunkRequestMessage(messageId+1));
-        } else {
-            notifyUnexpectedMessageToPeerScoring(peer, "skeleton");
-        }
-    }
-
-
     public void processBlockHashResponse(Peer peer, BlockHashResponseMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.debug("Process block hash response from node {} hash {}", nodeID, HashUtil.toPrintableHash(message.getHash()));

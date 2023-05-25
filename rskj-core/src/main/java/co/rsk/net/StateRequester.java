@@ -1,6 +1,8 @@
 package co.rsk.net;
 
 import co.rsk.config.InternalService;
+import co.rsk.net.messages.StateChunkRequestMessage;
+import co.rsk.net.messages.StateChunkResponseMessage;
 import org.ethereum.net.NodeHandler;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.PeerClient;
@@ -12,21 +14,17 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class StateRequester implements InternalService {
 
-    private static final long WORKER_TIMEOUT = 60; // seconds
-    private static final Logger logger = LoggerFactory.getLogger("net");
+    private static final Logger logger = LoggerFactory.getLogger("staterequester");
 
     private final NodeManager nodeManager;
     private final PeerClientFactory peerClientFactory;
 
-    private ScheduledExecutorService executor;
     private boolean connected;
-    private Channel peer;
+    private long messageId = 0;
+    private boolean enabled = false;
 
     public StateRequester(
             NodeManager nodeManager,
@@ -38,35 +36,33 @@ public class StateRequester implements InternalService {
 
     @Override
     public void start() {
-        this.executor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "stateRequester"));
-        executor.scheduleWithFixedDelay(
-                () -> {
-                    try {
-                        if (!connected) {
-                            connect();
-                        }
-                        requestState();
-                    } catch (Throwable t) {
-                        logger.error("Unhandled exception", t);
-                    }
-                }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS
-        );
+        logger.debug("Starting state requester...");
+        enabled = true;
+        connect();
     }
 
     @Override
     public void stop() {
-        this.executor.shutdown();
+
     }
 
     public synchronized void add(Channel peer) {
+        if (!enabled) {
+            return;
+        }
         if (!connected) {
-            this.peer = peer;
             this.connected = true;
-            notify();
+            requestState(peer);
         }
     }
 
-    private synchronized void connect() {
+    public void processStateChunk(Peer peer, StateChunkResponseMessage message) {
+        logger.debug("Received state chunk of {} bytes", message.getChunkOfTrieKeyValue().length);
+        // request another chunk
+        requestState(peer);
+    }
+
+    private void connect() {
         // Connect to the first node
         List<NodeHandler> nodes = nodeManager.getNodes(new HashSet<>());
         Node node = nodes.get(0).getNode();
@@ -76,18 +72,12 @@ public class StateRequester implements InternalService {
         logger.info("Connecting to: {}:{}", ip, port);
         PeerClient peerClient = peerClientFactory.newInstance();
         peerClient.connectAsync(ip, port, remoteId);
-
-        try {
-            wait();
-            logger.debug("Thread woke up");
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Waiting interrupted");
-        }
     }
 
-    private void requestState() {
-        // Send request state
-        // peer.sendMessage()
+    private void requestState(Peer peer) {
+        logger.debug("Requesting state chunk to node {}", peer.getPeerNodeID());
+        StateChunkRequestMessage message = new StateChunkRequestMessage(++messageId);
+        peer.sendMessage(message);
     }
 
     public interface PeerClientFactory {
