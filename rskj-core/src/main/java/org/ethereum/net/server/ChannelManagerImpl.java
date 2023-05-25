@@ -22,7 +22,7 @@ package org.ethereum.net.server;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
-import co.rsk.net.StateRequester;
+import co.rsk.net.SnapshotProcessor;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.InetAddressBlock;
@@ -70,7 +70,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private final Object disconnectionTimeoutsLock = new Object();
 
     private final SyncPool syncPool;
-    private final StateRequester stateRequester;
+    private final SnapshotProcessor snapshotProcessor;
     private final NodeFilter trustedPeers;
     private final int maxActivePeers;
     private final int maxConnectionsAllowed;
@@ -78,7 +78,7 @@ public class ChannelManagerImpl implements ChannelManager {
 
     private long timeLastLoggedPeers = System.currentTimeMillis();
 
-    public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool, StateRequester stateRequester) {
+    public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool, SnapshotProcessor snapshotProcessor) {
         this.mainWorker = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "newPeersProcessor"));
         this.syncPool = syncPool;
         this.maxActivePeers = config.maxActivePeers();
@@ -88,7 +88,7 @@ public class ChannelManagerImpl implements ChannelManager {
         this.newPeers = new CopyOnWriteArrayList<>();
         this.maxConnectionsAllowed = config.maxConnectionsAllowed();
         this.networkCIDR = config.networkCIDR();
-        this.stateRequester = stateRequester;
+        this.snapshotProcessor = snapshotProcessor;
     }
 
     @Override
@@ -179,7 +179,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private void addToActives(Channel peer) {
         if (peer.isUsingNewProtocol() || peer.hasEthStatusSucceeded()) {
             syncPool.add(peer);
-            stateRequester.add(peer);
+            snapshotProcessor.add(peer);
             synchronized (activePeersLock) {
                 activePeers.put(peer.getNodeId(), peer);
             }
