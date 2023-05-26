@@ -375,6 +375,10 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("sync.longSyncLimit");
     }
 
+    public boolean isSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.enabled");}
+
+    public int getSnapshotChunkSize() { return configFromFiles.getInt("sync.snapshot.chunkSize");}
+
     // its fixed, cannot be set by config file
     public int getChunkSize() {
         return CHUNK_SIZE;
