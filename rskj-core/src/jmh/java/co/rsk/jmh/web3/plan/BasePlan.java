@@ -21,6 +21,7 @@ package co.rsk.jmh.web3.plan;
 import co.rsk.jmh.Config;
 import co.rsk.jmh.web3.BenchmarkWeb3;
 import co.rsk.jmh.web3.BenchmarkWeb3Exception;
+import co.rsk.jmh.web3.EthMethodsConfig;
 import co.rsk.jmh.web3.e2e.RskDebugModuleWeb3j;
 import co.rsk.jmh.web3.e2e.RskModuleWeb3j;
 import co.rsk.jmh.web3.e2e.RskTraceModuleWeb3j;
@@ -43,16 +44,15 @@ public class BasePlan {
 
     @Param("regtest")
     public String config;
-
     @Param({"E2E"})
     public BenchmarkWeb3.Suites suite;
-
     @Param("http://localhost:4444")
     public String host;
 
     protected Web3ConnectorE2E web3Connector;
-
     protected Config configuration;
+    protected EthMethodsConfig ethMethodsConfig;
+
 
     @Setup(Level.Trial)
     public void setUp(BenchmarkParams params) throws BenchmarkWeb3Exception {
@@ -80,6 +80,7 @@ public class BasePlan {
             default:
                 throw new BenchmarkWeb3Exception("Unknown suite: " + suite);
         }
+        ethMethodsConfig = new EthMethodsConfig(configuration);
     }
 
     public Web3ConnectorE2E getWeb3Connector() {
@@ -100,6 +101,10 @@ public class BasePlan {
 
     public String getHost() {
         return host;
+    }
+
+    public EthMethodsConfig getEthMethodsConfig() {
+        return ethMethodsConfig;
     }
 
     public ObjectMapper getObjectMapper() {
