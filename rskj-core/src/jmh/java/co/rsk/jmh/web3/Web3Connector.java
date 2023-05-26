@@ -60,6 +60,12 @@ public interface Web3Connector {
 
     String ethGetBlockHashByNumber(BigInteger blockNumber) throws HttpRpcException;
 
+    String ethSign(String address, String data) throws HttpRpcException;
+
+    String ethGetStorageAt(String address, BigInteger position, DefaultBlockParameter defaultBlockParameter) throws HttpRpcException;
+
+    String ethGetCode(String address, DefaultBlockParameter defaultBlockParameter) throws HttpRpcException;
+
     RskModuleWeb3j.GenericJsonResponse traceTransaction(String transactionHash) throws HttpRpcException;
 
     RskModuleWeb3j.GenericJsonResponse traceBlock(String blockHash) throws HttpRpcException;
