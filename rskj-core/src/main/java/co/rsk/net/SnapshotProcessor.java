@@ -18,7 +18,10 @@ import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 
 public class SnapshotProcessor implements InternalService {
 
@@ -31,7 +34,6 @@ public class SnapshotProcessor implements InternalService {
 
     private boolean connected;
     private long messageId = 0;
-    private int lastKey = 0;
     private boolean enabled = false;
 
     public SnapshotProcessor(
@@ -79,7 +81,7 @@ public class SnapshotProcessor implements InternalService {
 
         Block bestBlock = blockchain.getBestBlock();
 
-        logger.debug("Retreiving trie. Trie store is: {}", trieStore);
+        logger.debug("Retreiving trie.");
 
         Optional<Trie> retrieve = trieStore.retrieve(bestBlock.getStateRoot());
 
@@ -91,26 +93,24 @@ public class SnapshotProcessor implements InternalService {
 
         Trie trie = retrieve.get();
         List<ByteArrayWrapper> trieKeys = new ArrayList<>(trie.collectKeys(Integer.MAX_VALUE));
-        lastKey = 0;
 
-        logger.debug("Getting nodes");
+        logger.debug("There are {} keys", trieKeys.size());
 
-        int chunk_size = 100;
-        List<ByteArrayWrapper> sublistOfKeys = trieKeys.subList(lastKey, chunk_size);
-        lastKey += chunk_size;
+        int chunk_size = Math.min(100, trieKeys.size());
+        List<ByteArrayWrapper> sublistOfKeys = trieKeys.subList(0, chunk_size);
         List<byte[]> trieEncoded = new ArrayList<>();
 
         logger.debug("Encoding nodes");
 
-        for (ByteArrayWrapper key : sublistOfKeys
-        ) {
+        for (ByteArrayWrapper key : sublistOfKeys) {
             byte[] value = trie.get(key.getData());
-            trieEncoded.add(RLP.encodeList(RLP.encodeElement(key.getData()), RLP.encode(value)));
+            trieEncoded.add(RLP.encodeList(RLP.encodeElement(key.getData()), RLP.encodeElement(value)));
         }
 
-        logger.debug("Sending message", sender.getPeerNodeID());
+        byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
+        logger.debug("Sending message of {} bytes", chunkBytes.length);
 
-        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(requestId, RLP.encode(trieEncoded));
+        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(requestId, chunkBytes);
 
         logger.debug("Sending state chunk request to node {}", sender.getPeerNodeID());
         sender.sendMessage(responseMessage);
@@ -130,7 +130,7 @@ public class SnapshotProcessor implements InternalService {
 
     private void requestState(Peer peer) {
         logger.debug("Requesting state chunk to node {}", peer.getPeerNodeID());
-        StateChunkRequestMessage message = new StateChunkRequestMessage(++messageId);
+        StateChunkRequestMessage message = new StateChunkRequestMessage(messageId++);
         peer.sendMessage(message);
     }
 
