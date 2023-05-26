@@ -20,18 +20,15 @@ package co.rsk.jmh.web3.e2e;
 
 import co.rsk.jmh.web3.Web3Connector;
 import com.fasterxml.jackson.databind.JsonNode;
-import okhttp3.OkHttpClient;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.*;
-import org.web3j.protocol.http.HttpService;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -247,6 +244,42 @@ public class Web3ConnectorE2E implements Web3Connector {
             EthBlock response = sendRequest(() -> rskModuleWeb3j.ethGetBlockByNumber(DefaultBlockParameter.valueOf(blockNumber), false));
             return response.getResult().getHash();
         } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public String ethSign(String address, String data) throws HttpRpcException {
+        try {
+            Request<?, EthSign> request = rskModuleWeb3j.ethSign(address, data);
+            EthSign response = request.send();
+            return response.getSignature();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public String ethGetStorageAt(String address, BigInteger position, DefaultBlockParameter defaultBlockParameter) throws HttpRpcException {
+        try {
+            Request<?, EthGetStorageAt> request = rskModuleWeb3j.ethGetStorageAt(address, position, defaultBlockParameter);
+            EthGetStorageAt response = request.send();
+            return response.getResult();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public String ethGetCode(String address, DefaultBlockParameter defaultBlockParameter) throws HttpRpcException {
+        try {
+            Request<?, EthGetCode> request = rskModuleWeb3j.ethGetCode(address, defaultBlockParameter);
+            EthGetCode response = request.send();
+            return response.getResult();
+        } catch (IOException e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
         }

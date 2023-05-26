@@ -21,7 +21,6 @@ package co.rsk.jmh.web3;
 import co.rsk.jmh.web3.e2e.HttpRpcException;
 import co.rsk.jmh.web3.e2e.RskModuleWeb3j;
 import com.fasterxml.jackson.databind.JsonNode;
-import co.rsk.jmh.web3.e2e.RskDebugModuleWeb3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthLog;
@@ -59,6 +58,12 @@ public interface Web3Connector {
     List<EthLog.LogResult> ethGetFilterLogs(BigInteger filterId) throws HttpRpcException;
 
     String ethGetBlockByNumber(BigInteger blockNumber) throws HttpRpcException;
+
+    String ethSign(String address, String data) throws HttpRpcException;
+
+    String ethGetStorageAt(String address, BigInteger position, DefaultBlockParameter defaultBlockParameter) throws HttpRpcException;
+
+    String ethGetCode(String address, DefaultBlockParameter defaultBlockParameter) throws HttpRpcException;
 
     RskModuleWeb3j.GenericJsonResponse traceTransaction(String transactionHash) throws HttpRpcException;
 
