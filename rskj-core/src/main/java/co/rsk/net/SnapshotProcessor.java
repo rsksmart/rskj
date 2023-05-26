@@ -31,6 +31,7 @@ public class SnapshotProcessor implements InternalService {
     private final PeerClientFactory peerClientFactory;
     private final Blockchain blockchain;
     private final TrieStore trieStore;
+    private final int chunkSize;
 
     private boolean connected;
     private long messageId = 0;
@@ -40,17 +41,18 @@ public class SnapshotProcessor implements InternalService {
             NodeManager nodeManager,
             Blockchain blockchain,
             TrieStore trieStore,
-            PeerClientFactory peerClientFactory) {
+            PeerClientFactory peerClientFactory,
+            int chunkSize) {
         this.nodeManager = nodeManager;
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.peerClientFactory = peerClientFactory;
         this.connected = false;
+        this.chunkSize = chunkSize;
     }
 
     @Override
     public void start() {
-        logger.debug("Starting snapshot processor...");
         enabled = true;
         connect();
     }
@@ -71,7 +73,11 @@ public class SnapshotProcessor implements InternalService {
     }
 
     public void processStateChunk(Peer peer, StateChunkResponseMessage message) {
-        logger.debug("Received state chunk of {} bytes", message.getChunkOfTrieKeyValue().length);
+        logger.debug(
+                "Received state chunk of {} bytes from node {}",
+                message.getChunkOfTrieKeyValue().length,
+                peer.getPeerNodeID()
+        );
         // request another chunk
         requestState(peer);
     }
@@ -80,27 +86,17 @@ public class SnapshotProcessor implements InternalService {
         logger.debug("Processing state chunk request from node {}", sender.getPeerNodeID());
 
         Block bestBlock = blockchain.getBestBlock();
-
-        logger.debug("Retreiving trie.");
-
         Optional<Trie> retrieve = trieStore.retrieve(bestBlock.getStateRoot());
 
         if (!retrieve.isPresent()) {
             return;
         }
 
-        logger.debug("Trie exists");
-
         Trie trie = retrieve.get();
         List<ByteArrayWrapper> trieKeys = new ArrayList<>(trie.collectKeys(Integer.MAX_VALUE));
-
-        logger.debug("There are {} keys", trieKeys.size());
-
-        int chunk_size = Math.min(100, trieKeys.size());
-        List<ByteArrayWrapper> sublistOfKeys = trieKeys.subList(0, chunk_size);
+        int nKeys = Math.min(chunkSize, trieKeys.size());
+        List<ByteArrayWrapper> sublistOfKeys = trieKeys.subList(0, nKeys);
         List<byte[]> trieEncoded = new ArrayList<>();
-
-        logger.debug("Encoding nodes");
 
         for (ByteArrayWrapper key : sublistOfKeys) {
             byte[] value = trie.get(key.getData());
@@ -108,11 +104,8 @@ public class SnapshotProcessor implements InternalService {
         }
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
-        logger.debug("Sending message of {} bytes", chunkBytes.length);
-
         StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(requestId, chunkBytes);
-
-        logger.debug("Sending state chunk request to node {}", sender.getPeerNodeID());
+        logger.debug("Sending state chunk of {} bytes to node {}", chunkBytes.length, sender.getPeerNodeID());
         sender.sendMessage(responseMessage);
     }
 
