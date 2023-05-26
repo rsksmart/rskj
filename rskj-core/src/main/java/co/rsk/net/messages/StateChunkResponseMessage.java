@@ -26,7 +26,7 @@ public class StateChunkResponseMessage extends MessageWithId {
 
     @Override
     protected byte[] getEncodedMessageWithoutId() {
-        return new byte[0];
+        return chunkOfTrieKeyValue;
     }
 
     public byte[] getChunkOfTrieKeyValue() {
