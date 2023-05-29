@@ -23,14 +23,21 @@ import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Genesis;
 import org.ethereum.util.RskTestContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Path;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class GenesisHashesTest {
+
+    @TempDir
+    public Path tempDir;
+
     @Test
     void mainnetHashTest() {
-        RskContext rskContext = new RskTestContext(new String[0]);
+        RskContext rskContext = new RskTestContext(tempDir);
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();
         assertThat(genesis.getHash(), is(new Keccak256("f88529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0")));
@@ -40,7 +47,7 @@ class GenesisHashesTest {
 
     @Test
     void testnetHashTest() {
-        RskContext rskContext = new RskTestContext(new String[]{ "--testnet" });
+        RskContext rskContext = new RskTestContext(tempDir, "--testnet" );
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();
         assertThat(genesis.getHash(), is(new Keccak256("cabb7fbe88cd6d922042a32ffc08ce8b1fbb37d650b9d4e7dbfe2a7469adfa42")));

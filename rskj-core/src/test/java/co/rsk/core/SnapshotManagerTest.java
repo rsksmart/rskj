@@ -30,8 +30,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 
 import static org.mockito.Mockito.mock;
 
@@ -39,6 +41,9 @@ import static org.mockito.Mockito.mock;
  * Created by ajlopez on 15/04/2017.
  */
 class SnapshotManagerTest {
+
+    @TempDir
+    public Path tempDir;
 
     private RskTestContext testContext;
     private Blockchain blockchain;
@@ -49,7 +54,7 @@ class SnapshotManagerTest {
 
     @BeforeEach
     void setUp() {
-        testContext = new RskTestContext(new String[]{"--regtest"});
+        testContext = new RskTestContext(tempDir, "--regtest");
         blockchain = testContext.getBlockchain();
         minerServer = testContext.getMinerServer();
         minerClient = testContext.getMinerClient();

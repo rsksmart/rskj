@@ -37,7 +37,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -53,22 +52,23 @@ import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 class RskContextTest {
 
-    private File databaseDir;
+    private Path databaseDir;
     private RskSystemProperties testProperties;
     private InternalService internalService;
     private RskContext rskContext;
 
     @BeforeEach
     void setUp(@TempDir Path tempDir) throws IOException {
-        databaseDir = tempDir.resolve("database").toFile();
+        databaseDir = tempDir.resolve("database");
 
         testProperties = spy(new TestSystemProperties());
         doReturn(0).when(testProperties).getStatesCacheSize();
-        doReturn(databaseDir.getAbsolutePath()).when(testProperties).databaseDir();
+        doReturn(databaseDir.toString()).when(testProperties).databaseDir();
 
         internalService = mock(InternalService.class);
 
@@ -77,7 +77,7 @@ class RskContextTest {
 
     @Test
     void getCliArgsSmokeTest() {
-        RskTestContext devnetContext = new RskTestContext(new String[] { "--devnet" });
+        RskTestContext devnetContext = new RskTestContext(databaseDir, "--devnet");
         MatcherAssert.assertThat(devnetContext.getCliArgs(), notNullValue());
         MatcherAssert.assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
         devnetContext.close();
@@ -101,36 +101,34 @@ class RskContextTest {
 
         TrieStore trieStore = rskContext.getTrieStore();
         MatcherAssert.assertThat(trieStore, is(instanceOf(TrieStoreImpl.class)));
-        MatcherAssert.assertThat(Files.list(databaseDir.toPath()).count(), is(1L));
+        MatcherAssert.assertThat(Files.list(databaseDir).count(), is(1L));
     }
 
     @Test
     void shouldBuildSimpleTrieStoreCleaningUpMultiTrieStore() throws IOException {
-        Path testDatabasesDirectory = databaseDir.toPath();
         doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
 
-        databaseDir.mkdir();
+        assertTrue(databaseDir.toFile().mkdir());
 
         long preExistingEpochs = 4;
         for (int i = 0; i < preExistingEpochs; i++) {
-            Files.createDirectory(testDatabasesDirectory.resolve(String.format("unitrie_%d", i)));
+            Files.createDirectory(databaseDir.resolve(String.format("unitrie_%d", i)));
         }
 
-        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is(preExistingEpochs));
+        MatcherAssert.assertThat(Files.list(databaseDir).count(), is(preExistingEpochs));
         TrieStore trieStore = rskContext.getTrieStore();
         MatcherAssert.assertThat(trieStore, is(instanceOf(TrieStoreImpl.class)));
-        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is(1L));
+        MatcherAssert.assertThat(Files.list(databaseDir).count(), is(1L));
     }
 
     @Test
     void shouldBuildMultiTrieStore() throws IOException {
         long numberOfEpochs = 3;
-        Path testDatabasesDirectory = databaseDir.toPath();
         doReturn(new GarbageCollectorConfig(true, 1000, (int) numberOfEpochs)).when(testProperties).garbageCollectorConfig();
 
         TrieStore trieStore = rskContext.getTrieStore();
         MatcherAssert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
-        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is(numberOfEpochs));
+        MatcherAssert.assertThat(Files.list(databaseDir).count(), is(numberOfEpochs));
     }
 
     @Test
@@ -138,38 +136,36 @@ class RskContextTest {
         rskContext.close();
 
         long numberOfEpochs = 3;
-        Path testDatabasesDirectory = databaseDir.toPath();
         doReturn(new GarbageCollectorConfig(true, 1000, (int) numberOfEpochs)).when(testProperties).garbageCollectorConfig();
 
         rskContext = makeRskContext();
 
         TrieStore trieStore = rskContext.getTrieStore();
         MatcherAssert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
-        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is(numberOfEpochs));
-        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).noneMatch(p -> p.getFileName().toString().equals("unitrie")), is(true));
+        MatcherAssert.assertThat(Files.list(databaseDir).count(), is(numberOfEpochs));
+        MatcherAssert.assertThat(Files.list(databaseDir).noneMatch(p -> p.getFileName().toString().equals("unitrie")), is(true));
     }
 
     @Test
     void shouldBuildMultiTrieStoreFromExistingDirectories() throws IOException {
         int numberOfEpochs = 3;
-        Path testDatabasesDirectory = databaseDir.toPath();
         doReturn(false).when(testProperties).databaseReset();
 
-        databaseDir.mkdir();
+        assertTrue(databaseDir.toFile().mkdir());
 
         doReturn(new GarbageCollectorConfig(true, 1000, numberOfEpochs)).when(testProperties).garbageCollectorConfig();
 
         int initialEpoch = 3;
         for (int i = initialEpoch; i < initialEpoch + numberOfEpochs; i++) {
-            Files.createDirectory(testDatabasesDirectory.resolve(String.format("unitrie_%d", i)));
+            Files.createDirectory(databaseDir.resolve(String.format("unitrie_%d", i)));
         }
         rskContext.close();
         rskContext = makeRskContext();
 
         TrieStore trieStore = rskContext.getTrieStore();
         MatcherAssert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
-        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is((long) numberOfEpochs));
-        int[] directorySuffixes = Files.list(testDatabasesDirectory)
+        MatcherAssert.assertThat(Files.list(databaseDir).count(), is((long) numberOfEpochs));
+        int[] directorySuffixes = Files.list(databaseDir)
                 .map(Path::getFileName)
                 .map(Path::toString)
                 .map(fileName -> fileName.replaceAll("unitrie_", ""))
