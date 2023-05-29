@@ -4,6 +4,7 @@ import co.rsk.config.NodeCliFlags;
 import co.rsk.config.NodeCliOptions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
 
 class CliArgsTest {
 
@@ -11,10 +12,10 @@ class CliArgsTest {
     void parseArgsCorrectly() {
         String[] args = new String[]{"--regtest", "-Xdatabase.dir=/home/rsk/data"};
 
-        CliArgs<NodeCliOptions, NodeCliFlags> cliArgs = new CliArgs.Parser<>(
-                NodeCliOptions.class,
-                NodeCliFlags.class
-        ).parse(args);
+        RskCli rskCli = new RskCli();
+        CommandLine commandLine = new CommandLine(rskCli);
+        commandLine.parseArgs(args);
+        CliArgs<NodeCliOptions, NodeCliFlags> cliArgs = rskCli.getCliArgs();
 
         Assertions.assertEquals(1, cliArgs.getFlags().size());
         Assertions.assertEquals(1, cliArgs.getParamValueMap().size());
@@ -25,11 +26,10 @@ class CliArgsTest {
     @Test
     void parseArgsIncorrectlyWithBadXArg() {
         String[] args = new String[]{"--regtest", "-Xdatabase.dir"};
-        CliArgs.Parser<NodeCliOptions, NodeCliFlags> parser = new CliArgs.Parser<>(
-                NodeCliOptions.class,
-                NodeCliFlags.class
-        );
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> parser.parse(args));
+        RskCli rskCli = new RskCli();
+        CommandLine commandLine = new CommandLine(rskCli);
+        // preguntar si hay que tirar esta excepcion exacta o esta bien la de PicoCli
+        Assertions.assertThrows(IllegalArgumentException.class, () -> commandLine.parseArgs(args));
     }
 }
