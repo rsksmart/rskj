@@ -17,7 +17,6 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.cli.exceptions.PicocliBadResultException;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
