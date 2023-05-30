@@ -53,7 +53,7 @@ public class RskCli implements Runnable {
     @CommandLine.Option(names = {"-X"}, description = "Read arguments in command line")
     private String xArgument;
     private boolean versionOrHelpRequested = false;
-    private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs = CliArgs.of(null, null, null);
+    private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
     public int load(String[] args) {
         CommandLine commandLine = new CommandLine(this);
