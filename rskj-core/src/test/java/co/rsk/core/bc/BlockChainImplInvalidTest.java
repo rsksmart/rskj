@@ -43,7 +43,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import picocli.CommandLine;
 
 import java.math.BigInteger;
 import java.nio.file.Path;
@@ -66,7 +65,7 @@ class BlockChainImplInvalidTest {
     @BeforeEach
     void setup() {
         RskCli rskCli = new RskCli();
-        new CommandLine(rskCli).parseArgs(new String[0]);
+        rskCli.load(new String[0]);
         objects = new RskTestContext(tempDir) {
             @Override
             protected synchronized RskSystemProperties buildRskSystemProperties() {

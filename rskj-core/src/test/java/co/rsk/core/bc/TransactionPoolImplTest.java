@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.cli.RskCli;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.genesis.TestGenesisLoader;
@@ -67,6 +68,9 @@ class TransactionPoolImplTest {
 
     @BeforeEach
     void setUp() {
+//        RskCli rskCli = new RskCli();
+//        rskCli.load(new String[]{"--regtest"});
+//        rskTestContext = new RskTestContext(rskCli) {
         rskTestContext = new RskTestContext(tempDir, "--regtest") {
             @Override
             protected GenesisLoader buildGenesisLoader() {

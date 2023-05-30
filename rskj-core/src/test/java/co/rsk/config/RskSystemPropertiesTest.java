@@ -23,11 +23,9 @@ import co.rsk.cli.RskCli;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import picocli.CommandLine;
 
 import java.util.List;
 import java.util.Map;
@@ -112,7 +110,7 @@ class RskSystemPropertiesTest {
     @Test
     void testRpcModules() {
         RskCli rskCli = new RskCli();
-        new CommandLine(rskCli).parseArgs(new String[]{});
+        rskCli.load(new String[]{});
 
         RskSystemProperties rskSystemProperties = new RskSystemProperties(
                 new ConfigLoader(

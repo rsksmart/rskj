@@ -19,6 +19,7 @@
 package co.rsk;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.cli.RskCli;
 import co.rsk.config.*;
 import co.rsk.net.AsyncNodeBlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
@@ -77,6 +78,10 @@ class RskContextTest {
 
     @Test
     void getCliArgsSmokeTest() {
+//        RskCli rskCli = new RskCli();
+//        rskCli.load(new String[] { "--devnet" });
+//        RskTestContext devnetContext = new RskTestContext(rskCli);
+
         RskTestContext devnetContext = new RskTestContext(databaseDir, "--devnet");
         MatcherAssert.assertThat(devnetContext.getCliArgs(), notNullValue());
         MatcherAssert.assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
@@ -235,7 +240,9 @@ class RskContextTest {
 
     @Test
     void closedContextShouldThrowErrorWhenBeingUsed() throws IllegalAccessException {
-        RskContext rskContext = new RskContext(new String[0]);
+        RskCli rskCli = new RskCli();
+        rskCli.load(new String[0]);
+        RskContext rskContext = new RskContext(rskCli);
 
         rskContext.close();
 
@@ -278,7 +285,9 @@ class RskContextTest {
     }
 
     private RskContext makeRskContext() {
-        return new RskContext(new String[0]) {
+        RskCli rskCli = new RskCli();
+        rskCli.load(new String[0]);
+        return new RskContext(rskCli) {
             @Override
             public RskSystemProperties getRskSystemProperties() {
                 return testProperties;

@@ -18,6 +18,7 @@
 
 package co.rsk;
 
+import co.rsk.cli.RskCli;
 import org.ethereum.util.RskTestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -25,7 +26,6 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -36,6 +36,10 @@ class NodeRunnerSmokeTest {
 
     @Test
     void mainnetSmokeTest() {
+//        RskCli rskCli = new RskCli();
+//        rskCli.load(new String[0]);
+//
+//        RskTestContext rskContext = new RskTestContext(rskCli);
         RskTestContext rskContext = new RskTestContext(makeDbArg(tempDir, "mainnet"));
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
@@ -43,6 +47,10 @@ class NodeRunnerSmokeTest {
 
     @Test
     void testnetSmokeTest() {
+//        RskCli rskCli = new RskCli();
+//        rskCli.load(new String[] { "--testnet" });
+//
+//        RskTestContext rskContext = new RskTestContext(rskCli);
         RskTestContext rskContext = new RskTestContext(makeDbArg(tempDir, "testnet"), "--testnet");
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
@@ -50,6 +58,10 @@ class NodeRunnerSmokeTest {
 
     @Test
     void regtestSmokeTest() {
+//        RskCli rskCli = new RskCli();
+//        rskCli.load(new String[] { "--regtest" });
+//
+//        RskTestContext rskContext = new RskTestContext(rskCli);
         RskTestContext rskContext = new RskTestContext(makeDbArg(tempDir, "regtest"), "--regtest");
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
@@ -57,12 +69,19 @@ class NodeRunnerSmokeTest {
 
     @Test
     void contextRecreationSmokeTest() {
+//        RskCli rskCli = new RskCli();
+//        rskCli.load(new String[]{ "--regtest" });
+//
+//        RskTestContext rskContext = new RskTestContext(rskCli);
         RskTestContext rskContext = new RskTestContext(makeDbArg(tempDir, "regtest"), "--regtest");
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
         assertTrue(rskContext.isClosed());
 
         // re-create context
+//        RskCli rskCli2 = new RskCli();
+//        rskCli2.load(new String[]{ "--regtest" });
+//        rskContext = new RskTestContext(rskCli2);
         rskContext = new RskTestContext(makeDbArg(tempDir, "regtest"), "--regtest");
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
