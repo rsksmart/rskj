@@ -3,11 +3,11 @@ package co.rsk.net;
 import co.rsk.config.InternalService;
 import co.rsk.net.messages.StateChunkRequestMessage;
 import co.rsk.net.messages.StateChunkResponseMessage;
+import co.rsk.trie.IterationElement;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.NodeHandler;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.PeerClient;
@@ -18,10 +18,7 @@ import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class SnapshotProcessor implements InternalService {
 
@@ -93,14 +90,16 @@ public class SnapshotProcessor implements InternalService {
         }
 
         Trie trie = retrieve.get();
-        List<ByteArrayWrapper> trieKeys = new ArrayList<>(trie.collectKeys(Integer.MAX_VALUE));
-        int nKeys = Math.min(chunkSize, trieKeys.size());
-        List<ByteArrayWrapper> sublistOfKeys = trieKeys.subList(0, nKeys);
         List<byte[]> trieEncoded = new ArrayList<>();
+        Iterator<IterationElement> it = trie.getInOrderIterator();
+        int i = 0;
 
-        for (ByteArrayWrapper key : sublistOfKeys) {
-            byte[] value = trie.get(key.getData());
-            trieEncoded.add(RLP.encodeList(RLP.encodeElement(key.getData()), RLP.encodeElement(value)));
+        while (it.hasNext() && i < chunkSize) {
+            IterationElement e = it.next();
+            byte[] key = e.getNodeKey().encode();
+            byte[] value = e.getNode().getValue();
+            trieEncoded.add(RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(value)));
+            i++;
         }
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
