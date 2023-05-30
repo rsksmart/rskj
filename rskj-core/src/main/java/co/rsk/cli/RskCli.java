@@ -1,18 +1,13 @@
 package co.rsk.cli;
 
-import co.rsk.NodeRunner;
 import co.rsk.config.NodeCliFlags;
 import co.rsk.config.NodeCliOptions;
 import co.rsk.util.VersionProviderUtil;
 import picocli.CommandLine;
 
-import java.lang.reflect.Field;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
-//versionProvider = VersionProviderUtil.class
 @CommandLine.Command(name = "rskj", mixinStandardHelpOptions = true, versionProvider = VersionProviderUtil.class,
         description = "RSKJ blockchain node implementation in Java")
 public class RskCli implements Runnable {
@@ -55,7 +50,30 @@ public class RskCli implements Runnable {
     @CommandLine.Option(names = {"-base-path"}, description = "Set base path")
     private String basePath;
 
+    @CommandLine.Option(names = {"-X"}, description = "Read arguments in command line")
+    private String xArgument;
+    private boolean versionOrHelpRequested = false;
+    private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs = CliArgs.of(null, null, null);
+
+    public int load(String[] args) {
+        CommandLine commandLine = new CommandLine(this);
+        int exitCode = commandLine.execute(args);
+        if (commandLine.isVersionHelpRequested() || commandLine.isUsageHelpRequested()) {
+           this.versionOrHelpRequested = true;
+        }
+        loadCliArgs();
+        return exitCode;
+    }
+
     public CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
+       return cliArgs;
+    }
+
+    public boolean isVersionOrHelpRequested() {
+        return versionOrHelpRequested;
+    }
+
+    private void loadCliArgs() {
         EnumSet<NodeCliFlags> activatedFlags = EnumSet.noneOf(NodeCliFlags.class);
         Map<NodeCliOptions, String> activatedOptions = new HashMap<>();
         Map<String, String> paramValueMap = new HashMap<>();
@@ -106,9 +124,22 @@ public class RskCli implements Runnable {
             activatedOptions.put(NodeCliOptions.BASE_PATH, basePath);
             paramValueMap.put("base-path", basePath);
         }
-        return CliArgs.of(activatedOptions, activatedFlags, paramValueMap);
+
+        if (xArgument != null) {
+            String[] keyValuePair = splitXArgumentIntoKeyValue(xArgument);
+            paramValueMap.put(keyValuePair[0], keyValuePair[1]);
+        }
+
+        cliArgs = CliArgs.of(activatedOptions, activatedFlags, paramValueMap);
     }
 
+    private String[] splitXArgumentIntoKeyValue(String xArgument) throws IllegalArgumentException {
+        String[] keyValuePair = xArgument.split("=", 2);
+        if (keyValuePair.length != 2) {
+            throw new IllegalArgumentException("Invalid format for -X argument. Expected format is key=value.");
+        }
+        return keyValuePair;
+    }
     @Override
     public void run() {
     }

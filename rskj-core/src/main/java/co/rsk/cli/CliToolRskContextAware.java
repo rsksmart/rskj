@@ -62,7 +62,9 @@ public abstract class CliToolRskContextAware {
     }
 
     public void execute(@Nonnull String[] args, @Nonnull NodeStopper nodeStopper) {
-        execute(args, () -> new RskContext(new RskCli()), nodeStopper);
+        RskCli rskCli = new RskCli();
+        rskCli.load(args);
+        execute(args, () -> new RskContext(rskCli), nodeStopper);
     }
 
     public void execute(@Nonnull String[] args, @Nonnull Factory<RskContext> contextFactory, @Nonnull NodeStopper nodeStopper) {
