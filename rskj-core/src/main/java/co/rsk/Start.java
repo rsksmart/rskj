@@ -34,9 +34,8 @@ public class Start {
         setUpThread(Thread.currentThread());
 
         RskCli rskCli = new RskCli();
-        CommandLine commandLine = new CommandLine(rskCli);
-        int exitCode = commandLine.execute(args);
-        if (exitCode != 0 || commandLine.isVersionHelpRequested() || commandLine.isUsageHelpRequested()) {
+        int exitCode = rskCli.load(args);
+        if (exitCode != 0 || rskCli.isVersionOrHelpRequested()) {
             System.exit(exitCode);
         }
 
