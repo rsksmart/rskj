@@ -17,7 +17,9 @@
  */
 package co.rsk.cli.config;
 
-import co.rsk.cli.CliArgs;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -25,10 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.Callable;
-
-import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 
 @Command(name = "migrate-config", mixinStandardHelpOptions = true, version = "migrate-config 1.0",
         description = "Migrates configuration using a mapping properties file")
