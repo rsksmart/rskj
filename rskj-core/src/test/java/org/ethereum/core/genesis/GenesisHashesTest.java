@@ -19,7 +19,6 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.RskContext;
-import co.rsk.cli.RskCli;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Genesis;
 import org.ethereum.util.RskTestContext;
@@ -39,9 +38,6 @@ class GenesisHashesTest {
     @Test
     void mainnetHashTest() {
         RskContext rskContext = new RskTestContext(tempDir);
-       // RskCli rskCli = new RskCli();
-     //   rskCli.load(new String[]{ "--main" });
-       // RskContext rskContext = new RskTestContext(rskCli);
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();
         assertThat(genesis.getHash(), is(new Keccak256("f88529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0")));
@@ -51,8 +47,6 @@ class GenesisHashesTest {
 
     @Test
     void testnetHashTest() {
-        RskCli rskCli = new RskCli();
-        rskCli.load(new String[]{ "--testnet" });
         RskContext rskContext = new RskTestContext(tempDir, "--testnet" );
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();

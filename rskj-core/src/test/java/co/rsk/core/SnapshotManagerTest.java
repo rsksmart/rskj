@@ -18,7 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.cli.RskCli;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -55,9 +54,6 @@ class SnapshotManagerTest {
 
     @BeforeEach
     void setUp() {
-//        RskCli rskCli = new RskCli();
-//        rskCli.load(new String[]{"--regtest"});
-//        testContext = new RskTestContext(rskCli);
         testContext = new RskTestContext(tempDir, "--regtest");
         blockchain = testContext.getBlockchain();
         minerServer = testContext.getMinerServer();

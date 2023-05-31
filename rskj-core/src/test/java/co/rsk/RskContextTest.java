@@ -78,10 +78,6 @@ class RskContextTest {
 
     @Test
     void getCliArgsSmokeTest() {
-//        RskCli rskCli = new RskCli();
-//        rskCli.load(new String[] { "--devnet" });
-//        RskTestContext devnetContext = new RskTestContext(rskCli);
-
         RskTestContext devnetContext = new RskTestContext(databaseDir, "--devnet");
         MatcherAssert.assertThat(devnetContext.getCliArgs(), notNullValue());
         MatcherAssert.assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));

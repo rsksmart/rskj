@@ -18,14 +18,12 @@
 package co.rsk.cli;
 
 import co.rsk.RskContext;
-import co.rsk.cli.exceptions.PicocliBadResultException;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.Factory;
 import co.rsk.util.NodeStopper;
 import org.ethereum.datasource.KeyValueDataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;

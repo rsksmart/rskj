@@ -1,7 +1,6 @@
 package co.rsk.util;
 
 import co.rsk.RskContext;
-import co.rsk.cli.RskCli;
 import org.ethereum.util.RskTestContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -22,10 +21,6 @@ class PreflightChecksUtilsTest {
 
     @Test
     void runChecks_receivesSkipJavaCheck_skipsJavaChecks() throws Exception {
-//        RskCli rskCli = new RskCli();
-//        rskCli.load(new String[]{"--skip-java-check"});
-//        RskContext rskContext = new RskTestContext(rskCli);
-
         String[] args = {"--skip-java-check"};
 
         RskContext rskContext = new RskTestContext(tempDir, args);
@@ -42,10 +37,6 @@ class PreflightChecksUtilsTest {
 
     @Test
     void getIntJavaVersion_OK() {
-//        RskCli rskCli = new RskCli();
-//        rskCli.load(new String[0]);
-//        RskContext rskContext = new RskTestContext(rskCli);
-
         RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtils = new PreflightChecksUtils(rskContext);
 
@@ -63,10 +54,6 @@ class PreflightChecksUtilsTest {
 
     @Test
     void runChecks_invalidJavaVersion_exceptionIsThrown() {
-//        RskCli rskCli = new RskCli();
-//        rskCli.load(new String[0]);
-//        RskContext rskContext = new RskTestContext(rskCli);
-
         RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
@@ -80,10 +67,6 @@ class PreflightChecksUtilsTest {
 
     @Test
     void runChecks_currentJavaVersionIs17_OK() throws Exception {
-//        RskCli rskCli = new RskCli();
-//        rskCli.load(new String[0]);
-//        RskContext rskContext = new RskTestContext(rskCli);
-
         RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
@@ -99,10 +82,6 @@ class PreflightChecksUtilsTest {
 
     @Test
     void runChecks_currentJavaVersionIs11_OK() throws Exception {
-//        RskCli rskCli = new RskCli();
-//        rskCli.load(new String[0]);
-//        RskContext rskContext = new RskTestContext(rskCli);
-
         RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
@@ -118,10 +97,6 @@ class PreflightChecksUtilsTest {
 
     @Test
     void runChecks_runAllChecks_OK() throws Exception {
-//        RskCli rskCli = new RskCli();
-//        rskCli.load(new String[0]);
-//        RskContext rskContext = new RskTestContext(rskCli);
-
         RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 

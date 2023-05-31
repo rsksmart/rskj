@@ -20,7 +20,6 @@ package co.rsk.core.bc;
 
 import co.rsk.RskContext;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.cli.RskCli;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.test.builders.BlockBuilder;
@@ -64,8 +63,6 @@ class BlockChainImplInvalidTest {
 
     @BeforeEach
     void setup() {
-        RskCli rskCli = new RskCli();
-        rskCli.load(new String[0]);
         objects = new RskTestContext(tempDir) {
             @Override
             protected synchronized RskSystemProperties buildRskSystemProperties() {
