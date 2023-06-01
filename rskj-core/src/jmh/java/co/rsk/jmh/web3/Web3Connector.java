@@ -32,6 +32,8 @@ import java.util.Map;
 
 public interface Web3Connector {
 
+    JsonNode ethCall(RskModuleWeb3j.EthCallArguments args, String bnOrId) throws HttpRpcException;
+
     BigInteger ethGetTransactionCount(String address) throws HttpRpcException;
 
     BigInteger ethGetBalance(String address, String block) throws HttpRpcException;
