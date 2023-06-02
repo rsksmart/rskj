@@ -36,7 +36,6 @@ public class BlocksPlan extends BasePlan {
     private String txHash;
     private String txBlockHash;
     private int txIndex;
-    //TODO get a valid address
     private String address;
     private BigInteger uncleIndex;
 
