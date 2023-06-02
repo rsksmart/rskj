@@ -242,7 +242,6 @@ public class BenchmarkWeb3 {
 
 
     @Benchmark
-    @Timeout(time = 30)
     public void ethSign(BasePlan plan) throws BenchmarkWeb3Exception {
         String address = plan.getEthMethodsConfig().getEthSignAddress();
         String message = plan.getEthMethodsConfig().getEthSignMessage();
@@ -250,7 +249,6 @@ public class BenchmarkWeb3 {
     }
 
     @Benchmark
-    @Timeout(time = 30)
     public void ethGetStorageAt(BasePlan plan) throws BenchmarkWeb3Exception {
         String address = plan.getEthMethodsConfig().getEthGetStorageAtAddress();
         Long position = plan.getEthMethodsConfig().getEthGetStorageAtPosition();
@@ -258,7 +256,6 @@ public class BenchmarkWeb3 {
     }
 
     @Benchmark
-    @Timeout(time = 30)
     public void ethGetCode(BasePlan plan) throws BenchmarkWeb3Exception {
         String address = plan.getEthMethodsConfig().getEthGetCodeAddress();
         DefaultBlockParameter defaultBlockParameter = plan.getEthMethodsConfig().getLatestBlock();
