@@ -263,24 +263,20 @@ public class BenchmarkWeb3 {
     }
 
     @Benchmark
-    @Timeout(time = 30)
     public EthAccounts ethAccounts(BasePlan plan) throws BenchmarkWeb3Exception {
         return plan.getWeb3Connector().ethAccounts();
     }
 
     @Benchmark
-    @Timeout(time = 30)
     public EthHashrate ethHashrate(BasePlan plan) throws BenchmarkWeb3Exception {
         return plan.getWeb3Connector().ethHashrate();
     }
 
     @Benchmark
-    @Timeout(time = 30)
     public EthGasPrice ethGasPrice(BasePlan plan) throws BenchmarkWeb3Exception {
         return plan.getWeb3Connector().ethGasPrice();
     }
     @Benchmark
-    @Timeout(time = 30)
     public RskModuleWeb3j.GenericJsonResponse ethBridgeState(BasePlan plan) throws BenchmarkWeb3Exception {
         return plan.getWeb3Connector().ethBridgeState();
     }
