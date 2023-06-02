@@ -126,28 +126,3 @@ public class BlocksAndTx {
         return blocksPlan.getWeb3Connector().rskGetRawBlockHeaderByNumber(blocksPlan.getBlockNumber());
     }
 }
-
-/*
-
-
-
-
-
-
-eth_getTransactionReceipt
-
-eth_getTransactionCount
-
-eth_getBlockTransactionCountByHash
-
-eth_getBlockTransactionCountByNumber
-
-eth_getUncleCountByBlockHash
-
-eth_getUncleCountByBlockNumber
-
-eth_getUncleByBlockHashAndIndex
-
-eth_getUncleByBlockNumberAndIndex
-
- */
