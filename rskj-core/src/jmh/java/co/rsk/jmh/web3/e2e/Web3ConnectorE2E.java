@@ -245,6 +245,42 @@ public class Web3ConnectorE2E implements Web3Connector {
     }
 
     @Override
+    public String ethSign(String address, String data) throws HttpRpcException {
+        try {
+            Request<?, EthSign> request = rskModuleWeb3j.ethSign(address, data);
+            EthSign response = request.send();
+            return response.getSignature();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public String ethGetStorageAt(String address, BigInteger position, DefaultBlockParameter defaultBlockParameter) throws HttpRpcException {
+        try {
+            Request<?, EthGetStorageAt> request = rskModuleWeb3j.ethGetStorageAt(address, position, defaultBlockParameter);
+            EthGetStorageAt response = request.send();
+            return response.getResult();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public String ethGetCode(String address, DefaultBlockParameter defaultBlockParameter) throws HttpRpcException {
+        try {
+            Request<?, EthGetCode> request = rskModuleWeb3j.ethGetCode(address, defaultBlockParameter);
+            EthGetCode response = request.send();
+            return response.getResult();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
     public String rskGetRawBlockHeaderByNumber(String bnOrId) throws HttpRpcException {
         try {
             RskModuleWeb3j.RawBlockHeaderByNumberResponse response = sendRequest(() -> rskModuleWeb3j.rskGetRawBlockHeaderByNumber(bnOrId));

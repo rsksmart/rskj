@@ -240,6 +240,28 @@ public class BenchmarkWeb3 {
         plan.getWeb3Connector().traceGet(transactionHash, Stream.of("0x0").collect(Collectors.toList()));
     }
 
+
+    @Benchmark
+    public void ethSign(BasePlan plan) throws BenchmarkWeb3Exception {
+        String address = plan.getEthMethodsConfig().getEthSignAddress();
+        String message = plan.getEthMethodsConfig().getEthSignMessage();
+        plan.getWeb3Connector().ethSign(address, message);
+    }
+
+    @Benchmark
+    public void ethGetStorageAt(BasePlan plan) throws BenchmarkWeb3Exception {
+        String address = plan.getEthMethodsConfig().getEthGetStorageAtAddress();
+        Long position = plan.getEthMethodsConfig().getEthGetStorageAtPosition();
+        plan.getWeb3Connector().ethGetStorageAt(address, BigInteger.valueOf(position), DefaultBlockParameter.valueOf("latest"));
+    }
+
+    @Benchmark
+    public void ethGetCode(BasePlan plan) throws BenchmarkWeb3Exception {
+        String address = plan.getEthMethodsConfig().getEthGetCodeAddress();
+        DefaultBlockParameter defaultBlockParameter = plan.getEthMethodsConfig().getLatestBlock();
+        plan.getWeb3Connector().ethGetCode(address, defaultBlockParameter);
+    }
+
     public enum Suites {
         // performing actual RPC calls to a running node (this node should be disconnected from other nodes, etc.)
         E2E,
