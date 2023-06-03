@@ -15,6 +15,8 @@ import org.ethereum.core.Genesis;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.datasource.HashMapDB;
 
+import java.nio.file.Path;
+
 /**
  * @deprecated use {@link RskTestContext} instead which builds the same graph of dependencies than the productive code
  */
@@ -22,12 +24,12 @@ import org.ethereum.datasource.HashMapDB;
 public class RskTestFactory extends RskTestContext {
     private final TestSystemProperties config;
 
-    public RskTestFactory() {
-        this(new TestSystemProperties());
+    public RskTestFactory(Path dbPath) {
+        this(dbPath, new TestSystemProperties());
     }
 
-    public RskTestFactory(TestSystemProperties config) {
-        super(new String[0]);
+    public RskTestFactory(Path dbPath, TestSystemProperties config) {
+        super(dbPath);
         this.config = config;
     }
 

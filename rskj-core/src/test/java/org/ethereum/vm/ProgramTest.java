@@ -22,12 +22,14 @@ package org.ethereum.vm;
 import co.rsk.util.TestContract;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 
 import static org.mockito.Mockito.*;
 
@@ -35,6 +37,9 @@ import static org.mockito.Mockito.*;
 public abstract class ProgramTest {
 
     private static final String LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+
+    @TempDir
+    public Path tempDir;
 
     private MockedStatic<LoggerFactory> loggerFactoryMocked;
 
@@ -59,7 +64,7 @@ public abstract class ProgramTest {
 
     @Test
     void helloContract() {
-        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.ZERO, false);
+        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.ZERO, false, tempDir);
         Assertions.assertFalse(result.isRevert());
         Assertions.assertNull(result.getException());
         Assertions.assertArrayEquals(
@@ -69,28 +74,28 @@ public abstract class ProgramTest {
 
     @Test
     void helloContractIsNotPayable() {
-        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.TEN, false);
+        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.TEN, false, tempDir);
         Assertions.assertTrue(result.isRevert());
         Assertions.assertNull(result.getException());
     }
 
     @Test
     void childContractDoesntInheritMsgValue() {
-        ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN, false);
+        ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN, false, tempDir);
         Assertions.assertFalse(result.isRevert());
         Assertions.assertNull(result.getException());
     }
 
     @Test
     void childContractDoesntInheritMsgValue_2() {
-        ProgramResult result = TestContract.msgValueTest().executeFunction("test_create", BigInteger.TEN, false);
+        ProgramResult result = TestContract.msgValueTest().executeFunction("test_create", BigInteger.TEN, false, tempDir);
         Assertions.assertFalse(result.isRevert());
         Assertions.assertNull(result.getException());
     }
 
     @Test
     void sendFailsAndReturnsFalseThenExecutionContinuesNormally() {
-        ProgramResult result = TestContract.sendTest().executeFunction("test", BigInteger.TEN, false);
+        ProgramResult result = TestContract.sendTest().executeFunction("test", BigInteger.TEN, false, tempDir);
         Assertions.assertFalse(result.isRevert());
         Assertions.assertNull(result.getException());
         Assertions.assertArrayEquals(
@@ -100,7 +105,7 @@ public abstract class ProgramTest {
 
     @Test
     void childContractGetsStipend() {
-        ProgramResult result = TestContract.bankTest().executeFunction("test", BigInteger.TEN, false);
+        ProgramResult result = TestContract.bankTest().executeFunction("test", BigInteger.TEN, false, tempDir);
         Assertions.assertFalse(result.isRevert());
         Assertions.assertNull(result.getException());
         Assertions.assertArrayEquals(
@@ -110,14 +115,14 @@ public abstract class ProgramTest {
 
     @Test
     void shouldRevertIfLessThanStipendGasAvailable() {
-        ProgramResult result = TestContract.bankTest2().executeFunction("test", BigInteger.TEN, false);
+        ProgramResult result = TestContract.bankTest2().executeFunction("test", BigInteger.TEN, false, tempDir);
         Assertions.assertTrue(result.isRevert());
         Assertions.assertNull(result.getException());
     }
 
     @Test
     void cantCreateTooLargeContract() {
-        ProgramResult result = TestContract.bigTest().createContract();
+        ProgramResult result = TestContract.bigTest().createContract(tempDir);
         Assertions.assertFalse(result.isRevert());
         Assertions.assertNotNull(result.getException());
         Assertions.assertTrue(result.getException() instanceof RuntimeException);
@@ -125,21 +130,21 @@ public abstract class ProgramTest {
 
     @Test
     void returnDataSizeTests() {
-        ProgramResult result = TestContract.returnDataTest().executeFunction("testSize", BigInteger.ZERO, false);
+        ProgramResult result = TestContract.returnDataTest().executeFunction("testSize", BigInteger.ZERO, false, tempDir);
         Assertions.assertFalse(result.isRevert());
         Assertions.assertNull(result.getException());
     }
 
     @Test
     void returnPrecompiledDataSizeTest() {
-        ProgramResult result = TestContract.returnDataTest().executeFunction("testPrecompiledSize", BigInteger.ZERO, true);
+        ProgramResult result = TestContract.returnDataTest().executeFunction("testPrecompiledSize", BigInteger.ZERO, true, tempDir);
         Assertions.assertFalse(result.isRevert());
         Assertions.assertNull(result.getException());
     }
 
     @Test
     void callPrecompiledContractMethodThroughStub() {
-        ProgramResult result = TestContract.returnBridgeTest().executeFunction("invokeGetFeePerKb", BigInteger.ZERO, true);
+        ProgramResult result = TestContract.returnBridgeTest().executeFunction("invokeGetFeePerKb", BigInteger.ZERO, true, tempDir);
         Assertions.assertFalse(result.isRevert());
         Assertions.assertNull(result.getException());
     }
@@ -147,7 +152,7 @@ public abstract class ProgramTest {
     @Test
     void returnDataCopyTest() {
         TestContract contract = TestContract.returnDataTest();
-        ProgramResult result = contract.executeFunction("testCopy", BigInteger.ZERO, false);
+        ProgramResult result = contract.executeFunction("testCopy", BigInteger.ZERO, false, tempDir);
         Assertions.assertFalse(result.isRevert());
         Assertions.assertNull(result.getException());
         Assertions.assertArrayEquals(

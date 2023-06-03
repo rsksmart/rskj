@@ -6,6 +6,7 @@ import org.ethereum.vm.program.ProgramResult;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -536,14 +537,14 @@ public class TestContract {
         return new TestContract(bytecode, "", functions);
     }
 
-    public ProgramResult executeFunction(String functionName, BigInteger value, boolean localCall, Object... args) {
+    public ProgramResult executeFunction(String functionName, BigInteger value, boolean localCall, Path dbPath, Object... args) {
         byte[] bytecode = Hex.decode(this.bytecode);
         byte[] encodedCall = this.functions.get(functionName).encode(args);
 
-        return new ContractRunner().createAndRunContract(bytecode, encodedCall, value, localCall);
+        return new ContractRunner(dbPath).createAndRunContract(bytecode, encodedCall, value, localCall);
     }
 
-    public ProgramResult createContract() {
-        return new ContractRunner().createContract(Hex.decode(this.bytecode));
+    public ProgramResult createContract(Path dbPath) {
+        return new ContractRunner(dbPath).createContract(Hex.decode(this.bytecode));
     }
 }

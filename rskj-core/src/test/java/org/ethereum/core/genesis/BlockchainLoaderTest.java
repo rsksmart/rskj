@@ -34,8 +34,10 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -45,9 +47,12 @@ import static org.mockito.Mockito.*;
 
 class BlockchainLoaderTest {
 
+    @TempDir
+    public Path tempDir;
+
     @Test
     void testLoadBlockchainEmptyBlockchain() {
-        RskTestFactory objects = new RskTestFactory() {
+        RskTestFactory objects = new RskTestFactory(tempDir) {
             @Override
             protected GenesisLoader buildGenesisLoader() {
                 return new TestGenesisLoader(getTrieStore(), "blockchain_loader_genesis.json", BigInteger.ZERO, true, true, true);
@@ -86,7 +91,7 @@ class BlockchainLoaderTest {
 
     @Test
     void testLoadBlockchainWithInconsistentBlock() {
-        RskTestFactory objects = new RskTestFactory() {
+        RskTestFactory objects = new RskTestFactory(tempDir) {
             @Override
             protected synchronized RepositoryLocator buildRepositoryLocator() {
                 RepositoryLocator repositoryLocatorSpy = spy(super.buildRepositoryLocator());

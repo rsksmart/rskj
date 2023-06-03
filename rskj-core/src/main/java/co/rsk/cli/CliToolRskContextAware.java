@@ -21,7 +21,7 @@ import co.rsk.RskContext;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.Factory;
 import co.rsk.util.NodeStopper;
-import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.KeyValueDataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +88,7 @@ public abstract class CliToolRskContextAware {
 
             RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
 
-            KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
+            KeyValueDataSourceUtils.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
 
             onExecute(args, ctx);
 

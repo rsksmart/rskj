@@ -4,6 +4,9 @@ import co.rsk.RskContext;
 import org.ethereum.util.RskTestContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Path;
 
 import static org.mockito.Mockito.*;
 
@@ -13,11 +16,14 @@ import static org.mockito.Mockito.*;
 
 class PreflightChecksUtilsTest {
 
+    @TempDir
+    public Path tempDir;
+
     @Test
     void runChecks_receivesSkipJavaCheck_skipsJavaChecks() throws Exception {
         String[] args = {"--skip-java-check"};
 
-        RskContext rskContext = new RskTestContext(args);
+        RskContext rskContext = new RskTestContext(tempDir, args);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
         when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn(null);
@@ -31,7 +37,7 @@ class PreflightChecksUtilsTest {
 
     @Test
     void getIntJavaVersion_OK() {
-        RskContext rskContext = new RskTestContext(new String[0]);
+        RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtils = new PreflightChecksUtils(rskContext);
 
         Assertions.assertEquals(8, preflightChecksUtils.getIntJavaVersion("1.8.0_275"));
@@ -47,8 +53,8 @@ class PreflightChecksUtilsTest {
     }
 
     @Test
-    void runChecks_invalidJavaVersion_exceptionIsThrown() throws Exception {
-        RskContext rskContext = new RskTestContext(new String[0]);
+    void runChecks_invalidJavaVersion_exceptionIsThrown() {
+        RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
         when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("16");
@@ -61,7 +67,7 @@ class PreflightChecksUtilsTest {
 
     @Test
     void runChecks_currentJavaVersionIs17_OK() throws Exception {
-        RskContext rskContext = new RskTestContext(new String[0]);
+        RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
         when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("17");
@@ -76,7 +82,7 @@ class PreflightChecksUtilsTest {
 
     @Test
     void runChecks_currentJavaVersionIs11_OK() throws Exception {
-        RskContext rskContext = new RskTestContext(new String[0]);
+        RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
         when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("11");
@@ -91,7 +97,7 @@ class PreflightChecksUtilsTest {
 
     @Test
     void runChecks_runAllChecks_OK() throws Exception {
-        RskContext rskContext = new RskTestContext(new String[0]);
+        RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
         when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("17.0.3");

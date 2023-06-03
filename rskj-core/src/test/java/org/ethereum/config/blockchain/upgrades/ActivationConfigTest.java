@@ -42,6 +42,7 @@ class ActivationConfigTest {
             "    hop400: 0",
             "    hop401: 0",
             "    fingerroot500: 0",
+            "    tbd600: 0",
             "},",
             "consensusRules: {",
             "    areBridgeTxsPaid: afterBridgeSync,",

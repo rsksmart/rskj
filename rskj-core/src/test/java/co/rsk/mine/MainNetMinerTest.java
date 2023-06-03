@@ -45,9 +45,11 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.time.Clock;
 
 import static org.mockito.Mockito.spy;
@@ -57,6 +59,10 @@ import static org.mockito.Mockito.when;
  * Created by SerAdmin on 1/3/2018.
  */
 class MainNetMinerTest {
+
+    @TempDir
+    public Path tempDir;
+
     private TestSystemProperties config;
     private MiningMainchainView mainchainView;
     private TransactionPool transactionPool;
@@ -71,7 +77,7 @@ class MainNetMinerTest {
         config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(Constants.mainnet());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.all());
-        RskTestFactory factory = new RskTestFactory(config) {
+        RskTestFactory factory = new RskTestFactory(tempDir, config) {
             @Override
             public GenesisLoader buildGenesisLoader() {
                 return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true) {
