@@ -258,7 +258,7 @@ public class BenchmarkWeb3 {
     @Benchmark
     public void ethGetCode(BasePlan plan) throws BenchmarkWeb3Exception {
         String address = plan.getEthMethodsConfig().getEthGetCodeAddress();
-        DefaultBlockParameter defaultBlockParameter = plan.getEthMethodsConfig().getLatestBlock();
+        DefaultBlockParameter defaultBlockParameter = DefaultBlockParameter.valueOf(BigInteger.valueOf(plan.getEthMethodsConfig().getEthGetCodeBlockNumber()));
         plan.getWeb3Connector().ethGetCode(address, defaultBlockParameter);
     }
 
