@@ -25,6 +25,7 @@ public class EthMethodsConfig {
     public static final String ETH_GET_STORAGE_AT_ADDRESS = "ethGetStorageAt.address";
     public static final String ETH_GET_STORAGE_AT_POSITION = "ethGetStorageAt.position";
     public static final String ETH_GET_CODE_ADDRESS = "ethGetCode.address";
+    public static final String ETH_GET_CODE_BLOCK_NUMBER = "ethGetCode.blockNumber";
     public static final String ETH_SIGN_ADDRESS = "ethSign.address";
     public static final String ETH_SIGN_MESSAGE = "ethSign.message";
 
@@ -32,6 +33,7 @@ public class EthMethodsConfig {
     private final String ethGetStorageAtAddress;
     private final Long ethGetStorageAtPosition;
     private final String ethGetCodeAddress;
+    private final Long ethGetCodeBlockNumber;
     private final String ethSignAddress;
     private final String ethSignMessage;
 
@@ -39,6 +41,7 @@ public class EthMethodsConfig {
         ethGetStorageAtAddress = config.getString(ETH_GET_STORAGE_AT_ADDRESS);
         ethGetStorageAtPosition = config.getLong(ETH_GET_STORAGE_AT_POSITION);
         ethGetCodeAddress = config.getString(ETH_GET_CODE_ADDRESS);
+        ethGetCodeBlockNumber = config.getLong(ETH_GET_CODE_BLOCK_NUMBER);
         ethSignAddress = config.getString(ETH_SIGN_ADDRESS);
         ethSignMessage = config.getString(ETH_SIGN_MESSAGE);
     }
@@ -53,6 +56,10 @@ public class EthMethodsConfig {
 
     public String getEthGetCodeAddress() {
         return ethGetCodeAddress;
+    }
+
+    public Long getEthGetCodeBlockNumber() {
+        return ethGetCodeBlockNumber;
     }
 
     public DefaultBlockParameter getLatestBlock() {
