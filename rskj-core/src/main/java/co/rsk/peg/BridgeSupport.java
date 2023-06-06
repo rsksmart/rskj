@@ -3060,6 +3060,9 @@ public class BridgeSupport {
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
             BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
+            if (activations.isActive(ConsensusRule.RSKIP376)){
+                migrationBtcTx.setVersion(2);
+            }
             migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);
 
             SendRequest sr = SendRequest.forTx(migrationBtcTx);
