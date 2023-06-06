@@ -15,7 +15,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -80,10 +79,24 @@ class BridgeSupportProcessFundsMigrationTest {
             Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP374, true)
         );
 
+        ActivationConfig.ForBlock activationsAfterRSKIP376 = mock(ActivationConfig.ForBlock.class);
+        when(activationsAfterRSKIP376.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activationsAfterRSKIP376.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activationsAfterRSKIP376.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+        when(activationsAfterRSKIP376.isActive(ConsensusRule.RSKIP376)).thenReturn(true);
+
+        Stream<Arguments> afterRskip376Tests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP376, false),
+            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP376, true),
+            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP376, false),
+            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP376, true)
+        );
+
         ActivationConfig.ForBlock activationsAfterRSKIP383 = mock(ActivationConfig.ForBlock.class);
         when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
         when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP376)).thenReturn(true);
         when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
 
         Stream<Arguments> afterRskip383Tests = Stream.of(
@@ -97,6 +110,7 @@ class BridgeSupportProcessFundsMigrationTest {
             afterRskip146Tests,
             afterRskip357Tests,
             afterRskip374Tests,
+            afterRskip376Tests,
             afterRskip383Tests
         ).flatMap(Function.identity());
     }
@@ -178,6 +192,12 @@ class BridgeSupportProcessFundsMigrationTest {
                 entry.getBtcTransaction(),
                 Coin.COIN
             );
+
+            if (activations.isActive(ConsensusRule.RSKIP376)){
+                Assertions.assertEquals(2, entry.getTransaction().getVersion());
+            } else {
+                Assertions.assertEquals(1, entry.getTransaction().getVersion());
+            }
         } else {
             verify(bridgeEventLogger, never()).logReleaseBtcRequested(
                 any(byte[].class),
