@@ -148,6 +148,8 @@ public class BridgeSupport {
 
     private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
 
+    private static final int BRIDGE_BTC_TX_VERSION = 2;
+
     private final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(
             "create",
             "add",
@@ -3061,7 +3063,7 @@ public class BridgeSupport {
         for(;;) {
             BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
             if (activations.isActive(ConsensusRule.RSKIP376)){
-                migrationBtcTx.setVersion(2);
+                migrationBtcTx.setVersion(BRIDGE_BTC_TX_VERSION);
             }
             migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);
 
