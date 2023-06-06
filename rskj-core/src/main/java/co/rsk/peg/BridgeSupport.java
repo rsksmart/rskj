@@ -143,12 +143,13 @@ public class BridgeSupport {
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
 
+    public static final int BRIDGE_BTC_TX_VERSION_2 = 2;
+    public static final int BRIDGE_BTC_TX_LEGACY_VERSION = 1;
+
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
-
-    private static final int BRIDGE_BTC_TX_VERSION = 2;
 
     private final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(
             "create",
@@ -3063,7 +3064,9 @@ public class BridgeSupport {
         for(;;) {
             BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
             if (activations.isActive(ConsensusRule.RSKIP376)){
-                migrationBtcTx.setVersion(BRIDGE_BTC_TX_VERSION);
+                migrationBtcTx.setVersion(BRIDGE_BTC_TX_VERSION_2);
+            } else {
+                migrationBtcTx.setVersion(BRIDGE_BTC_TX_LEGACY_VERSION);
             }
             migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);
 
