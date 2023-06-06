@@ -420,6 +420,11 @@ class PowpegMigrationTest {
                 Address spendingAddress = getAddressFromRedeemScript(bridgeConstants, redeemScript);
                 assertEquals(whoCanSpendTheseUtxos.get(input.getOutpoint().getHash()), spendingAddress);
             }
+            if(activations.isActive(ConsensusRule.RSKIP376)){
+                assertEquals(2, pegout.getVersion());
+            } else {
+                assertEquals(1, pegout.getVersion());
+            }
         }
 
         verifyPegouts(bridgeStorageProvider);
