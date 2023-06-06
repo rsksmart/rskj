@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static co.rsk.peg.BridgeSupport.BRIDGE_BTC_TX_LEGACY_VERSION;
+import static co.rsk.peg.BridgeSupport.BRIDGE_BTC_TX_VERSION_2;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -194,9 +196,9 @@ class BridgeSupportProcessFundsMigrationTest {
             );
 
             if (activations.isActive(ConsensusRule.RSKIP376)){
-                Assertions.assertEquals(2, entry.getTransaction().getVersion());
+                Assertions.assertEquals(BRIDGE_BTC_TX_VERSION_2, entry.getTransaction().getVersion());
             } else {
-                Assertions.assertEquals(1, entry.getTransaction().getVersion());
+                Assertions.assertEquals(BRIDGE_BTC_TX_LEGACY_VERSION, entry.getTransaction().getVersion());
             }
         } else {
             verify(bridgeEventLogger, never()).logReleaseBtcRequested(

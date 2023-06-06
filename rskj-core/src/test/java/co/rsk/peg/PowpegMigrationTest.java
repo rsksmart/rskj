@@ -40,6 +40,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static co.rsk.peg.BridgeSupport.BRIDGE_BTC_TX_LEGACY_VERSION;
+import static co.rsk.peg.BridgeSupport.BRIDGE_BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -421,9 +423,9 @@ class PowpegMigrationTest {
                 assertEquals(whoCanSpendTheseUtxos.get(input.getOutpoint().getHash()), spendingAddress);
             }
             if(activations.isActive(ConsensusRule.RSKIP376)){
-                assertEquals(2, pegout.getVersion());
+                assertEquals(BRIDGE_BTC_TX_VERSION_2, pegout.getVersion());
             } else {
-                assertEquals(1, pegout.getVersion());
+                assertEquals(BRIDGE_BTC_TX_LEGACY_VERSION, pegout.getVersion());
             }
         }
 
