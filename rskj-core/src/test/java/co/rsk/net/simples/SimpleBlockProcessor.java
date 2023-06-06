@@ -24,6 +24,8 @@ import co.rsk.net.BlockProcessor;
 import co.rsk.net.Peer;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import java.time.Instant;
+
+import co.rsk.net.messages.StateChunkRequestMessage;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
@@ -110,7 +112,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processStateChunkRequest(Peer sender, long requestId) {
+    public void processStateChunkRequest(Peer sender, StateChunkRequestMessage requestId) {
 
     }
 

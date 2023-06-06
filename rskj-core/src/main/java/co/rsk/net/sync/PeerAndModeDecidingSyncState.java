@@ -69,6 +69,14 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     }
 
     private void tryStartSyncing() {
+
+        // Pato (TODO) add snap sync as the first step to sync.
+        // Start snapshot syncing
+        // New snapshot syncing state
+        //if (tryStartSnapshotSync()) {
+        //    return;
+        //}
+
         if (tryStartLongForwardSync()) {
             return;
         }

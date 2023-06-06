@@ -6,6 +6,7 @@ import co.rsk.net.messages.StateChunkResponseMessage;
 import co.rsk.trie.IterationElement;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
+import com.google.common.collect.Maps;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.net.NodeHandler;
@@ -15,9 +16,11 @@ import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.util.*;
 
 public class SnapshotProcessor implements InternalService {
@@ -33,6 +36,9 @@ public class SnapshotProcessor implements InternalService {
     private boolean connected;
     private long messageId = 0;
     private boolean enabled = false;
+    private final Map<Long,  List<byte[]>> statesCache;
+    private BigInteger stateSize = BigInteger.ZERO;
+    private BigInteger stateChunkSize = BigInteger.ZERO;
 
     public SnapshotProcessor(
             NodeManager nodeManager,
@@ -46,6 +52,7 @@ public class SnapshotProcessor implements InternalService {
         this.peerClientFactory = peerClientFactory;
         this.connected = false;
         this.chunkSize = chunkSize;
+        this.statesCache = Maps.newConcurrentMap();
     }
 
     @Override
@@ -65,45 +72,62 @@ public class SnapshotProcessor implements InternalService {
         }
         if (!connected) {
             this.connected = true;
-            requestState(peer);
+            this.stateSize = BigInteger.ZERO;
+            this.stateChunkSize = BigInteger.ZERO;
+            requestState(peer, 0l, 0l);
         }
     }
 
     public void processStateChunk(Peer peer, StateChunkResponseMessage message) {
+        final RLPList trieElements = RLP.decodeList(message.getChunkOfTrieKeyValue());
         logger.debug(
-                "Received state chunk of {} bytes from node {}",
-                message.getChunkOfTrieKeyValue().length,
-                peer.getPeerNodeID()
+                "Received state chunk of {} elements ({} bytes).",
+                trieElements.size(),
+                message.getChunkOfTrieKeyValue().length
         );
-        // request another chunk
-        requestState(peer);
+        this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
+        this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
+        if(!message.isComplete()) {
+            // request another chunk
+            requestState(peer, message.getFrom() + trieElements.size(), message.getBlockNumber());
+        } else {
+            logger.debug("State Completed! {} chunks ({} bytes)", this.stateChunkSize.toString(), this.stateSize.toString());
+        }
     }
 
-    public void processStateChunkRequest(Peer sender, long requestId) {
+    public void processStateChunkRequest(Peer sender, StateChunkRequestMessage request) {
         logger.debug("Processing state chunk request from node {}", sender.getPeerNodeID());
 
-        Block bestBlock = blockchain.getBestBlock();
-        Optional<Trie> retrieve = trieStore.retrieve(bestBlock.getStateRoot());
+        Long blockNumber = request.getBlockNumber() > 0L ? request.getBlockNumber() : blockchain.getBestBlock().getNumber() - 10;
+        Block block = blockchain.getBlockByNumber(blockNumber);
+        Optional<Trie> retrieve = trieStore.retrieve(block.getStateRoot());
 
         if (!retrieve.isPresent()) {
             return;
         }
 
         Trie trie = retrieve.get();
-        List<byte[]> trieEncoded = new ArrayList<>();
-        Iterator<IterationElement> it = trie.getInOrderIterator();
-        int i = 0;
-
-        while (it.hasNext() && i < chunkSize) {
-            IterationElement e = it.next();
-            byte[] key = e.getNodeKey().encode();
-            byte[] value = e.getNode().getValue();
-            trieEncoded.add(RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(value)));
-            i++;
+        List<byte[]> trieEncoded = statesCache.get(blockNumber);
+        if (trieEncoded == null) {
+            Iterator<IterationElement> it = trie.getInOrderIterator();
+            trieEncoded = new ArrayList<>();
+            logger.debug("New block state requested {}. Loading cache...", blockNumber);
+            while (it.hasNext()) {
+                IterationElement e = it.next();
+                byte[] key = e.getNodeKey().encode();
+                byte[] value = e.getNode().getValue();
+                trieEncoded.add(RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(value)));
+            }
+            logger.debug("New block state requested {}. Cache loaded!", blockNumber);
+            statesCache.put(blockNumber, trieEncoded);
         }
 
-        byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
-        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(requestId, chunkBytes);
+
+        int start = (int) request.getFrom();
+        int limit = Integer.min(start + chunkSize, trieEncoded.size());
+        byte[][] result = Arrays.copyOfRange(trieEncoded.toArray(new byte[][]{}), start, limit);
+        byte[] chunkBytes = RLP.encodeList(result);
+        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, block.getNumber(), request.getFrom(), limit == trieEncoded.size());
         logger.debug("Sending state chunk of {} bytes to node {}", chunkBytes.length, sender.getPeerNodeID());
         sender.sendMessage(responseMessage);
     }
@@ -120,9 +144,9 @@ public class SnapshotProcessor implements InternalService {
         peerClient.connectAsync(ip, port, remoteId);
     }
 
-    private void requestState(Peer peer) {
-        logger.debug("Requesting state chunk to node {}", peer.getPeerNodeID());
-        StateChunkRequestMessage message = new StateChunkRequestMessage(messageId++);
+    private void requestState(Peer peer, long from, long blockNumber) {
+        logger.debug("Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
+        StateChunkRequestMessage message = new StateChunkRequestMessage(messageId++, blockNumber, from);
         peer.sendMessage(message);
     }
 

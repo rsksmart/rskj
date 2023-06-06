@@ -151,7 +151,7 @@ public class MessageVisitor {
     }
 
     public void apply(StateChunkRequestMessage message) {
-        this.snapshotProcessor.processStateChunkRequest(sender, message.getId());
+        this.snapshotProcessor.processStateChunkRequest(sender, message);
     }
 
     public void apply(BlockHashRequestMessage message) {
@@ -192,6 +192,7 @@ public class MessageVisitor {
     }
 
     public void apply(StateChunkResponseMessage message) {
+        logger.debug("snapshot chunk response : {}", message.getId());
         this.snapshotProcessor.processStateChunk(sender, message);
     }
 

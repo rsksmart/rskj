@@ -50,6 +50,7 @@ class MessageVisitorTest {
     private PeerScoringManager peerScoringManager;
     private TransactionGateway transactionGateway;
     private SyncProcessor syncProcessor;
+    private SnapshotProcessor snapshotProcessor;
     private BlockProcessor blockProcessor;
     private RskSystemProperties config;
 
@@ -58,6 +59,7 @@ class MessageVisitorTest {
         config = mock(RskSystemProperties.class);
         blockProcessor = mock(BlockProcessor.class);
         syncProcessor = mock(SyncProcessor.class);
+        snapshotProcessor = mock(SnapshotProcessor.class);
         transactionGateway = mock(TransactionGateway.class);
         peerScoringManager = mock(PeerScoringManager.class);
         channelManager = mock(ChannelManager.class);
@@ -67,6 +69,7 @@ class MessageVisitorTest {
                 config,
                 blockProcessor,
                 syncProcessor,
+                snapshotProcessor,
                 transactionGateway,
                 peerScoringManager,
                 channelManager,
@@ -307,7 +310,7 @@ class MessageVisitorTest {
         target.apply(message);
 
         verify(blockProcessor, times(1))
-                .processStateChunkRequest(sender, 1L);
+                .processStateChunkRequest(sender, new StateChunkRequestMessage(1l, 0l, 0L));
     }
 
     @Test

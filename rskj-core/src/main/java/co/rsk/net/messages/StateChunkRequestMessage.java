@@ -2,12 +2,18 @@ package co.rsk.net.messages;
 
 import org.ethereum.util.RLP;
 
+import java.math.BigInteger;
+
 public class StateChunkRequestMessage extends MessageWithId {
 
     private final long id;
+    private final long from;
+    private final long blockNumber;
 
-    public StateChunkRequestMessage(long id) {
+    public StateChunkRequestMessage(long id, long blockNumber, long from) {
         this.id = id;
+        this.from = from;
+        this.blockNumber = blockNumber;
     }
 
     @Override
@@ -27,6 +33,16 @@ public class StateChunkRequestMessage extends MessageWithId {
 
     @Override
     protected byte[] getEncodedMessageWithoutId() {
-        return RLP.encodeList(RLP.encodeElement(null));
+        byte[] rlpBlockNumber = RLP.encodeBigInteger(BigInteger.valueOf(this.blockNumber));
+        byte[] rlpFrom = RLP.encodeBigInteger(BigInteger.valueOf(this.from));
+        return RLP.encodeList(rlpBlockNumber, rlpFrom);
+    }
+
+    public long getFrom() {
+        return from;
+    }
+
+    public long getBlockNumber() {
+        return blockNumber;
     }
 }

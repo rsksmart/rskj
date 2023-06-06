@@ -257,17 +257,29 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            byte[] rlpBlockNumber = message.get(0).getRLPData();
+            byte[] rlpFrom = message.get(1).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            return new StateChunkRequestMessage(id);
+            long blockNumber = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
+            long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
+            return new StateChunkRequestMessage(id, blockNumber, from);
         }
     },
     STATE_CHUNK_RESPONSE_MESSAGE(21) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            byte[] chunkOfTrieKeys = message.get(0).getRLPData();
+            byte[] rlpBlockNumber = message.get(1).getRLPData();
+            byte[] rlpFrom = message.get(2).getRLPData();
+            byte[] rlpComplete = message.get(3).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            byte[] chunkOfTrieKeys = list.get(1).getRLPData();
-            return new StateChunkResponseMessage(id, chunkOfTrieKeys);
+            long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
+            long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
+            boolean complete = rlpComplete == null ? Boolean.FALSE : rlpComplete[0] != 0;
+            return new StateChunkResponseMessage(id, chunkOfTrieKeys, blockNumber, from, complete);
         }
     };
 

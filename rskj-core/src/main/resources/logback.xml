@@ -37,7 +37,7 @@
 
     <!-- File appender -->
     <appender name="FILE-AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>./logs/rsk.log</file>
+        <file>./${logging.file.folder:-logs}/rsk.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <!-- we use the replace pattern to allow wrapping mdc keys in [] while avoiding outputting an empty [] if none -->
             <Pattern>

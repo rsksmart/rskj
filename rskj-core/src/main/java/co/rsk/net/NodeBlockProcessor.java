@@ -299,6 +299,11 @@ public class NodeBlockProcessor implements BlockProcessor {
         return blockSyncService.canBeIgnoredForUnclesRewards(blockNumber);
     }
 
+    @Override
+    public void processStateChunkRequest(Peer sender, StateChunkRequestMessage stateChunkRequestMessage) {
+
+    }
+
     /**
      *
      * @param skeletonBlockNumber a block number that belongs to the skeleton
