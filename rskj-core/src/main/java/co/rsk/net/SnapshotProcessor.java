@@ -36,7 +36,7 @@ public class SnapshotProcessor implements InternalService {
     private boolean connected;
     private long messageId = 0;
     private boolean enabled = false;
-    private final Map<Long,  List<byte[]>> statesCache;
+    private final Map<String, Iterator<IterationElement>> iterators;
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
 
@@ -52,7 +52,7 @@ public class SnapshotProcessor implements InternalService {
         this.peerClientFactory = peerClientFactory;
         this.connected = false;
         this.chunkSize = chunkSize;
-        this.statesCache = Maps.newConcurrentMap();
+        this.iterators = Maps.newConcurrentMap();
     }
 
     @Override
@@ -107,27 +107,25 @@ public class SnapshotProcessor implements InternalService {
         }
 
         Trie trie = retrieve.get();
-        List<byte[]> trieEncoded = statesCache.get(blockNumber);
-        if (trieEncoded == null) {
-            Iterator<IterationElement> it = trie.getInOrderIterator();
-            trieEncoded = new ArrayList<>();
-            logger.debug("New block state requested {}. Loading cache...", blockNumber);
-            while (it.hasNext()) {
-                IterationElement e = it.next();
-                byte[] key = e.getNodeKey().encode();
-                byte[] value = e.getNode().getValue();
-                trieEncoded.add(RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(value)));
-            }
-            logger.debug("New block state requested {}. Cache loaded!", blockNumber);
-            statesCache.put(blockNumber, trieEncoded);
+        List<byte[]> trieEncoded = new ArrayList<>();
+        Iterator<IterationElement> it = iterators.get(sender.getPeerNodeID().toString());
+        if (it == null || request.getFrom() == 0l) {
+            it = trie.getInOrderIterator();
+            iterators.put(sender.getPeerNodeID().toString(), it);
         }
 
+        long i = request.getFrom();
+        long limit = request.getFrom() + chunkSize;
+        while (it.hasNext() && i < limit) {
+            IterationElement e = it.next();
+            byte[] key = e.getNodeKey().encode();
+            byte[] value = e.getNode().getValue();
+            trieEncoded.add(RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(value)));
+            i++;
+        }
 
-        int start = (int) request.getFrom();
-        int limit = Integer.min(start + chunkSize, trieEncoded.size());
-        byte[][] result = Arrays.copyOfRange(trieEncoded.toArray(new byte[][]{}), start, limit);
-        byte[] chunkBytes = RLP.encodeList(result);
-        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, block.getNumber(), request.getFrom(), limit == trieEncoded.size());
+        byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
+        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, block.getNumber(), request.getFrom(), !it.hasNext());
         logger.debug("Sending state chunk of {} bytes to node {}", chunkBytes.length, sender.getPeerNodeID());
         sender.sendMessage(responseMessage);
     }
