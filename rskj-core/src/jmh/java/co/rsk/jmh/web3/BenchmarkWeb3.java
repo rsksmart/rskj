@@ -47,7 +47,7 @@ public class BenchmarkWeb3 {
     @Benchmark
     @Timeout(time = 60)
     public void ethCallForSpecificBlock(TransactionPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethCall(plan.getEthCallArguments(), plan.getConfiguration().getString("eth.blockNumber"));
+        plan.getWeb3Connector().ethCall(plan.getEthCallArguments(), plan.getBlockNumber().toString());
     }
 
     @Benchmark

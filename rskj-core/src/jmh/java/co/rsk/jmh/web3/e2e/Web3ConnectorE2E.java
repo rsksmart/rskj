@@ -90,10 +90,10 @@ public class Web3ConnectorE2E implements Web3Connector {
     }
 
     @Override
-    public String ethBlockNumber() throws HttpRpcException {
+        public BigInteger ethBlockNumber() throws HttpRpcException {
         try {
             EthBlockNumber response = sendRequest(debugModuleWeb3j::ethBlockNumber);
-            return response.getBlockNumber().toString();
+            return response.getBlockNumber();
         } catch (Exception e) {
             e.printStackTrace();
             throw new HttpRpcException(e);
