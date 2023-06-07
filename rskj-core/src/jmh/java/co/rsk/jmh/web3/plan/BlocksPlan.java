@@ -69,8 +69,7 @@ public class BlocksPlan extends BasePlan {
     }
 
     private void initRegTest() throws HttpRpcException {
-        String lastBlockNumber = this.getWeb3Connector().ethBlockNumber();
-        BigInteger blockNumberInt = BigInteger.valueOf(Long.parseLong(lastBlockNumber));
+        BigInteger blockNumberInt =this.getWeb3Connector().ethBlockNumber();
         EthBlock.Block block = web3Connector.ethGetBlockByNumber(blockNumberInt, true).getBlock();
 
         blockHash = block.getHash();
