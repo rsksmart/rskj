@@ -99,17 +99,16 @@ public class SnapshotProcessor implements InternalService {
         logger.debug("Processing state chunk request from node {}", sender.getPeerNodeID());
 
         Long blockNumber = request.getBlockNumber() > 0L ? request.getBlockNumber() : blockchain.getBestBlock().getNumber() - 10;
-        Block block = blockchain.getBlockByNumber(blockNumber);
-        Optional<Trie> retrieve = trieStore.retrieve(block.getStateRoot());
 
-        if (!retrieve.isPresent()) {
-            return;
-        }
-
-        Trie trie = retrieve.get();
         List<byte[]> trieEncoded = new ArrayList<>();
         Iterator<IterationElement> it = iterators.get(sender.getPeerNodeID().toString());
         if (it == null || request.getFrom() == 0l) {
+            Block block = blockchain.getBlockByNumber(blockNumber);
+            Optional<Trie> retrieve = trieStore.retrieve(block.getStateRoot());
+            if (!retrieve.isPresent()) {
+                return;
+            }
+            Trie trie = retrieve.get();
             it = trie.getInOrderIterator();
             iterators.put(sender.getPeerNodeID().toString(), it);
         }
@@ -125,7 +124,7 @@ public class SnapshotProcessor implements InternalService {
         }
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
-        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, block.getNumber(), request.getFrom(), !it.hasNext());
+        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, blockNumber, request.getFrom(), !it.hasNext());
         logger.debug("Sending state chunk of {} bytes to node {}", chunkBytes.length, sender.getPeerNodeID());
         sender.sendMessage(responseMessage);
     }
