@@ -109,7 +109,7 @@ public class SnapshotProcessor implements InternalService {
                 return;
             }
             Trie trie = retrieve.get();
-            it = trie.getInOrderIterator();
+            it = trie.getPreOrderIterator();
             iterators.put(sender.getPeerNodeID().toString(), it);
         }
 
