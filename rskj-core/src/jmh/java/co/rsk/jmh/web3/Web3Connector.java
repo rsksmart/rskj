@@ -38,7 +38,7 @@ public interface Web3Connector {
 
     BigInteger ethGetBalance(String address, String block) throws HttpRpcException;
 
-    String ethBlockNumber() throws HttpRpcException;
+    BigInteger ethBlockNumber() throws HttpRpcException;
 
     String ethSendRawTransaction(String rawTx) throws HttpRpcException;
 
