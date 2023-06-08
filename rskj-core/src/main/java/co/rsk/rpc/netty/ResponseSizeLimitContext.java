@@ -27,6 +27,7 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 public class ResponseSizeLimitContext implements AutoCloseable {
 
+    //pay extra attention with ThreadLocal handling. In some cases, if incorrectly done it may lead to ctx being nul
     private static final ThreadLocal<ResponseSizeLimitContext> accumulatedResponseSize = new ThreadLocal<>();
 
     private int size = 0;
