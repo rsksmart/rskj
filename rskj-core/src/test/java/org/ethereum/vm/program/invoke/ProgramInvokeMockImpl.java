@@ -34,7 +34,6 @@ import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 /**
  * @author Roman Mandeleil
@@ -257,11 +256,6 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     @Override
     public boolean isStaticCall() {
         return false;
-    }
-
-    @Override
-    public Map<Integer, Long> getLockedGasByDepth() {
-        return null;
     }
 
     @Override

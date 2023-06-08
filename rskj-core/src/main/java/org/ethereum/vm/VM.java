@@ -39,7 +39,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -1529,42 +1528,18 @@ public class VM {
                 GasCost.add(userSpecifiedGas, minimumTransferGas) :
                 userSpecifiedGas + minimumTransferGas;
 
+        if (activations.isActive(RSKIP209)) {
+            remainingGas = GasCost.subtract(remainingGas, remainingGas / 64);
+        }
+
         // If specified gas is higher than available gas then move all remaining gas to callee.
         // This will have one possibly undesired behavior: if the specified gas is higher than the remaining gas,
         // the callee will receive less gas than the parent expected.
         long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
 
-        // TODO:I next two lines can be skipped for RSKIP validation. Temp vars so RSKIP pseudocode var names match with the used ones. Later `remainingGas` and `gasCost` should be reused
-        long availableGas = remainingGas;
-        long standardCallCosts = gasCost;
-
         if (computeGas) {
-            if (activations.isActive(RSKIP209)) {
-                program.spendGas(standardCallCosts, op.name());
-                long callGas = Math.min(specifiedGasPlusMin, availableGas); // TO_CHECK_1 @sergio to take into account transfer stipend, we cannot use `top-of-stack item` but `specifiedGasPlusMin`
-                long lockGas = availableGas / 64;
-                long maxGasToPassCallee = availableGas - lockGas; // TO_CHECK_2 @sergio we are not taking into account transfer stipend here
-                if (callGas > maxGasToPassCallee) {
-                    Map<Integer, Long> lockedGasByDepth = this.program.getLockedGasByDepth();
-                    long prevGasLock = lockedGasByDepth.getOrDefault(program.getCallDeep(), 0L);
-                    long forbiddenGas = callGas - maxGasToPassCallee;
-                    if (forbiddenGas > prevGasLock) { // locked for depth can only increase
-                        long expectedLock = forbiddenGas - prevGasLock;
-                        program.spendGas(expectedLock, "Locked for CALL depth " + program.getCallDeep());
-                        program.futureRefundGas(expectedLock); // TO_CHECK_4 @sergio this is how we were handling future refunds
-                        lockedGasByDepth.put(program.getCallDeep(), forbiddenGas);
-                        availableGas -= expectedLock; // TO_CHECK_5 @sergio this line is required to properly detect `movedRemainingGasToChild`, check usage below
-                    }
-                }
-                // TODO:I next two lines can be skipped for RSKIP validation. Temp vars so RSKIP pseudocode var names match with the used ones. Later `calleeGas` and `availableGas` should be reused
-                calleeGas = maxGasToPassCallee;
-                remainingGas = availableGas;
-            } else {
-                // TO_CHECK_6 @sergio aren't we missing consuming `maxGasToPassCallee` after RSKIP209? following lines show previous behavior:
-                // we were increasing `gasCost` with `maxGasToPassCallee` and consuming it inside `spendOpCodeGas()`, now we are just expending `gasCost`+`expectedLock`
-                gasCost = GasCost.add(gasCost, calleeGas);
-                spendOpCodeGas();
-            }
+            gasCost = GasCost.add(gasCost, calleeGas);
+            spendOpCodeGas();
 
             // when there's less gas than expected from the child call,
             // the estimateGas will be given by gasUsed + deductedRefunds instead of maxGasUsed

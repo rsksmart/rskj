@@ -27,8 +27,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.Program;
 
-import java.util.Map;
-
 /**
  * @author Roman Mandeleil
  * @since 19.12.2014
@@ -43,6 +41,5 @@ public interface ProgramInvokeFactory {
                                       DataWord inValue, long inGas,
                                       Coin balanceInt, byte[] dataIn,
                                       Repository repository, BlockStore blockStore,
-                                      boolean isStaticCall, boolean byTestingSuite,
-                                      Map<Integer, Long> lockedGasByDepth);
+                                      boolean isStaticCall, boolean byTestingSuite);
 }

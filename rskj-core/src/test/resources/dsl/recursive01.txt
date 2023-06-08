@@ -89,20 +89,29 @@ block_connect b01
 # Assert best block
 assert_best b01
 
-# invoke increment(350) method
-
+# invoke increment(172) method
 transaction_build tx02
     sender acc1
     nonce 1
     contract tx01   # created in tx01
     value 0
-    data 7cf5dab00000000000000000000000000000000000000000000000000000000000000190
+    data 7cf5dab000000000000000000000000000000000000000000000000000000000000000ab
     gas 6400000
+    build
+
+# invoke increment(173) method
+transaction_build tx03
+    sender acc1
+    nonce 2
+    contract tx01   # created in tx01
+    value 0
+    data 7cf5dab000000000000000000000000000000000000000000000000000000000000000ac
+    gas 2000000
     build
 
 block_build b02
     parent b01
-    transactions tx02
+    transactions tx02 tx03
     gasLimit 6500000
     build
 
@@ -111,6 +120,8 @@ block_connect b02
 # Assert best block
 assert_best b02
 
-# Back to code test, you must check tx02 result is OK
-# and RecursiveParent counter value should be 200 == 400 / 2
+# Back to code test, you must check:
+# - tx02 result is OK and RecursiveParent counter value should be 86 == 172 / 2
+# - tx03 result is NOK (revert OOG)
+
 

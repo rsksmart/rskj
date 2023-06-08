@@ -32,8 +32,6 @@ import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 
-import java.util.Map;
-
 /**
  * @author Roman Mandeleil
  * @since 19.12.2014
@@ -57,8 +55,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
                                              DataWord inValue, long inGas,
                                              Coin balanceInt, byte[] dataIn,
                                              Repository repository, BlockStore blockStore,
-                                             boolean isStaticCall, boolean byTestingSuite,
-                                             Map<Integer, Long> lockedGasByDepth) {
+                                             boolean isStaticCall, boolean byTestingSuite) {
         return null;
     }
 
@@ -114,7 +111,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
         return new ProgramInvokeImpl(addr.getBytes(), origin.getBytes(), caller.getBytes(), balance.getBytes(),
                 gasPrice.getBytes(), gas, callValue.getBytes(), data, lastHash, coinbase,
-                timestamp, number, txindex, difficulty, gaslimit, repository, blockStore, null);
+                timestamp, number, txindex, difficulty, gaslimit, repository, blockStore);
     }
 
 }

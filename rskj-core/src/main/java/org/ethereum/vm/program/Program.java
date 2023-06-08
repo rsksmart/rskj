@@ -174,7 +174,7 @@ public class Program {
      */
     private int getMaxDepth() {
         if (activations.isActive(ConsensusRule.RSKIP209)) {
-            return Integer.MAX_VALUE; // no limit after this RSKIP
+            return 1024; // capped limit after this RSKIP
         }
 
         if (activations.isActive(ConsensusRule.RSKIP150)) {
@@ -600,7 +600,7 @@ public class Program {
         InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, DataWord.valueOf(contractAddress.getBytes()), getOwnerAddress(), value, gasLimit,
-                newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite(), invoke.getLockedGasByDepth());
+                newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         returnDataBuffer = null; // reset return buffer right before the call
 
@@ -712,6 +712,7 @@ public class Program {
      * @param msg         is the message call object
      */
     public void callToAddress(MessageCall msg) {
+
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             refundGas(msg.getGas().longValue(), " call deep limit reach");
@@ -827,8 +828,7 @@ public class Program {
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(),
-                msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite(),
-                invoke.getLockedGasByDepth());
+                msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
         Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock, signatureCache);
@@ -1337,6 +1337,7 @@ public class Program {
     }
 
     public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
+
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), " call deep limit reach");
@@ -1427,10 +1428,6 @@ public class Program {
                 executePrecompiled(contract, msg, requiredGas, track, data);
             }
         }
-    }
-
-    public Map<Integer, Long> getLockedGasByDepth() {
-        return invoke.getLockedGasByDepth();
     }
 
     /**

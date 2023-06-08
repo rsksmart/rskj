@@ -45,7 +45,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private final DataWord balance;
     private final DataWord gasPrice;
     private final DataWord callValue;
-    private long gas;
+    private final long gas;
 
     byte[] msgData;
 
@@ -69,8 +69,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private int callDeep = 0;
     private boolean isStaticCall = false;
 
-    private final Map<Integer, Long> lockedGasByDepth;
-
     public ProgramInvokeImpl(DataWord address, DataWord origin, DataWord caller, DataWord balance,
                              DataWord gasPrice,
                              long gas,
@@ -79,8 +77,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                                      difficulty,
                              DataWord gaslimit, Repository repository, int callDeep, BlockStore blockStore,
                              boolean isStaticCall,
-                             boolean byTestingSuite,
-                             Map<Integer, Long> lockedGasByDepth) {
+                             boolean byTestingSuite) {
 
         // Transaction env
         this.address = address;
@@ -107,8 +104,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.blockStore = blockStore;
         this.isStaticCall = isStaticCall;
         this.byTestingSuite = byTestingSuite;
-
-        this.lockedGasByDepth = lockedGasByDepth;
     }
 
     public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
@@ -118,7 +113,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              Repository repository, BlockStore blockStore,
                              boolean byTestingSuite) {
         this(address, origin, caller, balance, gasPrice, gas, callValue, msgData, lastHash, coinbase,
-                timestamp, number, transactionIndex, difficulty, gaslimit, repository, blockStore, null);
+                timestamp, number, transactionIndex, difficulty, gaslimit, repository, blockStore);
 
         this.byTestingSuite = byTestingSuite;
     }
@@ -128,8 +123,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              byte[] gasPrice, byte[] gas, byte[] callValue, byte[] msgData,
                              byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
                              byte[] gaslimit,
-                             Repository repository, BlockStore blockStore,
-                             Map<Integer, Long> lockedGasByDepth) {
+                             Repository repository, BlockStore blockStore) {
 
         // Transaction env
         this.address = DataWord.valueOf(address);
@@ -152,8 +146,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
         this.repository = repository;
         this.blockStore = blockStore;
-
-        this.lockedGasByDepth = lockedGasByDepth;
     }
 
     /*           ADDRESS op         */
@@ -323,11 +315,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     @Override
-    public Map<Integer, Long> getLockedGasByDepth() {
-        return lockedGasByDepth;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -398,7 +385,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(address, origin, caller, balance, gasPrice, callValue, gas, prevHash, coinbase, timestamp, number, difficulty, gaslimit, storage, repository, byTransaction, byTestingSuite, lockedGasByDepth);
+        int result = Objects.hash(address, origin, caller, balance, gasPrice, callValue, gas, prevHash, coinbase, timestamp, number, difficulty, gaslimit, storage, repository, byTransaction, byTestingSuite);
         result = 31 * result + Arrays.hashCode(msgData);
         return result;
     }

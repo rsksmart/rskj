@@ -23,8 +23,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
 
-import java.util.Map;
-
 /**
  * @author Roman Mandeleil
  * @since 03.06.2014
@@ -62,7 +60,4 @@ public interface ProgramInvoke extends InvokeData {
     BlockStore getBlockStore();
 
     boolean isStaticCall();
-
-    Map<Integer, Long> getLockedGasByDepth();
-
 }

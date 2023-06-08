@@ -413,7 +413,7 @@ class DslFilesTest {
         Assertions.assertNotNull(txinfo);
         long gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed()).longValue();
 
-        Assertions.assertEquals(200000, gasUsed);
+        Assertions.assertEquals(197978, gasUsed);
         Assertions.assertFalse(world.getRepository().isExist(new RskAddress("0xa943B74640c466Fc700AF929Cabacb1aC6CC8895")), "Address should not exist");
     }
 
