@@ -38,7 +38,6 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -176,15 +175,7 @@ public class EthModule
     }
 
     protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {
-        long estimatedGas = reversibleExecutionResult.getMovedRemainingGasToChild() ?
-                reversibleExecutionResult.getGasUsed() + reversibleExecutionResult.getDeductedRefund() :
-                reversibleExecutionResult.getMaxGasUsed();
-
-        if (reversibleExecutionResult.isCallWithValuePerformed()) {
-            estimatedGas += GasCost.STIPEND_CALL;
-        }
-
-        return HexUtils.toQuantityJsonHex(estimatedGas);
+        return HexUtils.toQuantityJsonHex(reversibleExecutionResult.getEstimatedGas());
     }
 
     @Override

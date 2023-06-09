@@ -18,6 +18,7 @@
  */
 package org.ethereum.vm.program;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.CallCreate;
@@ -62,38 +63,36 @@ public class ProgramResult {
     private List<CallCreate> callCreateList;
 
     // estimateGas fields
-    private long maxGasUsed = 0; // sometimes the estimatedGas matches the maximum gasUsed
-    private boolean movedRemainingGasToChild; // this will happen when there's no more gas left than expected from the child call
     private boolean callWithValuePerformed; // this will happen for VT CALLs
     private long gasUsedBeforeRefunds = 0; // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
 
-    public void movedRemainingGasToChild(boolean moved) {
-        this.movedRemainingGasToChild = moved;
-    }
-
-    public boolean getMovedRemainingGasToChild() {
-        return movedRemainingGasToChild;
-    }
-
     public void setCallWithValuePerformed(boolean callWithValuePerformed) {
+        if (this.callWithValuePerformed) {
+            return; // never reset!
+        }
         this.callWithValuePerformed = callWithValuePerformed;
-    }
-
-    public boolean isCallWithValuePerformed() {
-        return callWithValuePerformed;
     }
 
     public void clearUsedGas() {
         gasUsed = 0;
     }
 
-    public long getMaxGasUsed() {
-        return maxGasUsed;
+    public long getEstimatedGas() {
+        long estimatedGas = gasUsed;
+
+        if (callWithValuePerformed) {
+            estimatedGas = GasCost.add(estimatedGas, GasCost.STIPEND_CALL);
+        }
+
+        if (deductedRefund > 0) {
+            estimatedGas = GasCost.add(estimatedGas, deductedRefund);
+        }
+
+        return estimatedGas;
     }
 
     public void spendGas(long gas) {
         gasUsed = GasCost.add(gasUsed, gas);
-        maxGasUsed = Math.max(gasUsed, maxGasUsed);
     }
 
     public void setRevert() {
@@ -264,6 +263,7 @@ public class ProgramResult {
         deductedRefund = GasCost.add(deductedRefund,gasValue);
     }
 
+    @VisibleForTesting
     public long getDeductedRefund() {
         return deductedRefund;
     }
@@ -292,9 +292,7 @@ public class ProgramResult {
             addDeleteAccounts(another.getDeleteAccounts());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
-            addDeductedRefund(another.getDeductedRefund());
-            this.maxGasUsed = Math.max(this.maxGasUsed, another.getMaxGasUsed());
-            this.movedRemainingGasToChild = this.movedRemainingGasToChild || another.movedRemainingGasToChild;
+            addDeductedRefund(another.deductedRefund);
             this.callWithValuePerformed = this.callWithValuePerformed || another.callWithValuePerformed;
         }
     }
@@ -319,6 +317,7 @@ public class ProgramResult {
         this.gasUsedBeforeRefunds = gasUsedBeforeRefunds;
     }
 
+    @VisibleForTesting
     public long getGasUsedBeforeRefunds() {
         return gasUsedBeforeRefunds;
     }
