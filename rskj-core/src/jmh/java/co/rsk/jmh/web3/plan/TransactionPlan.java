@@ -39,8 +39,6 @@ public class TransactionPlan extends BasePlan {
     private Iterator<Transaction> transactionsVT;
     private Iterator<Transaction> transactionsContractCreation;
     private Iterator<Transaction> transactionsContractCall;
-    private org.web3j.protocol.core.methods.response.Transaction contractCallTransaction;
-    private BigInteger blockNumber;
 
     @Override
     @Setup(Level.Trial) // move to "Level.Iteration" in case we set a batch size at some point
@@ -60,18 +58,6 @@ public class TransactionPlan extends BasePlan {
         transactionsVT = TransactionFactory.createTransactions(TransactionFactory.TransactionType.VT, configuration, nonce, numOfTransactions).listIterator();
         transactionsContractCreation = TransactionFactory.createTransactions(TransactionFactory.TransactionType.CONTRACT_CREATION, configuration, nonce, numOfTransactions).listIterator();
         transactionsContractCall = TransactionFactory.createTransactions(TransactionFactory.TransactionType.CONTRACT_CALL, configuration, nonce, numOfTransactions).listIterator();
-        blockNumber = web3Connector.ethBlockNumber();
-    }
-
-    private org.web3j.protocol.core.methods.response.Transaction setupContractCallTransaction(Transaction transaction) throws IOException {
-        if (super.getConfig().equals("regtest")) {
-            EthSendTransaction sendTransactionResponse = rskModuleWeb3j.ethSendTransaction(transaction).send();
-            EthTransaction transactionResponse = rskModuleWeb3j.ethGetTransactionByHash(sendTransactionResponse.getResult()).send();
-            return transactionResponse.getResult();
-        } else {
-            EthTransaction transactionResponse = rskModuleWeb3j.ethGetTransactionByHash(configuration.getString("eth.transactionContractCallHash")).send();
-            return transactionResponse.getResult();
-        }
     }
 
     @TearDown(Level.Trial) // move to "Level.Iteration" in case we set a batch size at some point
@@ -90,37 +76,5 @@ public class TransactionPlan extends BasePlan {
 
     public Iterator<Transaction> getTransactionsContractCall() {
         return transactionsContractCall;
-    }
-
-    public org.web3j.protocol.core.methods.response.Transaction getContractCallTransaction() {
-        if (contractCallTransaction == null) {
-            try {
-                contractCallTransaction = setupContractCallTransaction(transactionsContractCall.next());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return contractCallTransaction;
-    }
-
-    public RskModuleWeb3j.EthCallArguments getEthCallArguments() {
-        RskModuleWeb3j.EthCallArguments args = new RskModuleWeb3j.EthCallArguments();
-        org.web3j.protocol.core.methods.response.Transaction contractCallTransaction = getContractCallTransaction();
-
-        args.setFrom(contractCallTransaction.getFrom());
-        args.setTo(contractCallTransaction.getTo());
-        args.setGas("0x" + contractCallTransaction.getGas().toString(16));
-        args.setGasPrice("0x" + contractCallTransaction.getGasPrice().toString(16));
-        args.setValue("0x" + contractCallTransaction.getValue().toString(16));
-        args.setNonce("0x" + contractCallTransaction.getNonce().toString(16));
-        args.setChainId("0x" + BigInteger.valueOf(contractCallTransaction.getChainId()).toString(16));
-        args.setData(contractCallTransaction.getInput());
-
-        return args;
-    }
-
-    public BigInteger getBlockNumber() {
-        return blockNumber;
     }
 }

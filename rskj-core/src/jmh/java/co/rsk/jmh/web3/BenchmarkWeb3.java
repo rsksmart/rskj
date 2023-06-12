@@ -46,13 +46,13 @@ public class BenchmarkWeb3 {
 
     @Benchmark
     @Timeout(time = 60)
-    public void ethCallForSpecificBlock(TransactionPlan plan) throws BenchmarkWeb3Exception {
+    public void ethCallForSpecificBlock(EthPlan plan) throws BenchmarkWeb3Exception {
         plan.getWeb3Connector().ethCall(plan.getEthCallArguments(), plan.getBlockNumber().toString());
     }
 
     @Benchmark
     @Timeout(time = 60)
-    public void ethCallForPendingBlock(TransactionPlan plan) throws BenchmarkWeb3Exception {
+    public void ethCallForPendingBlock(EthPlan plan) throws BenchmarkWeb3Exception {
         plan.getWeb3Connector().ethCall(plan.getEthCallArguments(), "pending");
     }
 
