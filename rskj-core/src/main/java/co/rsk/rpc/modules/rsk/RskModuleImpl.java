@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.util.NodeStopper;
 import co.rsk.Flusher;
 import org.ethereum.core.Block;
@@ -14,6 +15,7 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,26 +37,30 @@ public class RskModuleImpl implements RskModule {
 
     private final NodeStopper nodeStopper;
 
+    private final RskSystemProperties rskSystemProperties;
+
     public RskModuleImpl(Blockchain blockchain,
                          BlockStore blockStore,
                          ReceiptStore receiptStore,
                          Web3InformationRetriever web3InformationRetriever,
                          Flusher flusher,
-                         NodeStopper nodeStopper) {
+                         NodeStopper nodeStopper,
+                         RskSystemProperties rskSystemProperties) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.web3InformationRetriever = web3InformationRetriever;
         this.flusher = flusher;
         this.nodeStopper = nodeStopper;
+        this.rskSystemProperties = rskSystemProperties;
     }
 
     public RskModuleImpl(Blockchain blockchain,
                          BlockStore blockStore,
                          ReceiptStore receiptStore,
                          Web3InformationRetriever web3InformationRetriever,
-                         Flusher flusher) {
-        this(blockchain, blockStore, receiptStore, web3InformationRetriever, flusher, System::exit);
+                         Flusher flusher, RskSystemProperties rskSystemProperties) {
+        this(blockchain, blockStore, receiptStore, web3InformationRetriever, flusher, System::exit, rskSystemProperties);
     }
 
     @Override
@@ -65,6 +71,11 @@ public class RskModuleImpl implements RskModule {
     @Override
     public void shutdown() {
         nodeStopper.stop(0);
+    }
+
+    @Override
+    public String getNodeId() {
+        return ByteUtil.toHexString(this.rskSystemProperties.nodeId());
     }
 
     @Override
