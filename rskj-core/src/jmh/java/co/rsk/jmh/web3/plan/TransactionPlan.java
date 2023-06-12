@@ -22,21 +22,15 @@ import co.rsk.jmh.helpers.BenchmarkHelper;
 import co.rsk.jmh.web3.BenchmarkWeb3Exception;
 import co.rsk.jmh.web3.e2e.RskModuleWeb3j;
 import co.rsk.jmh.web3.factory.TransactionFactory;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.BenchmarkParams;
-import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.request.Transaction;
-import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.EthTransaction;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 
 @State(Scope.Benchmark)
@@ -46,6 +40,7 @@ public class TransactionPlan extends BasePlan {
     private Iterator<Transaction> transactionsContractCreation;
     private Iterator<Transaction> transactionsContractCall;
     private org.web3j.protocol.core.methods.response.Transaction contractCallTransaction;
+    private BigInteger blockNumber;
 
     @Override
     @Setup(Level.Trial) // move to "Level.Iteration" in case we set a batch size at some point
@@ -65,6 +60,7 @@ public class TransactionPlan extends BasePlan {
         transactionsVT = TransactionFactory.createTransactions(TransactionFactory.TransactionType.VT, configuration, nonce, numOfTransactions).listIterator();
         transactionsContractCreation = TransactionFactory.createTransactions(TransactionFactory.TransactionType.CONTRACT_CREATION, configuration, nonce, numOfTransactions).listIterator();
         transactionsContractCall = TransactionFactory.createTransactions(TransactionFactory.TransactionType.CONTRACT_CALL, configuration, nonce, numOfTransactions).listIterator();
+        blockNumber = web3Connector.ethBlockNumber();
     }
 
     private org.web3j.protocol.core.methods.response.Transaction setupContractCallTransaction(Transaction transaction) throws IOException {
@@ -122,5 +118,9 @@ public class TransactionPlan extends BasePlan {
         args.setData(contractCallTransaction.getInput());
 
         return args;
+    }
+
+    public BigInteger getBlockNumber() {
+        return blockNumber;
     }
 }

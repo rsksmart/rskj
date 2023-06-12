@@ -47,7 +47,7 @@ public class BenchmarkWeb3 {
     @Benchmark
     @Timeout(time = 60)
     public void ethCallForSpecificBlock(TransactionPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethCall(plan.getEthCallArguments(), plan.getConfiguration().getString("eth.blockNumber"));
+        plan.getWeb3Connector().ethCall(plan.getEthCallArguments(), plan.getBlockNumber().toString());
     }
 
     @Benchmark
@@ -258,7 +258,7 @@ public class BenchmarkWeb3 {
     @Benchmark
     public void ethGetCode(BasePlan plan) throws BenchmarkWeb3Exception {
         String address = plan.getEthMethodsConfig().getEthGetCodeAddress();
-        DefaultBlockParameter defaultBlockParameter = plan.getEthMethodsConfig().getLatestBlock();
+        DefaultBlockParameter defaultBlockParameter = DefaultBlockParameter.valueOf(BigInteger.valueOf(plan.getEthMethodsConfig().getEthGetCodeBlockNumber()));
         plan.getWeb3Connector().ethGetCode(address, defaultBlockParameter);
     }
 
