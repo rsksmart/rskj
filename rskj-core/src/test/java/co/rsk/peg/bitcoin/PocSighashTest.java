@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,6 +48,7 @@ import java.util.stream.Stream;
 import static co.rsk.peg.FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -136,6 +138,103 @@ class PocSighashTest {
                 false
             );
             assertTrue(sighashes.contains(sighashFromSignedTx));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideTestArguments")
+    void test_sighash_is_different_when_tx_is_altered(NetworkParameters networkParameters) {
+        // Arrange
+        int erpFedActivationDelay = 720;
+
+        List<FedSigner> fedMembers = FedSigner.listOf("fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7");
+        List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        P2shErpFederation fed = new P2shErpFederation(
+            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
+            Instant.now(),
+            0L,
+            networkParameters,
+            erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
+            erpFedActivationDelay,
+            activations
+        );
+
+        List<FedUtxo> utxos = new ArrayList<>();
+        BtcTransaction peginTx = new BtcTransaction(networkParameters);
+        peginTx.addOutput(Coin.valueOf(100_000), fed.getAddress());
+        utxos.add(FedUtxo.of(peginTx, 0));
+
+        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Coin totalAmount = utxos.stream().map(fedUtxo -> fedUtxo.btcTransaction.getOutput(fedUtxo.getOutputIdx()).getValue()).reduce(Coin.ZERO, Coin::add);
+
+        // Act
+        Set<Sha256Hash> sighashes = new HashSet<>();
+        BtcTransaction pegOutTx = spendFromFed(
+            networkParameters,
+            erpFedActivationDelay,
+            fed,
+            fedMembers,
+            false,
+            utxos,
+            totalAmount.minus(Coin.valueOf(15_000)),
+            destinationAddress,
+            sighashes
+        );
+
+        // Assert each utxo has a unique sighash by checking the sighashes set has the same size of the utxo list
+        Assertions.assertEquals(utxos.size(), sighashes.size());
+
+        // Assert sighashes got before signing the input is the same after the tx is signed
+        for (int i = 0; i < pegOutTx.getInputs().size(); i++) {
+            Sha256Hash sighashFromSignedTx = pegOutTx.hashForSignature(
+                i,
+                fed.getRedeemScript(),
+                BtcTransaction.SigHash.ALL,
+                false
+            );
+            assertTrue(sighashes.contains(sighashFromSignedTx));
+        }
+
+
+        BtcTransaction peginTx2 = new BtcTransaction(networkParameters);
+        peginTx2.addOutput(Coin.valueOf(100_000), fed.getAddress());
+        utxos.add(FedUtxo.of(peginTx2, 0));
+
+        Coin alteredTxTotalAmount = utxos.stream().map(fedUtxo -> fedUtxo.btcTransaction.getOutput(fedUtxo.getOutputIdx()).getValue()).reduce(Coin.ZERO, Coin::add);
+
+        Set<Sha256Hash> alteredTxSighashes = new HashSet<>();
+        spendFromFed(
+            networkParameters,
+            erpFedActivationDelay,
+            fed,
+            fedMembers,
+            false,
+            utxos,
+            alteredTxTotalAmount.minus(Coin.valueOf(15_000)),
+            destinationAddress,
+            alteredTxSighashes
+        );
+
+        // Assert sighashes set size is equal to number of tx's inputs(utxos)
+        Assertions.assertEquals(utxos.size(), alteredTxSighashes.size());
+        // Assert altered tx sighashes size is equal to previous tx sighashes + 1(new utxo added)
+        Assertions.assertEquals(alteredTxSighashes.size(), sighashes.size() + 1);
+
+
+        // Assert altered tx sighashes are different than sighashes from previous tx
+        Iterator<Sha256Hash> sighashesIterator = sighashes.iterator();
+        Iterator<Sha256Hash> alteredTxSighashesIterator = alteredTxSighashes.iterator();
+        while (sighashesIterator.hasNext()) {
+            Sha256Hash alteredTxSighash = alteredTxSighashesIterator.next();
+            Sha256Hash sighash = sighashesIterator.next();
+
+            assertNotEquals(alteredTxSighash, sighash);
+            assertFalse(alteredTxSighashes.contains(sighash));
         }
     }
 
