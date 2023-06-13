@@ -18,7 +18,6 @@
 package org.ethereum.util;
 
 import co.rsk.RskContext;
-import co.rsk.cli.RskCli;
 import co.rsk.core.Wallet;
 import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.StateRootHandler;
@@ -50,17 +49,13 @@ public class RskTestContext extends RskContext {
 
         return result;
     }
-    private static RskCli loadCli(RskCli cli, String... args) {
-        cli.load(args);
-        return cli;
-    }
 
     public RskTestContext(Path dbPath, String... args) {
-        super(loadCli(new RskCli(), composeArgs(dbPath, args)));
+        super(composeArgs(dbPath, args));
     }
 
     public RskTestContext(String... args) {
-        super(loadCli(new RskCli(), args));
+        super(args);
     }
 
     @Override

@@ -40,7 +40,7 @@ public class Start {
 
         RskContext ctx = null;
         try {
-            ctx = new RskContext(rskCli);
+            ctx = new RskContext(args);
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);

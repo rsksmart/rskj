@@ -236,9 +236,7 @@ class RskContextTest {
 
     @Test
     void closedContextShouldThrowErrorWhenBeingUsed() throws IllegalAccessException {
-        RskCli rskCli = new RskCli();
-        rskCli.load(new String[0]);
-        RskContext rskContext = new RskContext(rskCli);
+        RskContext rskContext = new RskContext(new String[0]);
 
         rskContext.close();
 
@@ -281,9 +279,7 @@ class RskContextTest {
     }
 
     private RskContext makeRskContext() {
-        RskCli rskCli = new RskCli();
-        rskCli.load(new String[0]);
-        return new RskContext(rskCli) {
+        return new RskContext(new String[0]) {
             @Override
             public RskSystemProperties getRskSystemProperties() {
                 return testProperties;

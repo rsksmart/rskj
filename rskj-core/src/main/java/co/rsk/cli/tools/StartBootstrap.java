@@ -64,7 +64,7 @@ public class StartBootstrap implements Callable<Integer> {
 
         RskContext ctx = null;
         try {
-            ctx = new BootstrapRskContext(rskCli);
+            ctx = new BootstrapRskContext(args);
             new CommandLine(new StartBootstrap(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
         } catch (Exception e) {
             logger.error("Main thread of RSK bootstrap node crashed", e);
@@ -108,8 +108,8 @@ public class StartBootstrap implements Callable<Integer> {
      */
     static class BootstrapRskContext extends RskContext {
 
-        BootstrapRskContext(RskCli rskCli) {
-            super(rskCli);
+        BootstrapRskContext(String[] args) {
+            super(args);
         }
 
         @Override
