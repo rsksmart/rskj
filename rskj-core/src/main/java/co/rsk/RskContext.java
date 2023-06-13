@@ -155,7 +155,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private static final String CACHE_FILE_NAME = "rskcache";
 
-    private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
+    private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
@@ -257,11 +257,23 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     /***** Constructors ***********************************************************************************************/
 
-    public RskContext(RskCli rskCli) {
-        this(rskCli, rskCli.getCliArgs());
+//    public RskContext(RskCli rskCli) {
+//        this(rskCli, rskCli.getCliArgs());
+//    }
+//
+//    private RskContext(RskCli rskCli, CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
+//        Objects.requireNonNull(rskCli, "RskjCli must not be null");
+//        this.cliArgs = cliArgs;
+//        initializeNativeLibs();
+//    }
+
+    public RskContext(String[] args) {
+        RskCli rskCli = new RskCli();
+        rskCli.load(args);
+        initialize(rskCli, rskCli.getCliArgs());
     }
 
-    private RskContext(RskCli rskCli, CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
+    private void initialize(RskCli rskCli, CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
         Objects.requireNonNull(rskCli, "RskjCli must not be null");
         this.cliArgs = cliArgs;
         initializeNativeLibs();
