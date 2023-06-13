@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.BridgeSupport.BRIDGE_BTC_TX_LEGACY_VERSION;
-import static co.rsk.peg.BridgeSupport.BRIDGE_BTC_TX_VERSION_2;
+import static co.rsk.peg.ReleaseTransactionBuilder.BRIDGE_BTC_TX_LEGACY_VERSION;
+import static co.rsk.peg.ReleaseTransactionBuilder.BRIDGE_BTC_TX_VERSION_2;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
