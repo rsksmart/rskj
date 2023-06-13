@@ -101,6 +101,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
+import static co.rsk.peg.ReleaseTransactionBuilder.BRIDGE_BTC_TX_LEGACY_VERSION;
+import static co.rsk.peg.ReleaseTransactionBuilder.BRIDGE_BTC_TX_VERSION_2;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
@@ -142,9 +144,6 @@ public class BridgeSupport {
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
-
-    public static final int BRIDGE_BTC_TX_VERSION_2 = 2;
-    public static final int BRIDGE_BTC_TX_LEGACY_VERSION = 1;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();

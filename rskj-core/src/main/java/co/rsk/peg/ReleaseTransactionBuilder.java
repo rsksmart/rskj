@@ -39,6 +39,10 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public class ReleaseTransactionBuilder {
+
+    public static final int BRIDGE_BTC_TX_VERSION_2 = 2;
+    public static final int BRIDGE_BTC_TX_LEGACY_VERSION = 1;
+
     public class BuildResult {
         private final BtcTransaction btcTx;
         private final List<UTXO> selectedUTXOs;
@@ -133,7 +137,7 @@ public class ReleaseTransactionBuilder {
         BtcTransaction btcTx = new BtcTransaction(params);
 
         if (activations.isActive(ConsensusRule.RSKIP201)) {
-            btcTx.setVersion(2);
+            btcTx.setVersion(BRIDGE_BTC_TX_VERSION_2);
         }
 
         SendRequest sr = SendRequest.forTx(btcTx);

@@ -40,8 +40,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static co.rsk.peg.BridgeSupport.BRIDGE_BTC_TX_LEGACY_VERSION;
-import static co.rsk.peg.BridgeSupport.BRIDGE_BTC_TX_VERSION_2;
+import static co.rsk.peg.ReleaseTransactionBuilder.BRIDGE_BTC_TX_LEGACY_VERSION;
+import static co.rsk.peg.ReleaseTransactionBuilder.BRIDGE_BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
