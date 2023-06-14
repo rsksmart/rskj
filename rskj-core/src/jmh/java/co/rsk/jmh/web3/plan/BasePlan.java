@@ -95,14 +95,6 @@ public class BasePlan {
         return config;
     }
 
-    public BenchmarkWeb3.Suites getSuite() {
-        return suite;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
     public EthMethodsConfig getEthMethodsConfig() {
         return ethMethodsConfig;
     }
