@@ -17,7 +17,6 @@
  */
 package co.rsk;
 
-import co.rsk.cli.RskCli;
 import co.rsk.util.PreflightChecksUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,15 +31,12 @@ public class Start {
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
 
-        RskCli rskCli = new RskCli();
-        int exitCode = rskCli.load(args);
-        if (exitCode != 0 || rskCli.isVersionOrHelpRequested()) {
-            System.exit(exitCode);
-        }
-
         RskContext ctx = null;
         try {
             ctx = new RskContext(args);
+            if (ctx.isVersionOrHelpRequested()) {
+                System.exit(0);
+            }
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);

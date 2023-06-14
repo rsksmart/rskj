@@ -254,23 +254,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
 
     private volatile boolean closed;
+    private boolean versionOrHelpRequested;
 
     /***** Constructors ***********************************************************************************************/
-
-//    public RskContext(RskCli rskCli) {
-//        this(rskCli, rskCli.getCliArgs());
-//    }
-//
-//    private RskContext(RskCli rskCli, CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
-//        Objects.requireNonNull(rskCli, "RskjCli must not be null");
-//        this.cliArgs = cliArgs;
-//        initializeNativeLibs();
-//    }
-
     public RskContext(String[] args) {
         RskCli rskCli = new RskCli();
         rskCli.load(args);
         initialize(rskCli, rskCli.getCliArgs());
+        this.versionOrHelpRequested = rskCli.isVersionOrHelpRequested();
     }
 
     private void initialize(RskCli rskCli, CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
@@ -1266,6 +1257,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 KeyValueDataSourceUtils::getDbKindValueFromDbKindFile);
     }
 
+    public boolean isVersionOrHelpRequested() {
+        return versionOrHelpRequested;
+    }
+
     /***** Protected Methods ******************************************************************************************/
 
     @Nonnull
@@ -2182,4 +2177,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             throw new IllegalStateException("RSK Context is closed and cannot be in use anymore");
         }
     }
+
+
 }
