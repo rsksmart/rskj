@@ -240,14 +240,6 @@ public class BenchmarkWeb3 {
         plan.getWeb3Connector().traceGet(transactionHash, Stream.of("0x0").collect(Collectors.toList()));
     }
 
-
-    @Benchmark
-    public void ethSign(BasePlan plan) throws BenchmarkWeb3Exception {
-        String address = plan.getEthMethodsConfig().getEthSignAddress();
-        String message = plan.getEthMethodsConfig().getEthSignMessage();
-        plan.getWeb3Connector().ethSign(address, message);
-    }
-
     @Benchmark
     public void ethGetStorageAt(BasePlan plan) throws BenchmarkWeb3Exception {
         String address = plan.getEthMethodsConfig().getEthGetStorageAtAddress();
