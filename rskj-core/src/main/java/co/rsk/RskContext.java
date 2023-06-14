@@ -1257,7 +1257,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 KeyValueDataSourceUtils::getDbKindValueFromDbKindFile);
     }
 
-    public boolean isVersionOrHelpRequested() {
+    public synchronized boolean isVersionOrHelpRequested() {
+        checkIfNotClosed();
         return versionOrHelpRequested;
     }
 
