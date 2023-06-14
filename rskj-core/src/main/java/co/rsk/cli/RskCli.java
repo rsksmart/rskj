@@ -13,6 +13,24 @@ import java.util.Map;
 public class RskCli implements Runnable {
 
     // CLI FLAGS
+    // network flags
+    static class NetworkFlags {
+        @CommandLine.Option(names = {"--testnet"}, description = "Use testnet configuration")
+        boolean networkTestnet;
+
+        @CommandLine.Option(names = {"--regtest"}, description = "Use regtest configuration")
+        boolean networkRegtest;
+
+        @CommandLine.Option(names = {"--devnet"}, description = "Use devnet configuration")
+        boolean networkDevnet;
+
+        @CommandLine.Option(names = {"--main"}, description = "Use mainnet configuration")
+        boolean networkMainnet;
+    }
+
+    @CommandLine.ArgGroup(exclusive = true, multiplicity = "0..1")
+    NetworkFlags networkFlags;
+
     // db flags
     @CommandLine.Option(names = {"-r", "--reset"}, description = "Reset the database")
     private boolean dbReset;
@@ -29,19 +47,6 @@ public class RskCli implements Runnable {
 
     @CommandLine.Option(names = {"--skip-java-check"}, description = "Skip Java version check")
     private boolean skipJavaCheck;
-
-    // network
-    @CommandLine.Option(names = {"--testnet"}, description = "Use testnet configuration")
-    private boolean networkTestnet;
-
-    @CommandLine.Option(names = {"--regtest"}, description = "Use regtest configuration")
-    private boolean networkRegtest;
-
-    @CommandLine.Option(names = {"--devnet"}, description = "Use devnet configuration")
-    private boolean networkDevnet;
-
-    @CommandLine.Option(names = {"--main"}, description = "Use mainnet configuration")
-    private boolean networkMainnet;
 
     // CLI OPTIONS
     @CommandLine.Option(names = {"-rpccors"}, description = "Set RPC CORS")
@@ -99,22 +104,6 @@ public class RskCli implements Runnable {
             activatedFlags.add(NodeCliFlags.SKIP_JAVA_CHECK);
         }
 
-        if (networkTestnet) {
-            activatedFlags.add(NodeCliFlags.NETWORK_TESTNET);
-        }
-
-        if (networkRegtest) {
-            activatedFlags.add(NodeCliFlags.NETWORK_REGTEST);
-        }
-
-        if (networkDevnet) {
-            activatedFlags.add(NodeCliFlags.NETWORK_DEVNET);
-        }
-
-        if (networkMainnet) {
-            activatedFlags.add(NodeCliFlags.NETWORK_MAINNET);
-        }
-
         if (rpcCors != null) {
             activatedOptions.put(NodeCliOptions.RPC_CORS, rpcCors);
             paramValueMap.put("rpc-cors", rpcCors);
@@ -128,6 +117,18 @@ public class RskCli implements Runnable {
         if (xArgument != null) {
             String[] keyValuePair = splitXArgumentIntoKeyValue(xArgument);
             paramValueMap.put(keyValuePair[0], keyValuePair[1]);
+        }
+
+        if (networkFlags != null) {
+            if (networkFlags.networkTestnet) {
+                activatedFlags.add(NodeCliFlags.NETWORK_TESTNET);
+            } else if (networkFlags.networkRegtest) {
+                activatedFlags.add(NodeCliFlags.NETWORK_REGTEST);
+            } else if (networkFlags.networkDevnet) {
+                activatedFlags.add(NodeCliFlags.NETWORK_DEVNET);
+            } else if (networkFlags.networkMainnet) {
+                activatedFlags.add(NodeCliFlags.NETWORK_MAINNET);
+            }
         }
 
         cliArgs = CliArgs.of(activatedOptions, activatedFlags, paramValueMap);
