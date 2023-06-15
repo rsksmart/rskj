@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.cli;
 
 import co.rsk.config.NodeCliFlags;
@@ -16,20 +33,20 @@ public class RskCli implements Runnable {
     // network flags
     static class NetworkFlags {
         @CommandLine.Option(names = {"--testnet"}, description = "Use testnet configuration")
-        boolean networkTestnet;
+        private boolean networkTestnet;
 
         @CommandLine.Option(names = {"--regtest"}, description = "Use regtest configuration")
-        boolean networkRegtest;
+        private boolean networkRegtest;
 
         @CommandLine.Option(names = {"--devnet"}, description = "Use devnet configuration")
-        boolean networkDevnet;
+        private boolean networkDevnet;
 
         @CommandLine.Option(names = {"--main"}, description = "Use mainnet configuration")
-        boolean networkMainnet;
+        private boolean networkMainnet;
     }
 
     @CommandLine.ArgGroup(exclusive = true, multiplicity = "0..1")
-    NetworkFlags networkFlags;
+    private NetworkFlags networkFlags;
 
     // db flags
     @CommandLine.Option(names = {"-r", "--reset"}, description = "Reset the database")
