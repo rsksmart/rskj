@@ -19,9 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.TestSystemProperties;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 
 import java.io.IOException;
@@ -41,14 +39,6 @@ class GitHubStateTest {
 
 
     private long oldForkValue;
-    private static TestSystemProperties config;
-
-    @BeforeAll
-     static void setup() {
-        // TODO remove this after Homestead launch and shacommit update with actual block number
-        // for this JSON test commit the Homestead block was defined as 900000
-        config = new TestSystemProperties();
-    }
 
     @Disabled ("this method is mostly for hands-on convenient testing")
     @Test

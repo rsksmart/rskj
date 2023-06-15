@@ -88,6 +88,10 @@ public class World {
         this(new BlockChainBuilder().setReceiptStore(receiptStore));
     }
 
+    public World(RskSystemProperties config, ReceiptStore receiptStore) {
+        this(new BlockChainBuilder().setConfig(config).setReceiptStore(receiptStore));
+    }
+
     @VisibleForTesting
     public World(BlockChainBuilder blockChainBuilder) {
         this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getReceiptStore(), blockChainBuilder.getTrieStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null,

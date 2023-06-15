@@ -26,6 +26,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -66,6 +68,7 @@ import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.HexUtils;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 
 /**
  * Created by ajlopez on 30/11/2016.
@@ -101,12 +104,12 @@ class Web3ImplLogsTest {
     private static final String GET_VALUE_METHOD_SIGNATURE = "20965255";
     private static final String TRACKED_TEST_BLOCK_HASH = "0xafb368a4f74e51a3c6b6d72b049c4fc7bc7506251f13a3afa4fee4bece0e85eb";
     private static final String UNTRACKED_TEST_BLOCK_HASH = "0xdea168a4f74e51a3eeb6d72b049c4fc7bc750dd51f13a3afa4fee4bece0e85eb";
-    private final TestSystemProperties config = new TestSystemProperties();
+    private TestSystemProperties config;
 
     @TempDir
     public Path tempDir;
     private Blockchain blockChain;
-	private MiningMainchainView mainchainView;
+    private MiningMainchainView mainchainView;
     private RepositoryLocator repositoryLocator;
     private TransactionPool transactionPool;
     private Ethereum eth;
@@ -123,7 +126,30 @@ class Web3ImplLogsTest {
 
     @BeforeEach
     void setUp() {
-        RskTestFactory factory = new RskTestFactory(tempDir);
+        config = Mockito.spy(new TestSystemProperties());
+        ActivationConfig activationConfig = config.getActivationConfig();
+        ActivationConfig activationConfigSpy = Mockito.spy(activationConfig);
+
+        Mockito.doReturn(activationConfigSpy).when(config).getActivationConfig();
+
+        Mockito.doReturn(false)
+                .when(activationConfigSpy).isActive(Mockito.eq(ConsensusRule.RSKIPXXX), Mockito.anyLong());
+
+        Mockito.doAnswer(i1 -> {
+            ActivationConfig.ForBlock activationConfigForBlock = Mockito.spy(activationConfig.forBlock(i1.getArgument(0)));
+
+            Mockito.doAnswer(i2 -> {
+                if (i2.getArgument(0).equals(ConsensusRule.RSKIPXXX)) {
+                    return false;
+                }
+
+                return i2.callRealMethod();
+            }).when(activationConfigForBlock).isActive(Mockito.any());
+
+            return activationConfigForBlock;
+        }).when(activationConfigSpy).forBlock(Mockito.anyLong());
+
+        RskTestFactory factory = new RskTestFactory(tempDir, config);
         blockChain = factory.getBlockchain();
         blockStore = factory.getBlockStore();
         trieStore = factory.getTrieStore();
@@ -160,8 +186,8 @@ class Web3ImplLogsTest {
     @Test
     void newFilterGetLogsAfterBlock() throws Exception {
         Account acc1 = new AccountBuilder(blockChain,
-                                          blockStore,
-                                          repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
         FilterRequest fr = new FilterRequest();
@@ -175,8 +201,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(genesis).transactions(txs).build();
+                blockStore
+        ).trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Object[] logs = web3.eth_getFilterLogs(id);
@@ -185,14 +211,14 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(1, logs.length);
 
-        assertEquals("0x" + tx.getContractAddress().toString(),((LogFilterElement)logs[0]).address);
+        assertEquals("0x" + tx.getContractAddress().toString(), ((LogFilterElement) logs[0]).address);
     }
 
     @Test
     void newFilterWithAccountAndTopicsCreatedAfterBlockAndGetLogs() throws Exception {
         Account acc1 = new AccountBuilder(blockChain,
-                                          blockStore,
-                                          repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         web3.personal_newAccountWithSeed("notDefault");
 
@@ -203,13 +229,13 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(genesis).transactions(txs).build();
+                blockStore
+        ).trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         FilterRequest fr = new FilterRequest();
-        fr.setAddress( ByteUtil.toHexString(tx.getContractAddress().getBytes()));
-        fr.setTopics(new Object[] { "06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad1" });
+        fr.setAddress(ByteUtil.toHexString(tx.getContractAddress().getBytes()));
+        fr.setTopics(new Object[]{"06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad1"});
         String id = web3.eth_newFilter(fr);
 
         Object[] logs = web3.eth_getFilterLogs(id);
@@ -218,14 +244,14 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(1, logs.length);
 
-        assertEquals("0x" + tx.getContractAddress().toString(),((LogFilterElement)logs[0]).address);
+        assertEquals("0x" + tx.getContractAddress().toString(), ((LogFilterElement) logs[0]).address);
     }
 
     @Test
     void newFilterGetLogsTwiceAfterBlock() throws Exception {
         Account acc1 = new AccountBuilder(blockChain,
-                                          blockStore,
-                                          repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         web3.personal_newAccountWithSeed("notDefault");
 
@@ -240,8 +266,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(genesis).transactions(txs).build();
+                blockStore
+        ).trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         web3.eth_getFilterLogs(id);
@@ -251,7 +277,7 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(1, logs.length);
 
-        assertEquals("0x" + tx.getContractAddress().toString(),((LogFilterElement)logs[0]).address);
+        assertEquals("0x" + tx.getContractAddress().toString(), ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -269,8 +295,8 @@ class Web3ImplLogsTest {
     @Test
     void newFilterGetChangesAfterBlock() throws Exception {
         Account acc1 = new AccountBuilder(blockChain,
-                                          blockStore,
-                                          repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         web3.personal_newAccountWithSeed("notDefault");
 
@@ -285,8 +311,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(genesis).transactions(txs).build();
+                blockStore
+        ).trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Object[] logs = web3.eth_getFilterChanges(id);
@@ -295,7 +321,7 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(1, logs.length);
 
-        assertEquals("0x" + tx.getContractAddress().toString(),((LogFilterElement)logs[0]).address);
+        assertEquals("0x" + tx.getContractAddress().toString(), ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -370,10 +396,10 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(1, logs.length);
 
-        String txhash = ((LogFilterElement)logs[0]).transactionHash;
+        String txhash = ((LogFilterElement) logs[0]).transactionHash;
         TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
 
-        assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[0]).address);
+        assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -388,10 +414,10 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(1, logs.length);
 
-        String txhash = ((LogFilterElement)logs[0]).transactionHash;
+        String txhash = ((LogFilterElement) logs[0]).transactionHash;
         TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
 
-        assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[0]).address);
+        assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -405,11 +431,11 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(2, logs.length);
 
-        String txhash = ((LogFilterElement)logs[0]).transactionHash;
+        String txhash = ((LogFilterElement) logs[0]).transactionHash;
         TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
 
-        assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[0]).address);
-        assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[1]).address);
+        assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[0]).address);
+        assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[1]).address);
     }
 
     @Test
@@ -474,11 +500,11 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(2, logs.length);
 
-        String txhash = ((LogFilterElement)logs[0]).transactionHash;
+        String txhash = ((LogFilterElement) logs[0]).transactionHash;
         TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
 
-        assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[0]).address);
-        assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[1]).address);
+        assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[0]).address);
+        assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[1]).address);
     }
 
     @Test
@@ -512,7 +538,7 @@ class Web3ImplLogsTest {
         Block block1 = blockChain.getBlockByNumber(1l);
         FilterRequest fr = new FilterRequest();
         fr.setFromBlock("earliest");
-        fr.setAddress( ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes()));
+        fr.setAddress(ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes()));
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -520,9 +546,9 @@ class Web3ImplLogsTest {
 
         String address = "0x" + fr.getAddress();
 
-        assertEquals(address,((LogFilterElement)logs[0]).address);
-        assertEquals(address,((LogFilterElement)logs[1]).address);
-        assertEquals(address,((LogFilterElement)logs[2]).address);
+        assertEquals(address, ((LogFilterElement) logs[0]).address);
+        assertEquals(address, ((LogFilterElement) logs[1]).address);
+        assertEquals(address, ((LogFilterElement) logs[2]).address);
     }
 
     @Test
@@ -531,7 +557,7 @@ class Web3ImplLogsTest {
         Block block1 = blockChain.getBlockByNumber(1l);
         FilterRequest fr = new FilterRequest();
         fr.setFromBlock("earliest");
-        fr.setAddress( ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes()));
+        fr.setAddress(ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes()));
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -540,9 +566,9 @@ class Web3ImplLogsTest {
 
         String address = "0x" + fr.getAddress();
 
-        assertEquals(address,((LogFilterElement)logs[0]).address);
-        assertEquals(address,((LogFilterElement)logs[1]).address);
-        assertEquals(address,((LogFilterElement)logs[2]).address);
+        assertEquals(address, ((LogFilterElement) logs[0]).address);
+        assertEquals(address, ((LogFilterElement) logs[1]).address);
+        assertEquals(address, ((LogFilterElement) logs[2]).address);
     }
 
     @Test
@@ -619,7 +645,7 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         assertEquals(1, logs.length);
-        assertEquals(address,((LogFilterElement)logs[0]).address);
+        assertEquals(address, ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -637,7 +663,7 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         assertEquals(1, logs.length);
-        assertEquals(address,((LogFilterElement)logs[0]).address);
+        assertEquals(address, ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -655,7 +681,7 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         assertEquals(1, logs.length);
-        assertEquals(address,((LogFilterElement)logs[0]).address);
+        assertEquals(address, ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -674,7 +700,7 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         assertEquals(1, logs.length);
-        assertEquals(address,((LogFilterElement)logs[0]).address);
+        assertEquals(address, ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -736,7 +762,7 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         assertEquals(1, logs.length);
-        assertEquals(address,((LogFilterElement)logs[0]).address);
+        assertEquals(address, ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -754,7 +780,7 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         assertEquals(1, logs.length);
-        assertEquals(address,((LogFilterElement)logs[0]).address);
+        assertEquals(address, ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -890,9 +916,9 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(1, logs.length);
         assertEquals(blockHash, ((LogFilterElement) logs[0]).blockHash);
-        String txhash = ((LogFilterElement)logs[0]).transactionHash;
+        String txhash = ((LogFilterElement) logs[0]).transactionHash;
         TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
-        assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[0]).address);
+        assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[0]).address);
     }
 
     @Test
@@ -932,8 +958,8 @@ class Web3ImplLogsTest {
     @Test
     void createMainContractWithoutEvents() throws Exception {
         Account acc1 = new AccountBuilder(blockChain,
-                                          blockStore,
-                                          repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
         FilterRequest fr = new FilterRequest();
@@ -947,8 +973,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(genesis).transactions(txs).build();
+                blockStore
+        ).trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Object[] logs = web3.eth_getFilterChanges(id);
@@ -961,8 +987,8 @@ class Web3ImplLogsTest {
     @Test
     void createCallerContractWithEvents() throws Exception {
         Account acc1 = new AccountBuilder(blockChain,
-                                          blockStore,
-                                          repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
         FilterRequest fr = new FilterRequest();
@@ -976,8 +1002,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(genesis).transactions(txs).build();
+                blockStore
+        ).trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         String mainAddress = tx.getContractAddress().toString();
@@ -989,8 +1015,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
         Block block2 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(block1).transactions(txs2).build();
+                blockStore
+        ).trieStore(trieStore).parent(block1).transactions(txs2).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Object[] logs = web3.eth_getFilterChanges(id);
@@ -999,15 +1025,15 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(2, logs.length);
 
-        assertEquals("0x" + mainAddress, ((LogFilterElement)logs[0]).address);
-        assertEquals("0x" + callerAddress, ((LogFilterElement)logs[1]).address);
+        assertEquals("0x" + mainAddress, ((LogFilterElement) logs[0]).address);
+        assertEquals("0x" + callerAddress, ((LogFilterElement) logs[1]).address);
     }
 
     @Test
     void createCallerContractWithEventsOnInvoke() throws Exception {
         Account acc1 = new AccountBuilder(blockChain,
-                                          blockStore,
-                                          repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
         FilterRequest fr = new FilterRequest();
@@ -1021,8 +1047,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(genesis).transactions(txs).build();
+                blockStore
+        ).trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         String mainAddress = tx.getContractAddress().toString();
@@ -1034,8 +1060,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
         Block block2 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(block1).transactions(txs2).build();
+                blockStore
+        ).trieStore(trieStore).parent(block1).transactions(txs2).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Transaction tx3;
@@ -1044,8 +1070,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs3 = new ArrayList<>();
         txs3.add(tx3);
         Block block3 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(block2).transactions(txs3).build();
+                blockStore
+        ).trieStore(trieStore).parent(block2).transactions(txs3).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
         Object[] logs = web3.eth_getFilterChanges(id);
@@ -1054,16 +1080,16 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(3, logs.length);
 
-        assertEquals("0x" + mainAddress, ((LogFilterElement)logs[0]).address);
-        assertEquals("0x" + callerAddress, ((LogFilterElement)logs[1]).address);
-        assertEquals("0x" + mainAddress, ((LogFilterElement)logs[2]).address);
+        assertEquals("0x" + mainAddress, ((LogFilterElement) logs[0]).address);
+        assertEquals("0x" + callerAddress, ((LogFilterElement) logs[1]).address);
+        assertEquals("0x" + mainAddress, ((LogFilterElement) logs[2]).address);
     }
 
     @Test
     void createCallerContractWithEventsOnInvokeUsingGetFilterLogs() throws Exception {
         Account acc1 = new AccountBuilder(blockChain,
-                                          blockStore,
-                                          repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -1073,8 +1099,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(genesis).transactions(txs).build();
+                blockStore
+        ).trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         String mainAddress = tx.getContractAddress().toString();
@@ -1085,8 +1111,8 @@ class Web3ImplLogsTest {
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
         Block block2 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(block1).transactions(txs2).build();
+                blockStore
+        ).trieStore(trieStore).parent(block1).transactions(txs2).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Transaction tx3;
@@ -1095,12 +1121,12 @@ class Web3ImplLogsTest {
         List<Transaction> txs3 = new ArrayList<>();
         txs3.add(tx3);
         Block block3 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(block2).transactions(txs3).build();
+                blockStore
+        ).trieStore(trieStore).parent(block2).transactions(txs3).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
         FilterRequest fr = new FilterRequest();
-        fr.setAddress( "0x" + mainAddress);
+        fr.setAddress("0x" + mainAddress);
         String id = web3.eth_newFilter(fr);
 
         Object[] logs = web3.eth_getFilterLogs(id);
@@ -1109,7 +1135,7 @@ class Web3ImplLogsTest {
         assertNotNull(logs);
         assertEquals(1, logs.length);
 
-        assertEquals("0x" + mainAddress, ((LogFilterElement)logs[0]).address);
+        assertEquals("0x" + mainAddress, ((LogFilterElement) logs[0]).address);
     }
 
     private Web3Impl createWeb3() {
@@ -1159,12 +1185,12 @@ class Web3ImplLogsTest {
     private void addTwoEmptyBlocks() {
         Block genesis = blockChain.getBlockByNumber(0);
         Block block1 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(genesis).build();
+                blockStore
+        ).trieStore(trieStore).parent(genesis).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
         Block block2 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(block1).build();
+                blockStore
+        ).trieStore(trieStore).parent(block1).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
         assertEquals(3, blockChain.getSize());
     }
@@ -1173,8 +1199,8 @@ class Web3ImplLogsTest {
 
     private void addContractCreationWithoutEvents() {
         Account acc1 = new AccountBuilder(blockChain,
-                                          blockStore,
-                                          repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         Block genesis = blockChain.getBlockByNumber(0);
 
@@ -1201,15 +1227,15 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null,
-                                        blockStore
-        ).trieStore(trieStore).parent(genesis).transactions(txs).build();
+                blockStore
+        ).trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         web3.personal_newAccountWithSeed("notDefault");
     }
 
     private void addEventInContractCreation() {
-        addEmptyBlockToBlockchain(blockChain, blockStore, repositoryLocator, trieStore);
+        addEmptyBlockToBlockchain(blockChain, blockStore, repositoryLocator, trieStore, config);
 
         web3.personal_newAccountWithSeed("notDefault");
     }
@@ -1219,7 +1245,21 @@ class Web3ImplLogsTest {
             BlockStore blockStore,
             RepositoryLocator repositoryLocator,
             TrieStore trieStore) {
-        Account acc1 = new AccountBuilder(blockChain,blockStore,repositoryLocator)
+        addEmptyBlockToBlockchain(
+                blockChain,
+                blockStore,
+                repositoryLocator,
+                trieStore,
+                null);
+    }
+
+    public static void addEmptyBlockToBlockchain(
+            Blockchain blockChain,
+            BlockStore blockStore,
+            RepositoryLocator repositoryLocator,
+            TrieStore trieStore,
+            TestSystemProperties config) {
+        Account acc1 = new AccountBuilder(blockChain, blockStore, repositoryLocator)
                 .name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -1229,14 +1269,14 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null, blockStore)
-                .trieStore(trieStore).parent(genesis).transactions(txs).build();
+                .trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
     }
 
     private void addContractInvoke() {
         Account acc1 = new AccountBuilder(blockChain,
-                                          blockStore,
-                                          repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
+                blockStore,
+                repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
@@ -1245,7 +1285,7 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null, blockStore)
-                .trieStore(trieStore).parent(genesis).transactions(txs).build();
+                .trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
@@ -1254,7 +1294,7 @@ class Web3ImplLogsTest {
         List<Transaction> tx2s = new ArrayList<>();
         tx2s.add(tx2);
         Block block2 = new BlockBuilder(blockChain, null, blockStore)
-                .trieStore(trieStore).parent(block1).transactions(tx2s).build();
+                .trieStore(trieStore).parent(block1).transactions(tx2s).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         web3.personal_newAccountWithSeed("default");
@@ -1278,7 +1318,7 @@ class Web3ImplLogsTest {
         allTxs.add(tx);
 
         Block block1 = new BlockBuilder(blockChain, null, blockStore)
-                .trieStore(trieStore).parent(genesis).transactions(txs).build();
+                .trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
@@ -1295,7 +1335,7 @@ class Web3ImplLogsTest {
         allTxs.add(tx3);
 
         Block block2 = new BlockBuilder(blockChain, null, blockStore)
-                .trieStore(trieStore).parent(block1).transactions(txs).build();
+                .trieStore(trieStore).parent(block1).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         web3.personal_newAccountWithSeed("default");
@@ -1316,7 +1356,7 @@ class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(blockChain, null, blockStore)
-                .trieStore(trieStore).parent(genesis).transactions(txs).build();
+                .trieStore(trieStore).parent(genesis).transactions(txs).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
@@ -1326,14 +1366,14 @@ class Web3ImplLogsTest {
         List<Transaction> tx2s = new ArrayList<>();
         tx2s.add(tx2);
         Block block2 = new BlockBuilder(blockChain, null, blockStore)
-                .trieStore(trieStore).parent(block1).transactions(tx2s).build();
+                .trieStore(trieStore).parent(block1).transactions(tx2s).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Transaction tx3 = getContractTransactionWithCall(acc1, contractAddress);
         List<Transaction> tx3s = new ArrayList<>();
         tx3s.add(tx3);
         Block block3 = new BlockBuilder(blockChain, null, blockStore)
-                .trieStore(trieStore).parent(block2).transactions(tx3s).build();
+                .trieStore(trieStore).parent(block2).transactions(tx3s).config(config).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
         web3.personal_newAccountWithSeed("default");
@@ -1341,14 +1381,14 @@ class Web3ImplLogsTest {
     }
 
     private static Transaction getContractTransaction(Account acc1) {
-        return getContractTransaction(acc1,false);
+        return getContractTransaction(acc1, false);
     }
 
     //0.4.11+commit.68ef5810.Emscripten.clang WITH optimizations
     static final String compiled_0_4_11 = "6060604052341561000c57fe5b5b60466000819055507f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad16000546040518082815260200191505060405180910390a15b5b61014e8061005f6000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632096525514610046578063371303c01461006c575bfe5b341561004e57fe5b61005661007e565b6040518082815260200191505060405180910390f35b341561007457fe5b61007c6100c2565b005b60007f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b6000546040518082815260200191505060405180910390a160005490505b90565b60006000815460010191905081905550600160026000548115156100e257fe5b061415157f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad6000546040518082815260200191505060405180910390a25b5600a165627a7a7230582092c7b2c0483b85227396e18149993b33243059af0f3bd0364f1dc36b8bbbcdae0029";
     static final String compiled_unknown = "60606040526046600081905560609081527f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad190602090a160aa8060426000396000f3606060405260e060020a60003504632096525581146024578063371303c0146060575b005b60a36000805460609081527f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b90602090a1600060005054905090565b6022600080546001908101918290556060828152600290920614907f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad90602090a2565b5060206060f3";
 
-    private static Transaction getContractTransaction(Account acc1,boolean withEvent) {
+    private static Transaction getContractTransaction(Account acc1, boolean withEvent) {
     /* contract compiled in data attribute of tx
     contract counter {
         event Incremented(bool indexed odd, uint x);
@@ -1402,7 +1442,8 @@ class Web3ImplLogsTest {
                 .build();
     }
 
-    String compiledLogExample ="606060405234610000575b60bd806100186000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063195977a614603c575b6000565b34600057605460048080359060200190919050506056565b005b7ffd99bb34477b313b3e3b452b34d012d8315db36a1d63949d9d8f9d2573b05aff816040518082815260200191505060405180910390a15b505600a165627a7a72305820fb2550735b0655fb2fe03738be375a4c29ef1b6ff51004f869be19de0301f30b0029";
+    String compiledLogExample = "606060405234610000575b60bd806100186000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063195977a614603c575b6000565b34600057605460048080359060200190919050506056565b005b7ffd99bb34477b313b3e3b452b34d012d8315db36a1d63949d9d8f9d2573b05aff816040518082815260200191505060405180910390a15b505600a165627a7a72305820fb2550735b0655fb2fe03738be375a4c29ef1b6ff51004f869be19de0301f30b0029";
+
     private Transaction getMainContractTransaction(Account acc1) {
     /* contract compiled in data attribute of tx
 contract main {
@@ -1448,7 +1489,7 @@ contract caller {
                 .sender(acc1)
                 .gasLimit(BigInteger.valueOf(1000000))
                 .gasPrice(BigInteger.ONE)
-                .data( compiledCaller + address)
+                .data(compiledCaller + address)
                 .nonce(1)
                 .build();
     }
@@ -1459,7 +1500,7 @@ contract caller {
         while (address.length() < 64)
             address = "0" + address;
 
-        CallTransaction.Function func = CallTransaction.Function.fromSignature("doSomething", new String[] { "address" }, new String[0]);
+        CallTransaction.Function func = CallTransaction.Function.fromSignature("doSomething", new String[]{"address"}, new String[0]);
 
         return new TransactionBuilder()
                 .sender(acc1)
