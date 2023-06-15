@@ -73,8 +73,4 @@ public class TransactionPlan extends BasePlan {
     public Iterator<Transaction> getTransactionsContractCreation() {
         return transactionsContractCreation;
     }
-
-    public Iterator<Transaction> getTransactionsContractCall() {
-        return transactionsContractCall;
-    }
 }
