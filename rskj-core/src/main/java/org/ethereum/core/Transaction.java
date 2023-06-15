@@ -205,15 +205,15 @@ public class Transaction {
         long nonZeroes = this.nonZeroDataBytes();
         long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
 
-        long transactionCost =  this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION;
+        long transactionCost = this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION;
 
-        long transactionZeroData = getTxNoZeroData(activations);
+        long txNonZeroDataCost = getTxNonZeroDataCost(activations);
 
-        return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * transactionZeroData;
+        return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost;
     }
 
-    private static long getTxNoZeroData(ActivationConfig.ForBlock activations) {
-        return activations.isActive(ConsensusRule.RSKIPXXX)? GasCost.TX_NO_ZERO_DATA_EIP2028 : GasCost.TX_NO_ZERO_DATA;
+    private static long getTxNonZeroDataCost(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIPXXX) ? GasCost.TX_NO_ZERO_DATA_EIP2028 : GasCost.TX_NO_ZERO_DATA;
     }
 
     public void verify(SignatureCache signatureCache) {
