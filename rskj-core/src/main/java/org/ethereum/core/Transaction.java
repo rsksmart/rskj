@@ -205,7 +205,11 @@ public class Transaction {
         long nonZeroes = this.nonZeroDataBytes();
         long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
 
-        return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * getTxNoZeroData(activations);
+        long transactionCost =  this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION;
+
+        long transactionZeroData = getTxNoZeroData(activations);
+
+        return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * transactionZeroData;
     }
 
     private static long getTxNoZeroData(ActivationConfig.ForBlock activations) {

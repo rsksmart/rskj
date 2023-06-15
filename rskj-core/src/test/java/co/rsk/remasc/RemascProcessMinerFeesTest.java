@@ -87,7 +87,7 @@ class RemascProcessMinerFeesTest {
     @BeforeAll
      static void setUpBeforeClass() {
         config = spy(new TestSystemProperties());
-        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85, ConsensusRule.RSKIPXXX));
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 
         accountsAddressesUpToD = new LinkedList<>();
