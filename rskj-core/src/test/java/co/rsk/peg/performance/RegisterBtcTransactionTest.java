@@ -143,7 +143,7 @@ class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                         Optional<Long> height = provider.getHeightIfBtcTxhashIsAlreadyProcessed(txToLock.getHash());
                         Assertions.assertTrue(height.isPresent());
 
-                        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+                        Assertions.assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
                     } catch (IOException e) {
                         Assertions.fail();
                     }
@@ -176,7 +176,7 @@ class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                         Optional<Long> height = provider.getHeightIfBtcTxhashIsAlreadyProcessed(txToLock.getHash());
                         Assertions.assertTrue(height.isPresent());
 
-                        Assertions.assertTrue(provider.getReleaseTransactionSet().getEntries().size() > 0);
+                        Assertions.assertTrue(provider.getPegoutsWaitingForConfirmations().getEntries().size() > 0);
                     } catch (IOException e) {
                         Assertions.fail();
                     }

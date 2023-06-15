@@ -149,7 +149,7 @@ class AddSignatureTest extends BridgePerformanceTestCase {
 
             // Get the tx into the txs waiting for signatures
             try {
-                provider.getRskTxsWaitingForSignatures().put(rskTxHash, releaseTx);
+                provider.getPegoutsWaitingForSignatures().put(rskTxHash, releaseTx);
             } catch (IOException e) {
                 throw new RuntimeException("Exception while trying to gather txs waiting for signatures for storage initialization");
             }

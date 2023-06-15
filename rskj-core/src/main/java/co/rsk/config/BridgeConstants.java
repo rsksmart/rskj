@@ -46,6 +46,7 @@ public abstract class BridgeConstants {
     protected Coin minimumPegoutTxValueInSatoshis;
 
     protected long federationActivationAge;
+    protected long federationActivationAgeLegacy;
 
     protected long fundsMigrationAgeSinceActivationBegin;
     protected long fundsMigrationAgeSinceActivationEnd;
@@ -119,8 +120,8 @@ public abstract class BridgeConstants {
 
     public Coin getMinimumPegoutTxValueInSatoshis() { return minimumPegoutTxValueInSatoshis; }
 
-    public long getFederationActivationAge() {
-        return federationActivationAge;
+    public long getFederationActivationAge(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIP383)? federationActivationAge: federationActivationAgeLegacy;
     }
 
     public long getFundsMigrationAgeSinceActivationBegin() {

@@ -176,7 +176,7 @@ public class BridgeTestIntegration {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
-        provider0.getReleaseTransactionSet().add(tx1, 1L, PegTestUtils.createHash3(0));
+        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L, PegTestUtils.createHash3(0));
         provider0.save();
 
         track.commit();
@@ -215,18 +215,18 @@ public class BridgeTestIntegration {
 
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmation() throws IOException, VMException {
-        BtcTransaction tx1 = createTransaction();
-        BtcTransaction tx2 = createTransaction();
-        BtcTransaction tx3 = createTransaction();
+        BtcTransaction tx1 = createTransaction(2, bridgeConstants.getMinimumPegoutTxValueInSatoshis());
+        BtcTransaction tx2 = createTransaction(3, bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN));
+        BtcTransaction tx3 = createTransaction(4, bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN).add(Coin.MILLICOIN));
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock(0));
 
-        provider0.getReleaseTransactionSet().add(tx1, 1L);
-        provider0.getReleaseTransactionSet().add(tx2, 2L);
-        provider0.getReleaseTransactionSet().add(tx3, 3L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx3, 3L);
 
         provider0.save();
 
@@ -265,24 +265,24 @@ public class BridgeTestIntegration {
         //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
-        Assertions.assertEquals(3, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
     }
 
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException, VMException {
-        BtcTransaction tx1 = createTransaction();
-        BtcTransaction tx2 = createTransaction();
-        BtcTransaction tx3 = createTransaction();
+        BtcTransaction tx1 = createTransaction(2, bridgeConstants.getMinimumPegoutTxValueInSatoshis());
+        BtcTransaction tx2 = createTransaction(3, bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN));
+        BtcTransaction tx3 = createTransaction(4, bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN).add(Coin.MILLICOIN));
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock(0));
 
-        provider0.getReleaseTransactionSet().add(tx1, 1L);
-        provider0.getReleaseTransactionSet().add(tx2, 2L);
-        provider0.getReleaseTransactionSet().add(tx3, 3L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
+        provider0.getPegoutsWaitingForConfirmations().add(tx3, 3L);
 
         provider0.save();
 
@@ -324,8 +324,8 @@ public class BridgeTestIntegration {
         // reusing same storage configuration as the height doesn't affect storage configurations for releases.
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
-        Assertions.assertEquals(2, provider.getReleaseTransactionSet().getEntries().size());
-        Assertions.assertEquals(1, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        Assertions.assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
     }
 
     @Test
@@ -3285,7 +3285,30 @@ public class BridgeTestIntegration {
     }
 
     private BtcTransaction createTransaction() {
-        return new SimpleBtcTransaction(networkParameters, PegTestUtils.createHash());
+        return createTransaction(PegTestUtils.createHash());
+    }
+
+    private BtcTransaction createTransaction(Sha256Hash hash) {
+        return new SimpleBtcTransaction(networkParameters, hash);
+    }
+
+    private BtcTransaction createTransaction(int toPk, Coin value) {
+        return createTransaction(toPk, value, new BtcECKey());
+    }
+
+    private BtcTransaction createTransaction(int toPk, Coin value, BtcECKey btcECKey) {
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        BtcTransaction input = new BtcTransaction(params);
+
+        input.addOutput(Coin.COIN, btcECKey.toAddress(params));
+
+        Address to = BtcECKey.fromPrivate(BigInteger.valueOf(toPk)).toAddress(params);
+
+        BtcTransaction result = new BtcTransaction(params);
+        result.addInput(input.getOutput(0));
+        result.getInput(0).disconnect();
+        result.addOutput(value, to);
+        return result;
     }
 
     private Block getGenesisBlock() {

@@ -13,8 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class BridgeConstantsTest {
-
-    private static Stream<Arguments> generator() {
+    private static Stream<Arguments> fundsMigrationAgeSinceActivationEndArgsProvider() {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), false),
             Arguments.of(BridgeTestNetConstants.getInstance(), true),
@@ -23,8 +22,8 @@ class BridgeConstantsTest {
     }
 
     @ParameterizedTest()
-    @MethodSource("generator")
-    void test_getFundsMigrationAgeSinceActivationEnd(BridgeConstants bridgeConstants, boolean hasSameValueForBothMigrationAges) {
+    @MethodSource("fundsMigrationAgeSinceActivationEndArgsProvider")
+    void test_getFundsMigrationAgeSinceActivationEnd(BridgeConstants bridgeConstants, boolean hasSameValueForBothFields) {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
@@ -33,11 +32,11 @@ class BridgeConstantsTest {
 
         // assert
         assertEquals(fundsMigrationAgeSinceActivationEnd, bridgeConstants.fundsMigrationAgeSinceActivationEnd);
-        assertEquals(hasSameValueForBothMigrationAges,  fundsMigrationAgeSinceActivationEnd == bridgeConstants.specialCaseFundsMigrationAgeSinceActivationEnd);
+        assertEquals(hasSameValueForBothFields,  fundsMigrationAgeSinceActivationEnd == bridgeConstants.specialCaseFundsMigrationAgeSinceActivationEnd);
     }
 
     @ParameterizedTest()
-    @MethodSource("generator")
+    @MethodSource("fundsMigrationAgeSinceActivationEndArgsProvider")
     void test_getFundsMigrationAgeSinceActivationEnd_post_RSKIP357(BridgeConstants bridgeConstants, boolean hasSameValueForBothMigrationAges) {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -52,7 +51,7 @@ class BridgeConstantsTest {
     }
 
     @ParameterizedTest()
-    @MethodSource("generator")
+    @MethodSource("fundsMigrationAgeSinceActivationEndArgsProvider")
     void test_getFundsMigrationAgeSinceActivationEnd_post_RSKIP374(BridgeConstants bridgeConstants, boolean hasSameValueForBothMigrationAges) {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -65,5 +64,33 @@ class BridgeConstantsTest {
         // assert
         assertEquals(fundsMigrationAgeSinceActivationEnd, bridgeConstants.fundsMigrationAgeSinceActivationEnd);
         assertEquals(hasSameValueForBothMigrationAges,  fundsMigrationAgeSinceActivationEnd == bridgeConstants.specialCaseFundsMigrationAgeSinceActivationEnd);
+    }
+
+    private static Stream<Arguments> federationActivationAgeArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), false),
+            Arguments.of(BridgeTestNetConstants.getInstance(), false),
+            Arguments.of(BridgeRegTestConstants.getInstance(), false),
+            Arguments.of(BridgeMainNetConstants.getInstance(), true),
+            Arguments.of(BridgeTestNetConstants.getInstance(), true),
+            Arguments.of(BridgeRegTestConstants.getInstance(), true)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("federationActivationAgeArgProvider")
+    void test_getFederationActivationAge(BridgeConstants bridgeConstants, boolean isRSKIP383Active) {
+        // Arrange
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(isRSKIP383Active);
+        // Act
+        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
+
+        // assert
+        if (isRSKIP383Active){
+            assertEquals(bridgeConstants.federationActivationAge, federationActivationAge);
+        } else {
+            assertEquals(bridgeConstants.federationActivationAgeLegacy, federationActivationAge);
+        }
     }
 }
