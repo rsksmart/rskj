@@ -38,7 +38,7 @@ import java.util.Iterator;
 import java.util.Optional;
 
 @State(Scope.Benchmark)
-public class EthPlan extends BasePlan {
+public class EthCallPlan extends BasePlan {
 
     private Iterator<Transaction> transactionsContractCall;
     private org.web3j.protocol.core.methods.response.Transaction contractCallTransaction;
@@ -90,7 +90,7 @@ public class EthPlan extends BasePlan {
 
     public org.web3j.protocol.core.methods.response.Transaction getContractCallTransaction() {
         try {
-            if (contractCallTransaction == null) {
+            if (super.getConfig().equals("regtest")) {
                 if (transactionsContractCall == null) {
                     contractCallTransaction = setupContractCallTransaction();
                 } else {
