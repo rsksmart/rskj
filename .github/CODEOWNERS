@@ -3,3 +3,12 @@
 /rskj-core/src/main/java/co/rsk/rpc/modules/mnr/                            @rsksmart/rsk-mining
 /rskj-core/src/main/java/co/rsk/validators/ProofOfWorkRule.java             @rsksmart/rsk-mining
 /rskj-core/src/main/java/co/rsk/validators/Rskip92MerkleProofValidator.java @rsksmart/rsk-mining
+
+# powpeg
+/rskj-core/src/main/java/co/rsk/peg/                                        @rsksmart/rsk-fed
+/rskj-core/src/main/java/co/rsk/config/Bridge*                              @rsksmart/rsk-fed
+/rskj-core/src/test/java/co/rsk/peg/                                        @rsksmart/rsk-fed
+/rskj-core/src/test/java/co/rsk/config/Bridge*                              @rsksmart/rsk-fed
+
+# HF activation heights
+/rskj-core/src/main/java/resources/config/                                  @rsksmart/rsk-fed @rsksmart/rsk-core
