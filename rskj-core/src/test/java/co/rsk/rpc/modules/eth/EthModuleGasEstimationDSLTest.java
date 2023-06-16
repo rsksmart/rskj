@@ -145,7 +145,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Call same transaction with estimatedGas - 1, should fail
         args.setGas(HexUtils.toQuantityJsonHex(gasUsed));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithException(eth, args, block));
 
         // Call same transaction with estimated gas
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
@@ -153,7 +153,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Call same transaction with estimated gas
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithException(eth, args, block));
     }
 
     /**
@@ -215,7 +215,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Call same transaction with estimated gas minus 1
         args.setGas(HexUtils.toQuantityJsonHex(clearStoreageEstimatedGas - 1));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithException(eth, args, block));
 
         // estimate gas for updating a storage cell from non-zero to non-zero
         args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
@@ -241,7 +241,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Call same transaction with estimated gas minus 1
         args.setGas("0x" + Long.toString(updateStoreageEstimatedGas - 1, 16));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithException(eth, args, block));
 
         // Check against another already initialized (2,42) storage cell
         TransactionReceipt anotherInitStorageTransactionReceipt = world.getTransactionReceiptByName("tx02");
@@ -337,18 +337,18 @@ class EthModuleGasEstimationDSLTest {
         assertEquals(40771, estimatedGas);
 
         assertTrue(estimatedGas > callConstantGasUsed);
-        assertEquals(callConstant.getMaxGasUsed() + GasCost.STIPEND_CALL, estimatedGas);
+        assertEquals(callConstant.getMaxGasUsed() + GasCost.STIPEND_CALL + callConstant.getEstimationIncrement(), estimatedGas);
         assertFalse(callConstant.getMovedRemainingGasToChild()); // it just moved STIPEND_CALL (2300) to child
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
         args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithException(eth, args, block));
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithException(eth, args, block));
     }
 
     /**
@@ -411,11 +411,11 @@ class EthModuleGasEstimationDSLTest {
         assertEquals(46541, callConstantGasUsed);
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(48841, estimatedGas);
+        assertEquals(48861, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
-        assertEquals(callConstant.getGasUsed() + GasCost.STIPEND_CALL, estimatedGas);
+        assertEquals(callConstant.getGasUsed() + GasCost.STIPEND_CALL + callConstant.getEstimationIncrement(), estimatedGas);
 
         args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
@@ -423,8 +423,8 @@ class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1 - callConstant.getEstimationIncrement()));
+        assertTrue(runWithArgumentsAndBlockFailsWithException(eth, args, block));
     }
 
     /**
@@ -489,17 +489,17 @@ class EthModuleGasEstimationDSLTest {
         assertTrue(callConstant.isCallWithValuePerformed());
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(39459, estimatedGas);
+        assertEquals(39466, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
-        assertEquals(callConstant.getGasUsed() + GasCost.STIPEND_CALL, estimatedGas);
+        assertEquals(callConstant.getGasUsed() + GasCost.STIPEND_CALL + callConstant.getEstimationIncrement(), estimatedGas);
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithRevert(eth, args, block));
     }
 
     /**
@@ -564,17 +564,17 @@ class EthModuleGasEstimationDSLTest {
         assertTrue(callConstant.isCallWithValuePerformed());
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(48674, estimatedGas);
+        assertEquals(48681, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
-        assertEquals(callConstant.getGasUsed() + GasCost.STIPEND_CALL, estimatedGas);
+        assertEquals(callConstant.getGasUsed() + GasCost.STIPEND_CALL + callConstant.getEstimationIncrement(), estimatedGas);
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithRevert(eth, args, block));
     }
 
     /**
@@ -638,22 +638,22 @@ class EthModuleGasEstimationDSLTest {
         assertEquals(40955, callConstantGasUsed);
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(84210, estimatedGas);
+        assertEquals(84793, estimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
-        assertEquals(callConstantGasUsed + callConstant.getDeductedRefund() + GasCost.STIPEND_CALL, estimatedGas);
+        assertEquals(callConstantGasUsed + callConstant.getDeductedRefund() + GasCost.STIPEND_CALL + callConstant.getEstimationIncrement(), estimatedGas);
 
         args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithRevert(eth, args, block));
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithRevert(eth, args, block));
     }
 
     /**
@@ -715,21 +715,21 @@ class EthModuleGasEstimationDSLTest {
         assertEquals(40950, callConstantGasUsed);
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(84200, estimatedGas);
+        assertEquals(84783, estimatedGas);
 
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
-        assertEquals(callConstantGasUsed + callConstant.getDeductedRefund() + GasCost.STIPEND_CALL, estimatedGas);
+        assertEquals(callConstantGasUsed + callConstant.getDeductedRefund() + GasCost.STIPEND_CALL + callConstant.getEstimationIncrement(), estimatedGas);
         assertTrue(callConstant.getMovedRemainingGasToChild());
 
-        args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed ));
+        args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
+        assertTrue(runWithArgumentsAndBlockFailsWithRevert(eth, args, block));
 
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
-        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+        assertTrue(runWithArgumentsAndBlockFailsWithRevert(eth, args, block));
     }
 
     @Test
@@ -763,8 +763,8 @@ class EthModuleGasEstimationDSLTest {
         assertNull(callConstant.getException(), "Should be able to complete without exception");
 
         long estimatedGas = estimateGas(eth, args);
-        assertEquals(585974, estimatedGas);
-        assertEquals(callConstant.getGasUsed(), estimatedGas);
+        assertEquals(6_800_000, estimatedGas);
+        assertEquals(585_974, callConstant.getGasUsed());
 
         // call recurse(247) should get OOG after 246 CALL, but be able to complete the tx as parents retain some gas
         args.setData("0xb2041d2100000000000000000000000000000000000000000000000000000000000000f7"); // recurse(247)
@@ -775,8 +775,8 @@ class EthModuleGasEstimationDSLTest {
         assertNull(callConstant.getException(), "Should be able to complete without exception");
 
         estimatedGas = estimateGas(eth, args);
-        assertEquals(585974, estimatedGas);
-        assertEquals(callConstant.getGasUsed(), estimatedGas);
+        assertEquals(6_800_000, estimatedGas);
+        assertEquals(585_974, callConstant.getGasUsed());
 
         // call recurse(246) should be able to complete
         args.setData("0xb2041d2100000000000000000000000000000000000000000000000000000000000000f6"); // recurse(246)
@@ -787,8 +787,9 @@ class EthModuleGasEstimationDSLTest {
         assertNull(callConstant.getException(), "Should be able to complete without exception");
 
         estimatedGas = estimateGas(eth, args);
-        assertEquals(585460, estimatedGas);
-        assertEquals(callConstant.getGasUsed(), estimatedGas);
+
+        assertEquals(6_800_000, estimatedGas);
+        assertEquals(585_460, callConstant.getGasUsed());
 
         // call recurse(50) should be able to complete
         args.setData("0xb2041d210000000000000000000000000000000000000000000000000000000000000032"); // recurse(50)
@@ -799,14 +800,119 @@ class EthModuleGasEstimationDSLTest {
         assertNull(callConstant.getException(), "Should be able to complete without exception");
 
         estimatedGas = estimateGas(eth, args);
-        assertEquals(136424, estimatedGas);
-        assertEquals(callConstant.getGasUsed(), estimatedGas);
+        assertEquals(1_014_550, estimatedGas);
+        assertEquals(136_424, callConstant.getGasUsed());
     }
+
+    @Test
+    void estimateGas_stackOverflowWithStoreRefund() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/stackOverflowWithStorageRefund.txt");
+
+        TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
+        String contractAddressA = "0x" + contractDeployA.getTransaction().getContractAddress().toHexString();
+        byte[] status = contractDeployA.getStatus();
+
+        assertNotNull(status);
+        assertEquals(1, status.length);
+        assertEquals(0x01, status[0]);
+        assertEquals("0x6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
+
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        Block block = world.getBlockChain().getBestBlock();
+
+        // call recurse(1024) should get OOG after 246 CALL, but be able to complete the tx as parents retain some gas
+        final CallArguments args = new CallArguments();
+        args.setTo(contractAddressA);
+        args.setValue(HexUtils.toQuantityJsonHex(0));
+        args.setNonce(HexUtils.toQuantityJsonHex(1));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setData("0xb2041d210000000000000000000000000000000000000000000000000000000000000400"); // recurse(1024)
+
+        ProgramResult callConstant = eth.callConstant(args, block);
+        List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
+        assertEquals(167, internalTransactions.size());
+        assertTrue(callConstant.isRevert(), "Should revert due to OOG");
+        assertNull(callConstant.getException(), "Should be able to complete without exception");
+
+        long estimatedGas = estimateGas(eth, args);
+        assertEquals(6_800_000, estimatedGas);
+        assertEquals(1_420_607, callConstant.getGasUsed());
+
+        // call recurse(168) should get OOG after 168 CALL, but be able to complete the tx as parents retain some gas
+        args.setData("0xb2041d2100000000000000000000000000000000000000000000000000000000000000A8"); // recurse(168)
+        callConstant = eth.callConstant(args, block);
+        internalTransactions = callConstant.getInternalTransactions();
+        assertEquals(168, internalTransactions.size());
+        assertTrue(callConstant.isRevert(), "Should revert due to OOG");
+        assertNull(callConstant.getException(), "Should be able to complete without exception");
+
+        // call recurse(166) should be able to complete
+        args.setData("0xb2041d2100000000000000000000000000000000000000000000000000000000000000A6"); // recurse(166)
+        callConstant = eth.callConstant(args, block);
+        internalTransactions = callConstant.getInternalTransactions();
+        assertEquals(166, internalTransactions.size());
+        assertFalse(callConstant.isRevert(), "Should be able to complete without revert");
+        assertNull(callConstant.getException(), "Should be able to complete without exception");
+
+        estimatedGas = estimateGas(eth, args);
+        assertEquals(6_800_000, estimatedGas);
+        assertEquals(1_356_914, callConstant.getGasUsed());
+
+        // call recurse(150) should be able to complete
+        args.setData("0xb2041d210000000000000000000000000000000000000000000000000000000000000096"); // recurse(150)
+        callConstant = eth.callConstant(args, block);
+        internalTransactions = callConstant.getInternalTransactions();
+        assertEquals(150, internalTransactions.size());
+        assertEquals(60000L, callConstant.getDeductedRefund()); // 3 store refunds;
+        assertFalse(callConstant.isRevert(), "Should be able to complete without revert");
+        assertNull(callConstant.getException(), "Should be able to complete without exception");
+
+        estimatedGas = estimateGas(eth, args);
+        assertEquals(6_800_000, estimatedGas);
+        assertEquals(148_381_186, callConstant.getEstimationIncrement()); // TODO(iago) huge overestimation
+        assertEquals(1_229_282, callConstant.getGasUsed());
+
+        // Call same transaction with estimated gas
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1_500_000)); // TODO(iago) this is weird
+        assertTrue(runWithArgumentsAndBlock(eth, args, block));
+
+        // call recurse(50) should be able to complete
+        args.setData("0xb2041d210000000000000000000000000000000000000000000000000000000000000032"); // recurse(50)
+        callConstant = eth.callConstant(args, block);
+        internalTransactions = callConstant.getInternalTransactions();
+        assertEquals(50, internalTransactions.size());
+        assertEquals(30000L, callConstant.getDeductedRefund()); // 2 store refunds;
+        assertFalse(callConstant.isRevert(), "Should be able to complete without revert");
+        assertNull(callConstant.getException(), "Should be able to complete without exception");
+
+        estimatedGas = estimateGas(eth, args);
+        assertEquals(3_756_185, estimatedGas);
+        assertEquals(3_304_689, callConstant.getEstimationIncrement()); // TODO(iago) huge overestimation
+        assertEquals(421_496, callConstant.getGasUsed());
+
+        // Call same transaction with estimated gas
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas / 2)); // TODO(iago) this is also weird
+        assertTrue(runWithArgumentsAndBlock(eth, args, block));
+    }
+
+    // TODO(iago) overflow test with gas consumption together with neste calls,
+    // TODO(iago) overflow test with multiple calls on the same level (increment on consumedAtCallDepth should happen)
+    // TODO(iago) think about more tests for overflow
+    // TODO(iago) fix previous failing tests due to newly locked gas
 
     public boolean runWithArgumentsAndBlock(EthModuleTestUtils.EthModuleGasEstimation ethModule, CallArguments args, Block block) {
         ProgramResult localCallResult = ethModule.callConstant(args, block);
-
         return localCallResult.getException() == null && !localCallResult.isRevert();
+    }
+
+    public boolean runWithArgumentsAndBlockFailsWithException(EthModuleTestUtils.EthModuleGasEstimation ethModule, CallArguments args, Block block) {
+        ProgramResult localCallResult = ethModule.callConstant(args, block);
+        return localCallResult.getException() != null && !localCallResult.isRevert();
+    }
+
+    public boolean runWithArgumentsAndBlockFailsWithRevert(EthModuleTestUtils.EthModuleGasEstimation ethModule, CallArguments args, Block block) {
+        ProgramResult localCallResult = ethModule.callConstant(args, block);
+        return localCallResult.getException() == null && localCallResult.isRevert();
     }
 
     private long estimateGas(EthModuleTestUtils.EthModuleGasEstimation eth, CallArguments args) {

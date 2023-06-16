@@ -62,6 +62,8 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 01.06.2014
  */
 public class Program {
+    public static final int MAX_CALL_DEPTH_RSKIP209 = 1024;
+
     // These logs should never be in Info mode in production
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
@@ -174,7 +176,7 @@ public class Program {
      */
     private int getMaxDepth() {
         if (activations.isActive(ConsensusRule.RSKIP209)) {
-            return 1024; // capped limit after this RSKIP
+            return MAX_CALL_DEPTH_RSKIP209; // capped limit after this RSKIP
         }
 
         if (activations.isActive(ConsensusRule.RSKIP150)) {
@@ -832,6 +834,9 @@ public class Program {
 
         VM vm = new VM(config, precompiledContracts);
         Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock, signatureCache);
+        if (activations.isActive(ConsensusRule.RSKIP209)) {
+            program.getResult().inheritFrom(this.getResult()); // inherit from parent (from top level call)
+        }
 
         vm.play(program);
         childResult = program.getResult();
@@ -858,6 +863,11 @@ public class Program {
             // when there's an exception we skip applying results and refunding gas,
             // and we only do that when the call is successful or there's a REVERT operation.
             if (childResult.getException() != null) {
+
+                if (activations.isActive(ConsensusRule.RSKIP209)) {
+                    getResult().updateCallDepthConsumption(getCallDeep(), childResult.gasUsed);
+                }
+
                 return false;
             }
 
@@ -892,6 +902,11 @@ public class Program {
                 gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundGas);
             }
         }
+
+        if (activations.isActive(ConsensusRule.RSKIP209)) {
+            getResult().updateCallDepthConsumption(getCallDeep(), childResult.gasUsed);
+        }
+
         return childCallSuccessful;
     }
 

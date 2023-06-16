@@ -25,6 +25,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.rpc.netty.ExecTimeoutContext;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -1528,7 +1529,7 @@ public class VM {
                 GasCost.add(userSpecifiedGas, minimumTransferGas) :
                 userSpecifiedGas + minimumTransferGas;
 
-        if (activations.isActive(RSKIP209)) {
+        if (activations.isActive(ConsensusRule.RSKIP209)) {
             remainingGas = GasCost.subtract(remainingGas, remainingGas / 64);
         }
 

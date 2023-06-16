@@ -50,6 +50,7 @@ import java.util.*;
 import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP174;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP209;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -356,6 +357,10 @@ public class TransactionExecutor {
 
                 this.vm = new VM(vmConfig, precompiledContracts);
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts, signatureCache);
+
+                if (activations.isActive(ConsensusRule.RSKIP209)) {
+                    this.program.getResult().initializeTopLevel();
+                }
             }
         }
 
