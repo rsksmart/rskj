@@ -45,18 +45,6 @@ public class BenchmarkWeb3 {
     private static final int TRANSACTION_ACCOUNT_SLOTS = 16; // transaction.accountSlots = 16
 
     @Benchmark
-    @Timeout(time = 60)
-    public void ethCallForSpecificBlock(EthCallPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethCall(plan.getEthCallArguments(), plan.getBlockNumber().toString());
-    }
-
-    @Benchmark
-    @Timeout(time = 60)
-    public void ethCallForPendingBlock(EthCallPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethCall(plan.getEthCallArguments(), "pending");
-    }
-
-    @Benchmark
     public void ethGetBalance(BasePlan plan) throws BenchmarkWeb3Exception {
         String address = plan.getConfiguration().getString("address");
         plan.getWeb3Connector().ethGetBalance(address, "latest");
