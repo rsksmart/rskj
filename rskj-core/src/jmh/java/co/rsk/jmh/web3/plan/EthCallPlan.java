@@ -21,6 +21,7 @@ package co.rsk.jmh.web3.plan;
 import co.rsk.jmh.helpers.BenchmarkHelper;
 import co.rsk.jmh.web3.BenchmarkWeb3Exception;
 import co.rsk.jmh.web3.e2e.RskModuleWeb3j;
+import co.rsk.jmh.web3.factory.TransactionFactory;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
@@ -33,27 +34,53 @@ import org.web3j.protocol.core.methods.response.EthTransaction;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Iterator;
+import java.util.Optional;
 
 @State(Scope.Benchmark)
 public class EthCallPlan extends BasePlan {
 
-    private Iterator<Transaction> transactionsContractCall;
     private org.web3j.protocol.core.methods.response.Transaction contractCallTransaction;
     private BigInteger blockNumber;
     private RskModuleWeb3j.EthCallArguments ethCallArguments;
+    private Iterator<Transaction> transactionsContractCall;
 
     @Override
     @Setup(Level.Trial) // move to "Level.Iteration" in case we set a batch size at some point
     public void setUp(BenchmarkParams params) throws BenchmarkWeb3Exception {
         super.setUp(params);
 
+        String address = configuration.getString("sendTransaction.from");
+
+        long nonce = Optional.ofNullable(web3Connector.ethGetTransactionCount(address))
+                .map(BigInteger::longValue)
+                .orElseThrow(() -> new BenchmarkWeb3Exception("Could not get account nonce"));
+
+        long warmupIters = (long) params.getWarmup().getCount() * params.getWarmup().getBatchSize(); // in case we set a batch size at some point
+        long measurementIters = (long) params.getMeasurement().getCount() * params.getMeasurement().getBatchSize();  // in case we set a batch size at some point
+        long numOfTransactions = warmupIters + measurementIters;
+
+        transactionsContractCall = TransactionFactory.createTransactions(TransactionFactory.TransactionType.CONTRACT_CALL, configuration, nonce, numOfTransactions).listIterator();
+
         blockNumber = web3Connector.ethBlockNumber();
         ethCallArguments = buildEthCallArguments();
     }
 
     private org.web3j.protocol.core.methods.response.Transaction setupContractCallTransaction() throws IOException {
-        EthTransaction transactionResponse = rskModuleWeb3j.ethGetTransactionByHash(configuration.getString("eth.transactionContractCallHash")).send();
-        return transactionResponse.getResult();
+        Transaction txcc = transactionsContractCall.next();
+        org.web3j.protocol.core.methods.response.Transaction tx = new org.web3j.protocol.core.methods.response.Transaction();
+
+        tx.setHash(configuration.getString("eth.transactionContractCallHash"));
+
+        tx.setFrom(txcc.getFrom());
+        tx.setTo(txcc.getTo());
+        tx.setGas(txcc.getGas());
+        tx.setGasPrice(txcc.getGasPrice());
+        tx.setValue(txcc.getValue());
+        tx.setNonce(txcc.getNonce());
+        tx.setChainId(txcc.getChainId());
+        tx.setInput(txcc.getData());
+
+        return tx;
     }
 
     @TearDown(Level.Trial) // move to "Level.Iteration" in case we set a batch size at some point
@@ -80,10 +107,10 @@ public class EthCallPlan extends BasePlan {
         args.setTo(contractCallTransaction.getTo());
         args.setGas("0x" + contractCallTransaction.getGas().toString(16));
         args.setGasPrice("0x" + contractCallTransaction.getGasPrice().toString(16));
-        args.setValue(configuration.getString("eth.transaction.value"));
+        args.setValue("0x" + contractCallTransaction.getValue().toString(16));
         args.setNonce("0x" + contractCallTransaction.getNonce().toString(16));
         args.setChainId("0x" + BigInteger.valueOf(contractCallTransaction.getChainId()).toString(16));
-        args.setData(configuration.getString("eth.transaction.data"));
+        args.setData(contractCallTransaction.getInput());
 
         return args;
     }
