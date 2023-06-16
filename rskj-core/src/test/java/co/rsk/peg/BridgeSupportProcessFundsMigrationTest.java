@@ -196,9 +196,9 @@ class BridgeSupportProcessFundsMigrationTest {
             );
 
             if (activations.isActive(ConsensusRule.RSKIP376)){
-                Assertions.assertEquals(BRIDGE_BTC_TX_VERSION_2, entry.getTransaction().getVersion());
+                Assertions.assertEquals(BRIDGE_BTC_TX_VERSION_2, entry.getBtcTransaction().getVersion());
             } else {
-                Assertions.assertEquals(BRIDGE_BTC_TX_LEGACY_VERSION, entry.getTransaction().getVersion());
+                Assertions.assertEquals(BRIDGE_BTC_TX_LEGACY_VERSION, entry.getBtcTransaction().getVersion());
             }
         } else {
             verify(bridgeEventLogger, never()).logReleaseBtcRequested(
