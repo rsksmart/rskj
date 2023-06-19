@@ -85,10 +85,7 @@ public class RskModuleWeb3j extends JsonRpc2_0Web3j {
         private String gasLimit;
         private String gasPrice;
         private String value;
-        private String data; // compiledCode
-        private String nonce;
-        private String chainId;
-        private String type; // ignore, see https://github.com/rsksmart/rskj/pull/1601
+        private String data;
 
         public String getFrom() {
             return from;
@@ -144,30 +141,6 @@ public class RskModuleWeb3j extends JsonRpc2_0Web3j {
 
         public void setData(String data) {
             this.data = data;
-        }
-
-        public String getNonce() {
-            return nonce;
-        }
-
-        public void setNonce(String nonce) {
-            this.nonce = nonce;
-        }
-
-        public String getChainId() {
-            return chainId;
-        }
-
-        public void setChainId(String chainId) {
-            this.chainId = chainId;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
         }
     }
 }
