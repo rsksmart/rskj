@@ -5,6 +5,16 @@ plugins {
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 
+testing {
+    suites {
+        integrationTest(JvmTestSuite) {
+            dependencies {
+                implementation project
+            }
+        }
+    }
+}
+
 test {
     useJUnitPlatform()
 
@@ -19,6 +29,14 @@ test {
         exceptionFormat "short"
     }
     finalizedBy jacocoTestReport
+}
+
+integrationTest {
+    dependsOn assemble
+
+    beforeTest { descriptor ->
+        logger.lifecycle("Running integration test: ${descriptor}")
+    }
 }
 
 jacocoTestReport {
@@ -108,6 +126,7 @@ ext {
             awaitilityVer  : '4.2.0',
             commonsIoVer   : '2.11.0',
             commonsCodecVer: '1.15',
+            jacksonVer     : '2.13.3',
             okhttpWsVer    : '2.7.5',
 
             rskLllVer      : '0.0.2',
@@ -122,6 +141,7 @@ ext {
             awaitilityLib           : "org.awaitility:awaitility:${testLibVersions.awaitilityVer}",
             commonsIoLib            : "commons-io:commons-io:${testLibVersions.commonsIoVer}",
             commonsCodecLib         : "commons-codec:commons-codec:${testLibVersions.commonsCodecVer}",
+            jacksonLib              : "com.fasterxml.jackson.core:jackson-databind:${testLibVersions.jacksonVer}",
             okhttpWsLib             : "com.squareup.okhttp:okhttp-ws:${testLibVersions.okhttpWsVer}",
 
             rskLllLib               : "co.rsk:lll-compiler:${testLibVersions.rskLllVer}",
@@ -161,8 +181,15 @@ dependencies {
     testImplementation "${testLibs.commonsIoLib}"
     testImplementation "${testLibs.commonsCodecLib}"
     testImplementation "${testLibs.okhttpWsLib}"
-
     testImplementation "${testLibs.rskLllLib}"
+
+    integrationTestImplementation "${testLibs.junitLib}"
+    integrationTestImplementation "${testLibs.junitParams}"
+    integrationTestImplementation "${testLibs.junitSuite}"
+    integrationTestImplementation "${testLibs.mockitoLib}"
+    integrationTestImplementation "${testLibs.mockitoJupiter}"
+    integrationTestImplementation "${testLibs.jacksonLib}"
+    integrationTestImplementation "${testLibs.okhttpWsLib}"
 }
 
 javadoc {
