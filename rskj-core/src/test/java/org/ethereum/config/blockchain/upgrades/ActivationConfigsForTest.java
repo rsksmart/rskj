@@ -319,6 +319,7 @@ public class ActivationConfigsForTest {
         rskips.addAll(getIris300Rskips());
         rskips.addAll(getHop400Rskips());
         rskips.addAll(getHop401Rskips());
+        rskips.addAll(getFingerroot500Rskips());
         rskips.addAll(getTbd600Rskips());
 
         return enableTheseDisableThose(rskips, except);

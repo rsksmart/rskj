@@ -12,6 +12,7 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.Assertions;
@@ -28,8 +29,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.ReleaseTransactionBuilder.BRIDGE_BTC_TX_LEGACY_VERSION;
-import static co.rsk.peg.ReleaseTransactionBuilder.BRIDGE_BTC_TX_VERSION_2;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_LEGACY_VERSION;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -39,81 +40,78 @@ class BridgeSupportProcessFundsMigrationTest {
         BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
         BridgeTestNetConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
 
-        ActivationConfig.ForBlock activationsBeforeRSKIP146 = mock(ActivationConfig.ForBlock.class);
+        ActivationConfig.ForBlock wasabiActivations = ActivationConfigsForTest.wasabi100().forBlock(0);;
 
-        Stream<Arguments> beforeRskip146Tests = Stream.of(
-            Arguments.of(bridgeTestNetConstants, activationsBeforeRSKIP146, false),
-            Arguments.of(bridgeTestNetConstants, activationsBeforeRSKIP146, true),
-            Arguments.of(bridgeMainNetConstants, activationsBeforeRSKIP146, false),
-            Arguments.of(bridgeMainNetConstants, activationsBeforeRSKIP146, true)
+        Stream<Arguments> wasabiTests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, wasabiActivations, false),
+            Arguments.of(bridgeTestNetConstants, wasabiActivations, true),
+            Arguments.of(bridgeMainNetConstants, wasabiActivations, false),
+            Arguments.of(bridgeMainNetConstants, wasabiActivations, true)
         );
 
-        ActivationConfig.ForBlock activationsAfterRSKIP146 = mock(ActivationConfig.ForBlock.class);
-        when(activationsAfterRSKIP146.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0);;
 
-        Stream<Arguments> afterRskip146Tests = Stream.of(
-            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP146, false),
-            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP146, true),
-            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP146, false),
-            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP146, true)
+        Stream<Arguments> papyrusTests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, papyrusActivations, false),
+            Arguments.of(bridgeTestNetConstants, papyrusActivations, true),
+            Arguments.of(bridgeMainNetConstants, papyrusActivations, false),
+            Arguments.of(bridgeMainNetConstants, papyrusActivations, true)
         );
 
-        ActivationConfig.ForBlock activationsAfterRSKIP357 = mock(ActivationConfig.ForBlock.class);
-        when(activationsAfterRSKIP357.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        when(activationsAfterRSKIP357.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0);;
 
-        Stream<Arguments> afterRskip357Tests = Stream.of(
-            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP357, false),
-            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP357, true),
-            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP357, false),
-            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP357, true)
+        Stream<Arguments> irisTests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, irisActivations, false),
+            Arguments.of(bridgeTestNetConstants, irisActivations, true),
+            Arguments.of(bridgeMainNetConstants, irisActivations, false),
+            Arguments.of(bridgeMainNetConstants, irisActivations, true)
         );
 
-        ActivationConfig.ForBlock activationsAfterRSKIP374 = mock(ActivationConfig.ForBlock.class);
-        when(activationsAfterRSKIP374.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        when(activationsAfterRSKIP374.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
-        when(activationsAfterRSKIP374.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.iris300().forBlock(0);;
 
-        Stream<Arguments> afterRskip374Tests = Stream.of(
-            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP374, false),
-            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP374, true),
-            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP374, false),
-            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP374, true)
+        Stream<Arguments> hopTests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, hopActivations, false),
+            Arguments.of(bridgeTestNetConstants, hopActivations, true),
+            Arguments.of(bridgeMainNetConstants, hopActivations, false),
+            Arguments.of(bridgeMainNetConstants, hopActivations, true)
         );
 
-        ActivationConfig.ForBlock activationsAfterRSKIP376 = mock(ActivationConfig.ForBlock.class);
-        when(activationsAfterRSKIP376.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        when(activationsAfterRSKIP376.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
-        when(activationsAfterRSKIP376.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
-        when(activationsAfterRSKIP376.isActive(ConsensusRule.RSKIP376)).thenReturn(true);
 
-        Stream<Arguments> afterRskip376Tests = Stream.of(
-            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP376, false),
-            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP376, true),
-            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP376, false),
-            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP376, true)
+        ActivationConfig.ForBlock hop401Activations = ActivationConfigsForTest.hop401().forBlock(0);;
+
+        Stream<Arguments> hop401Tests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, hop401Activations, false),
+            Arguments.of(bridgeTestNetConstants, hop401Activations, true),
+            Arguments.of(bridgeMainNetConstants, hop401Activations, false),
+            Arguments.of(bridgeMainNetConstants, hop401Activations, true)
         );
 
-        ActivationConfig.ForBlock activationsAfterRSKIP383 = mock(ActivationConfig.ForBlock.class);
-        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
-        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
-        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP376)).thenReturn(true);
-        when(activationsAfterRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);;
 
-        Stream<Arguments> afterRskip383Tests = Stream.of(
-            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP383, false),
-            Arguments.of(bridgeTestNetConstants, activationsAfterRSKIP383, true),
-            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP383, false),
-            Arguments.of(bridgeMainNetConstants, activationsAfterRSKIP383, true)
+        Stream<Arguments> fingerrootTests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, fingerrootActivations, false),
+            Arguments.of(bridgeTestNetConstants, fingerrootActivations, true),
+            Arguments.of(bridgeMainNetConstants, fingerrootActivations, false),
+            Arguments.of(bridgeMainNetConstants, fingerrootActivations, true)
         );
+
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);;
+
+        Stream<Arguments> tbdTests = Stream.of(
+            Arguments.of(bridgeTestNetConstants, tbdActivations, false),
+            Arguments.of(bridgeTestNetConstants, tbdActivations, true),
+            Arguments.of(bridgeMainNetConstants, tbdActivations, false),
+            Arguments.of(bridgeMainNetConstants, tbdActivations, true)
+        );
+
         return Stream.of(
-            beforeRskip146Tests,
-            afterRskip146Tests,
-            afterRskip357Tests,
-            afterRskip374Tests,
-            afterRskip376Tests,
-            afterRskip383Tests
+            wasabiTests,
+            papyrusTests,
+            irisTests,
+            hopTests,
+            hop401Tests,
+            fingerrootTests,
+            tbdTests
         ).flatMap(Function.identity());
     }
 
@@ -196,9 +194,9 @@ class BridgeSupportProcessFundsMigrationTest {
             );
 
             if (activations.isActive(ConsensusRule.RSKIP376)){
-                Assertions.assertEquals(BRIDGE_BTC_TX_VERSION_2, entry.getBtcTransaction().getVersion());
+                Assertions.assertEquals(BTC_TX_VERSION_2, entry.getBtcTransaction().getVersion());
             } else {
-                Assertions.assertEquals(BRIDGE_BTC_TX_LEGACY_VERSION, entry.getBtcTransaction().getVersion());
+                Assertions.assertEquals(BTC_TX_LEGACY_VERSION, entry.getBtcTransaction().getVersion());
             }
         } else {
             verify(bridgeEventLogger, never()).logReleaseBtcRequested(
