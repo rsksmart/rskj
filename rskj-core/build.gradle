@@ -45,6 +45,21 @@ jacocoTestReport {
     }
 }
 
+task parallelTest(type: Test) {
+    useJUnitPlatform()
+    //increase heap memory
+    jvmArgs '-Xss64m', '-Xmx3G'
+    //stop build after the first failing test
+    failFast = project.hasProperty("failFast")
+    //option to use the half of the available cores (it can be increased but there is no too much difference)
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+    //this is recommended in the docs, -> https://docs.gradle.org/current/userguide/performance.html#forking_options
+    forkEvery = 750
+    //save some time avoiding reports
+    reports.html.required = false
+    reports.junitXml.required = false
+}
+
 tasks.withType(Javadoc) {
     options.addStringOption('Xdoclint:none', '-quiet')
 }
