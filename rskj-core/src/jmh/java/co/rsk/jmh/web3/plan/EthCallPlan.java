@@ -33,7 +33,6 @@ import java.math.BigInteger;
 @State(Scope.Benchmark)
 public class EthCallPlan extends BasePlan {
 
-    private BigInteger blockNumber;
     private RskModuleWeb3j.EthCallArguments ethCallArguments;
 
     @Override
@@ -41,25 +40,19 @@ public class EthCallPlan extends BasePlan {
     public void setUp(BenchmarkParams params) throws BenchmarkWeb3Exception {
         super.setUp(params);
 
-        blockNumber = web3Connector.ethBlockNumber();
         ethCallArguments = buildEthCallArguments();
     }
 
     private org.web3j.protocol.core.methods.response.Transaction setupTransaction() {
         org.web3j.protocol.core.methods.response.Transaction tx = new org.web3j.protocol.core.methods.response.Transaction();
 
-        tx.setHash(configuration.getString("eth_call.transaction.hash"));
         tx.setNonce(configuration.getString("eth_call.transaction.nonce"));
-        tx.setBlockHash(configuration.getString("eth_call.transaction.blockHash"));
-        tx.setBlockNumber(configuration.getString("eth_call.transaction.blockNumber"));
-        tx.setTransactionIndex(configuration.getString("eth_call.transaction.transactionIndex"));
         tx.setFrom(configuration.getString("eth_call.transaction.from"));
         tx.setTo(configuration.getString("eth_call.transaction.to"));
         tx.setGas(configuration.getString("eth_call.transaction.gas"));
         tx.setGasPrice(configuration.getString("eth_call.transaction.gasPrice"));
         tx.setValue(configuration.getString("eth_call.transaction.value"));
         tx.setInput(configuration.getString("eth_call.transaction.input"));
-        tx.setType(configuration.getString("eth_call.transaction.type"));
 
         return tx;
     }
@@ -75,14 +68,14 @@ public class EthCallPlan extends BasePlan {
         RskModuleWeb3j.EthCallArguments args = new RskModuleWeb3j.EthCallArguments();
         org.web3j.protocol.core.methods.response.Transaction tx = setupTransaction();
 
+        args.setNonce("0x" + tx.getNonce().toString(16));
         args.setFrom(tx.getFrom());
         args.setTo(tx.getTo());
         args.setGas("0x" + tx.getGas().toString(16));
         args.setGasPrice("0x" + tx.getGasPrice().toString(16));
         args.setValue("0x" + tx.getValue().toString(16));
-        args.setNonce("0x" + tx.getNonce().toString(16));
-        args.setChainId("0x" + BigInteger.valueOf(tx.getChainId()).toString(16));
         args.setData(tx.getInput());
+        args.setChainId("0x" + BigInteger.valueOf(tx.getChainId()).toString(16));
 
         return args;
     }
