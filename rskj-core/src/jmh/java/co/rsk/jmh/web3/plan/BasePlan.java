@@ -114,4 +114,8 @@ public class BasePlan {
     public RskTraceModuleWeb3j getTraceModuleWeb3j() {
         return traceModuleWeb3j;
     }
+
+    public String getHost() {
+        return host;
+    }
 }
