@@ -1,6 +1,6 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.ReleaseTransactionBuilder.BRIDGE_BTC_TX_VERSION_2;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -770,7 +770,7 @@ class ErpFederationTest {
         BtcTransaction pegOutTx = new BtcTransaction(networkParameters);
         pegOutTx.addInput(pegInTx.getOutput(outputIndex));
         pegOutTx.addOutput(Coin.valueOf(900_000), destinationAddress);
-        pegOutTx.setVersion(BRIDGE_BTC_TX_VERSION_2);
+        pegOutTx.setVersion(BTC_TX_VERSION_2);
         pegOutTx.getInput(0).setSequenceNumber(activationDelay);
 
         // Create signatures
