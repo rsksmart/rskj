@@ -256,9 +256,26 @@ public class BenchmarkWeb3 {
     public EthGasPrice ethGasPrice(BasePlan plan) throws BenchmarkWeb3Exception {
         return plan.getWeb3Connector().ethGasPrice();
     }
+
     @Benchmark
     public RskModuleWeb3j.GenericJsonResponse ethBridgeState(BasePlan plan) throws BenchmarkWeb3Exception {
         return plan.getWeb3Connector().ethBridgeState();
+    }
+
+    @Benchmark
+    @Timeout(time = 60)
+    public void ethCallForSpecificBlock(EthCallPlan plan) throws BenchmarkWeb3Exception {
+        if (!plan.getHost().contains("regtest")) {
+            plan.getWeb3Connector().ethCall(plan.getEthCallArguments(), plan.getBlockNumber().toString());
+        }
+    }
+
+    @Benchmark
+    @Timeout(time = 60)
+    public void ethCallForPendingBlock(EthCallPlan plan) throws BenchmarkWeb3Exception {
+        if (!plan.getHost().contains("regtest")) {
+            plan.getWeb3Connector().ethCall(plan.getEthCallArguments(), "pending");
+        }
     }
 
     public enum Suites {
