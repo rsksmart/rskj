@@ -54,6 +54,7 @@ import org.ethereum.crypto.Keccak256Helper;
  */
 public final class PegTestUtils {
 
+    public static final int BTC_TX_LEGACY_VERSION = 1;
     private static int nhash = 0;
 
     /**
