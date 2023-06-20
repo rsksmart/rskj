@@ -37,6 +37,7 @@ import co.rsk.util.HexUtils;
 public class Keccak256 implements Serializable, Comparable<Keccak256> {
     public static final int HASH_LEN = 32;
     public static final Keccak256 ZERO_HASH = new Keccak256(new byte[HASH_LEN]);
+    private static final long serialVersionUID = -3076062998897837430L;
 
     private final byte[] bytes;
 

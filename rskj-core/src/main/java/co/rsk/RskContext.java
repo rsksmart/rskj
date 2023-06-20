@@ -639,7 +639,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     .orElse(new ArrayList<>())
                     .contains("*");
 
-            if (acceptAnyHost && rskSystemProperties != null && rskSystemProperties.isWalletEnabled()) {
+            boolean isWalletEnabled = rskSystemProperties != null && rskSystemProperties.isWalletEnabled();
+
+            if (acceptAnyHost && isWalletEnabled) {
                 logger.warn("It is not recommended to bypass hosts checks, by setting '*' in" +
                         " the host list, and have wallet enabled both together." +
                         " If you bypass hosts check we suggest to have wallet disabled, the same thing" +

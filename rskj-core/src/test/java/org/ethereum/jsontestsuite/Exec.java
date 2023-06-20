@@ -81,11 +81,11 @@ public class Exec {
         else
             this.data = ByteUtil.EMPTY_BYTE_ARRAY;
 
-        this.gas = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(gas));
-        this.gasPrice = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(gasPrice));
+        this.gas = ByteUtil.bigIntegerToBytes(TestingCase.toBigInt(gas));
+        this.gasPrice = ByteUtil.bigIntegerToBytes(TestingCase.toBigInt(gasPrice));
 
         this.origin = Hex.decode(origin);
-        this.value = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(value));
+        this.value = ByteUtil.bigIntegerToBytes(TestingCase.toBigInt(value));
     }
 
 

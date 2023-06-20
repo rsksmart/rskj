@@ -26,7 +26,7 @@ import org.ethereum.jsontestsuite.model.BlockTck;
 import java.util.List;
 import java.util.Map;
 
-public class BlockTestCase {
+public class BlockTestingCase {
 
     private List<BlockTck> blocks;
     private BlockHeaderTck genesisBlockHeader;
@@ -36,7 +36,7 @@ public class BlockTestCase {
     private String lastblockhash;
     private int noBlockChainHistory;
 
-    public BlockTestCase() {
+    public BlockTestingCase() {
     }
 
     public String getLastblockhash() {

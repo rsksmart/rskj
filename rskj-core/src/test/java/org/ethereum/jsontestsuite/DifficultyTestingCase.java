@@ -33,7 +33,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @author Mikhail Kalinin
  * @since 02.09.2015
  */
-public class DifficultyTestCase {
+public class DifficultyTestingCase {
 
     @JsonIgnore
     private String name;

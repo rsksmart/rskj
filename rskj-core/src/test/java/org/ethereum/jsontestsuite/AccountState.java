@@ -54,14 +54,14 @@ public class AccountState {
 
         JsonNode store = accountState.get("storage");
 
-        this.balance = new Coin(TestCase.toBigInt(balance));
+        this.balance = new Coin(TestingCase.toBigInt(balance));
 
         if (code != null && code.length() > 2)
             this.code = Hex.decode(code.substring(2));
         else
             this.code = ByteUtil.EMPTY_BYTE_ARRAY;
 
-        this.nonce = TestCase.toBigInt(nonce).toByteArray();
+        this.nonce = TestingCase.toBigInt(nonce).toByteArray();
 
         for (Iterator<String> it = store.fieldNames(); it.hasNext(); ) {
             String keyS = it.next();

@@ -69,10 +69,10 @@ public class Env {
         String prevHash = previousHash == null ? "" : previousHash.asText();
 
         this.currentCoinbase = Hex.decode(coinbase);
-        this.currentDifficulty = BigIntegers.asUnsignedByteArray(TestCase.toBigInt(difficulty) );
-        this.currentGasLimit =   BigIntegers.asUnsignedByteArray(TestCase.toBigInt(gasLimit));
-        this.currentNumber = TestCase.toBigInt(number).toByteArray();
-        this.currentTimestamp = TestCase.toBigInt(timestamp).toByteArray();
+        this.currentDifficulty = BigIntegers.asUnsignedByteArray(TestingCase.toBigInt(difficulty) );
+        this.currentGasLimit =   BigIntegers.asUnsignedByteArray(TestingCase.toBigInt(gasLimit));
+        this.currentNumber = TestingCase.toBigInt(number).toByteArray();
+        this.currentTimestamp = TestingCase.toBigInt(timestamp).toByteArray();
         this.previousHash = Hex.decode(prevHash);
 
     }

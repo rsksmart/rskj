@@ -29,6 +29,7 @@ import org.bouncycastle.util.Pack;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Objects;
 
 /**
  * Support class for constructing integrated encryption cipher
@@ -188,16 +189,9 @@ public class EthereumIESEngine
 
             kdf.generateBytes(k, 0, k.length);
 
-//            if (v.length != 0)
-//            {
-//                System.arraycopy(K, 0, K2, 0, K2.length);
-//                System.arraycopy(K, K2.length, K1, 0, K1.length);
-//            }
-//            else
-            {
-                System.arraycopy(k, 0, k1, 0, k1.length);
-                System.arraycopy(k, inLen, k2, 0, k2.length);
-            }
+
+            System.arraycopy(k, 0, k1, 0, k1.length);
+            System.arraycopy(k, inLen, k2, 0, k2.length);
 
             c = new byte[inLen];
 
@@ -250,7 +244,7 @@ public class EthereumIESEngine
             k2A = k2;
         }
         mac.init(new KeyParameter(k2A));
-        mac.update(iv, 0, iv.length);
+        mac.update(Objects.requireNonNull(iv), 0, iv.length);
         mac.update(c, 0, c.length);
         if (p2 != null)
         {
@@ -305,16 +299,8 @@ public class EthereumIESEngine
 
             kdf.generateBytes(k, 0, k.length);
 
-//            if (v.length != 0)
-//            {
-//                System.arraycopy(K, 0, K2, 0, K2.length);
-//                System.arraycopy(K, K2.length, K1, 0, K1.length);
-//            }
-//            else
-            {
-                System.arraycopy(k, 0, k1, 0, k1.length);
-                System.arraycopy(k, k1.length, k2, 0, k2.length);
-            }
+            System.arraycopy(k, 0, k1, 0, k1.length);
+            System.arraycopy(k, k1.length, k2, 0, k2.length);
 
             m = new byte[k1.length];
 
@@ -370,7 +356,7 @@ public class EthereumIESEngine
             k2A = k2;
         }
         mac.init(new KeyParameter(k2A));
-        mac.update(iv, 0, iv.length);
+        mac.update(Objects.requireNonNull(iv), 0, iv.length);
         mac.update(inEnc, inOff + v.length, inLen - v.length - t2.length);
 
         if (p2 != null)
@@ -444,20 +430,8 @@ public class EthereumIESEngine
         // Compute the common value and convert to byte array.
         agree.init(privParam);
         BigInteger z = agree.calculateAgreement(pubParam);
-        byte[] Z = BigIntegers.asUnsignedByteArray(agree.getFieldSize(), z);
-
         // Create input to KDF.
-        byte[] vz;
-//        if (v.length != 0)
-//        {
-//            VZ = new byte[v.length + Z.length];
-//            System.arraycopy(v, 0, VZ, 0, v.length);
-//            System.arraycopy(Z, 0, VZ, v.length, Z.length);
-//        }
-//        else
-        {
-            vz = Z;
-        }
+        byte[] vz = BigIntegers.asUnsignedByteArray(agree.getFieldSize(), z);
 
         // Initialise the KDF.
         DerivationParameters kdfParam;
