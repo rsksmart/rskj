@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_LEGACY_VERSION;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.PegTestUtils.BTC_TX_LEGACY_VERSION;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -187,7 +187,7 @@ class BridgeSupportProcessFundsMigrationTest {
             );
 
             if (activations.isActive(ConsensusRule.RSKIP376)){
-                Assertions.assertEquals(BTC_TX_VERSION_2, entry.getBtcTransaction().getVersion());
+                Assertions.assertEquals(BTC_TX_VERSION, entry.getBtcTransaction().getVersion());
             } else {
                 Assertions.assertEquals(BTC_TX_LEGACY_VERSION, entry.getBtcTransaction().getVersion());
             }
