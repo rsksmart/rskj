@@ -101,7 +101,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
@@ -3062,7 +3062,7 @@ public class BridgeSupport {
         for(;;) {
             BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
             if (activations.isActive(ConsensusRule.RSKIP376)){
-                migrationBtcTx.setVersion(BTC_TX_VERSION);
+                migrationBtcTx.setVersion(BTC_TX_VERSION_2);
             }
 
             migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);

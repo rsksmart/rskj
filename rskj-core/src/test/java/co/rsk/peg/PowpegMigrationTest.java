@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static co.rsk.peg.PegTestUtils.BTC_TX_LEGACY_VERSION;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -427,7 +427,7 @@ class PowpegMigrationTest {
                 assertEquals(whoCanSpendTheseUtxos.get(input.getOutpoint().getHash()), spendingAddress);
             }
             if(activations.isActive(ConsensusRule.RSKIP376)){
-                assertEquals(BTC_TX_VERSION, pegout.getVersion());
+                assertEquals(BTC_TX_VERSION_2, pegout.getVersion());
             } else {
                 assertEquals(BTC_TX_LEGACY_VERSION, pegout.getVersion());
             }
