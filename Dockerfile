@@ -28,7 +28,7 @@ USER rsk
 WORKDIR /var/lib/rsk
 COPY --from=build --chown=rsk:rsk /home/rsk/rsk.jar ./
 
-ENV DEFAULT_JVM_OPTS="-Xms3G -Xmx5G"
+ENV DEFAULT_JVM_OPTS="-Xms4G"
 ENV RSKJ_SYS_PROPS="-Drpc.providers.web.http.bind_address=0.0.0.0 -Drpc.providers.web.http.hosts.0=localhost -Drpc.providers.web.http.hosts.1=127.0.0.1 -Drpc.providers.web.http.hosts.2=::1"
 ENV RSKJ_CLASS=co.rsk.Start
 ENV RSKJ_OPTS=""
