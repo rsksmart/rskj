@@ -27,6 +27,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.infra.BenchmarkParams;
+import org.web3j.protocol.core.methods.response.Transaction;
 
 import java.math.BigInteger;
 
@@ -43,8 +44,8 @@ public class EthCallPlan extends BasePlan {
         ethCallArguments = buildEthCallArguments();
     }
 
-    private org.web3j.protocol.core.methods.response.Transaction setupTransaction() {
-        org.web3j.protocol.core.methods.response.Transaction tx = new org.web3j.protocol.core.methods.response.Transaction();
+    private Transaction setupTransaction() {
+        Transaction tx = new Transaction();
 
         tx.setFrom(configuration.getString("eth_call.transaction.from"));
         tx.setTo(configuration.getString("eth_call.transaction.to"));
@@ -56,16 +57,9 @@ public class EthCallPlan extends BasePlan {
         return tx;
     }
 
-    @TearDown(Level.Trial) // move to "Level.Iteration" in case we set a batch size at some point
-    public void tearDown() throws InterruptedException {
-        // wait for new blocks to have free account slots for transaction creation
-        BenchmarkHelper.waitForBlocks(configuration);
-    }
-
-
     private RskModuleWeb3j.EthCallArguments buildEthCallArguments() {
         RskModuleWeb3j.EthCallArguments args = new RskModuleWeb3j.EthCallArguments();
-        org.web3j.protocol.core.methods.response.Transaction tx = setupTransaction();
+        Transaction tx = setupTransaction();
 
         args.setFrom(tx.getFrom());
         args.setTo(tx.getTo());
