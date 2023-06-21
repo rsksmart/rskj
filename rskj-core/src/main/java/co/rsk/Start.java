@@ -33,12 +33,12 @@ public class Start {
         setUpThread(Thread.currentThread());
 
         RskContext ctx = null;
-        ctx = new RskContext(args);
-        if (ctx.getCliArgs().getFlags().contains(NodeCliFlags.VERSION) || ctx.getCliArgs().getFlags().contains(NodeCliFlags.HELP)) {
-            return;
-        }
-        try {
 
+        try {
+            ctx = new RskContext(args);
+            if (ctx.getCliArgs().getFlags().contains(NodeCliFlags.VERSION) || ctx.getCliArgs().getFlags().contains(NodeCliFlags.HELP)) {
+                return;
+            }
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);
