@@ -184,6 +184,14 @@ public class EthModule
             estimatedGas += GasCost.STIPEND_CALL;
         }
 
+        estimatedGas = GasCost.add(estimatedGas, reversibleExecutionResult.getEstimationIncrement());
+
+        // ensure not returning more than blockGasLimit
+        if (estimatedGas > gasEstimationCap) {
+            LOGGER.warn("Estimation {} was bigger than cap {}", estimatedGas, gasEstimationCap);
+            estimatedGas = gasEstimationCap;
+        }
+
         return HexUtils.toQuantityJsonHex(estimatedGas);
     }
 

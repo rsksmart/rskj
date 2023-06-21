@@ -18,6 +18,7 @@
  */
 package org.ethereum.vm.program;
 
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.CallCreate;
@@ -53,6 +54,8 @@ public class ProgramResult {
     protected long gasUsed;
     private long futureRefund = 0;
     protected long deductedRefund = 0;
+
+    private Map<Integer, Long> consumedAtCallDepth;
 
     /*
      * for testing runs ,
@@ -298,7 +301,7 @@ public class ProgramResult {
             this.callWithValuePerformed = this.callWithValuePerformed || another.callWithValuePerformed;
         }
     }
-    
+
     public static ProgramResult empty() {
         ProgramResult result = new ProgramResult();
         result.setHReturn(EMPTY_BYTE_ARRAY);
@@ -321,5 +324,46 @@ public class ProgramResult {
 
     public long getGasUsedBeforeRefunds() {
         return gasUsedBeforeRefunds;
+    }
+
+    Map<Integer, Long> getConsumedAtCallDepth() {
+        return consumedAtCallDepth; // NOSONAR
+    }
+
+    public void initializeConsumedAtCallDepth() {
+        this.consumedAtCallDepth = new MaxSizeHashMap<>(Program.MAX_CALL_DEPTH_RSKIP209, false);
+    }
+
+    void inheritConsumedAtCallDepth(Map<Integer, Long> consumedAtCallDepth) {
+        this.consumedAtCallDepth = consumedAtCallDepth; // NOSONAR
+    }
+
+    public void updateCallDepthConsumption(int depth, long consumedGas) {
+        Long oldValue = this.consumedAtCallDepth.get(depth);
+        if (oldValue == null) {
+            oldValue = 0L;
+        }
+        long newValue = GasCost.add(oldValue, consumedGas);
+        this.consumedAtCallDepth.put(depth, newValue);
+    }
+
+    public long getEstimationIncrement() {
+        if (this.consumedAtCallDepth == null) { // ie. RSKIP209 disabled
+            return 0L;
+        }
+
+        final double f = 64.0 / 63;
+
+        long increment = 0;
+        double fLevel = f;
+        for (int i = 1; i < this.consumedAtCallDepth.size(); i++) {
+            long consumed = this.consumedAtCallDepth.get(i);
+            long required = (long) Math.ceil(consumed * fLevel);
+            long diff = required - consumed;
+            increment += diff;
+            fLevel *= f;
+        }
+
+        return increment;
     }
 }

@@ -62,6 +62,8 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 01.06.2014
  */
 public class Program {
+    public static final int MAX_CALL_DEPTH_RSKIP209 = 1024;
+
     // These logs should never be in Info mode in production
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
@@ -172,7 +174,10 @@ public class Program {
      * Changed to a value more similar to Ethereum's with EIP150
      * since RSKIP150.
      */
-    public int getMaxDepth() {
+    private int getMaxDepth() {
+        if (activations.isActive(ConsensusRule.RSKIP209)) {
+            return MAX_CALL_DEPTH_RSKIP209; // capped limit after this RSKIP
+        }
         if (activations.isActive(ConsensusRule.RSKIP150)) {
             return 400;
         }
@@ -602,6 +607,10 @@ public class Program {
         if (!isEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
             Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock, signatureCache);
+            if (activations.isActive(ConsensusRule.RSKIP209)) {
+                program.getResult().inheritConsumedAtCallDepth(this.getResult().getConsumedAtCallDepth()); // inherit from parent (from top level call)
+            }
+
             vm.play(program);
             programResult = program.getResult();
 
@@ -827,6 +836,9 @@ public class Program {
 
         VM vm = new VM(config, precompiledContracts);
         Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock, signatureCache);
+        if (activations.isActive(ConsensusRule.RSKIP209)) {
+            program.getResult().inheritConsumedAtCallDepth(this.getResult().getConsumedAtCallDepth()); // inherit from parent (from top level call)
+        }
 
         vm.play(program);
         childResult = program.getResult();
@@ -887,6 +899,7 @@ public class Program {
                 gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundGas);
             }
         }
+
         return childCallSuccessful;
     }
 

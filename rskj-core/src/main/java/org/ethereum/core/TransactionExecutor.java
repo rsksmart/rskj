@@ -356,6 +356,9 @@ public class TransactionExecutor {
 
                 this.vm = new VM(vmConfig, precompiledContracts);
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts, signatureCache);
+                if (activations.isActive(ConsensusRule.RSKIP209)) {
+                    this.program.getResult().initializeConsumedAtCallDepth();
+                }
             }
         }
 
@@ -379,6 +382,9 @@ public class TransactionExecutor {
 
             this.vm = new VM(vmConfig, precompiledContracts);
             this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts, signatureCache);
+            if (activations.isActive(ConsensusRule.RSKIP209)) {
+                this.program.getResult().initializeConsumedAtCallDepth();
+            }
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network

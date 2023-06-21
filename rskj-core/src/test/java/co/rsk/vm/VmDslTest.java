@@ -36,7 +36,7 @@ import java.io.FileNotFoundException;
  */
 class VmDslTest {
     @Test
-    void invokeRecursiveContractsUsing400Levels() throws FileNotFoundException, DslProcessorException {
+    void invokeRecursiveContracts() throws FileNotFoundException, DslProcessorException {
         System.gc();
         DslParser parser = DslParser.fromResource("dsl/recursive01.txt");
         World world = new World();
@@ -47,7 +47,7 @@ class VmDslTest {
         Block block = world.getBlockByName("b02");
 
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(1, block.getTransactionsList().size());
+        Assertions.assertEquals(2, block.getTransactionsList().size());
 
         Transaction creationTransaction = world.getTransactionByName("tx01");
 
@@ -59,17 +59,26 @@ class VmDslTest {
                 .getStorageValue(creationTransaction.getContractAddress(), DataWord.ZERO);
 
         Assertions.assertNotNull(counterValue);
-        Assertions.assertEquals(200, counterValue.intValue());
+        Assertions.assertEquals(86, counterValue.intValue());
 
-        TransactionReceipt transactionReceipt = world.getTransactionReceiptByName("tx02");
+        TransactionReceipt transactionReceipt2 = world.getTransactionReceiptByName("tx02");
 
-        Assertions.assertNotNull(transactionReceipt);
+        Assertions.assertNotNull(transactionReceipt2);
 
-        byte[] status = transactionReceipt.getStatus();
+        byte[] status2 = transactionReceipt2.getStatus();
 
-        Assertions.assertNotNull(status);
-        Assertions.assertEquals(1, status.length);
-        Assertions.assertEquals(1, status[0]);
+        Assertions.assertNotNull(status2);
+        Assertions.assertEquals(1, status2.length);
+        Assertions.assertEquals(1, status2[0]);
+
+        TransactionReceipt transactionReceipt3 = world.getTransactionReceiptByName("tx03");
+
+        Assertions.assertNotNull(transactionReceipt3);
+
+        byte[] status3 = transactionReceipt3.getStatus();
+
+        Assertions.assertNotNull(status3);
+        Assertions.assertEquals(0, status3.length);
     }
 
     @Test

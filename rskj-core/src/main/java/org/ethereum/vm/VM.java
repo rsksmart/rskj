@@ -25,6 +25,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.rpc.netty.ExecTimeoutContext;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -1528,6 +1529,10 @@ public class VM {
                 GasCost.add(userSpecifiedGas, minimumTransferGas) :
                 userSpecifiedGas + minimumTransferGas;
 
+        if (activations.isActive(ConsensusRule.RSKIP209)) {
+            remainingGas = GasCost.subtract(remainingGas, remainingGas / 64);
+        }
+
         // If specified gas is higher than available gas then move all remaining gas to callee.
         // This will have one possibly undesired behavior: if the specified gas is higher than the remaining gas,
         // the callee will receive less gas than the parent expected.
@@ -1540,7 +1545,7 @@ public class VM {
             // when there's less gas than expected from the child call,
             // the estimateGas will be given by gasUsed + deductedRefunds instead of maxGasUsed
             program.getResult().movedRemainingGasToChild(calleeGas == remainingGas);
-            
+
             if (!value.isZero()) {
                 program.getResult().setCallWithValuePerformed(true);
             }
@@ -2002,6 +2007,8 @@ public class VM {
         program = aprogram;
         stack = program.getStack();
 
+        long preGas = program.getRemainingGas();
+
         try {
 
             for(long s=0;s<steps;s++) {
@@ -2066,6 +2073,17 @@ public class VM {
             if (isLogEnabled) { // this must be prevented because it's slow!
                 program.fullTrace();
             }
+
+            long postGas = program.getRemainingGas();
+
+            long fixGas = preGas - postGas;
+
+            // Sergio: fixGas and program.getResult().getGasUsed() should be equivalent (and seem to be so)
+
+            if (program.getActivations().isActive(ConsensusRule.RSKIP209)) {
+                program.getResult().updateCallDepthConsumption(program.getCallDeep(), program.getResult().getGasUsed());
+            }
+
         }
     }
 

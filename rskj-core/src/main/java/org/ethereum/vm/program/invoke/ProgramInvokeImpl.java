@@ -45,7 +45,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private final DataWord balance;
     private final DataWord gasPrice;
     private final DataWord callValue;
-    private long gas;
+    private final long gas;
 
     byte[] msgData;
 
