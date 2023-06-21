@@ -251,11 +251,13 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
+
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
 
     private volatile boolean closed;
 
     /***** Constructors ***********************************************************************************************/
+
     public RskContext(String[] args) {
         RskCli rskCli = new RskCli();
         rskCli.load(args);
@@ -635,7 +637,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     .orElse(new ArrayList<>())
                     .contains("*");
 
-            if (acceptAnyHost && rskSystemProperties != null && rskSystemProperties.isWalletEnabled()) {
+            boolean isWalletEnabled = rskSystemProperties != null && rskSystemProperties.isWalletEnabled();
+
+            if (acceptAnyHost && isWalletEnabled) {
                 logger.warn("It is not recommended to bypass hosts checks, by setting '*' in" +
                         " the host list, and have wallet enabled both together." +
                         " If you bypass hosts check we suggest to have wallet disabled, the same thing" +
@@ -1037,14 +1041,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             internalServices.add(getPeerScoringReporterService());
         }
 
-        internalServices.add(new BlockChainFlusher(
-                getRskSystemProperties().flushNumberOfBlocks(),
-                getCompositeEthereumListener(),
-                getTrieStore(),
-                getBlockStore(),
-                getReceiptStore(),
-                getBlocksBloomStore(),
-                getStateRootsStore()));
+
+        internalServices.add(getBlockChainFlusher());
 
         internalServices.add(getExecutionBlockRetriever());
 
@@ -2172,6 +2170,4 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             throw new IllegalStateException("RSK Context is closed and cannot be in use anymore");
         }
     }
-
-
 }
