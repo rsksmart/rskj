@@ -74,15 +74,20 @@ public class RskCli implements Runnable {
 
     @CommandLine.Option(names = {"-X"}, description = "Read arguments in command line")
     private String xArgument;
-    private boolean versionOrHelpRequested = false;
+
+//    @CommandLine.Option(names = {"-h", "--help"}, description = "Help requested")
+    private boolean help;
+//
+//    @CommandLine.Option(names = {"-v", "--version"}, description = "Version requested")
+    private boolean version;
+
     private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
     public int load(String[] args) {
         CommandLine commandLine = new CommandLine(this);
         int exitCode = commandLine.execute(args);
-        if (commandLine.isVersionHelpRequested() || commandLine.isUsageHelpRequested()) {
-           this.versionOrHelpRequested = true;
-        }
+        version = commandLine.isVersionHelpRequested();
+        help = commandLine.isUsageHelpRequested();
         loadCliArgs();
         return exitCode;
     }
@@ -90,15 +95,20 @@ public class RskCli implements Runnable {
     public CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
        return cliArgs;
     }
-
     public boolean isVersionOrHelpRequested() {
-        return versionOrHelpRequested;
+        return help || version;
     }
-
     private void loadCliArgs() {
         EnumSet<NodeCliFlags> activatedFlags = EnumSet.noneOf(NodeCliFlags.class);
         Map<NodeCliOptions, String> activatedOptions = new HashMap<>();
         Map<String, String> paramValueMap = new HashMap<>();
+
+        if (help) {
+            activatedFlags.add(NodeCliFlags.HELP);
+        }
+        if (version) {
+            activatedFlags.add(NodeCliFlags.VERSION);
+        }
 
         if (dbReset) {
             activatedFlags.add(NodeCliFlags.DB_RESET);

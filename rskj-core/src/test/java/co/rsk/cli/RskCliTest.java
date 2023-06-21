@@ -15,7 +15,7 @@ public class RskCliTest {
         RskCli rskCli = new RskCli();
         String[] args = {"--help"};
         rskCli.load(args);
-        assertTrue(rskCli.isVersionOrHelpRequested());
+        assertTrue(rskCli.getCliArgs().getFlags().contains(NodeCliFlags.HELP));
     }
 
     @Test
@@ -23,7 +23,7 @@ public class RskCliTest {
         RskCli rskCli = new RskCli();
         String[] args = {"--version"};
         rskCli.load(args);
-        assertTrue(rskCli.isVersionOrHelpRequested());
+        assertTrue(rskCli.getCliArgs().getFlags().contains(NodeCliFlags.VERSION));
     }
     @Test
     void argsAreParsedCorrectly() {
