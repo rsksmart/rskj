@@ -326,27 +326,19 @@ public class ProgramResult {
         return gasUsedBeforeRefunds;
     }
 
-    public void initializeTopLevel() {
-        if (this.consumedAtCallDepth != null) {
-            throw new IllegalStateException("consumedCallDepth should only be set once at top level");
-        }
+    Map<Integer, Long> getConsumedAtCallDepth() {
+        return consumedAtCallDepth; // NOSONAR
+    }
 
+    public void initializeConsumedAtCallDepth() {
         this.consumedAtCallDepth = new MaxSizeHashMap<>(Program.MAX_CALL_DEPTH_RSKIP209, false);
     }
 
-    void inheritFrom(ProgramResult another) {
-        if (this.consumedAtCallDepth != null) {
-            throw new IllegalStateException("consumedCallDepth should only be set once at top level");
-        }
-
-        if (another.consumedAtCallDepth == null) {
-            throw new IllegalStateException("consumedCallDepth should have been set by top level caller");
-        }
-
-        this.consumedAtCallDepth = another.consumedAtCallDepth; // NOSONAR
+    void inheritConsumedAtCallDepth(Map<Integer, Long> consumedAtCallDepth) {
+        this.consumedAtCallDepth = consumedAtCallDepth; // NOSONAR
     }
 
-    void updateCallDepthConsumption(int depth, long consumedGas) {
+    public void updateCallDepthConsumption(int depth, long consumedGas) {
         Long oldValue = this.consumedAtCallDepth.get(depth);
         if (oldValue == null) {
             oldValue = 0L;

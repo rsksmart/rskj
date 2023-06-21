@@ -178,11 +178,9 @@ public class Program {
         if (activations.isActive(ConsensusRule.RSKIP209)) {
             return MAX_CALL_DEPTH_RSKIP209; // capped limit after this RSKIP
         }
-
         if (activations.isActive(ConsensusRule.RSKIP150)) {
             return 400;
         }
-
         return 1024;
     }
 
@@ -609,6 +607,10 @@ public class Program {
         if (!isEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
             Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock, signatureCache);
+            if (activations.isActive(ConsensusRule.RSKIP209)) {
+                program.getResult().inheritConsumedAtCallDepth(this.getResult().getConsumedAtCallDepth()); // inherit from parent (from top level call)
+            }
+
             vm.play(program);
             programResult = program.getResult();
 
@@ -835,7 +837,7 @@ public class Program {
         VM vm = new VM(config, precompiledContracts);
         Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock, signatureCache);
         if (activations.isActive(ConsensusRule.RSKIP209)) {
-            program.getResult().inheritFrom(this.getResult()); // inherit from parent (from top level call)
+            program.getResult().inheritConsumedAtCallDepth(this.getResult().getConsumedAtCallDepth()); // inherit from parent (from top level call)
         }
 
         vm.play(program);
@@ -863,11 +865,6 @@ public class Program {
             // when there's an exception we skip applying results and refunding gas,
             // and we only do that when the call is successful or there's a REVERT operation.
             if (childResult.getException() != null) {
-
-                if (activations.isActive(ConsensusRule.RSKIP209)) {
-                    getResult().updateCallDepthConsumption(getCallDeep(), childResult.gasUsed);
-                }
-
                 return false;
             }
 
@@ -901,10 +898,6 @@ public class Program {
             if (isGasLogEnabled) {
                 gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundGas);
             }
-        }
-
-        if (activations.isActive(ConsensusRule.RSKIP209)) {
-            getResult().updateCallDepthConsumption(getCallDeep(), childResult.gasUsed);
         }
 
         return childCallSuccessful;

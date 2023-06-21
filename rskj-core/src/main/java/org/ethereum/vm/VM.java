@@ -2007,6 +2007,8 @@ public class VM {
         program = aprogram;
         stack = program.getStack();
 
+        long preGas = program.getRemainingGas();
+
         try {
 
             for(long s=0;s<steps;s++) {
@@ -2071,6 +2073,17 @@ public class VM {
             if (isLogEnabled) { // this must be prevented because it's slow!
                 program.fullTrace();
             }
+
+            long postGas = program.getRemainingGas();
+
+            long fixGas = preGas - postGas;
+
+            // Sergio: fixGas and program.getResult().getGasUsed() should be equivalent (and seem to be so)
+
+            if (program.getActivations().isActive(ConsensusRule.RSKIP209)) {
+                program.getResult().updateCallDepthConsumption(program.getCallDeep(), program.getResult().getGasUsed());
+            }
+
         }
     }
 
