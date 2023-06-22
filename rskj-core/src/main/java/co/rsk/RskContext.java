@@ -273,10 +273,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     }
 
     /***** Public Methods *********************************************************************************************/
-    public List<String> getUnmatchedArgs() {
+    public synchronized List<String> getUnmatchedArgs() {
+        checkIfNotClosed();
+
         return unmatchedArgs;
     }
-    public CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
+    public synchronized CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
+        checkIfNotClosed();
+
         return cliArgs;
     }
 

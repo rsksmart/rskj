@@ -19,7 +19,6 @@
 package co.rsk;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.cli.RskCli;
 import co.rsk.config.*;
 import co.rsk.net.AsyncNodeBlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
