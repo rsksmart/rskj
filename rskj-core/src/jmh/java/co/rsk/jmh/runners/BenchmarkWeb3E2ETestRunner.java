@@ -19,17 +19,19 @@
 package co.rsk.jmh.runners;
 
 import co.rsk.jmh.helpers.OptionsHelper;
-import co.rsk.jmh.web3.BenchmarkLocalWalletWeb3;
+import co.rsk.jmh.web3.BenchmarkWeb3;
+import co.rsk.jmh.web3.BlocksAndTx;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 
-public class BenchmarkWeb3E2ELocalWalletRunner {
+public class BenchmarkWeb3E2ETestRunner {
 
     public static void main(String[] args) throws Exception {
-        Options opt = OptionsHelper.createE2EBuilder(args, "result_web3_e2e_local_wallet.csv")
-                .include(BenchmarkLocalWalletWeb3.class.getName())
+        Options opt = OptionsHelper.createE2EBuilder(args, "result_web3_e2e_test.csv")
+                .include(BenchmarkWeb3.class.getName())
+                .include(BlocksAndTx.class.getName())
                 .warmupIterations(1)
-                .measurementIterations(10)
+                .measurementIterations(1)
                 .build();
 
         new Runner(opt).run();

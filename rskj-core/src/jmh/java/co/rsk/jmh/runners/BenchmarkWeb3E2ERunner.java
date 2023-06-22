@@ -30,6 +30,8 @@ public class BenchmarkWeb3E2ERunner {
         Options opt = OptionsHelper.createE2EBuilder(args, "result_web3_e2e.csv")
                 .include(BenchmarkWeb3.class.getName())
                 .include(BlocksAndTx.class.getName())
+                .warmupIterations(25)
+                .measurementIterations(100)
                 .build();
 
         new Runner(opt).run();
