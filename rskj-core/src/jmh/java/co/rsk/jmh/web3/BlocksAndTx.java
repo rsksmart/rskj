@@ -27,7 +27,7 @@ import org.web3j.protocol.core.methods.response.*;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode({Mode.SingleShotTime})
-@Warmup(iterations = 1)
+@Warmup(iterations = 3)
 @Measurement(iterations = 20)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Timeout(time = 10)
