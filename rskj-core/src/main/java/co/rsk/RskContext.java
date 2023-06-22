@@ -1175,6 +1175,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return peerScoringReporterService;
     }
 
+    public synchronized boolean isVersionOrHelpRequested() {
+        checkIfNotClosed();
+
+        return cliArgs.getFlags().contains(NodeCliFlags.VERSION) || cliArgs.getFlags().contains(NodeCliFlags.HELP);
+    }
+
     public boolean isClosed() {
         return closed;
     }
