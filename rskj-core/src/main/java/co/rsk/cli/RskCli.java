@@ -24,6 +24,7 @@ import picocli.CommandLine;
 
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 @CommandLine.Command(name = "rskj", mixinStandardHelpOptions = true, versionProvider = VersionProviderUtil.class,
         description = "RSKJ blockchain node implementation in Java")
@@ -73,7 +74,7 @@ public class RskCli implements Runnable {
     private String basePath;
 
     @CommandLine.Option(names = {"-X"}, description = "Read arguments in command line")
-    private String xArgument;
+    private List<String> xArgument;
 
     private boolean help;
     private boolean version;
@@ -137,8 +138,10 @@ public class RskCli implements Runnable {
         }
 
         if (xArgument != null) {
-            String[] keyValuePair = splitXArgumentIntoKeyValue(xArgument);
-            paramValueMap.put(keyValuePair[0], keyValuePair[1]);
+            for (String arg : xArgument) {
+                String[] keyValuePair = splitXArgumentIntoKeyValue(arg);
+                paramValueMap.put(keyValuePair[0], keyValuePair[1]);
+            }
         }
 
         if (networkFlags != null) {
