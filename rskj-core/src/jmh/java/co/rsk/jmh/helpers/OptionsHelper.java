@@ -47,8 +47,7 @@ public class OptionsHelper {
                 .param("host", ParamsHelper.getRequired("host", args))
                 .param("config", ParamsHelper.getRequired("config", args))
                 .mode(Mode.SingleShotTime) // we cannot flood the server with http requests
-                .forks(2)
-                .warmupIterations(1) // for RPC calls usually one warmup call is enough
+                .forks(1)
                 .result(resultDir + "/" + reportFileName)
                 .resultFormat(ResultFormatType.CSV)
                 .shouldFailOnError(true);
