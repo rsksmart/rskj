@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 
 // annotated fields at class, method or field level are providing default values that can be overriden via CLI or Runner parameters
 @BenchmarkMode({Mode.SingleShotTime})
-@Warmup(iterations = 1)
+@Warmup(iterations = 3)
 @Measurement(iterations = 20)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Timeout(time = 10)
