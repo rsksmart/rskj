@@ -74,7 +74,14 @@ public class RskCli implements Runnable {
     private String basePath;
 
     @CommandLine.Option(names = {"-X"}, description = "Read arguments in command line")
-    private List<String> xArgument;
+    private List<String> xArguments;
+
+    @CommandLine.Unmatched
+    private List<String> unmatchedArgs;
+
+    public List<String> getUnmatchedArgs() {
+        return unmatchedArgs;
+    }
 
     private boolean help;
     private boolean version;
@@ -137,8 +144,8 @@ public class RskCli implements Runnable {
             paramValueMap.put("base-path", basePath);
         }
 
-        if (xArgument != null) {
-            for (String arg : xArgument) {
+        if (xArguments != null) {
+            for (String arg : xArguments) {
                 String[] keyValuePair = splitXArgumentIntoKeyValue(arg);
                 paramValueMap.put(keyValuePair[0], keyValuePair[1]);
             }
