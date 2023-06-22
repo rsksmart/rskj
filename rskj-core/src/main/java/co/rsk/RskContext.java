@@ -256,13 +256,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private volatile boolean closed;
 
-    private List<String> unmatchedArgs;
     /***** Constructors ***********************************************************************************************/
-
     public RskContext(String[] args) {
         RskCli rskCli = new RskCli();
         rskCli.load(args);
-        unmatchedArgs = rskCli.getUnmatchedArgs();
         initialize(rskCli, rskCli.getCliArgs());
     }
 
@@ -273,11 +270,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     }
 
     /***** Public Methods *********************************************************************************************/
-    public synchronized List<String> getUnmatchedArgs() {
-        checkIfNotClosed();
 
-        return unmatchedArgs;
-    }
     public synchronized CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
         checkIfNotClosed();
 

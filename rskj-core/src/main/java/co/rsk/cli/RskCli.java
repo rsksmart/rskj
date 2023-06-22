@@ -76,20 +76,13 @@ public class RskCli implements Runnable {
     @CommandLine.Option(names = {"-X"}, description = "Read arguments in command line")
     private List<String> xArguments;
 
-    @CommandLine.Unmatched
-    private List<String> unmatchedArgs;
-
-    public List<String> getUnmatchedArgs() {
-        return unmatchedArgs;
-    }
-
     private boolean help;
     private boolean version;
 
     private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
     public int load(String[] args) {
-        CommandLine commandLine = new CommandLine(this);
+        CommandLine commandLine = new CommandLine(this).setUnmatchedArgumentsAllowed(true);
         int exitCode = commandLine.execute(args);
         version = commandLine.isVersionHelpRequested();
         help = commandLine.isUsageHelpRequested();

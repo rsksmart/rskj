@@ -22,7 +22,7 @@ import co.rsk.cli.exceptions.PicocliBadResultException;
 import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
-import java.util.List;
+
 import java.util.concurrent.Callable;
 
 public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware implements Callable<Integer> {
@@ -31,10 +31,7 @@ public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware 
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) {
         this.ctx = ctx;
 
-        List<String> unmatchedArgs = ctx.getUnmatchedArgs();
-        String[] unmatchedArgsArray = unmatchedArgs.toArray(new String[0]);
-
-        int result = new CommandLine(this).setUnmatchedArgumentsAllowed(true).execute(unmatchedArgsArray);
+        int result = new CommandLine(this).setUnmatchedArgumentsAllowed(true).execute(args);
 
         if (result != 0) {
             throw new PicocliBadResultException(result);
