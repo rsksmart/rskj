@@ -20,7 +20,6 @@ package co.rsk.cli.tools;
 import co.rsk.NodeRunner;
 import co.rsk.RskContext;
 import co.rsk.config.InternalService;
-import co.rsk.config.NodeCliFlags;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.util.PreflightChecksUtils;
@@ -57,7 +56,7 @@ public class StartBootstrap implements Callable<Integer> {
         setUpThread(Thread.currentThread());
         RskContext ctx = null;
         try {
-            ctx = new RskContext(args);
+            ctx = new BootstrapRskContext(args);
             if (ctx.isVersionOrHelpRequested()) {
                 ctx.close();
                 System.exit(0);
