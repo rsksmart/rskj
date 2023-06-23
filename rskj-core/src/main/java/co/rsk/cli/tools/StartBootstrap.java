@@ -55,15 +55,20 @@ public class StartBootstrap implements Callable<Integer> {
 
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
-
-        try (RskContext ctx = new RskContext(args)) {
+        RskContext ctx = null;
+        try {
+            ctx = new RskContext(args);
             if (ctx.isVersionOrHelpRequested()) {
-                return;
+                ctx.close();
+                System.exit(0);
             }
             new CommandLine(new StartBootstrap(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
 
         } catch (Exception e) {
             logger.error("Main thread of RSK bootstrap node crashed", e);
+            if (ctx != null) {
+                ctx.close();
+            }
             System.exit(1);
         }
     }
