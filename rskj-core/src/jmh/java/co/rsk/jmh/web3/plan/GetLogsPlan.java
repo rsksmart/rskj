@@ -24,7 +24,9 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.infra.BenchmarkParams;
+import org.web3j.protocol.core.DefaultBlockParameter;
 
+import java.math.BigInteger;
 import java.util.Optional;
 
 @State(Scope.Benchmark)
@@ -32,16 +34,41 @@ public class GetLogsPlan extends BasePlan {
 
     private String ethFilterId;
 
+    private DefaultBlockParameter fromBlock;
+    private DefaultBlockParameter toBlock;
+    private String address;
+    private String blockHash;
+
     @Override
     @Setup(Level.Trial) // move to "Level.Iteration" in case we set a batch size at some point
     public void setUp(BenchmarkParams params) throws BenchmarkWeb3Exception {
         super.setUp(params);
 
         this.ethFilterId = generateNewFilterId();
+        this.fromBlock = DefaultBlockParameter.valueOf(new BigInteger(getConfiguration().getString("getLogs.fromBlock")));
+        this.toBlock = DefaultBlockParameter.valueOf(new BigInteger(getConfiguration().getString("getLogs.toBlock")));
+        this.address = getConfiguration().getString("getLogs.address");
+        this.blockHash = getConfiguration().getString("getLogs.blockHash");
     }
 
-    public String getEthFilterId() {
-        return ethFilterId;
+    public BigInteger getEthFilterId() {
+        return new BigInteger(this.ethFilterId.replace("0x", ""), 16);
+    }
+
+    public DefaultBlockParameter getFromBlock() {
+        return fromBlock;
+    }
+
+    public DefaultBlockParameter getToBlock() {
+        return toBlock;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public String getBlockHash() {
+        return blockHash;
     }
 
     private String generateNewFilterId() throws BenchmarkWeb3Exception {
