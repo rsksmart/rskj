@@ -28,8 +28,6 @@ public class BenchmarkWeb3E2ELocalWalletRunner {
     public static void main(String[] args) throws Exception {
         Options opt = OptionsHelper.createE2EBuilder(args, "result_web3_e2e_local_wallet.csv")
                 .include(BenchmarkLocalWalletWeb3.class.getName())
-                .warmupIterations(1)
-                .measurementIterations(10)
                 .build();
 
         new Runner(opt).run();

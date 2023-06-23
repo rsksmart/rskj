@@ -30,6 +30,7 @@ public class BenchmarkWeb3E2ETestRunner {
         Options opt = OptionsHelper.createE2EBuilder(args, "result_web3_e2e_test.csv")
                 .include(BenchmarkWeb3.class.getName())
                 .include(BlocksAndTx.class.getName())
+                // this overrides annotations!
                 .warmupIterations(1)
                 .measurementIterations(1)
                 .build();
