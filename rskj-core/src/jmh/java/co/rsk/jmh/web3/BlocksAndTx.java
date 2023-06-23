@@ -27,8 +27,8 @@ import org.web3j.protocol.core.methods.response.*;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode({Mode.SingleShotTime})
-@Warmup(iterations = 3)
-@Measurement(iterations = 20)
+@Warmup(iterations = 25)
+@Measurement(iterations = 100)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Timeout(time = 10)
 public class BlocksAndTx {

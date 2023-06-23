@@ -27,18 +27,15 @@ import org.web3j.protocol.core.methods.response.EthGasPrice;
 import org.web3j.protocol.core.methods.response.EthHashrate;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 // TODO Try maybe some of the methods with org.openjdk.jmh.annotations.Measurement.batchSize, to test simultaneous calls
 
 // annotated fields at class, method or field level are providing default values that can be overriden via CLI or Runner parameters
 @BenchmarkMode({Mode.SingleShotTime})
-@Warmup(iterations = 3)
-@Measurement(iterations = 20)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
+@Warmup(iterations = 25)
+@Measurement(iterations = 100)
 @Timeout(time = 10)
 public class BenchmarkWeb3 {
 
@@ -68,64 +65,42 @@ public class BenchmarkWeb3 {
 
     @Benchmark
     @Timeout(time = 30)
-    public void ethGetLogsByBlockHash(BasePlan plan) throws BenchmarkWeb3Exception {
-        String blockHash = plan.getConfiguration().getString("getLogs.blockHash");
-        plan.getWeb3Connector().ethGetLogs(blockHash);
+    public void ethGetLogsByBlockHash(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethGetLogs(plan.getBlockHash());
     }
 
     @Benchmark
     @Timeout(time = 30)
-    public void ethGetLogsByBlockRange(BasePlan plan) throws BenchmarkWeb3Exception {
-        String fromBlock = plan.getConfiguration().getString("getLogs.fromBlock");
-        String toBlock = plan.getConfiguration().getString("getLogs.toBlock");
-        String address = plan.getConfiguration().getString("getLogs.address");
-
-        DefaultBlockParameter fromDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(fromBlock));
-        DefaultBlockParameter toDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(toBlock));
-
-        plan.getWeb3Connector().ethGetLogs(fromDefaultBlockParameter, toDefaultBlockParameter, address);
+    public void ethGetLogsByBlockRange(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethGetLogs(plan.getFromBlock(), plan.getToBlock(), plan.getAddress());
     }
 
     @Benchmark
     @Timeout(time = 30)
-    public void ethGetLogsByBlockRange_NullAddress(BasePlan plan) throws BenchmarkWeb3Exception {
-        String fromBlock = plan.getConfiguration().getString("getLogs.fromBlock");
-        String toBlock = plan.getConfiguration().getString("getLogs.toBlock");
-
-        DefaultBlockParameter fromDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(fromBlock));
-        DefaultBlockParameter toDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(toBlock));
-
-        plan.getWeb3Connector().ethGetLogs(fromDefaultBlockParameter, toDefaultBlockParameter, null);
+    public void ethGetLogsByBlockRange_NullAddress(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethGetLogs(plan.getFromBlock(), plan.getToBlock(), null);
     }
 
     @Benchmark
-    public void ethNewFilterByBlockHash(BasePlan plan) throws BenchmarkWeb3Exception {
-        String blockHash = plan.getConfiguration().getString("getLogs.blockHash");
-        plan.getWeb3Connector().ethNewFilter(blockHash);
+    public void ethNewFilterByBlockHash(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethNewFilter(plan.getBlockHash());
     }
 
     @Benchmark
-    public void ethNewFilterByBlockRange(BasePlan plan) throws BenchmarkWeb3Exception {
-        String fromBlock = plan.getConfiguration().getString("getLogs.fromBlock");
-        String toBlock = plan.getConfiguration().getString("getLogs.toBlock");
-        String address = plan.getConfiguration().getString("getLogs.address");
-
-        DefaultBlockParameter fromDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(fromBlock));
-        DefaultBlockParameter toDefaultBlockParameter = DefaultBlockParameter.valueOf(new BigInteger(toBlock));
-
-        plan.getWeb3Connector().ethNewFilter(fromDefaultBlockParameter, toDefaultBlockParameter, address);
+    public void ethNewFilterByBlockRange(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethNewFilter(plan.getFromBlock(), plan.getToBlock(), plan.getAddress());
     }
 
     @Benchmark
     @Timeout(time = 30)
     public void ethGetFilterChanges(GetLogsPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethGetFilterChanges(new BigInteger(plan.getEthFilterId().replace("0x", ""), 16));
+        plan.getWeb3Connector().ethGetFilterChanges(plan.getEthFilterId());
     }
 
     @Benchmark
     @Timeout(time = 30)
     public void ethGetFilterLogs(GetLogsPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethGetFilterLogs(new BigInteger(plan.getEthFilterId().replace("0x", ""), 16));
+        plan.getWeb3Connector().ethGetFilterLogs(plan.getEthFilterId());
     }
 
     @Benchmark
@@ -200,32 +175,19 @@ public class BenchmarkWeb3 {
 
     @Benchmark
     @Timeout(time = 60)
-    public void traceFilterBetweenBlockRange(BasePlan plan) throws BenchmarkWeb3Exception {
-        String fromBlock = plan.getConfiguration().getString("trace.fromBlock");
-        String toBlock = plan.getConfiguration().getString("trace.toBlock");
-        plan.getWeb3Connector().traceFilter(fromBlock, toBlock);
+    public void traceFilterBetweenBlockRange(TracePlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().traceFilter(plan.getFromBlock(), plan.getToBlock());
     }
 
     @Benchmark
     @Timeout(time = 60)
-    public void traceFilterBetweenAddresses(BasePlan plan) throws BenchmarkWeb3Exception {
-        String fromBlock = plan.getConfiguration().getString("trace.fromBlock");
-        String toBlock = plan.getConfiguration().getString("trace.toBlock");
-        List<String> fromAddresses = Stream.of(
-                (plan.getConfiguration().getString("trace.fromAddresses"))
-                        .split(",")
-        ).collect(Collectors.toList());
-        List<String> toAddresses = Stream.of(
-                (plan.getConfiguration().getString("trace.toAddresses"))
-                        .split(",")
-        ).collect(Collectors.toList());
-        plan.getWeb3Connector().traceFilter(fromBlock, toBlock, fromAddresses, toAddresses);
+    public void traceFilterBetweenAddresses(TracePlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().traceFilter(plan.getFromBlock(), plan.getToBlock(), plan.getFromAddresses(), plan.getToAddresses());
     }
 
     @Benchmark
-    public void traceGet(BasePlan plan) throws BenchmarkWeb3Exception {
-        String transactionHash = plan.getConfiguration().getString("trace.transactionHash");
-        plan.getWeb3Connector().traceGet(transactionHash, Stream.of("0x0").collect(Collectors.toList()));
+    public void traceGet(TracePlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().traceGet(plan.getTransactionHash(), plan.getPositions());
     }
 
     @Benchmark
