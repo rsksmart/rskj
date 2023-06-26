@@ -85,13 +85,20 @@ public class SnapshotProcessor implements InternalService {
                 trieElements.size(),
                 message.getChunkOfTrieKeyValue().length
         );
+
         this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
         this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
+        logger.debug("State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
         if(!message.isComplete()) {
             // request another chunk
             requestState(peer, message.getFrom() + trieElements.size(), message.getBlockNumber());
         } else {
-            logger.debug("State Completed! {} chunks ({} bytes)", this.stateChunkSize.toString(), this.stateSize.toString());
+            logger.debug("State Completed! {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
+
+            logger.debug("Starting again the infinite loop!");
+            this.stateSize = BigInteger.ZERO;
+            this.stateChunkSize = BigInteger.ZERO;
+            requestState(peer, 0l, 0l);
         }
     }
 
