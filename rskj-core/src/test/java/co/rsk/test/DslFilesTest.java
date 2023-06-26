@@ -28,9 +28,6 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -38,9 +35,7 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
@@ -50,39 +45,10 @@ import java.util.Arrays;
  * Created by ajlopez on 8/7/2016.
  */
 class DslFilesTest {
-    private World world;
-    
-    @BeforeEach
-    public void setup() {
-        TestSystemProperties config = Mockito.spy(new TestSystemProperties());
-        ActivationConfig activationConfig = config.getActivationConfig();
-        ActivationConfig activationConfigSpy = Mockito.spy(activationConfig);
-        
-        Mockito.doReturn(activationConfigSpy).when(config).getActivationConfig();
-
-        Mockito.doReturn(false)
-                .when(activationConfigSpy).isActive(Mockito.eq(ConsensusRule.RSKIPXXX), Mockito.anyLong());
-
-        Mockito.doAnswer(i1 -> {
-            ActivationConfig.ForBlock activationConfigForBlock = Mockito.spy(activationConfig.forBlock(i1.getArgument(0)));
-
-            Mockito.doAnswer(i2 -> {
-                if (i2.getArgument(0).equals(ConsensusRule.RSKIPXXX)) {
-                    return false;
-                }
-
-                return i2.callRealMethod();
-            }).when(activationConfigForBlock).isActive(Mockito.any());
-
-            return activationConfigForBlock;
-        }).when(activationConfigSpy).forBlock(Mockito.anyLong());
-        
-        world = new World(config);
-    }
-    
     @Test
     void runAccounts01Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/accounts01.txt");
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -92,6 +58,7 @@ class DslFilesTest {
     @Test
     void runTransfers01Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/transfers01.txt");
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -104,6 +71,7 @@ class DslFilesTest {
     @Test
     void runCreate01Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/create01.txt");
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -128,6 +96,7 @@ class DslFilesTest {
 
 
         DslParser parser = DslParser.fromResource("dsl/create02.txt");
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -189,6 +158,7 @@ class DslFilesTest {
     @Test
     void runCreateContractAndPreserveBalance() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/create_and_preserve_balance.txt");
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -216,6 +186,7 @@ class DslFilesTest {
     @Test
     void runContracts01Resource() throws FileNotFoundException {
         DslParser parser = DslParser.fromResource("dsl/contracts01.txt");
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));
     }
@@ -223,7 +194,7 @@ class DslFilesTest {
     @Test
     void runContracts02Resource() throws FileNotFoundException {
         DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));
     }
@@ -231,7 +202,7 @@ class DslFilesTest {
     @Test
     void runContracts03Resource() throws FileNotFoundException {
         DslParser parser = DslParser.fromResource("dsl/contracts03.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));
     }
@@ -239,7 +210,7 @@ class DslFilesTest {
     @Test
     void runContracts04Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/contracts04.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));
     }
@@ -247,7 +218,7 @@ class DslFilesTest {
     @Test
     void runContracts05Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/contracts05.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));
     }
@@ -255,7 +226,7 @@ class DslFilesTest {
     @Test
     void runContracts06Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/contracts06.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));
     }
@@ -263,7 +234,7 @@ class DslFilesTest {
     @Test
     void runLogs01Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/logs01.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -308,7 +279,7 @@ class DslFilesTest {
     @Test
     void runContracts07Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/contracts07.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         Assertions.assertDoesNotThrow(() -> processor.processCommands(parser));
     }
@@ -316,7 +287,7 @@ class DslFilesTest {
     @Test
     void runBlocks01Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/blocks01.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -328,7 +299,7 @@ class DslFilesTest {
     @Test
     void runBlocks02Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/blocks02.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -340,7 +311,7 @@ class DslFilesTest {
     @Test
     void runBlocks03Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/blocks03.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -352,7 +323,7 @@ class DslFilesTest {
     @Test
     void runUncles01Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/uncles01.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -366,7 +337,7 @@ class DslFilesTest {
     @Test
     void runUncles02Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/uncles02.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -381,7 +352,7 @@ class DslFilesTest {
     @Test
     void runUncles03Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/uncles03.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -396,7 +367,7 @@ class DslFilesTest {
     @Test
     void runUncles04Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/uncles04.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -411,7 +382,7 @@ class DslFilesTest {
     @Test
     void runUncles05Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/uncles05.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -429,7 +400,7 @@ class DslFilesTest {
     @Test
     void runCreateAfterSuicide() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/createAfterSuicide.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -449,7 +420,7 @@ class DslFilesTest {
     @Test
     void runCodeSizeAfterSuicide() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/codeSizeAfterSuicide.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -471,7 +442,7 @@ class DslFilesTest {
     @Test
     void onReorganizationTxGetsReaddedToTxPool() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/reorganization.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -483,7 +454,7 @@ class DslFilesTest {
     @Test
     void onReorganizationTxDoesNotGetsReaddedToTxPoolIfPresentOnBothChains() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/reorganization_same_tx_on_both.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -494,7 +465,7 @@ class DslFilesTest {
     @Test
     void onReorganizationTxDoesNotGetsReaddedIfCompetingTxIsOnBlock() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/reorganization_different_tx_on_both_same_nonce.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -505,7 +476,7 @@ class DslFilesTest {
     @Test
     void onReorganizationTxDoesGetsReaddedIfNonCompetingTxIsOnBlock() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/reorganization_different_non_competing_tx.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 

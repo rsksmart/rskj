@@ -19,7 +19,6 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
@@ -37,7 +36,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -54,7 +52,6 @@ public class BlockBuilder {
     private byte[] gasLimit;
     private final BridgeSupportFactory bridgeSupportFactory;
     private BlockStore blockStore;
-    private RskSystemProperties config;
 
     public BlockBuilder(Blockchain blockChain, BridgeSupportFactory bridgeSupportFactory, BlockStore blockStore) {
         this.blockChain = blockChain;
@@ -89,11 +86,6 @@ public class BlockBuilder {
         return this;
     }
 
-    public BlockBuilder config(RskSystemProperties config) {
-        this.config = config;
-        return this;
-    }
-
     /**
      * This has to be called after .parent() in order to have any effect
      */
@@ -111,7 +103,7 @@ public class BlockBuilder {
         Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
         if (blockChain != null) {
-            final RskSystemProperties config = Optional.ofNullable(this.config).orElse(new TestSystemProperties());
+            final TestSystemProperties config = new TestSystemProperties();
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),

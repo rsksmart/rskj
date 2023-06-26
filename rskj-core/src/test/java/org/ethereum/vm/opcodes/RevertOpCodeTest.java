@@ -1,16 +1,11 @@
 package org.ethereum.vm.opcodes;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.io.FileNotFoundException;
 
@@ -47,40 +42,10 @@ class RevertOpCodeTest {
     }
     */
 
-    private World world;
-
-    @BeforeEach
-    void setUp() {
-        TestSystemProperties config = Mockito.spy(new TestSystemProperties());
-        ActivationConfig activationConfig = config.getActivationConfig();
-        ActivationConfig activationConfigSpy = Mockito.spy(activationConfig);
-
-        Mockito.doReturn(activationConfigSpy).when(config).getActivationConfig();
-
-        Mockito.doReturn(false)
-                .when(activationConfigSpy).isActive(Mockito.eq(ConsensusRule.RSKIPXXX), Mockito.anyLong());
-
-        Mockito.doAnswer(i1 -> {
-            ActivationConfig.ForBlock activationConfigForBlock = Mockito.spy(activationConfig.forBlock(i1.getArgument(0)));
-
-            Mockito.doAnswer(i2 -> {
-                if (i2.getArgument(0).equals(ConsensusRule.RSKIPXXX)) {
-                    return false;
-                }
-
-                return i2.callRealMethod();
-            }).when(activationConfigForBlock).isActive(Mockito.any());
-
-            return activationConfigForBlock;
-        }).when(activationConfigSpy).forBlock(Mockito.anyLong());
-
-        world = new World(config);        
-    }
-
     @Test
     void runFullContractThenRunAndRevert() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/opcode_revert1.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -93,7 +58,7 @@ class RevertOpCodeTest {
     @Test
     void runAndRevertThenRunFullContract() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/opcode_revert2.txt");
-        
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 

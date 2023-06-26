@@ -59,7 +59,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.ethereum.util.ByteUtil.byteArrayToLong;
 
@@ -67,18 +66,16 @@ public class StateTestRunner {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private TestSystemProperties config;
-    private BlockFactory blockFactory;
-    private RepositoryBtcBlockStoreWithCache.Factory blockStoreWithCache;
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final RepositoryBtcBlockStoreWithCache.Factory blockStoreWithCache = new RepositoryBtcBlockStoreWithCache.Factory(
+            config.getNetworkConstants().bridgeConstants.getBtcParams()
+    );
 
-    private BridgeSupportFactory bridgeSupportFactory;
+    private final BridgeSupportFactory bridgeSupportFactory;
 
     public static List<String> run(StateTestingCase stateTestCase2) {
-        return run(stateTestCase2, null);
-    }
-
-    public static List<String> run(StateTestingCase stateTestCase2, TestSystemProperties config) {
-        return new StateTestRunner(stateTestCase2, config).runImpl();
+        return new StateTestRunner(stateTestCase2).runImpl();
     }
 
     protected StateTestingCase stateTestCase;
@@ -94,15 +91,6 @@ public class StateTestRunner {
     protected SignatureCache signatureCache;
 
     public StateTestRunner(StateTestingCase stateTestCase) {
-        this(stateTestCase, null);
-    }
-
-    public StateTestRunner(StateTestingCase stateTestCase, TestSystemProperties testSystemProperties) {
-        config = Optional.ofNullable(testSystemProperties).orElse(new TestSystemProperties());
-        blockFactory = new BlockFactory(config.getActivationConfig());
-        blockStoreWithCache = new RepositoryBtcBlockStoreWithCache.Factory(
-                config.getNetworkConstants().bridgeConstants.getBtcParams()
-        );
         this.stateTestCase = stateTestCase;
         this.signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         this.bridgeSupportFactory = new BridgeSupportFactory(
@@ -130,9 +118,9 @@ public class StateTestRunner {
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
 
-        try {
+        try{
             executor.executeTransaction();
-        } catch (StackOverflowError soe) {
+        } catch (StackOverflowError soe){
             logger.error(" !!! StackOverflowError: update your java run command with -Xss32M !!!");
             System.exit(-1);
         }
@@ -192,16 +180,16 @@ public class StateTestRunner {
         List<LogInfo> origLogs = programResult.getLogInfoList();
         List<LogInfo> postLogs = LogBuilder.build(stateTestCase.getLogs());
 
-        List<String> logsResult = LogsValidator.valid(origLogs, postLogs, vStats);
+        List<String> logsResult = LogsValidator.valid(origLogs, postLogs,vStats);
 
         Repository postRepository = RepositoryBuilder.build(stateTestCase.getPost());
 
         // Balances cannot be validated because has consumption for CALLs differ.
-        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, false, false, vStats);
+        List<String> repoResults = RepositoryValidator.valid(repository, postRepository,  false ,false,vStats);
 
         logger.info("--------- POST Validation---------");
         List<String> outputResults =
-                OutputValidator.valid(ByteUtil.toHexString(programResult.getHReturn()), stateTestCase.getOut(), vStats);
+                OutputValidator.valid(ByteUtil.toHexString(programResult.getHReturn()), stateTestCase.getOut(),vStats);
 
         List<String> results = new ArrayList<>();
         results.addAll(repoResults);
@@ -212,9 +200,9 @@ public class StateTestRunner {
             logger.error(result);
         }
 
-        if ((vStats.storageChecks == 0) && (vStats.logChecks == 0) &&
-                (vStats.balancetChecks == 0) && (vStats.outputChecks == 0) &&
-                (vStats.blockChecks == 0)) {
+        if ((vStats.storageChecks==0) && (vStats.logChecks==0) &&
+                (vStats.balancetChecks==0) && (vStats.outputChecks==0) &&
+                (vStats.blockChecks==0)) {
             // This generally mean that the test didn't check anything
             // AccountChecks are considered not indicative of the result of the test
             logger.info("IRRELEVANT\n");
@@ -224,7 +212,6 @@ public class StateTestRunner {
     }
 
     public static final byte[] ZERO32_BYTE_ARRAY = new byte[32];
-
     public Block build(Env env) {
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                 // Don't use the empty parent hash because it's used to log and

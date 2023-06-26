@@ -35,17 +35,12 @@
 
 package co.rsk.jsontestsuite;
 
-import co.rsk.config.TestSystemProperties;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.MethodOrderer;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -62,36 +57,6 @@ import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
 class LocalStateTest {
-
-    private TestSystemProperties config;
-
-    @BeforeEach
-    public void setup() {
-        // TODO remove this after Homestead launch and shacommit update with actual block number
-        // for this JSON test commit the Homestead block was defined as 900000
-        config = Mockito.spy(new TestSystemProperties());
-        ActivationConfig activationConfig = config.getActivationConfig();
-        ActivationConfig activationConfigSpy = Mockito.spy(activationConfig);
-
-        Mockito.doReturn(activationConfigSpy).when(config).getActivationConfig();
-
-        Mockito.doReturn(false)
-                .when(activationConfigSpy).isActive(Mockito.eq(ConsensusRule.RSKIPXXX), Mockito.anyLong());
-
-        Mockito.doAnswer(i1 -> {
-            ActivationConfig.ForBlock activationConfigForBlock = Mockito.spy(activationConfig.forBlock(i1.getArgument(0)));
-
-            Mockito.doAnswer(i2 -> {
-                if (i2.getArgument(0).equals(ConsensusRule.RSKIPXXX)) {
-                    return false;
-                }
-
-                return i2.callRealMethod();
-            }).when(activationConfigForBlock).isActive(Mockito.any());
-
-            return activationConfigForBlock;
-        }).when(activationConfigSpy).forBlock(Mockito.anyLong());
-    }
 
     @Disabled("this method is mostly for hands-on convenient testing")
     public void stSingleTest() throws IOException {
@@ -280,7 +245,7 @@ class LocalStateTest {
          excluded.add("CallRecursiveContract");
 
 
-        GitHubJSONTestSuite.runStateTest(json, excluded, config);
+        GitHubJSONTestSuite.runStateTest(json, excluded);
     }
 
     @Test

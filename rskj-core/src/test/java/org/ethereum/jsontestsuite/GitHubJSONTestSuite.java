@@ -19,7 +19,6 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.TestSystemProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
@@ -240,10 +239,6 @@ public class GitHubJSONTestSuite {
     }
 
     public static void runStateTest(String jsonSuite, Set<String> excluded) throws IOException {
-        runStateTest(jsonSuite, excluded, null);
-    }
-
-    public static void runStateTest(String jsonSuite, Set<String> excluded, TestSystemProperties config) throws IOException {
 
         StateTestSuite stateTestSuite = new StateTestSuite(jsonSuite);
         Map<String, StateTestingCase> testCases = stateTestSuite.getTestCases();
@@ -276,7 +271,7 @@ public class GitHubJSONTestSuite {
             logger.info(output);
             logger.info(line);
 
-            List<String> result = StateTestRunner.run(testCases.get(testName), config);
+            List<String> result = StateTestRunner.run(testCases.get(testName));
             results.put(testName,result);
 
 

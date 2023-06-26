@@ -43,7 +43,7 @@ class TxValidatorIntrinsicGasLimitValidatorTest {
     @BeforeEach
     void setUp() {
         constants = Constants.regtest();
-        activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.ARE_BRIDGE_TXS_PAID, ConsensusRule.RSKIPXXX);
+        activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.ARE_BRIDGE_TXS_PAID);
     }
 
     @Test

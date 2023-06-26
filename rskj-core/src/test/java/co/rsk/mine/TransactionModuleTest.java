@@ -80,7 +80,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 
 import java.math.BigInteger;
 import java.time.Clock;
@@ -93,45 +92,23 @@ class TransactionModuleTest {
     private BlockFactory blockFactory;
     private SignatureCache signatureCache;
     private TransactionExecutorFactory transactionExecutorFactory;
+    private ActivationConfig activationConfig;
     private Constants constants;
     private Block executionBlock;
-    private ActivationConfig activationConfigSpy;
-    private ActivationConfig activationConfig;
-    private ActivationConfig.ForBlock activationConfigForBlock;
-    private World world;
 
     @BeforeEach
     void setUp() {
         executionBlock = Mockito.mock(Block.class);
         constants = Mockito.mock(Constants.class);
         config = Mockito.spy(new TestSystemProperties());
-        activationConfig = config.getActivationConfig();
-        activationConfigSpy = Mockito.spy(activationConfig);
+        activationConfig = Mockito.spy(config.getActivationConfig());
 
-        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
-        Mockito.doReturn(activationConfigSpy).when(config).getActivationConfig();
+        Mockito.when(config.getActivationConfig()).thenReturn(activationConfig);
 
-        Mockito.doReturn(false)
-                .when(activationConfigSpy).isActive(Mockito.eq(ConsensusRule.RSKIPXXX), Mockito.anyLong());
-
-        Mockito.doAnswer(i1 -> {
-            activationConfigForBlock = Mockito.spy(activationConfig.forBlock(i1.getArgument(0)));
-
-            Mockito.doAnswer(i2 -> {
-                if (i2.getArgument(0).equals(ConsensusRule.RSKIPXXX)) {
-                    return false;
-                }
-
-                return i2.callRealMethod();
-            }).when(activationConfigForBlock).isActive(Mockito.any());
-
-            return activationConfigForBlock;
-        }).when(activationConfigSpy).forBlock(Mockito.anyLong());
-
-        blockFactory = new BlockFactory(activationConfigSpy);
+        blockFactory = new BlockFactory(activationConfig);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
-        world = new World(config);
+        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
     }
 
     @Test
@@ -141,35 +118,25 @@ class TransactionModuleTest {
         byte[] bytes = new byte[]{-8, 96, -128, 8, -126, -61, 80, -108, -31, 126, -117, -65, -39, -94, 75, -27, 104, -101, 13, -118, 50, 8, 31, -83, -40, -94, 59, 107, 7, -127, -1, 102, -96, -63, -110, 91, -2, 42, -19, 18, 4, 67, -64, 48, -45, -85, -123, 41, 14, -48, -124, 118, 21, -63, -39, -45, 67, 116, -103, 93, 37, 4, 88, -61, 49, -96, 77, -30, -116, 59, -58, -82, -95, 76, 46, 124, 115, -32, -80, 125, 30, -42, -75, -111, -49, -41, 121, -73, -121, -68, -41, 72, -120, 94, 82, 42, 17, 61};
         Transaction txInBlock = new ImmutableTransaction(bytes);
 
-        Assertions.assertEquals(txInBlock.transactionCost(constants, activationConfigSpy.forBlock(executionBlock.getNumber()), new BlockTxSignatureCache(new ReceivedTxSignatureCache())), 21068L);
+        Assertions.assertEquals(txInBlock.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber()), new BlockTxSignatureCache(new ReceivedTxSignatureCache())), 21068L);
     }
 
     @Test
     void testTransactionCostWithRSKIPXXXEnabled() {
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
 
-        Mockito.doAnswer(i1 -> {
-            activationConfigForBlock = Mockito.spy(activationConfig.forBlock(i1.getArgument(0)));
-
-            Mockito.doAnswer(i2 -> {
-                if (i2.getArgument(0).equals(ConsensusRule.RSKIPXXX)) {
-                    return true;
-                }
-
-                return i2.callRealMethod();
-            }).when(activationConfigForBlock).isActive(Mockito.any());
-
-            return activationConfigForBlock;
-        }).when(activationConfigSpy).forBlock(Mockito.anyLong());
-
         byte[] bytes = new byte[]{-8, 96, -128, 8, -126, -61, 80, -108, -31, 126, -117, -65, -39, -94, 75, -27, 104, -101, 13, -118, 50, 8, 31, -83, -40, -94, 59, 107, 7, -127, -1, 102, -96, -63, -110, 91, -2, 42, -19, 18, 4, 67, -64, 48, -45, -85, -123, 41, 14, -48, -124, 118, 21, -63, -39, -45, 67, 116, -103, 93, 37, 4, 88, -61, 49, -96, 77, -30, -116, 59, -58, -82, -95, 76, 46, 124, 115, -32, -80, 125, 30, -42, -75, -111, -49, -41, 121, -73, -121, -68, -41, 72, -120, 94, 82, 42, 17, 61};
         Transaction txInBlock = new ImmutableTransaction(bytes);
 
-        Assertions.assertEquals(txInBlock.transactionCost(constants, activationConfigSpy.forBlock(executionBlock.getNumber()), new BlockTxSignatureCache(new ReceivedTxSignatureCache())), 21016L);
+        Mockito.doReturn(true)
+                .when(activationConfig).isActive(Mockito.eq(ConsensusRule.RSKIPXXX), Mockito.anyLong());
+
+        Assertions.assertEquals(txInBlock.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber()), new BlockTxSignatureCache(new ReceivedTxSignatureCache())), 21016L);
     }
 
     @Test
     void sendTransactionMustNotBeMined() {
+        World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
         TrieStore trieStore = world.getTrieStore();
@@ -196,6 +163,7 @@ class TransactionModuleTest {
 
     @Test
     void sendTransactionMustBeMined() {
+        World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
         TrieStore trieStore = world.getTrieStore();
@@ -228,7 +196,7 @@ class TransactionModuleTest {
     @Test
     void sendSeveralTransactionsWithAutoMining() {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        world = new World(config, receiptStore);
+        World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
         MiningMainchainView mainchainView = new MiningMainchainViewImpl(world.getBlockStore(), 1);
@@ -261,7 +229,7 @@ class TransactionModuleTest {
     void sendRawTransactionWithAutoMining() throws Exception {
 
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        world = new World(config, receiptStore);
+        World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
         TrieStore trieStore = world.getTrieStore();
@@ -290,7 +258,7 @@ class TransactionModuleTest {
     void sendRawTransactionWithoutAutoMining() {
 
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        world = new World(config, receiptStore);
+        World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
         TrieStore trieStore = world.getTrieStore();
@@ -313,6 +281,7 @@ class TransactionModuleTest {
 
     @Test
     void testGasEstimation() {
+        World world = new World();
         Blockchain blockchain = world.getBlockChain();
 
         TrieStore trieStore = world.getTrieStore();
