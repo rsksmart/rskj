@@ -47,9 +47,6 @@ import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -77,7 +74,6 @@ import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -85,54 +81,12 @@ import java.math.BigInteger;
 import java.time.Clock;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class TransactionModuleTest {
-    private TestSystemProperties config;
-    private BlockFactory blockFactory;
-    private SignatureCache signatureCache;
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     private TransactionExecutorFactory transactionExecutorFactory;
-    private ActivationConfig activationConfig;
-    private Constants constants;
-    private Block executionBlock;
-
-    @BeforeEach
-    void setUp() {
-        executionBlock = Mockito.mock(Block.class);
-        constants = Mockito.mock(Constants.class);
-        config = Mockito.spy(new TestSystemProperties());
-        activationConfig = Mockito.spy(config.getActivationConfig());
-
-        Mockito.when(config.getActivationConfig()).thenReturn(activationConfig);
-
-        blockFactory = new BlockFactory(activationConfig);
-        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
-
-        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
-    }
-
-    @Test
-    void testTransactionCostWithRSKIPXXXDisabled() {
-        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
-
-        byte[] bytes = new byte[]{-8, 96, -128, 8, -126, -61, 80, -108, -31, 126, -117, -65, -39, -94, 75, -27, 104, -101, 13, -118, 50, 8, 31, -83, -40, -94, 59, 107, 7, -127, -1, 102, -96, -63, -110, 91, -2, 42, -19, 18, 4, 67, -64, 48, -45, -85, -123, 41, 14, -48, -124, 118, 21, -63, -39, -45, 67, 116, -103, 93, 37, 4, 88, -61, 49, -96, 77, -30, -116, 59, -58, -82, -95, 76, 46, 124, 115, -32, -80, 125, 30, -42, -75, -111, -49, -41, 121, -73, -121, -68, -41, 72, -120, 94, 82, 42, 17, 61};
-        Transaction txInBlock = new ImmutableTransaction(bytes);
-
-        Assertions.assertEquals(txInBlock.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber()), new BlockTxSignatureCache(new ReceivedTxSignatureCache())), 21068L);
-    }
-
-    @Test
-    void testTransactionCostWithRSKIPXXXEnabled() {
-        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
-
-        byte[] bytes = new byte[]{-8, 96, -128, 8, -126, -61, 80, -108, -31, 126, -117, -65, -39, -94, 75, -27, 104, -101, 13, -118, 50, 8, 31, -83, -40, -94, 59, 107, 7, -127, -1, 102, -96, -63, -110, 91, -2, 42, -19, 18, 4, 67, -64, 48, -45, -85, -123, 41, 14, -48, -124, 118, 21, -63, -39, -45, 67, 116, -103, 93, 37, 4, 88, -61, 49, -96, 77, -30, -116, 59, -58, -82, -95, 76, 46, 124, 115, -32, -80, 125, 30, -42, -75, -111, -49, -41, 121, -73, -121, -68, -41, 72, -120, 94, 82, 42, 17, 61};
-        Transaction txInBlock = new ImmutableTransaction(bytes);
-
-        Mockito.doReturn(true)
-                .when(activationConfig).isActive(Mockito.eq(ConsensusRule.RSKIPXXX), Mockito.anyLong());
-
-        Assertions.assertEquals(txInBlock.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber()), new BlockTxSignatureCache(new ReceivedTxSignatureCache())), 21016L);
-    }
 
     @Test
     void sendTransactionMustNotBeMined() {
@@ -327,17 +281,17 @@ class TransactionModuleTest {
         BigInteger nonce = repository.getAccountState(srcAddr).getNonce();
         RskAddress contractAddress = new RskAddress(HashUtil.calcNewAddr(srcAddr.getBytes(), nonce.toByteArray()));
         int gasLimit = 5000000; // start with 5M
-        int consumed = checkEstimateGas(callCallWithValue, 33472 + GasCost.STIPEND_CALL, gasLimit, srcAddr, contractAddress, web3, repository);
+        int consumed = checkEstimateGas(callCallWithValue, 33264 + GasCost.STIPEND_CALL, gasLimit, srcAddr, contractAddress, web3, repository);
 
         // Now that I know the estimation, call again using the estimated value
         // it should not fail. We set the gasLimit to the expected value plus 1 to
         // differentiate between OOG and success.
-        int consumed2 = checkEstimateGas(callCallWithValue, 33472 + GasCost.STIPEND_CALL, consumed + 1, srcAddr, contractAddress, web3, repository);
+        int consumed2 = checkEstimateGas(callCallWithValue, 33264 + GasCost.STIPEND_CALL, consumed + 1, srcAddr, contractAddress, web3, repository);
 
         Assertions.assertEquals(consumed, consumed2);
 
-        consumed = checkEstimateGas(callUnfill, 46942, gasLimit, srcAddr, contractAddress, web3, repository);
-        consumed2 = checkEstimateGas(callUnfill, 46942, consumed + 1, srcAddr, contractAddress, web3, repository);
+        consumed = checkEstimateGas(callUnfill, 46734, gasLimit, srcAddr, contractAddress, web3, repository);
+        consumed2 = checkEstimateGas(callUnfill, 46734, consumed + 1, srcAddr, contractAddress, web3, repository);
 
         Assertions.assertEquals(consumed, consumed2);
     }

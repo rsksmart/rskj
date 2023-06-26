@@ -99,7 +99,7 @@ class Web3ImplLogsTest {
     private static final String ONE_TOPIC = "0000000000000000000000000000000000000000000000000000000000000001";
     private static final String INCREMENT_METHOD_SIGNATURE = "371303c0";
     private static final String GET_VALUE_METHOD_SIGNATURE = "20965255";
-    private static final String TRACKED_TEST_BLOCK_HASH = "0xafb368a4f74e51a3c6b6d72b049c4fc7bc7506251f13a3afa4fee4bece0e85eb";
+    private static final String TRACKED_TEST_BLOCK_HASH = "0x8eac2053d453195bfede97c77ee215b64bf47c8bdcecc75c67a8aa6f7c66f173";
     private static final String UNTRACKED_TEST_BLOCK_HASH = "0xdea168a4f74e51a3eeb6d72b049c4fc7bc750dd51f13a3afa4fee4bece0e85eb";
     private final TestSystemProperties config = new TestSystemProperties();
 

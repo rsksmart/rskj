@@ -23,6 +23,9 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -37,12 +40,14 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.mockito.Mockito.mock;
 
 class TransactionTest {
 
@@ -435,6 +440,30 @@ class TransactionTest {
         Assertions.assertEquals(chainId, transaction.getChainId());
         Assertions.assertEquals(Transaction.LOWER_REAL_V, transaction.getSignature().getV());
         Assertions.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, transaction.getEncodedV());
+    }
+
+    @Test
+    void testTransactionCostWithRSKIPXXXDisabled() {
+        byte[] bytes = new byte[]{-8, 96, -128, 8, -126, -61, 80, -108, -31, 126, -117, -65, -39, -94, 75, -27, 104, -101, 13, -118, 50, 8, 31, -83, -40, -94, 59, 107, 7, -127, -1, 102, -96, -63, -110, 91, -2, 42, -19, 18, 4, 67, -64, 48, -45, -85, -123, 41, 14, -48, -124, 118, 21, -63, -39, -45, 67, 116, -103, 93, 37, 4, 88, -61, 49, -96, 77, -30, -116, 59, -58, -82, -95, 76, 46, 124, 115, -32, -80, 125, 30, -42, -75, -111, -49, -41, 121, -73, -121, -68, -41, 72, -120, 94, 82, 42, 17, 61};
+        Transaction txInBlock = new ImmutableTransaction(bytes);
+
+        Constants constants = Mockito.mock(Constants.class);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        Mockito.doReturn(false).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIPXXX));
+
+        Assertions.assertEquals(21068L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
+    }
+
+    @Test
+    void testTransactionCostWithRSKIPXXXEnabled() {
+        byte[] bytes = new byte[]{-8, 96, -128, 8, -126, -61, 80, -108, -31, 126, -117, -65, -39, -94, 75, -27, 104, -101, 13, -118, 50, 8, 31, -83, -40, -94, 59, 107, 7, -127, -1, 102, -96, -63, -110, 91, -2, 42, -19, 18, 4, 67, -64, 48, -45, -85, -123, 41, 14, -48, -124, 118, 21, -63, -39, -45, 67, 116, -103, 93, 37, 4, 88, -61, 49, -96, 77, -30, -116, 59, -58, -82, -95, 76, 46, 124, 115, -32, -80, 125, 30, -42, -75, -111, -49, -41, 121, -73, -121, -68, -41, 72, -120, 94, 82, 42, 17, 61};
+        Transaction txInBlock = new ImmutableTransaction(bytes);
+
+        Constants constants = Mockito.mock(Constants.class);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIPXXX));
+
+        Assertions.assertEquals(21016L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }
 }
 
