@@ -26,12 +26,14 @@ import java.util.*;
 public class SnapshotProcessor implements InternalService {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
+    private static final String KBYTES = "kbytes";
 
     private final NodeManager nodeManager;
     private final PeerClientFactory peerClientFactory;
     private final Blockchain blockchain;
     private final TrieStore trieStore;
     private final int chunkSize;
+    private final String chunkSizeType;
 
     private boolean connected;
     private long messageId = 0;
@@ -45,13 +47,14 @@ public class SnapshotProcessor implements InternalService {
             Blockchain blockchain,
             TrieStore trieStore,
             PeerClientFactory peerClientFactory,
-            int chunkSize) {
+            int chunkSize, String chunkSizeType) {
         this.nodeManager = nodeManager;
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.peerClientFactory = peerClientFactory;
         this.connected = false;
         this.chunkSize = chunkSize;
+        this.chunkSizeType = chunkSizeType;
         this.iterators = Maps.newConcurrentMap();
     }
 
@@ -120,14 +123,15 @@ public class SnapshotProcessor implements InternalService {
             iterators.put(sender.getPeerNodeID().toString(), it);
         }
 
-        long i = request.getFrom();
-        long limit = request.getFrom() + chunkSize;
+        long i = KBYTES.equals(this.chunkSizeType)? 0l : request.getFrom();
+        long limit = KBYTES.equals(this.chunkSizeType)? chunkSize * 1024 : i + chunkSize;
         while (it.hasNext() && i < limit) {
             IterationElement e = it.next();
             byte[] key = e.getNodeKey().encode();
             byte[] value = e.getNode().getValue();
-            trieEncoded.add(RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(value)));
-            i++;
+            final byte[] element = RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(value));
+            trieEncoded.add(element);
+            i = KBYTES.equals(this.chunkSizeType)? i + element.length : i+1;
         }
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));

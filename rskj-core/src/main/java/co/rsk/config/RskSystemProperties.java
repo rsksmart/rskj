@@ -379,6 +379,9 @@ public class RskSystemProperties extends SystemProperties {
 
     public int getSnapshotChunkSize() { return configFromFiles.getInt("sync.snapshot.chunkSize");}
 
+    public String getSnapshotChunkSizeType() {
+        return configFromFiles.getString("sync.snapshot.chunkSizeType");
+    }
     // its fixed, cannot be set by config file
     public int getChunkSize() {
         return CHUNK_SIZE;
@@ -486,4 +489,5 @@ public class RskSystemProperties extends SystemProperties {
                 .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), Long.parseLong(entry.getValue().toString())))
                 .forEach(entry -> methodTimeoutMap.put(entry.getKey(), entry.getValue()));
     }
+
 }

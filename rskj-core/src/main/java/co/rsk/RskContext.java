@@ -1947,7 +1947,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             getCompositeEthereumListener(),
                             getEthereumChannelInitializerFactory()
                     ),
-                    getRskSystemProperties().getSnapshotChunkSize()
+                    getRskSystemProperties().getSnapshotChunkSize(),
+                    getRskSystemProperties().getSnapshotChunkSizeType()
             );
         }
         return snapshotProcessor;
