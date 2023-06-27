@@ -32,6 +32,9 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
@@ -39,7 +42,10 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static co.rsk.peg.PegTestUtils.BTC_TX_LEGACY_VERSION;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -419,6 +425,11 @@ class PowpegMigrationTest {
                 Script redeemScript = new Script(input.getScriptSig().getChunks().get(chunksSize - 1).data);
                 Address spendingAddress = getAddressFromRedeemScript(bridgeConstants, redeemScript);
                 assertEquals(whoCanSpendTheseUtxos.get(input.getOutpoint().getHash()), spendingAddress);
+            }
+            if(activations.isActive(ConsensusRule.RSKIP376)){
+                assertEquals(BTC_TX_VERSION_2, pegout.getVersion());
+            } else {
+                assertEquals(BTC_TX_LEGACY_VERSION, pegout.getVersion());
             }
         }
 
@@ -1395,12 +1406,29 @@ class PowpegMigrationTest {
         );
     }
 
-    @Test
-    void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg_post_RSKIP_353_with_RSKIP_357_disabled_creates_p2shErpFederation() throws Exception {
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest
-            .hop401(Collections.singletonList(ConsensusRule.RSKIP357))
+    private static Stream<Arguments> activationsArgProvider() {
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest
+            .hop401()
             .forBlock(0);
 
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest
+            .fingerroot500()
+            .forBlock(0);
+
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest
+            .tbd600()
+            .forBlock(0);
+
+        return Stream.of(
+            Arguments.of(hopActivations),
+            Arguments.of(fingerrootActivations),
+            Arguments.of(tbdActivations)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("activationsArgProvider")
+    void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg(ActivationConfig.ForBlock activations) throws Exception {
         Address originalPowpegAddress = Address.fromBase58(
             bridgeConstants.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
