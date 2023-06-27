@@ -1539,7 +1539,11 @@ public class VM {
 
             // when there's less gas than expected from the child call,
             // the estimateGas will be given by gasUsed + deductedRefunds instead of maxGasUsed
-            program.getResult().movedRemainingGasToChild(calleeGas == remainingGas);
+            if (calleeGas == remainingGas) {
+                // in case program has more than one CALL, we cannot simply pass calleeGas == remainingGas or
+                // we could be marking it as false when it was previously set to true
+                program.getResult().setMovedRemainingGasToChild();
+            }
             
             if (!value.isZero()) {
                 program.getResult().setCallWithValuePerformed(true);
