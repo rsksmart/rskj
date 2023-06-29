@@ -20,6 +20,7 @@ public class VersionProviderUtil implements CommandLine.IVersionProvider {
         }
 
         String appVersion = prop.getProperty("versionNumber").replace("\'", "");
+
         return new String[]{appVersion};
     }
 }

@@ -34,6 +34,7 @@ public class Start {
         try {
             ctx = new RskContext(args);
             if (ctx.isVersionOrHelpRequested()) {
+                ctx.close();
                 System.exit(0);
             }
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
