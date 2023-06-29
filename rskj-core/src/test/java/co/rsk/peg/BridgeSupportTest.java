@@ -2110,6 +2110,148 @@ class BridgeSupportTest {
         return Stream.of(BridgeRegTestConstants.getInstance(), BridgeTestNetConstants.getInstance(), BridgeMainNetConstants.getInstance());
     }
 
+    @Test
+    void rskTxWaitingForSignature_fail_adding_an_already_existence_key_after_rskip_375() throws IOException {
+        // Arrange
+        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP375)).thenReturn(true);
+
+        // Set state to make concur a pegout migration tx and pegout batch creation on the same updateCollection
+        Federation oldFederation = bridgeConstants.getGenesisFederation();
+        Federation newFederation = new Federation(
+            FederationTestUtils.getFederationMembers(1),
+            Instant.EPOCH,
+            5L,
+            bridgeConstants.getBtcParams()
+        );
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmationsEntries = new HashSet<>();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmationsEntries);
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
+
+        when(provider.getFeePerKb())
+            .thenReturn(Coin.MILLICOIN);
+        when(provider.getReleaseRequestQueue())
+            .thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(3)));
+        when(provider.getPegoutsWaitingForConfirmations())
+            .thenReturn(pegoutsWaitingForConfirmations);
+
+        // Federation change on going
+        when(provider.getOldFederation())
+            .thenReturn(oldFederation);
+        when(provider.getNewFederation())
+            .thenReturn(newFederation);
+
+        // Utxos to migrate
+        List<UTXO> utxos = PegTestUtils.createUTXOs(30, oldFederation.getAddress());
+        when(provider.getOldFederationBtcUTXOs())
+            .thenReturn(utxos);
+
+        List<UTXO> utxosNew = PegTestUtils.createUTXOs(25, newFederation.getAddress());
+        when(provider.getNewFederationBtcUTXOs())
+            .thenReturn(utxosNew);
+
+        // Advance blockchain to migration phase
+        BlockGenerator blockGenerator = new BlockGenerator();
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(180, 1);
+        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(rskCurrentBlock)
+            .withActivations(activations)
+            .build();
+
+        Transaction tx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+        bridgeSupport.updateCollections(tx);
+
+
+        // Assert two pegouts are added to pegouts waitingForConfirmations, one pegout batch and one pegout migration tx
+        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        // Assert the two added pegouts has the same pegoutCreationRskTxHash
+        assertEquals(1,
+            provider
+                .getPegoutsWaitingForConfirmations()
+                .getEntries()
+                .stream()
+                .map(PegoutsWaitingForConfirmations.Entry::getPegoutCreationRskTxHash)
+                .collect(Collectors.toSet()).size()
+        );
+
+        // Advance blockchain to the height where both pegouts have enough confirmations to be moved to waitingForSignature
+        rskCurrentBlock = blockGenerator.createBlock(184, 1);
+        bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(rskCurrentBlock)
+            .withActivations(activations)
+            .build();
+
+        tx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+        bridgeSupport.updateCollections(tx);
+
+        // Since only one pegout per updateCollection call is move to waitingForisgnatures
+        // -assert one of the two pegout get moved to pegoutWaitingForSignate and one is left on waitingForConfirmation
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
+
+        // Advance blockchain one block to make the second pegout to be moved to waitingForConfirmation
+        rskCurrentBlock = blockGenerator.createBlock(185, 1);
+        BridgeSupport bridgeSupportForFailingTx = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(rskCurrentBlock)
+            .withActivations(activations)
+            .build();
+
+        Transaction throwsExceptionTx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+
+        assertThrows(IllegalStateException.class, () -> {
+            bridgeSupportForFailingTx.updateCollections(throwsExceptionTx);
+        });
+
+
+        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
+    }
+
     @ParameterizedTest
     @MethodSource("provideBridgeConstants")
     void rskTxWaitingForSignature_uses_pegoutCreation_rskTxHash_after_rskip_375_activation(BridgeConstants bridgeConstants) throws IOException {
