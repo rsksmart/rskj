@@ -43,15 +43,15 @@ public class Web3ConnectorE2E implements Web3Connector {
 
     private RskTraceModuleWeb3j traceModuleWeb3j;
 
-    private Web3ConnectorE2E(String host, RskDebugModuleWeb3j debugModuleWeb3j, RskModuleWeb3j rskModuleWeb3j, RskTraceModuleWeb3j traceModuleWeb3j) {
+    private Web3ConnectorE2E(RskDebugModuleWeb3j debugModuleWeb3j, RskModuleWeb3j rskModuleWeb3j, RskTraceModuleWeb3j traceModuleWeb3j) {
         this.debugModuleWeb3j = debugModuleWeb3j;
         this.rskModuleWeb3j = rskModuleWeb3j;
         this.traceModuleWeb3j = traceModuleWeb3j;
     }
 
-    public static Web3ConnectorE2E create(String host, RskDebugModuleWeb3j debugModuleWeb3j, RskModuleWeb3j rskModuleWeb3j, RskTraceModuleWeb3j traceModuleWeb3j) {
+    public static Web3ConnectorE2E create(RskDebugModuleWeb3j debugModuleWeb3j, RskModuleWeb3j rskModuleWeb3j, RskTraceModuleWeb3j traceModuleWeb3j) {
         if (connector == null) {
-            connector = new Web3ConnectorE2E(host, debugModuleWeb3j, rskModuleWeb3j, traceModuleWeb3j);
+            connector = new Web3ConnectorE2E(debugModuleWeb3j, rskModuleWeb3j, traceModuleWeb3j);
         }
         return connector;
     }
@@ -134,31 +134,25 @@ public class Web3ConnectorE2E implements Web3Connector {
     }
 
     @Override
-    public List<EthLog.LogResult> ethGetLogs(DefaultBlockParameter fromBlock, DefaultBlockParameter toBlock, String address) throws HttpRpcException {
-        EthFilter filter = new EthFilter(fromBlock, toBlock, address);
-
-        return ethGetLogs(filter);
+    public List<EthLog.LogResult> ethGetLogs(EthFilter filter) throws HttpRpcException {
+        try {
+            EthLog response = sendRequest(() -> rskModuleWeb3j.ethGetLogs(filter));
+            return response.getLogs();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
     }
 
     @Override
-    public List<EthLog.LogResult> ethGetLogs(String blockHash) throws HttpRpcException {
-        EthFilter filter = new EthFilter(blockHash);
-
-        return ethGetLogs(filter);
-    }
-
-    @Override
-    public String ethNewFilter(DefaultBlockParameter fromBlock, DefaultBlockParameter toBlock, String address) throws HttpRpcException {
-        EthFilter filter = new EthFilter(fromBlock, toBlock, address);
-
-        return ethNewFilter(filter);
-    }
-
-    @Override
-    public String ethNewFilter(String blockHash) throws HttpRpcException {
-        EthFilter filter = new EthFilter(blockHash);
-
-        return ethNewFilter(filter);
+    public String ethNewFilter(EthFilter filter) throws HttpRpcException {
+        try {
+            org.web3j.protocol.core.methods.response.EthFilter response = sendRequest(() -> rskModuleWeb3j.ethNewFilter(filter));
+            return response.getResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
     }
 
     @Override
@@ -206,26 +200,6 @@ public class Web3ConnectorE2E implements Web3Connector {
     @Override
     public RskModuleWeb3j.GenericJsonResponse traceGet(String transactionHash, List<String> positions) throws HttpRpcException {
         return sendRequest(() -> traceModuleWeb3j.traceGet(transactionHash, positions));
-    }
-
-    private List<EthLog.LogResult> ethGetLogs(EthFilter filter) throws HttpRpcException {
-        try {
-            EthLog response = sendRequest(() -> rskModuleWeb3j.ethGetLogs(filter));
-            return response.getLogs();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new HttpRpcException(e);
-        }
-    }
-
-    private String ethNewFilter(EthFilter filter) throws HttpRpcException {
-        try {
-            org.web3j.protocol.core.methods.response.EthFilter response = sendRequest(() -> rskModuleWeb3j.ethNewFilter(filter));
-            return response.getResult();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new HttpRpcException(e);
-        }
     }
 
     private <R extends Response<?>> R sendRequest(Supplier<Request<?, R>> supplier) throws HttpRpcException {

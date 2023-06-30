@@ -23,6 +23,7 @@ import co.rsk.jmh.web3.e2e.RskModuleWeb3j;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.Response;
+import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.*;
 
@@ -46,13 +47,9 @@ public interface Web3Connector {
 
     BigInteger ethEstimateGas(Transaction transaction) throws HttpRpcException;
 
-    List<EthLog.LogResult> ethGetLogs(DefaultBlockParameter fromBlock, DefaultBlockParameter toBlock, String address) throws HttpRpcException;
+    List<EthLog.LogResult> ethGetLogs(EthFilter filter) throws HttpRpcException;
 
-    List<EthLog.LogResult> ethGetLogs(String blockHash) throws HttpRpcException;
-
-    String ethNewFilter(DefaultBlockParameter fromBlock, DefaultBlockParameter toBlock, String address) throws HttpRpcException;
-
-    String ethNewFilter(String blockHash) throws HttpRpcException;
+    String ethNewFilter(EthFilter filter) throws HttpRpcException;
 
     List<EthLog.LogResult> ethGetFilterChanges(BigInteger filterId) throws HttpRpcException;
 

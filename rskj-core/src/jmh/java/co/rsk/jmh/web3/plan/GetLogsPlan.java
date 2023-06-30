@@ -25,8 +25,10 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.infra.BenchmarkParams;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.methods.request.EthFilter;
 
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.Optional;
 
 @State(Scope.Benchmark)
@@ -38,6 +40,12 @@ public class GetLogsPlan extends BasePlan {
     private DefaultBlockParameter toBlock;
     private String address;
     private String blockHash;
+    private EthFilter blockRangeAddressFilter;
+    private EthFilter blockHashFilter;
+    private EthFilter blockRangeFilter;
+    private EthFilter blockRangeAddressOneTopicFilter;
+    private EthFilter blockRangeAddressTwoTopicFilter;
+    private EthFilter blockRangeTwoTopicFilter;
 
     @Override
     @Setup(Level.Trial) // move to "Level.Iteration" in case we set a batch size at some point
@@ -49,30 +57,53 @@ public class GetLogsPlan extends BasePlan {
         this.toBlock = DefaultBlockParameter.valueOf(new BigInteger(getConfiguration().getString("getLogs.toBlock")));
         this.address = getConfiguration().getString("getLogs.address");
         this.blockHash = getConfiguration().getString("getLogs.blockHash");
+
+        this.blockRangeFilter = new EthFilter(fromBlock, toBlock, Collections.emptyList());
+        this.blockRangeAddressFilter = new EthFilter(fromBlock, toBlock, address);
+        this.blockHashFilter = new EthFilter(blockHash);
+
+        this.blockRangeAddressOneTopicFilter = new EthFilter(fromBlock, toBlock, address);
+        this.blockRangeAddressOneTopicFilter.addSingleTopic(getConfiguration().getString("getLogs.topic1"));
+
+        this.blockRangeAddressTwoTopicFilter = new EthFilter(fromBlock, toBlock, address);
+        this.blockRangeAddressTwoTopicFilter.addOptionalTopics(getConfiguration().getString("getLogs.topic1"), getConfiguration().getString("getLogs.topic2"));
+
+        this.blockRangeAddressTwoTopicFilter = new EthFilter(fromBlock, toBlock, address);
+
+        this.blockRangeTwoTopicFilter = new EthFilter(fromBlock, toBlock, Collections.emptyList());
+        this.blockRangeTwoTopicFilter.addOptionalTopics(getConfiguration().getString("getLogs.topic1"), getConfiguration().getString("getLogs.topic2"));
     }
 
     public BigInteger getEthFilterId() {
         return new BigInteger(this.ethFilterId.replace("0x", ""), 16);
     }
 
-    public DefaultBlockParameter getFromBlock() {
-        return fromBlock;
+    public EthFilter getBlockHashFilter() {
+        return blockHashFilter;
     }
 
-    public DefaultBlockParameter getToBlock() {
-        return toBlock;
+    public EthFilter getBlockRangeAddressFilter() {
+        return blockRangeAddressFilter;
     }
 
-    public String getAddress() {
-        return address;
+    public EthFilter getBlockRangeFilter() {
+        return blockRangeFilter;
     }
 
-    public String getBlockHash() {
-        return blockHash;
+    public EthFilter getBlockRangeAddressOneTopicFilter() {
+        return blockRangeAddressOneTopicFilter;
+    }
+
+    public EthFilter getBlockRangeAddressTwoTopicFilter() {
+        return blockRangeAddressTwoTopicFilter;
+    }
+
+    public EthFilter getBlockRangeTwoTopicFilter() {
+        return blockRangeTwoTopicFilter;
     }
 
     private String generateNewFilterId() throws BenchmarkWeb3Exception {
         String blockHash = configuration.getString("getLogs.blockHash");
-        return Optional.ofNullable(web3Connector.ethNewFilter(blockHash)).orElse("");
+        return Optional.ofNullable(web3Connector.ethNewFilter(new EthFilter(blockHash))).orElse("");
     }
 }
