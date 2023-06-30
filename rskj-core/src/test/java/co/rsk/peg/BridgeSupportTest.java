@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
@@ -85,6 +86,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -2111,14 +2113,10 @@ class BridgeSupportTest {
     }
 
     @Test
-    void rskTxWaitingForSignature_fail_adding_an_already_existence_key_after_rskip_375() throws IOException {
+    void rskTxWaitingForSignature_fail_adding_an_already_existing_key_after_rskip_375() throws IOException {
         // Arrange
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP375)).thenReturn(true);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
 
         // Set state to make concur a pegout migration tx and pegout batch creation on the same updateCollection
         Federation oldFederation = bridgeConstants.getGenesisFederation();
@@ -2131,16 +2129,18 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWaitingForConfirmationsEntries = new HashSet<>();
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(pegoutsWaitingForConfirmationsEntries);
-        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
-
         when(provider.getFeePerKb())
             .thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(3)));
+
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations())
             .thenReturn(pegoutsWaitingForConfirmations);
+
+        SortedMap<Keccak256, BtcTransaction> pegoutWaitingForSignatures = new TreeMap<>();
+        when(provider.getPegoutsWaitingForSignatures())
+            .thenReturn(pegoutWaitingForSignatures);
 
         // Federation change on going
         when(provider.getOldFederation())
@@ -2149,25 +2149,23 @@ class BridgeSupportTest {
             .thenReturn(newFederation);
 
         // Utxos to migrate
-        List<UTXO> utxos = PegTestUtils.createUTXOs(30, oldFederation.getAddress());
+        List<UTXO> utxos = PegTestUtils.createUTXOs(10, oldFederation.getAddress());
         when(provider.getOldFederationBtcUTXOs())
             .thenReturn(utxos);
 
-        List<UTXO> utxosNew = PegTestUtils.createUTXOs(25, newFederation.getAddress());
+        List<UTXO> utxosNew = PegTestUtils.createUTXOs(10, newFederation.getAddress());
         when(provider.getNewFederationBtcUTXOs())
             .thenReturn(utxosNew);
 
         // Advance blockchain to migration phase
         BlockGenerator blockGenerator = new BlockGenerator();
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(180, 1);
-        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
-            .withEventLogger(bridgeEventLogger)
             .withExecutionBlock(rskCurrentBlock)
-            .withActivations(activations)
+            .withActivations(fingerrootActivations)
             .build();
 
         Transaction tx = Transaction
@@ -2183,26 +2181,49 @@ class BridgeSupportTest {
         bridgeSupport.updateCollections(tx);
 
 
-        // Assert two pegouts are added to pegouts waitingForConfirmations, one pegout batch and one pegout migration tx
-        assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries().size());
-        // Assert the two added pegouts has the same pegoutCreationRskTxHash
-        assertEquals(1,
-            provider
-                .getPegoutsWaitingForConfirmations()
-                .getEntries()
-                .stream()
-                .map(PegoutsWaitingForConfirmations.Entry::getPegoutCreationRskTxHash)
-                .collect(Collectors.toSet()).size()
+        // Assert two transactions are added to pegoutsWaitingForConfirmations, one pegout batch and one migration tx
+        assertEquals(2, pegoutsWaitingForConfirmations.getEntries().size());
+
+        // Get new fed wallet to identify the migration tx
+        Wallet newFedWallet = BridgeUtils.getFederationNoSpendWallet(
+            new Context(bridgeConstants.getBtcParams()),
+            newFederation,
+            false,
+            null
         );
+
+        PegoutsWaitingForConfirmations.Entry migrationTx = null;
+        PegoutsWaitingForConfirmations.Entry pegoutBatchTx = null;
+
+        /*
+            Iterate pegoutsWaitingForConfigrmation entries to identify migration tx by checking if all outputs are sent to the active fed means this is
+            a migration tx; if not, it is a peg-out batch
+         */
+        for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries()) {
+            List<TransactionOutput> walletOutputs = entry.getBtcTransaction().getWalletOutputs(newFedWallet);
+            if (walletOutputs.size() == entry.getBtcTransaction().getOutputs().size()){
+                migrationTx = entry;
+                continue;
+            } else {
+                pegoutBatchTx = entry;
+            }
+        }
+
+        // Assert the two added pegouts has the same pegoutCreationRskTxHash
+        assertNotNull(migrationTx);
+        assertNotNull(pegoutBatchTx);
+        assertEquals(migrationTx.getPegoutCreationRskTxHash(), pegoutBatchTx.getPegoutCreationRskTxHash());
+
+        // Assert no pegouts were moved to pegoutWaitingForSignatures
+        assertEquals(0, pegoutWaitingForSignatures.size());
 
         // Advance blockchain to the height where both pegouts have enough confirmations to be moved to waitingForSignature
         rskCurrentBlock = blockGenerator.createBlock(184, 1);
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
-            .withEventLogger(bridgeEventLogger)
             .withExecutionBlock(rskCurrentBlock)
-            .withActivations(activations)
+            .withActivations(fingerrootActivations)
             .build();
 
         tx = Transaction
@@ -2217,19 +2238,23 @@ class BridgeSupportTest {
             .build();
         bridgeSupport.updateCollections(tx);
 
-        // Since only one pegout per updateCollection call is move to waitingForisgnatures
-        // -assert one of the two pegout get moved to pegoutWaitingForSignate and one is left on waitingForConfirmation
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
+        /*
+            Since only one pegout per updateCollection call is move to waitingForSignatures
+            assert one of the two pegout get moved to pegoutWaitingForSignate and one is left on waitingForConfirmation
+         */
+        assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+        assertEquals(1, pegoutWaitingForSignatures.size());
+
+        // assert the migration tx was the first one to be confirmed
+        assertTrue(pegoutWaitingForSignatures.containsKey(migrationTx.getPegoutCreationRskTxHash()));
 
         // Advance blockchain one block to make the second pegout to be moved to waitingForConfirmation
         rskCurrentBlock = blockGenerator.createBlock(185, 1);
         BridgeSupport bridgeSupportForFailingTx = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
-            .withEventLogger(bridgeEventLogger)
             .withExecutionBlock(rskCurrentBlock)
-            .withActivations(activations)
+            .withActivations(fingerrootActivations)
             .build();
 
         Transaction throwsExceptionTx = Transaction
@@ -2248,8 +2273,39 @@ class BridgeSupportTest {
         });
 
 
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
+        assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+        assertEquals(1, pegoutWaitingForSignatures.size());
+
+        /*
+            Now we remove the migrationTx from pegoutWaitingForSignatures pretending it was signed
+            just to assert that in the next updateCollection call the pegoutBatch will be moved to pegoutWaitingForSignatures
+         */
+        pegoutWaitingForSignatures.remove(migrationTx.getPegoutCreationRskTxHash());
+
+        rskCurrentBlock = blockGenerator.createBlock(186, 1);
+        bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withExecutionBlock(rskCurrentBlock)
+            .withActivations(fingerrootActivations)
+            .build();
+
+        tx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+
+        bridgeSupport.updateCollections(tx);
+
+        assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
+        assertEquals(1, pegoutWaitingForSignatures.size());
+        assertTrue(pegoutWaitingForSignatures.containsKey(pegoutBatchTx.getPegoutCreationRskTxHash()));
     }
 
     @ParameterizedTest
