@@ -284,4 +284,11 @@ public final class TestUtils {
         return Hex.decode(peerId);
     }
 
+    public static void waitFor(long durationMillis) {
+        long startMillis = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startMillis < durationMillis) {
+            // simulate processing time
+        }
+    }
+
 }

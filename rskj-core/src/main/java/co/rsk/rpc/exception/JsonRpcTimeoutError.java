@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2023 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,13 +15,21 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.jsonrpc;
 
-/**
- * A standard error to send when internal errors don't want to be exposed.
- */
-public class JsonRpcInternalError extends JsonRpcError {
-    public JsonRpcInternalError() {
-        super(JsonRpcError.INTERNAL_ERROR, "Internal error.");
+package co.rsk.rpc.exception;
+
+import co.rsk.jsonrpc.JsonRpcError;
+
+public class JsonRpcTimeoutError extends JsonRpcThrowableError {
+    private static final long serialVersionUID = 950001095761882084L;
+    private static final String MSG = "Execution has got timeout out.";
+    public JsonRpcTimeoutError() {
+        super(MSG);
     }
+
+    @Override
+    public JsonRpcError getErrorResponse() {
+        return new JsonRpcError(JsonRpcError.RPC_LIMIT_ERROR, MSG);
+    }
+
 }
