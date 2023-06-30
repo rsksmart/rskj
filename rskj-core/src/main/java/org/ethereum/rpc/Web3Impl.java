@@ -17,55 +17,6 @@
  */
 package org.ethereum.rpc;
 
-import static co.rsk.util.HexUtils.jsonHexToInt;
-import static co.rsk.util.HexUtils.jsonHexToLong;
-import static co.rsk.util.HexUtils.stringHexToBigInteger;
-import static co.rsk.util.HexUtils.stringHexToByteArray;
-import static co.rsk.util.HexUtils.toQuantityJsonHex;
-import static co.rsk.util.HexUtils.toUnformattedJsonHex;
-import static java.lang.Math.max;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
-
-import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
-
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.BlockInformation;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.net.client.Capability;
-import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.PeerServer;
-import org.ethereum.rpc.dto.BlockResultDTO;
-import org.ethereum.rpc.dto.CompilationResultDTO;
-import org.ethereum.rpc.dto.TransactionReceiptDTO;
-import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.util.BuildInfo;
-import org.ethereum.vm.DataWord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
-
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -89,12 +40,44 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
-import co.rsk.scoring.InvalidInetAddressException;
-import co.rsk.scoring.PeerScoringInformation;
-import co.rsk.scoring.PeerScoringManager;
-import co.rsk.scoring.PeerScoringReporterUtil;
-import co.rsk.scoring.PeerScoringReputationSummary;
+import co.rsk.scoring.*;
 import co.rsk.util.HexUtils;
+import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockInformation;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.TransactionInfo;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.net.client.Capability;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.rpc.dto.BlockResultDTO;
+import org.ethereum.rpc.dto.CompilationResultDTO;
+import org.ethereum.rpc.dto.TransactionReceiptDTO;
+import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.util.BuildInfo;
+import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
+
+import static co.rsk.util.HexUtils.*;
+import static java.lang.Math.max;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
 
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -265,7 +248,8 @@ public class Web3Impl implements Web3 {
         String s = null;
         try {
             int n = channelManager.getActivePeers().size();
-            return s = HexUtils.toQuantityJsonHex(n);
+            s = HexUtils.toQuantityJsonHex(n);
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("net_peerCount(): {}", s);
@@ -664,8 +648,8 @@ public class Web3Impl implements Web3 {
         BlockResultDTO s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
-
-            return s = (b == null ? null : getBlockResult(b, fullTransactionObjects));
+            s = (b == null ? null : getBlockResult(b, fullTransactionObjects));
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getBlockByHash({}, {}): {}", blockHash, fullTransactionObjects, s);
@@ -704,7 +688,8 @@ public class Web3Impl implements Web3 {
 
                 for (Transaction tx : txs) {
                     if (tx.getHash().equals(txHash)) {
-                        return s = new TransactionResultDTO(null, null, tx, config.rpcZeroSignatureIfRemasc(), signatureCache);
+                        s = new TransactionResultDTO(null, null, tx, config.rpcZeroSignatureIfRemasc(), signatureCache);
+                        return s;
                     }
                 }
             } else {
@@ -720,8 +705,8 @@ public class Web3Impl implements Web3 {
             if (txInfo == null) {
                 return null;
             }
-
-            return s = new TransactionResultDTO(block, txInfo.getIndex(), txInfo.getReceipt().getTransaction(), config.rpcZeroSignatureIfRemasc(), signatureCache);
+            s = new TransactionResultDTO(block, txInfo.getIndex(), txInfo.getReceipt().getTransaction(), config.rpcZeroSignatureIfRemasc(), signatureCache);
+            return s;
         } finally {
             logger.debug("eth_getTransactionByHash({}): {}", transactionHash, s);
         }
@@ -744,8 +729,8 @@ public class Web3Impl implements Web3 {
             }
 
             Transaction tx = b.getTransactionsList().get(idx);
-
-            return s = new TransactionResultDTO(b, idx, tx, config.rpcZeroSignatureIfRemasc(), signatureCache);
+            s = new TransactionResultDTO(b, idx, tx, config.rpcZeroSignatureIfRemasc(), signatureCache);
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getTransactionByBlockHashAndIndex({}, {}): {}", blockHash, index, s);
@@ -885,9 +870,8 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_newFilter(FilterRequest fr) throws Exception {
         String str = null;
-
         try {
-            Filter filter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore);
+            Filter filter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore, config.getRpcEthGetLogsMaxBlockToQuery(),config.getRpcEthGetLogsMaxLogsToReturn());
             int id = filterManager.registerFilter(filter);
 
             str = toQuantityJsonHex(id);
