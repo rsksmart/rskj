@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode({Mode.SingleShotTime})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Warmup(iterations = 25)
-@Measurement(iterations = 100)
+@Measurement(iterations = 1000)
 @Timeout(time = 10)
 public class BenchmarkWeb3 {
 
@@ -66,29 +66,47 @@ public class BenchmarkWeb3 {
     @Benchmark
     @Timeout(time = 30)
     public void ethGetLogsByBlockHash(GetLogsPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethGetLogs(plan.getBlockHash());
+        plan.getWeb3Connector().ethGetLogs(plan.getBlockHashFilter());
     }
 
     @Benchmark
     @Timeout(time = 30)
-    public void ethGetLogsByBlockRange(GetLogsPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethGetLogs(plan.getFromBlock(), plan.getToBlock(), plan.getAddress());
+    public void ethGetLogsByBlockRangeAndAddress(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethGetLogs(plan.getBlockRangeAddressFilter());
+    }
+
+    @Benchmark
+    @Timeout(time = 60)
+    public void ethGetLogsByBlockRangeNoFilters(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethGetLogs(plan.getBlockRangeFilter());
     }
 
     @Benchmark
     @Timeout(time = 30)
-    public void ethGetLogsByBlockRange_NullAddress(GetLogsPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethGetLogs(plan.getFromBlock(), plan.getToBlock(), null);
+    public void ethGetLogsByBlockRangeAddressOneTopic(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethGetLogs(plan.getBlockRangeAddressOneTopicFilter());
+    }
+
+    @Benchmark
+    @Timeout(time = 30)
+    public void ethGetLogsByBlockRangeAddressTwoTopics(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethGetLogs(plan.getBlockRangeAddressTwoTopicFilter());
+    }
+
+    @Benchmark
+    @Timeout(time = 30)
+    public void ethGetLogsByBlockRangeTwoTopics(GetLogsPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().ethGetLogs(plan.getBlockRangeTwoTopicFilter());
     }
 
     @Benchmark
     public void ethNewFilterByBlockHash(GetLogsPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethNewFilter(plan.getBlockHash());
+        plan.getWeb3Connector().ethNewFilter(plan.getBlockHashFilter());
     }
 
     @Benchmark
     public void ethNewFilterByBlockRange(GetLogsPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().ethNewFilter(plan.getFromBlock(), plan.getToBlock(), plan.getAddress());
+        plan.getWeb3Connector().ethNewFilter(plan.getBlockRangeAddressFilter());
     }
 
     @Benchmark
