@@ -49,7 +49,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Created by ajlopez on 17/01/2018.
  */
-class LogFilterTest {
+class
+LogFilterTest {
 
     @TempDir
     public Path tempDir;
@@ -211,7 +212,7 @@ class LogFilterTest {
     @Test
     void testLogFilterExceptionIsThrownWhenLimitIsReached(){
         //TODO RskTestFactory is deprecated but RskTestContext is not working in the same way
-        RskTestFactory rskTestContext = new RskTestFactory();
+        RskTestFactory rskTestContext = new RskTestFactory(tempDir);
         Blockchain blockchain = rskTestContext.getBlockchain();
         BlockStore blockStore = rskTestContext.getBlockStore();
         BlocksBloomStore blocksBloomStore = rskTestContext.getBlocksBloomStore();
