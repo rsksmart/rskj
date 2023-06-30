@@ -72,7 +72,7 @@ public class BasePlan {
                 this.rskModuleWeb3j = new RskModuleWeb3j(new HttpService(host, httpClient));
                 this.traceModuleWeb3j = new RskTraceModuleWeb3j(new HttpService(host));
 
-                web3Connector = Web3ConnectorE2E.create(host, debugModuleWeb3j, rskModuleWeb3j, traceModuleWeb3j);
+                web3Connector = Web3ConnectorE2E.create(debugModuleWeb3j, rskModuleWeb3j, traceModuleWeb3j);
                 break;
             case INT:
             case UNIT:
