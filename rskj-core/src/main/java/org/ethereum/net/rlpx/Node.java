@@ -128,10 +128,9 @@ public class Node implements Serializable {
                 ", id=" + getHexId() +
                 '}';
     }
-
     @Override
     public int hashCode() {
-        return Objects.hash(host, port, id);
+        return Objects.hash(host, port, Arrays.hashCode(id));
     }
 
     @Override
