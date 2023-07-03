@@ -2192,26 +2192,16 @@ class BridgeSupportTest {
             null
         );
 
-        PegoutsWaitingForConfirmations.Entry migrationTx = null;
-        PegoutsWaitingForConfirmations.Entry pegoutBatchTx = null;
+        Iterator<PegoutsWaitingForConfirmations.Entry> entriesWaitingForConfirmationsIterator = pegoutsWaitingForConfirmations.getEntries().iterator();
+        // Since updateCollections calls processFundsMigration method first then the migrationTx should be the first added to the pegoutsWaitingForConfirmations
+        PegoutsWaitingForConfirmations.Entry migrationTx = entriesWaitingForConfirmationsIterator.next();
+        PegoutsWaitingForConfirmations.Entry pegoutBatchTx = entriesWaitingForConfirmationsIterator.next();
 
-        /*
-            Iterate pegoutsWaitingForConfigrmation entries to identify migration tx by checking if all outputs are sent to the active fed means this is
-            a migration tx; if not, it is a peg-out batch
-         */
-        for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries()) {
-            List<TransactionOutput> walletOutputs = entry.getBtcTransaction().getWalletOutputs(newFedWallet);
-            if (walletOutputs.size() == entry.getBtcTransaction().getOutputs().size()){
-                migrationTx = entry;
-                continue;
-            } else {
-                pegoutBatchTx = entry;
-            }
-        }
+        // assert the first entry added to pegoutWaitingForConfirmations was the migration tx
+        List<TransactionOutput> migrationTxOutputs = migrationTx.getBtcTransaction().getWalletOutputs(newFedWallet);
+        assertEquals(migrationTxOutputs.size(), migrationTx.getBtcTransaction().getOutputs().size());
 
         // Assert the two added pegouts has the same pegoutCreationRskTxHash
-        assertNotNull(migrationTx);
-        assertNotNull(pegoutBatchTx);
         assertEquals(migrationTx.getPegoutCreationRskTxHash(), pegoutBatchTx.getPegoutCreationRskTxHash());
 
         // Assert no pegouts were moved to pegoutWaitingForSignatures
@@ -2246,9 +2236,16 @@ class BridgeSupportTest {
         assertEquals(1, pegoutWaitingForSignatures.size());
 
         // assert the migration tx was the first one to be confirmed
-        assertTrue(pegoutWaitingForSignatures.containsKey(migrationTx.getPegoutCreationRskTxHash()));
+        assertEquals(
+            pegoutWaitingForSignatures.get(migrationTx.getPegoutCreationRskTxHash()).getHash(),
+            migrationTx.getBtcTransaction().getHash()
+        );
 
-        // Advance blockchain one block to make the second pegout to be moved to waitingForConfirmation
+        /*
+            Advance blockchain one block so the bridge now will attempt to move the pegoutBatchTx to pegoutWaitingForSignatures
+            but will fail due to there's already an entry using that pegoutCreationRskTx as key. It's not allowed to
+            overwrite pegoutWaitingForSignatures entries.
+         */
         rskCurrentBlock = blockGenerator.createBlock(185, 1);
         BridgeSupport bridgeSupportForFailingTx = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
@@ -2273,8 +2270,11 @@ class BridgeSupportTest {
         });
 
 
+        // assert both collections still without any change
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+        assertTrue(pegoutsWaitingForConfirmations.getEntries().contains(pegoutBatchTx));
         assertEquals(1, pegoutWaitingForSignatures.size());
+        assertEquals(migrationTx.getBtcTransaction().getHash(), pegoutWaitingForSignatures.get(migrationTx.getPegoutCreationRskTxHash()).getHash());
 
         /*
             Now we remove the migrationTx from pegoutWaitingForSignatures pretending it was signed
@@ -2305,7 +2305,7 @@ class BridgeSupportTest {
 
         assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
         assertEquals(1, pegoutWaitingForSignatures.size());
-        assertTrue(pegoutWaitingForSignatures.containsKey(pegoutBatchTx.getPegoutCreationRskTxHash()));
+        assertEquals(pegoutBatchTx.getBtcTransaction().getHash(), pegoutWaitingForSignatures.get(pegoutBatchTx.getPegoutCreationRskTxHash()).getHash());
     }
 
     @ParameterizedTest
