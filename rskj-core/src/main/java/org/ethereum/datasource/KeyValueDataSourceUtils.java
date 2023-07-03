@@ -67,7 +67,7 @@ public class KeyValueDataSourceUtils {
                 return DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME));
             }
 
-            return DbKind.LEVEL_DB;
+            return DbKind.ROCKS_DB;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -109,9 +109,6 @@ public class KeyValueDataSourceUtils {
         if (prevDbKind != currentDbKind) {
             if (databaseReset) {
                 KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
-            } else {
-                LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
-                throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + ".");
             }
         }
     }

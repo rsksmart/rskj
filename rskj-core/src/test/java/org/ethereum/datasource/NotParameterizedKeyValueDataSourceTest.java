@@ -24,12 +24,12 @@ class NotParameterizedKeyValueDataSourceTest {
     }
 
     @Test()
-    void testShouldThrowErrorWhenValidatingDifferentKinds() throws IOException {
+    void testShouldNotThrowErrorWhenValidatingDifferentKinds() throws IOException {
         FileWriter fileWriter = new FileWriter(new File(tempDir.toString(), KeyValueDataSourceUtils.DB_KIND_PROPERTIES_FILE));
         fileWriter.write("keyvalue.datasource=ROCKS_DB\n");
         fileWriter.close();
         String path = tempDir.toString();
-        Assertions.assertThrows(IllegalStateException.class, () -> KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, path, false));
+        Assertions.assertDoesNotThrow(() -> KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, path, false));
     }
 
     @Test()
@@ -73,7 +73,7 @@ class NotParameterizedKeyValueDataSourceTest {
 
         dbKindFile.delete();
         DbKind dbKindFallback = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
-        Assertions.assertEquals(DbKind.LEVEL_DB, dbKindFallback, "When missing DbKind, LEVEL_DB should be returned as fallback");
+        Assertions.assertEquals(DbKind.ROCKS_DB, dbKindFallback, "When missing DbKind, LEVEL_DB should be returned as fallback");
     }
 
     @Test
@@ -107,16 +107,10 @@ class NotParameterizedKeyValueDataSourceTest {
     }
 
     @Test
-    void validateDbKindExistingFolderDifferentDbWithoutResetThrows() {
+    void validateDbKindExistingFolderDifferentDbWithoutResetShouldNotThrowError() {
         String dbPath = tempDir.toString();
         KeyValueDataSourceUtils.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
-
-        try {
-            KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, dbPath, false);
-            Assertions.fail("Should've thrown exception due to already existing dbKind file without reset flag");
-        } catch (RuntimeException re) {
-            Assertions.assertTrue(re.getMessage().startsWith("DbKind mismatch. You have selected"));
-        }
+        Assertions.assertDoesNotThrow(() -> KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, dbPath, false));
     }
 
     @Test
