@@ -147,7 +147,7 @@ public class Node implements Serializable {
             return false;
         }
 
-        // TODO(mc): do we need to check host and port too?
-        return Arrays.equals(id, ((Node) o).id);
+        Node node = (Node) o;
+        return port == node.port && Arrays.equals(id, node.id) && Objects.equals(host, node.host);
     }
 }
