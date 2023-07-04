@@ -104,12 +104,8 @@ public class KeyValueDataSourceUtils {
             return;
         }
 
-        DbKind prevDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
-
-        if (prevDbKind != currentDbKind) {
-            if (databaseReset) {
-                KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
-            }
+        if (databaseReset) {
+            KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
         }
     }
 }
