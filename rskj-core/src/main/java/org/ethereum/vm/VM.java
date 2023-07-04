@@ -1399,6 +1399,20 @@ public class VM {
         program.stackPush(data);
     }
 
+    protected void doPUSH0(){
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        program.step();
+
+        DataWord zero = DataWord.ZERO;
+
+        if (isLogEnabled) {
+            hint = "" + ByteUtil.toHexString(zero.getData());
+        }
+
+        program.stackPush(zero);
+    }
+
     protected void doJUMPDEST()
     {
         spendOpCodeGas();
@@ -1911,6 +1925,9 @@ public class VM {
             case OpCodes.OP_MSIZE: doMSIZE();
             break;
             case OpCodes.OP_GAS: doGAS();
+            break;
+
+            case OpCodes.OP_PUSH_0: doPUSH0();
             break;
 
             case OpCodes.OP_PUSH_1:
