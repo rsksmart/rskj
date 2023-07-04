@@ -2197,14 +2197,14 @@ class BridgeSupportTest {
         PegoutsWaitingForConfirmations.Entry migrationTx = entriesWaitingForConfirmationsIterator.next();
         PegoutsWaitingForConfirmations.Entry pegoutBatchTx = entriesWaitingForConfirmationsIterator.next();
 
-        // assert the first entry added to pegoutWaitingForConfirmations was the migration tx
+        // assert the first entry added to pegoutsWaitingForConfirmations was the migration tx
         List<TransactionOutput> migrationTxOutputs = migrationTx.getBtcTransaction().getWalletOutputs(newFedWallet);
         assertEquals(migrationTxOutputs.size(), migrationTx.getBtcTransaction().getOutputs().size());
 
         // Assert the two added pegouts has the same pegoutCreationRskTxHash
         assertEquals(migrationTx.getPegoutCreationRskTxHash(), pegoutBatchTx.getPegoutCreationRskTxHash());
 
-        // Assert no pegouts were moved to pegoutWaitingForSignatures
+        // Assert no pegouts were moved to pegoutsWaitingForSignatures
         assertEquals(0, pegoutWaitingForSignatures.size());
 
         // Advance blockchain to the height where both pegouts have enough confirmations to be moved to waitingForSignature
@@ -2229,8 +2229,8 @@ class BridgeSupportTest {
         bridgeSupport.updateCollections(tx);
 
         /*
-            Since only one pegout per updateCollection call is move to waitingForSignatures
-            assert one of the two pegout get moved to pegoutWaitingForSignate and one is left on waitingForConfirmation
+            Since only one pegout per updateCollection call is move to pegoutsWaitingForSignatures
+            assert one of the two pegout get moved to pegoutsWaitingForSignatures and one is left on pegoutsWaitingForConfirmation
          */
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
         assertEquals(1, pegoutWaitingForSignatures.size());
@@ -2242,9 +2242,9 @@ class BridgeSupportTest {
         );
 
         /*
-            Advance blockchain one block so the bridge now will attempt to move the pegoutBatchTx to pegoutWaitingForSignatures
+            Advance blockchain one block so the bridge now will attempt to move the pegoutBatchTx to pegoutsWaitingForSignatures
             but will fail due to there's already an entry using that pegoutCreationRskTx as key. It's not allowed to
-            overwrite pegoutWaitingForSignatures entries.
+            overwrite pegoutsWaitingForSignatures entries.
          */
         rskCurrentBlock = blockGenerator.createBlock(185, 1);
         BridgeSupport bridgeSupportForFailingTx = bridgeSupportBuilder
@@ -2277,8 +2277,8 @@ class BridgeSupportTest {
         assertEquals(migrationTx.getBtcTransaction().getHash(), pegoutWaitingForSignatures.get(migrationTx.getPegoutCreationRskTxHash()).getHash());
 
         /*
-            Now we remove the migrationTx from pegoutWaitingForSignatures pretending it was signed
-            just to assert that in the next updateCollection call the pegoutBatch will be moved to pegoutWaitingForSignatures
+            Now we remove the migrationTx from pegoutsWaitingForSignatures pretending it was signed
+            just to assert that in the next updateCollection call the pegoutBatchTx will be moved to pegoutsWaitingForSignatures
          */
         pegoutWaitingForSignatures.remove(migrationTx.getPegoutCreationRskTxHash());
 
