@@ -322,7 +322,10 @@ public class OpCodes {
     static final byte OP_JUMPDEST =0x5b ;
 
     /*  Push Operations */
-
+    /**
+     * (0x5f) Pushes the constant value 0 onto the stack.
+     */
+    static final byte OP_PUSH_0 =0x5f ;
     /**
      * (0x60) Place 1-byte item on stack
      */
