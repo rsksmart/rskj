@@ -61,6 +61,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import picocli.CommandLine;
 
 import java.io.*;
@@ -379,7 +380,9 @@ class CliToolsTest {
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(databaseDir).when(rskSystemProperties).databaseDir();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(DbKind.ROCKS_DB).when(rskContext).getCurrentDbKind();
+        doReturn(DbKind.ROCKS_DB).when(rskContext).getCurrentDbKind(Mockito.eq(databaseDir));
+        doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ImportState importStateCliTool = new ImportState();
@@ -548,7 +551,7 @@ class CliToolsTest {
         }
 
         Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
-        Assertions.assertEquals("keyvalue.datasource=LEVEL_DB", dbKindPropsFileLine);
+        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
     }
 
     @Test
