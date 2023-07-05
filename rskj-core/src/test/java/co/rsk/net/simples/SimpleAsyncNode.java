@@ -127,7 +127,7 @@ public class SimpleAsyncNode extends SimpleNode {
         NetBlockStore blockStore = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(config, blockStore, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
-        NodeBlockProcessor processor = new NodeBlockProcessor(blockStore, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
+        NodeBlockProcessor processor = new NodeBlockProcessor(blockStore, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
         SimpleChannelManager channelManager = new SimpleChannelManager();
@@ -141,7 +141,7 @@ public class SimpleAsyncNode extends SimpleNode {
                 mock(Genesis.class),
                 mock(EthereumListener.class)
         );
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, mock(StatusResolver.class));
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, null, channelManager, null, peerScoringManager, mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }
