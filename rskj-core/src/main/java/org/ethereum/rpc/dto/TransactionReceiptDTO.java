@@ -17,6 +17,7 @@
  */
 package org.ethereum.rpc.dto;
 
+import org.ethereum.core.BasicBlock;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.TransactionReceipt;
@@ -66,7 +67,8 @@ public class TransactionReceiptDTO {
         logs = new LogFilterElement[receipt.getLogInfoList().size()];
         for (int i = 0; i < logs.length; i++) {
             LogInfo logInfo = receipt.getLogInfoList().get(i);
-            logs[i] = new LogFilterElement(logInfo, block, txInfo.getIndex(),
+            BasicBlock basicBlock = BasicBlock.createFromBlock(block);
+            logs[i] = new LogFilterElement(logInfo, basicBlock, txInfo.getIndex(),
                     txInfo.getReceipt().getTransaction(), i);
         }
 

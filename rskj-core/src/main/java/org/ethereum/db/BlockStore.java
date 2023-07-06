@@ -21,6 +21,7 @@ package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.db.RemascCache;
+import org.ethereum.core.BasicBlock;
 import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
 
@@ -46,6 +47,8 @@ public interface BlockStore extends RemascCache {
     List<Block> getChainBlocksByNumber(long blockNumber);
 
     void removeBlock(Block block);
+
+    BasicBlock getBasicBlock(byte[] hash);
 
     Block getBlockByHash(byte[] hash);
 

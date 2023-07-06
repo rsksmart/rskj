@@ -42,6 +42,7 @@ public interface Blockchain {
      * @return - bloc by that hash
      */
     Block getBlockByHash(byte[] hash);
+    BasicBlock getBasicBlockByHash(byte[] hash);
 
     /**
      * Get total difficulty from the start

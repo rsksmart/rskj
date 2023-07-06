@@ -29,10 +29,7 @@ import co.rsk.net.BlockCache;
 import co.rsk.remasc.Sibling;
 import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Bloom;
+import org.ethereum.core.*;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.mapdb.DataIO;
 import org.mapdb.Serializer;
@@ -271,8 +268,23 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized Block getBlockByHash(byte[] hash) {
+    public synchronized BasicBlock getBasicBlock(byte[] hash) {
+        Block block = this.blockCache.getBlockByHash(hash);
 
+        if (block != null) {
+            return BasicBlock.createFromBlock(block);
+        }
+
+        byte[] blockRlp = blocks.get(hash);
+        if (blockRlp == null) {
+            return null;
+        }
+
+        return blockFactory.decodeBasicBlock(hash, blockRlp);
+    }
+
+    @Override
+    public synchronized Block getBlockByHash(byte[] hash) {
         Block block = getBlock(hash);
         if (block == null) {
             return null;

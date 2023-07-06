@@ -55,11 +55,11 @@ public class LogFilter extends Filter {
         this.maxBlocksToQuery = maxBlocksToQuery;
     }
 
-    void onLogMatch(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
+    void onLogMatch(LogInfo logInfo, BasicBlock b, int txIndex, Transaction tx, int logIdx) {
         add(new LogFilterEvent(new LogFilterElement(logInfo, b, txIndex, tx, logIdx)));
     }
 
-    void onTransaction(Transaction tx, Block block, int txIndex, boolean reverseLogIdxOrder) {
+    void onTransaction(Transaction tx, BasicBlock block, int txIndex, boolean reverseLogIdxOrder) {
         TransactionInfo txInfo = blockchain.getTransactionInfoByBlock(tx, block.getHash().getBytes());
         TransactionReceipt receipt = txInfo.getReceipt();
 
@@ -76,16 +76,16 @@ public class LogFilter extends Filter {
         }
     }
 
-    void onBlock(Block block, boolean reverseTxOrder) {
-        if (!addressesTopicsFilter.matchBloom(new Bloom(block.getLogBloom()))) {
+    void onBlock(BasicBlock basicBlock, boolean reverseTxOrder) {
+        if (!addressesTopicsFilter.matchBloom(new Bloom(basicBlock.getLogBloom()))) {
             return;
         }
 
-        List<Transaction> txs = block.getTransactionsList();
+        List<Transaction> txs = basicBlock.getTransactions();
 
         for (int i = 0; i < txs.size(); i++) {
             int txIdx = reverseTxOrder ? txs.size() - i - 1 : i;
-            onTransaction(txs.get(txIdx), block, txIdx, reverseTxOrder);
+            onTransaction(txs.get(txIdx), basicBlock, txIdx, reverseTxOrder);
         }
     }
 
@@ -101,9 +101,9 @@ public class LogFilter extends Filter {
     public void newBlockReceived(Block b) {
         if (this.fromLatestBlock) {
             this.clearEvents();
-            onBlock(b, false);
+            onBlock(BasicBlock.createFromBlock(b), false);
         } else if (this.toLatestBlock) {
-            onBlock(b, false);
+            onBlock(BasicBlock.createFromBlock(b), false);
         }
     }
 
@@ -235,7 +235,7 @@ public class LogFilter extends Filter {
 
             processBlocks(blockFrom, blockTo, filter, blockchain, blocksBloomStore);
         } else if ("latest".equalsIgnoreCase(fr.getFromBlock())) {
-            filter.onBlock(blockchain.getBestBlock(), false);
+            filter.onBlock(BasicBlock.createFromBlock(blockchain.getBestBlock()), false);
         }
     }
 
@@ -256,7 +256,7 @@ public class LogFilter extends Filter {
 
         BlocksBloom bloomAccumulator = null;
 
-        Block block = toBlock;
+        BasicBlock block = BasicBlock.createFromBlock(toBlock);
         long blockNumber = block.getNumber();
         Keccak256 blockHash = block.getHash();
 
@@ -275,10 +275,10 @@ public class LogFilter extends Filter {
             }
 
             if (skippingToNumber) {
-                block = blockchain.getBlockByNumber(blockNumber);
+                block = BasicBlock.createFromBlock(blockchain.getBlockByNumber(blockNumber));
             } else {
                 // redundant on first iter as we already have the block, but it's cached so left like this for code simplicity
-                block = blockchain.getBlockByHash(blockHash.getBytes());
+                block = blockchain.getBasicBlockByHash(blockHash.getBytes());
             }
             skippingToNumber = false;
 
@@ -303,7 +303,7 @@ public class LogFilter extends Filter {
     }
 
     @Nullable
-    private static BlocksBloom addBlockBloom(Block block, BlocksBloom bloomAccumulator, BlocksBloomStore blocksBloomStore) {
+    private static BlocksBloom addBlockBloom(BasicBlock block, BlocksBloom bloomAccumulator, BlocksBloomStore blocksBloomStore) {
         // reset bloomAccumulator on every confirmed lastInRange block to start a new bloom
         if (blocksBloomStore.lastNumberInRange(block.getNumber()) == block.getNumber()) {
             bloomAccumulator = BlocksBloom.createEmptyWithBackwardsAddition();

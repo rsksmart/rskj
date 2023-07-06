@@ -22,6 +22,7 @@ import co.rsk.config.MiningConfig;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -31,9 +32,7 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
@@ -94,6 +93,22 @@ public class BlockFactory {
 
     public BlockHeader decodeHeader(byte[] encoded) {
         return decodeHeader(RLP.decodeList(encoded), true);
+    }
+
+    public BasicBlock decodeBasicBlock(byte[] hash, byte[] rawData) {
+        RLPList block = RLP.decodeList(rawData);
+        if (block.size() != 3) {
+            throw new IllegalArgumentException("A block must have 3 exactly items");
+        }
+
+        RLPList rlpHeader = (RLPList) block.get(0);
+        byte[] parentHash = rlpHeader.get(0).getRLPData();
+        byte[] nrBytes = rlpHeader.get(8).getRLPData();
+        long blockNumber = parseBigInteger(nrBytes).longValueExact();
+        List<Transaction> transactionList = parseTxs((RLPList) block.get(1));
+        byte[] logsBloom = rlpHeader.get(6).getRLPData();
+
+        return BasicBlock.createFromScratch(new Keccak256(hash), new Keccak256(parentHash), blockNumber, transactionList, logsBloom);
     }
 
     private BlockHeader decodeHeader(RLPList rlpHeader, boolean sealed) {

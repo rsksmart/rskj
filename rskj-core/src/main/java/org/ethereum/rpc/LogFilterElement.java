@@ -20,7 +20,7 @@ package org.ethereum.rpc;
 
 import java.util.Arrays;
 
-import org.ethereum.core.Block;
+import org.ethereum.core.BasicBlock;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.LogInfo;
 
@@ -39,7 +39,7 @@ public class LogFilterElement {
     public String data;
     public String[] topics;
 
-    public LogFilterElement(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
+    public LogFilterElement(LogInfo logInfo, BasicBlock b, int txIndex, Transaction tx, int logIdx) {
         logIndex = HexUtils.toQuantityJsonHex(logIdx);
         blockNumber = b == null ? null : HexUtils.toQuantityJsonHex(b.getNumber());
         blockHash = b == null ? null : HexUtils.toJsonHex(b.getHash().getBytes());

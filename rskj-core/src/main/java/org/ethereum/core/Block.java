@@ -71,21 +71,24 @@ public class Block {
         this(header, transactionsList, uncleList, isRskip126Enabled, sealed, true);
     }
 
-    private Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed, boolean checktxs) {
-        byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskip126Enabled);
+    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed, boolean checktxs) {
+        this.header = header;
+        this.transactionsList = ImmutableList.copyOf(transactionsList);
+        this.uncleList = ImmutableList.copyOf(uncleList);
+        this.sealed = sealed;
 
-        if (checktxs && !Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
+        if (!checktxs) {
+            return;
+        }
+
+        byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskip126Enabled);
+        if (!Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
             String message = String.format(
                     "Transactions trie root validation failed for block %d %s", header.getNumber(), header.getHash()
             );
             panicProcessor.panic("txroot", message);
             throw new IllegalArgumentException(message);
         }
-
-        this.header = header;
-        this.transactionsList = ImmutableList.copyOf(transactionsList);
-        this.uncleList = ImmutableList.copyOf(uncleList);
-        this.sealed = sealed;
     }
 
     public void seal() {
