@@ -51,6 +51,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
     @Nullable
     private final CacheSnapshotHandler cacheSnapshotHandler;
 
+    public static Map<String, Long> cacheHits = new HashMap<>();
+    public static Map<String, Long> uncommitedCacheHits = new HashMap<>();
+    public static Map<String, Long> dbHits = new HashMap<>();
+
     public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize) {
         this(base, cacheSize, null);
     }
@@ -76,13 +80,16 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
         try {
             if (committedCache.containsKey(wrappedKey)) {
+                addHits(this.base.getName(), cacheHits);
                 return committedCache.get(wrappedKey);
             }
 
             if (uncommittedCache.containsKey(wrappedKey)) {
+                addHits(this.base.getName(), uncommitedCacheHits);
                 return uncommittedCache.get(wrappedKey);
             }
 
+            addHits(this.base.getName(), dbHits);
             value = base.get(key);
 
             if (traceEnabled) {
@@ -100,6 +107,27 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
 
         return value;
+    }
+
+
+    public static void resetHits() {
+        dbHits = new HashMap<>();
+        cacheHits = new HashMap<>();
+    }
+
+    public static void printHits() {
+        cacheHits.computeIfAbsent("receipts", x -> 0L);
+        cacheHits.computeIfAbsent("blooms", x -> 0L);
+        dbHits.computeIfAbsent("receipts", x -> 0L);
+        dbHits.computeIfAbsent("blooms", x -> 0L);
+
+        logger.error("=====receipts: {} - {}", cacheHits.get("receipts"), dbHits.get("receipts"));
+        logger.error("=====blooms: {} - {}", cacheHits.get("blooms"), dbHits.get("blooms"));
+    }
+
+    private static void addHits(String name, Map<String, Long> collector) {
+        collector.putIfAbsent(name, 0L);
+        collector.computeIfPresent(name, (k, v) -> v + 1);
     }
 
     @Override

@@ -46,6 +46,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -978,9 +979,15 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getLogs(FilterRequest fr) throws Exception {
         logger.debug("eth_getLogs ...");
+
+        DataSourceWithCache.resetHits();
+
         String id = eth_newFilter(fr);
         Object[] ret = eth_getFilterLogs(id);
         eth_uninstallFilter(id);
+
+        DataSourceWithCache.printHits();
+
         return ret;
     }
 
