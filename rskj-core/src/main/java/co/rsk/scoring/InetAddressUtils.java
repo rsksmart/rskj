@@ -12,15 +12,15 @@ import java.net.UnknownHostException;
  * Created by ajlopez on 15/07/2017.
  */
 public final class InetAddressUtils {
-    private InetAddressUtils() {}
+    private InetAddressUtils() {
+    }
 
     /**
      * Returns <tt>true</tt> if the specified texts represent an address with mask
      * ie "192.168.51.1/16" has a mask
-     *    "192.168.51.1" has no mask
+     * "192.168.51.1" has no mask
      *
-     * @param   text    the address
-     *
+     * @param text the address
      * @return <tt>true</tt> or <tt>false</tt>
      */
     public static boolean hasMask(String text) {
@@ -37,9 +37,8 @@ public final class InetAddressUtils {
      * Convert a text representation to an InetAddress
      * It supports IPV4 and IPV6 formats
      *
-     * @param   hostname    the address
-     *
-     * @return  the text converted to an InetAddress
+     * @param hostname the address
+     * @return the text converted to an InetAddress
      */
     public static InetAddress getAddressForBan(@CheckForNull String hostname) throws InvalidInetAddressException {
         if (hostname == null) {
@@ -60,8 +59,7 @@ public final class InetAddressUtils {
             }
 
             return address;
-        }
-        catch (UnknownHostException ex) {
+        } catch (UnknownHostException ex) {
             throw new InvalidInetAddressException("unknown host: '" + name + "'", ex);
         }
     }
@@ -72,10 +70,9 @@ public final class InetAddressUtils {
      * It supports IPV4 and IPV6 formats
      * ie "192.168.51.1/16" is a valid text
      *
-     * @param   text    the address with mask
-     *
-     * @return  the text converted to an InetAddressBlock
-     * @throws  InvalidInetAddressException if the text is invalid
+     * @param text the address with mask
+     * @return the text converted to an InetAddressBlock
+     * @throws InvalidInetAddressException if the text is invalid
      */
     public static InetAddressCidrBlock parse(String text) throws InvalidInetAddressException {
         //TODO(mmarquez): should we validate address format ??
@@ -89,11 +86,15 @@ public final class InetAddressUtils {
 
         try {
             nbits = Integer.parseInt(parts[1]);
-        }
-        catch (NumberFormatException ex) {
+        } catch (NumberFormatException ex) {
             throw new InvalidInetAddressBlockException("Invalid mask", ex);
         }
 
+        return parse(address, nbits);
+    }
+
+
+    public static InetAddressCidrBlock parse(InetAddress address, int nbits) throws InvalidInetAddressException {
         if (nbits <= 0 || nbits > address.getAddress().length * 8) {
             throw new InvalidInetAddressBlockException("Invalid mask", null);
         }

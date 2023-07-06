@@ -25,6 +25,9 @@ import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.InetAddressBlock;
+import co.rsk.scoring.InetAddressCidrBlock;
+import co.rsk.scoring.InetAddressUtils;
+import co.rsk.scoring.InvalidInetAddressException;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.NodeFilter;
 import org.ethereum.core.Block;
@@ -271,11 +274,11 @@ public class ChannelManagerImpl implements ChannelManager {
         logger.debug("Peer {}: notifies about disconnect", channel.getPeerId());
         channel.onDisconnect();
         synchronized (newPeers) {
-            if(newPeers.remove(channel)) {
+            if (newPeers.remove(channel)) {
                 logger.info("Peer removed from new peers list: {}", channel.getPeerId());
             }
-            synchronized (activePeersLock){
-                if(activePeers.values().remove(channel)) {
+            synchronized (activePeersLock) {
+                if (activePeers.values().remove(channel)) {
                     logger.info("Peer removed from active peers list: {}", channel.getPeerId());
                 }
             }
@@ -294,10 +297,24 @@ public class ChannelManagerImpl implements ChannelManager {
         synchronized (activePeersLock) {
             //TODO(lsebrie): save block address in a data structure and keep updated on each channel add/remove
             //TODO(lsebrie): check if we need to use a different networkCIDR for ipv6
-            return activePeers.values().stream()
+            boolean b1 = activePeers.values().stream()
                     .map(ch -> new InetAddressBlock(ch.getInetSocketAddress().getAddress(), networkCIDR))
                     .filter(block -> block.contains(inetAddress))
                     .count() < maxConnectionsAllowed;
+            boolean b2 = activePeers.values().stream()
+                    .map(ch -> {
+                        try {
+                            return InetAddressUtils.parse(ch.getInetSocketAddress().getAddress(), networkCIDR);
+                        } catch (InvalidInetAddressException e) {
+                            e.printStackTrace();
+                        }
+
+                        return null;
+                    })
+                    .filter(block -> block != null && block.contains(inetAddress))
+                    .count() < maxConnectionsAllowed;
+
+            return b1 && b2;
         }
     }
 
@@ -321,7 +338,7 @@ public class ChannelManagerImpl implements ChannelManager {
      * the peers with an id belonging to the skip set.
      *
      * @param transactions List of Transactions to be sent
-     * @param skip        the set of peers to avoid sending the message.
+     * @param skip         the set of peers to avoid sending the message.
      * @return a set containing the ids of the peers that received the transaction.
      */
     @Override
