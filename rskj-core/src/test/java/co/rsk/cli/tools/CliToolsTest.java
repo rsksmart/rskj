@@ -375,11 +375,13 @@ class CliToolsTest {
 
         String databaseDir = tempDir.resolve("db").toAbsolutePath().toString();
         String[] args = new String[]{"--file", stateFile.getAbsolutePath()};
+        Path unitrieDbPath = Paths.get(databaseDir, "unitrie");
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(databaseDir).when(rskSystemProperties).databaseDir();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(DbKind.ROCKS_DB).when(rskContext).getDbKind(Mockito.eq(unitrieDbPath.getParent().toString()));
         doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
