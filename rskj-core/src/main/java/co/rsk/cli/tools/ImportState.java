@@ -31,6 +31,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
@@ -54,9 +55,10 @@ public class ImportState extends PicoCliToolRskContextAware {
     public Integer call() throws IOException {
         RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
-        DbKind currentDbKind = ctx.getCurrentDbKind();
+        Path unitrieDbPath = Paths.get(databaseDir, "unitrie");
+        DbKind currentDbKind = ctx.getDbKind(unitrieDbPath.getParent().toString());
 
-        KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "unitrie"), currentDbKind);
+        KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(unitrieDbPath, currentDbKind);
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             importState(reader, trieDB);
