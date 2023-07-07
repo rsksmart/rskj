@@ -54,7 +54,7 @@ public class ImportState extends PicoCliToolRskContextAware {
     public Integer call() throws IOException {
         RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
-        DbKind currentDbKind = ctx.getCurrentDbKind(databaseDir);
+        DbKind currentDbKind = ctx.getCurrentDbKind();
 
         KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "unitrie"), currentDbKind);
 
