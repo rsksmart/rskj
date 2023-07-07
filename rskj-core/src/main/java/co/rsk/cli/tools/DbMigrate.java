@@ -107,7 +107,7 @@ public class DbMigrate extends PicoCliToolRskContextAware {
             throw new IllegalArgumentException("Db to migrate not specified. Please specify in the first argument.");
         }
 
-        DbKind sourceDbKind = ctx.getCurrentDbKind();
+        DbKind sourceDbKind = ctx.getDbKind(ctx.getRskSystemProperties().databaseDir());
         DbKind targetDbKind = DbKind.ofName(this.targetdb);
 
         if (sourceDbKind == targetDbKind) {
