@@ -25,7 +25,6 @@ import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.InetAddressBlock;
-import co.rsk.scoring.InetAddressCidrBlock;
 import co.rsk.scoring.InetAddressUtils;
 import co.rsk.scoring.InvalidInetAddressException;
 import com.google.common.annotations.VisibleForTesting;
@@ -306,7 +305,7 @@ public class ChannelManagerImpl implements ChannelManager {
                         try {
                             return InetAddressUtils.parse(ch.getInetSocketAddress().getAddress(), networkCIDR);
                         } catch (InvalidInetAddressException e) {
-                            e.printStackTrace();
+                            logger.error(e.getMessage());
                         }
 
                         return null;
