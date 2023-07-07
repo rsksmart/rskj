@@ -250,7 +250,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
-    private DbKind currentDbKind;
+
+    private final DbKind currentDbKind;
 
     private volatile boolean closed;
 
@@ -271,6 +272,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
         this.cliArgs = cliArgs;
         initializeNativeLibs();
+        ConfigLoader configLoader = new ConfigLoader(cliArgs);
+        currentDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(configLoader.getConfig().getString(RskSystemProperties.PROPERTY_BASE_PATH));
     }
 
     /***** Public Methods *********************************************************************************************/
@@ -1147,13 +1150,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     }
 
     public DbKind getCurrentDbKind() {
-        return getCurrentDbKind(getRskSystemProperties().databaseDir());
-    }
-
-    public DbKind getCurrentDbKind(String databaseDir) {
-        if (currentDbKind == null) {
-            currentDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
-        }
         return currentDbKind;
     }
 
@@ -1173,7 +1169,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         DB indexDB = DBMaker.fileDB(dbFile)
                 .make();
 
-        DbKind currentDbKind = getCurrentDbKind(databaseDir);
+        DbKind currentDbKind = getCurrentDbKind();
         KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "blocks"), currentDbKind);
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
