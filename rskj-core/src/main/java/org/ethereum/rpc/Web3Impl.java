@@ -987,6 +987,7 @@ public class Web3Impl implements Web3 {
         eth_uninstallFilter(id);
 
         DataSourceWithCache.printHits();
+        DataSourceWithCache.printCachesSize();
 
         return ret;
     }

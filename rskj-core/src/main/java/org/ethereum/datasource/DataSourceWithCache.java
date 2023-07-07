@@ -27,6 +27,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -51,6 +54,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
     @Nullable
     private final CacheSnapshotHandler cacheSnapshotHandler;
 
+    public static Map<String, Map<ByteArrayWrapper, byte[]>> cacheCollector = new HashMap<>();
+
     public static Map<String, Long> cacheHits = new HashMap<>();
     public static Map<String, Long> uncommitedCacheHits = new HashMap<>();
     public static Map<String, Long> dbHits = new HashMap<>();
@@ -66,6 +71,9 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float) 0.75, false);
         this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler));
         this.cacheSnapshotHandler = cacheSnapshotHandler;
+
+        cacheCollector.put(this.base.getName() + "-committed", this.committedCache);
+        cacheCollector.put(this.base.getName() + "-uncommitted", this.uncommittedCache);
     }
 
     @Override
@@ -342,5 +350,25 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
 
         return cache;
+    }
+
+    public static void printCachesSize() {
+        printCacheSize("receipts-committed", cacheCollector.get("receipts-committed"));
+        printCacheSize("receipts-uncommitted", cacheCollector.get("receipts-uncommitted"));
+        printCacheSize("blooms-committed", cacheCollector.get("blooms-committed"));
+        printCacheSize("blooms-uncommitted", cacheCollector.get("blooms-uncommitted"));
+    }
+
+    private static void printCacheSize(String name, Map map) {
+        try {
+            logger.error("====={} entries: {}", name, map.size());
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(map);
+            oos.close();
+            logger.error("====={} size: {}", name, baos.size());
+        } catch (IOException e) {
+            logger.error("Could not estimate cache size", e);
+        }
     }
 }
