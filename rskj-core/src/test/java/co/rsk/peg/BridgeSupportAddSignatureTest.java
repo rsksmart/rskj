@@ -99,12 +99,12 @@ class BridgeSupportAddSignatureTest {
         );
 
         when(mockFederationSupport.getActiveFederation()).thenReturn(activeFederation);
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         bridgeSupport.addSignature(BtcECKey.fromPrivate(Hex.decode("fa01")), null,
                 createHash3(1).getBytes());
 
-        verify(provider, times(1)).getRskTxsWaitingForSignatures();
+        verify(provider, times(1)).getPegoutsWaitingForSignatures();
     }
 
     @Test
@@ -156,12 +156,12 @@ class BridgeSupportAddSignatureTest {
 
         when(mockFederationSupport.getActiveFederation()).thenReturn(activeFederation);
         when(mockFederationSupport.getRetiringFederation()).thenReturn(retiringFederation);
-        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
         bridgeSupport.addSignature(BtcECKey.fromPrivate(Hex.decode("fa01")), null,
                 createHash3(1).getBytes());
 
-        verify(provider, times(1)).getRskTxsWaitingForSignatures();
+        verify(provider, times(1)).getPegoutsWaitingForSignatures();
     }
 
     @Test
@@ -217,7 +217,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.addSignature(BtcECKey.fromPrivate(Hex.decode("fa05")), null,
                 createHash3(1).getBytes());
 
-        verify(provider, times(0)).getRskTxsWaitingForSignatures();
+        verify(provider, times(0)).getPegoutsWaitingForSignatures();
     }
 
     @Test
@@ -233,7 +233,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.addSignature(BtcECKey.fromPrivate(Hex.decode("fa03")), null,
                 createHash3(1).getBytes());
 
-        verify(provider, times(0)).getRskTxsWaitingForSignatures();
+        verify(provider, times(0)).getPegoutsWaitingForSignatures();
     }
 
     @Test
@@ -261,7 +261,7 @@ class BridgeSupportAddSignatureTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstantsRegtest, activationsBeforeForks);
 
-        assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
     }
 
     @Test
@@ -285,7 +285,7 @@ class BridgeSupportAddSignatureTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstantsRegtest, activationsBeforeForks);
 
-        assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
     }
 
     @Test
@@ -332,7 +332,7 @@ class BridgeSupportAddSignatureTest {
 
         // Save btc tx to be signed
         final Keccak256 rskTxHash = createHash3(1);
-        provider.getRskTxsWaitingForSignatures().put(rskTxHash, btcTx);
+        provider.getPegoutsWaitingForSignatures().put(rskTxHash, btcTx);
         provider.save();
         track.commit();
 
@@ -461,7 +461,7 @@ class BridgeSupportAddSignatureTest {
         t.addInput(prevOut1).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(federation));
         t.addInput(prevOut2).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(federation));
         t.addInput(prevOut3).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(federation));
-        provider.getRskTxsWaitingForSignatures().put(keccak256, t);
+        provider.getPegoutsWaitingForSignatures().put(keccak256, t);
         provider.save();
 
         SignatureCache signatureCache = new ReceivedTxSignatureCache();
@@ -526,7 +526,7 @@ class BridgeSupportAddSignatureTest {
 
         provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstantsRegtest, activationsBeforeForks);
 
-        assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
         assertThat(logs, is(not(empty())));
         assertThat(logs, hasSize(5));
         LogInfo releaseTxEvent = logs.get(4);
@@ -569,7 +569,7 @@ class BridgeSupportAddSignatureTest {
         TransactionOutput output = new TransactionOutput(btcRegTestParams, t, Coin.COIN, new BtcECKey().toAddress(btcRegTestParams));
         t.addOutput(output);
         t.addInput(prevOut).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(federation));
-        provider.getRskTxsWaitingForSignatures().put(keccak256, t);
+        provider.getPegoutsWaitingForSignatures().put(keccak256, t);
         provider.save();
         track.commit();
 
@@ -637,7 +637,7 @@ class BridgeSupportAddSignatureTest {
         provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstantsRegtest, activationsBeforeForks);
 
         if ("FullySigned".equals(expectedResult)) {
-            assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+            assertTrue(provider.getPegoutsWaitingForSignatures().isEmpty());
             assertThat(logs, is(not(empty())));
             assertThat(logs, hasSize(3));
             LogInfo releaseTxEvent = logs.get(2);
@@ -649,7 +649,7 @@ class BridgeSupportAddSignatureTest {
             assertTrue(retrievedScriptSig.getChunks().get(1).data.length > 0);
             assertTrue(retrievedScriptSig.getChunks().get(2).data.length > 0);
         } else {
-            Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(keccak256).getInput(0).getScriptSig();
+            Script retrievedScriptSig = provider.getPegoutsWaitingForSignatures().get(keccak256).getInput(0).getScriptSig();
             assertEquals(4, retrievedScriptSig.getChunks().size());
             boolean expectSignatureToBePersisted = "PartiallySigned".equals(expectedResult); // for "InvalidParameters"
             assertEquals(expectSignatureToBePersisted, retrievedScriptSig.getChunks().get(1).data.length > 0);

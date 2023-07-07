@@ -21,17 +21,6 @@ package org.ethereum;
 
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-
-import java.io.File;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.bouncycastle.util.encoders.Hex;
@@ -52,6 +41,8 @@ import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.security.SecureRandom;
 import java.util.*;
 
@@ -301,4 +292,12 @@ public final class TestUtils {
 
         return Hex.decode(peerId);
     }
+
+    public static void waitFor(long durationMillis) {
+        long startMillis = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startMillis < durationMillis) {
+            // simulate processing time
+        }
+    }
+
 }

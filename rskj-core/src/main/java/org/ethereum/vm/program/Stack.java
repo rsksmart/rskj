@@ -25,6 +25,7 @@ import org.ethereum.vm.program.listener.ProgramListenerAware;
 
 public class Stack extends java.util.Stack<DataWord> implements ProgramListenerAware {
 
+    private static final long serialVersionUID = -227393866144006913L;
     private ProgramListener traceListener;
 
     @Override
@@ -61,4 +62,5 @@ public class Stack extends java.util.Stack<DataWord> implements ProgramListenerA
     private boolean isAccessible(int from) {
         return from >= 0 && from < size();
     }
+
 }

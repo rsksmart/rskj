@@ -37,7 +37,7 @@ import java.util.Set;
  */
 public class PeersMessage extends P2pMessage {
 
-    private boolean parsed = false;
+    private boolean pmParsed = false;
 
     private Set<PeerConnectionData> peers;
 
@@ -47,7 +47,7 @@ public class PeersMessage extends P2pMessage {
 
     public PeersMessage(Set<PeerConnectionData> peers) {
         this.peers = peers;
-        parsed = true;
+        pmParsed = true;
     }
 
     private void parse() {
@@ -71,7 +71,7 @@ public class PeersMessage extends P2pMessage {
                 throw new RuntimeException("Malformed ip", e);
             }
         }
-        this.parsed = true;
+        this.pmParsed = true;
     }
 
     private void encode() {
@@ -93,7 +93,7 @@ public class PeersMessage extends P2pMessage {
     }
 
     public Set<PeerConnectionData> getPeers() {
-        if (!parsed) {
+        if (!pmParsed) {
             this.parse();
         }
         return peers;
@@ -109,8 +109,9 @@ public class PeersMessage extends P2pMessage {
         return null;
     }
 
+    @Override
     public String toString() {
-        if (!parsed) {
+        if (!pmParsed) {
             this.parse();
         }
 

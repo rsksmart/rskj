@@ -30,13 +30,31 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * This context overrides every persistent database access with a non-persistent one.
  * It is the closest to a production context that one can use for testing.
  */
 public class RskTestContext extends RskContext {
-    public RskTestContext(String[] args) {
+
+    private static String[] composeArgs(Path dbPath, String... args) {
+        if (Stream.of(args).anyMatch(a -> a.toLowerCase().startsWith("-xdatabase.dir"))) {
+            throw new IllegalArgumentException("Database path provided in both 'dbPath' and 'args'");
+        }
+
+        String[] result = Arrays.copyOf(args, args.length + 1);
+        result[args.length] = "-Xdatabase.dir=" + dbPath.resolve("db");
+
+        return result;
+    }
+
+    public RskTestContext(Path dbPath, String... args) {
+        super(composeArgs(dbPath, args));
+    }
+
+    public RskTestContext(String... args) {
         super(args);
     }
 

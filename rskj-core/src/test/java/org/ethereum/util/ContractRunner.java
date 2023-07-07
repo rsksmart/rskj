@@ -1,6 +1,7 @@
 package org.ethereum.util;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
@@ -33,8 +34,8 @@ public class ContractRunner {
 
     public final Account sender;
 
-    public ContractRunner() {
-        this(new RskTestFactory());
+    public ContractRunner(Path dbPath) {
+        this(new RskTestFactory(dbPath));
     }
 
     public ContractRunner(RskTestFactory factory) {

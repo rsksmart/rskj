@@ -38,7 +38,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.jsontestsuite.Env;
-import org.ethereum.jsontestsuite.StateTestCase;
+import org.ethereum.jsontestsuite.StateTestingCase;
 import org.ethereum.jsontestsuite.TestProgramInvokeFactory;
 import org.ethereum.jsontestsuite.builder.EnvBuilder;
 import org.ethereum.jsontestsuite.builder.LogBuilder;
@@ -75,11 +75,11 @@ public class StateTestRunner {
 
     private final BridgeSupportFactory bridgeSupportFactory;
 
-    public static List<String> run(StateTestCase stateTestCase2) {
+    public static List<String> run(StateTestingCase stateTestCase2) {
         return new StateTestRunner(stateTestCase2).runImpl();
     }
 
-    protected StateTestCase stateTestCase;
+    protected StateTestingCase stateTestCase;
     private TrieStoreImpl trieStore;
     protected Repository repository;
     protected Transaction transaction;
@@ -91,7 +91,7 @@ public class StateTestRunner {
     protected PrecompiledContracts precompiledContracts;
     protected SignatureCache signatureCache;
 
-    public StateTestRunner(StateTestCase stateTestCase) {
+    public StateTestRunner(StateTestingCase stateTestCase) {
         this.stateTestCase = stateTestCase;
         this.signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         this.bridgeSupportFactory = new BridgeSupportFactory(

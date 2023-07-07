@@ -63,15 +63,15 @@ public class BridgeStorageProvider {
 
     private Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed;
 
-    // RSK release txs follow these steps: First, they are waiting for coin selection (releaseRequestQueue),
-    // then they are waiting for enough confirmations on the RSK network (releaseTransactionSet),
-    // then they are waiting for federators' signatures (rskTxsWaitingForSignatures),
+    // RSK pegouts txs follow these steps: First, they are waiting for coin selection (releaseRequestQueue),
+    // then they are waiting for enough confirmations on the RSK network (pegoutsWaitingForConfirmations),
+    // then they are waiting for federators' signatures (pegoutsWaitingForSignatures),
     // then they are logged into the block that has them as completely signed for btc release
-    // and are removed from rskTxsWaitingForSignatures.
+    // and are removed from pegoutsWaitingForSignatures.
     // key = rsk tx hash, value = btc tx
     private ReleaseRequestQueue releaseRequestQueue;
-    private ReleaseTransactionSet releaseTransactionSet;
-    private SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures;
+    private PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
+    private SortedMap<Keccak256, BtcTransaction> pegoutsWaitingForSignatures;
 
     private List<UTXO> newFederationBtcUTXOs;
     private List<UTXO> oldFederationBtcUTXOs;
@@ -265,58 +265,58 @@ public class BridgeStorageProvider {
         }
     }
 
-    public ReleaseTransactionSet getReleaseTransactionSet() throws IOException {
-        if (releaseTransactionSet != null) {
-            return releaseTransactionSet;
+    public PegoutsWaitingForConfirmations getPegoutsWaitingForConfirmations() throws IOException {
+        if (pegoutsWaitingForConfirmations != null) {
+            return pegoutsWaitingForConfirmations;
         }
 
-        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>(getFromRepository(RELEASE_TX_SET,
-                data -> BridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters).getEntries()));
+        Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>(getFromRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS,
+                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters).getEntries()));
 
         if (!activations.isActive(RSKIP146)) {
-            releaseTransactionSet = new ReleaseTransactionSet(entries);
-            return releaseTransactionSet;
+            pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
+            return pegoutsWaitingForConfirmations;
         }
 
         entries.addAll(getFromRepository(
-                RELEASE_TX_SET_WITH_TXHASH,
-                data -> BridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters, true).getEntries()));
+            PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY,
+                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries()));
 
-        releaseTransactionSet = new ReleaseTransactionSet(entries);
+        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
 
-        return releaseTransactionSet;
+        return pegoutsWaitingForConfirmations;
     }
 
-    public void saveReleaseTransactionSet() {
-        if (releaseTransactionSet == null) {
+    public void savePegoutsWaitingForConfirmations() {
+        if (pegoutsWaitingForConfirmations == null) {
             return;
         }
 
-        safeSaveToRepository(RELEASE_TX_SET, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSet);
+        safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmations);
 
         if (activations.isActive(RSKIP146)) {
-            safeSaveToRepository(RELEASE_TX_SET_WITH_TXHASH, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSetWithTxHash);
+            safeSaveToRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY, pegoutsWaitingForConfirmations, BridgeSerializationUtils::serializePegoutsWaitingForConfirmationsWithTxHash);
         }
     }
 
-    public SortedMap<Keccak256, BtcTransaction> getRskTxsWaitingForSignatures() throws IOException {
-        if (rskTxsWaitingForSignatures != null) {
-            return rskTxsWaitingForSignatures;
+    public SortedMap<Keccak256, BtcTransaction> getPegoutsWaitingForSignatures() throws IOException {
+        if (pegoutsWaitingForSignatures != null) {
+            return pegoutsWaitingForSignatures;
         }
 
-        rskTxsWaitingForSignatures = getFromRepository(
-                RSK_TXS_WAITING_FOR_SIGNATURES_KEY,
+        pegoutsWaitingForSignatures = getFromRepository(
+            PEGOUTS_WAITING_FOR_SIGNATURES,
                 data -> BridgeSerializationUtils.deserializeMap(data, networkParameters, false)
         );
-        return rskTxsWaitingForSignatures;
+        return pegoutsWaitingForSignatures;
     }
 
-    public void saveRskTxsWaitingForSignatures() {
-        if (rskTxsWaitingForSignatures == null) {
+    public void savePegoutsWaitingForSignatures() {
+        if (pegoutsWaitingForSignatures == null) {
             return;
         }
 
-        safeSaveToRepository(RSK_TXS_WAITING_FOR_SIGNATURES_KEY, rskTxsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
+        safeSaveToRepository(PEGOUTS_WAITING_FOR_SIGNATURES, pegoutsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
     }
 
     public Federation getNewFederation() {
@@ -927,8 +927,8 @@ public class BridgeStorageProvider {
         saveBtcTxHashesAlreadyProcessed();
 
         saveReleaseRequestQueue();
-        saveReleaseTransactionSet();
-        saveRskTxsWaitingForSignatures();
+        savePegoutsWaitingForConfirmations();
+        savePegoutsWaitingForSignatures();
 
         saveNewFederation();
         saveNewFederationBtcUTXOs();

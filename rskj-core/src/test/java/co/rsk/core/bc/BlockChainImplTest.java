@@ -42,14 +42,20 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 public class BlockChainImplTest {
-    private ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
-    private ECKey catKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cat".getBytes()));
+
+    private final ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
+    private final ECKey catKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cat".getBytes()));
+
+    @TempDir
+    public Path tempDir;
 
     private RskTestFactory objects;
     private RskSystemProperties config;
@@ -60,7 +66,7 @@ public class BlockChainImplTest {
 
     @BeforeEach
     void setup() {
-        objects = new RskTestFactory() {
+        objects = new RskTestFactory(tempDir) {
             @Override
             protected GenesisLoader buildGenesisLoader() {
                 return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);

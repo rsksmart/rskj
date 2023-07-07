@@ -184,6 +184,12 @@ public class EthModule
             estimatedGas += GasCost.STIPEND_CALL;
         }
 
+        // ensure not returning blockGasLimit+stipend
+        if (estimatedGas > gasEstimationCap) {
+            LOGGER.warn("Estimation {} was bigger than cap {}", estimatedGas, gasEstimationCap);
+            estimatedGas = gasEstimationCap;
+        }
+
         return HexUtils.toQuantityJsonHex(estimatedGas);
     }
 

@@ -63,7 +63,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import picocli.CommandLine;
 
 import java.io.*;
@@ -78,7 +77,9 @@ import java.util.Random;
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.generateBytesFromRandom;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -754,7 +755,7 @@ class CliToolsTest {
     }
 
     @Test
-    public void testErrorHandlingInPicocli() {
+    void testErrorHandlingInPicocli() {
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
 
@@ -778,11 +779,11 @@ class CliToolsTest {
 
         dummyTool.execute(new String[]{}, () -> rskContext, stopper);
 
-        verify(stopper, times(1)).stop(Mockito.eq(1));
+        verify(stopper, times(1)).stop(1);
     }
 
     @Test
     void execToolIgnoringArgsShouldNotThrowNoSuchElementException() {
-        Assertions.assertDoesNotThrow(() -> DummyTool.main(new String[]{"--reset", "-t", "dummy-value"}));
+        Assertions.assertDoesNotThrow(() -> DummyTool.main(new String[]{"-Xdatabase.dir=" + tempDir.resolve("db"), "--reset", "-t", "dummy-value"}));
     }
 }

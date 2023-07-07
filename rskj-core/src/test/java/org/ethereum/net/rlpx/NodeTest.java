@@ -19,6 +19,7 @@
 
 package org.ethereum.net.rlpx;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -28,11 +29,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by mario on 01/08/2016.
@@ -89,4 +90,55 @@ class NodeTest {
 
     }
 
+    @Test
+    void nodeCreationWithUrlIsParsedCorrectly() {
+        String host = "host";
+        int port = 1234;
+        String hexNodeId = String.valueOf(Hex.encodeHex(NODE_ID_1));
+        String enodeUrl = "enode://" + hexNodeId + "@" + host + ":" + port;
+        Node node = new Node(enodeUrl);
+        assertNotNull(node);
+
+        assertEquals(port, node.getPort());
+        assertEquals(host, node.getHost());
+        assertEquals(hexNodeId, node.getHexId());
+    }
+
+    @Test
+    void nodeCreationWithBadSchemeMustFail() {
+        assertThrows(RuntimeException.class, () -> new Node("http://www.google.es"));
+    }
+
+    @Test
+    void nodeCreationWithBadUriMustThrowCorrectException() {
+        assertThrows(RuntimeException.class, () -> new Node("invalidUri"));
+    }
+
+    @Test
+    void nodeReturnsExpectedStringValue() {
+        Node node = new Node(NODE_ID_1, GOOGLE, GOOGLE_PORT);
+        String expectedString = "Node{ host='" + GOOGLE
+                + "', port=" + GOOGLE_PORT
+                + ", id=" + Hex.encodeHexString(NODE_ID_1)
+                + "}";
+
+        assertEquals(expectedString, node.toString());
+    }
+
+    @Test
+    void equalsMethodWorksAsExpected() {
+        Node node1 = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
+        Node node2 = new Node(NODE_ID_1, "www.google.es", NODE_PORT_1);
+
+        assertEquals(node1, node2);
+        assertNotEquals(node1, new Object());
+        assertNotEquals(node1, null);
+    }
+
+    @Test
+    void hashCodeIsUsingHostPortAndIdToBeCalculated() {
+        int expectedHash = Objects.hash(NODE_HOST_1, NODE_PORT_1, NODE_ID_1);
+        Node node = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
+        assertEquals(expectedHash, node.hashCode());
+    }
 }

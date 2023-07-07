@@ -117,7 +117,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -259,7 +259,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -403,7 +403,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -571,7 +571,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -705,8 +705,8 @@ class BridgeSupportFlyoverTest {
         when(provider.getOldFederation()).thenReturn(retiringFederation);
         when(provider.getLockingCap()).thenReturn(lockingCapValue);
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
-        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         Address userRefundBtcAddress = createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
         Address lpBtcAddress = createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -812,13 +812,13 @@ class BridgeSupportFlyoverTest {
         );
 
         if (result.longValue() == FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value() || result.longValue() == FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()){
-            List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+            List<BtcTransaction> pegoutsWaitingForConfirmationsEntries = provider.getPegoutsWaitingForConfirmations().getEntries()
                 .stream()
-                .map(ReleaseTransactionSet.Entry::getTransaction)
+                .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
                 .collect(Collectors.toList());
 
-            assertEquals(1, releaseTxs.size());
-            BtcTransaction releaseTx = releaseTxs.get(0);
+            assertEquals(1, pegoutsWaitingForConfirmationsEntries.size());
+            BtcTransaction releaseTx = pegoutsWaitingForConfirmationsEntries.get(0);
             Assertions.assertEquals(1, releaseTx.getOutputs().size());
 
             Coin amountSent = BridgeUtils.getAmountSentToAddresses(activations,
@@ -1607,7 +1607,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -1791,7 +1791,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -1809,8 +1809,8 @@ class BridgeSupportFlyoverTest {
         Coin lockingCapValue = Coin.COIN;
         provider.setLockingCap(lockingCapValue);
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
-        doReturn(releaseTransactionSet).when(provider).getReleaseTransactionSet();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
         Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -1985,7 +1985,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2003,8 +2003,8 @@ class BridgeSupportFlyoverTest {
         Coin lockingCapValue = Coin.COIN;
         provider.setLockingCap(lockingCapValue);
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
-        doReturn(releaseTransactionSet).when(provider).getReleaseTransactionSet();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
         Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -2179,7 +2179,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2196,8 +2196,8 @@ class BridgeSupportFlyoverTest {
         Coin lockingCapValue = Coin.COIN;
         provider.setLockingCap(lockingCapValue);
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
-        doReturn(releaseTransactionSet).when(provider).getReleaseTransactionSet();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
         Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -2346,7 +2346,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2363,8 +2363,8 @@ class BridgeSupportFlyoverTest {
         Coin lockingCapValue = Coin.COIN;
         provider.setLockingCap(lockingCapValue);
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
-        doReturn(releaseTransactionSet).when(provider).getReleaseTransactionSet();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
         Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
         Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -2528,7 +2528,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2869,8 +2869,8 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
-        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         BtcLockSender btcLockSender = mock(BtcLockSender.class);
         BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
@@ -2953,10 +2953,10 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
         when(provider.isFlyoverDerivationHashUsed(any(), any())).thenReturn(false);
 
         BtcLockSender btcLockSender = mock(BtcLockSender.class);

@@ -44,7 +44,9 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.time.Clock;
 import java.util.List;
 
@@ -54,6 +56,10 @@ import java.util.List;
 class Web3ImplSnapshotTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
+
+    @TempDir
+    public Path tempDir;
+
     private RskTestFactory factory;
     private Blockchain blockchain;
     private MiningMainchainView mainchainView;
@@ -61,7 +67,7 @@ class Web3ImplSnapshotTest {
 
     @BeforeEach
     void setUp() {
-        factory = new RskTestFactory(config);
+        factory = new RskTestFactory(tempDir, config);
         blockchain = factory.getBlockchain();
         mainchainView = factory.getMiningMainchainView();
         blockFactory = factory.getBlockFactory();

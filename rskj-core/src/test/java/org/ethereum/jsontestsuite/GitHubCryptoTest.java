@@ -39,10 +39,10 @@ class GitHubCryptoTest {
 
         ObjectMapper mapper = new ObjectMapper();
         JavaType type = mapper.getTypeFactory().
-                constructMapType(HashMap.class, String.class, CryptoTestCase.class);
+                constructMapType(HashMap.class, String.class, CryptoTestingCase.class);
 
 
-        HashMap<String , CryptoTestCase> testSuite =
+        HashMap<String , CryptoTestingCase> testSuite =
                 mapper.readValue(json, type);
 
         for (String key : testSuite.keySet()){

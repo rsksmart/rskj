@@ -898,15 +898,15 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void serializeTransactionSet() throws Exception {
-        Set<ReleaseTransactionSet.Entry> sampleEntries = new HashSet<>(Arrays.asList(
-            new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("ccdd"), 10L),
-            new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("bb"), 20L),
-            new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("ba"), 30L),
-            new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("aa"), 40L)
+        Set<PegoutsWaitingForConfirmations.Entry> sampleEntries = new HashSet<>(Arrays.asList(
+            new PegoutsWaitingForConfirmations.Entry(mockBtcTransactionSerialize("ccdd"), 10L),
+            new PegoutsWaitingForConfirmations.Entry(mockBtcTransactionSerialize("bb"), 20L),
+            new PegoutsWaitingForConfirmations.Entry(mockBtcTransactionSerialize("ba"), 30L),
+            new PegoutsWaitingForConfirmations.Entry(mockBtcTransactionSerialize("aa"), 40L)
         ));
-        ReleaseTransactionSet sample = new ReleaseTransactionSet(sampleEntries);
+        PegoutsWaitingForConfirmations sample = new PegoutsWaitingForConfirmations(sampleEntries);
 
-        byte[] result = BridgeSerializationUtils.serializeReleaseTransactionSet(sample);
+        byte[] result = BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(sample);
         String hexResult = ByteUtil.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("cd");
@@ -923,8 +923,8 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void deserializeTransactionSet_emptyOrNull() throws Exception {
-        assertEquals(0, BridgeSerializationUtils.deserializeReleaseTransactionSet(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
-        assertEquals(0, BridgeSerializationUtils.deserializeReleaseTransactionSet(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
     }
 
     @Test
@@ -947,20 +947,20 @@ class BridgeSerializationUtilsTest {
         t4.addInput(input.getOutput(0));
         t4.addOutput(Coin.MILLICOIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
 
-        Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
-            new ReleaseTransactionSet.Entry(t1, 32L),
-            new ReleaseTransactionSet.Entry(t2, 14L),
-            new ReleaseTransactionSet.Entry(t3, 102L),
-            new ReleaseTransactionSet.Entry(t4, 20L)
+        Set<PegoutsWaitingForConfirmations.Entry> expectedEntries = new HashSet<>(Arrays.asList(
+            new PegoutsWaitingForConfirmations.Entry(t1, 32L),
+            new PegoutsWaitingForConfirmations.Entry(t2, 14L),
+            new PegoutsWaitingForConfirmations.Entry(t3, 102L),
+            new PegoutsWaitingForConfirmations.Entry(t4, 20L)
         ));
 
-        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(expectedEntries);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(expectedEntries);
 
-        byte[] data = BridgeSerializationUtils.serializeReleaseTransactionSet(releaseTransactionSet);
+        byte[] data = BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations);
 
-        ReleaseTransactionSet result = BridgeSerializationUtils.deserializeReleaseTransactionSet(data, params);
+        PegoutsWaitingForConfirmations result = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, params);
 
-        Set<ReleaseTransactionSet.Entry> entries = result.getEntries();
+        Set<PegoutsWaitingForConfirmations.Entry> entries = result.getEntries();
 
         assertEquals(expectedEntries, entries);
     }
@@ -976,14 +976,14 @@ class BridgeSerializationUtilsTest {
         t1.addInput(input.getOutput(0));
         t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
 
-        Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
-            new ReleaseTransactionSet.Entry(t1, 32L, PegTestUtils.createHash3(0))
+        Set<PegoutsWaitingForConfirmations.Entry> expectedEntries = new HashSet<>(Arrays.asList(
+            new PegoutsWaitingForConfirmations.Entry(t1, 32L, PegTestUtils.createHash3(0))
         ));
 
-        ReleaseTransactionSet rtc = new ReleaseTransactionSet(expectedEntries);
-        byte[] serializedEntries = BridgeSerializationUtils.serializeReleaseTransactionSetWithTxHash(rtc);
+        PegoutsWaitingForConfirmations rtc = new PegoutsWaitingForConfirmations(expectedEntries);
+        byte[] serializedEntries = BridgeSerializationUtils.serializePegoutsWaitingForConfirmationsWithTxHash(rtc);
 
-        Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeReleaseTransactionSet(serializedEntries, params));
+        Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(serializedEntries, params));
     }
 
     @Test
@@ -997,14 +997,14 @@ class BridgeSerializationUtilsTest {
         t1.addInput(input.getOutput(0));
         t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
 
-        Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
-            new ReleaseTransactionSet.Entry(t1, 32L)
+        Set<PegoutsWaitingForConfirmations.Entry> expectedEntries = new HashSet<>(Arrays.asList(
+            new PegoutsWaitingForConfirmations.Entry(t1, 32L)
         ));
 
-        ReleaseTransactionSet rtc = new ReleaseTransactionSet(expectedEntries);
-        byte[] serializedEntries = BridgeSerializationUtils.serializeReleaseTransactionSet(rtc);
+        PegoutsWaitingForConfirmations rtc = new PegoutsWaitingForConfirmations(expectedEntries);
+        byte[] serializedEntries = BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(rtc);
 
-        Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeReleaseTransactionSet(serializedEntries, params, true));
+        Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(serializedEntries, params, true));
     }
 
     @Test
@@ -1013,7 +1013,7 @@ class BridgeSerializationUtilsTest {
         byte[] data = RLP.encodeList(firstItem);
 
         try {
-            BridgeSerializationUtils.deserializeReleaseTransactionSet(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (RuntimeException e) {
             return;
         }

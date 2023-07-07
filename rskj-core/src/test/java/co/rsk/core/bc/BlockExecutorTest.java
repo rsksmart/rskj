@@ -57,8 +57,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.*;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
@@ -78,6 +81,9 @@ public class BlockExecutorTest {
     private static final BlockFactory BLOCK_FACTORY = new BlockFactory(activationConfig);
     public static final boolean RSKIP_126_IS_ACTIVE = true;
 
+    @TempDir
+    public Path tempDir;
+
     private Blockchain blockchain;
     private TrieStore trieStore;
     private RepositorySnapshot repository;
@@ -87,7 +93,7 @@ public class BlockExecutorTest {
     public void setUp() {
         cfg = spy(CONFIG);
         doReturn(activationConfig).when(cfg).getActivationConfig();
-        RskTestFactory objects = new RskTestFactory(CONFIG);
+        RskTestFactory objects = new RskTestFactory(tempDir, CONFIG);
         blockchain = objects.getBlockchain();
         trieStore = objects.getTrieStore();
         repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());

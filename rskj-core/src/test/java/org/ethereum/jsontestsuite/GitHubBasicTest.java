@@ -56,7 +56,7 @@ class GitHubBasicTest {
 
         DifficultyTestSuite testSuite = new DifficultyTestSuite(json);
 
-        for (DifficultyTestCase testCase : testSuite.getTestCases()) {
+        for (DifficultyTestingCase testCase : testSuite.getTestCases()) {
 
             logger.info("Running {}\n", testCase.getName());
 
@@ -76,7 +76,7 @@ class GitHubBasicTest {
 
         DifficultyTestSuite testSuite = new DifficultyTestSuite(json);
 
-        for (DifficultyTestCase testCase : testSuite.getTestCases()) {
+        for (DifficultyTestingCase testCase : testSuite.getTestCases()) {
 
             logger.info("Running {}\n", testCase.getName());
 
@@ -96,7 +96,7 @@ class GitHubBasicTest {
 
         DifficultyTestSuite testSuite = new DifficultyTestSuite(json);
 
-        for (DifficultyTestCase testCase : testSuite.getTestCases()) {
+        for (DifficultyTestingCase testCase : testSuite.getTestCases()) {
 
             logger.info("Running {}\n", testCase.getName());
 

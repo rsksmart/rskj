@@ -30,24 +30,34 @@ import co.rsk.util.HexUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Created by ajlopez on 17/01/2018.
  */
-class LogFilterTest {
+class
+LogFilterTest {
+
+    @TempDir
+    public Path tempDir;
+
     @Test
     void noEvents() {
-        LogFilter filter = new LogFilter(null, null, false, false);
-
+        LogFilter filter = new LogFilter.LogFilterBuilder().build();
         Object[] result = filter.getEvents();
 
         Assertions.assertNotNull(result);
@@ -56,7 +66,7 @@ class LogFilterTest {
 
     @Test
     void noEventsAfterEmptyBlock() {
-        LogFilter filter = new LogFilter(null, null, false, false);
+        LogFilter filter =new LogFilter.LogFilterBuilder().build();
 
         Block block = new BlockGenerator().getBlock(1);
 
@@ -70,7 +80,7 @@ class LogFilterTest {
 
     @Test
     void eventAfterBlockWithEvent() {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(tempDir);
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
@@ -79,7 +89,12 @@ class LogFilterTest {
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
 
-        LogFilter filter = new LogFilter(atfilter, blockchain, false, true);
+        LogFilter filter = new LogFilter.LogFilterBuilder()
+                .addressesTopicsFilter(atfilter)
+                .blockchain(blockchain)
+                .fromLatestBlock(false)
+                .toLatestBlock(true)
+                .build();
 
         filter.newBlockReceived(block);
 
@@ -91,7 +106,7 @@ class LogFilterTest {
 
     @Test
     void twoEventsAfterTwoBlocksWithEventAndToLatestBlock() {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(tempDir);
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
@@ -100,7 +115,12 @@ class LogFilterTest {
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
 
-        LogFilter filter = new LogFilter(atfilter, blockchain, false, true);
+        LogFilter filter = new LogFilter.LogFilterBuilder()
+                .addressesTopicsFilter(atfilter)
+                .blockchain(blockchain)
+                .fromLatestBlock(false)
+                .toLatestBlock(true)
+                .build();
 
         filter.newBlockReceived(block);
         filter.newBlockReceived(block);
@@ -113,7 +133,7 @@ class LogFilterTest {
 
     @Test
     void onlyOneEventAfterTwoBlocksWithEventAndFromLatestBlock() {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(tempDir);
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
@@ -122,8 +142,12 @@ class LogFilterTest {
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
 
-        LogFilter filter = new LogFilter(atfilter, blockchain, true, true);
-
+        LogFilter filter = new LogFilter.LogFilterBuilder()
+                .addressesTopicsFilter(atfilter)
+                .blockchain(blockchain)
+                .fromLatestBlock(true)
+                .toLatestBlock(true)
+                .build();
         filter.newBlockReceived(block);
         filter.newBlockReceived(block);
 
@@ -135,7 +159,7 @@ class LogFilterTest {
 
     @Test
     void testFromFilterRequest() throws Exception {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(tempDir);
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         BlocksBloomStore blocksBloomStore = factory.getBlocksBloomStore();
@@ -183,6 +207,62 @@ class LogFilterTest {
         logFilter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore);
         result = logFilter.getEventsInternal();
         Assertions.assertEquals(2, result.size());
+    }
+
+    @Test
+    void testLogFilterExceptionIsThrownWhenLimitIsReached(){
+        //TODO RskTestFactory is deprecated but RskTestContext is not working in the same way
+        RskTestFactory rskTestContext = new RskTestFactory(tempDir);
+        Blockchain blockchain = rskTestContext.getBlockchain();
+        BlockStore blockStore = rskTestContext.getBlockStore();
+        BlocksBloomStore blocksBloomStore = rskTestContext.getBlocksBloomStore();
+        TestUtils.setInternalState(blocksBloomStore, "noBlocks", 2);
+        TestUtils.setInternalState(blocksBloomStore, "noConfirmations", 1);
+        RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
+
+        BlockBuilder blockBuilder = new BlockBuilder(blockchain, null, blockStore)
+                .trieStore(rskTestContext.getTrieStore());
+
+        Account acc1 = new AccountBuilder(blockchain,blockStore,repositoryLocator)
+                .name("acc1").balance(Coin.valueOf(10000000)).build();
+
+        createBlocksTo(6,blockBuilder,blockchain,acc1);
+
+        FilterRequest filterRequest = new FilterRequest();
+        //fromBlock nº1
+        filterRequest.setFromBlock("0x1");
+        //to block nº5
+        filterRequest.setToBlock("0x5");
+        //Limit is 3 so exception is expected
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> {
+            LogFilter.fromFilterRequest(filterRequest, blockchain, blocksBloomStore, 3L, 0L);
+        });
+        assertEquals(-32012,ex.getCode());
+    }
+
+    @Test
+    void addFilter_mustFail_whenLimitIsReached(){
+        int limit = 2;
+        LogFilter filter = new LogFilter.LogFilterBuilder()
+                .maxBlocksToReturn(limit)
+                .build();
+        assertTrue(filter.getEventsInternal().isEmpty());
+        filter.add(new FilterTest.FilterEventMock());
+        filter.add(new FilterTest.FilterEventMock());
+
+        // the limit is reached
+        assertEquals(limit,filter.getEvents().length);
+
+        FilterTest.FilterEventMock thirdEvent = new FilterTest.FilterEventMock();
+        assertThrows(RskJsonRpcRequestException.class, () -> filter.add(thirdEvent));
+    }
+
+    private void createBlocksTo(int blockNumber, BlockBuilder blockBuilder, Blockchain blockchain, Account acc1) {
+
+        Block parent = blockchain.getBlockByNumber(0);
+        for(int i = 0; i<blockNumber; i++) {
+            parent = addBlockToBlockchain(parent, acc1, blockBuilder, blockchain);
+        }
     }
 
     public static Block addBlockToBlockchain(Block parent, Account account, BlockBuilder blockBuilder, Blockchain blockchain) {

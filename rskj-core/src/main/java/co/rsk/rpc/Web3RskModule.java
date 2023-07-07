@@ -22,7 +22,7 @@ import co.rsk.rpc.modules.rsk.RskModule;
 
 public interface Web3RskModule {
 
-    default String rsk_getRawTransactionReceiptByHash(String transactionHash)  {
+    default String rsk_getRawTransactionReceiptByHash(String transactionHash) {
         return getRskModule().getRawTransactionReceiptByHash(transactionHash);
     }
 
@@ -40,6 +40,10 @@ public interface Web3RskModule {
 
     default void rsk_shutdown() {
         getRskModule().shutdown();
+    }
+
+    default void rsk_flush() {
+        getRskModule().flush();
     }
 
     RskModule getRskModule();

@@ -68,7 +68,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.function.Supplier;
 
 import static org.ethereum.crypto.HashUtil.toPrintableHash;
 import static org.ethereum.json.Utils.parseData;
@@ -110,12 +109,12 @@ public class TestRunner {
 
     public List<String> runTestSuite(TestSuite testSuite) {
 
-        Iterator<TestCase> testIterator = testSuite.iterator();
+        Iterator<TestingCase> testIterator = testSuite.iterator();
         List<String> resultCollector = new ArrayList<>();
 
         while (testIterator.hasNext()) {
 
-            TestCase testCase = testIterator.next();
+            TestingCase testCase = testIterator.next();
 
             TestRunner runner = new TestRunner();
             List<String> result = runner.runTestCase(testCase);
@@ -126,7 +125,7 @@ public class TestRunner {
     }
 
 
-    public List<String> runTestCase(BlockTestCase testCase) {
+    public List<String> runTestCase(BlockTestingCase testCase) {
         /* 1 */ // Create genesis + init pre state
         ValidationStats vStats = new ValidationStats();
 
@@ -230,7 +229,7 @@ public class TestRunner {
     }
 
 
-    public List<String> runTestCase(TestCase testCase) {
+    public List<String> runTestCase(TestingCase testCase) {
 
         logger.info("\n***");
         logger.info(" Running test case: [" + testCase.getName() + "]");

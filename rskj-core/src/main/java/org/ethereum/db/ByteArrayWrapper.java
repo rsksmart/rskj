@@ -31,6 +31,7 @@ import java.util.Arrays;
  */
 public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializable {
 
+    private static final long serialVersionUID = -2510179337207357675L;
     private final byte[] data;
     private int hashCode = 0;
 

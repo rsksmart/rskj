@@ -41,8 +41,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,12 +54,16 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
 class BlockChainImplInvalidTest {
+
+    @TempDir
+    public Path tempDir;
+
     private Blockchain blockChain;
     private RskContext objects;
 
     @BeforeEach
     void setup() {
-        objects = new RskTestContext(new String[0]) {
+        objects = new RskTestContext(tempDir) {
             @Override
             protected synchronized RskSystemProperties buildRskSystemProperties() {
                 RskSystemProperties rskSystemProperties = super.buildRskSystemProperties();

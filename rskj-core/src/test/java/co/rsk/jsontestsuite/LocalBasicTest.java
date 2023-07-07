@@ -26,7 +26,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.jsontestsuite.DifficultyTestCase;
+import org.ethereum.jsontestsuite.DifficultyTestingCase;
 import org.ethereum.jsontestsuite.DifficultyTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.junit.jupiter.api.Test;
@@ -91,7 +91,7 @@ class LocalBasicTest {
 
         DifficultyTestSuite testSuite = new DifficultyTestSuite(json);
 
-        for (DifficultyTestCase testCase : testSuite.getTestCases()) {
+        for (DifficultyTestingCase testCase : testSuite.getTestCases()) {
 
             logger.info("Running {}\n", testCase.getName());
 

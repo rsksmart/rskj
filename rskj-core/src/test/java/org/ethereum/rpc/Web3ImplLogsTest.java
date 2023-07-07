@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,12 +76,12 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.HexUtils;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Created by ajlopez on 30/11/2016.
  */
 class Web3ImplLogsTest {
-
 
     // Events used:
     // event Incremented(bool indexed odd, uint x);
@@ -112,6 +113,9 @@ class Web3ImplLogsTest {
     private static final String TRACKED_TEST_BLOCK_HASH = "0x00ed383312dfc27d0ff0b85632ac24380a32ce511bb6bcb776d5812f35d4d157";
     private static final String UNTRACKED_TEST_BLOCK_HASH = "0xdea168a4f74e51a3eeb6d72b049c4fc7bc750dd51f13a3afa4fee4bece0e85eb";
     private final TestSystemProperties config = new TestSystemProperties();
+
+    @TempDir
+    public Path tempDir;
     private Blockchain blockChain;
     private RepositoryLocator repositoryLocator;
     private TransactionPool transactionPool;
@@ -128,7 +132,7 @@ class Web3ImplLogsTest {
 
     @BeforeEach
     void setUp() {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(tempDir);
         blockChain = factory.getBlockchain();
         blockStore = factory.getBlockStore();
         trieStore = factory.getTrieStore();
