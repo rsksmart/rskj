@@ -319,7 +319,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 FileUtil.recursiveDelete(rskSystemProperties.databaseDir());
             }
 
-            logger.warn("keyvalue.datasource is used the first time the node is run or or db is created from scratch.");
             KeyValueDataSourceUtils.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
 
             if (rskSystemProperties.importEnabled()) {
