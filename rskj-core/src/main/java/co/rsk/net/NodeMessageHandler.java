@@ -55,6 +55,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
 
+    private static final Logger loggerSnapExperiment = LoggerFactory.getLogger("snapExperiment");
+
     private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
     private static final int QUEUED_TIME_TO_WARN_LIMIT = 2; // seconds
@@ -305,7 +307,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                     this.processMessage(task.getSender(), task.getMessage());
                     if (task.getMessage().getMessageType() == MessageType.BLOCK_MESSAGE) {
                         BlockMessage message = (BlockMessage) task.getMessage();
-                        logger.debug("BlockMessage block: [{}] took: [{}]seconds", message.getBlock().getNumber(), task.getNodeMsgTraceInfo().getLifeTimeInSeconds());
+                        loggerSnapExperiment.debug("BlockMessage block: [{}] took: [{}]milliseconds", message.getBlock().getNumber(), task.getNodeMsgTraceInfo().getLifeTimeInSeconds()*1000);
                     }
                     logEnd(task, startNanos);
                 } else {
