@@ -308,6 +308,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                     if (task.getMessage().getMessageType() == MessageType.BLOCK_MESSAGE) {
                         BlockMessage message = (BlockMessage) task.getMessage();
                         loggerSnapExperiment.debug("BlockMessage block: [{}] took: [{}]milliseconds", message.getBlock().getNumber(), task.getNodeMsgTraceInfo().getLifeTimeInSeconds()*10000);
+                        loggerSnapExperiment.debug("BlockMessage block: [{}] arrived at: [{}]", message.getBlock().getNumber(), System.currentTimeMillis());
                     }
                     logEnd(task, startNanos);
                 } else {
