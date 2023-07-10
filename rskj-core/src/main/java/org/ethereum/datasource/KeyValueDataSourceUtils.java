@@ -104,8 +104,14 @@ public class KeyValueDataSourceUtils {
             return;
         }
 
-        if (databaseReset) {
-            KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
+        DbKind prevDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
+
+        if (prevDbKind != currentDbKind) {
+            if (databaseReset) {
+                KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
+            } else {
+                LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("keyvalue.datasource is used the first time the node is run or or db is created from scratch.");
+            }
         }
     }
 }
