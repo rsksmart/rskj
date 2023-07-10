@@ -88,7 +88,6 @@ public abstract class CliToolRskContextAware {
 
             RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
 
-            logger.warn("keyvalue.datasource is used the first time the node is run or or db is created from scratch.");
             KeyValueDataSourceUtils.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
 
             onExecute(args, ctx);
