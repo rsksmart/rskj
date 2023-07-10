@@ -32,6 +32,7 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
 import co.rsk.util.TraceUtils;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -302,6 +303,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                     long startNanos = System.nanoTime();
                     logStart(task);
                     this.processMessage(task.getSender(), task.getMessage());
+                    if (task.getMessage().getMessageType() == MessageType.BLOCK_MESSAGE) {
+                        BlockMessage message = (BlockMessage) task.getMessage();
+                        logger.debug("BlockMessage block: [{}] took: [{}]seconds", message.getBlock().getNumber(), task.getNodeMsgTraceInfo().getLifeTimeInSeconds());
+                    }
                     logEnd(task, startNanos);
                 } else {
                     logger.trace("No task");
