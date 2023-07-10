@@ -21,10 +21,7 @@ package co.rsk.net.eth;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
-import co.rsk.net.messages.BlockMessage;
-import co.rsk.net.messages.GetBlockMessage;
-import co.rsk.net.messages.Message;
-import co.rsk.net.messages.StatusMessage;
+import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.TraceUtils;
@@ -57,6 +54,8 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
     private static final Logger logger = LoggerFactory.getLogger("sync");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
+
+    private static final Logger loggerSnapExperiment = LoggerFactory.getLogger("snapExperiment");
 
     private final CompositeEthereumListener ethereumListener;
     /**
@@ -151,7 +150,14 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                     }
 
                     if (this.messageHandler != null) {
+
                         NodeMsgTraceInfo nodeMsgTraceInfo = new NodeMsgTraceInfo(msgTraceId, sessionId);
+
+                        if (message.getMessageType() == MessageType.BLOCK_MESSAGE) {
+                            BlockMessage blockMessage = (BlockMessage) message;
+                            loggerSnapExperiment.debug("BlockMessage block: [{}] arrived at: [{}]", blockMessage.getBlock().getNumber(), System.currentTimeMillis());
+                        }
+
                         this.messageHandler.postMessage(channel, message, nodeMsgTraceInfo);
                     }
                     break;

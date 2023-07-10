@@ -32,6 +32,7 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
 import co.rsk.util.TraceUtils;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -53,6 +54,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
+
+    private static final Logger loggerSnapExperiment = LoggerFactory.getLogger("snapExperiment");
 
     private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
@@ -302,6 +305,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                     long startNanos = System.nanoTime();
                     logStart(task);
                     this.processMessage(task.getSender(), task.getMessage());
+                    if (task.getMessage().getMessageType() == MessageType.BLOCK_MESSAGE) {
+                        BlockMessage message = (BlockMessage) task.getMessage();
+                        loggerSnapExperiment.debug("BlockMessage block: [{}] took: [{}]milliseconds", message.getBlock().getNumber(), task.getNodeMsgTraceInfo().getLifeTimeInSeconds()*1000);
+                        loggerSnapExperiment.debug("BlockMessage block: [{}] was processed at: [{}]", message.getBlock().getNumber(), System.currentTimeMillis());
+                    }
                     logEnd(task, startNanos);
                 } else {
                     logger.trace("No task");
