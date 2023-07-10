@@ -24,7 +24,6 @@ import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
-import co.rsk.scoring.InetAddressBlock;
 import co.rsk.scoring.InetAddressUtils;
 import co.rsk.scoring.InvalidInetAddressException;
 import com.google.common.annotations.VisibleForTesting;
@@ -296,11 +295,7 @@ public class ChannelManagerImpl implements ChannelManager {
         synchronized (activePeersLock) {
             //TODO(lsebrie): save block address in a data structure and keep updated on each channel add/remove
             //TODO(lsebrie): check if we need to use a different networkCIDR for ipv6
-            boolean b1 = activePeers.values().stream()
-                    .map(ch -> new InetAddressBlock(ch.getInetSocketAddress().getAddress(), networkCIDR))
-                    .filter(block -> block.contains(inetAddress))
-                    .count() < maxConnectionsAllowed;
-            boolean b2 = activePeers.values().stream()
+            return activePeers.values().stream()
                     .map(ch -> {
                         try {
                             return InetAddressUtils.parse(ch.getInetSocketAddress().getAddress(), networkCIDR);
@@ -312,8 +307,6 @@ public class ChannelManagerImpl implements ChannelManager {
                     })
                     .filter(block -> block != null && block.contains(inetAddress))
                     .count() < maxConnectionsAllowed;
-
-            return b1 && b2;
         }
     }
 

@@ -6,7 +6,7 @@ import java.net.UnknownHostException;
 
 /**
  * InetAddressUtils has static methods
- * to perform operations on InetAddress and InetAddressBlock
+ * to perform operations on InetAddress and InetAddressCidrBlock
  * given an String representation
  * <p>
  * Created by ajlopez on 15/07/2017.
