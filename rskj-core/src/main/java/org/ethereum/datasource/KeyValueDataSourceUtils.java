@@ -110,7 +110,10 @@ public class KeyValueDataSourceUtils {
             if (databaseReset) {
                 KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
             } else {
-                LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("keyvalue.datasource is used the first time the node is run or or db is created from scratch.");
+                LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn(String
+                        .format("Current Db kind %s does not match with db kind %s from properties file, using value from properties file." +
+                                " keyvalue.datasource from .conf file is used the first time the node is run or db is created from scratch.",
+                                currentDbKind.name(), prevDbKind.name()));
             }
         }
     }
