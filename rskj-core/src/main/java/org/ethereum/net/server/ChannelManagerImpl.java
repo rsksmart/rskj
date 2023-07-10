@@ -300,7 +300,7 @@ public class ChannelManagerImpl implements ChannelManager {
                         try {
                             return InetAddressUtils.parse(ch.getInetSocketAddress().getAddress(), networkCIDR);
                         } catch (InvalidInetAddressException e) {
-                            logger.error(e.getMessage());
+                            logger.error(e.getMessage(), e);
                         }
 
                         return null;
