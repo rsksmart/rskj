@@ -244,7 +244,6 @@ class RskContextTest {
             add("resolveCacheSnapshotPath");
             add("isClosed");
             add("close");
-            add("getDbKind");
         }};
 
         for (Method method : RskContext.class.getDeclaredMethods()) {
