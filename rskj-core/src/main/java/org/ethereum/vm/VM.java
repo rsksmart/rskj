@@ -1927,7 +1927,11 @@ public class VM {
             case OpCodes.OP_GAS: doGAS();
             break;
 
-            case OpCodes.OP_PUSH_0: doPUSH0();
+            case OpCodes.OP_PUSH_0:
+                if (!activations.isActive(RSKIPYYY)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doPUSH0();
             break;
 
             case OpCodes.OP_PUSH_1:
