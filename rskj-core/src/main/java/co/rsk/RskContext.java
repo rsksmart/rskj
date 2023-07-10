@@ -1251,7 +1251,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
     }
 
-    public DbKind getDbKind(String dbPath) {
+    public synchronized DbKind getDbKind(String dbPath) {
+        checkIfNotClosed();
         return dbPathToDbKindMap.computeIfAbsent(dbPath, KeyValueDataSourceUtils::getDbKindValueFromDbKindFile);
     }
 
