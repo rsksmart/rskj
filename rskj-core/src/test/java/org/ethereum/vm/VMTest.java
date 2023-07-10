@@ -650,7 +650,6 @@ public abstract class VMTest {
 
     @Test  // PUSH0 OP
     void testPUSH0() {
-
         program = getProgram(compile("PUSH0"));
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -3392,6 +3391,7 @@ public abstract class VMTest {
         when(activations.isActive(ConsensusRule.RSKIP90)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP89)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP150)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIPYYY)).thenReturn(true);
         return activations;
     }
 
