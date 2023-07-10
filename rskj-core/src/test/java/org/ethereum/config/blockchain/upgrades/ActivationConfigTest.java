@@ -112,6 +112,7 @@ class ActivationConfigTest {
             "    rskip377: fingerroot500",
             "    rskip383: fingerroot500",
             "    rskip385: fingerroot500",
+            "    rskipyyy: tbd600",
             "}"
     ));
 
