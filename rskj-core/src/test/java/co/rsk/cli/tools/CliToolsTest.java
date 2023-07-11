@@ -526,6 +526,7 @@ class CliToolsTest {
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
         doReturn(true).when(rskSystemProperties).databaseReset();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(DbKind.ROCKS_DB).when(rskContext).getDbKind(Mockito.anyString());
 
         NodeStopper stopper = mock(NodeStopper.class);
 
@@ -551,7 +552,7 @@ class CliToolsTest {
         }
 
         Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
-        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
+        Assertions.assertEquals("keyvalue.datasource=LEVEL_DB", dbKindPropsFileLine);
     }
 
     @Test
