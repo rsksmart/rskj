@@ -26,6 +26,7 @@ import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
+import co.rsk.pcc.BFV;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
@@ -77,7 +78,9 @@ public class PrecompiledContracts {
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
-
+    public static final String BFV_ADD_STR = "0000000000000000000000000000000001000011";
+    public static final String BFV_SUB_STR = "0000000000000000000000000000000001000012";
+    public static final String BFV_MUL_STR = "0000000000000000000000000000000001000013";
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
     public static final DataWord RIPEMPD160_ADDR_DW = DataWord.valueFromHex(RIPEMPD160_ADDR_STR);
@@ -91,6 +94,9 @@ public class PrecompiledContracts {
     public static final DataWord REMASC_ADDR_DW = DataWord.valueFromHex(REMASC_ADDR_STR);
     public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
     public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueFromHex(BLOCK_HEADER_ADDR_STR);
+    public static final DataWord BFV_ADD_DW = DataWord.valueFromHex(BFV_ADD_STR);
+    public static final DataWord BFV_SUB_DW = DataWord.valueFromHex(BFV_SUB_STR);
+    public static final DataWord BFV_MUL_DW = DataWord.valueFromHex(BFV_MUL_STR);
 
     public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
     public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
@@ -105,6 +111,9 @@ public class PrecompiledContracts {
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_DW);
     public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
     public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
+    public static final RskAddress BFV_ADD_ADDR = new RskAddress(BFV_ADD_DW);
+    public static final RskAddress BFV_SUB_ADDR = new RskAddress(BFV_SUB_DW);
+    public static final RskAddress BFV_MUL_ADDR = new RskAddress(BFV_MUL_DW);
 
     public static final List<RskAddress> GENESIS_ADDRESSES = Collections.unmodifiableList(Arrays.asList(
             ECRECOVER_ADDR,
@@ -118,14 +127,17 @@ public class PrecompiledContracts {
 
     // this maps needs to be updated by hand any time a new pcc is added
     public static final Map<RskAddress, ConsensusRule> CONSENSUS_ENABLED_ADDRESSES = Collections.unmodifiableMap(
-            Stream.of(
-                    new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
-                    new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
-                    new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
-                    new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
-                    new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
-                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153)
-            ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+        Stream.of(
+            new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
+            new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
+            new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
+            new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
+            new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
+            new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
+            new AbstractMap.SimpleEntry<>(BFV_ADD_ADDR, ConsensusRule.RSKIPBFV),
+            new AbstractMap.SimpleEntry<>(BFV_SUB_ADDR, ConsensusRule.RSKIPBFV),
+            new AbstractMap.SimpleEntry<>(BFV_MUL_ADDR, ConsensusRule.RSKIPBFV)
+        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
     private static ECRecover ecRecover = new ECRecover();
@@ -202,6 +214,18 @@ public class PrecompiledContracts {
 
         if (activations.isActive(ConsensusRule.RSKIP153) && address.equals(BLAKE2F_ADDR_DW)) {
             return new Blake2F();
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIPBFV) && address.equals(BFV_ADD_DW)) {
+            return new BFV(BFV.Op.ADD);
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIPBFV) && address.equals(BFV_SUB_DW)) {
+            return new BFV(BFV.Op.SUB);
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIPBFV) && address.equals(BFV_MUL_DW)) {
+            return new BFV(BFV.Op.MUL);
         }
 
         return null;
