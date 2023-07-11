@@ -167,6 +167,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
                     if (logger.isTraceEnabled()) {
                         logger.trace("<~ RocksDbDataSource.get(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), (ret == null ? "null" : ret.length));
                     }
+                    logger.info("SnapshotSync <~ RocksDbDataSource.get(): {}, return length: {}", name, (ret == null ? "null" : ret.length));
 
                     result = ret;
                     break;

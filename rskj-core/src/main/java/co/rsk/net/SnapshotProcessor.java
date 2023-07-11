@@ -127,10 +127,12 @@ public class SnapshotProcessor implements InternalService {
         long limit = KBYTES.equals(this.chunkSizeType)? chunkSize * 1024 : i + chunkSize;
         while (it.hasNext() && i < limit) {
             IterationElement e = it.next();
+            logger.info("Single node read.");
             byte[] key = e.getNodeKey().encode();
             byte[] value = e.getNode().getValue();
             final byte[] element = RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(value));
             trieEncoded.add(element);
+            logger.info("Single node calculated.");
             i = KBYTES.equals(this.chunkSizeType)? i + element.length : i+1;
         }
 

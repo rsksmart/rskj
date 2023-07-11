@@ -35,8 +35,10 @@ public class SnapshotSyncBench {
             this.iterator = trie.getPreOrderIterator();
             Trie node = this.iterator.next().getNode();
             System.out.println(" -------- Iterator...");
-            System.out.println(" -------- Bytes size: " + node.getChildrenSize().value);
-            // Reads the entire trie, no sense.
+            System.out.println(" -------- Bytes size 00: " + node.getNodeReference((byte)0x00).referenceSize());
+            System.out.println(" -------- Bytes size 01: " + node.getNodeReference((byte)0x01).referenceSize());
+            System.out.println(" -------- Bytes size children: " + node.getChildrenSize().value);
+            // Reads the entire trie, no sense. Run once only, to know the size of the tree and save the value.
             //System.out.println(" -------- Trie size: " + node.trieSize());
        } catch (Throwable e) {
             System.out.println(" -------- Error:" + e.getMessage());
@@ -76,11 +78,14 @@ public class SnapshotSyncBench {
 
 
     private void readNode(Iterator<IterationElement> it, OpCounters counters) {
-        Trie node = it.next().getNode();
-        byte[] value = node.getValue();
-        if (value != null) {
+        final IterationElement element = it.next();
+        byte[] value = element.getNode().getValue();
+        byte[] key = element.getNodeKey().encode();
+        counters.bytesRead += key.length;
+        if(value!=null) {
             counters.bytesRead += value.length;
         }
     }
+
 
 }

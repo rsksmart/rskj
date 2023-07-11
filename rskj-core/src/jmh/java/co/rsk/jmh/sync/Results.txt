@@ -1,0 +1,111 @@
+Sin sync
+
+Benchmark                                 Mode  Cnt        Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   115240.766 ±   5641.029  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  6966987.758 ± 353878.836  ops/s
+SnapshotSyncBench.readAll                   ss            75.556                s/op
+Benchmark                                 Mode  Cnt        Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   115041.448 ±   4131.214  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  6965072.606 ± 236862.496  ops/s
+SnapshotSyncBench.readAll                   ss            75.921                s/op
+
+Con sync
+&> while true; do sync; sleep 0.5; echo "sync"; done
+
+Benchmark                                 Mode  Cnt        Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   106570.241 ±   5077.498  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  6456545.851 ± 303914.008  ops/s
+SnapshotSyncBench.readAll                   ss            77.036                s/op
+
+Benchmark                                 Mode  Cnt        Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   110318.170 ±   4162.840  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  6681462.663 ± 211875.560  ops/s
+SnapshotSyncBench.readAll                   ss            78.510                s/op
+
+
+------------------------------------------------------------------------------------
+ROCK DB
+
+#1 run
+Benchmark                                 Mode  Cnt      Score       Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   4949.135 ±   840.226  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  86094.273 ± 83153.244  ops/s
+SnapshotSyncBench.readAll                   ss         532.786               s/op
+
+#2 run
+Benchmark                                 Mode  Cnt       Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   37604.247 ±   3335.921  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  299657.306 ± 165580.498  ops/s
+SnapshotSyncBench.readAll                   ss          242.922                s/op
+
+#3 run
+Benchmark                                 Mode  Cnt       Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   38279.021 ±   3817.538  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  301726.332 ± 218943.660  ops/s
+SnapshotSyncBench.readAll                   ss          230.713                s/op
+
+------------------------------------------------------------------------------------
+LEVEL DB #2
+
+#1 run
+Benchmark                                 Mode  Cnt       Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   39782.999 ±  22207.912  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  312492.104 ± 245561.361  ops/s
+SnapshotSyncBench.readAll                   ss           85.049                s/op
+
+Restart PC
+#2 run
+Benchmark                                 Mode  Cnt       Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   73690.496 ±  26826.669  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  509728.563 ± 202339.126  ops/s
+SnapshotSyncBench.readAll                   ss           91.767                s/op
+
+#3 run
+Benchmark                                 Mode  Cnt       Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30  101510.077 ±   4253.642  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  652250.447 ± 185491.427  ops/s
+SnapshotSyncBench.readAll                   ss           80.930                s/op
+
+
+------------------------------------------------------------------------------------
+ROCKS DB #2
+
+#1 run
+Benchmark                                 Mode  Cnt       Score       Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30    6306.236 ±  1448.417  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  100103.356 ± 86381.557  ops/s
+SnapshotSyncBench.readAll                   ss          255.307               s/op
+
+#2 run
+Benchmark                                 Mode  Cnt       Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   38456.973 ±   3054.200  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  302634.243 ± 218803.023  ops/s
+SnapshotSyncBench.readAll                   ss          229.397                s/op
+
+Benchmark                                 Mode  Cnt       Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   52182.326 ±   4058.452  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  375252.170 ± 186404.671  ops/s
+SnapshotSyncBench.readAll                   ss          166.179                s/op
+
+Benchmark                                 Mode  Cnt       Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   52938.821 ±   3819.125  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  379627.242 ± 187246.008  ops/s
+SnapshotSyncBench.readAll                   ss          162.185                s/op
+
+------------------------------------------------------------------------------------
+LEVEL DB #3
+
+#1 run
+Benchmark                                 Mode  Cnt       Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30   89194.200 ±  22567.104  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  595593.881 ± 161323.598  ops/s
+SnapshotSyncBench.readAll                   ss           81.515                s/op
+
+#2 run
+Benchmark                                 Mode  Cnt       Score        Error  Units
+SnapshotSyncBench.splitBranch            thrpt   30  147559.151 ±   4794.734  ops/s
+SnapshotSyncBench.splitBranch:bytesRead  thrpt   30  903932.499 ± 214932.659  ops/s
+SnapshotSyncBench.readAll                   ss           61.238                s/op
+
+
+
