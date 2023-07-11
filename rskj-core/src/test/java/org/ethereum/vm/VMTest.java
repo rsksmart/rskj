@@ -3391,7 +3391,7 @@ public abstract class VMTest {
         when(activations.isActive(ConsensusRule.RSKIP90)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP89)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP150)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIPYYY)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP389)).thenReturn(true);
         return activations;
     }
 

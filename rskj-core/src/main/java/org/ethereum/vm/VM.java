@@ -1928,7 +1928,7 @@ public class VM {
             break;
 
             case OpCodes.OP_PUSH_0:
-                if (!activations.isActive(RSKIPYYY)) {
+                if (!activations.isActive(RSKIP389)) {
                     throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doPUSH0();
