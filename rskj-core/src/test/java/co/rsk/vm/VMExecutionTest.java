@@ -894,21 +894,19 @@ class VMExecutionTest {
         return program;
     }
 
-    private void executePush0(String expect, ActivationConfig.ForBlock activations){
+    private void executePush0(ActivationConfig.ForBlock activations){
         Program program = executeCodeWithActivationConfig("PUSH0", 1, activations);
         Stack stack = program.getStack();
 
         Assertions.assertEquals(1, stack.size());
-        Assertions.assertEquals(DataWord.valueFromHex(expect), stack.peek());
+        Assertions.assertEquals(DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000000"), stack.peek());
     }
     @Test
     void testPUSH0Activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIPYYY)).thenReturn(true);
 
-        executePush0(
-                "0000000000000000000000000000000000000000000000000000000000000000",
-                activations);
+        executePush0(activations);
     }
 
     @Test
@@ -917,9 +915,7 @@ class VMExecutionTest {
         when(activations.isActive(RSKIPYYY)).thenReturn(false);
 
         Assertions.assertThrows(Program.IllegalOperationException.class, () -> {
-            executePush0(
-                    "0000000000000000000000000000000000000000000000000000000000000000",
-                    activations);
+            executePush0(activations);
         });
 
     }
