@@ -105,7 +105,7 @@ class ChannelManagerImplTest {
         Logger logger = mock(Logger.class);
         TestUtils.setFinalStatic(channelManager, "logger", logger);
 
-        channelManager.isAddressBlockAvailable(otherPeer.getInetSocketAddress().getAddress());
+        Assertions.assertTrue(channelManager.isAddressBlockAvailable(otherPeer.getInetSocketAddress().getAddress()));
 
         verify(logger).error(anyString(), any(Throwable.class));
     }
