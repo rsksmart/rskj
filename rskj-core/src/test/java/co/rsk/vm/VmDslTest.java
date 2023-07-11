@@ -165,8 +165,6 @@ class VmDslTest {
         Assertions.assertEquals(1, statusCallOld[0]);
 
         short oldGas = ByteBuffer.wrap(callTransactionReceiptOld.getGasUsed()).getShort();
-        // check gas diff
-        // System.out.println("old gas: " + oldGas + "\nnew gas: " + newGas);
         Assertions.assertTrue(newGas < oldGas);
     }
 }
