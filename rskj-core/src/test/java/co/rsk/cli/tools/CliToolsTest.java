@@ -381,7 +381,7 @@ class CliToolsTest {
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(databaseDir).when(rskSystemProperties).databaseDir();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
-        doReturn(DbKind.ROCKS_DB).when(rskContext).getDbKind(Mockito.eq(unitrieDbPath.getParent().toString()));
+        doReturn(DbKind.ROCKS_DB).when(rskContext).getDbKind(Mockito.eq(databaseDir));
         doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 

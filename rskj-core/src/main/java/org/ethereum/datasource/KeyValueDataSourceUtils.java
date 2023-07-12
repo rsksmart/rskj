@@ -12,6 +12,24 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class KeyValueDataSourceUtils {
+    public static class DbKindValueFromDbKindFileResponse {
+        private final DbKind dbKind;
+        private final boolean dbKindFileExists;
+
+        DbKindValueFromDbKindFileResponse(DbKind dbKind, boolean dbKindFileExists) {
+            this.dbKind = dbKind;
+            this.dbKindFileExists = dbKindFileExists;
+        }
+
+        public DbKind getDbKind() {
+            return dbKind;
+        }
+
+        public boolean doesDbKindFileExists() {
+            return dbKindFileExists;
+        }
+    }
+
     public static final String DB_KIND_PROPERTIES_FILE = "dbKind.properties";
     public static final String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
     public static final String KEYVALUE_DATASOURCE = "KeyValueDataSource";
@@ -54,7 +72,7 @@ public class KeyValueDataSourceUtils {
         destinationDataSource.close();
     }
 
-    public static DbKind getDbKindValueFromDbKindFile(String databaseDir) {
+    public static DbKindValueFromDbKindFileResponse getDbKindValueFromDbKindFile(String databaseDir) {
         try {
             File file = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
             Properties props = new Properties();
@@ -64,10 +82,10 @@ public class KeyValueDataSourceUtils {
                     props.load(reader);
                 }
 
-                return DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME));
+                return new DbKindValueFromDbKindFileResponse(DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME)), true);
             }
 
-            return DbKind.ROCKS_DB;
+            return new DbKindValueFromDbKindFileResponse(DbKind.ROCKS_DB, false);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -104,7 +122,13 @@ public class KeyValueDataSourceUtils {
             return;
         }
 
-        DbKind prevDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
+        DbKindValueFromDbKindFileResponse dbKindValueFromDbKindFile  = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
+        DbKind prevDbKind = dbKindValueFromDbKindFile.getDbKind();
+
+        if (!dbKindValueFromDbKindFile.doesDbKindFileExists()) {
+            KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
+            return;
+        }
 
         if (prevDbKind != currentDbKind) {
             if (databaseReset) {
