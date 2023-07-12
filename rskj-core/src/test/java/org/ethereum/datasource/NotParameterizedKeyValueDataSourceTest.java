@@ -61,18 +61,18 @@ class NotParameterizedKeyValueDataSourceTest {
         BufferedWriter writer = new BufferedWriter(new FileWriter(dbKindFile));
         writer.write(propName + DbKind.LEVEL_DB);
         writer.close();
-        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
+        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath).getDbKind();
         Assertions.assertEquals(DbKind.LEVEL_DB, dbKindLevel, "When DbKind file is LEVEL_DB, calculated should too");
 
         dbKindFile.delete();
         writer = new BufferedWriter(new FileWriter(dbKindFile));
         writer.write(propName + DbKind.ROCKS_DB);
         writer.close();
-        DbKind dbKindRocks = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
+        DbKind dbKindRocks = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath).getDbKind();
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindRocks, "When DbKind file is ROCKS_DB, calculated should too");
 
         dbKindFile.delete();
-        DbKind dbKindFallback = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
+        DbKind dbKindFallback = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath).getDbKind();
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindFallback, "When missing DbKind, LEVEL_DB should be returned as fallback");
     }
 
@@ -82,13 +82,13 @@ class NotParameterizedKeyValueDataSourceTest {
         File dbKindFile = tempDir.resolve(KeyValueDataSourceUtils.DB_KIND_PROPERTIES_FILE).toFile();
 
         KeyValueDataSourceUtils.generatedDbKindFile(DbKind.LEVEL_DB, dbPath);
-        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
+        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath).getDbKind();
         Assertions.assertEquals(DbKind.LEVEL_DB, dbKindLevel, "When LEVEL_DB is provided on generate, that should be the value when requested");
 
         dbKindFile.delete();
 
         KeyValueDataSourceUtils.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
-        DbKind dbKindRocks = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
+        DbKind dbKindRocks = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath).getDbKind();
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindRocks, "When ROCKS_DB is provided on generate, that should be the value when requested");
     }
 
@@ -102,7 +102,7 @@ class NotParameterizedKeyValueDataSourceTest {
     void validateDbKindMissingFolder() {
         String dbPath = tempDir.toString();
         KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, dbPath, false);
-        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
+        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath).getDbKind();
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindLevel, "When DbKind file is missing validation should create it with the provided value");
     }
 
@@ -118,7 +118,7 @@ class NotParameterizedKeyValueDataSourceTest {
         String dbPath = tempDir.toString();
         KeyValueDataSourceUtils.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
         KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, dbPath, true);
-        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
+        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath).getDbKind();
         Assertions.assertEquals(DbKind.LEVEL_DB, dbKindLevel, "When DbKind changes and reset flag is specified on validation, new DbKind file should be generated");
     }
 
@@ -127,7 +127,7 @@ class NotParameterizedKeyValueDataSourceTest {
         String dbPath = tempDir.toString();
         KeyValueDataSourceUtils.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
         KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, dbPath, false);
-        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
+        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath).getDbKind();
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindLevel, "When same DB without reset specified on validation, nothing changes on DbKind file");
     }
 
@@ -136,7 +136,7 @@ class NotParameterizedKeyValueDataSourceTest {
         String dbPath = tempDir.toString();
         KeyValueDataSourceUtils.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
         KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, dbPath, true);
-        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
+        DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath).getDbKind();
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindLevel, "When same DB and reset specified on validation, nothing changes on DbKind file");
     }
 
