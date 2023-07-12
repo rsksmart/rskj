@@ -122,7 +122,6 @@ import org.ethereum.util.FileUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.ethereum.datasource.KeyValueDataSourceUtils.DbKindValueFromDbKindFileResponse;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.slf4j.Logger;
