@@ -904,7 +904,7 @@ class VMExecutionTest {
     @Test
     void testPUSH0Activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(RSKIP389)).thenReturn(true);
+        when(activations.isActive(RSKIP398)).thenReturn(true);
 
         executePush0(activations);
     }
@@ -912,7 +912,7 @@ class VMExecutionTest {
     @Test
     void testPUSH0NoActivation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(RSKIP389)).thenReturn(false);
+        when(activations.isActive(RSKIP398)).thenReturn(false);
 
         Assertions.assertThrows(Program.IllegalOperationException.class, () -> {
             executePush0(activations);
