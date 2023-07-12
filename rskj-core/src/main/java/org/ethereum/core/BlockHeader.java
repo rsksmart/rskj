@@ -321,15 +321,22 @@ public abstract class BlockHeader {
 
     // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
     // calculating RSKIP92 block hashes
-    public byte[] getFullEncoded() { return this.getEncoded(true, true, false); }
+    public byte[] getFullEncoded() { return this.getEncoded(true, true); }
     // the encoded block header used for calculating block hashes including RSKIP92
-    public byte[] getEncoded() { return this.getEncoded(true, !useRskip92Encoding, false); }
+    public byte[] getEncoded() { return this.getEncoded(true, !useRskip92Encoding); }
     public byte[] getEncodedCompressed() { return this.getEncoded(true, true, true); }
     public byte[] getEncodedForHash() { return this.getEncoded(true, !useRskip92Encoding, true); }
 
     @Nullable
     public Coin getMinimumGasPrice() {
         return this.minimumGasPrice;
+    }
+
+    /**
+     * note: being also used by powpeg
+     */
+    public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase) {
+        return this.getEncoded(withMergedMiningFields, withMerkleProofAndCoinbase, false);
     }
 
     public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase, boolean compressed) {
