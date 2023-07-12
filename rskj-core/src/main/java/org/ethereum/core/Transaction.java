@@ -213,7 +213,7 @@ public class Transaction {
     }
 
     private static long getTxNonZeroDataCost(ActivationConfig.ForBlock activations) {
-        return activations.isActive(ConsensusRule.RSKIPXXX) ? GasCost.TX_NO_ZERO_DATA_EIP2028 : GasCost.TX_NO_ZERO_DATA;
+        return activations.isActive(ConsensusRule.RSKIP400) ? GasCost.TX_NO_ZERO_DATA_EIP2028 : GasCost.TX_NO_ZERO_DATA;
     }
 
     public void verify(SignatureCache signatureCache) {
