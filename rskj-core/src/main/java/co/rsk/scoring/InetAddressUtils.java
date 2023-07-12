@@ -74,7 +74,7 @@ public final class InetAddressUtils {
      * @return the text converted to an InetAddressBlock
      * @throws InvalidInetAddressException if the text is invalid
      */
-    public static InetAddressCidrBlock parse(String text) throws InvalidInetAddressException {
+    public static InetAddressCidrBlock createCidrBlock(String text) throws InvalidInetAddressException {
         //TODO(mmarquez): should we validate address format ??
         String[] parts = text.split("/");
 
@@ -90,11 +90,11 @@ public final class InetAddressUtils {
             throw new InvalidInetAddressBlockException("Invalid mask", ex);
         }
 
-        return parse(address, nbits);
+        return createCidrBlock(address, nbits);
     }
 
 
-    public static InetAddressCidrBlock parse(InetAddress address, int nbits) throws InvalidInetAddressException {
+    public static InetAddressCidrBlock createCidrBlock(InetAddress address, int nbits) throws InvalidInetAddressException {
         if (nbits <= 0 || nbits > address.getAddress().length * 8) {
             throw new InvalidInetAddressBlockException("Invalid mask", null);
         }

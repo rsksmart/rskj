@@ -298,7 +298,7 @@ public class ChannelManagerImpl implements ChannelManager {
             return activePeers.values().stream()
                     .map(ch -> {
                         try {
-                            return InetAddressUtils.parse(ch.getInetSocketAddress().getAddress(), networkCIDR);
+                            return InetAddressUtils.createCidrBlock(ch.getInetSocketAddress().getAddress(), networkCIDR);
                         } catch (InvalidInetAddressException e) {
                             logger.error(e.getMessage(), e);
                         }
