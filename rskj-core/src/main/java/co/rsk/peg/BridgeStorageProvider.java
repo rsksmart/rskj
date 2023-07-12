@@ -52,8 +52,8 @@ public class BridgeStorageProvider {
     protected static final int LEGACY_ERP_FEDERATION_FORMAT_VERSION = 2000;
     protected static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
 
-    // Dummy value to use when saved Fast Bridge Derivation Argument Hash
-    private static final byte FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE = (byte) 1;
+    // Dummy value to use when saving key only indexes
+    private static final byte TRUE_VALUE = (byte) 1;
 
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -787,7 +787,7 @@ public class BridgeStorageProvider {
 
         return data != null &&
             data.length == 1 &&
-            data[0] == FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE;
+            data[0] == TRUE_VALUE;
     }
 
     public void markFlyoverDerivationHashAsUsed(Sha256Hash btcTxHash, Keccak256 flyoverDerivationHash) {
@@ -808,7 +808,7 @@ public class BridgeStorageProvider {
                 flyoverBtcTxHash,
                 flyoverDerivationHash
             ),
-            new byte[]{FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE}
+            new byte[]{TRUE_VALUE}
         );
     }
 
