@@ -110,6 +110,8 @@ public class BridgeStorageProvider {
 
     private Long nextPegoutHeight;
 
+    private Sha256Hash bridgeBtcTxSigHashToSave;
+
     public BridgeStorageProvider(
         Repository repository,
         RskAddress contractAddress,
@@ -923,6 +925,47 @@ public class BridgeStorageProvider {
         return getReleaseRequestQueue().getEntries().size();
     }
 
+    public boolean hasBridgeBtcTxSigHash(Sha256Hash sigHash) {
+        if (!activations.isActive(RSKIP379) || sigHash == null){
+            return false;
+        }
+
+        byte[] data = repository.getStorageBytes(
+            contractAddress,
+            getStorageKeyForBridgeBtcTxSigHashIndex(sigHash)
+        );
+
+        return data != null &&
+           data.length == 1 &&
+           data[0] == TRUE_VALUE;
+    }
+
+    public void setBridgeBtcTxSigHash(Sha256Hash sigHash) {
+        if (!activations.isActive(RSKIP379) || sigHash == null) {
+            return;
+        }
+
+        if (hasBridgeBtcTxSigHash(sigHash)){
+            throw new IllegalStateException(String.format("Given bridge btc tx sigHash %s already exists in the index. Index entries are considered unique.", sigHash));
+        }
+
+        bridgeBtcTxSigHashToSave = sigHash;
+    }
+
+    private void saveBridgeBtcTxSigHash() {
+        if (!activations.isActive(RSKIP379) || bridgeBtcTxSigHashToSave == null) {
+            return;
+        }
+
+        repository.addStorageBytes(
+            contractAddress,
+            getStorageKeyForBridgeBtcTxSigHashIndex(
+                bridgeBtcTxSigHashToSave
+            ),
+            new byte[]{TRUE_VALUE}
+        );
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -964,6 +1007,8 @@ public class BridgeStorageProvider {
         saveReceiveHeadersLastTimestamp();
 
         saveNextPegoutHeight();
+
+        saveBridgeBtcTxSigHash();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
@@ -998,6 +1043,10 @@ public class BridgeStorageProvider {
         }
 
         return key;
+    }
+
+    private DataWord getStorageKeyForBridgeBtcTxSigHashIndex(Sha256Hash sigHash) {
+        return BRIDGE_BTC_TX_SIG_HASH_KEY.getCompoundKey("-", sigHash.toString());
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
