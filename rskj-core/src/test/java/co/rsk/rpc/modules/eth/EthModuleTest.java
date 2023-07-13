@@ -43,9 +43,12 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -62,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class EthModuleTest {
-
     private final TestSystemProperties config = new TestSystemProperties();
     private SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
@@ -352,5 +354,360 @@ class EthModuleTest {
                 config.getCallGasCap()
         );
         assertThat(eth.chainId(), is("0x21"));
+    }
+
+    @Test
+    void whenExecuteCallWithDataParameter_callExecutorWithData() {
+        CallArguments args = new CallArguments();
+        args.setData(Constants.TEST_DATA);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        byte[] hReturn = HexUtils.stringToByteArray("hello");
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.getHReturn())
+                .thenReturn(hReturn);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                anyByte(),
+                null,
+                null,
+                executor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        eth.call(args, "latest");
+
+        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(executor, times(1))
+                .executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), dataCaptor.getValue());
+    }
+
+    @Test
+    void whenExecuteCallWithInputParameter_callExecutorWithInput() {
+        CallArguments args = new CallArguments();
+        args.setInput(Constants.TEST_DATA);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        byte[] hReturn = HexUtils.stringToByteArray("hello");
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.getHReturn())
+                .thenReturn(hReturn);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                anyByte(),
+                null,
+                null,
+                executor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        eth.call(args, "latest");
+
+        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(executor, times(1))
+                .executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+    }
+
+    @Test
+    void whenExecuteCallWithInputAndDataParameters_callExecutorWithInput() {
+        CallArguments args = new CallArguments();
+        args.setData(Constants.TEST_DATA);
+        args.setInput(Constants.TEST_DATA);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        byte[] hReturn = HexUtils.stringToByteArray("hello");
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.getHReturn())
+                .thenReturn(hReturn);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                anyByte(),
+                null,
+                null,
+                executor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+
+        eth.call(args, "latest");
+
+        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(executor, times(1))
+                .executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+    }
+
+    @Test
+    void whenExecuteEstimateGasWithDataParameter_callExecutorWithData() {
+        CallArguments args = new CallArguments();
+        args.setData(Constants.TEST_DATA);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        Block block = mock(Block.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        when(blockchain.getBestBlock())
+                .thenReturn(block);
+
+        ProgramResult executorResult = mock(ProgramResult.class);
+        TransactionExecutor transactionExecutor = mock(TransactionExecutor.class);
+        when(transactionExecutor.getResult())
+                .thenReturn(executorResult);
+
+        ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
+        when(reversibleTransactionExecutor.estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(transactionExecutor);
+
+        EthModule eth = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                blockchain,
+                null,
+                reversibleTransactionExecutor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        eth.estimateGas(args);
+
+        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(reversibleTransactionExecutor, times(1))
+                .estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), dataCaptor.getValue());
+    }
+
+    @Test
+    void whenExecuteEstimateGasWithInputParameter_callExecutorWithInput() {
+        CallArguments args = new CallArguments();
+        args.setInput(Constants.TEST_DATA);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        Block block = mock(Block.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        when(blockchain.getBestBlock())
+                .thenReturn(block);
+
+        ProgramResult executorResult = mock(ProgramResult.class);
+        TransactionExecutor transactionExecutor = mock(TransactionExecutor.class);
+        when(transactionExecutor.getResult())
+                .thenReturn(executorResult);
+
+        ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
+        when(reversibleTransactionExecutor.estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(transactionExecutor);
+
+        EthModule eth = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                blockchain,
+                null,
+                reversibleTransactionExecutor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        eth.estimateGas(args);
+
+        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(reversibleTransactionExecutor, times(1))
+                .estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+    }
+
+    @Test
+    void whenExecuteEstimateGasWithInputAndDataParameters_callExecutorWithInput() {
+        CallArguments args = new CallArguments();
+        args.setData(Constants.TEST_DATA);
+        args.setInput(Constants.TEST_DATA);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        Block block = mock(Block.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        when(blockchain.getBestBlock())
+                .thenReturn(block);
+
+        ProgramResult executorResult = mock(ProgramResult.class);
+        TransactionExecutor transactionExecutor = mock(TransactionExecutor.class);
+        when(transactionExecutor.getResult())
+                .thenReturn(executorResult);
+
+        ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
+        when(reversibleTransactionExecutor.estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(transactionExecutor);
+
+        EthModule eth = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                blockchain,
+                null,
+                reversibleTransactionExecutor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        eth.estimateGas(args);
+
+        ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(reversibleTransactionExecutor, times(1))
+                .estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+        assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
+    }
+
+    @Test
+    void whenExecuteSendTransactionWithDataParameter_callExecutorWithData() {
+        Constants constants = Constants.regtest();
+
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+
+        // Hash of the expected transaction
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setData(Constants.TEST_DATA);
+
+        String expectedDataValue = args.getData().substring(2);
+
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+
+        TransactionPool transactionPool = mock(TransactionPool.class);
+
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+
+        ethModuleTransaction.sendTransaction(args);
+
+        ArgumentCaptor<Transaction> transactionCaptor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionGateway, times(1))
+                .receiveTransaction(transactionCaptor.capture());
+        assertArrayEquals(Hex.decode(expectedDataValue), transactionCaptor.getValue().getData());
+    }
+
+    @Test
+    void whenExecuteSendTransactionWithInputParameter_callExecutorWithInput() {
+        Constants constants = Constants.regtest();
+
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+
+        // Hash of the expected transaction
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setInput(Constants.TEST_DATA);
+
+        String expectedDataValue = args.getInput().substring(2);
+
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+
+        TransactionPool transactionPool = mock(TransactionPool.class);
+
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+
+        ethModuleTransaction.sendTransaction(args);
+
+        ArgumentCaptor<Transaction> transactionCaptor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionGateway, times(1))
+                .receiveTransaction(transactionCaptor.capture());
+        assertArrayEquals(Hex.decode(expectedDataValue), transactionCaptor.getValue().getData());
+    }
+
+    @Test
+    void whenExecuteSendTransactionWithInputAndDataParameters_callExecutorWithInput() {
+        Constants constants = Constants.regtest();
+
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+
+        // Hash of the expected transaction
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setData(Constants.TEST_DATA);
+        args.setInput(Constants.TEST_DATA);
+
+        String expectedDataValue = args.getInput().substring(2);
+
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+
+        TransactionPool transactionPool = mock(TransactionPool.class);
+
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+
+        ethModuleTransaction.sendTransaction(args);
+
+        ArgumentCaptor<Transaction> transactionCaptor = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionGateway, times(1))
+                .receiveTransaction(transactionCaptor.capture());
+        assertArrayEquals(Hex.decode(expectedDataValue), transactionCaptor.getValue().getData());
     }
 }
