@@ -17,7 +17,7 @@ public class RskContextState {
     public void setup() {
         System.out.println("RskContextState -------- Setup...");
         try {
-            System.setProperty("database.dir", "./test/local-mainnet-1_rockdb/database");
+            System.setProperty("database.dir", "/var/lib/rsk/database/mainnet/");
             String[] args = {};
             this.context = new RskContext(args);
             System.out.println("RskContextState -------- Context...");
