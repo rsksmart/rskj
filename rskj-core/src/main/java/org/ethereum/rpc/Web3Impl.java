@@ -349,7 +349,7 @@ public class Web3Impl implements Web3 {
 
         logger.debug("eth_hashrate(): {}", hashesPerSecond);
 
-        return hashesPerSecond.toString(16);
+        return HexUtils.toQuantityJsonHex(hashesPerSecond);
     }
 
     @Override
