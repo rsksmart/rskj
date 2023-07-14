@@ -12,24 +12,6 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class KeyValueDataSourceUtils {
-    public static class DbKindValueFromDbKindFileResponse {
-        private final DbKind dbKind;
-        private final boolean dbKindFileExists;
-
-        DbKindValueFromDbKindFileResponse(DbKind dbKind, boolean dbKindFileExists) {
-            this.dbKind = dbKind;
-            this.dbKindFileExists = dbKindFileExists;
-        }
-
-        public DbKind getDbKind() {
-            return dbKind;
-        }
-
-        public boolean doesDbKindFileExists() {
-            return dbKindFileExists;
-        }
-    }
-
     public static final String DB_KIND_PROPERTIES_FILE = "dbKind.properties";
     public static final String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
     public static final String KEYVALUE_DATASOURCE = "KeyValueDataSource";
@@ -72,7 +54,7 @@ public class KeyValueDataSourceUtils {
         destinationDataSource.close();
     }
 
-    public static DbKindValueFromDbKindFileResponse getDbKindValueFromDbKindFile(String databaseDir) {
+    public static DbKind getDbKindValueFromDbKindFile(String databaseDir) {
         try {
             File file = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
             Properties props = new Properties();
@@ -82,10 +64,10 @@ public class KeyValueDataSourceUtils {
                     props.load(reader);
                 }
 
-                return new DbKindValueFromDbKindFileResponse(DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME)), true);
+                return DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME));
             }
 
-            return new DbKindValueFromDbKindFileResponse(DbKind.ROCKS_DB, false);
+            return DbKind.ROCKS_DB;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -116,19 +98,14 @@ public class KeyValueDataSourceUtils {
         }
 
         boolean databaseDirExists = dir.exists() && dir.isDirectory();
+        File file = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
 
-        if (!databaseDirExists || dir.list().length == 0) {
+        if (!databaseDirExists || dir.list().length == 0 || !file.exists() || !file.canRead()) {
             KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
             return;
         }
 
-        DbKindValueFromDbKindFileResponse dbKindValueFromDbKindFile  = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
-        DbKind prevDbKind = dbKindValueFromDbKindFile.getDbKind();
-
-        if (!dbKindValueFromDbKindFile.doesDbKindFileExists()) {
-            KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
-            return;
-        }
+        DbKind prevDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
 
         if (prevDbKind != currentDbKind) {
             if (databaseReset) {
