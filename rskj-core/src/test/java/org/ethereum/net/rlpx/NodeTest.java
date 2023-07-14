@@ -130,10 +130,14 @@ class NodeTest {
     void equalsMethodWorksAsExpected() {
         Node node1 = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
         Node node2 = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
+        Node node3 = new Node(NODE_ID_1, "google.com", NODE_PORT_1);
+        Node node4 = new Node(NODE_ID_1, NODE_HOST_1, 6667);
 
         assertEquals(node1, node2);
         assertNotEquals(node1, new Object());
         assertNotEquals(node1, null);
+        assertNotEquals(node1, node3);
+        assertNotEquals(node1, node4);
     }
 
     @Test
