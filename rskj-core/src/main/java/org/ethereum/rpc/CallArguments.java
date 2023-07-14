@@ -38,7 +38,6 @@ public class CallArguments {
     private String nonce;
     private String chainId;
     private String type; // ignore, see https://github.com/rsksmart/rskj/pull/1601
-    private String input;
 
     public String getFrom() {
         return from;
@@ -89,7 +88,7 @@ public class CallArguments {
     }
 
     public String getData() {
-        return getInputOrData();
+        return this.data;
     }
 
     public void setData(String data) {
@@ -121,15 +120,11 @@ public class CallArguments {
     }
 
     public String getInput() {
-        return getInputOrData();
+        return this.data;
     }
 
     public void setInput(String input) {
-        this.input = input;
-    }
-
-    private String getInputOrData() {
-        return Optional.ofNullable(input).filter(i -> !i.isEmpty()).orElse(data);
+        this.data = input;
     }
 
     @Override

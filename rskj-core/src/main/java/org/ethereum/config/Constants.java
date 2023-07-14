@@ -39,7 +39,6 @@ public class Constants {
     public static final byte TESTNET_CHAIN_ID = (byte) 31;
     public static final byte DEVNET_CHAIN_ID = (byte) 32;
     public static final byte REGTEST_CHAIN_ID = (byte) 33;
-    public static final String TEST_DATA = "0x603d80600c6000396000f3007c01000000000000000000000000000000000000000000000000000000006000350463c6888fa18114602d57005b6007600435028060005260206000f3";
 
     private static final byte[] FALLBACKMINING_PUBKEY_0 = Hex.decode("041e2b148c024770e19c4f31db2233cac791583df95b4d14a5e9fd4b38dc8254b3048f937f169446b19d2eca40db1dd93fab34c0cd8a310afd6e6211f9a89e4bca");
     private static final byte[] FALLBACKMINING_PUBKEY_1 = Hex.decode("04b55031870df5de88bdb84f65bd1c6f8331c633e759caa5ac7cad3fa4f8a36791e995804bba1558ddcf330a67ff5bfa253fa1d8789735f97a97e849686527976e");

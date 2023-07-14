@@ -65,6 +65,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class EthModuleTest {
+
+    public static final String TEST_DATA = "0x603d80600c6000396000f3007c01000000000000000000000000000000000000000000000000000000006000350463c6888fa18114602d57005b6007600435028060005260206000f3";
+    
     private final TestSystemProperties config = new TestSystemProperties();
     private SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
@@ -359,7 +362,7 @@ class EthModuleTest {
     @Test
     void whenExecuteCallWithDataParameter_callExecutorWithData() {
         CallArguments args = new CallArguments();
-        args.setData(Constants.TEST_DATA);
+        args.setData(TEST_DATA);
         ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
@@ -402,7 +405,7 @@ class EthModuleTest {
     @Test
     void whenExecuteCallWithInputParameter_callExecutorWithInput() {
         CallArguments args = new CallArguments();
-        args.setInput(Constants.TEST_DATA);
+        args.setInput(TEST_DATA);
         ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
@@ -445,8 +448,8 @@ class EthModuleTest {
     @Test
     void whenExecuteCallWithInputAndDataParameters_callExecutorWithInput() {
         CallArguments args = new CallArguments();
-        args.setData(Constants.TEST_DATA);
-        args.setInput(Constants.TEST_DATA);
+        args.setData(TEST_DATA);
+        args.setInput(TEST_DATA);
         ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
@@ -490,7 +493,7 @@ class EthModuleTest {
     @Test
     void whenExecuteEstimateGasWithDataParameter_callExecutorWithData() {
         CallArguments args = new CallArguments();
-        args.setData(Constants.TEST_DATA);
+        args.setData(TEST_DATA);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         Block block = mock(Block.class);
         Blockchain blockchain = mock(Blockchain.class);
@@ -532,7 +535,7 @@ class EthModuleTest {
     @Test
     void whenExecuteEstimateGasWithInputParameter_callExecutorWithInput() {
         CallArguments args = new CallArguments();
-        args.setInput(Constants.TEST_DATA);
+        args.setInput(TEST_DATA);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         Block block = mock(Block.class);
         Blockchain blockchain = mock(Blockchain.class);
@@ -574,8 +577,8 @@ class EthModuleTest {
     @Test
     void whenExecuteEstimateGasWithInputAndDataParameters_callExecutorWithInput() {
         CallArguments args = new CallArguments();
-        args.setData(Constants.TEST_DATA);
-        args.setInput(Constants.TEST_DATA);
+        args.setData(TEST_DATA);
+        args.setInput(TEST_DATA);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         Block block = mock(Block.class);
         Blockchain blockchain = mock(Blockchain.class);
@@ -624,7 +627,7 @@ class EthModuleTest {
 
         // Hash of the expected transaction
         CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
-        args.setData(Constants.TEST_DATA);
+        args.setData(TEST_DATA);
 
         String expectedDataValue = args.getData().substring(2);
 
@@ -656,7 +659,7 @@ class EthModuleTest {
 
         // Hash of the expected transaction
         CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
-        args.setInput(Constants.TEST_DATA);
+        args.setInput(TEST_DATA);
 
         String expectedDataValue = args.getInput().substring(2);
 
@@ -688,8 +691,8 @@ class EthModuleTest {
 
         // Hash of the expected transaction
         CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
-        args.setData(Constants.TEST_DATA);
-        args.setInput(Constants.TEST_DATA);
+        args.setData(TEST_DATA);
+        args.setInput(TEST_DATA);
 
         String expectedDataValue = args.getInput().substring(2);
 
