@@ -18,8 +18,6 @@
 
 package org.ethereum.rpc;
 
-import java.util.Optional;
-
 /**
  * Wraps call arguments for several json-rpc methods.
  * Take account to fill up the arguments using the right hex value encoding (QUANTITY and UNFORMATTED DATA),
