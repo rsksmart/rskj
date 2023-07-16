@@ -1511,7 +1511,7 @@ public class BridgeSupportTestIntegration {
 
         try (MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class, CALLS_REAL_METHODS)) {
             bridgeUtilsMocked.when(() ->
-                    BridgeUtils.isValidPegInTx(
+                    BridgeUtilsLegacy.isValidPegInTx(
                             any(BtcTransaction.class),
                             anyList(),
                             nullable(Script.class),
