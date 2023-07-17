@@ -179,14 +179,6 @@ public final class PegTestUtils {
         return key.toAddress(networkParameters);
     }
 
-    public static Address createRandomP2SHMultisigAddress(NetworkParameters networkParameters, int keysCount) {
-        List<BtcECKey> keys = createRandomBtcECKeys(keysCount);
-        Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-
-        return Address.fromP2SHScript(networkParameters, outputScript);
-    }
-
     public static List<BtcECKey> createRandomBtcECKeys(int keysCount) {
         List<BtcECKey> keys = new ArrayList<>();
         for (int i = 0; i < keysCount; i++) {
