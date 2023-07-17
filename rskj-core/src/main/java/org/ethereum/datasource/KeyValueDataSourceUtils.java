@@ -89,7 +89,7 @@ public class KeyValueDataSourceUtils {
         }
     }
 
-    public static void validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
+    public static void validateDbKind(DbKind currentDbKind, String databaseDir) {
         File dbDir = new File(databaseDir);
         boolean dbDirExists = dbDir.exists();
 

@@ -132,7 +132,7 @@ public class DbMigrate extends PicoCliToolRskContextAware {
                     .forEach(this::migrate);
         }
 
-        KeyValueDataSourceUtils.validateDbKind(targetDbKind, targetDbDir, true);
+        KeyValueDataSourceUtils.validateDbKind(targetDbKind, targetDbDir);
 
         String nodeIdFilePath = "/" + NODE_ID_FILE;
 
