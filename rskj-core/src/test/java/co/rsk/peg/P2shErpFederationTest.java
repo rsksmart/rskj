@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -195,7 +196,7 @@ class P2shErpFederationTest {
             "destination"
         );
 
-        FederationTestUtils.spendFromErpFed(
+        assertDoesNotThrow(() -> FederationTestUtils.spendFromErpFed(
             networkParameters,
             pshErpFed,
             signWithEmergencyMultisig ? emergencyKeys : standardKeys,
@@ -204,7 +205,7 @@ class P2shErpFederationTest {
             destinationAddress,
             value.minus(fee),
             signWithEmergencyMultisig
-        );
+        ));
     }
 
     private void validateP2shErpRedeemScript(
