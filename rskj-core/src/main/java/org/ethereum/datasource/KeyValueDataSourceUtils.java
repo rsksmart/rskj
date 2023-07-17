@@ -90,31 +90,37 @@ public class KeyValueDataSourceUtils {
     }
 
     public static void validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
-        File dir = new File(databaseDir);
+        File dbDir = new File(databaseDir);
+        boolean dbDirExists = dbDir.exists();
 
-        if (dir.exists() && !dir.isDirectory()) {
+        if (dbDirExists && !dbDir.isDirectory()) {
             LoggerFactory.getLogger(KEYVALUE_DATASOURCE).error("database.dir should be a folder.");
             throw new IllegalStateException("database.dir should be a folder");
         }
 
-        boolean databaseDirExists = dir.exists() && dir.isDirectory();
-        File file = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
+        File dbKindFile = new File(dbDir, DB_KIND_PROPERTIES_FILE);
+        boolean dbKindFileExists = dbKindFile.exists();
+        if (dbKindFileExists && !dbKindFile.isFile()) {
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).error("dbKind file should be a file.");
+            throw new IllegalStateException("dbKind file should be a file");
+        }
 
-        if (!databaseDirExists || dir.list().length == 0 || !file.exists() || !file.canRead()) {
+        boolean isEmptyDbDir = dbDirExists && Objects.requireNonNull(dbDir.list()).length == 0;
+        if (!dbDirExists || isEmptyDbDir) { // use dbKind from config, if db folder doesn't exist or is empty
             KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
             return;
         }
 
-        DbKind prevDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
+        if (!dbKindFileExists || !dbKindFile.canRead()) { // use LEVEL_DB (for backward compatibility), if db folder is not empty and dbKind file doesn't exist
+            KeyValueDataSourceUtils.generatedDbKindFile(DbKind.LEVEL_DB, databaseDir);
+            return;
+        }
 
+        DbKind prevDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
         if (prevDbKind != currentDbKind) {
-            if (databaseReset) {
-                KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
-            } else {
-                LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Current Db kind {} does not match with db kind {} from properties file, using value from properties file." +
-                                " keyvalue.datasource from .conf file is used the first time the node is run or db is created from scratch.",
-                                currentDbKind.name(), prevDbKind.name());
-            }
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Current Db kind {} does not match with db kind {} from properties file, using value from properties file." +
+                            " keyvalue.datasource from .conf file is used the first time the node is run or db is created from scratch.",
+                    currentDbKind.name(), prevDbKind.name());
         }
     }
 }
