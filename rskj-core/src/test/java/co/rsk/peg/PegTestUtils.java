@@ -176,6 +176,11 @@ public final class PegTestUtils {
         return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(networkParameters);
     }
 
+    /**
+     * @deprecated Use co.rsk.peg.BitcoinTestUtils#createP2PKHAddress(co.rsk.bitcoinj.core.NetworkParameters, java.lang.String) instead.
+     * Avoid using random values in tests
+     */
+    @Deprecated
     public static Address createRandomP2PKHBtcAddress(NetworkParameters networkParameters) {
         BtcECKey key = new BtcECKey();
         return key.toAddress(networkParameters);
