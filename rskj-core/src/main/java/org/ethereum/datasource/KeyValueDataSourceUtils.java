@@ -111,7 +111,7 @@ public class KeyValueDataSourceUtils {
             return;
         }
 
-        if (!dbKindFileExists || !dbKindFile.canRead()) { // use LEVEL_DB (for backward compatibility), if db folder is not empty and dbKind file doesn't exist
+        if (!dbKindFileExists) { // use LEVEL_DB (for backward compatibility), if db folder is not empty and dbKind file doesn't exist
             KeyValueDataSourceUtils.generatedDbKindFile(DbKind.LEVEL_DB, databaseDir);
             return;
         }
