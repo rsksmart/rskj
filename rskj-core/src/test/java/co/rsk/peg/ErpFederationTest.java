@@ -25,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -36,7 +35,6 @@ import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -729,29 +727,15 @@ class ErpFederationTest {
         boolean isRskip293Active,
         boolean signWithEmergencyMultisig) {
 
-        List<BtcECKey> standardKeys = Arrays.stream(new String[]{
-            "fed1",
-            "fed2",
-            "fed3",
-            "fed4",
-            "fed5",
-            "fed6",
-            "fed7",
-            "fed8",
-            "fed9",
-            "fed10",
-        }).map(seed -> BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
-            .sorted(BtcECKey.PUBKEY_COMPARATOR)
-            .collect(Collectors.toList());
+        List<BtcECKey> standardKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10"},
+            true
+        );
 
-        List<BtcECKey> emergencyKeys = Arrays.stream(new String[]{
-            "erp1",
-            "erp2",
-            "erp3",
-            "erp4"
-        }).map(seed -> BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
-            .sorted(BtcECKey.PUBKEY_COMPARATOR)
-            .collect(Collectors.toList());
+        List<BtcECKey> emergencyKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"erp1", "erp2", "erp3", "erp4"},
+            true
+        );
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
