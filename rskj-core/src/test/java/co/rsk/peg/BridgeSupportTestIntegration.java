@@ -1509,8 +1509,11 @@ public class BridgeSupportTestIntegration {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(mockBtcBlockStore);
 
-        try (MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class, CALLS_REAL_METHODS)) {
-            bridgeUtilsMocked.when(() ->
+        try (
+            MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class, CALLS_REAL_METHODS);
+            MockedStatic<BridgeUtilsLegacy> bridgeUtilsLegacyMocked = mockStatic(BridgeUtilsLegacy.class, CALLS_REAL_METHODS);
+        ) {
+            bridgeUtilsLegacyMocked.when(() ->
                     BridgeUtilsLegacy.isValidPegInTx(
                             any(BtcTransaction.class),
                             anyList(),
