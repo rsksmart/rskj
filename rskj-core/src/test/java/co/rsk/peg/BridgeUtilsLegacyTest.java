@@ -1,10 +1,12 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -501,6 +503,41 @@ class BridgeUtilsLegacyTest {
         );
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0));
+    }
+
+    @Test
+    void isValidPegInTx_after_rskip_379() {
+        // arrange
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP379)).thenReturn(true);
+
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        Federation federation = mock(Federation.class);
+        Script retiredFederationP2SHScript = mock(Script.class);
+        Context context = mock(Context.class);
+        BridgeConstants bridgeConstants = mock(BridgeConstants.class);
+
+        // act and assert
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> {
+            BridgeUtilsLegacy.isValidPegInTx(
+                btcTx,
+                Collections.singletonList(federation),
+                retiredFederationP2SHScript,
+                context,
+                bridgeConstants,
+                activations
+            );
+        }, "Calling BridgeUtilsLegacy.isValidPegInTx method after RSKIP379 activation");
+
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> {
+            BridgeUtilsLegacy.isValidPegInTx(
+                btcTx,
+                federation,
+                context,
+                bridgeConstants,
+                activations
+            );
+        }, "Calling BridgeUtilsLegacy.isValidPegInTx method after RSKIP379 activation");
     }
 
     private class SimpleBtcTransaction {
