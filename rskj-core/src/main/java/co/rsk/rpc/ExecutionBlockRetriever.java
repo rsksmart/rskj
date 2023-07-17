@@ -27,6 +27,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
@@ -45,8 +46,6 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
  * for Web3 calls.
  */
 public class ExecutionBlockRetriever implements InternalService {
-    private static final String LATEST_ID = "latest";
-    private static final String PENDING_ID = "pending";
 
     private final Object pendingBlockLock = new Object();
     private final Blockchain blockchain;
@@ -63,11 +62,11 @@ public class ExecutionBlockRetriever implements InternalService {
     }
 
     public Result retrieveExecutionBlock(String bnOrId) {
-        if (LATEST_ID.equals(bnOrId)) {
+        if (BlockTag.LATEST.tagEquals(bnOrId)) {
             return Result.ofBlock(blockchain.getBestBlock());
         }
 
-        if (PENDING_ID.equals(bnOrId)) {
+        if (BlockTag.PENDING.tagEquals(bnOrId)) {
             return getPendingBlockResult();
         }
 

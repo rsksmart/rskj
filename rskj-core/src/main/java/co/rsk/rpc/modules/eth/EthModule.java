@@ -44,6 +44,7 @@ import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
@@ -150,15 +151,14 @@ public class EthModule
         }
     }
 
-    public String estimateGas(CallArguments args) {
+    public String estimateGas(CallArguments args, @Nonnull Block block) {
         String estimation = null;
-        Block bestBlock = blockchain.getBestBlock();
         try {
             CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
 
             TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
-                    bestBlock,
-                    bestBlock.getCoinbase(),
+                    block,
+                    block.getCoinbase(),
                     hexArgs.getGasPrice(),
                     hexArgs.gasLimitForGasEstimation(gasEstimationCap),
                     hexArgs.getToAddress(),
@@ -174,6 +174,12 @@ public class EthModule
             LOGGER.debug("eth_estimateGas(): {}", estimation);
         }
     }
+
+    public String estimateGas(CallArguments args) {
+        Block bestBlock = blockchain.getBestBlock();
+        return estimateGas(args, bestBlock);
+    }
+
 
     protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {
         long estimatedGas = reversibleExecutionResult.getMovedRemainingGasToChild() ?
