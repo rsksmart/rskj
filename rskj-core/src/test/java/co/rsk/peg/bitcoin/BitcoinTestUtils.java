@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;

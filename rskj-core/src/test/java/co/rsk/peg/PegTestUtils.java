@@ -170,7 +170,7 @@ public final class PegTestUtils {
     }
 
     /**
-     * @deprecated Use co.rsk.peg.BitcoinTestUtils#createP2PKHAddress(co.rsk.bitcoinj.core.NetworkParameters, java.lang.String) instead.
+     * @deprecated Use co.rsk.peg.bitcoin.BitcoinTestUtils#createP2PKHAddress(co.rsk.bitcoinj.core.NetworkParameters, java.lang.String) instead.
      * Avoid using random values in tests
      */
     @Deprecated

@@ -16,6 +16,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
