@@ -79,7 +79,6 @@ class ErpFederationTest {
             activationDelayValue,
             false
         );
-
     }
 
     @Test
@@ -755,7 +754,10 @@ class ErpFederationTest {
         BtcTransaction fundTx = new BtcTransaction(networkParameters);
         fundTx.addOutput(value, erpFed.getAddress());
 
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(
+            networkParameters,
+            "destination"
+        );
 
         FederationTestUtils.spendFromErpFed(
             networkParameters,

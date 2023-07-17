@@ -1,6 +1,8 @@
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -20,5 +22,10 @@ public class BitcoinTestUtils {
         }
 
         return keys;
+    }
+
+    public static Address createP2PKHAddress(NetworkParameters networkParameters, String seed) {
+        BtcECKey key = BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
+        return key.toAddress(networkParameters);
     }
 }
