@@ -154,7 +154,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public PendingState getPendingState() {
+    public synchronized PendingState getPendingState() {
         return getPendingState(getCurrentRepository());
     }
 
