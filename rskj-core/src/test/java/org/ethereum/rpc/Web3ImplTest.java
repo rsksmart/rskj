@@ -2431,22 +2431,6 @@ class Web3ImplTest {
         );
     }
 
-    @Test
-    void whenEthUninstallFilter_throwFilterNotFoundException() {
-        RskSystemProperties config = mock(RskSystemProperties.class);
-
-        when(config.isMinerClientEnabled()).thenReturn(false);
-        when(config.minerClientAutoMine()).thenReturn(false);
-
-        Web3RskImpl web3 = (Web3RskImpl) createWeb3();
-
-        Assertions.assertThrowsExactly(
-                RskJsonRpcRequestException.class,
-                () -> web3.eth_uninstallFilter("0x01"),
-                "filter not found"
-        );
-    }
-
     private Web3Impl createWeb3() {
         return createWeb3(
                 Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),

@@ -72,13 +72,7 @@ public class FilterManager {
 
     public boolean removeFilter(int id) {
         synchronized (filterLock) {
-            Filter filter = installedFilters.remove(id);
-
-            if (filter == null) {
-                throw filterNotFound("filter not found");
-            }
-
-            return true;
+            return installedFilters.remove(id) != null;
         }
     }
 

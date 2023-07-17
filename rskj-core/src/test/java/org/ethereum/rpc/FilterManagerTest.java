@@ -18,17 +18,4 @@ public class FilterManagerTest {
                 "filter not found"
         );
     }
-
-    @Test
-    void whenRemoveFilter_throwFilterNotFoundException() {
-        Ethereum ethMock = Web3Mocks.getMockEthereum();
-        FilterManager filterManager = new FilterManager(ethMock);
-
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> filterManager.removeFilter(1));
-        Assertions.assertThrowsExactly(
-                RskJsonRpcRequestException.class,
-                () -> filterManager.removeFilter(1),
-                "filter not found"
-        );
-    }
 }
