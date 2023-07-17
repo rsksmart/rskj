@@ -965,7 +965,7 @@ class BridgeSupportReleaseBtcTest {
         for (int i = 0; i < entriesSizeAboveMaxIterations; i++) {
             entries.add(
                 new ReleaseRequestQueue.Entry(
-                    PegTestUtils.createP2PKHBtcAddress(bridgeConstants.getBtcParams(), i+2),
+                    BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), String.valueOf(i)),
                     Coin.COIN.multiply(5)
                 )
             );
