@@ -32,20 +32,37 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class P2shErpFederationTest {
 
-    @Test
-    void getRedeemScript_testnet() {
-        test_getRedeemScript(BridgeTestNetConstants.getInstance());
-    }
+    @ParameterizedTest
+    @MethodSource("getRedeemScriptArgsProvider")
+    void getRedeemScript(BridgeConstants bridgeConstants) {
+        List<BtcECKey> defaultKeys = bridgeConstants.getGenesisFederation().getBtcPublicKeys();
+        List<BtcECKey> emergencyKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
-    @Test
-    void getRedeemScript_mainnet() {
-        test_getRedeemScript(BridgeMainNetConstants.getInstance());
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        Federation p2shErpFederation = new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
+            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+            0L,
+            bridgeConstants.getBtcParams(),
+            emergencyKeys,
+            activationDelay,
+            activations
+        );
+
+        validateP2shErpRedeemScript(
+            p2shErpFederation.getRedeemScript(),
+            defaultKeys,
+            emergencyKeys,
+            activationDelay
+        );
     }
 
     @Test
     void getStandardRedeemscript() {
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
-                Arrays.asList(new BtcECKey(), new BtcECKey(), new BtcECKey())
+            Arrays.asList(new BtcECKey(), new BtcECKey(), new BtcECKey())
         );
         Instant creationTime = Instant.now();
         int creationBlock = 0;
@@ -54,7 +71,6 @@ class P2shErpFederationTest {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
 
         // Create a legacy powpeg and then a p2sh valid one. Both of them should produce the same standard redeem script
-
         Federation legacyFed = new Federation(
                 members,
                 creationTime,
@@ -191,31 +207,6 @@ class P2shErpFederationTest {
         );
     }
 
-    private void test_getRedeemScript(BridgeConstants bridgeConstants) {
-        List<BtcECKey> defaultKeys = bridgeConstants.getGenesisFederation().getBtcPublicKeys();
-        List<BtcECKey> emergencyKeys = bridgeConstants.getErpFedPubKeysList();
-        long activationDelay = bridgeConstants.getErpFedActivationDelay();
-
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-
-        Federation p2shErpFederation = new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
-            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
-            bridgeConstants.getBtcParams(),
-            emergencyKeys,
-            activationDelay,
-            activations
-        );
-
-        validateP2shErpRedeemScript(
-            p2shErpFederation.getRedeemScript(),
-            defaultKeys,
-            emergencyKeys,
-            activationDelay
-        );
-    }
-
     private void validateP2shErpRedeemScript(
         Script erpRedeemScript,
         List<BtcECKey> defaultMultisigKeys,
@@ -317,6 +308,13 @@ class P2shErpFederationTest {
                 bridgeTestNetConstants.getErpFedActivationDelay(),
                 true
             )
+        );
+    }
+
+    private static Stream<Arguments> getRedeemScriptArgsProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance()),
+            Arguments.of(BridgeTestNetConstants.getInstance())
         );
     }
 }
