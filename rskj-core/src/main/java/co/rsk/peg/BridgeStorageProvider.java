@@ -932,7 +932,7 @@ public class BridgeStorageProvider {
 
         byte[] data = repository.getStorageBytes(
             contractAddress,
-            getStorageKeyForBridgeBtcTxSigHashIndex(sigHash)
+            getStorageKeyForBridgeBtcTxSigHash(sigHash)
         );
 
         return data != null &&
@@ -959,7 +959,7 @@ public class BridgeStorageProvider {
 
         repository.addStorageBytes(
             contractAddress,
-            getStorageKeyForBridgeBtcTxSigHashIndex(
+            getStorageKeyForBridgeBtcTxSigHash(
                 bridgeBtcTxSigHashToSave
             ),
             new byte[]{TRUE_VALUE}
@@ -1045,8 +1045,8 @@ public class BridgeStorageProvider {
         return key;
     }
 
-    private DataWord getStorageKeyForBridgeBtcTxSigHashIndex(Sha256Hash sigHash) {
-        return BRIDGE_BTC_TX_SIG_HASH_KEY.getCompoundKey("-", sigHash.toString());
+    private DataWord getStorageKeyForBridgeBtcTxSigHash(Sha256Hash sigHash) {
+        return BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
