@@ -184,22 +184,15 @@ public class SnapshotProcessor implements InternalService {
         int maxCompressedLength = fastCompressor.maxCompressedLength(src.length);
         byte[] dst = new byte[maxCompressedLength];
         int compressedLength = fastCompressor.compress(src, 0, src.length, dst, 0, maxCompressedLength);
+        // TODO(iago) revisit this, try to improve it
         return Arrays.copyOf(dst, compressedLength);
     }
 
-    private static byte[] decompressLz4(byte[] src, int originalSize) {
+    private static byte[] decompressLz4(byte[] src, int expandedSize) {
         LZ4SafeDecompressor decompressor = LZ4Factory.safeInstance().safeDecompressor();
-
-        // TODO(iago) try to not use ByteBuffer
-        ByteBuffer decompressedBuffer = ByteBuffer.allocate(originalSize);
-        decompressor.decompress(ByteBuffer.wrap(src), decompressedBuffer);
-
-        // TODO(iago) revisit this
-        if (!decompressedBuffer.hasArray()) {
-            throw new IllegalStateException("Decompressed buffer does not have backing array");
-        }
-
-        return decompressedBuffer.array();
+        byte[] dst = new byte[expandedSize];
+        decompressor.decompress(src, dst);
+        return  dst;
     }
 
     private void connect() {
