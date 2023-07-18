@@ -1,11 +1,14 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.rpc.OriginValidator;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import io.netty.util.CharsetUtil;
 import org.ethereum.rpc.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,7 +117,9 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
 
             if (!"application/json".equals(mimeType) && !"application/json-rpc".equals(mimeType)) {
                 logger.debug("Unsupported content type");
-                response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
+                String errorMessage = "invalid content type, only application/json is supported";
+                ByteBuf errorContent = Unpooled.copiedBuffer(errorMessage, CharsetUtil.UTF_8);
+                response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE, errorContent);
             } else if (origin != null && !this.originValidator.isValidOrigin(origin)) {
                 logger.debug("Invalid origin");
                 response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
