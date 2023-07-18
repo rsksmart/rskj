@@ -2406,15 +2406,17 @@ class Web3ImplTest {
         when(config.isMinerClientEnabled()).thenReturn(false);
         when(config.minerClientAutoMine()).thenReturn(false);
 
+        RskJsonRpcRequestException expectedException = RskJsonRpcRequestException.filterNotFound("filter not found");
+
         Web3RskImpl web3 = (Web3RskImpl) createWeb3();
 
         RskJsonRpcRequestException exception = Assertions.assertThrowsExactly(
-                RskJsonRpcRequestException.class,
+                expectedException.getClass(),
                 () -> web3.eth_getFilterChanges("0x01"),
                 "filter not found"
         );
 
-        assertEquals(-32000, exception.getCode());
+        assertEquals(expectedException.getCode(), exception.getCode());
     }
 
     @Test
@@ -2424,15 +2426,17 @@ class Web3ImplTest {
         when(config.isMinerClientEnabled()).thenReturn(false);
         when(config.minerClientAutoMine()).thenReturn(false);
 
+        RskJsonRpcRequestException expectedException = RskJsonRpcRequestException.filterNotFound("filter not found");
+
         Web3RskImpl web3 = (Web3RskImpl) createWeb3();
 
         RskJsonRpcRequestException exception = Assertions.assertThrowsExactly(
-                RskJsonRpcRequestException.class,
+                expectedException.getClass(),
                 () -> web3.eth_getFilterLogs("0x01"),
                 "filter not found"
         );
 
-        assertEquals(-32000, exception.getCode());
+        assertEquals(expectedException.getCode(), exception.getCode());
     }
 
     private Web3Impl createWeb3() {
