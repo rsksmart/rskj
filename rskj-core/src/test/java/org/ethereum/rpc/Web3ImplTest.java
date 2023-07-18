@@ -2408,11 +2408,13 @@ class Web3ImplTest {
 
         Web3RskImpl web3 = (Web3RskImpl) createWeb3();
 
-        Assertions.assertThrowsExactly(
+        RskJsonRpcRequestException exception = Assertions.assertThrowsExactly(
                 RskJsonRpcRequestException.class,
                 () -> web3.eth_getFilterChanges("0x01"),
                 "filter not found"
         );
+
+        assertEquals(-32000, exception.getCode());
     }
 
     @Test
@@ -2424,11 +2426,13 @@ class Web3ImplTest {
 
         Web3RskImpl web3 = (Web3RskImpl) createWeb3();
 
-        Assertions.assertThrowsExactly(
+        RskJsonRpcRequestException exception = Assertions.assertThrowsExactly(
                 RskJsonRpcRequestException.class,
                 () -> web3.eth_getFilterLogs("0x01"),
                 "filter not found"
         );
+
+        assertEquals(-32000, exception.getCode());
     }
 
     private Web3Impl createWeb3() {
