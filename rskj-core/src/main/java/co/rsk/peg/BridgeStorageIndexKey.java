@@ -40,8 +40,7 @@ public enum BridgeStorageIndexKey {
     FAST_BRIDGE_HASH_USED_IN_BTC_TX("fastBridgeHashUsedInBtcTx"),
     FAST_BRIDGE_FEDERATION_INFORMATION("fastBridgeFederationInformation"),
 
-    // Bridge btc tx sig hash index key
-    BRIDGE_BTC_TX_SIG_HASH_KEY("bridgeBtcTxSigHash"),
+    BRIDGE_BTC_TX_SIG_HASH("bridgeBtcTxSigHash"),
     ;
 
     private String key;
