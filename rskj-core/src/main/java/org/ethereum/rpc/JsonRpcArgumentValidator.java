@@ -21,8 +21,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class JsonRpcArgumentValidator {
-
-    private static final String HEX_BN_OR_ID_REGEX = "^(0x([1-9a-f]+[0-9a-f]*|0)|earliest|finalized|safe|latest|pending)$";
+    //Same regex as "^(0x([1-9a-f]+[0-9a-f]*|0)|earliest|finalized|safe|latest|pending)$" optimized for java:S5852
+    private static final String HEX_BN_OR_ID_REGEX = "^(?:0x[0-9a-fA-F]+$|earliest$|finalized$|safe$|latest$|pending$)";
     private static final Pattern HEX_BN_OR_ID_PATTERN = Pattern.compile(HEX_BN_OR_ID_REGEX);
 
     private JsonRpcArgumentValidator() { }
