@@ -44,8 +44,6 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
  */
 public class Web3InformationRetriever {
 
-    private static final String EARLIEST = "earliest";
-    private static final String LATEST = "latest";
     private static final String PENDING = "pending";
 
     private final TransactionPool transactionPool;

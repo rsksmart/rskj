@@ -2383,7 +2383,7 @@ class Web3ImplTest {
         Web3Impl web3 = builder
                 .build();
 
-        when(web3InformationRetriever.getBlock(eq("pending"))).thenReturn(Optional.of(pendingBlock));
+        when(web3InformationRetriever.getBlock("pending")).thenReturn(Optional.of(pendingBlock));
         when(ethModule.estimateGas(eq(args),blockCaptor.capture())).thenReturn(estimatedCost);
 
 
@@ -2440,7 +2440,7 @@ class Web3ImplTest {
         Web3TestBuilder builder = Web3TestBuilder.builder();
         CallArguments args = Mockito.mock(CallArguments.class);
         Web3InformationRetriever web3InformationRetriever = builder.getWeb3InformationRetriever();
-        when(web3InformationRetriever.getBlock(eq(unknownBlock))).thenReturn(Optional.empty());
+        when(web3InformationRetriever.getBlock(unknownBlock)).thenReturn(Optional.empty());
 
         Web3Impl web3 = builder.build();
         RskJsonRpcRequestException expectedException = Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
@@ -2455,7 +2455,7 @@ class Web3ImplTest {
         Web3TestBuilder builder = Web3TestBuilder.builder();
         CallArguments args = Mockito.mock(CallArguments.class);
         Web3InformationRetriever web3InformationRetriever = builder.getWeb3InformationRetriever();
-        when(web3InformationRetriever.getBlock(eq(unknownBlock))).thenReturn(Optional.empty());
+        when(web3InformationRetriever.getBlock(unknownBlock)).thenReturn(Optional.empty());
 
         Web3Impl web3 = builder.build();
         RskJsonRpcRequestException expectedException = Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
