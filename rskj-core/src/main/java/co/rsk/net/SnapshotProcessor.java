@@ -124,6 +124,8 @@ public class SnapshotProcessor implements InternalService {
     }
 
     public void processStateChunkRequest(Peer sender, StateChunkRequestMessage request) {
+        long startChunk = System.currentTimeMillis();
+
         logger.debug("Processing state chunk request from node {}", sender.getPeerNodeID());
 
         Long blockNumber = request.getBlockNumber() > 0L ? request.getBlockNumber() : blockchain.getBestBlock().getNumber() - 10;
@@ -161,10 +163,10 @@ public class SnapshotProcessor implements InternalService {
                 continue;
             }
 
-            long start = System.currentTimeMillis();
+            long startCompress = System.currentTimeMillis();
             byte[] compressedValue = compressLz4(value);
-            long total = System.currentTimeMillis() - start;
-            totalCompressingTime += total;
+            long totalCompress = System.currentTimeMillis() - startCompress;
+            totalCompressingTime += totalCompress;
 
             // TODO(iago) remove this
             if (logger.isTraceEnabled()) {
@@ -185,7 +187,10 @@ public class SnapshotProcessor implements InternalService {
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
         StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, blockNumber, request.getFrom(), !it.hasNext());
-        logger.debug("Sending state chunk of {} bytes to node {}, compressing time {}ms", chunkBytes.length, sender.getPeerNodeID(), totalCompressingTime);
+
+        long totalChunkTime = System.currentTimeMillis() - startChunk;
+
+        logger.debug("Sending state chunk of {} bytes to node {}, compressing time {}ms, totalTime {}ms", chunkBytes.length, sender.getPeerNodeID(), totalCompressingTime, totalChunkTime);
         sender.sendMessage(responseMessage);
     }
 
