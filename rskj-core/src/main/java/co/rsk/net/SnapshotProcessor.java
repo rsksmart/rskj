@@ -143,18 +143,28 @@ public class SnapshotProcessor implements InternalService {
 
         long i = KBYTES.equals(this.chunkSizeType)? 0l : request.getFrom();
         long limit = KBYTES.equals(this.chunkSizeType)? chunkSize * 1024 : i + chunkSize;
+
+        long totalCompressingTime = 0L;
+
         while (it.hasNext() && i < limit) {
             IterationElement e = it.next();
-            logger.info("Single node read.");
+            if (logger.isTraceEnabled()) {
+                logger.trace("Single node read.");
+            }
             byte[] key = e.getNodeKey().encode();
             byte[] value = e.getNode().getValue();
             if (value == null) {
-                logger.debug("State value is null for key {}", ByteUtil.toHexString(key));
+                if (logger.isTraceEnabled()) {
+                    logger.trace("State value is null for key {}", ByteUtil.toHexString(key));
+                }
                 // TODO(iago) revisit this
                 continue;
             }
 
+            long start = System.currentTimeMillis();
             byte[] compressedValue = compressLz4(value);
+            long total = System.currentTimeMillis() - start;
+            totalCompressingTime += total;
 
             // TODO(iago) remove this
             if (logger.isTraceEnabled()) {
@@ -167,13 +177,15 @@ public class SnapshotProcessor implements InternalService {
 
             final byte[] element = RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(compressedValue), RLP.encodeInt(value.length));
             trieEncoded.add(element);
-            logger.info("Single node calculated.");
+            if (logger.isTraceEnabled()) {
+                logger.trace("Single node calculated.");
+            }
             i = KBYTES.equals(this.chunkSizeType)? i + element.length : i+1;
         }
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
         StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, blockNumber, request.getFrom(), !it.hasNext());
-        logger.debug("Sending state chunk of {} bytes to node {}", chunkBytes.length, sender.getPeerNodeID());
+        logger.debug("Sending state chunk of {} bytes to node {}, compressing time {}ms", chunkBytes.length, sender.getPeerNodeID(), totalCompressingTime);
         sender.sendMessage(responseMessage);
     }
 
