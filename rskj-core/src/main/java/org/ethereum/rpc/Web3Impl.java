@@ -59,6 +59,7 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -68,6 +69,7 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidParameterException;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
@@ -921,8 +923,16 @@ public class Web3Impl implements Web3 {
             if (id == null) {
                 return false;
             }
+            // there should be a way to do this in a more smart way
+            // but geth is accepting inputs in both formats. "0xFF" and "FF" too.
+            // and without this if we get "FF" we return 500 (ISE)
+            String filterId = id;
 
-            return filterManager.removeFilter(stringHexToBigInteger(id).intValue());
+            if (!id.contains("0x")) {
+                 filterId = "0x" + id;
+            }
+
+            return filterManager.removeFilter(stringHexToBigInteger(filterId).intValue());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_uninstallFilter({}): {}", id, s);
@@ -945,6 +955,11 @@ public class Web3Impl implements Web3 {
 
         try {
             s = getFilterEvents(id, true);
+
+            if (s == null) {
+                throw new RskJsonRpcRequestException(-32000, "filter not found");
+            }
+
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getFilterChanges({}): {}", id, Arrays.toString(s));
@@ -958,10 +973,19 @@ public class Web3Impl implements Web3 {
     public Object[] eth_getFilterLogs(String id) {
         logger.debug("eth_getFilterLogs ...");
 
+//        if (!id.matches("-?[0-9a-fA-F]+")) {
+//            throw new InvalidParameterException("Invalid id: not a hex number");
+//        }
+
         Object[] s = null;
 
         try {
             s = getFilterEvents(id, false);
+
+            if (s == null) {
+                throw new RskJsonRpcRequestException(-32000, "filter not found");
+            }
+
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getFilterLogs({}): {}", id, Arrays.toString(s));
