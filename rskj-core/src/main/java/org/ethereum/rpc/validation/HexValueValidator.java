@@ -6,11 +6,20 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 public class HexValueValidator {
     private HexValueValidator(){}
 
-    public static boolean isValid(String hexNumber){
-        if (HexUtils.isHex(hexNumber)) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid block number: " + hexNumber);
+    private static boolean isValid(String input){
+        if (!HexUtils.isHex(input) && !HexUtils.isHexWithPrefix(input)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid argument: " + input + ": param should be a hex value string.");
         }
         return true;
+    }
+
+    public static String getValidHex(String input) {
+        isValid(input);
+
+        if (HexUtils.isHex(input) && !HexUtils.hasHexPrefix(input)) {
+             return "0x" + input;
+        }
+        return input;
     }
 
 }
