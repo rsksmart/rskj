@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.*;
 
 public class SnapshotProcessor implements InternalService {
@@ -98,7 +97,13 @@ public class SnapshotProcessor implements InternalService {
             final RLPList trieElement = (RLPList) trieElements.get(i);
             final byte[] key = trieElement.get(0).getRLPData();
             final int uncompressedSize = ByteUtil.byteArrayToInt(trieElement.get(2).getRLPData());
-            final byte[] value = decompressLz4(trieElement.get(1).getRLPData(), uncompressedSize);
+            byte[] value = trieElement.get(1).getRLPData();
+
+            boolean isCompressed = uncompressedSize != -1;
+            if (isCompressed) {
+                value = decompressLz4(value, uncompressedSize);
+            }
+
             final String keyString = ByteUtil.toHexString(key);
             final String valueString = ByteUtil.toHexString(value);
 
@@ -143,6 +148,9 @@ public class SnapshotProcessor implements InternalService {
             iterators.put(sender.getPeerNodeID().toString(), it);
         }
 
+        long rawSize = 0L;
+        long compressedSize = 0L;
+
         long i = KBYTES.equals(this.chunkSizeType)? 0l : request.getFrom();
         long limit = KBYTES.equals(this.chunkSizeType)? chunkSize * 1024 : i + chunkSize;
 
@@ -163,6 +171,8 @@ public class SnapshotProcessor implements InternalService {
                 continue;
             }
 
+            rawSize += value.length;
+
             long startCompress = System.currentTimeMillis();
             byte[] compressedValue = compressLz4(value);
             long totalCompress = System.currentTimeMillis() - startCompress;
@@ -177,7 +187,17 @@ public class SnapshotProcessor implements InternalService {
                 }
             }
 
-            final byte[] element = RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(compressedValue), RLP.encodeInt(value.length));
+            // TODO(iago) can we guess if the value can be compressed or not without doing it?
+            boolean needsCompression = compressedValue.length < value.length;
+
+            if (needsCompression) {
+                compressedSize += compressedValue.length;
+            } else {
+                compressedSize += value.length;
+            }
+
+            byte[] uncompressedSize = needsCompression ? RLP.encodeInt(value.length) : RLP.encodeInt(-1);
+            final byte[] element = RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(compressedValue), uncompressedSize);
             trieEncoded.add(element);
             if (logger.isTraceEnabled()) {
                 logger.trace("Single node calculated.");
@@ -190,7 +210,9 @@ public class SnapshotProcessor implements InternalService {
 
         long totalChunkTime = System.currentTimeMillis() - startChunk;
 
-        logger.debug("Sending state chunk of {} bytes to node {}, compressing time {}ms, totalTime {}ms", chunkBytes.length, sender.getPeerNodeID(), totalCompressingTime, totalChunkTime);
+        double compressionFactor = (double) rawSize / (double) compressedSize;
+
+        logger.debug("Sending state chunk of {} bytes to node {}, compressing time {}ms, totalTime {}ms, compressionFactor {}", chunkBytes.length, sender.getPeerNodeID(), totalCompressingTime, totalChunkTime, compressionFactor);
         sender.sendMessage(responseMessage);
     }
 
