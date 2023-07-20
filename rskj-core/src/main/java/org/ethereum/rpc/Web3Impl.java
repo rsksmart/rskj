@@ -69,7 +69,6 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidParameterException;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
@@ -919,18 +918,14 @@ public class Web3Impl implements Web3 {
     public boolean eth_uninstallFilter(String id) {
         Boolean s = null;
 
+        id = HexValueValidator.getValidHex(id);
+
         try {
             if (id == null) {
                 return false;
             }
-            // there should be a way to do this in a more smart way
-            // but geth is accepting inputs in both formats. "0xFF" and "FF" too.
-            // and without this if we get "FF" we return 500 (ISE)
-            String filterId = id;
 
-            if (!id.contains("0x")) {
-                 filterId = "0x" + id;
-            }
+            String filterId = id;
 
             return filterManager.removeFilter(stringHexToBigInteger(filterId).intValue());
         } finally {
@@ -944,6 +939,8 @@ public class Web3Impl implements Web3 {
     public Object[] eth_getFilterChanges(String id) {
         logger.debug("eth_getFilterChanges ...");
 
+        id = HexValueValidator.getValidHex(id);
+
         // TODO(mc): this is a quick solution that seems to work with OpenZeppelin tests, but needs to be reviewed
         // We do the same as in Ganache: mine a block in each request to getFilterChanges so block filters work
         if (config.isMinerClientEnabled() && config.minerClientAutoMine()) {
@@ -955,11 +952,6 @@ public class Web3Impl implements Web3 {
 
         try {
             s = getFilterEvents(id, true);
-
-            if (s == null) {
-                throw new RskJsonRpcRequestException(-32000, "filter not found");
-            }
-
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getFilterChanges({}): {}", id, Arrays.toString(s));
@@ -972,20 +964,13 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getFilterLogs(String id) {
         logger.debug("eth_getFilterLogs ...");
-        HexValueValidator.isValid(id);
 
-//        if (!id.matches("-?[0-9a-fA-F]+")) {
-//            throw new InvalidParameterException("Invalid id: not a hex number");
-//        }
+        id = HexValueValidator.getValidHex(id);
 
         Object[] s = null;
 
         try {
             s = getFilterEvents(id, false);
-
-            if (s == null) {
-                throw new RskJsonRpcRequestException(-32000, "filter not found");
-            }
 
         } finally {
             if (logger.isDebugEnabled()) {
