@@ -18,7 +18,12 @@
 
 package org.ethereum.rpc;
 
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.validation.BnTagOrNumberValidator;
+import org.ethereum.rpc.validation.EthAddressValidator;
+
 import java.util.Arrays;
+import java.util.Collection;
 
 public class FilterRequest {
 
@@ -77,5 +82,52 @@ public class FilterRequest {
 
     public void setBlockHash(String blockHash) {
         this.blockHash = blockHash;
+    }
+
+    public boolean isValid() {
+        if (fromBlock != null) {
+            BnTagOrNumberValidator.isValid(fromBlock);
+        }
+        if (toBlock != null) {
+            BnTagOrNumberValidator.isValid(toBlock);
+        }
+        validateAddress();
+        validateTopics();
+        return true;
+    }
+
+    private boolean validateTopics() {
+        if (topics != null) {
+            for (Object topic : topics) {
+                if (topic instanceof String) {
+                    new Topic((String) topic);
+                } else if (topic instanceof Collection) {
+                    Collection<?> iterable = (Collection<?>) topic;
+                    iterable.stream()
+                            .filter(String.class::isInstance)
+                            .map(String.class::cast)
+                            .forEach(Topic::new);
+                } else {
+                    throw RskJsonRpcRequestException.invalidParamError("Invalid topic parameter.");
+                }
+            }
+        }
+        return true;
+    }
+
+    private void validateAddress() {
+        if (address != null) {
+            if (address instanceof String) {
+                EthAddressValidator.isValid((String) address);
+            } else if (address instanceof Collection) {
+                Collection<?> iterable = (Collection<?>) address;
+                iterable.stream()
+                        .filter(String.class::isInstance)
+                        .map(String.class::cast)
+                        .forEach(EthAddressValidator::isValid);
+            } else {
+                throw RskJsonRpcRequestException.invalidParamError("Invalid address parameter.");
+            }
+        }
     }
 }
