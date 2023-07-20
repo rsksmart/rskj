@@ -59,7 +59,7 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.validation.HexValueValidator;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -972,6 +972,7 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getFilterLogs(String id) {
         logger.debug("eth_getFilterLogs ...");
+        HexValueValidator.isValid(id);
 
 //        if (!id.matches("-?[0-9a-fA-F]+")) {
 //            throw new InvalidParameterException("Invalid id: not a hex number");
@@ -1002,6 +1003,7 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getLogs(FilterRequest fr) throws Exception {
         logger.debug("eth_getLogs ...");
+        fr.isValid();
         String id = eth_newFilter(fr);
         Object[] ret = eth_getFilterLogs(id);
         eth_uninstallFilter(id);
