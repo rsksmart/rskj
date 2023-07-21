@@ -21,20 +21,21 @@ package org.ethereum.rpc.validation;
 import co.rsk.util.HexUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-public class HexTopicValidator {
-    private static final int TOPIC_BYTE_LENGTH = 32;
+public class BlockHashValidator {
+    private static int BLOCK_HASH_BYTE_LENGTH = 32;
+    private BlockHashValidator() { }
 
-    public static boolean isValid(String topic) {
-        byte[] topicBytes = null;
-        try {
-            topicBytes = HexUtils.stringHexToByteArray(topic);
+    public static boolean isValid(String blockHash) {
+        byte[] blockHashBytes = null;
+        try{
+            blockHashBytes = HexUtils.stringHexToByteArray(blockHash);
         } catch (Exception e) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid topic format. " + e.getMessage());
+            throw RskJsonRpcRequestException.invalidParamError("Invalid block hash format. " + e.getMessage());
         }
-        if (TOPIC_BYTE_LENGTH != topicBytes.length) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid topic: incorrect length.");
+        if(BLOCK_HASH_BYTE_LENGTH != blockHashBytes.length){
+            throw RskJsonRpcRequestException.invalidParamError("Invalid block hash: incorrect length.");
         }
+
         return true;
     }
-
 }

@@ -19,6 +19,7 @@
 package org.ethereum.rpc;
 
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.validation.BlockHashValidator;
 import org.ethereum.rpc.validation.BnTagOrNumberValidator;
 import org.ethereum.rpc.validation.EthAddressValidator;
 
@@ -93,6 +94,9 @@ public class FilterRequest {
         }
         validateAddress();
         validateTopics();
+        if (blockHash != null) {
+            BlockHashValidator.isValid(blockHash);
+        }
         return true;
     }
 

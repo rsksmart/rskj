@@ -76,9 +76,7 @@ import java.util.function.UnaryOperator;
 
 import static co.rsk.util.HexUtils.*;
 import static java.lang.Math.max;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -870,6 +868,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_newFilter(FilterRequest fr) throws Exception {
+        fr.isValid();
         String str = null;
         try {
             Filter filter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore, config.getRpcEthGetLogsMaxBlockToQuery(),config.getRpcEthGetLogsMaxLogsToReturn());
@@ -916,10 +915,8 @@ public class Web3Impl implements Web3 {
 
     @Override
     public boolean eth_uninstallFilter(String id) {
+        HexValueValidator.isValid(id);
         Boolean s = null;
-
-        id = HexValueValidator.getValidHex(id);
-
         try {
             if (id == null) {
                 return false;
@@ -938,8 +935,7 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getFilterChanges(String id) {
         logger.debug("eth_getFilterChanges ...");
-
-        id = HexValueValidator.getValidHex(id);
+        HexValueValidator.isValid(id);
 
         // TODO(mc): this is a quick solution that seems to work with OpenZeppelin tests, but needs to be reviewed
         // We do the same as in Ganache: mine a block in each request to getFilterChanges so block filters work
@@ -964,8 +960,7 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getFilterLogs(String id) {
         logger.debug("eth_getFilterLogs ...");
-
-        id = HexValueValidator.getValidHex(id);
+        HexValueValidator.isValid(id);
 
         Object[] s = null;
 
