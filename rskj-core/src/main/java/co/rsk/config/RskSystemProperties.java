@@ -377,6 +377,8 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean isSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.enabled");}
 
+    public boolean isSnapshotSyncCompressionEnabled() { return configFromFiles.getBoolean("sync.snapshot.compression");}
+
     public int getSnapshotChunkSize() { return configFromFiles.getInt("sync.snapshot.chunkSize");}
 
     public String getSnapshotChunkSizeType() {
