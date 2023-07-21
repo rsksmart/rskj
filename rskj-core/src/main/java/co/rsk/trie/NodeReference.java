@@ -90,6 +90,27 @@ public class NodeReference {
         return node;
     }
 
+    public Optional<Trie> getNodeDetached() {
+        if (lazyNode != null) {
+            return Optional.of(lazyNode);
+        }
+
+        if (lazyHash == null) {
+            return Optional.empty();
+        }
+
+        Optional<Trie> node = store.retrieve(lazyHash.getBytes());
+
+        // Broken database, can't continue
+        if (!node.isPresent()) {
+            logger.error("Broken database, execution can't continue");
+            nodeStopper.stop(1);
+            return Optional.empty();
+        }
+
+        return node;
+    }
+
     /**
      * The hash or empty if this is an empty reference.
      * If the hash is not present but its node is known, it will be calculated.
