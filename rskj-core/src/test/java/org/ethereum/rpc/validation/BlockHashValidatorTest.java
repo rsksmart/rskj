@@ -22,41 +22,38 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class HexTopicValidatorTest {
+class BlockHashValidatorTest {
     @Test
-    void testValidHexTopicWithPrefix() {
-        String validHexTopic = "0x1ABF1234567890ABCdEF01234167890ABCDeF01234567890ABCDEF0123456789";
-        Assertions.assertTrue(HexTopicValidator.isValid(validHexTopic));
-    }
-
-    @Test
-    void testValidHexTopicWithoutPrefix() {
-        String validHexTopic = "1ABF1234567890ABCDEF01234567890ABCDEF01234567890ABCDEF0123456789";
-        boolean result = HexTopicValidator.isValid(validHexTopic);
+    void testValidBlockHash() {
+        boolean result = BlockHashValidator.isValid("0xae3bd321d09d559c148a2eb85a1b395383d176368fac8fdf2a3babf346461909");
         Assertions.assertTrue(result);
     }
 
     @Test
-    void testInvalidHexTopicTooShort() {
-        String invalidHexTopic = "0x12345";
+    void testValidBlockHashWithoutOx() {
+        boolean result = BlockHashValidator.isValid("ae3bd321d09d559c148a2eb85a1b395383d176368fac8fdf2a3babf346461909");
+        Assertions.assertTrue(result);
+    }
+
+    @Test
+    void testInvalidBlockHashFormat() {
         Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
-            HexTopicValidator.isValid(invalidHexTopic);
+            BlockHashValidator.isValid("0zae3bd321d09d559c148a2eb85a1b395383d176368fac8fdf2a3babf346461909");
         });
     }
 
     @Test
-    void testInvalidHexTopicTooLong() {
-        String invalidHexTopic = "0x1ABF1234567890ABCDEF01234567890ABCDEF01234567890ABCDEF0123456789FF";
+    void testInvalidLargerBlockHashLength() {
         Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
-            HexTopicValidator.isValid(invalidHexTopic);
+            BlockHashValidator.isValid("1234567890abcdef1234567890abcqasdfasdfdef1234567890abcdef1234567890abcde");
         });
     }
 
     @Test
-    void testInvalidHexTopicWithInvalidCharacters() {
-        String invalidHexTopic = "0x1ABF1234567890ABCDEF01234567890ABGDEF01234567890ABCDEF0123456789";
+    void testInvalidShorterBlockHashLength() {
         Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
-            HexTopicValidator.isValid(invalidHexTopic);
+            BlockHashValidator.isValid("1234567890abcdef1234564567890abcdef1234567890abcde");
         });
     }
+
 }
