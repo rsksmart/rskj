@@ -65,6 +65,23 @@ public enum NetworkUpgrades {
         public String projectVersionModifier() {
             return "Orchid";
         }
+    }),
+
+    TBD600_PROPERTIES(new TestSystemProperties() {
+        @Override
+        public ActivationConfig getActivationConfig() {
+            return ActivationConfigsForTest.tbd600();
+        }
+
+        @Override
+        public String toString() {
+            return "Tbd600";
+        }
+
+        @Override
+        public String projectVersionModifier() {
+            return "TBD";
+        }
     });
 
     private final TestSystemProperties properties;

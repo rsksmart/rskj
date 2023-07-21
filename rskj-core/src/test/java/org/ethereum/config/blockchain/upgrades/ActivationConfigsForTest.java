@@ -178,7 +178,9 @@ public class ActivationConfigsForTest {
     private static List<ConsensusRule> getTbd600Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(Arrays.asList(
-            ConsensusRule.RSKIP376
+            ConsensusRule.RSKIP376,
+            ConsensusRule.RSKIP144,
+            ConsensusRule.RSKIP351
         ));
 
         return rskips;

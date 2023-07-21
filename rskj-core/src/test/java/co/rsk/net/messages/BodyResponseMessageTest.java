@@ -1,6 +1,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
@@ -15,7 +16,8 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 
 class BodyResponseMessageTest {
-    BodyResponseMessage testCreateMessage(BlockHeaderExtension extension) {
+
+    private BodyResponseMessage testCreateMessage(BlockHeaderExtension extension) {
         List<Transaction> transactions = new ArrayList<>();
 
         for (int k = 1; k <= 10; k++)
@@ -46,14 +48,22 @@ class BodyResponseMessageTest {
         Assertions.assertNotNull(message.getUncles());
         Assertions.assertEquals(uncles.size(), message.getUncles().size());
 
-        for (int k = 0; k < uncles.size(); k++)
+        for (int k = 0; k < uncles.size(); k++) {
             Assertions.assertArrayEquals(uncles.get(k).getFullEncoded(), message.getUncles().get(k).getFullEncoded());
+        }
 
         return  message;
     }
+
+    private BodyResponseMessage encodeAndDecodeMessage(BodyResponseMessage message) {
+        return (BodyResponseMessage) Message.create(new BlockFactory(new TestSystemProperties().getActivationConfig()), message.getEncoded());
+    }
+
     @Test
     void createMessage() {
         BodyResponseMessage message = testCreateMessage(null);
+        Assertions.assertNull(message.getBlockHeaderExtension());
+        message = encodeAndDecodeMessage(message);
         Assertions.assertNull(message.getBlockHeaderExtension());
     }
 
@@ -63,6 +73,8 @@ class BodyResponseMessageTest {
         short[] edges = new short[]{ 1, 2, 3, 4 };
         BlockHeaderExtension extension = new BlockHeaderExtensionV1(bloom.getData(), edges);
         BodyResponseMessage message = testCreateMessage(extension);
+        Assertions.assertArrayEquals(extension.getEncoded(), message.getBlockHeaderExtension().getEncoded());
+        message = encodeAndDecodeMessage(message);
         Assertions.assertArrayEquals(extension.getEncoded(), message.getBlockHeaderExtension().getEncoded());
     }
 

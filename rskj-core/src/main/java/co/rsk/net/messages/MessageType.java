@@ -143,7 +143,7 @@ public enum MessageType {
 
             for (int k = 0; k < rlpHeaders.size(); k++) {
                 RLPElement element = rlpHeaders.get(k);
-                BlockHeader header = blockFactory.decodeHeader(element.getRLPData(), true);
+                BlockHeader header = blockFactory.decodeHeader(element.getRLPData(), false);
                 headers.add(header);
             }
 
@@ -233,7 +233,7 @@ public enum MessageType {
             }
 
             BlockHeaderExtension blockHeaderExtension = message.size() == 3
-                    ? BlockHeaderExtension.fromEncoded((RLPList) RLP.decode2(message.get(2).getRLPData()).get(0))
+                    ? BlockHeaderExtension.fromEncoded(message.get(2).getRLPData())
                     : null;
 
             return new BodyResponseMessage(id, transactions, uncles, blockHeaderExtension);

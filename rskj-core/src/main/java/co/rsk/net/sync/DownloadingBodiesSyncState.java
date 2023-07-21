@@ -116,7 +116,8 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
 
         // we already checked that this message was expected
         BlockHeader header = pendingBodyResponses.remove(requestId).header;
-        header.setExtension(message.getBlockHeaderExtension());
+        // TODO: as returned headers are "fully" encoded with extension data included, there's no need to set an extension here
+//        header.setExtension(message.getBlockHeaderExtension());
         Block block;
         try {
             block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles());

@@ -8,7 +8,8 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 
 class BlockHeaderExtensionV1Test {
-    private static short[] EDGES = new short[] { 1, 2, 3, 4 };
+    private static final short[] EDGES = new short[] { 1, 2, 3, 4 };
+    private static final short[] NO_EDGES = new short[0];
 
     @Test
     void createWithLogsBloomAndEdges() {
@@ -99,5 +100,11 @@ class BlockHeaderExtensionV1Test {
 
         Assertions.assertArrayEquals(logsBloom, extension.getLogsBloom());
         Assertions.assertArrayEquals(EDGES, extension.getTxExecutionSublistsEdges());
+
+        extension = BlockHeaderExtensionV1.fromEncoded(
+                new BlockHeaderExtensionV1(logsBloom, NO_EDGES).getEncoded()
+        );
+
+        Assertions.assertArrayEquals(NO_EDGES, extension.getTxExecutionSublistsEdges());
     }
 }

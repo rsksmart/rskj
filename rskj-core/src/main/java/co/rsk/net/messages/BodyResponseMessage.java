@@ -12,10 +12,10 @@ import java.util.List;
  * Created by ajlopez on 25/08/2017.
  */
 public class BodyResponseMessage extends MessageWithId {
-    private long id;
-    private List<Transaction> transactions;
-    private List<BlockHeader> uncles;
-    private BlockHeaderExtension blockHeaderExtension;
+    private final long id;
+    private final List<Transaction> transactions;
+    private final List<BlockHeader> uncles;
+    private final BlockHeaderExtension blockHeaderExtension;
 
     public BodyResponseMessage(long id, List<Transaction> transactions, List<BlockHeader> uncles, BlockHeaderExtension blockHeaderExtension) {
         this.id = id;
@@ -48,7 +48,7 @@ public class BodyResponseMessage extends MessageWithId {
         List<byte[]> elements = Lists.newArrayList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
 
         if (this.blockHeaderExtension != null) {
-            elements.add(this.blockHeaderExtension.getEncoded());
+            elements.add(BlockHeaderExtension.toEncoded(blockHeaderExtension));
         }
 
         return RLP.encodeList(elements.toArray(new byte[][]{}));

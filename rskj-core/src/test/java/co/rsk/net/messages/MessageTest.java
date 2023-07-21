@@ -19,6 +19,8 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.blockchain.utils.BlockMiner;
+import co.rsk.config.MiningConfig;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 import co.rsk.net.utils.TransactionUtils;
@@ -26,22 +28,17 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.core.Account;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockIdentifier;
-import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -205,10 +202,6 @@ class MessageTest {
 
         BlockHeadersResponseMessage result = (BlockHeadersResponseMessage) Message.create(blockFactory, encoded);
 
-        for (int k = 0; k < headers.size(); k++) {
-            result.getBlockHeaders().get(k).setExtension(headers.get(k).getExtension()); // identity applying on block header v0
-        }
-
         Assertions.assertNotNull(encoded);
         Assertions.assertNotNull(result);
         Assertions.assertArrayEquals(encoded, result.getEncoded());
@@ -222,35 +215,54 @@ class MessageTest {
 
     @Test
     void encodeDecodeBlockHeadersResponseMessageWithoutRSKIP351() {
-        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
-        BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
+        ActivationConfig activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351);
+        BlockFactory blockFactory = new BlockFactory(activationConfig);
+        BlockMiner blockMiner = new BlockMiner(activationConfig);
 
         List<BlockHeader> headers = new ArrayList<>();
-        for (int k = 1; k <= 4; k++)
-            headers.add(blockGenerator.getBlock(k).getHeader());
+        for (int k = 1; k <= 4; k++) {
+            BlockHeader header = blockFactory.getBlockHeaderBuilder()
+                    .setNumber(MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION + k)
+                    .setIncludeForkDetectionData(true)
+                    .build();
+            Block block = blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), false);
+            Block minedBlock = blockMiner.mineBlock(block);
+            headers.add(minedBlock.getHeader());
+        }
 
-        BlockHeadersResponseMessage newmessage = testBlockHeadersResponseMessage(blockFactory, headers);
+        BlockHeadersResponseMessage newMessage = testBlockHeadersResponseMessage(blockFactory, headers);
 
         for (int k = 0; k < headers.size(); k++) {
-            Assertions.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
-            Assertions.assertEquals(headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
-            Assertions.assertArrayEquals(headers.get(k).getFullEncoded(), newmessage.getBlockHeaders().get(k).getFullEncoded());
+            Assertions.assertEquals(headers.get(k).getNumber(), newMessage.getBlockHeaders().get(k).getNumber());
+            Assertions.assertEquals(headers.get(k).getHash(), newMessage.getBlockHeaders().get(k).getHash());
+            Assertions.assertArrayEquals(headers.get(k).getFullEncoded(), newMessage.getBlockHeaders().get(k).getFullEncoded());
+            Assertions.assertArrayEquals(headers.get(k).getMiningForkDetectionData(), newMessage.getBlockHeaders().get(k).getMiningForkDetectionData());
         }
     }
 
     @Test
     void encodeDecodeBlockHeadersResponseMessage() {
         List<BlockHeader> headers = new ArrayList<>();
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+        BlockMiner blockMiner = new BlockMiner(activationConfig);
 
-        for (int k = 1; k <= 4; k++)
-            headers.add(blockGenerator.getBlock(k).getHeader());
+        for (int k = 1; k <= 4; k++) {
+            BlockHeader header = blockFactory.getBlockHeaderBuilder()
+                    .setNumber(MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION + k)
+                    .setIncludeForkDetectionData(true)
+                    .build();
+            Block block = blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), false);
+            Block minedBlock = blockMiner.mineBlock(block);
+            headers.add(minedBlock.getHeader());
+        }
 
-        BlockHeadersResponseMessage newmessage = testBlockHeadersResponseMessage(blockFactory, headers);
+        BlockHeadersResponseMessage newMessage = testBlockHeadersResponseMessage(blockFactory, headers);
 
         for (int k = 0; k < headers.size(); k++) {
-            Assertions.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
-            Assertions.assertEquals(headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
-            Assertions.assertArrayEquals(headers.get(k).getFullEncoded(), newmessage.getBlockHeaders().get(k).getFullEncoded());
+            Assertions.assertEquals(headers.get(k).getNumber(), newMessage.getBlockHeaders().get(k).getNumber());
+            Assertions.assertEquals(headers.get(k).getHash(), newMessage.getBlockHeaders().get(k).getHash());
+            Assertions.assertArrayEquals(headers.get(k).getFullEncoded(), newMessage.getBlockHeaders().get(k).getFullEncoded());
+            Assertions.assertArrayEquals(headers.get(k).getMiningForkDetectionData(), newMessage.getBlockHeaders().get(k).getMiningForkDetectionData());
         }
     }
 
