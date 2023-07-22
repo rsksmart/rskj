@@ -22,38 +22,66 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.ethereum.TestUtils.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 class BlockHashValidatorTest {
     @Test
     void testValidBlockHash() {
         boolean result = BlockHashValidator.isValid("0xae3bd321d09d559c148a2eb85a1b395383d176368fac8fdf2a3babf346461909");
-        Assertions.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
     void testValidBlockHashWithoutOx() {
         boolean result = BlockHashValidator.isValid("ae3bd321d09d559c148a2eb85a1b395383d176368fac8fdf2a3babf346461909");
-        Assertions.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
     void testInvalidBlockHashFormat() {
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
+        assertThrows(RskJsonRpcRequestException.class, () -> {
             BlockHashValidator.isValid("0zae3bd321d09d559c148a2eb85a1b395383d176368fac8fdf2a3babf346461909");
         });
     }
 
     @Test
     void testInvalidLargerBlockHashLength() {
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
+        assertThrows(RskJsonRpcRequestException.class, () -> {
             BlockHashValidator.isValid("1234567890abcdef1234567890abcqasdfasdfdef1234567890abcdef1234567890abcde");
         });
     }
 
     @Test
     void testInvalidShorterBlockHashLength() {
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
+        assertThrows(RskJsonRpcRequestException.class, () -> {
             BlockHashValidator.isValid("1234567890abcdef1234564567890abcdef1234567890abcde");
         });
+    }
+
+    @Test
+    void testValidBlockHashMixedCase() {
+        assertTrue(BlockHashValidator.isValid("0xAe3Bd321D09D559C148A2Eb85A1B395383D176368Fac8Fdf2A3BabF346461909"));
+    }
+
+    @Test
+    void testValidBlockHashUppercase() {
+        assertTrue(BlockHashValidator.isValid("0xAE3BD321D09D559C148A2EB85A1B395383D176368FAC8FDF2A3BABF346461909"));
+    }
+
+    @Test
+    void testWhitespaceString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> BlockHashValidator.isValid(" "));
+    }
+
+    @Test
+    void testEmptyString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> BlockHashValidator.isValid(""));
+    }
+
+    @Test
+    void testNullString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> BlockHashValidator.isValid(null));
     }
 
 }
