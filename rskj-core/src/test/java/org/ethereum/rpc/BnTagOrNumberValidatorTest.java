@@ -25,8 +25,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BnTagOrNumberValidatorTest {
-
-
     @Test
     void testValidHexBlockNumberOrId() {
         assertTrue(BnTagOrNumberValidator.isValid("0x123"));
@@ -52,6 +50,39 @@ class BnTagOrNumberValidatorTest {
         assertThrows(RskJsonRpcRequestException.class, () -> {
             BnTagOrNumberValidator.isValid("invalid");
         });
+    }
+
+    @Test
+    void testValidBlockTagPascalCase() {
+        assertTrue(BnTagOrNumberValidator.isValid("Earliest"));
+        assertTrue(BnTagOrNumberValidator.isValid("Finalized"));
+        assertTrue(BnTagOrNumberValidator.isValid("Safe"));
+        assertTrue(BnTagOrNumberValidator.isValid("Latest"));
+        assertTrue(BnTagOrNumberValidator.isValid("Pending"));
+    }
+
+    @Test
+    void testValidBlockTagUppercase() {
+        assertTrue(BnTagOrNumberValidator.isValid("EARLIEST"));
+        assertTrue(BnTagOrNumberValidator.isValid("FINALIZED"));
+        assertTrue(BnTagOrNumberValidator.isValid("SAFE"));
+        assertTrue(BnTagOrNumberValidator.isValid("LATEST"));
+        assertTrue(BnTagOrNumberValidator.isValid("PENDING"));
+    }
+
+    @Test
+    void testWhitespaceString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.isValid(" "));
+    }
+
+    @Test
+    void testEmptyString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.isValid(""));
+    }
+
+    @Test
+    void testNullString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.isValid(null));
     }
 
 }
