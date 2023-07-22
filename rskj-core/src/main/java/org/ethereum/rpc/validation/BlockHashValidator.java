@@ -23,16 +23,20 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 public class BlockHashValidator {
     private static int BLOCK_HASH_BYTE_LENGTH = 32;
-    private BlockHashValidator() { }
+    private BlockHashValidator() {
+
+    }
 
     public static boolean isValid(String blockHash) {
-        byte[] blockHashBytes = null;
-        try{
+        byte[] blockHashBytes;
+
+        try {
             blockHashBytes = HexUtils.stringHexToByteArray(blockHash);
         } catch (Exception e) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block hash format. " + e.getMessage());
         }
-        if(BLOCK_HASH_BYTE_LENGTH != blockHashBytes.length){
+
+        if (BLOCK_HASH_BYTE_LENGTH != blockHashBytes.length) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block hash: incorrect length.");
         }
 
