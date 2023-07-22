@@ -45,4 +45,28 @@ class HexValueValidatorTest {
         assertThrows(RskJsonRpcRequestException.class, () -> HexValueValidator.isValid("0x1234g6"));
     }
 
+    @Test
+    void testValidHexadecimalWithoutPrefix() {
+        assertThrows(RskJsonRpcRequestException.class, () -> HexValueValidator.isValid("123456"));
+    }
+
+    @Test
+    void testInvalidHexadecimalWithPrefix() {
+        assertThrows(RskJsonRpcRequestException.class, () -> HexValueValidator.isValid("0x1234g6"));
+    }
+
+    @Test
+    void testWhitespaceString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> HexValueValidator.isValid(" "));
+    }
+
+    @Test
+    void testEmptyString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> HexValueValidator.isValid(""));
+    }
+
+    @Test
+    void testNullString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> HexValueValidator.isValid(null));
+    }
 }
