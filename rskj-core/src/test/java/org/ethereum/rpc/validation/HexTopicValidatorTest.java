@@ -22,6 +22,8 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.ethereum.TestUtils.assertThrows;
+
 class HexTopicValidatorTest {
     @Test
     void testValidHexTopicWithPrefix() {
@@ -58,5 +60,30 @@ class HexTopicValidatorTest {
         Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
             HexTopicValidator.isValid(invalidHexTopic);
         });
+    }
+
+    @Test
+    void testNullString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> HexTopicValidator.isValid(null));
+    }
+
+    @Test
+    void testEmptyString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> HexTopicValidator.isValid(""));
+    }
+
+    @Test
+    void testWhitespaceString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> HexTopicValidator.isValid(" "));
+    }
+
+    @Test
+    void testInvalidHexadecimalWithPrefix() {
+        assertThrows(RskJsonRpcRequestException.class, () -> HexTopicValidator.isValid("0x1234g6"));
+    }
+
+    @Test
+    void testValidHexadecimalWithoutPrefix() {
+        assertThrows(RskJsonRpcRequestException.class, () -> HexTopicValidator.isValid("123456"));
     }
 }
