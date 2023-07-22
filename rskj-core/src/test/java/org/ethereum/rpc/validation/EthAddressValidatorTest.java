@@ -45,4 +45,28 @@ class EthAddressValidatorTest {
         });
     }
 
+    @Test
+    void testValidAddressWithoutPrefix() {
+        assertThrows(RskJsonRpcRequestException.class, () -> EthAddressValidator.isValid("123456"));
+    }
+
+    @Test
+    void testInvalidAddressWithPrefix() {
+        assertThrows(RskJsonRpcRequestException.class, () -> EthAddressValidator.isValid("0x1234g6"));
+    }
+
+    @Test
+    void testWhitespaceString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> EthAddressValidator.isValid(" "));
+    }
+
+    @Test
+    void testEmptyString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> EthAddressValidator.isValid(""));
+    }
+
+    @Test
+    void testNullString() {
+        assertThrows(RskJsonRpcRequestException.class, () -> EthAddressValidator.isValid(null));
+    }
 }
