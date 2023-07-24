@@ -34,14 +34,10 @@ public class BnTagOrNumberValidator {
 
         parameter = parameter.toLowerCase();
 
-        if (StringUtils.equalsAny(parameter, "earliest", "finalized", "safe", "latest", "pending")) {
-            return true;
+        if (!StringUtils.equalsAny(parameter, "earliest", "finalized", "safe", "latest", "pending") && !HexUtils.isHexWithPrefix(parameter)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid block number: " + parameter);
         }
 
-        if (HexUtils.isHexWithPrefix(parameter)) {
-            return true;
-        }
-
-        throw RskJsonRpcRequestException.invalidParamError("Invalid block number: " + parameter);
+        return true;
     }
 }

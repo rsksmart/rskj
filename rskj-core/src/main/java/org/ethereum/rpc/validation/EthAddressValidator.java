@@ -27,14 +27,17 @@ public class EthAddressValidator {
 
     public static boolean isValid(String parameter){
         byte[] addressBytes = null;
+
         try {
             addressBytes = HexUtils.stringHexToByteArray(parameter);
-        }catch (Exception e){
+        } catch (Exception e) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid address format. " + e.getMessage());
         }
-        if(ETH_ADDRESS_BYTE_LENGTH != addressBytes.length ){
+
+        if (ETH_ADDRESS_BYTE_LENGTH != addressBytes.length ) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid address: incorrect length.");
         }
+
         return true;
     }
 }
