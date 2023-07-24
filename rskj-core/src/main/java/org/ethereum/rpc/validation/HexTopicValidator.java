@@ -24,6 +24,10 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 public class HexTopicValidator {
     private static final int TOPIC_BYTE_LENGTH = 32;
 
+    private HexTopicValidator() {
+
+    }
+
     public static boolean isValid(String topic) {
         byte[] topicBytes = null;
         try {
