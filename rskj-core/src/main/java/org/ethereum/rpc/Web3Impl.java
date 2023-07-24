@@ -60,6 +60,7 @@ import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.validation.BnTagOrNumberValidator;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -1077,11 +1078,10 @@ public class Web3Impl implements Web3 {
         if (null == bnOrId) {
             block = blockchain.getBestBlock();
         } else {
-            if(!JsonRpcArgumentValidator.isValidHexBlockNumberOrId(bnOrId)){
-                throw RskJsonRpcRequestException.invalidParamError("invalid blocknumber or tagId: " + bnOrId);
-            }
+            BnTagOrNumberValidator.isValid(bnOrId);
+
             Optional<Block> optBlock = web3InformationRetriever.getBlock(bnOrId);
-            if(!optBlock.isPresent()){
+            if (!optBlock.isPresent()) {
                 throw RskJsonRpcRequestException.headerNotFound();
             }
             block = optBlock.get();
