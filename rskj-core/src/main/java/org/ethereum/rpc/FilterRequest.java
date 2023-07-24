@@ -103,7 +103,9 @@ public class FilterRequest {
     private boolean validateTopics() {
         if (topics != null) {
             for (Object topic : topics) {
-                if (topic instanceof String) {
+                if (topic == null) {
+                    continue;
+                } else if (topic instanceof String) {
                     new Topic((String) topic);
                 } else if (topic instanceof Collection) {
                     Collection<?> iterable = (Collection<?>) topic;
