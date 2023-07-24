@@ -903,10 +903,7 @@ class Web3ImplLogsTest {
         FilterRequest fr = new FilterRequest();
         fr.setBlockHash(blockHash);
 
-        Object[] logs = web3.eth_getLogs(fr);
-
-        assertNotNull(logs);
-        assertEquals(0, logs.length);
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> web3.eth_getLogs(fr));
     }
 
     @Test
