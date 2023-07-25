@@ -3,9 +3,11 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.core.RskAddress;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -38,7 +40,14 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         );
     }
 
-    private static Stream<Arguments> non_null_sigHash_parameters() {
+    private static Stream<Arguments> invalid_entry_values() {
+        return Stream.of(
+            Arguments.of(new byte[]{1, 2}),
+            Arguments.of(new byte[]{0})
+        );
+    }
+
+    private static Stream<Arguments> valid_sigHash_parameters() {
         return Stream.of(
             Arguments.of(false, Sha256Hash.ZERO_HASH),
             Arguments.of(false, PegTestUtils.createHash(10)),
@@ -51,7 +60,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
     @MethodSource("null_sigHash_parameters")
     void hasBtcTxSigHash_null_sigHash(boolean isRskip379HardForkActive) {
         // Arrange
-        ActivationConfig.ForBlock activations = isRskip379HardForkActive?
+        ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
                                                     ActivationConfigsForTest.tbd600().forBlock(0) :
                                                     ActivationConfigsForTest.fingerroot500().forBlock(0);
 
@@ -82,11 +91,82 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         );
     }
 
+    @Test
+    void hasBtcTxSigHash_null_stored_value() {
+        // Arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeConstants,
+            activations
+        );
+        Sha256Hash sigHash = PegTestUtils.createHash(5);
+        DataWord entryKey = BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, entryKey)).thenReturn(null);
+
+        // Act
+        boolean result = provider.hasBridgeBtcTxSigHash(sigHash);
+
+        // Assert
+        Assertions.assertFalse(result);
+
+        verify(repository, times(1)).getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            entryKey
+        );
+
+        verify(repository, never()).addStorageBytes(
+            any(),
+            any(),
+            any()
+        );
+    }
+
     @ParameterizedTest
-    @MethodSource("non_null_sigHash_parameters")
+    @MethodSource("invalid_entry_values")
+    void hasBtcTxSigHash_invalid_stored_data(byte[] invalidStoredValue) {
+        // Arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeConstants,
+            activations
+        );
+        Sha256Hash sigHash = PegTestUtils.createHash(5);
+        DataWord entryKey = BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, entryKey)).thenReturn(invalidStoredValue);
+
+        // Act
+        boolean result = provider.hasBridgeBtcTxSigHash(sigHash);
+
+        // Assert
+        Assertions.assertFalse(result);
+
+        verify(repository, times(1)).getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            entryKey
+        );
+
+        verify(repository, never()).addStorageBytes(
+            any(),
+            any(),
+            any()
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("valid_sigHash_parameters")
     void hasBtcTxSigHash_non_null_sigHash(boolean isRskip379HardForkActive, Sha256Hash sigHash) {
         // Arrange
-        ActivationConfig.ForBlock activations = isRskip379HardForkActive?
+        ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
                                                     ActivationConfigsForTest.tbd600().forBlock(0) :
                                                     ActivationConfigsForTest.fingerroot500().forBlock(0);
 
@@ -103,22 +183,22 @@ class BridgeStorageProviderBridgeTxsIndexTests {
 
         // Assert
         Assertions.assertFalse(result);
-        if (isRskip379HardForkActive){
+        if (isRskip379HardForkActive) {
             verify(repository, times(1)).getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
             );
         } else {
             verify(repository, never()).getStorageBytes(
-                any(),
-                any()
+                any(RskAddress.class),
+                any(DataWord.class)
             );
         }
 
         verify(repository, never()).addStorageBytes(
-            any(),
-            any(),
-            any()
+            any(RskAddress.class),
+            any(DataWord.class),
+            any(byte[].class)
         );
     }
 
@@ -165,8 +245,8 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         // reset calls counter
         Mockito.reset(repository);
 
-        boolean sigHashShouldNotExists = provider.hasBridgeBtcTxSigHash(sigHash);
-        Assertions.assertFalse(sigHashShouldNotExists);
+        boolean sigHashShouldNotExist = provider.hasBridgeBtcTxSigHash(sigHash);
+        Assertions.assertFalse(sigHashShouldNotExist);
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
@@ -178,7 +258,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString()),
-            new byte[]{(byte)1}
+            new byte[]{(byte) 1}
         );
         verify(repository, never()).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
@@ -191,8 +271,8 @@ class BridgeStorageProviderBridgeTxsIndexTests {
             .thenReturn(new byte[]{TRUE_VALUE});
 
         // Check if saved sigHash exists
-        boolean shouldFoundSigHash = provider.hasBridgeBtcTxSigHash(sigHash);
-        Assertions.assertTrue(shouldFoundSigHash);
+        boolean shouldFindSigHash = provider.hasBridgeBtcTxSigHash(sigHash);
+        Assertions.assertTrue(shouldFindSigHash);
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
@@ -203,7 +283,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
     @MethodSource("null_sigHash_parameters")
     void setBridgeBtcTxSigHash_null_sigHash(boolean isRskip379HardForkActive) throws IOException {
         // Arrange
-        ActivationConfig.ForBlock activations = isRskip379HardForkActive?
+        ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
                                                     ActivationConfigsForTest.tbd600().forBlock(0) :
                                                     ActivationConfigsForTest.fingerroot500().forBlock(0);
 
@@ -234,10 +314,10 @@ class BridgeStorageProviderBridgeTxsIndexTests {
     }
 
     @ParameterizedTest
-    @MethodSource("non_null_sigHash_parameters")
+    @MethodSource("valid_sigHash_parameters")
     void setBridgeBtcTxSigHash_non_null_sigHash(boolean isRskip379HardForkActive, Sha256Hash sigHash) throws IOException {
         // Arrange
-        ActivationConfig.ForBlock activations = isRskip379HardForkActive?
+        ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
                                                     ActivationConfigsForTest.tbd600().forBlock(0) :
                                                     ActivationConfigsForTest.fingerroot500().forBlock(0);
 
@@ -254,7 +334,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         provider.save();
 
         // Assert
-        if (isRskip379HardForkActive){
+        if (isRskip379HardForkActive) {
             verify(repository, times(1)).getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
@@ -263,7 +343,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
             verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString()),
-                new byte[]{(byte)1}
+                new byte[]{(byte) 1}
             );
         } else {
             verify(repository, never()).getStorageBytes(
