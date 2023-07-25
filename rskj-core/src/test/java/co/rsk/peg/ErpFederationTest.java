@@ -31,10 +31,12 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -737,9 +739,11 @@ class ErpFederationTest {
             true
         );
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
+        List<ConsensusRule> except = isRskip293Active ?
+            Collections.emptyList() :
+            Collections.singletonList(ConsensusRule.RSKIP293);
+        ActivationConfig activations = ActivationConfigsForTest.hop400(except);
+
         ErpFederation erpFed = new ErpFederation(
             FederationMember.getFederationMembersFromKeys(standardKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -747,7 +751,7 @@ class ErpFederationTest {
             networkParameters,
             emergencyKeys,
             activationDelay,
-            activations
+            activations.forBlock(0)
         );
 
         Coin value = Coin.valueOf(1_000_000);
