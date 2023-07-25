@@ -793,7 +793,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (channelManager == null) {
-            channelManager = new ChannelManagerImpl(getRskSystemProperties(), getSyncPool(), getSnapshotProcessor());
+            channelManager = new ChannelManagerImpl(getRskSystemProperties(), getSyncPool());
         }
 
         return channelManager;
@@ -987,10 +987,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         boolean rpcHttpEnabled = getRskSystemProperties().isRpcHttpEnabled();
         boolean rpcWebSocketEnabled = getRskSystemProperties().isRpcWebSocketEnabled();
         boolean bloomServiceEnabled = getRskSystemProperties().bloomServiceEnabled();
-
-        if (getRskSystemProperties().isSnapshotSyncEnabled()) {
-            internalServices.add(getSnapshotProcessor());
-        }
 
         if (bloomServiceEnabled) {
             internalServices.add(new BlocksBloomService(getCompositeEthereumListener(), getBlocksBloomStore(), getBlockStore()));
@@ -1445,7 +1441,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 rskSystemProperties.getChunkSize(),
                 rskSystemProperties.getMaxRequestedBodies(),
                 rskSystemProperties.getLongSyncLimit(),
-                rskSystemProperties.getTopBest());
+                rskSystemProperties.getTopBest(),
+                rskSystemProperties.isSnapshotSyncEnabled());
     }
 
     protected synchronized StateRootHandler buildStateRootHandler() {
@@ -1898,7 +1895,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getDifficultyCalculator(),
                     getPeersInformation(),
                     getGenesis(),
-                    getCompositeEthereumListener());
+                    getCompositeEthereumListener(),
+                    getSnapshotProcessor());
         }
 
         return syncProcessor;
@@ -1939,14 +1937,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private SnapshotProcessor getSnapshotProcessor() {
         if (snapshotProcessor == null) {
             snapshotProcessor = new SnapshotProcessor(
-                    getNodeManager(),
                     getBlockchain(),
                     getTrieStore(),
-                    () -> new PeerClient(
-                            getRskSystemProperties(),
-                            getCompositeEthereumListener(),
-                            getEthereumChannelInitializerFactory()
-                    ),
+                    getPeersInformation(),
                     getRskSystemProperties().getSnapshotChunkSize(),
                     getRskSystemProperties().getSnapshotChunkSizeType(),
                     getRskSystemProperties().isSnapshotSyncCompressionEnabled()

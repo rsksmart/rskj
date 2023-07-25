@@ -25,10 +25,10 @@ import java.time.Duration;
 @Immutable
 public final class SyncConfiguration {
     @VisibleForTesting
-    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0);
+    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0, false);
 
     @VisibleForTesting
-    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 0);
+    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 0, false);
 
     private final int expectedPeers;
     private final Duration timeoutWaitingPeers;
@@ -39,6 +39,7 @@ public final class SyncConfiguration {
     private final int longSyncLimit;
     private final int maxRequestedBodies;
     private final double topBest;
+    private final boolean isSnapSyncEnabled;
 
     /**
      * @param expectedPeers The expected number of peers we would want to start finding a connection point.
@@ -50,6 +51,7 @@ public final class SyncConfiguration {
      * @param maxRequestedBodies Amount of bodies to request at the same time when synchronizing backwards.
      * @param longSyncLimit Distance to the tip of the peer's blockchain to enable long synchronization.
      * @param topBest % of top best nodes that  will be considered for random selection.
+     * @param isSnapSyncEnabled flag to enable snap sync
      */
     public SyncConfiguration(
             int expectedPeers,
@@ -60,7 +62,8 @@ public final class SyncConfiguration {
             int chunkSize,
             int maxRequestedBodies,
             int longSyncLimit,
-            double topBest) {
+            double topBest,
+            boolean isSnapSyncEnabled) {
         this.expectedPeers = expectedPeers;
         this.timeoutWaitingPeers = Duration.ofSeconds(timeoutWaitingPeers);
         this.timeoutWaitingRequest = Duration.ofSeconds(timeoutWaitingRequest);
@@ -70,6 +73,7 @@ public final class SyncConfiguration {
         this.maxRequestedBodies = maxRequestedBodies;
         this.longSyncLimit = longSyncLimit;
         this.topBest = topBest;
+        this.isSnapSyncEnabled = isSnapSyncEnabled;
     }
 
     public final int getExpectedPeers() {
@@ -106,5 +110,9 @@ public final class SyncConfiguration {
 
     public double getTopBest() {
        return topBest;
+    }
+
+    public boolean isSnapSyncEnabled() {
+        return isSnapSyncEnabled;
     }
 }

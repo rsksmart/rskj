@@ -24,6 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public class PeerAndModeDecidingSyncState extends BaseSyncState {
@@ -69,15 +71,11 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     }
 
     private void tryStartSyncing() {
+        if (tryStartSnapshotSync()) {
+            return;
+        }
 
-        // Pato (TODO) add snap sync as the first step to sync.
-        // Start snapshot syncing
-        // New snapshot syncing state
-        //if (tryStartSnapshotSync()) {
-        //    return;
-        //}
-
-        if (tryStartLongForwardSync()) {
+        if (tryStartBlockForwardSync()) {
             return;
         }
 
@@ -88,7 +86,41 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         syncEventsHandler.onLongSyncUpdate(false, null);
     }
 
-    private boolean tryStartLongForwardSync() {
+    private boolean tryStartSnapshotSync() {
+        if (!syncConfiguration.isSnapSyncEnabled()) {
+            logger.trace("Snap syncing disabled");
+            return false;
+        }
+
+        // TODO(snap-poc) deal with multiple peers logic here
+        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
+        Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
+
+        if (!bestPeerOpt.isPresent() || !peerBestBlockNumOpt.isPresent()) {
+            logger.trace("Snap syncing not possible, no valid peer");
+            return false;
+        }
+
+        // we consider Snap as part of the Long Sync
+        if (!shouldLongSync(peerBestBlockNumOpt.get())) {
+            logger.debug("Snap syncing not required (long sync not required)");
+            return false;
+        }
+
+        // TODO(snap-poc) tmp naive approach until we can spot from DB (stateRoot?) if further Snap sync is required
+        if (syncEventsHandler.isSnapSyncFinished()) {
+            logger.debug("Snap syncing not required (local state is ok)");
+            return false;
+        }
+
+        // we consider Snap as part of the Long Sync
+        syncEventsHandler.onLongSyncUpdate(true, peerBestBlockNumOpt.get());
+        List<Peer> peers = Collections.singletonList(bestPeerOpt.get());
+        syncEventsHandler.startSnapSync(peers);
+        return true;
+    }
+
+    private boolean tryStartBlockForwardSync() {
         Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
         if (!bestPeerOpt.isPresent() || !peerBestBlockNumOpt.isPresent()) {
@@ -103,7 +135,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
 
         // start "long" / "forward" sync
         syncEventsHandler.onLongSyncUpdate(true, peerBestBlockNumOpt.get());
-        syncEventsHandler.startSyncing(bestPeerOpt.get());
+        syncEventsHandler.startBlockForwardSyncing(bestPeerOpt.get());
         return true;
     }
 

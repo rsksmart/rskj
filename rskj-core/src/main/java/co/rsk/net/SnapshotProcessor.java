@@ -1,8 +1,9 @@
 package co.rsk.net;
 
-import co.rsk.config.InternalService;
 import co.rsk.net.messages.StateChunkRequestMessage;
 import co.rsk.net.messages.StateChunkResponseMessage;
+import co.rsk.net.sync.PeersInformation;
+import co.rsk.net.sync.SnapSyncState;
 import co.rsk.trie.IterationElement;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
@@ -12,11 +13,6 @@ import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4SafeDecompressor;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
-import org.ethereum.net.NodeHandler;
-import org.ethereum.net.NodeManager;
-import org.ethereum.net.client.PeerClient;
-import org.ethereum.net.rlpx.Node;
-import org.ethereum.net.server.Channel;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -26,70 +22,66 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.*;
 
-public class SnapshotProcessor implements InternalService {
+public class SnapshotProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
     private static final String KBYTES = "kbytes";
     private static final int UNCOMPRESSED_FLAG = -1;
 
-    private final NodeManager nodeManager;
-    private final PeerClientFactory peerClientFactory;
     private final Blockchain blockchain;
     private final TrieStore trieStore;
     private final int chunkSize;
     private final String chunkSizeType;
+    private final PeersInformation peersInformation;
 
     private final boolean isCompressionEnabled;
 
-    private boolean connected;
     private long messageId = 0;
-    private boolean enabled = false;
+
     private final Map<String, Iterator<IterationElement>> iterators;
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
+    private SnapSyncState snapSyncState;
 
-    public SnapshotProcessor(
-            NodeManager nodeManager,
-            Blockchain blockchain,
+    public SnapshotProcessor(Blockchain blockchain,
             TrieStore trieStore,
-            PeerClientFactory peerClientFactory,
+            PeersInformation peersInformation,
             int chunkSize, String chunkSizeType,
             boolean isCompressionEnabled) {
-        this.nodeManager = nodeManager;
         this.blockchain = blockchain;
         this.trieStore = trieStore;
-        this.peerClientFactory = peerClientFactory;
-        this.connected = false;
+        this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
         this.chunkSizeType = chunkSizeType;
         this.iterators = Maps.newConcurrentMap();
         this.isCompressionEnabled = isCompressionEnabled;
     }
 
-    @Override
-    public void start() {
-        enabled = true;
-        connect();
+    public void startSyncing(List<Peer> peers, SnapSyncState snapSyncState) {
+        // TODO(snap-poc) temporary hack, code in this should be moved to SnapSyncState probably
+        this.snapSyncState = snapSyncState;
+
+        this.stateSize = BigInteger.ZERO;
+        this.stateChunkSize = BigInteger.ZERO;
+
+        // TODO(snap-poc) deal with multiple peers algorithm here
+        Peer peer = peers.get(0);
+
+        long peerBestBlock = peersInformation.getPeer(peer).getStatus().getBestBlockNumber();
+        requestState(peer, blockchain.getBestBlock().getNumber(), peerBestBlock);
     }
 
-    @Override
-    public void stop() {
+    // TODO(snap-poc) should be called on errors too
+    private void stopSyncing() {
+        this.stateSize = BigInteger.ZERO;
+        this.stateChunkSize = BigInteger.ZERO;
 
+        this.snapSyncState.finished();
     }
 
-    public synchronized void add(Channel peer) {
-        if (!enabled) {
-            return;
-        }
-        if (!connected) {
-            this.connected = true;
-            this.stateSize = BigInteger.ZERO;
-            this.stateChunkSize = BigInteger.ZERO;
-            requestState(peer, 0l, 0l);
-        }
-    }
+    public void processStateChunkResponse(Peer peer, StateChunkResponseMessage message) {
+        peersInformation.getOrRegisterPeer(peer);
 
-    public void processStateChunk(Peer peer, StateChunkResponseMessage message) {
         final RLPList trieElements = RLP.decodeList(message.getChunkOfTrieKeyValue());
         logger.debug(
                 "Received state chunk of {} elements ({} bytes).",
@@ -123,12 +115,8 @@ public class SnapshotProcessor implements InternalService {
             // request another chunk
             requestState(peer, message.getFrom() + trieElements.size(), message.getBlockNumber());
         } else {
-            logger.debug("State Completed! {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
-
-            logger.debug("Starting again the infinite loop!");
-            this.stateSize = BigInteger.ZERO;
-            this.stateChunkSize = BigInteger.ZERO;
-            requestState(peer, 0l, 0l);
+            logger.info("State Completed! {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
+            stopSyncing();
         }
     }
 
@@ -238,25 +226,10 @@ public class SnapshotProcessor implements InternalService {
         return  dst;
     }
 
-    private void connect() {
-        // Connect to the first node
-        List<NodeHandler> nodes = nodeManager.getNodes(new HashSet<>());
-        Node node = nodes.get(0).getNode();
-        String ip = node.getHost();
-        int port = node.getPort();
-        String remoteId = ByteUtil.toHexString(node.getId().getID());
-        logger.info("Connecting to: {}:{}", ip, port);
-        PeerClient peerClient = peerClientFactory.newInstance();
-        peerClient.connectAsync(ip, port, remoteId);
-    }
-
     private void requestState(Peer peer, long from, long blockNumber) {
         logger.debug("Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
         StateChunkRequestMessage message = new StateChunkRequestMessage(messageId++, blockNumber, from);
         peer.sendMessage(message);
     }
 
-    public interface PeerClientFactory {
-        PeerClient newInstance();
-    }
 }

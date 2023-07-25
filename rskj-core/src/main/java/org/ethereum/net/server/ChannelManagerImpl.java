@@ -70,7 +70,6 @@ public class ChannelManagerImpl implements ChannelManager {
     private final Object disconnectionTimeoutsLock = new Object();
 
     private final SyncPool syncPool;
-    private final SnapshotProcessor snapshotProcessor;
     private final NodeFilter trustedPeers;
     private final int maxActivePeers;
     private final int maxConnectionsAllowed;
@@ -78,7 +77,7 @@ public class ChannelManagerImpl implements ChannelManager {
 
     private long timeLastLoggedPeers = System.currentTimeMillis();
 
-    public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool, SnapshotProcessor snapshotProcessor) {
+    public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool) {
         this.mainWorker = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "newPeersProcessor"));
         this.syncPool = syncPool;
         this.maxActivePeers = config.maxActivePeers();
@@ -88,7 +87,6 @@ public class ChannelManagerImpl implements ChannelManager {
         this.newPeers = new CopyOnWriteArrayList<>();
         this.maxConnectionsAllowed = config.maxConnectionsAllowed();
         this.networkCIDR = config.networkCIDR();
-        this.snapshotProcessor = snapshotProcessor;
     }
 
     @Override
@@ -179,7 +177,6 @@ public class ChannelManagerImpl implements ChannelManager {
     private void addToActives(Channel peer) {
         if (peer.isUsingNewProtocol() || peer.hasEthStatusSucceeded()) {
             syncPool.add(peer);
-            snapshotProcessor.add(peer);
             synchronized (activePeersLock) {
                 activePeers.put(peer.getNodeId(), peer);
             }

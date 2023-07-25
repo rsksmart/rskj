@@ -43,7 +43,7 @@ public interface SyncEventsHandler {
 
     void startDownloadingSkeleton(long connectionPoint, Peer peer);
 
-    void startSyncing(Peer peer);
+    void startBlockForwardSyncing(Peer peer);
 
     void backwardDownloadBodies(Block parent, List<BlockHeader> toRequest, Peer peer);
 
@@ -58,4 +58,10 @@ public interface SyncEventsHandler {
     void startFindingConnectionPoint(Peer peer);
 
     void backwardSyncing(Peer peer);
+
+    void startSnapSync(List<Peer> peers);
+
+    void snapSyncFinished();
+
+    boolean isSnapSyncFinished();
 }
