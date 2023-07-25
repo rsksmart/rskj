@@ -126,7 +126,12 @@ public class FederationTestUtils {
             List<BtcECKey.ECDSASignature> signatures = allSignatures.subList(i, requiredSignatures + i);
             Script inputScript = createInputScript(federation.getRedeemScript(), signatures, signWithEmergencyMultisig);
             spendTx.getInput(0).setScriptSig(inputScript);
-            inputScript.correctlySpends(spendTx,0, federation.getP2SHScript());
+            inputScript.correctlySpends(
+                spendTx,
+                0,
+                federation.getP2SHScript(),
+                Script.ALL_VERIFY_FLAGS
+            );
         }
 
         // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
