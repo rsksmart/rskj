@@ -32,10 +32,10 @@ import java.util.regex.Pattern;
  * Hex utils
  */
 public class HexUtils {
+
+    public static final String HEX_PREFIX = "0x";
 	
     private static final Pattern LEADING_ZEROS_PATTERN = Pattern.compile("0x(0)+");
-
-    private static final String HEX_PREFIX = "0x";
 
     private static final String ZERO_STR = "0";
 
