@@ -82,6 +82,8 @@ public class SnapshotProcessor {
     public void processStateChunkResponse(Peer peer, StateChunkResponseMessage message) {
         peersInformation.getOrRegisterPeer(peer);
 
+        snapSyncState.newChunk();
+
         final RLPList trieElements = RLP.decodeList(message.getChunkOfTrieKeyValue());
         logger.debug(
                 "Received state chunk of {} elements ({} bytes).",
