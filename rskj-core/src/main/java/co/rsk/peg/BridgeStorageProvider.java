@@ -110,7 +110,7 @@ public class BridgeStorageProvider {
 
     private Long nextPegoutHeight;
 
-    private Sha256Hash bridgeBtcTxSigHashToSave;
+    private Sha256Hash bridgeBtcTxSigHash;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -949,18 +949,18 @@ public class BridgeStorageProvider {
             throw new IllegalStateException(String.format("Given bridge btc tx sigHash %s already exists in the index. Index entries are considered unique.", sigHash));
         }
 
-        bridgeBtcTxSigHashToSave = sigHash;
+        bridgeBtcTxSigHash = sigHash;
     }
 
     private void saveBridgeBtcTxSigHash() {
-        if (!activations.isActive(RSKIP379) || bridgeBtcTxSigHashToSave == null) {
+        if (!activations.isActive(RSKIP379) || bridgeBtcTxSigHash == null) {
             return;
         }
 
         repository.addStorageBytes(
             contractAddress,
             getStorageKeyForBridgeBtcTxSigHash(
-                bridgeBtcTxSigHashToSave
+                bridgeBtcTxSigHash
             ),
             new byte[]{TRUE_VALUE}
         );
