@@ -44,6 +44,10 @@ public class SnapSyncState extends BaseSyncState {
         snapshotProcessor.startSyncing(this.peers, this);
     }
 
+    public void newChunk() {
+        resetTimeElapsed();
+    }
+
     @Override
     public void tick(Duration duration) {
         // TODO(snap-poc) handle multiple peers casuistry, similarly to co.rsk.net.sync.DownloadingBodiesSyncState.tick
