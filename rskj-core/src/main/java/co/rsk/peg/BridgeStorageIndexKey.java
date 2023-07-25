@@ -43,7 +43,7 @@ public enum BridgeStorageIndexKey {
     BRIDGE_BTC_TX_SIG_HASH("bridgeBtcTxSigHash"),
     ;
 
-    private String key;
+    private final String key;
 
     BridgeStorageIndexKey(String key) {
         this.key = key;
