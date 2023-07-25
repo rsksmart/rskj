@@ -25,10 +25,10 @@ import java.time.Duration;
 @Immutable
 public final class SyncConfiguration {
     @VisibleForTesting
-    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0, false);
+    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0, false, 60);
 
     @VisibleForTesting
-    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 0, false);
+    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 0, false, 60);
 
     private final int expectedPeers;
     private final Duration timeoutWaitingPeers;
@@ -41,6 +41,8 @@ public final class SyncConfiguration {
     private final double topBest;
     private final boolean isSnapSyncEnabled;
 
+    private final Duration timeoutWaitingSnapChunk;
+
     /**
      * @param expectedPeers The expected number of peers we would want to start finding a connection point.
      * @param timeoutWaitingPeers Timeout in minutes to start finding the connection point when we have at least one peer
@@ -51,7 +53,8 @@ public final class SyncConfiguration {
      * @param maxRequestedBodies Amount of bodies to request at the same time when synchronizing backwards.
      * @param longSyncLimit Distance to the tip of the peer's blockchain to enable long synchronization.
      * @param topBest % of top best nodes that  will be considered for random selection.
-     * @param isSnapSyncEnabled flag to enable snap sync
+     * @param isSnapSyncEnabled flag to indicate if snap sync is enabled
+     * @param timeoutWaitingSnapChunk specific request timeout for snap sync
      */
     public SyncConfiguration(
             int expectedPeers,
@@ -63,7 +66,8 @@ public final class SyncConfiguration {
             int maxRequestedBodies,
             int longSyncLimit,
             double topBest,
-            boolean isSnapSyncEnabled) {
+            boolean isSnapSyncEnabled,
+            int timeoutWaitingSnapChunk) {
         this.expectedPeers = expectedPeers;
         this.timeoutWaitingPeers = Duration.ofSeconds(timeoutWaitingPeers);
         this.timeoutWaitingRequest = Duration.ofSeconds(timeoutWaitingRequest);
@@ -74,6 +78,8 @@ public final class SyncConfiguration {
         this.longSyncLimit = longSyncLimit;
         this.topBest = topBest;
         this.isSnapSyncEnabled = isSnapSyncEnabled;
+        // TODO(snap-poc) re-visit the need of this specific timeout as the algorithm evolves
+        this.timeoutWaitingSnapChunk = Duration.ofSeconds(timeoutWaitingSnapChunk);
     }
 
     public final int getExpectedPeers() {
@@ -114,5 +120,9 @@ public final class SyncConfiguration {
 
     public boolean isSnapSyncEnabled() {
         return isSnapSyncEnabled;
+    }
+
+    public Duration getTimeoutWaitingSnapChunk() {
+        return timeoutWaitingSnapChunk;
     }
 }

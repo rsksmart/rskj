@@ -47,7 +47,11 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void tick(Duration duration) {
         // TODO(snap-poc) handle multiple peers casuistry, similarly to co.rsk.net.sync.DownloadingBodiesSyncState.tick
-        super.tick(duration);
+
+        timeElapsed = timeElapsed.plus(duration);
+        if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingSnapChunk()) >= 0) {
+            onMessageTimeOut();
+        }
     }
 
     // TODO(snap-poc) handle potential errors by calling co.rsk.net.sync.SyncEventsHandler.onErrorSyncing, like other SyncStates do
