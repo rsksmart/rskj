@@ -1442,7 +1442,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 rskSystemProperties.getMaxRequestedBodies(),
                 rskSystemProperties.getLongSyncLimit(),
                 rskSystemProperties.getTopBest(),
-                rskSystemProperties.isSnapshotSyncEnabled());
+                rskSystemProperties.isSnapshotSyncEnabled(),
+                rskSystemProperties.getSnapshotChunkTimeout());
     }
 
     protected synchronized StateRootHandler buildStateRootHandler() {
