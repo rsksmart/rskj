@@ -36,6 +36,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.RskErrorResolver;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +58,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
 
     public JsonRpcWeb3ServerHandler(Web3 service, JsonRpcWeb3ServerProperties jsonRpcWeb3ServerProperties) {
         this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), jsonRpcWeb3ServerProperties.getRpcModules());
+        this.jsonRpcServer.setInvocationListener(new JsonRpcWeb3ServerHandlerInvocationListener());
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new JsonRpcRequestValidatorInterceptor(jsonRpcWeb3ServerProperties.getMaxBatchRequestsSize()));
         jsonRpcServer.setInterceptorList(interceptors);
@@ -100,6 +102,11 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             JsonRpcError error = e.getErrorResponse();
             int errorCode = error.getCode();
             responseContent = buildErrorContent(errorCode, error.getMessage());
+            responseCode = errorCode;
+        } catch (RskJsonRpcRequestException e) {
+            LOGGER.error(e.getMessage(), e);
+            int errorCode = e.getCode();
+            responseContent = buildErrorContent(errorCode, e.getMessage());
             responseCode = errorCode;
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";

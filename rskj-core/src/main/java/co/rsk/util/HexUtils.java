@@ -88,6 +88,19 @@ public class HexUtils {
         }
         return Hex.decode(result);
     }
+
+    /**
+     * Convert hex encoded string to decoded byte array. Throw an error if hex length is odd
+     */
+    public static byte[] stringEvenHexToByteArray(final String param) {
+
+        String result = removeHexPrefix(param);
+
+        if (result.length() % 2 != 0) { //NOSONAR
+            throw invalidParamError("invalid argument 0: json: cannot unmarshal hex string of odd length into hash");
+        }
+        return Hex.decode(result);
+    }
         
     /**
      * Convert hex encoded string or integer in string format to decoded byte array
@@ -223,7 +236,7 @@ public class HexUtils {
      * if the parameter has the hex prefix 
      */
     public static boolean hasHexPrefix(final String data) {
-        return data != null && data.startsWith(HEX_PREFIX);
+        return data != null && data.regionMatches(true, 0, HEX_PREFIX, 0, 2);
     }
 
     /**
@@ -354,7 +367,7 @@ public class HexUtils {
      */
     public static int jsonHexToInt(final String param) {
         if (!hasHexPrefix(param)) {
-            throw invalidParamError(INCORRECT_HEX_SYNTAX);
+            throw invalidParamError("invalid argument 1: json: cannot unmarshal hex string without 0x prefix into value of type int");
         }
 
         String preResult = removeHexPrefix(param);
