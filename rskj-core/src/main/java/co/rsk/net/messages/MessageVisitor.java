@@ -193,7 +193,7 @@ public class MessageVisitor {
 
     public void apply(StateChunkResponseMessage message) {
         logger.debug("snapshot chunk response : {}", message.getId());
-        this.snapshotProcessor.processStateChunk(sender, message);
+        this.snapshotProcessor.processStateChunkResponse(sender, message);
     }
 
     public void apply(TransactionsMessage message) {

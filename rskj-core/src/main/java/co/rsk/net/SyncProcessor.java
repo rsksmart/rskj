@@ -68,6 +68,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private final PeersInformation peersInformation;
     private final Map<Long, MessageInfo> pendingMessages;
     private final AtomicBoolean isSyncing = new AtomicBoolean();
+    private final SnapshotProcessor snapshotProcessor;
 
     private volatile long initialBlockNumber;
     private volatile long highestBlockNumber;
@@ -77,6 +78,10 @@ public class SyncProcessor implements SyncEventsHandler {
     private SyncState syncState;
     private long lastRequestId;
 
+    // TODO(snap-poc) tmp field until we can spot from DB (stateRoot?) if further Snap sync is required
+    private boolean snapSyncFinished;
+
+    @VisibleForTesting
     public SyncProcessor(Blockchain blockchain,
                          BlockStore blockStore,
                          ConsensusValidationMainchainView consensusValidationMainchainView,
@@ -89,6 +94,23 @@ public class SyncProcessor implements SyncEventsHandler {
                          PeersInformation peersInformation,
                          Genesis genesis,
                          EthereumListener ethereumListener) {
+
+        this(blockchain, blockStore, consensusValidationMainchainView, blockSyncService, syncConfiguration, blockFactory, blockHeaderValidationRule, syncBlockValidatorRule, difficultyCalculator, peersInformation, genesis, ethereumListener, null);
+    }
+
+    public SyncProcessor(Blockchain blockchain,
+                         BlockStore blockStore,
+                         ConsensusValidationMainchainView consensusValidationMainchainView,
+                         BlockSyncService blockSyncService,
+                         SyncConfiguration syncConfiguration,
+                         BlockFactory blockFactory,
+                         BlockHeaderValidationRule blockHeaderValidationRule,
+                         SyncBlockValidatorRule syncBlockValidatorRule,
+                         DifficultyCalculator difficultyCalculator,
+                         PeersInformation peersInformation,
+                         Genesis genesis,
+                         EthereumListener ethereumListener,
+                         SnapshotProcessor snapshotProcessor) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.consensusValidationMainchainView = consensusValidationMainchainView;
@@ -112,9 +134,9 @@ public class SyncProcessor implements SyncEventsHandler {
         };
 
         this.peersInformation = peersInformation;
+        this.snapshotProcessor = snapshotProcessor;
         setSyncState(new PeerAndModeDecidingSyncState(syncConfiguration, this, peersInformation, blockStore));
     }
-
     public void processStatus(Peer sender, Status status) {
         logger.debug("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.toPrintableHash(status.getBestBlockHash()));
         peersInformation.registerPeer(sender).setStatus(status);
@@ -246,7 +268,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startSyncing(Peer peer) {
+    public void startBlockForwardSyncing(Peer peer) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.info("Start syncing with node {}", nodeID);
         byte[] bestBlockHash = peersInformation.getPeer(peer).getStatus().getBestBlockHash();
@@ -254,6 +276,22 @@ public class SyncProcessor implements SyncEventsHandler {
                 syncConfiguration,
                 this,
                 blockHeaderValidationRule, peer, bestBlockHash));
+    }
+
+    @Override
+    public void startSnapSync(List<Peer> peers) {
+        logger.info("Start Snap syncing with #{} nodes", peers.size());
+        setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration, peers));
+    }
+
+    @Override
+    public void snapSyncFinished() {
+        this.snapSyncFinished = true;
+    }
+
+    @Override
+    public boolean isSnapSyncFinished() {
+        return snapSyncFinished;
     }
 
     @Override

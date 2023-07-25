@@ -190,7 +190,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b1);
         SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b1);
-        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,1,1,20,192, 20, 10, 0);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,1,1,20,192, 20, 10, 0, false);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b2, syncConfiguration);
 
         Assertions.assertEquals(50, node1.getBestBlock().getNumber());
@@ -231,7 +231,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b1);
         SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b1);
-        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,1,1,20,192, 20, 10, 0);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,1,1,20,192, 20, 10, 0, false);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b2, syncConfiguration);
 
         Assertions.assertEquals(200, node1.getBestBlock().getNumber());
@@ -272,7 +272,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b1);
         SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b1);
-        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,0,1,20,192, 20, 10, 0);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,0,1,20,192, 20, 10, 0, false);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b2, syncConfiguration);
 
         Assertions.assertEquals(200, node1.getBestBlock().getNumber());
@@ -319,7 +319,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b1);
         SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b2);
-        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,1,1,20,192, 20, 10, 0);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,1,1,20,192, 20, 10, 0, false);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b3, syncConfiguration);
 
         Assertions.assertEquals(193, node1.getBestBlock().getNumber());
@@ -363,7 +363,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b2);
         SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b2);
         SimpleAsyncNode node3 = SimpleAsyncNode.createDefaultNode(b3);
-        SyncConfiguration syncConfiguration = new SyncConfiguration(3,1,10,100,20,192, 20, 10, 0);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(3,1,10,100,20,192, 20, 10, 0, false);
         SimpleAsyncNode node4 = SimpleAsyncNode.createNode(b1, syncConfiguration);
 
         Assertions.assertEquals(200, node1.getBestBlock().getNumber());

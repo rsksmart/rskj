@@ -66,7 +66,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) { }
 
     @Override
-    public void startSyncing(Peer peer) {
+    public void startBlockForwardSyncing(Peer peer) {
         this.startSyncingWasCalled_ = true;
     }
 
@@ -103,4 +103,21 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public boolean stopSyncingWasCalled() {
         return stopSyncingWasCalled_;
     }
+
+
+    @Override
+    public void startSnapSync(List<Peer> peers) {
+
+    }
+
+    @Override
+    public void snapSyncFinished() {
+
+    }
+
+    @Override
+    public boolean isSnapSyncFinished() {
+        return false;
+    }
+
 }
