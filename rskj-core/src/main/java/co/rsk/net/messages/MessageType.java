@@ -143,7 +143,7 @@ public enum MessageType {
 
             for (int k = 0; k < rlpHeaders.size(); k++) {
                 RLPElement element = rlpHeaders.get(k);
-                BlockHeader header = blockFactory.decodeHeader(element.getRLPData(), false);
+                BlockHeader header = blockFactory.decodeHeader(element.getRLPData(), true);
                 headers.add(header);
             }
 

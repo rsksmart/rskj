@@ -235,7 +235,7 @@ class MessageTest {
         for (int k = 0; k < headers.size(); k++) {
             Assertions.assertEquals(headers.get(k).getNumber(), newMessage.getBlockHeaders().get(k).getNumber());
             Assertions.assertEquals(headers.get(k).getHash(), newMessage.getBlockHeaders().get(k).getHash());
-            Assertions.assertArrayEquals(headers.get(k).getFullEncoded(), newMessage.getBlockHeaders().get(k).getFullEncoded());
+            Assertions.assertArrayEquals(headers.get(k).getEncodedCompressed(), newMessage.getBlockHeaders().get(k).getEncodedCompressed());
             Assertions.assertArrayEquals(headers.get(k).getMiningForkDetectionData(), newMessage.getBlockHeaders().get(k).getMiningForkDetectionData());
         }
     }
@@ -261,7 +261,7 @@ class MessageTest {
         for (int k = 0; k < headers.size(); k++) {
             Assertions.assertEquals(headers.get(k).getNumber(), newMessage.getBlockHeaders().get(k).getNumber());
             Assertions.assertEquals(headers.get(k).getHash(), newMessage.getBlockHeaders().get(k).getHash());
-            Assertions.assertArrayEquals(headers.get(k).getFullEncoded(), newMessage.getBlockHeaders().get(k).getFullEncoded());
+            Assertions.assertArrayEquals(headers.get(k).getEncodedCompressed(), newMessage.getBlockHeaders().get(k).getEncodedCompressed());
             Assertions.assertArrayEquals(headers.get(k).getMiningForkDetectionData(), newMessage.getBlockHeaders().get(k).getMiningForkDetectionData());
         }
     }

@@ -611,7 +611,7 @@ public abstract class BlockHeader {
      * @return The computed hash for merged mining
      */
     private byte[] getBaseHashForMergedMining() {
-        byte[] encodedBlock = getEncoded(false, false, false);
+        byte[] encodedBlock = getEncoded(false, false, true);
         byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
 
         if (isUMMBlock()) {
