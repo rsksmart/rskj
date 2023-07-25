@@ -805,12 +805,12 @@ class Web3ImplTest {
         txs.add(tx);
         Block block1 = createCanonicalBlock(world, txs);
 
-        String hashString = tx.getHash().toHexString();
+        String hashString = tx.getHash().toHexString(true);
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
         assertNotNull(tr);
-        assertEquals("0x" + hashString, tr.getHash());
+        assertEquals(hashString, tr.getHash());
 
         String blockHashString = "0x" + block1.getHash();
         assertEquals(blockHashString, tr.getBlockHash());
@@ -843,13 +843,13 @@ class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         transactionPool.addTransaction(tx);
 
-        String hashString = tx.getHash().toHexString();
+        String hashString = tx.getHash().toHexString(true);
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
         assertNotNull(tr);
 
-        assertEquals("0x" + hashString, tr.getHash());
+        assertEquals(hashString, tr.getHash());
         assertEquals("0x0", tr.getNonce());
         assertNull(tr.getBlockHash());
         assertNull(tr.getTransactionIndex());
@@ -880,7 +880,7 @@ class Web3ImplTest {
         assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
-        String hashString = tx.getHash().toHexString();
+        String hashString = tx.getHash().toHexString(true);
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
@@ -900,15 +900,15 @@ class Web3ImplTest {
         txs.add(tx);
         Block block1 = createCanonicalBlock(world, txs);
 
-        String hashString = tx.getHash().toHexString();
-        String blockHashString = block1.getHash().toHexString();
+        String hashString = tx.getHash().toHexString(true);
+        String blockHashString = block1.getHash().toHexString(true);
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockHashAndIndex(blockHashString, "0x0");
 
         assertNotNull(tr);
-        assertEquals("0x" + hashString, tr.getHash());
+        assertEquals(hashString, tr.getHash());
 
-        assertEquals("0x" + blockHashString, tr.getBlockHash());
+        assertEquals(blockHashString, tr.getBlockHash());
     }
 
     @Test
@@ -922,7 +922,7 @@ class Web3ImplTest {
                 world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String blockHashString = block1.getHash().toString();
+        String blockHashString = block1.getHash().toHexString(true);
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockHashAndIndex(blockHashString, "0x0");
 
@@ -2979,7 +2979,7 @@ class Web3ImplTest {
         txs.add(tx);
         Block block1 = createCanonicalBlock(world, txs);
 
-        String hashString = tx.getHash().toHexString();
+        String hashString = tx.getHash().toHexString(true);
 
         TransactionReceiptDTO txReceipt = web3.eth_getTransactionReceipt(hashString);
         TransactionResultDTO txResult = web3.eth_getTransactionByHash(hashString);
