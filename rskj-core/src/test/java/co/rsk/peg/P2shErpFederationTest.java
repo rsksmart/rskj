@@ -37,14 +37,14 @@ class P2shErpFederationTest {
     @ParameterizedTest
     @MethodSource("getRedeemScriptArgsProvider")
     void getRedeemScript(BridgeConstants bridgeConstants) {
-        List<BtcECKey> defaultKeys = bridgeConstants.getGenesisFederation().getBtcPublicKeys();
+        List<BtcECKey> standardKeys = bridgeConstants.getGenesisFederation().getBtcPublicKeys();
         List<BtcECKey> emergencyKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Federation p2shErpFederation = new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
+            FederationTestUtils.getFederationMembersWithBtcKeys(standardKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
             bridgeConstants.getBtcParams(),
@@ -55,7 +55,7 @@ class P2shErpFederationTest {
 
         validateP2shErpRedeemScript(
             p2shErpFederation.getRedeemScript(),
-            defaultKeys,
+            standardKeys,
             emergencyKeys,
             activationDelay
         );
@@ -177,7 +177,7 @@ class P2shErpFederationTest {
             true
         );
 
-        P2shErpFederation pshErpFed = new P2shErpFederation(
+        P2shErpFederation p2shErpFed = new P2shErpFederation(
             FederationMember.getFederationMembersFromKeys(standardKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -190,7 +190,7 @@ class P2shErpFederationTest {
         Coin value = Coin.valueOf(1_000_000);
         Coin fee = Coin.valueOf(10_000);
         BtcTransaction fundTx = new BtcTransaction(networkParameters);
-        fundTx.addOutput(value, pshErpFed.getAddress());
+        fundTx.addOutput(value, p2shErpFed.getAddress());
 
         Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(
             networkParameters,
@@ -199,7 +199,7 @@ class P2shErpFederationTest {
 
         assertDoesNotThrow(() -> FederationTestUtils.spendFromErpFed(
             networkParameters,
-            pshErpFed,
+            p2shErpFed,
             signWithEmergencyMultisig ? emergencyKeys : standardKeys,
             fundTx.getHash(),
             0,

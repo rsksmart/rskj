@@ -124,7 +124,7 @@ public class FederationTestUtils {
         int permutations = totalSigners % 2 == 0 ? requiredSignatures - 1 : requiredSignatures;
         for (int i = 0; i < permutations; i++) {
             List<BtcECKey.ECDSASignature> signatures = allSignatures.subList(i, requiredSignatures + i);
-            Script inputScript = createInputScript(federation.getRedeemScript(), signatures, signWithEmergencyMultisig);
+            Script inputScript = createInputScriptSig(federation.getRedeemScript(), signatures, signWithEmergencyMultisig);
             spendTx.getInput(0).setScriptSig(inputScript);
             inputScript.correctlySpends(
                 spendTx,
@@ -138,7 +138,7 @@ public class FederationTestUtils {
 //        System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
     }
 
-    private static Script createInputScript(
+    private static Script createInputScriptSig(
         Script fedRedeemScript,
         List<BtcECKey.ECDSASignature> signatures,
         boolean signWithTheEmergencyMultisig) {
