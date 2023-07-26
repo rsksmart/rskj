@@ -34,16 +34,13 @@ import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-
-import java.math.BigInteger;
+import co.rsk.peg.simples.SimpleRskTransaction;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -172,21 +169,14 @@ public final class PegTestUtils {
         return ScriptBuilder.createOpReturnScript(payloadBytes);
     }
 
-    public static Address createP2PKHBtcAddress(NetworkParameters networkParameters, int pk) {
-        return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(networkParameters);
-    }
-
+    /**
+     * @deprecated Use co.rsk.peg.bitcoin.BitcoinTestUtils#createP2PKHAddress(co.rsk.bitcoinj.core.NetworkParameters, java.lang.String) instead.
+     * Avoid using random values in tests
+     */
+    @Deprecated
     public static Address createRandomP2PKHBtcAddress(NetworkParameters networkParameters) {
         BtcECKey key = new BtcECKey();
         return key.toAddress(networkParameters);
-    }
-
-    public static Address createRandomP2SHMultisigAddress(NetworkParameters networkParameters, int keysCount) {
-        List<BtcECKey> keys = createRandomBtcECKeys(keysCount);
-        Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-
-        return Address.fromP2SHScript(networkParameters, outputScript);
     }
 
     public static List<BtcECKey> createRandomBtcECKeys(int keysCount) {
