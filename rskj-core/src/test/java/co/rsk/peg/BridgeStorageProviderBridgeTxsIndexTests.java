@@ -431,4 +431,81 @@ class BridgeStorageProviderBridgeTxsIndexTests {
 
         }, String.format(DUPLICATED_INSERTION_ERROR_MESSAGE, newSigHash));
     }
+
+    @Test
+    void setBridgeBtcTxSigHash_multiple_sigHash_in_a_single_rsk_tx() throws IOException {
+        // Arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+
+        Sha256Hash sigHash = PegTestUtils.createHash(15);
+        Sha256Hash sigHash2 = PegTestUtils.createHash(25);
+        Sha256Hash sigHash3 = PegTestUtils.createHash(35);
+
+        Repository repository = mock(Repository.class);
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeConstants,
+            activations
+        );
+
+        // Set multiple sighash when index is empty
+        provider.setBridgeBtcTxSigHash(sigHash);
+        provider.setBridgeBtcTxSigHash(sigHash2);
+        provider.setBridgeBtcTxSigHash(sigHash3);
+
+        // Verify the method check if the given sigHash already exists in the index
+        verify(repository, times(3)).getStorageBytes(
+            any(RskAddress.class),
+            any(DataWord.class)
+        );
+        // Verify sigHash is not persisted into the index when save has not been called.
+        verify(repository, never()).addStorageBytes(
+            any(),
+            any(),
+            any()
+        );
+        Mockito.reset(repository);
+
+        // Try to set same sigHash, it should allow it to do it.
+        provider.setBridgeBtcTxSigHash(sigHash);
+        verify(repository, times(1)).getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+        );
+
+        // Try to set a different sigHash. It should allow it as well.
+        Sha256Hash sigHash4 = PegTestUtils.createHash(7);
+        provider.setBridgeBtcTxSigHash(sigHash4);
+
+        verify(repository, times(1)).getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash4.toString())
+        );
+        // Verify no sigHash is persisted yet
+        verify(repository, never()).addStorageBytes(
+            any(),
+            any(),
+            any()
+        );
+        Mockito.reset(repository);
+
+        // Now let's persist pending sigHashes
+        provider.save();
+
+        // Check the persisted sigHash is the sigHash4
+        verify(repository, times(4)).addStorageBytes(
+            any(RskAddress.class),
+            any(DataWord.class),
+            any(byte[].class)
+        );
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash4.toString())))
+            .thenReturn(new byte[]{TRUE_VALUE});
+
+        // Try to set again the new sigHash that was persisted into the repository
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            provider.setBridgeBtcTxSigHash(sigHash4);
+
+        }, String.format(DUPLICATED_INSERTION_ERROR_MESSAGE, sigHash4));
+    }
 }

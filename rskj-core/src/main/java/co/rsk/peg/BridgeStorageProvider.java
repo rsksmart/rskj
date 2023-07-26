@@ -110,7 +110,7 @@ public class BridgeStorageProvider {
 
     private Long nextPegoutHeight;
 
-    private Sha256Hash bridgeBtcTxSigHash;
+    private Set<Sha256Hash> bridgeBtcTxSigHashes;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -949,21 +949,27 @@ public class BridgeStorageProvider {
             throw new IllegalStateException(String.format("Given bridge btc tx sigHash %s already exists in the index. Index entries are considered unique.", sigHash));
         }
 
-        bridgeBtcTxSigHash = sigHash;
+        if (bridgeBtcTxSigHashes == null){
+            bridgeBtcTxSigHashes = new HashSet<>();
+        }
+
+        bridgeBtcTxSigHashes.add(sigHash);
     }
 
-    private void saveBridgeBtcTxSigHash() {
-        if (!activations.isActive(RSKIP379) || bridgeBtcTxSigHash == null) {
+    private void saveBridgeBtcTxSigHashes() {
+        if (!activations.isActive(RSKIP379) || bridgeBtcTxSigHashes == null) {
             return;
         }
 
-        repository.addStorageBytes(
-            contractAddress,
-            getStorageKeyForBridgeBtcTxSigHash(
-                bridgeBtcTxSigHash
-            ),
-            new byte[]{TRUE_VALUE}
-        );
+        bridgeBtcTxSigHashes.forEach(bridgeBtcTxSigHash -> {
+            repository.addStorageBytes(
+                contractAddress,
+                getStorageKeyForBridgeBtcTxSigHash(
+                    bridgeBtcTxSigHash
+                ),
+                new byte[]{TRUE_VALUE}
+            );
+        });
     }
 
     public void save() throws IOException {
@@ -1008,7 +1014,7 @@ public class BridgeStorageProvider {
 
         saveNextPegoutHeight();
 
-        saveBridgeBtcTxSigHash();
+        saveBridgeBtcTxSigHashes();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
