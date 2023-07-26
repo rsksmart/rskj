@@ -17,15 +17,18 @@
  */
 package org.ethereum.core.genesis;
 
+import javax.annotation.Nullable;
+
 public enum BlockTag {
     PENDING("pending"), LATEST("latest"), EARLIEST("earliest"), FINALIZED("finalized"), SAFE("safe");
 
-    private String tag;
+    private final String tag;
 
     BlockTag(String tag) {
         this.tag = tag;
     }
 
+    @Nullable
     public static BlockTag fromString(String text) {
         for (BlockTag b : BlockTag.values()) {
             if (b.tag.equalsIgnoreCase(text)) {

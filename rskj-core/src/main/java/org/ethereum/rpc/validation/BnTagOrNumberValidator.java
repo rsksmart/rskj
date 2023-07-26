@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2023 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.ethereum.rpc.validation;
 
 import co.rsk.util.HexUtils;
@@ -9,21 +26,15 @@ public class BnTagOrNumberValidator {
 
     }
 
-    public static boolean isValid(String parameter) {
+    public static void isValid(String parameter) {
         if (parameter == null) {
             throw RskJsonRpcRequestException.invalidParamError("Cannot process null parameter");
         }
 
         parameter = parameter.toLowerCase();
 
-        if (BlockTag.fromString(parameter) != null) {
-            return true;
+        if (BlockTag.fromString(parameter) == null && !HexUtils.isHexWithPrefix(parameter)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid block number: " + parameter);
         }
-
-        if (HexUtils.isHexWithPrefix(parameter)) {
-            return true;
-        }
-
-        throw RskJsonRpcRequestException.invalidParamError("Invalid block number: " + parameter);
     }
 }
