@@ -32,10 +32,10 @@ import java.util.regex.Pattern;
  * Hex utils
  */
 public class HexUtils {
-
-    public static final String HEX_PREFIX = "0x";
 	
     private static final Pattern LEADING_ZEROS_PATTERN = Pattern.compile("0x(0)+");
+
+    public static final String HEX_PREFIX = "0x";
 
     private static final String ZERO_STR = "0";
 
@@ -85,19 +85,6 @@ public class HexUtils {
 
         if (result.length() % 2 != 0) { //NOSONAR
             result = ZERO_STR + result;
-        }
-        return Hex.decode(result);
-    }
-
-    /**
-     * Convert hex encoded string to decoded byte array. Throw an error if hex length is odd
-     */
-    public static byte[] stringEvenHexToByteArray(final String param) {
-
-        String result = removeHexPrefix(param);
-
-        if (result.length() % 2 != 0) { //NOSONAR
-            throw invalidParamError("invalid argument 0: json: cannot unmarshal hex string of odd length into hash");
         }
         return Hex.decode(result);
     }
@@ -367,7 +354,7 @@ public class HexUtils {
      */
     public static int jsonHexToInt(final String param) {
         if (!hasHexPrefix(param)) {
-            throw invalidParamError("invalid argument 1: json: cannot unmarshal hex string without 0x prefix into value of type int");
+            throw invalidParamError(INCORRECT_HEX_SYNTAX);
         }
 
         String preResult = removeHexPrefix(param);

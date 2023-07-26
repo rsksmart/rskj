@@ -55,11 +55,6 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
         return HexUtils.toUnformattedJsonHex(this.bytes);
     }
 
-    public String toHexString(boolean addPrefix) {
-        String hexString = this.toHexString();
-        return addPrefix ? String.format("%s%s", HexUtils.HEX_PREFIX, hexString) : hexString;
-    }
-
     public String toHexString() {
         return ByteUtil.toHexString(bytes);
     }

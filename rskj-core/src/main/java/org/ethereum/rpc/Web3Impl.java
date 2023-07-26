@@ -526,11 +526,7 @@ public class Web3Impl implements Web3 {
     }
 
     public Block getBlockByJSonHash(String blockHash) {
-        if(!HexUtils.hasHexPrefix(blockHash)) {
-            throw invalidParamError("invalid argument 0: cannot unmarshal hex string without 0x prefix into hash");
-        }
-
-        byte[] bhash = stringEvenHexToByteArray(blockHash);
+        byte[] bhash = stringHexToByteArray(blockHash);
 
         if (bhash.length != Keccak256.HASH_LEN) {
             throw invalidParamError("invalid argument 0: hex string has length " + (bhash.length * 2) + ", want " + (Keccak256.HASH_LEN * 2) + " for hash");
@@ -679,19 +675,10 @@ public class Web3Impl implements Web3 {
 
     @Override
     public TransactionResultDTO eth_getTransactionByHash(String transactionHash) {
-        if(!HexUtils.hasHexPrefix(transactionHash)) {
-            throw invalidParamError("invalid argument 0: cannot unmarshal hex string without 0x prefix into hash");
-        }
-
         TransactionResultDTO s = null;
         try {
-            byte[] bhash = stringEvenHexToByteArray(transactionHash);
+            Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
 
-            if (bhash.length != Keccak256.HASH_LEN) {
-                throw invalidParamError("invalid argument 0: hex string has length " + (bhash.length * 2) + ", want " + (Keccak256.HASH_LEN * 2) + " for hash");
-            }
-
-            Keccak256 txHash = new Keccak256(bhash);
             Block block = null;
 
             TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore).orElse(null);
@@ -730,11 +717,12 @@ public class Web3Impl implements Web3 {
         TransactionResultDTO s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
-            int idx = jsonHexToInt(index);
 
             if (b == null) {
                 return null;
             }
+
+            int idx = jsonHexToInt(index);
 
             if (idx >= b.getTransactionsList().size()) {
                 return null;
@@ -795,25 +783,10 @@ public class Web3Impl implements Web3 {
 
     @Override
     public BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) {
-        if(!HexUtils.hasHexPrefix(blockHash)) {
-            throw invalidParamError("invalid argument 0: cannot unmarshal hex string without 0x prefix into hash");
-        }
-
         BlockResultDTO s = null;
 
         try {
-            byte[] bhash = stringEvenHexToByteArray(blockHash);
-
-            if (bhash.length != Keccak256.HASH_LEN) {
-                throw invalidParamError("invalid argument 0: hex string has length " + (bhash.length * 2) + ", want " + (Keccak256.HASH_LEN * 2) + " for hash");
-            }
-
-
-            if (!hasHexPrefix(uncleIdx)) {
-                throw invalidParamError("invalid argument 1: json: cannot unmarshal hex string without 0x prefix into value of type int");
-            }
-
-            Block block = blockchain.getBlockByHash(bhash);
+            Block block = blockchain.getBlockByHash(stringHexToByteArray(blockHash));
 
             if (block == null) {
                 return null;
