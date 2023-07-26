@@ -961,15 +961,13 @@ public class BridgeStorageProvider {
             return;
         }
 
-        bridgeBtcTxSigHashes.forEach(bridgeBtcTxSigHash -> {
-            repository.addStorageBytes(
-                contractAddress,
-                getStorageKeyForBridgeBtcTxSigHash(
-                    bridgeBtcTxSigHash
-                ),
-                new byte[]{TRUE_VALUE}
-            );
-        });
+        bridgeBtcTxSigHashes.forEach(bridgeBtcTxSigHash -> repository.addStorageBytes(
+            contractAddress,
+            getStorageKeyForBridgeBtcTxSigHash(
+                bridgeBtcTxSigHash
+            ),
+            new byte[]{TRUE_VALUE}
+        ));
     }
 
     public void save() throws IOException {
