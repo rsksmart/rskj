@@ -678,7 +678,6 @@ public class Web3Impl implements Web3 {
         TransactionResultDTO s = null;
         try {
             Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
-
             Block block = null;
 
             TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore).orElse(null);

@@ -922,7 +922,7 @@ class Web3ImplTest {
                 world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String blockHashString = block1.getHash().toHexString();
+        String blockHashString = block1.getHash().toString();
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockHashAndIndex(blockHashString, "0x0");
 

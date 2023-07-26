@@ -35,7 +35,7 @@ public class HexUtils {
 	
     private static final Pattern LEADING_ZEROS_PATTERN = Pattern.compile("0x(0)+");
 
-    public static final String HEX_PREFIX = "0x";
+    private static final String HEX_PREFIX = "0x";
 
     private static final String ZERO_STR = "0";
 
@@ -223,7 +223,7 @@ public class HexUtils {
      * if the parameter has the hex prefix 
      */
     public static boolean hasHexPrefix(final String data) {
-        return data != null && data.regionMatches(true, 0, HEX_PREFIX, 0, 2);
+        return data != null && data.startsWith(HEX_PREFIX);
     }
 
     /**
