@@ -21,7 +21,7 @@ package org.ethereum.rpc.validation;
 import co.rsk.util.HexUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-public class HexTopicValidator {
+public final class HexTopicValidator {
     private static final int TOPIC_BYTE_LENGTH = 32;
 
     private HexTopicValidator() {

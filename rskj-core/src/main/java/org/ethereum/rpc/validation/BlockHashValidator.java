@@ -21,8 +21,8 @@ package org.ethereum.rpc.validation;
 import co.rsk.util.HexUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-public class BlockHashValidator {
-    private static int BLOCK_HASH_BYTE_LENGTH = 32;
+public final class BlockHashValidator {
+    private static final int BLOCK_HASH_BYTE_LENGTH = 32;
     private BlockHashValidator() {
 
     }
