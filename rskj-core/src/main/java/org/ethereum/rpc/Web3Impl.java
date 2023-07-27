@@ -59,7 +59,10 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.validation.BlockHashValidator;
+import org.ethereum.rpc.validation.HexIndexValidator;
 import org.ethereum.rpc.validation.HexValueValidator;
+import org.ethereum.rpc.validation.TransactionHashValidator;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -537,6 +540,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getBlockTransactionCountByHash(String blockHash) {
+        BlockHashValidator.isValid(blockHash);
         String s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
@@ -644,6 +648,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public BlockResultDTO eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) {
+        BlockHashValidator.isValid(blockHash);
         BlockResultDTO s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
@@ -675,6 +680,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public TransactionResultDTO eth_getTransactionByHash(String transactionHash) {
+        TransactionHashValidator.isValid(transactionHash);
         TransactionResultDTO s = null;
         try {
             Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
@@ -713,6 +719,9 @@ public class Web3Impl implements Web3 {
 
     @Override
     public TransactionResultDTO eth_getTransactionByBlockHashAndIndex(String blockHash, String index) {
+        BlockHashValidator.isValid(blockHash);
+        HexIndexValidator.isValid(index);
+
         TransactionResultDTO s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
@@ -782,6 +791,8 @@ public class Web3Impl implements Web3 {
 
     @Override
     public BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) {
+        BlockHashValidator.isValid(blockHash);
+        HexIndexValidator.isValid(uncleIdx);
         BlockResultDTO s = null;
 
         try {

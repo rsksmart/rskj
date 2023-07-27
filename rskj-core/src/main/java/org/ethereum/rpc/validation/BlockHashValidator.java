@@ -21,8 +21,10 @@ package org.ethereum.rpc.validation;
 import co.rsk.util.HexUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-public final class BlockHashValidator {
-    private static final int BLOCK_HASH_BYTE_LENGTH = 32;
+public class BlockHashValidator {
+    private final static int BLOCK_HASH_BYTE_LENGTH = 32;
+    public final static String INVALID_HEX_MESSAGE = "Invalid block hash format. ";
+    public final static String INVALID_LENGTH_MESSAGE = "Invalid block hash: incorrect length.";
     private BlockHashValidator() {
 
     }
@@ -33,11 +35,11 @@ public final class BlockHashValidator {
         try {
             blockHashBytes = HexUtils.stringHexToByteArray(blockHash);
         } catch (Exception e) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid block hash format. " + e.getMessage());
+            throw RskJsonRpcRequestException.invalidParamError(INVALID_HEX_MESSAGE + e.getMessage());
         }
 
         if (BLOCK_HASH_BYTE_LENGTH != blockHashBytes.length) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid block hash: incorrect length.");
+            throw RskJsonRpcRequestException.invalidParamError(INVALID_LENGTH_MESSAGE);
         }
 
     }
