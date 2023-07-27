@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.P2shErpFederationRedeemScriptParser;
@@ -48,6 +49,15 @@ public class P2shErpFederation extends ErpFederation {
             );
         }
         return standardRedeemScript;
+    }
+
+    @Override
+    public Address getAddress() {
+        if (address == null) {
+            address = Address.fromP2SHScript(btcParams, getP2SHScript());
+        }
+
+        return address;
     }
 
     @Override
