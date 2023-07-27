@@ -170,23 +170,22 @@ public class ReleaseTransactionBuilder {
                 )
                 .collect(Collectors.toList());
 
-            ScriptChunk witnessScriptChunk = btcTx.getInput(0).getScriptSig().getChunks().get(btcTx.getInput(0).getScriptSig().getChunks().size() - 1);
+            List<ScriptChunk> scriptChunksList = btcTx.getInput(0).getScriptSig().getChunks();
+            int scriptChunksSize = scriptChunksList.size();
+            ScriptChunk witnessScriptChunk = scriptChunksList.get(scriptChunksSize - 1);
             byte[] witnessRedeemScript = witnessScriptChunk.data;
-
             byte[] witnessRedeemScriptHash = Sha256Hash.hash(witnessRedeemScript);
+
             Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(witnessRedeemScriptHash).build();
-
-            Script originalScriptSig = btcTx.getInput(0).getScriptSig();
-
-            for (int i = 0; i < originalScriptSig.getChunks().size(); i++) {
-                ScriptChunk chunk = originalScriptSig.getChunks().get(i);
-                btcTx.getWitness(0).setPush(i, chunk.data);
-            }
-
             for (TransactionInput transactionInput : btcTx.getInputs()) {
                 transactionInput.setScriptSig(segwitScriptSig);
             }
 
+            Script originalScriptSig = btcTx.getInput(0).getScriptSig();
+            for (int i = 0; i < originalScriptSig.getChunks().size(); i++) {
+                ScriptChunk chunk = originalScriptSig.getChunks().get(i);
+                btcTx.getWitness(0).setPush(i, chunk.data);
+            }
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {
