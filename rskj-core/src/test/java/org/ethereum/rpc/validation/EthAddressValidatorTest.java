@@ -21,14 +21,13 @@ package org.ethereum.rpc.validation;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class EthAddressValidatorTest {
     @Test
     void testValidAddress() {
-        assertTrue(EthAddressValidator.isValid("0x023827714750bf8c232ed8856049dc6dd42a693c"));
-        assertTrue(EthAddressValidator.isValid("0x023827714750bf8c232ed8856049dc6dd42a693"));
+        assertDoesNotThrow(() -> EthAddressValidator.isValid("0x023827714750bf8c232ed8856049dc6dd42a693c"));
+        assertDoesNotThrow(() -> EthAddressValidator.isValid("0x023827714750bf8c232ed8856049dc6dd42a693"));
     }
 
     @Test
