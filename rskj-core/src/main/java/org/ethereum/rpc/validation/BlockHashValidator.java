@@ -27,7 +27,7 @@ public final class BlockHashValidator {
 
     }
 
-    public static boolean isValid(String blockHash) {
+    public static void isValid(String blockHash) {
         byte[] blockHashBytes;
 
         try {
@@ -40,6 +40,5 @@ public final class BlockHashValidator {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block hash: incorrect length.");
         }
 
-        return true;
     }
 }

@@ -23,19 +23,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.ethereum.TestUtils.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BlockHashValidatorTest {
     @Test
     void testValidBlockHash() {
-        boolean result = BlockHashValidator.isValid("0xae3bd321d09d559c148a2eb85a1b395383d176368fac8fdf2a3babf346461909");
-        assertTrue(result);
+        assertDoesNotThrow(() -> BlockHashValidator.isValid("0xae3bd321d09d559c148a2eb85a1b395383d176368fac8fdf2a3babf346461909"));
     }
 
     @Test
     void testValidBlockHashWithoutOx() {
-        boolean result = BlockHashValidator.isValid("ae3bd321d09d559c148a2eb85a1b395383d176368fac8fdf2a3babf346461909");
-        assertTrue(result);
+        assertDoesNotThrow(() -> BlockHashValidator.isValid("ae3bd321d09d559c148a2eb85a1b395383d176368fac8fdf2a3babf346461909"));
     }
 
     @Test
@@ -61,12 +60,12 @@ class BlockHashValidatorTest {
 
     @Test
     void testValidBlockHashMixedCase() {
-        assertTrue(BlockHashValidator.isValid("0xAe3Bd321D09D559C148A2Eb85A1B395383D176368Fac8Fdf2A3BabF346461909"));
+        assertDoesNotThrow(() -> BlockHashValidator.isValid("0xAe3Bd321D09D559C148A2Eb85A1B395383D176368Fac8Fdf2A3BabF346461909"));
     }
 
     @Test
     void testValidBlockHashUppercase() {
-        assertTrue(BlockHashValidator.isValid("0xAE3BD321D09D559C148A2EB85A1B395383D176368FAC8FDF2A3BABF346461909"));
+        assertDoesNotThrow(() -> BlockHashValidator.isValid("0xAE3BD321D09D559C148A2EB85A1B395383D176368FAC8FDF2A3BABF346461909"));
     }
 
     @Test
@@ -83,5 +82,4 @@ class BlockHashValidatorTest {
     void testNullString() {
         assertThrows(RskJsonRpcRequestException.class, () -> BlockHashValidator.isValid(null));
     }
-
 }
