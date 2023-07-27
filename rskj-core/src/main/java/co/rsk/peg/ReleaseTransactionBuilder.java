@@ -19,8 +19,12 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -28,6 +32,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKMULTISIG;
 
 /**
  * Given a set of UTXOs, a ReleaseTransactionBuilder
@@ -154,14 +161,32 @@ public class ReleaseTransactionBuilder {
             }
 
             List<UTXO> selectedUTXOs = wallet
-                .getUTXOProvider().getOpenTransactionOutputs(wallet.getWatchedAddresses()).stream()
-                .filter(utxo ->
-                    btcTx.getInputs().stream().anyMatch(input ->
-                        input.getOutpoint().getHash().equals(utxo.getHash()) &&
-                        input.getOutpoint().getIndex() == utxo.getIndex()
+                    .getUTXOProvider().getOpenTransactionOutputs(wallet.getWatchedAddresses()).stream()
+                    .filter(utxo ->
+                            btcTx.getInputs().stream().anyMatch(input ->
+                                    input.getOutpoint().getHash().equals(utxo.getHash()) &&
+                                            input.getOutpoint().getIndex() == utxo.getIndex()
+                            )
                     )
-                )
-                .collect(Collectors.toList());
+                    .collect(Collectors.toList());
+
+            ScriptChunk witnessScriptChunk = btcTx.getInput(0).getScriptSig().getChunks().get(btcTx.getInput(0).getScriptSig().getChunks().size() - 1);
+            byte[] witnessRedeemScript = witnessScriptChunk.data;
+
+            byte[] witnessRedeemScriptHash = Sha256Hash.hash(witnessRedeemScript);
+            Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(witnessRedeemScriptHash).build();
+
+            Script originalScriptSig = btcTx.getInput(0).getScriptSig();
+
+            for (int i = 0; i < originalScriptSig.getChunks().size(); i++) {
+                ScriptChunk chunk = originalScriptSig.getChunks().get(i);
+                btcTx.getWitness(0).setPush(i, chunk.data);
+            }
+
+            for (TransactionInput transactionInput : btcTx.getInputs()) {
+                transactionInput.setScriptSig(segwitScriptSig);
+            }
+
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {
