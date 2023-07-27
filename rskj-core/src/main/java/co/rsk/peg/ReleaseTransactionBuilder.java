@@ -161,14 +161,14 @@ public class ReleaseTransactionBuilder {
             }
 
             List<UTXO> selectedUTXOs = wallet
-                    .getUTXOProvider().getOpenTransactionOutputs(wallet.getWatchedAddresses()).stream()
-                    .filter(utxo ->
-                            btcTx.getInputs().stream().anyMatch(input ->
-                                    input.getOutpoint().getHash().equals(utxo.getHash()) &&
-                                            input.getOutpoint().getIndex() == utxo.getIndex()
-                            )
+                .getUTXOProvider().getOpenTransactionOutputs(wallet.getWatchedAddresses()).stream()
+                .filter(utxo ->
+                    btcTx.getInputs().stream().anyMatch(input ->
+                        input.getOutpoint().getHash().equals(utxo.getHash()) &&
+                        input.getOutpoint().getIndex() == utxo.getIndex()
                     )
-                    .collect(Collectors.toList());
+                )
+                .collect(Collectors.toList());
 
             ScriptChunk witnessScriptChunk = btcTx.getInput(0).getScriptSig().getChunks().get(btcTx.getInput(0).getScriptSig().getChunks().size() - 1);
             byte[] witnessRedeemScript = witnessScriptChunk.data;
