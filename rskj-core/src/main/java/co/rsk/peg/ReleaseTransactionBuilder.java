@@ -172,19 +172,18 @@ public class ReleaseTransactionBuilder {
 
             List<ScriptChunk> scriptChunksList = btcTx.getInput(0).getScriptSig().getChunks();
             int scriptChunksSize = scriptChunksList.size();
-            ScriptChunk witnessScriptChunk = scriptChunksList.get(scriptChunksSize - 1);
-            byte[] witnessRedeemScript = witnessScriptChunk.data;
-            byte[] witnessRedeemScriptHash = Sha256Hash.hash(witnessRedeemScript);
+            ScriptChunk redeemScriptChunk = scriptChunksList.get(scriptChunksSize - 1);
+            byte[] redeemScript = redeemScriptChunk.data;
+            byte[] redeemScriptHash = Sha256Hash.hash(redeemScript);
 
-            Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(witnessRedeemScriptHash).build();
-            for (TransactionInput transactionInput : btcTx.getInputs()) {
-                transactionInput.setScriptSig(segwitScriptSig);
-            }
-
-            Script originalScriptSig = btcTx.getInput(0).getScriptSig();
-            for (int i = 0; i < originalScriptSig.getChunks().size(); i++) {
-                ScriptChunk chunk = originalScriptSig.getChunks().get(i);
-                btcTx.getWitness(0).setPush(i, chunk.data);
+            Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
+            for (int i = 0; i < btcTx.getInputs().size(); i ++) {
+                Script originalScriptSig = btcTx.getInput(i).getScriptSig();
+                for (int j = 0; j < originalScriptSig.getChunks().size(); j++) {
+                    ScriptChunk chunk = originalScriptSig.getChunks().get(j);
+                    btcTx.getWitness(i).setPush(j, chunk.data);
+                }
+                btcTx.getInput(i).setScriptSig(segwitScriptSig);
             }
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);

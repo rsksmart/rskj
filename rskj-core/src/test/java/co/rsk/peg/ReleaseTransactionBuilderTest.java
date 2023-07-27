@@ -143,7 +143,7 @@ class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    void build_pegout_tx_from_erp_federation() {
+    void build_pegout_tx_from_p2shp2wsh_erp_federation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
