@@ -68,7 +68,7 @@ public class SnapshotProcessor {
         Peer peer = peers.get(0);
 
         long peerBestBlock = peersInformation.getPeer(peer).getStatus().getBestBlockNumber();
-        requestState(peer, blockchain.getBestBlock().getNumber(), peerBestBlock);
+        requestState(peer, 0L, 0L);
     }
 
     // TODO(snap-poc) should be called on errors too
