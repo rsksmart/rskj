@@ -23,19 +23,19 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.ethereum.TestUtils.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class HexTopicValidatorTest {
     @Test
     void testValidHexTopicWithPrefix() {
         String validHexTopic = "0x1ABF1234567890ABCdEF01234167890ABCDeF01234567890ABCDEF0123456789";
-        Assertions.assertTrue(HexTopicValidator.isValid(validHexTopic));
+        assertDoesNotThrow(() -> HexTopicValidator.isValid(validHexTopic));
     }
 
     @Test
     void testValidHexTopicWithoutPrefix() {
         String validHexTopic = "1ABF1234567890ABCDEF01234567890ABCDEF01234567890ABCDEF0123456789";
-        boolean result = HexTopicValidator.isValid(validHexTopic);
-        Assertions.assertTrue(result);
+        assertDoesNotThrow(() -> HexTopicValidator.isValid(validHexTopic));
     }
 
     @Test
