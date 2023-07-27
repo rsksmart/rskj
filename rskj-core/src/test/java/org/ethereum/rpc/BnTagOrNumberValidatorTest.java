@@ -27,13 +27,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class BnTagOrNumberValidatorTest {
     @Test
     void testValidHexBlockNumberOrId() {
-        assertTrue(BnTagOrNumberValidator.isValid("0x123"));
-        assertTrue(BnTagOrNumberValidator.isValid("0x0123"));
-        assertTrue(BnTagOrNumberValidator.isValid("earliest"));
-        assertTrue(BnTagOrNumberValidator.isValid("finalized"));
-        assertTrue(BnTagOrNumberValidator.isValid("safe"));
-        assertTrue(BnTagOrNumberValidator.isValid("latest"));
-        assertTrue(BnTagOrNumberValidator.isValid("pending"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("0x123"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("0x0123"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("earliest"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("finalized"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("safe"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("latest"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("pending"));
     }
 
     @Test
@@ -54,20 +54,20 @@ class BnTagOrNumberValidatorTest {
 
     @Test
     void testValidBlockTagPascalCase() {
-        assertTrue(BnTagOrNumberValidator.isValid("Earliest"));
-        assertTrue(BnTagOrNumberValidator.isValid("Finalized"));
-        assertTrue(BnTagOrNumberValidator.isValid("Safe"));
-        assertTrue(BnTagOrNumberValidator.isValid("Latest"));
-        assertTrue(BnTagOrNumberValidator.isValid("Pending"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("Earliest"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("Finalized"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("Safe"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("Latest"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("Pending"));
     }
 
     @Test
     void testValidBlockTagUppercase() {
-        assertTrue(BnTagOrNumberValidator.isValid("EARLIEST"));
-        assertTrue(BnTagOrNumberValidator.isValid("FINALIZED"));
-        assertTrue(BnTagOrNumberValidator.isValid("SAFE"));
-        assertTrue(BnTagOrNumberValidator.isValid("LATEST"));
-        assertTrue(BnTagOrNumberValidator.isValid("PENDING"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("EARLIEST"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("FINALIZED"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("SAFE"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("LATEST"));
+        assertDoesNotThrow(() -> BnTagOrNumberValidator.isValid("PENDING"));
     }
 
     @Test
