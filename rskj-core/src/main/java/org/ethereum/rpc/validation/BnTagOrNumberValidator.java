@@ -27,7 +27,7 @@ public final class BnTagOrNumberValidator {
 
     }
 
-    public static boolean isValid(String parameter) {
+    public static void isValid(String parameter) {
         if (parameter == null) {
             throw RskJsonRpcRequestException.invalidParamError("Cannot process null parameter");
         }
@@ -37,7 +37,5 @@ public final class BnTagOrNumberValidator {
         if (!StringUtils.equalsAny(parameter, "earliest", "finalized", "safe", "latest", "pending") && !HexUtils.isHexWithPrefix(parameter)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block number: " + parameter);
         }
-
-        return true;
     }
 }
