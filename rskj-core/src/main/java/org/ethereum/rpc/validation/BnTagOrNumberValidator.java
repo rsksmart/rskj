@@ -22,7 +22,7 @@ import co.rsk.util.HexUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-public class BnTagOrNumberValidator {
+public final class BnTagOrNumberValidator {
     private BnTagOrNumberValidator() {
 
     }

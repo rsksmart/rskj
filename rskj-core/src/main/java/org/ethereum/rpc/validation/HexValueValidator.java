@@ -21,7 +21,7 @@ package org.ethereum.rpc.validation;
 import co.rsk.util.HexUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-public class HexValueValidator {
+public final class HexValueValidator {
     private HexValueValidator(){}
 
     public static boolean isValid(String input){

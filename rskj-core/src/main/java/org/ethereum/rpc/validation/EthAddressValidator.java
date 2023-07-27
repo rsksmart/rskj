@@ -21,7 +21,7 @@ package org.ethereum.rpc.validation;
 import co.rsk.util.HexUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-public class EthAddressValidator {
+public final class EthAddressValidator {
     private static final int ETH_ADDRESS_BYTE_LENGTH = 20;
     private EthAddressValidator() { }
 
