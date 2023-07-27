@@ -24,10 +24,9 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 public final class HexValueValidator {
     private HexValueValidator(){}
 
-    public static boolean isValid(String input){
+    public static void isValid(String input){
         if (!HexUtils.isHexWithPrefix(input)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid argument: " + input + ": param should be a hex value string.");
         }
-        return true;
     }
 }
