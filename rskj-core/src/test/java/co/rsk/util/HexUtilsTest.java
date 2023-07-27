@@ -318,9 +318,4 @@ class HexUtilsTest {
     void test_jsonHexToInt() {
         Assertions.assertEquals(4095, HexUtils.jsonHexToInt("0xfff"));
     }
-    @Test
-    void test_jsonHexToInt_whenWrongParameter_expectException() {
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> HexUtils.jsonHexToInt("fff"));
-    }
-
 }

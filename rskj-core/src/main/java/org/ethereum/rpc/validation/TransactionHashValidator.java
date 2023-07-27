@@ -4,7 +4,7 @@ import co.rsk.util.HexUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 public class TransactionHashValidator {
-    private final static int TRANSACTION_HASH_BYTE_LENGTH = 64;
+    private final static int TRANSACTION_HASH_BYTE_LENGTH = 32;
     public final static String INVALID_HEX_MESSAGE = "Invalid transaction hash format. ";
     public final static String INVALID_LENGTH_MESSAGE = "Invalid transaction hash: incorrect length.";
     private TransactionHashValidator() {
