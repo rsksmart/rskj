@@ -25,7 +25,7 @@ public final class EthAddressValidator {
     private static final int ETH_ADDRESS_BYTE_LENGTH = 20;
     private EthAddressValidator() { }
 
-    public static boolean isValid(String parameter){
+    public static void isValid(String parameter){
         byte[] addressBytes = null;
 
         try {
@@ -37,7 +37,5 @@ public final class EthAddressValidator {
         if (ETH_ADDRESS_BYTE_LENGTH != addressBytes.length ) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid address: incorrect length.");
         }
-
-        return true;
     }
 }
