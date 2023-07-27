@@ -28,7 +28,7 @@ public final class HexTopicValidator {
 
     }
 
-    public static boolean isValid(String topic) {
+    public static void isValid(String topic) {
         byte[] topicBytes = null;
         try {
             topicBytes = HexUtils.stringHexToByteArray(topic);
@@ -38,7 +38,6 @@ public final class HexTopicValidator {
         if (TOPIC_BYTE_LENGTH != topicBytes.length) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid topic: incorrect length.");
         }
-        return true;
     }
 
 }
