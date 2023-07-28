@@ -19,7 +19,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.BridgeStorageIndexKey.BRIDGE_BTC_TX_SIG_HASH;
+import static co.rsk.peg.BridgeStorageIndexKey.PEGOUT_TX_SIG_HASH;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -27,9 +27,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class BridgeStorageProviderBridgeTxsIndexTests {
+class BridgeStorageProviderPegoutTxIndexTests {
 
-    private static final String DUPLICATED_INSERTION_ERROR_MESSAGE = "Given bridge btc tx sigHash %s already exists in the index. Index entries are considered unique.";
+    private static final String DUPLICATED_INSERTION_ERROR_MESSAGE = "Given pegout tx sigHash %s already exists in the index. Index entries are considered unique.";
     private static final byte TRUE_VALUE = (byte) 1;
     private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
@@ -58,7 +58,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
 
     @ParameterizedTest
     @MethodSource("null_sigHash_parameters")
-    void hasBtcTxSigHash_null_sigHash(boolean isRskip379HardForkActive) {
+    void hasPegoutSigHash_null_sigHash(boolean isRskip379HardForkActive) {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
                                                     ActivationConfigsForTest.tbd600().forBlock(0) :
@@ -74,7 +74,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         );
 
         // Act
-        boolean result = provider.hasBridgeBtcTxSigHash(null);
+        boolean result = provider.hasPegoutTxSigHash(null);
 
         // Assert
         Assertions.assertFalse(result);
@@ -92,7 +92,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
     }
 
     @Test
-    void hasBtcTxSigHash_null_stored_value() {
+    void hasPegoutTxSigHash_null_stored_value() {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
 
@@ -105,11 +105,11 @@ class BridgeStorageProviderBridgeTxsIndexTests {
             activations
         );
         Sha256Hash sigHash = PegTestUtils.createHash(5);
-        DataWord entryKey = BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
+        DataWord entryKey = PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, entryKey)).thenReturn(null);
 
         // Act
-        boolean result = provider.hasBridgeBtcTxSigHash(sigHash);
+        boolean result = provider.hasPegoutTxSigHash(sigHash);
 
         // Assert
         Assertions.assertFalse(result);
@@ -128,7 +128,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
 
     @ParameterizedTest
     @MethodSource("invalid_entry_values")
-    void hasBtcTxSigHash_invalid_stored_data(byte[] invalidStoredValue) {
+    void hasPegoutTxSigHash_invalid_stored_data(byte[] invalidStoredValue) {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
 
@@ -141,11 +141,11 @@ class BridgeStorageProviderBridgeTxsIndexTests {
             activations
         );
         Sha256Hash sigHash = PegTestUtils.createHash(5);
-        DataWord entryKey = BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
+        DataWord entryKey = PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, entryKey)).thenReturn(invalidStoredValue);
 
         // Act
-        boolean result = provider.hasBridgeBtcTxSigHash(sigHash);
+        boolean result = provider.hasPegoutTxSigHash(sigHash);
 
         // Assert
         Assertions.assertFalse(result);
@@ -164,7 +164,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
 
     @ParameterizedTest
     @MethodSource("valid_sigHash_parameters")
-    void hasBtcTxSigHash_non_null_sigHash(boolean isRskip379HardForkActive, Sha256Hash sigHash) {
+    void hasPegoutTxSigHash_non_null_sigHash(boolean isRskip379HardForkActive, Sha256Hash sigHash) {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
                                                     ActivationConfigsForTest.tbd600().forBlock(0) :
@@ -179,14 +179,14 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         );
 
         // Act
-        boolean result = provider.hasBridgeBtcTxSigHash(sigHash);
+        boolean result = provider.hasPegoutTxSigHash(sigHash);
 
         // Assert
         Assertions.assertFalse(result);
         if (isRskip379HardForkActive) {
             verify(repository, times(1)).getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+                PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
             );
         } else {
             verify(repository, never()).getStorageBytes(
@@ -203,7 +203,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
     }
 
     @Test
-    void hasBtcTxSigHash_passing_existing_sigHash() throws IOException {
+    void hasPegoutTxSigHash_passing_existing_sigHash() throws IOException {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
 
@@ -218,16 +218,16 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         );
 
         // Check if sigHash exists when there are no entries in the index
-        boolean result = provider.hasBridgeBtcTxSigHash(sigHash);
+        boolean result = provider.hasPegoutTxSigHash(sigHash);
         Assertions.assertFalse(result);
 
         // Verify the method check if the given sigHash exists in the index
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
         );
 
-        // Verify sigHash is not persisted into the index when calling hasBtcTxSigHash
+        // Verify sigHash is not persisted into the index when calling hasPegoutTxSigHash
         verify(repository, never()).addStorageBytes(
             any(),
             any(),
@@ -236,20 +236,20 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         // reset calls counter
         Mockito.reset(repository);
 
-        // Let's set the sigHash and then call hasBtcTxSigHash, it should return false.
-        provider.setBridgeBtcTxSigHash(sigHash);
+        // Let's set the sigHash and then call hasPegoutTxSigHash, it should return false.
+        provider.setPegoutTxSigHash(sigHash);
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
         );
         // reset calls counter
         Mockito.reset(repository);
 
-        boolean sigHashShouldNotExist = provider.hasBridgeBtcTxSigHash(sigHash);
+        boolean sigHashShouldNotExist = provider.hasPegoutTxSigHash(sigHash);
         Assertions.assertFalse(sigHashShouldNotExist);
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
         );
         Mockito.reset(repository);
 
@@ -257,31 +257,31 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         provider.save();
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString()),
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString()),
             new byte[]{(byte) 1}
         );
         verify(repository, never()).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
         );
         Mockito.reset(repository);
 
         // Let's create a stub for the just saved sigHash
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())))
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())))
             .thenReturn(new byte[]{TRUE_VALUE});
 
         // Check if saved sigHash exists
-        boolean shouldFindSigHash = provider.hasBridgeBtcTxSigHash(sigHash);
+        boolean shouldFindSigHash = provider.hasPegoutTxSigHash(sigHash);
         Assertions.assertTrue(shouldFindSigHash);
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
         );
     }
 
     @ParameterizedTest
     @MethodSource("null_sigHash_parameters")
-    void setBridgeBtcTxSigHash_null_sigHash(boolean isRskip379HardForkActive) throws IOException {
+    void setPegoutTxSigHash_null(boolean isRskip379HardForkActive) throws IOException {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
                                                     ActivationConfigsForTest.tbd600().forBlock(0) :
@@ -297,7 +297,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         );
 
         // Act
-        provider.setBridgeBtcTxSigHash(null);
+        provider.setPegoutTxSigHash(null);
         provider.save();
 
         // Assert
@@ -315,7 +315,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
 
     @ParameterizedTest
     @MethodSource("valid_sigHash_parameters")
-    void setBridgeBtcTxSigHash_non_null_sigHash(boolean isRskip379HardForkActive, Sha256Hash sigHash) throws IOException {
+    void setPegoutTxSigHash_non_null(boolean isRskip379HardForkActive, Sha256Hash sigHash) throws IOException {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
                                                     ActivationConfigsForTest.tbd600().forBlock(0) :
@@ -330,19 +330,19 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         );
 
         // Act
-        provider.setBridgeBtcTxSigHash(sigHash);
+        provider.setPegoutTxSigHash(sigHash);
         provider.save();
 
         // Assert
         if (isRskip379HardForkActive) {
             verify(repository, times(1)).getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+                PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
             );
 
             verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString()),
+                PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString()),
                 new byte[]{(byte) 1}
             );
         } else {
@@ -360,7 +360,7 @@ class BridgeStorageProviderBridgeTxsIndexTests {
     }
 
     @Test
-    void setBridgeBtcTxSigHash_passing_existing_sigHash() throws IOException {
+    void setPegoutTxSigHash_passing_existing() throws IOException {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
 
@@ -375,12 +375,12 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         );
 
         // Add a sigHash when index is empty
-        provider.setBridgeBtcTxSigHash(sigHash);
+        provider.setPegoutTxSigHash(sigHash);
 
         // Verify the method check if the given sigHash already exists in the index
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
         );
         // Verify sigHash is not persisted into the index when save has not been called.
         verify(repository, never()).addStorageBytes(
@@ -391,19 +391,19 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         Mockito.reset(repository);
 
         // Try to set same sigHash, it should allow it to do it.
-        provider.setBridgeBtcTxSigHash(sigHash);
+        provider.setPegoutTxSigHash(sigHash);
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
         );
 
         // Try to set a different sigHash. It should allow it as well.
         Sha256Hash newSigHash = PegTestUtils.createHash(7);
-        provider.setBridgeBtcTxSigHash(newSigHash);
+        provider.setPegoutTxSigHash(newSigHash);
 
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", newSigHash.toString())
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", newSigHash.toString())
         );
         // Verify no sigHash is persisted yet
         verify(repository, never()).addStorageBytes(
@@ -419,21 +419,21 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         // Check the persisted sigHash is the newSigHash
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", newSigHash.toString()),
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", newSigHash.toString()),
             new byte[]{TRUE_VALUE}
         );
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", newSigHash.toString())))
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, PEGOUT_TX_SIG_HASH.getCompoundKey("-", newSigHash.toString())))
             .thenReturn(new byte[]{TRUE_VALUE});
 
         // Try to set again the new sigHash that was persisted into the repository
         Assertions.assertThrows(IllegalStateException.class, () -> {
-            provider.setBridgeBtcTxSigHash(newSigHash);
+            provider.setPegoutTxSigHash(newSigHash);
 
         }, String.format(DUPLICATED_INSERTION_ERROR_MESSAGE, newSigHash));
     }
 
     @Test
-    void setBridgeBtcTxSigHash_multiple_sigHash_in_a_single_rsk_tx() throws IOException {
+    void setPegoutTxSigHash_multiple_sigHash_in_a_single_rsk_tx() throws IOException {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
 
@@ -450,9 +450,9 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         );
 
         // Set multiple sighash when index is empty
-        provider.setBridgeBtcTxSigHash(sigHash);
-        provider.setBridgeBtcTxSigHash(sigHash2);
-        provider.setBridgeBtcTxSigHash(sigHash3);
+        provider.setPegoutTxSigHash(sigHash);
+        provider.setPegoutTxSigHash(sigHash2);
+        provider.setPegoutTxSigHash(sigHash3);
 
         // Verify the method check if the given sigHash already exists in the index
         verify(repository, times(3)).getStorageBytes(
@@ -468,19 +468,19 @@ class BridgeStorageProviderBridgeTxsIndexTests {
         Mockito.reset(repository);
 
         // Try to set same sigHash, it should allow it to do it.
-        provider.setBridgeBtcTxSigHash(sigHash);
+        provider.setPegoutTxSigHash(sigHash);
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString())
         );
 
         // Try to set a different sigHash. It should allow it as well.
         Sha256Hash sigHash4 = PegTestUtils.createHash(7);
-        provider.setBridgeBtcTxSigHash(sigHash4);
+        provider.setPegoutTxSigHash(sigHash4);
 
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash4.toString())
+            PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash4.toString())
         );
         // Verify no sigHash is persisted yet
         verify(repository, never()).addStorageBytes(
@@ -499,12 +499,12 @@ class BridgeStorageProviderBridgeTxsIndexTests {
             any(DataWord.class),
             any(byte[].class)
         );
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BRIDGE_BTC_TX_SIG_HASH.getCompoundKey("-", sigHash4.toString())))
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash4.toString())))
             .thenReturn(new byte[]{TRUE_VALUE});
 
         // Try to set again the new sigHash that was persisted into the repository
         Assertions.assertThrows(IllegalStateException.class, () -> {
-            provider.setBridgeBtcTxSigHash(sigHash4);
+            provider.setPegoutTxSigHash(sigHash4);
 
         }, String.format(DUPLICATED_INSERTION_ERROR_MESSAGE, sigHash4));
     }
