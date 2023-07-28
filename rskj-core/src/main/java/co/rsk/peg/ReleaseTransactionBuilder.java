@@ -19,8 +19,13 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -28,6 +33,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKMULTISIG;
 
 /**
  * Given a set of UTXOs, a ReleaseTransactionBuilder
@@ -162,6 +171,27 @@ public class ReleaseTransactionBuilder {
                     )
                 )
                 .collect(Collectors.toList());
+
+            List<ScriptChunk> scriptSigChunks = btcTx.getInput(0).getScriptSig().getChunks();
+            int scriptSigChunksSize = scriptSigChunks.size();
+            ScriptChunk redeemScriptChunk = scriptSigChunks.get(scriptSigChunksSize - 1);
+            byte[] redeemScriptData = redeemScriptChunk.data;
+            byte[] redeemScriptHash = Sha256Hash.hash(redeemScriptData);
+
+            Script witnessScript = btcTx.getInput(0).getScriptSig();
+            int requiredSignatures = scriptSigChunksSize - 2;
+            List<TransactionSignature> txSignatures = Stream
+                .generate(TransactionSignature::dummy)
+                .limit(requiredSignatures)
+                .collect(Collectors.toList());
+            TransactionWitness txWitness = TransactionWitness.createWitnessScript(witnessScript, txSignatures);
+
+            Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
+            int txInputsSize = btcTx.getInputs().size();
+            for (int i = 0; i < txInputsSize; i++) {
+                btcTx.getInput(i).setScriptSig(segwitScriptSig);
+                btcTx.setWitness(i, txWitness);
+            }
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {

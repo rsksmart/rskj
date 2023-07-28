@@ -18,40 +18,14 @@
 
 package co.rsk.peg;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.InsufficientMoneyException;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.core.UTXOProvider;
-import co.rsk.bitcoinj.core.UTXOProviderException;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
@@ -59,6 +33,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
+
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class ReleaseTransactionBuilderTest {
     private Wallet wallet;
@@ -157,19 +143,21 @@ class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    void build_pegout_tx_from_erp_federation() {
+    void build_pegout_tx_from_p2shp2wsh_erp_federation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
         // Use mainnet constants to test a real situation
-        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+        BridgeConstants bridgeConstants = BridgeTestNetConstants.getInstance();
 
-        Federation erpFederation = new ErpFederation(
-            FederationMember.getFederationMembersFromKeys(Arrays.asList(
-                new BtcECKey(),
-                new BtcECKey(),
-                new BtcECKey())
-            ),
+        List<BtcECKey> keys = Arrays.asList(new String[]{
+                "03a48b738494d520c7e1b3332a0d00acd48fd38f4d9742adc2750373299dc6a964",
+                "038e2b8e234b2d6f018484c1fad60ca977295fc213c7f37290f281abb9e6fd6279",
+                "030ad717800a13a6e7e97dbf001260ab91afe93d0a2de1b6627097a9c05a14ac23"
+        }).stream().map(k -> BtcECKey.fromPublicOnly(org.spongycastle.util.encoders.Hex.decode(k))).collect(Collectors.toList());
+
+        Federation p2shErpFederation = new P2shErpFederation(
+            FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
             bridgeConstants.getBtcParams(),
@@ -185,7 +173,7 @@ class ReleaseTransactionBuilderTest {
                 Coin.COIN,
                 0,
                 false,
-                erpFederation.getP2SHScript()
+                p2shErpFederation.getP2SHScript()
             ),
             new UTXO(
                 Sha256Hash.of(new byte[]{1}),
@@ -193,13 +181,13 @@ class ReleaseTransactionBuilderTest {
                 Coin.COIN,
                 0,
                 false,
-                erpFederation.getP2SHScript()
+                p2shErpFederation.getP2SHScript()
             )
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(bridgeConstants.getBtcParams()),
-            erpFederation,
+            p2shErpFederation,
             utxos,
             false,
             mock(BridgeStorageProvider.class)
@@ -208,7 +196,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             bridgeConstants.getBtcParams(),
             thisWallet,
-            erpFederation.address,
+            p2shErpFederation.getAddress(),
             Coin.SATOSHI.multiply(1000),
             activations
         );
@@ -220,6 +208,8 @@ class ReleaseTransactionBuilderTest {
             pegoutRecipient,
             pegoutAmount
         );
+
+        Assertions.assertTrue(result.getBtcTx().hasWitness());
         Assertions.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
     }
 

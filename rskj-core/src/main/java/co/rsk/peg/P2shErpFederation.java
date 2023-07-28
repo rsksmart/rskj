@@ -49,4 +49,13 @@ public class P2shErpFederation extends ErpFederation {
         }
         return standardRedeemScript;
     }
+
+    @Override
+    public Script getP2SHScript() {
+        if (p2shScript == null) {
+            p2shScript = ScriptBuilder.createP2SHP2WSHOutputScript(getRedeemScript());
+        }
+
+        return p2shScript;
+    }
 }
