@@ -11,7 +11,7 @@ public class TransactionHashValidator {
 
     }
 
-    public static boolean isValid(String transactionHash) {
+    public static void isValid(String transactionHash) {
         byte[] transactionHashBytes;
 
         try {
@@ -23,7 +23,5 @@ public class TransactionHashValidator {
         if (TRANSACTION_HASH_BYTE_LENGTH != transactionHashBytes.length) {
             throw RskJsonRpcRequestException.invalidParamError(INVALID_LENGTH_MESSAGE);
         }
-
-        return true;
     }
 }
