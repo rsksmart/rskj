@@ -25,6 +25,13 @@ public final class EthAddressValidator {
     private static final int ETH_ADDRESS_BYTE_LENGTH = 20;
     private EthAddressValidator() { }
 
+    /**
+     * Validates if the given parameter is a valid RSK address.
+     *
+     * @param parameter The string representation of the RSK address to be validated.
+     * @return True if the address is valid, otherwise false.
+     * @throws RskJsonRpcRequestException If the address format is invalid or incorrect length.
+     */
     public static void isValid(String parameter){
         byte[] addressBytes = null;
 

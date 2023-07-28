@@ -28,6 +28,13 @@ public final class HexTopicValidator {
 
     }
 
+    /**
+     * Validates if the given topic is a valid Hexadecimal string of 32 bytes length.
+     *
+     * @param topic The string representation of the Hexadecimal topic to be validated.
+     * @return Nothing.
+     * @throws RskJsonRpcRequestException If the topic format is invalid or the length is incorrect.
+     */
     public static void isValid(String topic) {
         byte[] topicBytes = null;
         try {

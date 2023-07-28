@@ -24,6 +24,13 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 public final class HexValueValidator {
     private HexValueValidator(){}
 
+    /**
+     * Validates if the given input is a valid hexadecimal value string with a prefix.
+     *
+     * @param input The string representation of the hexadecimal value to be validated.
+     * @return Nothing.
+     * @throws RskJsonRpcRequestException If the input is not a valid hexadecimal value string with a prefix.
+     */
     public static void isValid(String input){
         if (!HexUtils.isHexWithPrefix(input)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid argument: " + input + ": param should be a hexadecimal value string.");

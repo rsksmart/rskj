@@ -27,6 +27,15 @@ public final class BnTagOrNumberValidator {
 
     }
 
+    /**
+     * Validates if the given parameter is a valid block number or tag.
+     * The tags can be one of the following: "earliest", "finalized", "safe", "latest", "pending".
+     * If the parameter is not a tag, it checks if the parameter is a hexadecimal number with prefix.
+     *
+     * @param parameter The string representation of the block number or tag to be validated.
+     * @return Nothing.
+     * @throws RskJsonRpcRequestException If the parameter is null or it's neither a valid tag nor a hexadecimal number with prefix.
+     */
     public static void isValid(String parameter) {
         if (parameter == null) {
             throw RskJsonRpcRequestException.invalidParamError("Cannot process null parameter");
