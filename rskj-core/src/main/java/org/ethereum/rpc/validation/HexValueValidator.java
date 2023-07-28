@@ -26,7 +26,7 @@ public final class HexValueValidator {
 
     public static void isValid(String input){
         if (!HexUtils.isHexWithPrefix(input)) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid argument: " + input + ": param should be a hex value string.");
+            throw RskJsonRpcRequestException.invalidParamError("Invalid argument: " + input + ": param should be a hexadecimal value string.");
         }
     }
 }
