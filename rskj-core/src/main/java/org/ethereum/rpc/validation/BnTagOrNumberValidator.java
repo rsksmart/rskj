@@ -20,6 +20,7 @@ package org.ethereum.rpc.validation;
 
 import co.rsk.util.HexUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 public final class BnTagOrNumberValidator {
@@ -43,7 +44,7 @@ public final class BnTagOrNumberValidator {
 
         parameter = parameter.toLowerCase();
 
-        if (!StringUtils.equalsAny(parameter, "earliest", "finalized", "safe", "latest", "pending") && !HexUtils.isHexWithPrefix(parameter)) {
+        if (BlockTag.fromString(parameter) == null && !HexUtils.isHexWithPrefix(parameter)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block number: " + parameter);
         }
     }
