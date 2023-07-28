@@ -208,6 +208,8 @@ class ReleaseTransactionBuilderTest {
             pegoutRecipient,
             pegoutAmount
         );
+
+        Assertions.assertTrue(result.getBtcTx().hasWitness());
         Assertions.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
     }
 

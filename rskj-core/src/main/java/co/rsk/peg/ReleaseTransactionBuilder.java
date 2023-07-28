@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -32,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKMULTISIG;
@@ -170,20 +172,25 @@ public class ReleaseTransactionBuilder {
                 )
                 .collect(Collectors.toList());
 
-            List<ScriptChunk> scriptChunksList = btcTx.getInput(0).getScriptSig().getChunks();
-            int scriptChunksSize = scriptChunksList.size();
-            ScriptChunk redeemScriptChunk = scriptChunksList.get(scriptChunksSize - 1);
-            byte[] redeemScript = redeemScriptChunk.data;
-            byte[] redeemScriptHash = Sha256Hash.hash(redeemScript);
+            List<ScriptChunk> scriptSigChunks = btcTx.getInput(0).getScriptSig().getChunks();
+            int scriptSigChunksSize = scriptSigChunks.size();
+            ScriptChunk redeemScriptChunk = scriptSigChunks.get(scriptSigChunksSize - 1);
+            byte[] redeemScriptData = redeemScriptChunk.data;
+            byte[] redeemScriptHash = Sha256Hash.hash(redeemScriptData);
+
+            Script witnessScript = btcTx.getInput(0).getScriptSig();
+            int requiredSignatures = scriptSigChunksSize - 2;
+            List<TransactionSignature> txSignatures = Stream
+                .generate(TransactionSignature::dummy)
+                .limit(requiredSignatures)
+                .collect(Collectors.toList());
+            TransactionWitness txWitness = TransactionWitness.createWitnessScript(witnessScript, txSignatures);
 
             Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
-            for (int i = 0; i < btcTx.getInputs().size(); i ++) {
-                Script originalScriptSig = btcTx.getInput(i).getScriptSig();
-                for (int j = 0; j < originalScriptSig.getChunks().size(); j++) {
-                    ScriptChunk chunk = originalScriptSig.getChunks().get(j);
-                    btcTx.getWitness(i).setPush(j, chunk.data);
-                }
+            int txInputsSize = btcTx.getInputs().size();
+            for (int i = 0; i < txInputsSize; i++) {
                 btcTx.getInput(i).setScriptSig(segwitScriptSig);
+                btcTx.setWitness(i, txWitness);
             }
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
