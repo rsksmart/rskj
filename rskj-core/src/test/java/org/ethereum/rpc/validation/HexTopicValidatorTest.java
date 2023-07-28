@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.ethereum.TestUtils.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HexTopicValidatorTest {
     @Test
@@ -86,4 +87,11 @@ class HexTopicValidatorTest {
     void testValidHexadecimalWithoutPrefix() {
         assertThrows(RskJsonRpcRequestException.class, () -> HexTopicValidator.isValid("123456"));
     }
+
+    @Test
+    void testValidErrorCodeOnException() {
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> HexTopicValidator.isValid("123456"));
+        assertEquals(-32602, exception.getCode());
+    }
+
 }

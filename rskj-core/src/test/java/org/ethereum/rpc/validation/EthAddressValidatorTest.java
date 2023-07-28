@@ -21,6 +21,7 @@ package org.ethereum.rpc.validation;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
+import static org.ethereum.TestUtils.assertThrows;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EthAddressValidatorTest {
@@ -67,5 +68,11 @@ class EthAddressValidatorTest {
     @Test
     void testNullString() {
         assertThrows(RskJsonRpcRequestException.class, () -> EthAddressValidator.isValid(null));
+    }
+
+    @Test
+    void testValidErrorCodeOnException() {
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> EthAddressValidator.isValid("123456"));
+        assertEquals(-32602, exception.getCode());
     }
 }

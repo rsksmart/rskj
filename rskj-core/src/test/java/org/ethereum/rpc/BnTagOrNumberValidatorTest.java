@@ -22,6 +22,7 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.validation.BnTagOrNumberValidator;
 import org.junit.jupiter.api.Test;
 
+import static org.ethereum.TestUtils.assertThrows;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BnTagOrNumberValidatorTest {
@@ -85,4 +86,9 @@ class BnTagOrNumberValidatorTest {
         assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.isValid(null));
     }
 
+    @Test
+    void testValidErrorCodeOnException() {
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.isValid("123456"));
+        assertEquals(-32602, exception.getCode());
+    }
 }

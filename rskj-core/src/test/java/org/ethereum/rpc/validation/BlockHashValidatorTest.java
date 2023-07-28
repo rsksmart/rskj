@@ -23,8 +23,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.ethereum.TestUtils.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class BlockHashValidatorTest {
     @Test
@@ -81,5 +80,11 @@ class BlockHashValidatorTest {
     @Test
     void testNullString() {
         assertThrows(RskJsonRpcRequestException.class, () -> BlockHashValidator.isValid(null));
+    }
+
+    @Test
+    void testValidErrorCodeOnException() {
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> BlockHashValidator.isValid("123456"));
+        assertEquals(-32602, exception.getCode());
     }
 }

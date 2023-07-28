@@ -21,6 +21,7 @@ package org.ethereum.rpc.validation;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
+import static org.ethereum.TestUtils.assertThrows;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HexValueValidatorTest {
@@ -68,5 +69,11 @@ class HexValueValidatorTest {
     @Test
     void testNullString() {
         assertThrows(RskJsonRpcRequestException.class, () -> HexValueValidator.isValid(null));
+    }
+
+    @Test
+    void testValidErrorCodeOnException() {
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> HexValueValidator.isValid("123456"));
+        assertEquals(-32602, exception.getCode());
     }
 }
