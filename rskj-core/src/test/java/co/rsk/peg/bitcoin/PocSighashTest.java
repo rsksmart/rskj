@@ -105,7 +105,9 @@ class PocSighashTest {
         utxos.add(FedUtxo.of(txWithOutputToRandomAddress, 1));
 
         BtcTransaction txWithOutputToMultisig = new BtcTransaction(networkParameters);
-        txWithOutputToMultisig.addOutput(Coin.valueOf(700_001), PegTestUtils.createRandomP2SHMultisigAddress(networkParameters, 3));
+        txWithOutputToMultisig.addOutput(Coin.valueOf(700_001), BitcoinTestUtils.createP2SHMultisigAddress(
+            networkParameters,
+            Arrays.asList(new BtcECKey(), new BtcECKey(), new BtcECKey())));
         txWithOutputToMultisig.addOutput(Coin.valueOf(700_002), fed.getAddress());
         utxos.add(FedUtxo.of(txWithOutputToMultisig, 1));
 
