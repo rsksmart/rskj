@@ -45,6 +45,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private static final int MAX_RETRIES = 2;
 
     private static final Logger logger = LoggerFactory.getLogger("db");
+    private static final Logger loggerSnapshot = LoggerFactory.getLogger("snapExperiment");
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
@@ -167,7 +168,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
                     if (logger.isTraceEnabled()) {
                         logger.trace("<~ RocksDbDataSource.get(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), (ret == null ? "null" : ret.length));
                     }
-                    logger.info("SnapshotSync <~ RocksDbDataSource.get(): {}, return length: {}", name, (ret == null ? "null" : ret.length));
+                    loggerSnapshot.info("SnapshotSync <~ RocksDbDataSource.get(): {}, return length: {}", name, (ret == null ? "null" : ret.length));
 
                     result = ret;
                     break;

@@ -1,22 +1,21 @@
 package co.rsk.jmh.sync;
 
-import co.rsk.trie.TrieDTO;
-import co.rsk.trie.TrieDTOInOrderIterator;
+import co.rsk.trie.IterationElement;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
-import com.google.common.collect.Lists;
 import org.openjdk.jmh.annotations.*;
 
-import java.util.List;
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
-@Warmup(iterations = 1, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 20, time = 1)
+@Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 30, time = 1)
 @Fork(1)
-public class SnapshotSyncBench {
+public class SnapshotSyncOldBench {
 
     private TrieStore trieStore;
-    private TrieDTOInOrderIterator iterator;
+    private Iterator<IterationElement> iteratorOld;
     private byte[] root;
 
     @Setup
@@ -28,8 +27,8 @@ public class SnapshotSyncBench {
             System.out.println(" -------- TrieStore...");
             this.root = contextState.getBlockchain().getBestBlock().getStateRoot();
             System.out.println(" -------- StateRoot..." + contextState.getBlockchain().getBestBlock().getNumber());
-            this.iterator = new TrieDTOInOrderIterator(this.trieStore, this.root);
-            TrieDTO node = this.iterator.next();
+            initilizeIterator();
+            Trie node = this.iteratorOld.next().getNode();
             System.out.println(" -------- Iterator...");
             System.out.println(" -------- Bytes size children: " + node.getChildrenSize().value);
             // Reads the entire trie, no sense. Run once only, to know the size of the tree and save the value.
@@ -48,14 +47,15 @@ public class SnapshotSyncBench {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void read(OpCounters counters) {
-        if (this.iterator.hasNext()) {
-            readNode(this.iterator, counters);
+    public void readOld(OpCounters counters) {
+        if (this.iteratorOld.hasNext()) {
+            readNodeOld(this.iteratorOld, counters);
         } else {
-            this.iterator = new TrieDTOInOrderIterator(this.trieStore, this.root);
-            readNode(this.iterator, counters);
+            initilizeIterator();
+            readNodeOld(this.iteratorOld, counters);
         }
     }
+
 
     @Benchmark
     @BenchmarkMode(Mode.SingleShotTime)
@@ -63,31 +63,24 @@ public class SnapshotSyncBench {
     @Warmup(iterations = 0)
     @Measurement(iterations = 1)
     public void readAll(OpCounters counters) {
-        this.iterator = new TrieDTOInOrderIterator(this.trieStore, this.root);
-        List<byte[]> nodes = Lists.newArrayList();
-        while (this.iterator.hasNext()) {
-            nodes.add(readNode(this.iterator, counters).getEncoded());
+        initilizeIterator();
+        while (this.iteratorOld.hasNext()) {
+            readNodeOld(this.iteratorOld, counters);
         }
         System.out.println("----- Final bytesRead:" + counters.bytesRead);
         System.out.println("----- Final bytesSend:" + counters.bytesSend);
         System.out.println("----- Final nodes:" + counters.nodes);
-        System.out.println("----- Final nodes bytes:" + nodes.size());
-        System.out.println("----- Final nodes terminal:" + counters.terminal);
-        System.out.println("----- Final nodes account:" + counters.account);
-        System.out.println("----- Final nodes terminalAccount:" + counters.terminalAccount);
     }
 
-
-    private TrieDTO readNode(TrieDTOInOrderIterator it, OpCounters counters) {
-        final TrieDTO element = it.next();
+    private void readNodeOld(Iterator<IterationElement> it, OpCounters counters) {
+        final IterationElement element = it.next();
+        counters.bytesRead += element.getNode().getMessageLength();
         counters.nodes++;
-        counters.bytesRead += element.getSource().length;
-        counters.bytesRead += element.getValue() != null ? element.getValue().length : 0;
-        counters.bytesSend += element.getEncoded().length;
-        counters.terminal += element.isTerminal() ? 1 : 0;
-        counters.account += element.isAccountLevel() ? 1 : 0;
-        counters.terminalAccount += element.isTerminal() && element.isAccountLevel() ? 1 : 0;
-        return element;
     }
+
+    private void initilizeIterator() {
+        this.iteratorOld = this.trieStore.retrieve(this.root).get().getInOrderIterator();
+    }
+
 
 }

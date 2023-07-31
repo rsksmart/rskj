@@ -88,6 +88,19 @@ public class MultiTrieStore implements TrieStore {
     }
 
     @Override
+    public Optional<TrieDTO> retrieveDTO(byte[] rootHash) {
+        for (TrieStore epochTrieStore : epochs) {
+            byte[] message = epochTrieStore.retrieveValue(rootHash);
+            if (message == null) {
+                continue;
+            }
+            return Optional.of(TrieDTO.decode(message, this));
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
     public byte[] retrieveValue(byte[] hash) {
         for (TrieStore epochTrieStore : epochs) {
             byte[] value = epochTrieStore.retrieveValue(hash);

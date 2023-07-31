@@ -2,10 +2,8 @@ package co.rsk.net;
 
 import co.rsk.net.messages.StateChunkRequestMessage;
 import co.rsk.net.messages.StateChunkResponseMessage;
-import co.rsk.net.sync.PeersInformation;
-import co.rsk.net.sync.SnapSyncState;
-import co.rsk.trie.IterationElement;
-import co.rsk.trie.Trie;
+import co.rsk.trie.TrieDTO;
+import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieStore;
 import com.google.common.collect.Maps;
 import net.jpountz.lz4.LZ4Compressor;
@@ -37,8 +35,8 @@ public class SnapshotProcessor {
     private final boolean isCompressionEnabled;
 
     private long messageId = 0;
-
-    private final Map<String, Iterator<IterationElement>> iterators;
+    private boolean enabled = false;
+    private final Map<String, Iterator<TrieDTO>> iterators;
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
     private SnapSyncState snapSyncState;
@@ -130,15 +128,10 @@ public class SnapshotProcessor {
         Long blockNumber = request.getBlockNumber() > 0L ? request.getBlockNumber() : blockchain.getBestBlock().getNumber() - 10;
 
         List<byte[]> trieEncoded = new ArrayList<>();
-        Iterator<IterationElement> it = iterators.get(sender.getPeerNodeID().toString());
+        Iterator<TrieDTO> it = iterators.get(sender.getPeerNodeID().toString());
         if (it == null || request.getFrom() == 0l) {
             Block block = blockchain.getBlockByNumber(blockNumber);
-            Optional<Trie> retrieve = trieStore.retrieve(block.getStateRoot());
-            if (!retrieve.isPresent()) {
-                return;
-            }
-            Trie trie = retrieve.get();
-            it = trie.getPreOrderIterator();
+            it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot());
             iterators.put(sender.getPeerNodeID().toString(), it);
         }
 

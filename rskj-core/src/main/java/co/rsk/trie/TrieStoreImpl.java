@@ -165,6 +165,18 @@ public class TrieStoreImpl implements TrieStore {
     }
 
     @Override
+    public Optional<TrieDTO> retrieveDTO(byte[] hash) {
+        byte[] message = this.store.get(hash);
+
+        if (message == null) {
+            return Optional.empty();
+        }
+
+        TrieDTO trie = TrieDTO.decode(message, this);
+        return Optional.of(trie);
+    }
+
+    @Override
     public byte[] retrieveValue(byte[] hash) {
         if (logger.isTraceEnabled()) {
             TraceInfo traceInfo = traceInfoLocal.get();
