@@ -171,6 +171,7 @@ public class Trie {
         profiler.stop(metric);
 
         return trie;
+
     }
 
     private static Trie fromMessageOrchid(byte[] message, TrieStore store) {

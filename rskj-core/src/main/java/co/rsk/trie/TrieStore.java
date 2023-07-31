@@ -31,6 +31,7 @@ public interface TrieStore {
      */
     Optional<Trie> retrieve(byte[] hash);
 
+    Optional<TrieDTO> retrieveDTO(byte[] hash);
     byte[] retrieveValue(byte[] hash);
 
     void dispose();

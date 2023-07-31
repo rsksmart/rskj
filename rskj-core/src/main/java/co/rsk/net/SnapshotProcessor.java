@@ -3,8 +3,8 @@ package co.rsk.net;
 import co.rsk.config.InternalService;
 import co.rsk.net.messages.StateChunkRequestMessage;
 import co.rsk.net.messages.StateChunkResponseMessage;
-import co.rsk.trie.IterationElement;
-import co.rsk.trie.Trie;
+import co.rsk.trie.TrieDTO;
+import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieStore;
 import com.google.common.collect.Maps;
 import org.ethereum.core.Block;
@@ -38,7 +38,7 @@ public class SnapshotProcessor implements InternalService {
     private boolean connected;
     private long messageId = 0;
     private boolean enabled = false;
-    private final Map<String, Iterator<IterationElement>> iterators;
+    private final Map<String, Iterator<TrieDTO>> iterators;
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
 
@@ -111,28 +111,22 @@ public class SnapshotProcessor implements InternalService {
         Long blockNumber = request.getBlockNumber() > 0L ? request.getBlockNumber() : blockchain.getBestBlock().getNumber() - 10;
 
         List<byte[]> trieEncoded = new ArrayList<>();
-        Iterator<IterationElement> it = iterators.get(sender.getPeerNodeID().toString());
+        Iterator<TrieDTO> it = iterators.get(sender.getPeerNodeID().toString());
         if (it == null || request.getFrom() == 0l) {
             Block block = blockchain.getBlockByNumber(blockNumber);
-            Optional<Trie> retrieve = trieStore.retrieve(block.getStateRoot());
-            if (!retrieve.isPresent()) {
-                return;
-            }
-            Trie trie = retrieve.get();
-            it = trie.getPreOrderIterator();
+            it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot());
             iterators.put(sender.getPeerNodeID().toString(), it);
         }
 
         long i = KBYTES.equals(this.chunkSizeType)? 0l : request.getFrom();
         long limit = KBYTES.equals(this.chunkSizeType)? chunkSize * 1024 : i + chunkSize;
         while (it.hasNext() && i < limit) {
-            IterationElement e = it.next();
-            logger.info("Single node read.");
-            byte[] key = e.getNodeKey().encode();
-            byte[] value = e.getNode().getValue();
-            final byte[] element = RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(value));
+            TrieDTO e = it.next();
+            //logger.info("Single node read.");
+            byte[] value = e.getEncoded();
+            final byte[] element = RLP.encodeElement(value);
             trieEncoded.add(element);
-            logger.info("Single node calculated.");
+            //logger.info("Single node calculated.");
             i = KBYTES.equals(this.chunkSizeType)? i + element.length : i+1;
         }
 
