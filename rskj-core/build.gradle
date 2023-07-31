@@ -5,6 +5,21 @@ plugins {
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 
+configurations {
+    jmh
+}
+
+sourceSets {
+    jmh {
+        java {
+            srcDirs = ['src/jmh/java']
+        }
+        resources {
+            srcDirs = ['src/jmh/resources']
+        }
+    }
+}
+
 testing {
     suites {
         integrationTest(JvmTestSuite) {
@@ -147,6 +162,11 @@ ext {
             rskLllVer      : '0.0.2',
     ]
 
+    jmhLibVersions = [
+            jmh: "1.36",
+            web3j: "4.9.8",
+    ]
+
     testLibs = [
             junitLib                : "org.junit.jupiter:junit-jupiter-engine:${testLibVersions.junitVer}",
             junitParams             : "org.junit.jupiter:junit-jupiter-params:${testLibVersions.junitVer}",
@@ -161,11 +181,26 @@ ext {
 
             rskLllLib               : "co.rsk:lll-compiler:${testLibVersions.rskLllVer}",
     ]
+
+    jmhLibs = [
+            jmhCore                 : "org.openjdk.jmh:jmh-core:${jmhLibVersions.jmh}",
+            jmhAnnotations          : "org.openjdk.jmh:jmh-generator-annprocess:${jmhLibVersions.jmh}",
+            web3jCore               : "org.web3j:core:${jmhLibVersions.web3j}",
+    ]
+
 }
 
 // WARN: consider different setups and sure to not use GPG elements without checksums or without signature file
 // in the remote repository (see https://github.com/gradle/gradle/security/advisories/GHSA-j6wc-xfg8-jx2j)
 dependencies {
+    jmhImplementation "${jmhLibs.jmhCore}"
+    jmhImplementation "${jmhLibs.web3jCore}"
+    jmhImplementation "${libs.slf4jApiLib}"
+    jmhAnnotationProcessor "${jmhLibs.jmhAnnotations}"
+    jmhRuntimeOnly "${libs.log4jOverSlf4jLib}"
+    jmhRuntimeOnly "${libs.logbackCoreLib}"
+    jmhRuntimeOnly "${libs.logbackClassicLib}"
+
     implementation "${libs.nettyLib}"
     implementation "${libs.spongyCastleLib}"
     implementation "${libs.bouncyCastleLib}"
@@ -305,6 +340,42 @@ task fatJar(type: Jar, dependsOn: jar) {
     }
 
     with jar
+}
+
+task jmhJar(type: Jar) {
+    from sourceSets.jmh.output
+    archiveClassifier = 'jmh'
+}
+
+task jmh(type: JavaExec) {
+    doLast {
+        mkdir "${buildDir}/reports/jmh"
+    }
+
+    classpath = sourceSets.jmh.runtimeClasspath
+
+    // provide -PjmhArgs="<regular jmh parameters format>", ie: -PjmhArgs="-wi 5 -i 5 -f 1 -p suite=e2e -p host=http://localhost:4444 co.rsk.jmh.web3.BenchmarkWeb3"
+    if (project.hasProperty('jmhArgs')) {
+        mainClass = 'org.openjdk.jmh.Main'
+        args(jmhArgs.split("\\s+"))
+    }
+    // provide predefined Benchmark Runner task and optionally other known parameters, ie: -Pbenchmark=BenchmarkWeb3E2ERunner -Phost=http://localhost:4444 -Pnetwork=regtest
+    else if (project.hasProperty('benchmark')) {
+        mainClass = "co.rsk.jmh.runners.${project.getProperty("benchmark")}"
+
+        def customArgs = []
+
+        if (project.hasProperty('host')) {
+            customArgs << "-p" << "host=${project.getProperty("host")}"
+        }
+
+        if (project.hasProperty('config')) {
+            customArgs << "-p" << "config=${project.getProperty("config")}"
+        }
+
+        args(customArgs)
+    }
+
 }
 
 tasks.withType(Tar) {
