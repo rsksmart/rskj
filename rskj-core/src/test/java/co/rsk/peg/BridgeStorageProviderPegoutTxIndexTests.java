@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -50,9 +51,9 @@ class BridgeStorageProviderPegoutTxIndexTests {
     private static Stream<Arguments> valid_sigHash_parameters() {
         return Stream.of(
             Arguments.of(false, Sha256Hash.ZERO_HASH),
-            Arguments.of(false, PegTestUtils.createHash(10)),
+            Arguments.of(false, BitcoinTestUtils.createHash(10)),
             Arguments.of(true, Sha256Hash.ZERO_HASH),
-            Arguments.of(true, PegTestUtils.createHash(20))
+            Arguments.of(true, BitcoinTestUtils.createHash(20))
         );
     }
 
@@ -104,7 +105,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
             bridgeConstants,
             activations
         );
-        Sha256Hash sigHash = PegTestUtils.createHash(5);
+        Sha256Hash sigHash = BitcoinTestUtils.createHash(5);
         DataWord entryKey = PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, entryKey)).thenReturn(null);
 
@@ -140,7 +141,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
             bridgeConstants,
             activations
         );
-        Sha256Hash sigHash = PegTestUtils.createHash(5);
+        Sha256Hash sigHash = BitcoinTestUtils.createHash(5);
         DataWord entryKey = PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, entryKey)).thenReturn(invalidStoredValue);
 
@@ -207,7 +208,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
 
-        Sha256Hash sigHash = PegTestUtils.createHash(15);
+        Sha256Hash sigHash = BitcoinTestUtils.createHash(15);
 
         Repository repository = mock(Repository.class);
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -364,7 +365,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
 
-        Sha256Hash sigHash = PegTestUtils.createHash(15);
+        Sha256Hash sigHash = BitcoinTestUtils.createHash(15);
 
         Repository repository = mock(Repository.class);
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -398,7 +399,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
         );
 
         // Try to set a different sigHash. It should allow it as well.
-        Sha256Hash newSigHash = PegTestUtils.createHash(7);
+        Sha256Hash newSigHash = BitcoinTestUtils.createHash(7);
         provider.setPegoutTxSigHash(newSigHash);
 
         verify(repository, times(1)).getStorageBytes(
@@ -437,9 +438,9 @@ class BridgeStorageProviderPegoutTxIndexTests {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
 
-        Sha256Hash sigHash = PegTestUtils.createHash(15);
-        Sha256Hash sigHash2 = PegTestUtils.createHash(25);
-        Sha256Hash sigHash3 = PegTestUtils.createHash(35);
+        Sha256Hash sigHash = BitcoinTestUtils.createHash(15);
+        Sha256Hash sigHash2 = BitcoinTestUtils.createHash(25);
+        Sha256Hash sigHash3 = BitcoinTestUtils.createHash(35);
 
         Repository repository = mock(Repository.class);
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -475,7 +476,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
         );
 
         // Try to set a different sigHash. It should allow it as well.
-        Sha256Hash sigHash4 = PegTestUtils.createHash(7);
+        Sha256Hash sigHash4 = BitcoinTestUtils.createHash(7);
         provider.setPegoutTxSigHash(sigHash4);
 
         verify(repository, times(1)).getStorageBytes(
