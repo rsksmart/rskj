@@ -77,6 +77,9 @@ public final class PegTestUtils {
         return createHash(nhash++);
     }
 
+    /**
+     * @deprecated Use co.rsk.peg.bitcoin.BitcoinTestUtils#createHash(int) instead.
+     */
     public static Sha256Hash createHash(int nHash) {
         byte[] bytes = new byte[32];
         bytes[0] = (byte) (0xFF & nHash);
