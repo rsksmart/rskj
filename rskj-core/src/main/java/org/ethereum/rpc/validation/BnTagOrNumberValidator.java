@@ -19,7 +19,6 @@
 package org.ethereum.rpc.validation;
 
 import co.rsk.util.HexUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
