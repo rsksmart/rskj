@@ -26,7 +26,7 @@ import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
-import co.rsk.pcc.BFV;
+import co.rsk.pcc.BFVPrecompiled;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
@@ -217,15 +217,15 @@ public class PrecompiledContracts {
         }
 
         if (activations.isActive(ConsensusRule.RSKIPBFV) && address.equals(BFV_ADD_DW)) {
-            return new BFV(BFV.Op.ADD);
+            return new BFVPrecompiled(BFVPrecompiled.Op.ADD);
         }
 
         if (activations.isActive(ConsensusRule.RSKIPBFV) && address.equals(BFV_SUB_DW)) {
-            return new BFV(BFV.Op.SUB);
+            return new BFVPrecompiled(BFVPrecompiled.Op.SUB);
         }
 
         if (activations.isActive(ConsensusRule.RSKIPBFV) && address.equals(BFV_MUL_DW)) {
-            return new BFV(BFV.Op.MUL);
+            return new BFVPrecompiled(BFVPrecompiled.Op.MUL);
         }
 
         return null;
