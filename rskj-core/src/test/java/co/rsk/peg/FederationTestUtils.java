@@ -18,14 +18,10 @@
 
 package co.rsk.peg;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -163,4 +159,62 @@ public class FederationTestUtils {
             .data(fedRedeemScript.getProgram())
             .build();
     }
+
+    public static void spendFromP2shP2wshErpFed(
+        NetworkParameters networkParameters,
+        ErpFederation federation,
+        List<BtcECKey> signers,
+        Sha256Hash fundTxHash,
+        int outputIndex,
+        Address receiver,
+        Coin value,
+        boolean signWithEmergencyMultisig) {
+
+        BtcTransaction spendTx = new BtcTransaction(networkParameters);
+        spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
+        spendTx.addOutput(value, receiver);
+
+        if (signWithEmergencyMultisig) {
+            spendTx.setVersion(BTC_TX_VERSION_2);
+            spendTx.getInput(0).setSequenceNumber(federation.getActivationDelay());
+        }
+
+        Script redeemScript = federation.getRedeemScript();
+
+        // Create signatures
+        Sha256Hash sigHash = spendTx.hashForSignature(
+            0,
+            redeemScript,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        int totalSigners = signers.size();
+        List<TransactionSignature> allTxSignatures = new ArrayList<>();
+
+        for (int i = 0; i < totalSigners; i++) {
+            BtcECKey keyToSign = signers.get(i);
+            BtcECKey.ECDSASignature signature = keyToSign.sign(sigHash);
+            TransactionSignature txSignature = new TransactionSignature(
+                signature,
+                BtcTransaction.SigHash.ALL,
+                false
+            );
+            allTxSignatures.add(txSignature);
+        }
+
+        byte[] redeemScriptHash = Sha256Hash.hash(redeemScript.getProgram());
+        Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
+
+        int requiredSignatures = totalSigners / 2 + 1;
+        List<TransactionSignature> txSignatures = allTxSignatures.subList(0, requiredSignatures);
+        spendTx.getInput(0).setScriptSig(segwitScriptSig);
+
+        TransactionWitness txWitness = TransactionWitness.createWitnessScript(redeemScript, txSignatures);
+        spendTx.setWitness(0, txWitness);
+
+        // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
+        // System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
+    }
+
 }
