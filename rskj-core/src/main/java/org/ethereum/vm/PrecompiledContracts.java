@@ -81,6 +81,8 @@ public class PrecompiledContracts {
     public static final String BFV_ADD_STR = "0000000000000000000000000000000001000011";
     public static final String BFV_SUB_STR = "0000000000000000000000000000000001000012";
     public static final String BFV_MUL_STR = "0000000000000000000000000000000001000013";
+    public static final String BFV_TRAN_STR = "0000000000000000000000000000000001000014";
+
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
     public static final DataWord RIPEMPD160_ADDR_DW = DataWord.valueFromHex(RIPEMPD160_ADDR_STR);
@@ -97,6 +99,7 @@ public class PrecompiledContracts {
     public static final DataWord BFV_ADD_DW = DataWord.valueFromHex(BFV_ADD_STR);
     public static final DataWord BFV_SUB_DW = DataWord.valueFromHex(BFV_SUB_STR);
     public static final DataWord BFV_MUL_DW = DataWord.valueFromHex(BFV_MUL_STR);
+    public static final DataWord BFV_TRAN_DW = DataWord.valueFromHex(BFV_TRAN_STR);
 
     public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
     public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
@@ -114,6 +117,7 @@ public class PrecompiledContracts {
     public static final RskAddress BFV_ADD_ADDR = new RskAddress(BFV_ADD_DW);
     public static final RskAddress BFV_SUB_ADDR = new RskAddress(BFV_SUB_DW);
     public static final RskAddress BFV_MUL_ADDR = new RskAddress(BFV_MUL_DW);
+    public static final RskAddress BFV_TRAN_ADDR = new RskAddress(BFV_TRAN_DW);
 
     public static final List<RskAddress> GENESIS_ADDRESSES = Collections.unmodifiableList(Arrays.asList(
             ECRECOVER_ADDR,
@@ -122,23 +126,22 @@ public class PrecompiledContracts {
             IDENTITY_ADDR,
             BIG_INT_MODEXP_ADDR,
             BRIDGE_ADDR,
-            REMASC_ADDR
-    ));
+            REMASC_ADDR));
 
     // this maps needs to be updated by hand any time a new pcc is added
     public static final Map<RskAddress, ConsensusRule> CONSENSUS_ENABLED_ADDRESSES = Collections.unmodifiableMap(
-        Stream.of(
-            new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
-            new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
-            new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
-            new AbstractMap.SimpleEntry<>(BFV_ADD_ADDR, ConsensusRule.RSKIPBFV),
-            new AbstractMap.SimpleEntry<>(BFV_SUB_ADDR, ConsensusRule.RSKIPBFV),
-            new AbstractMap.SimpleEntry<>(BFV_MUL_ADDR, ConsensusRule.RSKIPBFV)
-        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-    );
+            Stream.of(
+                    new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
+                    new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
+                    new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
+                    new AbstractMap.SimpleEntry<>(BFV_ADD_ADDR, ConsensusRule.RSKIPBFV),
+                    new AbstractMap.SimpleEntry<>(BFV_SUB_ADDR, ConsensusRule.RSKIPBFV),
+                    new AbstractMap.SimpleEntry<>(BFV_MUL_ADDR, ConsensusRule.RSKIPBFV),
+                    new AbstractMap.SimpleEntry<>(BFV_TRAN_ADDR, ConsensusRule.RSKIPBFV))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
@@ -151,14 +154,13 @@ public class PrecompiledContracts {
     private final RemascConfig remascConfig;
 
     public PrecompiledContracts(RskSystemProperties config,
-                                BridgeSupportFactory bridgeSupportFactory,
-                                SignatureCache signatureCache) {
+            BridgeSupportFactory bridgeSupportFactory,
+            SignatureCache signatureCache) {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.signatureCache = signatureCache;
         this.remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
     }
-
 
     public PrecompiledContract getContractForAddress(ActivationConfig.ForBlock activations, DataWord address) {
 
@@ -228,6 +230,10 @@ public class PrecompiledContracts {
             return new BFVPrecompiled(BFVPrecompiled.Op.MUL);
         }
 
+        if (activations.isActive(ConsensusRule.RSKIPBFV) && address.equals(BFV_TRAN_DW)) {
+            return new BFVPrecompiled(BFVPrecompiled.Op.TRAN);
+        }
+
         return null;
     }
 
@@ -255,7 +261,7 @@ public class PrecompiledContracts {
         public long getGasForData(byte[] data) {
 
             // gas charge for the execution:
-            // minimum 15 and additional 3 for each 32 bytes word (round  up)
+            // minimum 15 and additional 3 for each 32 bytes word (round up)
             if (data == null) {
                 return 15;
             }
@@ -271,12 +277,11 @@ public class PrecompiledContracts {
 
     public static class Sha256 extends PrecompiledContract {
 
-
         @Override
         public long getGasForData(byte[] data) {
 
             // gas charge for the execution:
-            // minimum 60 and additional 12 for each 32 bytes word (round  up)
+            // minimum 60 and additional 12 for each 32 bytes word (round up)
             if (data == null) {
                 return 60;
             }
@@ -294,16 +299,14 @@ public class PrecompiledContracts {
         }
     }
 
-
     public static class Ripempd160 extends PrecompiledContract {
-
 
         @Override
         public long getGasForData(byte[] data) {
 
             // TODO Replace magic numbers with constants
             // gas charge for the execution:
-            // minimum 600 and additional 120 for each 32 bytes word (round  up)
+            // minimum 600 and additional 120 for each 32 bytes word (round up)
             if (data == null) {
                 return 600;
             }
@@ -324,7 +327,6 @@ public class PrecompiledContracts {
             return DataWord.valueOf(result).getData();
         }
     }
-
 
     public static class ECRecover extends PrecompiledContract {
 
@@ -497,7 +499,6 @@ public class PrecompiledContracts {
         }
 
     }
-
 
     public static class Blake2F extends PrecompiledContract {
 

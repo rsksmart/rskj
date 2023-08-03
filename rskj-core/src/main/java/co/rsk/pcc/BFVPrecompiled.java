@@ -5,78 +5,75 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 
 public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
-    public enum Op {
-        ADD, SUB, MUL
-    }
+
     private final Op op;
 
     public BFVPrecompiled(Op operation) {
         this.op = operation;
-//        this.bfv = new BFV();
+        // this.bfv = new BFV();
     }
 
     @Override
     public long getGasForData(byte[] data) {
-        // todo(fedejinich) this will be refactored into this.op.getGas
-        switch (this.op) {
-            case ADD: {
-                return bfvAddGas(data);
-            }
-            case SUB: {
-                return bfvSubGas(data);
-            }
-            case MUL: {
-                return bfvMulGas(data);
-            }
-            default:
-                // todo(fedejinich) should i throw an exception?
-                return 0;
-        }
-    }
-
-    private long bfvAddGas(byte[] data) {
-        throw new NotImplementedException("bfv add gas should be implemented");
-    }
-    private long bfvSubGas(byte[] data) {
-        throw new NotImplementedException("bfv sub gas should be implemented");
-    }
-    private long bfvMulGas(byte[] data) {
-        throw new NotImplementedException("bfv mul gas should be implemented");
+        return this.op.gasForData(data);
     }
 
     @Override
     public byte[] execute(byte[] data) throws VMException {
-        // todo(fedejinich) this will be refactored into this.op.execute(data)
-        switch (this.op) {
-            case ADD: {
-                return bfvAdd(data);
-            }
-            case SUB: {
-                return bfvSub(data);
-            }
-            case MUL: {
-               return bfvMul(data);
-            }
-            default:
-                throw new VMException("no bfv operation provided");
-        }
+        return this.op.executeOperation(data);
     }
 
-    private byte[] bfvAdd(byte[] data) {
-//        byte[] el1 =;
-//        byte[] op2=;
-//        int op1Len= el1.length;
-//        int op2Len= op2.length;
-//        return this.bfv.execute(el1, op1Len, op2, op2Len);
-        System.out.println("bfv add");
-       throw new NotImplementedException("bfv add should be implemented");
-    }
+    public enum Op {
+        ADD // addition
+        {
+            @Override
+            public long gasForData(byte[] data) {
+                throw new NotImplementedException("bfv add gas should be implemented");
+            }
 
-    private byte[] bfvSub(byte[] data) {
-        throw new NotImplementedException("bfv sub should be implemented");
-    }
+            @Override
+            public byte[] executeOperation(byte[] data) {
+                throw new NotImplementedException("bfv add should be implemented");
+            }
+        },
+        SUB // subtraction
+        {
+            @Override
+            public long gasForData(byte[] data) {
+                throw new NotImplementedException("bfv sub gas should be implemented");
+            }
 
-    private byte[] bfvMul(byte[] data) {
-        throw new NotImplementedException("bfv mul should be implemented");
+            @Override
+            public byte[] executeOperation(byte[] data) {
+                throw new NotImplementedException("bfv sub should be implemented");
+            }
+        },
+        MUL // multiplication (with relinearization)
+        {
+            @Override
+            public long gasForData(byte[] data) {
+                throw new NotImplementedException("bfv mul gas should be implemented");
+            }
+
+            @Override
+            public byte[] executeOperation(byte[] data) {
+                throw new NotImplementedException("bfv mul should be implemented");
+            }
+        },
+        TRAN // transcipher from PASTA
+        {
+            @Override
+            public long gasForData(byte[] data) {
+                throw new NotImplementedException("bfv tran gas should be implemented");
+            }
+
+            @Override
+            public byte[] executeOperation(byte[] data) {
+                throw new NotImplementedException("bfv tran should be implemented");
+            }
+        };
+
+        public abstract long gasForData(byte[] data);
+        public abstract byte[] executeOperation(byte[] data);
     }
 }
