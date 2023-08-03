@@ -4,14 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Utils;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
@@ -19,6 +13,7 @@ import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -210,8 +205,42 @@ class P2shErpFederationTest {
     }
 
     @Test
-    void spendFromP2shP2wshErpFed() {
+    void spendFromP2shP2wshAddress() throws Exception {
+        NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
 
+        String wifPrivKey1 = "cMgRyc5tpWLWKfs2gSv6zRXu2ZaQSqwVtU6oNbQneSgCB13JCQNA";
+        String wifPrivKey2 = "cW19KKSRKHATNb4oPPvyaSqLCs82nqFyZqQbVY6zaD82YtERYL51";
+        String wifPrivKey3 = "cUq9ruifqrtMPMwwu6SrKPr6A7egwhvPZxwE7uMmWQdn11LsHpWi";
+
+        BtcECKey key1 = DumpedPrivateKey.fromBase58(networkParameters, wifPrivKey1).getKey();
+        BtcECKey key2 = DumpedPrivateKey.fromBase58(networkParameters, wifPrivKey2).getKey(); // DA BIEN
+        BtcECKey key3 = DumpedPrivateKey.fromBase58(networkParameters, wifPrivKey3).getKey();
+
+        List<BtcECKey> standardKeys = new ArrayList<>();
+        standardKeys.add(key1);
+        standardKeys.add(key2);
+        standardKeys.add(key3);
+
+        Script redeemScript = new ScriptBuilder().createRedeemScript(standardKeys.size()/2+1, standardKeys);
+
+        Coin prevValue = Coin.valueOf(10_000);
+        Coin value = Coin.valueOf(10_000);
+        Coin fee = Coin.valueOf(1_000);
+
+        assertDoesNotThrow(() -> FederationTestUtils.spendFromP2shP2wshAddress(
+            networkParameters,
+            redeemScript,
+            standardKeys,
+            Sha256Hash.wrap("e692d0daeda4b41fc38304df2d8b6ad537e11c687c29d6334d4f3026ab859621"),
+            0,
+            Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"),
+            prevValue,
+            value.minus(fee)
+        ));
+    }
+
+    @Test
+    void spendFromP2shP2wshErpFed() throws Exception {
         NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
         long activationDelay = BridgeTestNetConstants.getInstance().getErpFedActivationDelay();
 
@@ -221,39 +250,35 @@ class P2shErpFederationTest {
         );
 
         List<BtcECKey> emergencyKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"erp1", "erp2", "erp3", "erp4"},
-                true
+            new String[]{"erp1", "erp2", "erp3", "erp4"},
+            true
         );
 
-        P2shErpFederation p2shErpFed = new P2shErpFederation(
-                FederationMember.getFederationMembersFromKeys(standardKeys),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                0L,
-                networkParameters,
-                emergencyKeys,
-                activationDelay,
-                mock(ActivationConfig.ForBlock.class)
+        Script standardRedeem = new ScriptBuilder().createRedeemScript(standardKeys.size()/2+1, standardKeys);
+        Script emergencyRedeem = new ScriptBuilder().createRedeemScript(emergencyKeys.size()/2+1, emergencyKeys);
+        Script redeemScript = P2shErpFederationRedeemScriptParser.createP2shP2wshErpRedeemScript(standardRedeem, emergencyRedeem, activationDelay);
+
+  /*    Script p2shP2wshOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
+        Address segwitAddress = Address.fromP2SHScript(
+            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
+            p2shP2wshOutputScript
         );
 
-        Coin value = Coin.valueOf(1_000_000);
-        Coin fee = Coin.valueOf(10_000);
-        BtcTransaction fundTx = new BtcTransaction(networkParameters);
-        fundTx.addOutput(value, p2shErpFed.getAddress());
+        System.out.println(segwitAddress);*/
 
-        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(
-                networkParameters,
-                "destination"
-        );
+        Coin prevValue = Coin.valueOf(10_000);
+        Coin value = Coin.valueOf(10_000);
+        Coin fee = Coin.valueOf(1_000);
 
         assertDoesNotThrow(() -> FederationTestUtils.spendFromP2shP2wshErpFed(
-                networkParameters,
-                p2shErpFed,
-                standardKeys,
-                fundTx.getHash(),
-                0,
-                destinationAddress,
-                value.minus(fee),
-                false
+            networkParameters,
+            redeemScript,
+            standardKeys,
+            Sha256Hash.wrap("357007049d84ff1b440d0ace28218e0b00970be57081ece7ae85dfb65ad59b94"),
+            0,
+            Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"),
+            prevValue,
+            value.minus(fee)
         ));
     }
 
