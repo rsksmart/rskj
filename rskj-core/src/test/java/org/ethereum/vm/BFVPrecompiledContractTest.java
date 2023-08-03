@@ -37,8 +37,6 @@ import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.typesafe.config.ConfigValueFactory;
-
 import co.rsk.config.TestSystemProperties;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
@@ -127,6 +125,32 @@ class BFVPrecompiledContractTest {
         }
 
         fail("bfv mul unexpected behavior");
+    }
+
+    @Test
+    public void bfvTranTest() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIPBFV)).thenReturn(true);
+        byte[] data = Hex.decode(
+                "18c547e4f7b0f325ad1e56f57e26c745b09a3e503d86e00e5255ff7f715d3d1c000000000000000000000000000000000000000000000000000000000000001c73b1693892219d736caba55bdb67216e485557ea6b6af75f37096c9aa6a5a75feeb940b1d03b21e36b0e47e79769f095fe2ab855bd91e3a38756b7d75a9c4549");
+        DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000001000014");
+        PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
+
+        try {
+            contract.execute(data);
+        } catch (NotImplementedException e) {
+            assertEquals("bfv tran should be implemented", e.getMessage());
+            try {
+                contract.getGasForData(data);
+            } catch (NotImplementedException n) {
+                assertEquals("bfv tran gas should be implemented", n.getMessage());
+                return;
+            }
+        } catch (VMException e) {
+            fail("execute() unexpected error");
+        }
+
+        fail("bfv tran unexpected behavior");
     }
 
     @Test
