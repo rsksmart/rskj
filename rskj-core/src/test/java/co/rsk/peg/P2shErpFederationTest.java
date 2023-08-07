@@ -240,7 +240,7 @@ class P2shErpFederationTest {
     }
 
     @Test
-    void spendFromP2shP2wshErpFed() throws Exception {
+    void spendFromP2shP2wshErpStandardFed() throws Exception {
         NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
         long activationDelay = BridgeTestNetConstants.getInstance().getErpFedActivationDelay();
 
@@ -258,23 +258,71 @@ class P2shErpFederationTest {
         Script emergencyRedeem = new ScriptBuilder().createRedeemScript(emergencyKeys.size()/2+1, emergencyKeys);
         Script redeemScript = P2shErpFederationRedeemScriptParser.createP2shP2wshErpRedeemScript(standardRedeem, emergencyRedeem, activationDelay);
 
-  /*    Script p2shP2wshOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
+        Script p2shP2wshOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
         Address segwitAddress = Address.fromP2SHScript(
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             p2shP2wshOutputScript
         );
 
-        System.out.println(segwitAddress);*/
+        System.out.println(segwitAddress);
 
         Coin prevValue = Coin.valueOf(10_000);
         Coin value = Coin.valueOf(10_000);
         Coin fee = Coin.valueOf(1_000);
 
-        assertDoesNotThrow(() -> FederationTestUtils.spendFromP2shP2wshErpFed(
+        assertDoesNotThrow(() -> FederationTestUtils.spendFromP2shP2wshErpStandardFed(
             networkParameters,
             redeemScript,
             standardKeys,
             Sha256Hash.wrap("357007049d84ff1b440d0ace28218e0b00970be57081ece7ae85dfb65ad59b94"),
+            0,
+            Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"),
+            prevValue,
+            value.minus(fee)
+        ));
+    }
+
+    @Test
+    void spendFromP2shP2wshErpEmergencyFed() throws Exception {
+        NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
+        long activationDelay = 30;
+        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(activationDelay);
+/*        byte[] serializedCsvValueTest = Utils.signedLongToByteArrayLE(activationDelayTest);
+        long activationDelay = BridgeTestNetConstants.getInstance().getErpFedActivationDelay();
+        */
+
+        List<BtcECKey> standardKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10"},
+            true
+        );
+
+        List<BtcECKey> emergencyKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"erp1", "erp2", "erp3", "erp4"},
+            true
+        );
+
+        Script standardRedeem = new ScriptBuilder().createRedeemScript(standardKeys.size()/2+1, standardKeys);
+        Script emergencyRedeem = new ScriptBuilder().createRedeemScript(emergencyKeys.size()/2+1, emergencyKeys);
+        Script redeemScript = P2shErpFederationRedeemScriptParser.createP2shP2wshErpRedeemScript(standardRedeem, emergencyRedeem, activationDelay);
+
+        Script p2shP2wshOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
+        Address segwitAddress = Address.fromP2SHScript(
+          NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
+          p2shP2wshOutputScript
+        );
+        System.out.println(segwitAddress);
+
+        Coin prevValue = Coin.valueOf(10_000);
+        Coin value = Coin.valueOf(10_000);
+        Coin fee = Coin.valueOf(1_000);
+
+        assertDoesNotThrow(() -> FederationTestUtils.spendFromP2shP2wshErpEmergencyFed(
+            networkParameters,
+            redeemScript,
+            activationDelay,
+            emergencyKeys,
+            Sha256Hash.wrap("c41ec145ffef0a3fd7c523c9baddbc1abe9d3bccafe56f7642df8b0cafc938a5"), // first tx
+            // Sha256Hash.wrap("57637d943931c5581fe8f50512c6fa60cdb674acdb60ca2ff22d8b26908e0d9c") // second tx
             0,
             Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"),
             prevValue,
