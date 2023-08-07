@@ -241,11 +241,11 @@ class P2shErpFederationTest {
 
     @Test
     void spendFromP2shP2wshErpStandardFed() throws Exception {
-        NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
+        NetworkParameters networkParameters = BridgeMainNetConstants.getInstance().getBtcParams();
         long activationDelay = BridgeTestNetConstants.getInstance().getErpFedActivationDelay();
 
         List<BtcECKey> standardKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10"},
+            new String[]{"fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10", "fed11", "fed12"},
             true
         );
 
@@ -258,25 +258,27 @@ class P2shErpFederationTest {
         Script emergencyRedeem = new ScriptBuilder().createRedeemScript(emergencyKeys.size()/2+1, emergencyKeys);
         Script redeemScript = P2shErpFederationRedeemScriptParser.createP2shP2wshErpRedeemScript(standardRedeem, emergencyRedeem, activationDelay);
 
+        int redeemScriptLength = redeemScript.getProgram().length;
+
         Script p2shP2wshOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
         Address segwitAddress = Address.fromP2SHScript(
-            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
+            networkParameters,
             p2shP2wshOutputScript
         );
 
-        System.out.println(segwitAddress);
+        System.out.println(segwitAddress); // 3Ho5spvK6uLEjkNynYE3Brya6esGC3QzSD
 
-        Coin prevValue = Coin.valueOf(10_000);
-        Coin value = Coin.valueOf(10_000);
+        Coin prevValue = Coin.valueOf(100_000);
+        Coin value = Coin.valueOf(99_000);
         Coin fee = Coin.valueOf(1_000);
 
         assertDoesNotThrow(() -> FederationTestUtils.spendFromP2shP2wshErpStandardFed(
             networkParameters,
             redeemScript,
             standardKeys,
-            Sha256Hash.wrap("357007049d84ff1b440d0ace28218e0b00970be57081ece7ae85dfb65ad59b94"),
+            Sha256Hash.wrap("b2bb57061c435d6f80f24670ba8fc16ccf6560e8324c3a790449e2e9920d63c9"),
             0,
-            Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"),
+            Address.fromBase58(networkParameters,"12MXsCtte9onzqaHwN5VcnwZKGd7oDSsQq"),
             prevValue,
             value.minus(fee)
         ));
@@ -284,7 +286,7 @@ class P2shErpFederationTest {
 
     @Test
     void spendFromP2shP2wshErpEmergencyFed() throws Exception {
-        NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
+        NetworkParameters networkParameters = BridgeMainNetConstants.getInstance().getBtcParams();
         long activationDelay = 30;
         byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(activationDelay);
 /*        byte[] serializedCsvValueTest = Utils.signedLongToByteArrayLE(activationDelayTest);
@@ -321,8 +323,7 @@ class P2shErpFederationTest {
             redeemScript,
             activationDelay,
             emergencyKeys,
-            Sha256Hash.wrap("c41ec145ffef0a3fd7c523c9baddbc1abe9d3bccafe56f7642df8b0cafc938a5"), // first tx
-            // Sha256Hash.wrap("57637d943931c5581fe8f50512c6fa60cdb674acdb60ca2ff22d8b26908e0d9c") // second tx
+            Sha256Hash.wrap("b2bb57061c435d6f80f24670ba8fc16ccf6560e8324c3a790449e2e9920d63c9"), // mainnet tx
             0,
             Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"),
             prevValue,
