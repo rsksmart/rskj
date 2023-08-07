@@ -12,6 +12,7 @@ public class OpCounters {
     public int terminal = 0;
     public int account = 0;
     public int terminalAccount = 0;
+    public int recovered = 0;
 
     @Setup(Level.Iteration)
     public void setupIteration() {
@@ -22,6 +23,7 @@ public class OpCounters {
         this.terminal = 0;
         this.account = 0;
         this.terminalAccount = 0;
+        this.recovered = 0;
     }
 
 }

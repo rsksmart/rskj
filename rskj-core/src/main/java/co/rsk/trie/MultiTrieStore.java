@@ -94,7 +94,7 @@ public class MultiTrieStore implements TrieStore {
             if (message == null) {
                 continue;
             }
-            return Optional.of(TrieDTO.decode(message, this));
+            return Optional.of(TrieDTO.decodeFromMessage(message, this));
         }
 
         return Optional.empty();

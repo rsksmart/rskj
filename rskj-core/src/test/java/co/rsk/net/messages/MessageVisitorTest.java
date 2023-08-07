@@ -310,7 +310,7 @@ class MessageVisitorTest {
         target.apply(message);
 
         verify(blockProcessor, times(1))
-                .processStateChunkRequest(sender, new StateChunkRequestMessage(1l, 0l, 0L));
+                .processStateChunkRequest(sender, new StateChunkRequestMessage(1l, 0l, 0L, 0L));
     }
 
     @Test

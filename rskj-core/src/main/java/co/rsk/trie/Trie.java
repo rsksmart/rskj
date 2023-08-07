@@ -26,6 +26,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.util.HexUtils;
 import co.rsk.util.NodeStopper;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
@@ -154,6 +155,9 @@ public class Trie {
         checkValueLength();
     }
 
+    public void setChildrenSize(VarInt childrenSize) {
+        this.childrenSize = childrenSize;
+    }
     /**
      * Deserialize a Trie, either using the original format or RSKIP 107 format, based on version flags.
      * The original trie wasted the first byte by encoding the arity, which was always 2. We use this marker to
@@ -656,7 +660,6 @@ public class Trie {
         if (sharedPath.length() > key.length()) {
             return null;
         }
-
         int commonPathLength = key.commonPath(sharedPath).length();
         if (commonPathLength < sharedPath.length()) {
             return null;

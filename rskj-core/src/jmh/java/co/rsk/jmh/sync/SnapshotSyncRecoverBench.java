@@ -7,8 +7,8 @@ import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.HexUtils;
 import com.google.common.collect.Lists;
-import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.vm.trace.Op;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 1, time = 100, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 20, time = 1)
 @Fork(1)
-public class SnapshotSyncBench {
+public class SnapshotSyncRecoverBench {
 
     private TrieStore trieStore;
     private TrieDTOInOrderIterator iterator;
@@ -52,38 +52,24 @@ public class SnapshotSyncBench {
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public void read(OpCounters counters) {
-        if (this.iterator.hasNext()) {
-            readNode(this.iterator, counters);
-        } else {
-            this.iterator = new TrieDTOInOrderIterator(this.trieStore, this.root, 0);
-            readNode(this.iterator, counters);
-        }
-    }
-
-    @Benchmark
     @BenchmarkMode(Mode.SingleShotTime)
     @OutputTimeUnit(TimeUnit.SECONDS)
     @Warmup(iterations = 0)
     @Measurement(iterations = 1)
-    public void readAll(OpCounters counters) {
+    public void readAllAndRecover(OpCounters counters) {
         this.iterator = new TrieDTOInOrderIterator(this.trieStore, this.root, 0);
-        List<byte[]> nodes = Lists.newArrayList();
+        List<TrieDTO> nodes = Lists.newArrayList();
         while (this.iterator.hasNext()) {
-            nodes.add(readNode(this.iterator, counters).getEncoded());
+            nodes.add(readNode(this.iterator, counters));
         }
-        System.out.println("----- Final bytesRead:" + counters.bytesRead);
-        System.out.println("----- Final bytesSend:" + counters.bytesSend);
-        System.out.println("----- Final nodes:" + counters.nodes);
-        System.out.println("----- Final recovered:" + counters.recovered);
-        System.out.println("----- Final nodes bytes:" + nodes.size());
-        System.out.println("----- Final nodes terminal:" + counters.terminal);
-        System.out.println("----- Final nodes account:" + counters.account);
-        System.out.println("----- Final nodes terminalAccount:" + counters.terminalAccount);
-    }
+        TrieDTO[] nodeArray = nodes.toArray(new TrieDTO[]{});
+        Optional<TrieDTO> recovered = TrieDTOInOrderRecoverer.recoverTrie(nodeArray);
+        byte[] recoveredBytes = recovered.get().toMessage();
+        Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(recoveredBytes));
+        System.out.println("Root: " + HexUtils.toJsonHex(this.root));
+        System.out.println("Recovered: " + hash.toHexString());
 
+    }
 
     private TrieDTO readNode(TrieDTOInOrderIterator it, OpCounters counters) {
         final TrieDTO element = it.next();
@@ -96,7 +82,16 @@ public class SnapshotSyncBench {
         counters.terminal += element.isTerminal() ? 1 : 0;
         counters.account += element.isAccountLevel() ? 1 : 0;
         counters.terminalAccount += element.isTerminal() && element.isAccountLevel() ? 1 : 0;
-        return element;
+        return recovered;
+    }
+
+
+    public static void main(String[] args) {
+        final SnapshotSyncRecoverBench snapshotSyncRecoverBench = new SnapshotSyncRecoverBench();
+        final RskContextState contextState = new RskContextState();
+        contextState.setup();
+        snapshotSyncRecoverBench.setup(contextState);
+        snapshotSyncRecoverBench.readAllAndRecover(new OpCounters());
     }
 
 }

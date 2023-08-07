@@ -36,7 +36,6 @@ public class SnapshotProcessor {
 
     private long messageId = 0;
     private boolean enabled = false;
-    private final Map<String, Iterator<TrieDTO>> iterators;
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
     private SnapSyncState snapSyncState;
@@ -111,12 +110,16 @@ public class SnapshotProcessor {
         this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
         this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
         logger.debug("State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
-        if(!message.isComplete()) {
+        if (!message.isComplete()) {
             // request another chunk
-            requestState(peer, message.getFrom() + trieElements.size(), message.getBlockNumber());
+            requestState(peer, message.getTo(), message.getBlockNumber());
         } else {
-            logger.info("State Completed! {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
-            stopSyncing();
+            logger.debug("State Completed! {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
+
+            logger.debug("Starting again the infinite loop!");
+            this.stateSize = BigInteger.ZERO;
+            this.stateChunkSize = BigInteger.ZERO;
+            requestState(peer, 0l, 0l);
         }
     }
 
@@ -128,12 +131,8 @@ public class SnapshotProcessor {
         Long blockNumber = request.getBlockNumber() > 0L ? request.getBlockNumber() : blockchain.getBestBlock().getNumber() - 10;
 
         List<byte[]> trieEncoded = new ArrayList<>();
-        Iterator<TrieDTO> it = iterators.get(sender.getPeerNodeID().toString());
-        if (it == null || request.getFrom() == 0l) {
-            Block block = blockchain.getBlockByNumber(blockNumber);
-            it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot());
-            iterators.put(sender.getPeerNodeID().toString(), it);
-        }
+        Block block = blockchain.getBlockByNumber(blockNumber);
+        TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom());
 
         long rawSize = 0L;
         long compressedSize = 0L;
@@ -223,7 +222,7 @@ public class SnapshotProcessor {
 
     private void requestState(Peer peer, long from, long blockNumber) {
         logger.debug("Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
-        StateChunkRequestMessage message = new StateChunkRequestMessage(messageId++, blockNumber, from);
+        StateChunkRequestMessage message = new StateChunkRequestMessage(messageId++, blockNumber, from, chunkSize);
         peer.sendMessage(message);
     }
 

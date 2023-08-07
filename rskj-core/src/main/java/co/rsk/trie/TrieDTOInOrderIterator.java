@@ -28,16 +28,46 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     private final Deque<TrieDTO> visiting;
     private final TrieStore ds;
 
+
     public TrieDTOInOrderIterator(TrieStore ds, byte[] root) {
+        this(ds, root, 0L);
+    }
+
+    public TrieDTOInOrderIterator(TrieStore ds, byte[] root, long initialChildrenSize) {
         Objects.requireNonNull(root);
         this.ds = ds;
         this.visiting = new LinkedList<>();
         // find the leftmost node, pushing all the intermediate nodes onto the visiting stack
-        byte[] node = this.ds.retrieveValue(root);
-        TrieDTO nodeDTO = TrieDTO.decode(node, this.ds);
-        visiting.push(nodeDTO);
-        pushLeftmostNode(nodeDTO);
+        TrieDTO nodeDTO = pushNode(root, visiting);
+        findByChildrenSize(initialChildrenSize, nodeDTO, visiting);
         // now the leftmost unvisited node is on top of the visiting stack
+    }
+
+    private TrieDTO findByChildrenSize(long childrenSize, TrieDTO nodeDTO, Deque<TrieDTO> visiting) {
+        if (!nodeDTO.isTerminal()) {
+            if (nodeDTO.getLeftHash() != null) {
+                TrieDTO left = getNode(nodeDTO.getLeftHash());
+                if (childrenSize < left.getTotalSize()) {
+                    visiting.push(left);
+                    return findByChildrenSize(childrenSize, left, visiting);
+                } else {
+                    final long leftAndParent = left.getTotalSize() + nodeDTO.getSize();
+                    if (childrenSize <= leftAndParent) {
+                        return this.next();
+                    } else if (nodeDTO.getRightHash() != null) {
+                        this.visiting.pop(); // Remove parent when going right
+                        TrieDTO right = getNode(nodeDTO.getRightHash());
+                        final long maxSize = leftAndParent + right.getTotalSize();
+                        if (childrenSize < maxSize) {
+                            visiting.push(right);
+                            return findByChildrenSize(childrenSize - leftAndParent, right, visiting);
+                        }
+                        throw new RuntimeException("Invalid ChildrenSize " + childrenSize + ". Bigger than the size of the trie:" + maxSize);
+                    }
+                }
+            }
+        }
+        return nodeDTO;
     }
 
     /**
@@ -49,10 +79,7 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
         TrieDTO visiting = this.visiting.pop();
         // if the node has a right child, its leftmost node is next
         if (visiting.getRightHash() != null) {
-            byte[] rightSrc = this.ds.retrieveValue(visiting.getRightHash());
-            TrieDTO rightNode = TrieDTO.decode(rightSrc, this.ds);
-            //TrieKeySlice rightNodeKey = visiting.getNodeKey().rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
-            this.visiting.push(rightNode); // push the right node
+            TrieDTO rightNode = pushNode(visiting.getRightHash(), this.visiting);
 
             // find the leftmost node of the right child
             pushLeftmostNode(rightNode);
@@ -75,11 +102,19 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     private void pushLeftmostNode(TrieDTO nodeKey) {
         // find the leftmost node
         if (nodeKey.getLeftHash() != null) {
-            byte[] leftSrc = this.ds.retrieveValue(nodeKey.getLeftHash());
-            TrieDTO leftNode = TrieDTO.decode(leftSrc, this.ds);
-            //TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
-            visiting.push(leftNode); // push the left node
+            TrieDTO leftNode = pushNode(nodeKey.getLeftHash(), visiting);
             pushLeftmostNode(leftNode); // recurse on next left node
         }
+    }
+
+    private TrieDTO pushNode(byte[] root, Deque<TrieDTO> visiting) {
+        TrieDTO nodeDTO = getNode(root);
+        visiting.push(nodeDTO);
+        return nodeDTO;
+    }
+
+    private TrieDTO getNode(byte[] root) {
+        byte[] node = this.ds.retrieveValue(root);
+        return TrieDTO.decodeFromMessage(node, this.ds);
     }
 }

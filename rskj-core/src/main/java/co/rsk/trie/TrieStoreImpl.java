@@ -172,7 +172,7 @@ public class TrieStoreImpl implements TrieStore {
             return Optional.empty();
         }
 
-        TrieDTO trie = TrieDTO.decode(message, this);
+        TrieDTO trie = TrieDTO.decodeFromMessage(message, this);
         return Optional.of(trie);
     }
 
