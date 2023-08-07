@@ -1078,7 +1078,7 @@ public class Web3Impl implements Web3 {
         if (null == bnOrId) {
             block = blockchain.getBestBlock();
         } else {
-            BnTagOrNumberValidator.isValid(bnOrId);
+            BnTagOrNumberValidator.validate(bnOrId);
 
             Optional<Block> optBlock = web3InformationRetriever.getBlock(bnOrId);
             if (!optBlock.isPresent()) {

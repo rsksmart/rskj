@@ -84,6 +84,7 @@ public class Web3InformationRetriever {
                     break;
                 case SAFE:
                 case FINALIZED:
+                default:
                     throw RskJsonRpcRequestException.unknownBLockException();
             }
         } else {

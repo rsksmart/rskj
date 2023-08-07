@@ -65,7 +65,7 @@ class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData(""); // no data
 
-        long estimatedGas = estimateGas(eth, args);
+        long estimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
         assertEquals(21000, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
@@ -85,7 +85,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Try to estimate with not enough gas
         args.setGas(HexUtils.toQuantityJsonHex(1000));
-        e = Assertions.assertThrows(GasCost.InvalidGasException.class, () -> estimateGas(eth, args));
+        e = Assertions.assertThrows(GasCost.InvalidGasException.class, () -> estimateGas(eth, args, world.getBlockChain().getBestBlock()));
         assertEquals("Got invalid gas value, tried operation: 1000 - 21000", e.getMessage());
     }
 
@@ -132,7 +132,7 @@ class EthModuleGasEstimationDSLTest {
         assertFalse(callConstant.getMovedRemainingGasToChild()); // it just moved STIPEND_CALL (2300) to child
 
         // Estimate the gas to use
-        long estimatedGas = estimateGas(eth, args);
+        long estimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
         assertEquals(35728, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
@@ -193,23 +193,23 @@ class EthModuleGasEstimationDSLTest {
         ProgramResult callConstantResult = eth.callConstant(args, block);
 
         long clearStorageGasUsed = callConstantResult.getGasUsed();
-        long clearStoreageEstimatedGas = estimateGas(eth, args);
-        assertEquals(26909, clearStoreageEstimatedGas);
+        long clearStorageEstimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
+        assertEquals(26909, clearStorageEstimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
         assertTrue(0 < clearStorageGasUsed && clearStorageGasUsed < initStorageGasUsed);
-        assertTrue(clearStoreageEstimatedGas < initStorageGasUsed);
-        assertTrue(clearStoreageEstimatedGas > clearStorageGasUsed);
-        assertEquals(clearStoreageEstimatedGas,
+        assertTrue(clearStorageEstimatedGas < initStorageGasUsed);
+        assertTrue(clearStorageEstimatedGas > clearStorageGasUsed);
+        assertEquals(clearStorageEstimatedGas,
                 clearStorageGasUsed + callConstantResult.getDeductedRefund());
 
         // Call same transaction with estimated gas
-        args.setGas(HexUtils.toQuantityJsonHex(clearStoreageEstimatedGas));
+        args.setGas(HexUtils.toQuantityJsonHex(clearStorageEstimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         // Call same transaction with estimated gas minus 1
-        args.setGas(HexUtils.toQuantityJsonHex(clearStoreageEstimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(clearStorageEstimatedGas - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
 
         // estimate gas for updating a storage cell from non-zero to non-zero
@@ -218,22 +218,22 @@ class EthModuleGasEstimationDSLTest {
                 "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000001"); // setValue(1,1)
         long updateStorageGasUsed = eth.callConstant(args, block).getGasUsed();
-        long updateStoreageEstimatedGas = estimateGas(eth, args);
-        assertEquals(26973, updateStoreageEstimatedGas);
+        long updateStorageEstimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
+        assertEquals(26973, updateStorageEstimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
         // The estimated gas should be less than the gas used gas for initializing a storage cell
         assertTrue(updateStorageGasUsed < initStorageGasUsed);
-        assertTrue(updateStoreageEstimatedGas < initStorageGasUsed);
-        assertEquals(updateStoreageEstimatedGas, updateStorageGasUsed);
+        assertTrue(updateStorageEstimatedGas < initStorageGasUsed);
+        assertEquals(updateStorageEstimatedGas, updateStorageGasUsed);
 
         // Call same transaction with estimated gas
-        args.setGas("0x" + Long.toString(updateStoreageEstimatedGas, 16));
+        args.setGas("0x" + Long.toString(updateStorageEstimatedGas, 16));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         // Call same transaction with estimated gas minus 1
-        args.setGas("0x" + Long.toString(updateStoreageEstimatedGas - 1, 16));
+        args.setGas("0x" + Long.toString(updateStorageEstimatedGas - 1, 16));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
 
         // Check against another already initialized (2,42) storage cell
@@ -253,13 +253,13 @@ class EthModuleGasEstimationDSLTest {
 
         ProgramResult anotherCallConstantResult = eth.callConstant(args, block);
         long anotherClearStorageGasUsed = anotherCallConstantResult.getGasUsed();
-        long anotherClearStorageEstimatedGas = estimateGas(eth, args);
+        long anotherClearStorageEstimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
         assertEquals(26909, anotherClearStorageEstimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
         assertEquals(initStorageGasUsed, anotherInitStorageGasUsed);
-        assertEquals(clearStoreageEstimatedGas, anotherClearStorageEstimatedGas);
+        assertEquals(clearStorageEstimatedGas, anotherClearStorageEstimatedGas);
         assertEquals(clearStorageGasUsed, anotherClearStorageGasUsed);
     }
 
@@ -288,7 +288,7 @@ class EthModuleGasEstimationDSLTest {
         callArguments.setGas(HexUtils.toQuantityJsonHex(gasEstimationCap + 1_000_000_000)); // exceeding the gas cap
         callArguments.setData("0x31fe52e8"); // call outOfGas()
 
-        String estimatedGas = eth.estimateGas(callArguments);
+        String estimatedGas = eth.estimateGas(callArguments, world.getBlockChain().getBestBlock());
         assertEquals("0x67c280", estimatedGas);
 
         assertEquals(gasEstimationCap, Long.decode(estimatedGas).longValue());
@@ -323,7 +323,7 @@ class EthModuleGasEstimationDSLTest {
         ProgramResult callConstant = eth.callConstant(args, block);
         long callConstantGasUsed = callConstant.getGasUsed();
 
-        long estimatedGas = estimateGas(eth, args);
+        long estimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
         assertEquals(40771, estimatedGas);
 
         assertTrue(estimatedGas > callConstantGasUsed);
@@ -399,7 +399,7 @@ class EthModuleGasEstimationDSLTest {
 
         long callConstantGasUsed = callConstant.getGasUsed();
 
-        long estimatedGas = estimateGas(eth, args);
+        long estimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
         assertEquals(48841, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
@@ -475,7 +475,7 @@ class EthModuleGasEstimationDSLTest {
         assertTrue(callConstant.getMovedRemainingGasToChild());
         assertTrue(callConstant.isCallWithValuePerformed());
 
-        long estimatedGas = estimateGas(eth, args);
+        long estimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
         assertEquals(39459, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
@@ -548,7 +548,7 @@ class EthModuleGasEstimationDSLTest {
         assertTrue(callConstant.getMovedRemainingGasToChild());
         assertTrue(callConstant.isCallWithValuePerformed());
 
-        long estimatedGas = estimateGas(eth, args);
+        long estimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
         assertEquals(48674, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
@@ -601,7 +601,7 @@ class EthModuleGasEstimationDSLTest {
         assertEquals(ByteUtil.byteArrayToLong(callWithValueReceipt.getGasUsed()), gasUsed);
 
         // Estimate the gas to use
-        long estimatedGas = estimateGas(eth, args);
+        long estimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
         assertEquals(34996, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
@@ -682,7 +682,7 @@ class EthModuleGasEstimationDSLTest {
 
         long callConstantGasUsed = callConstant.getGasUsed();
 
-        long estimatedGas = estimateGas(eth, args);
+        long estimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
         assertEquals(84210, estimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
@@ -758,7 +758,7 @@ class EthModuleGasEstimationDSLTest {
 
         long callConstantGasUsed = callConstant.getGasUsed();
 
-        long estimatedGas = estimateGas(eth, args);
+        long estimatedGas = estimateGas(eth, args, world.getBlockChain().getBestBlock());
         assertEquals(84200, estimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
@@ -784,8 +784,8 @@ class EthModuleGasEstimationDSLTest {
         return localCallResult.getException() == null;
     }
 
-    private long estimateGas(EthModuleTestUtils.EthModuleGasEstimation eth, CallArguments args) {
-        return Long.parseLong(eth.estimateGas(args).substring("0x".length()), 16);
+    private long estimateGas(EthModuleTestUtils.EthModuleGasEstimation eth, CallArguments args, Block block) {
+        return Long.parseLong(eth.estimateGas(args, block).substring("0x".length()), 16);
     }
 
     // todo this is duplicated code, should be extracted into a test util

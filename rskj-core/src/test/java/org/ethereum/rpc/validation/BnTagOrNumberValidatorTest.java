@@ -28,66 +28,66 @@ class BnTagOrNumberValidatorTest {
     @Test
     void testValidHexBlockNumberOrId() {
         assertDoesNotThrow(() -> {
-            BnTagOrNumberValidator.isValid("0x123");
-            BnTagOrNumberValidator.isValid("0x0123");
-            BnTagOrNumberValidator.isValid("earliest");
-            BnTagOrNumberValidator.isValid("finalized");
-            BnTagOrNumberValidator.isValid("safe");
-            BnTagOrNumberValidator.isValid("latest");
-            BnTagOrNumberValidator.isValid("pending");
+            BnTagOrNumberValidator.validate("0x123");
+            BnTagOrNumberValidator.validate("0x0123");
+            BnTagOrNumberValidator.validate("earliest");
+            BnTagOrNumberValidator.validate("finalized");
+            BnTagOrNumberValidator.validate("safe");
+            BnTagOrNumberValidator.validate("latest");
+            BnTagOrNumberValidator.validate("pending");
         });
     }
 
     @Test
     void testInvalidParameters() {
         assertThrows(RskJsonRpcRequestException.class, () -> {
-            BnTagOrNumberValidator.isValid("0x");
+            BnTagOrNumberValidator.validate("0x");
         });
         assertThrows(RskJsonRpcRequestException.class, () -> {
-            BnTagOrNumberValidator.isValid("0x12j");
+            BnTagOrNumberValidator.validate("0x12j");
         });
         assertThrows(RskJsonRpcRequestException.class, () -> {
-            BnTagOrNumberValidator.isValid("0xGHI");
+            BnTagOrNumberValidator.validate("0xGHI");
         });
         assertThrows(RskJsonRpcRequestException.class, () -> {
-            BnTagOrNumberValidator.isValid("invalid");
+            BnTagOrNumberValidator.validate("invalid");
         });
     }
 
     @Test
     void testValidBlockTagPascalCase() {
         assertDoesNotThrow(() -> {
-            BnTagOrNumberValidator.isValid("Earliest");
-            BnTagOrNumberValidator.isValid("Finalized");
-            BnTagOrNumberValidator.isValid("Safe");
-            BnTagOrNumberValidator.isValid("Latest");
-            BnTagOrNumberValidator.isValid("Pending");
+            BnTagOrNumberValidator.validate("Earliest");
+            BnTagOrNumberValidator.validate("Finalized");
+            BnTagOrNumberValidator.validate("Safe");
+            BnTagOrNumberValidator.validate("Latest");
+            BnTagOrNumberValidator.validate("Pending");
         });
     }
 
     @Test
     void testValidBlockTagUppercase() {
         assertDoesNotThrow(() -> {
-            BnTagOrNumberValidator.isValid("EARLIEST");
-            BnTagOrNumberValidator.isValid("FINALIZED");
-            BnTagOrNumberValidator.isValid("SAFE");
-            BnTagOrNumberValidator.isValid("LATEST");
-            BnTagOrNumberValidator.isValid("PENDING");
+            BnTagOrNumberValidator.validate("EARLIEST");
+            BnTagOrNumberValidator.validate("FINALIZED");
+            BnTagOrNumberValidator.validate("SAFE");
+            BnTagOrNumberValidator.validate("LATEST");
+            BnTagOrNumberValidator.validate("PENDING");
         });
     }
 
     @Test
     void testWhitespaceString() {
-        assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.isValid(" "));
+        assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.validate(" "));
     }
 
     @Test
     void testEmptyString() {
-        assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.isValid(""));
+        assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.validate(""));
     }
 
     @Test
     void testNullString() {
-        assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.isValid(null));
+        assertThrows(RskJsonRpcRequestException.class, () -> BnTagOrNumberValidator.validate(null));
     }
 }

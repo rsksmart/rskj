@@ -26,7 +26,7 @@ public class BnTagOrNumberValidator {
 
     }
 
-    public static void isValid(String parameter) {
+    public static void validate(String parameter) {
         if (parameter == null) {
             throw RskJsonRpcRequestException.invalidParamError("Cannot process null parameter");
         }
