@@ -269,8 +269,8 @@ class P2shErpFederationTest {
         System.out.println(segwitAddress); // 3Ho5spvK6uLEjkNynYE3Brya6esGC3QzSD
 
         Coin prevValue = Coin.valueOf(100_000);
-        Coin value = Coin.valueOf(99_000);
-        Coin fee = Coin.valueOf(1_000);
+        Coin value = Coin.valueOf(100_000);
+        Coin fee = Coin.valueOf(24_000);
 
         assertDoesNotThrow(() -> FederationTestUtils.spendFromP2shP2wshErpStandardFed(
             networkParameters,

@@ -230,9 +230,6 @@ public class FederationTestUtils {
         spendTx.addInput(fundTxHash, outputIndex, redeemScript);
         spendTx.addOutput(value, receiver);
 
-/*        if (signWithEmergencyMultisig) {
-            spendTx.getInput(0).setSequenceNumber(activationDelay);
-        }*/
 
         // Create signatures
         Sha256Hash sigHash = spendTx.hashForWitnessSignature(
@@ -269,8 +266,27 @@ public class FederationTestUtils {
         TransactionWitness txWitness = TransactionWitness.createWitnessErpScript(redeemScript, txSignatures);
         spendTx.setWitness(0, txWitness);
 
+        String rawTx = Hex.toHexString(spendTx.bitcoinSerialize());
+        double estimatedSize = calculateTxSize(txWitness, rawTx);
+
+        Coin fee = prevValue.minus(value);
+        Coin estimatedFeeRate = fee.divide((long) estimatedSize);
+
         // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
         System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
+    }
+
+    public static double calculateTxSize(TransactionWitness txWitness, String rawTx) {
+        int estimatedTotalSize = rawTx.length()/2;
+        int estimatedWitnessSize = 0;
+        for (int i = 0; i < txWitness.getPushCount(); i++) {
+            estimatedWitnessSize += txWitness.getPush(i).length;
+        }
+        int estimatedBaseSize = (estimatedTotalSize - estimatedWitnessSize);
+        double estimatedTxWeight = estimatedTotalSize + 3*estimatedBaseSize;
+        double estimatedTxVirtualSize = Math.max(0.25*estimatedTotalSize + 0.75*estimatedBaseSize, estimatedTxWeight/4);
+
+        return estimatedTxVirtualSize;
     }
 
     public static void spendFromP2shP2wshErpEmergencyFed(
