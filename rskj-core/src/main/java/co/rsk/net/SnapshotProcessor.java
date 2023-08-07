@@ -26,8 +26,6 @@ import java.util.*;
 public class SnapshotProcessor implements InternalService {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
-    private static final String KBYTES = "kbytes";
-
     private final NodeManager nodeManager;
     private final PeerClientFactory peerClientFactory;
     private final Blockchain blockchain;
@@ -38,7 +36,6 @@ public class SnapshotProcessor implements InternalService {
     private boolean connected;
     private long messageId = 0;
     private boolean enabled = false;
-    private final Map<String, Iterator<TrieDTO>> iterators;
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
 
@@ -55,7 +52,6 @@ public class SnapshotProcessor implements InternalService {
         this.connected = false;
         this.chunkSize = chunkSize;
         this.chunkSizeType = chunkSizeType;
-        this.iterators = Maps.newConcurrentMap();
     }
 
     @Override
@@ -92,9 +88,9 @@ public class SnapshotProcessor implements InternalService {
         this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
         this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
         logger.debug("State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
-        if(!message.isComplete()) {
+        if (!message.isComplete()) {
             // request another chunk
-            requestState(peer, message.getFrom() + trieElements.size(), message.getBlockNumber());
+            requestState(peer, message.getTo(), message.getBlockNumber());
         } else {
             logger.debug("State Completed! {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
 
@@ -111,27 +107,22 @@ public class SnapshotProcessor implements InternalService {
         Long blockNumber = request.getBlockNumber() > 0L ? request.getBlockNumber() : blockchain.getBestBlock().getNumber() - 10;
 
         List<byte[]> trieEncoded = new ArrayList<>();
-        Iterator<TrieDTO> it = iterators.get(sender.getPeerNodeID().toString());
-        if (it == null || request.getFrom() == 0l) {
-            Block block = blockchain.getBlockByNumber(blockNumber);
-            it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot());
-            iterators.put(sender.getPeerNodeID().toString(), it);
-        }
+        Block block = blockchain.getBlockByNumber(blockNumber);
+        TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom());
 
-        long i = KBYTES.equals(this.chunkSizeType)? 0l : request.getFrom();
-        long limit = KBYTES.equals(this.chunkSizeType)? chunkSize * 1024 : i + chunkSize;
-        while (it.hasNext() && i < limit) {
+        long readed = 0L;
+        // TODO basic validation of chunk size
+        final long limit = request.getChunkSize() * 1024;
+        while (it.hasNext() && readed < limit) {
             TrieDTO e = it.next();
-            //logger.info("Single node read.");
             byte[] value = e.getEncoded();
             final byte[] element = RLP.encodeElement(value);
             trieEncoded.add(element);
-            //logger.info("Single node calculated.");
-            i = KBYTES.equals(this.chunkSizeType)? i + element.length : i+1;
+            readed += e.getSize();
         }
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
-        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, blockNumber, request.getFrom(), !it.hasNext());
+        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, blockNumber, request.getFrom(), request.getFrom() + readed, !it.hasNext());
         logger.debug("Sending state chunk of {} bytes to node {}", chunkBytes.length, sender.getPeerNodeID());
         sender.sendMessage(responseMessage);
     }
@@ -150,7 +141,7 @@ public class SnapshotProcessor implements InternalService {
 
     private void requestState(Peer peer, long from, long blockNumber) {
         logger.debug("Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
-        StateChunkRequestMessage message = new StateChunkRequestMessage(messageId++, blockNumber, from);
+        StateChunkRequestMessage message = new StateChunkRequestMessage(messageId++, blockNumber, from, chunkSize);
         peer.sendMessage(message);
     }
 

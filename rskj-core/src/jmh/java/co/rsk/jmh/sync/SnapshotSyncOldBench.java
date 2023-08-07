@@ -30,7 +30,7 @@ public class SnapshotSyncOldBench {
             initilizeIterator();
             Trie node = this.iteratorOld.next().getNode();
             System.out.println(" -------- Iterator...");
-            System.out.println(" -------- Bytes size children: " + node.getChildrenSize().value);
+            System.out.println(" -------- Bytes size children: " + node.getLeft().referenceSize() + node.getRight().referenceSize());
             // Reads the entire trie, no sense. Run once only, to know the size of the tree and save the value.
             //System.out.println(" -------- Trie size: " + node.trieSize());
        } catch (Throwable e) {

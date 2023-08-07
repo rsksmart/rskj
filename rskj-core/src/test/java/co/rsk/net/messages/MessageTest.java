@@ -330,7 +330,7 @@ class MessageTest {
     void encodeDecodeStateChunkRequestMessage() {
         long someId = 42;
 
-        StateChunkRequestMessage message = new StateChunkRequestMessage(someId, 0L, 0L);
+        StateChunkRequestMessage message = new StateChunkRequestMessage(someId, 0L, 0L, 100L);
 
         byte[] encoded = message.getEncoded();
 

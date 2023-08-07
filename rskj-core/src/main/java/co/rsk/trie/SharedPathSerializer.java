@@ -48,10 +48,10 @@ public class SharedPathSerializer {
     }
 
     public void serializeInto(ByteBuffer buffer) {
-      serializeInto(this.sharedPath,buffer);
+        serializeInto(this.sharedPath, buffer);
     }
 
-    public static void serializeInto(TrieKeySlice sharedPath,ByteBuffer buffer) {
+    public static void serializeInto(TrieKeySlice sharedPath, ByteBuffer buffer) {
         if (!isPresent(sharedPath)) {
             return;
         }
@@ -127,6 +127,7 @@ public class SharedPathSerializer {
         }
         return lshared;
     }
+
     public static TrieKeySlice deserialize(ByteBuffer message, boolean sharedPrefixPresent) {
         if (!sharedPrefixPresent) {
             return TrieKeySlice.empty();
@@ -140,9 +141,9 @@ public class SharedPathSerializer {
         return TrieKeySlice.fromEncoded(encodedKey, 0, lshared, lencoded);
     }
 
-    public static byte[] deserializeBytes(ByteBuffer message, boolean sharedPrefixPresent, ByteArrayOutputStream encoder) throws IOException {
+    public static TrieKeySlice deserializeBytes(ByteBuffer message, boolean sharedPrefixPresent, ByteArrayOutputStream encoder) throws IOException {
         if (!sharedPrefixPresent) {
-            return new byte[0];
+            return TrieKeySlice.empty();
         }
 
         int lshared = getPathBitsLength(message);
@@ -150,8 +151,10 @@ public class SharedPathSerializer {
         int lencoded = PathEncoder.calculateEncodedLength(lshared);
         byte[] encodedKey = new byte[lencoded];
         message.get(encodedKey);
-        writeBytes(encoder, lshared, encodedKey);
-        return encodedKey;
+        if (encoder != null) {
+            writeBytes(encoder, lshared, encodedKey);
+        }
+        return TrieKeySlice.fromEncoded(encodedKey, 0, lshared, lencoded);
     }
 
     private static VarInt readVarInt(ByteBuffer message) {

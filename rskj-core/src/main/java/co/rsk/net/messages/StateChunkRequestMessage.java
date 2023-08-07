@@ -8,11 +8,13 @@ public class StateChunkRequestMessage extends MessageWithId {
 
     private final long id;
     private final long from;
+    private final long chunkSize;
     private final long blockNumber;
 
-    public StateChunkRequestMessage(long id, long blockNumber, long from) {
+    public StateChunkRequestMessage(long id, long blockNumber, long from, long chunkSize) {
         this.id = id;
         this.from = from;
+        this.chunkSize = chunkSize;
         this.blockNumber = blockNumber;
     }
 
@@ -35,13 +37,17 @@ public class StateChunkRequestMessage extends MessageWithId {
     protected byte[] getEncodedMessageWithoutId() {
         byte[] rlpBlockNumber = RLP.encodeBigInteger(BigInteger.valueOf(this.blockNumber));
         byte[] rlpFrom = RLP.encodeBigInteger(BigInteger.valueOf(this.from));
-        return RLP.encodeList(rlpBlockNumber, rlpFrom);
+        byte[] rlpChunkSize = RLP.encodeBigInteger(BigInteger.valueOf(this.chunkSize));
+        return RLP.encodeList(rlpBlockNumber, rlpFrom, rlpChunkSize);
     }
 
     public long getFrom() {
         return from;
     }
 
+    public long getChunkSize() {
+        return chunkSize;
+    }
     public long getBlockNumber() {
         return blockNumber;
     }
