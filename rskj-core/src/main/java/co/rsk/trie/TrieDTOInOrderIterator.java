@@ -18,10 +18,7 @@
 
 package co.rsk.trie;
 
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Objects;
+import java.util.*;
 
 public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
 
@@ -97,7 +94,7 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     /**
      * Find the leftmost node from this root, pushing all the intermediate nodes onto the visiting stack
      *
-     * @param nodeKey  the root of the subtree for which we are trying to reach the leftmost node
+     * @param nodeKey the root of the subtree for which we are trying to reach the leftmost node
      */
     private void pushLeftmostNode(TrieDTO nodeKey) {
         // find the leftmost node
@@ -108,13 +105,19 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     }
 
     private TrieDTO pushNode(byte[] root, Deque<TrieDTO> visiting) {
-        TrieDTO nodeDTO = getNode(root);
-        visiting.push(nodeDTO);
-        return nodeDTO;
+        final TrieDTO result = getNode(root);
+        if (result != null) {
+            visiting.push(result);
+        }
+        return result;
     }
 
-    private TrieDTO getNode(byte[] root) {
-        byte[] node = this.ds.retrieveValue(root);
-        return TrieDTO.decodeFromMessage(node, this.ds);
+    private TrieDTO getNode(byte[] hash) {
+        if (hash != null) {
+            byte[] node = this.ds.retrieveValue(hash);
+            return TrieDTO.decodeFromMessage(node, this.ds);
+        } else {
+            return null;
+        }
     }
 }

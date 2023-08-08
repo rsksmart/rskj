@@ -322,6 +322,8 @@ public class TrieDTO {
                 "{leftHash=" + HexUtils.toJsonHex(this.leftHash) + "},\n" +
                 "{rightHash=" + HexUtils.toJsonHex(this.rightHash) + "},\n" +
                 "{value=" + HexUtils.toJsonHex(this.value) + "},\n" +
+                //"{hash=" + HexUtils.toJsonHex(new Keccak256(Keccak256Helper.keccak256(this.toMessage())).getBytes()) + "},\n" +
+                //"{toMessage=" + HexUtils.toJsonHex(this.toMessage()) + "},\n" +
                 "{source=" + HexUtils.toJsonHex(this.source) + "}\n";
     }
 
