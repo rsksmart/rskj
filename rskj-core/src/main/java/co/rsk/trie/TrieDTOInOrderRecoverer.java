@@ -19,12 +19,17 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.util.HexUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.crypto.Keccak256Helper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class TrieDTOInOrderRecoverer {
+
+    private static final Logger logger = LoggerFactory.getLogger(TrieDTOInOrderRecoverer.class);
 
     public static Optional<TrieDTO> recoverTrie(TrieDTO[] trieCollection) {
         return recoverSubtree(trieCollection, 0, trieCollection.length - 1);
@@ -35,13 +40,10 @@ public class TrieDTOInOrderRecoverer {
             return Optional.empty();
         }
         if (end - start == 0) {
-            return Optional.of(fromTrieDTO(trieCollection[0], Optional.empty(), Optional.empty()));
+            return Optional.of(fromTrieDTO(trieCollection[start], Optional.empty(), Optional.empty()));
         }
         int indexRoot = findRoot(trieCollection, start, end);
-        final int percentage = (indexRoot * 100 / trieCollection.length) ;
-        if (percentage % 5 == 0) {
-            System.out.println("-- Completed:" + percentage);
-        }
+        logger.info("-- indexRoot: {}", indexRoot);
         Optional<TrieDTO> left = recoverSubtree(trieCollection, start, indexRoot - 1);
         Optional<TrieDTO> right = recoverSubtree(trieCollection, indexRoot + 1, end);
         return Optional.of(fromTrieDTO(trieCollection[indexRoot], left, right));
@@ -68,14 +70,26 @@ public class TrieDTOInOrderRecoverer {
             Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(rightNode.toMessage()));
             result.setRight(hash.getBytes());
         });
+        logger.info("-- ChildrenSize: {} ,Hash: {}, Left: {}, Right:{}",
+                result.getChildrenSize().value,
+                getHashString(result.toMessage()).substring(0, 6),
+                left.isPresent() ? HexUtils.toJsonHex(result.getLeft()).substring(0, 6):"",
+                right.isPresent() ? HexUtils.toJsonHex(result.getRight()).substring(0, 6):"");
+
+
         return result;
+    }
+
+    private static Keccak256 getHash(byte[] recoveredBytes) {
+        return new Keccak256(Keccak256Helper.keccak256(recoveredBytes));
+    }
+
+    private static String getHashString(byte[] recoveredBytes) {
+        return getHash(recoveredBytes).toHexString();
     }
 
     private static long getValue(TrieDTO trieCollection) {
         return trieCollection.getChildrenSize().value;
     }
 
-    private static int compare(TrieDTO element, TrieDTO element2) {
-        return Long.compare(element.getChildrenSize().value, element2.getChildrenSize().value);
-    }
 }
