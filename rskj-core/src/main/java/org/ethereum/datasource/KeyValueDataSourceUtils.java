@@ -67,7 +67,7 @@ public class KeyValueDataSourceUtils {
                 return DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME));
             }
 
-            return DbKind.LEVEL_DB;
+            return DbKind.ROCKS_DB;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -89,30 +89,38 @@ public class KeyValueDataSourceUtils {
         }
     }
 
-    public static void validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
-        File dir = new File(databaseDir);
+    public static void validateDbKind(DbKind currentDbKind, String databaseDir) {
+        File dbDir = new File(databaseDir);
+        boolean dbDirExists = dbDir.exists();
 
-        if (dir.exists() && !dir.isDirectory()) {
+        if (dbDirExists && !dbDir.isDirectory()) {
             LoggerFactory.getLogger(KEYVALUE_DATASOURCE).error("database.dir should be a folder.");
             throw new IllegalStateException("database.dir should be a folder");
         }
 
-        boolean databaseDirExists = dir.exists() && dir.isDirectory();
+        File dbKindFile = new File(dbDir, DB_KIND_PROPERTIES_FILE);
+        boolean dbKindFileExists = dbKindFile.exists();
+        if (dbKindFileExists && !dbKindFile.isFile()) {
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).error("dbKind file should be a file.");
+            throw new IllegalStateException("dbKind file should be a file");
+        }
 
-        if (!databaseDirExists || dir.list().length == 0) {
+        boolean isEmptyDbDir = dbDirExists && Objects.requireNonNull(dbDir.list()).length == 0;
+        if (!dbDirExists || isEmptyDbDir) { // use dbKind from config, if db folder doesn't exist or is empty
             KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
             return;
         }
 
-        DbKind prevDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
+        if (!dbKindFileExists) { // use LEVEL_DB (for backward compatibility), if db folder is not empty and dbKind file doesn't exist
+            KeyValueDataSourceUtils.generatedDbKindFile(DbKind.LEVEL_DB, databaseDir);
+            return;
+        }
 
+        DbKind prevDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
         if (prevDbKind != currentDbKind) {
-            if (databaseReset) {
-                KeyValueDataSourceUtils.generatedDbKindFile(currentDbKind, databaseDir);
-            } else {
-                LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
-                throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + ".");
-            }
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Current Db kind {} does not match with db kind {} from properties file, using value from properties file." +
+                            " keyvalue.datasource from .conf file is used the first time the node is run or db is created from scratch.",
+                    currentDbKind.name(), prevDbKind.name());
         }
     }
 }
