@@ -84,6 +84,10 @@ repositories {
     maven {
         url "https://deps.rsklabs.io"
     }
+
+    flatDir {
+        dirs 'libs'
+    }
 }
 
 sourceCompatibility = 1.8
@@ -240,6 +244,8 @@ dependencies {
     integrationTestImplementation "${testLibs.mockitoJupiter}"
     integrationTestImplementation "${testLibs.jacksonLib}"
     integrationTestImplementation "${testLibs.okhttpWsLib}"
+
+    implementation files("/Users/fedejinich/Projects/rskj/libs/hhejava-1.0-SNAPSHOT.jar")
 }
 
 javadoc {
