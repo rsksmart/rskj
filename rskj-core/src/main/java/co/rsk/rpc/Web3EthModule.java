@@ -25,6 +25,8 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.HexIndexParam;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -108,19 +110,19 @@ public interface Web3EthModule {
         return getEthModule().sendTransaction(args);
     }
 
-    BlockResultDTO eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception;
+    BlockResultDTO eth_getBlockByHash(BlockHashParam blockHash, Boolean fullTransactionObjects) throws Exception;
 
     BlockResultDTO eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) throws Exception;
 
     TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception;
 
-    TransactionResultDTO eth_getTransactionByBlockHashAndIndex(String blockHash, String index) throws Exception;
+    TransactionResultDTO eth_getTransactionByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam index) throws Exception;
 
     TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(String bnOrId, String index) throws Exception;
 
     TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception;
 
-    BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) throws Exception;
+    BlockResultDTO eth_getUncleByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam uncleIdx) throws Exception;
 
     BlockResultDTO eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) throws Exception;
 

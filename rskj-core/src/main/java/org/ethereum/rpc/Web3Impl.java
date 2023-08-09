@@ -59,6 +59,8 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.HexIndexParam;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -235,8 +237,7 @@ public class Web3Impl implements Web3 {
         try {
             byte netVersion = config.getNetworkConstants().getChainId();
             return s = Byte.toString(netVersion);
-        }
-        finally {
+        } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("net_version(): {}", s);
             }
@@ -411,10 +412,10 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_getBalance(String address, String block) {
         /* HEX String  - an integer block number
-        *  String "earliest"  for the earliest/genesis block
-        *  String "latest"  - for the latest mined block
-        *  String "pending"  - for the pending state/transactions
-        */
+         *  String "earliest"  for the earliest/genesis block
+         *  String "latest"  - for the latest mined block
+         *  String "pending"  - for the pending state/transactions
+         */
 
         AccountInformationProvider accountInformationProvider = web3InformationRetriever.getInformationProvider(block);
 
@@ -445,7 +446,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) {
-        return invokeByBlockRef(blockRef, blockNumber -> this.eth_getStorageAt(address,storageIdx, blockNumber));
+        return invokeByBlockRef(blockRef, blockNumber -> this.eth_getStorageAt(address, storageIdx, blockNumber));
     }
 
     @Override
@@ -485,7 +486,8 @@ public class Web3Impl implements Web3 {
      * It processes inputs maps ex: { "blockNumber": "0x0" },
      * { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false }
      * and invoke a function after processing.
-     * @param inputs map
+     *
+     * @param inputs                map
      * @param toInvokeByBlockNumber a function that returns a string based on the block number
      * @return function invocation result
      */
@@ -493,8 +495,8 @@ public class Web3Impl implements Web3 {
         final boolean requireCanonical = Boolean.parseBoolean(inputs.get("requireCanonical"));
         return applyIfPresent(inputs, "blockHash", blockHash -> this.toInvokeByBlockHash(blockHash, requireCanonical, toInvokeByBlockNumber))
                 .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
-                .orElseThrow(() -> invalidParamError("Invalid block input"))
-        );
+                        .orElseThrow(() -> invalidParamError("Invalid block input"))
+                );
     }
 
     private String toInvokeByBlockHash(String blockHash, boolean requireCanonical, Function<String, String> toInvokeByBlockNumber) {
@@ -644,10 +646,14 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public BlockResultDTO eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) {
+    public BlockResultDTO eth_getBlockByHash(BlockHashParam blockHash, Boolean fullTransactionObjects) {
+        if (blockHash == null) {
+            throw invalidParamError("blockHash is null");
+        }
+
         BlockResultDTO s = null;
         try {
-            Block b = getBlockByJSonHash(blockHash);
+            Block b = this.blockchain.getBlockByHash(blockHash.getHash().getBytes());
             s = (b == null ? null : getBlockResult(b, fullTransactionObjects));
             return s;
         } finally {
@@ -684,7 +690,7 @@ public class Web3Impl implements Web3 {
             TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore).orElse(null);
 
             if (txInfo == null) {
-                List<Transaction> txs =     web3InformationRetriever.getTransactions("pending");
+                List<Transaction> txs = web3InformationRetriever.getTransactions("pending");
 
                 for (Transaction tx : txs) {
                     if (tx.getHash().equals(txHash)) {
@@ -713,16 +719,24 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public TransactionResultDTO eth_getTransactionByBlockHashAndIndex(String blockHash, String index) {
+    public TransactionResultDTO eth_getTransactionByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam index) {
+        if (blockHash == null) {
+            throw invalidParamError("blockHash is null");
+        }
+
+        if (index == null) {
+            throw invalidParamError("index is null");
+        }
+
         TransactionResultDTO s = null;
         try {
-            Block b = getBlockByJSonHash(blockHash);
+            Block b = blockchain.getBlockByHash(blockHash.getHash().getBytes());
 
             if (b == null) {
                 return null;
             }
 
-            int idx = jsonHexToInt(index);
+            int idx = index.getIndex();
 
             if (idx >= b.getTransactionsList().size()) {
                 return null;
@@ -782,17 +796,17 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) {
+    public BlockResultDTO eth_getUncleByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam uncleIdx) {
         BlockResultDTO s = null;
 
         try {
-            Block block = blockchain.getBlockByHash(stringHexToByteArray(blockHash));
+            Block block = blockchain.getBlockByHash(blockHash.getHash().getBytes());
 
             if (block == null) {
                 return null;
             }
 
-            s = getUncleResultDTO(uncleIdx, block);
+            s = getUncleResultDTO(uncleIdx.getIndex(), block);
 
             return s;
         } finally {
@@ -802,14 +816,13 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    private BlockResultDTO getUncleResultDTO(String uncleIdx, Block block) {
-        int idx = jsonHexToInt(uncleIdx);
+    private BlockResultDTO getUncleResultDTO(Integer uncleIdx, Block block) {
 
-        if (idx >= block.getUncleList().size()) {
+        if (uncleIdx >= block.getUncleList().size()) {
             return null;
         }
 
-        BlockHeader uncleHeader = block.getUncleList().get(idx);
+        BlockHeader uncleHeader = block.getUncleList().get(uncleIdx);
         Block uncle = blockchain.getBlockByHash(uncleHeader.getHash().getBytes());
 
         if (uncle == null) {
@@ -829,8 +842,8 @@ public class Web3Impl implements Web3 {
             if (!block.isPresent()) {
                 return null;
             }
-
-            s = getUncleResultDTO(uncleIdx, block.get());
+            int idx = jsonHexToInt(uncleIdx);
+            s = getUncleResultDTO(idx, block.get());
 
             return s;
         } finally {
@@ -871,7 +884,7 @@ public class Web3Impl implements Web3 {
     public String eth_newFilter(FilterRequest fr) throws Exception {
         String str = null;
         try {
-            Filter filter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore, config.getRpcEthGetLogsMaxBlockToQuery(),config.getRpcEthGetLogsMaxLogsToReturn());
+            Filter filter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore, config.getRpcEthGetLogsMaxBlockToQuery(), config.getRpcEthGetLogsMaxLogsToReturn());
             int id = filterManager.registerFilter(filter);
 
             str = toQuantityJsonHex(id);
@@ -1103,7 +1116,7 @@ public class Web3Impl implements Web3 {
     /**
      * Adds an address or block to the list of banned addresses
      * It supports IPV4 and IPV6 addresses with an optional number of bits to ignore
-     *
+     * <p>
      * "192.168.51.1" is a valid address
      * "192.168.51.1/16" is a valid block
      *
@@ -1125,7 +1138,7 @@ public class Web3Impl implements Web3 {
     /**
      * Removes an address or block to the list of banned addresses
      * It supports IPV4 and IPV6 addresses with an optional number of bits to ignore
-     *
+     * <p>
      * "192.168.51.1" is a valid address
      * "192.168.51.1/16" is a valid block
      *
@@ -1182,7 +1195,6 @@ public class Web3Impl implements Web3 {
      * Clears scoring for the received id
      *
      * @param id peer identifier: firstly tried as an InetAddress, used as a NodeId otherwise
-     *
      * @return the list of scoring information, per node id and address
      */
     @SuppressWarnings("squid:S1166")
