@@ -175,13 +175,6 @@ public class BridgeSupport {
 
     private final SignatureCache signatureCache;
 
-    protected enum TxType {
-        PEGIN,
-        PEGOUT,
-        MIGRATION,
-        UNKNOWN
-    }
-
     public BridgeSupport(
             BridgeConstants bridgeConstants,
             BridgeStorageProvider provider,
@@ -450,7 +443,7 @@ public class BridgeSupport {
         return btcBlockStore;
     }
 
-    protected TxType getTransactionType(BtcTransaction btcTx) {
+    protected PegTxType getTransactionType(BtcTransaction btcTx) {
         Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 
         /************************************************************************/
@@ -458,7 +451,7 @@ public class BridgeSupport {
         /************************************************************************/
         if (activations.isActive(ConsensusRule.RSKIP199) && txIsFromOldFederation(btcTx)) {
             logger.debug("[getTransactionType][btc tx {}] is from the old federation, treated as a migration", btcTx.getHash());
-            return TxType.MIGRATION;
+            return PegTxType.MIGRATION;
         }
 
         if (BridgeUtils.isValidPegInTx(
@@ -470,7 +463,7 @@ public class BridgeSupport {
             activations
         )) {
             logger.debug("[getTransactionType][btc tx {}] is a peg-in", btcTx.getHash());
-            return TxType.PEGIN;
+            return PegTxType.PEGIN;
         }
 
         if (BridgeUtils.isMigrationTx(
@@ -483,16 +476,16 @@ public class BridgeSupport {
             activations
         )) {
             logger.debug("[getTransactionType][btc tx {}] is a migration transaction", btcTx.getHash());
-            return TxType.MIGRATION;
+            return PegTxType.MIGRATION;
         }
 
         if (BridgeUtils.isPegOutTx(btcTx, getLiveFederations(), activations)) {
             logger.debug("[getTransactionType][btc tx {}] is a peg-out", btcTx.getHash());
-            return TxType.PEGOUT;
+            return PegTxType.PEGOUT;
         }
 
         logger.debug("[getTransactionType][btc tx {}] is neither a peg-in, peg-out, nor migration", btcTx.getHash());
-        return TxType.UNKNOWN;
+        return PegTxType.UNKNOWN;
     }
 
     private boolean txIsFromOldFederation(BtcTransaction btcTx) {

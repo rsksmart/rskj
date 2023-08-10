@@ -31,7 +31,6 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.BridgeSupport.TxType;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSender;
@@ -5857,7 +5856,7 @@ class BridgeSupportTest {
         btcTx.addOutput(Coin.COIN.multiply(10), bridgeConstantsRegtest.getGenesisFederation().getAddress());
         btcTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
 
-        Assertions.assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(btcTx));
+        Assertions.assertEquals(PegTxType.PEGIN, bridgeSupport.getTransactionType(btcTx));
     }
 
     @Test
@@ -5918,7 +5917,7 @@ class BridgeSupportTest {
         }
         releaseInput1.setScriptSig(inputScript);
 
-        Assertions.assertEquals(TxType.PEGOUT, bridgeSupport.getTransactionType(pegoutBtcTx));
+        Assertions.assertEquals(PegTxType.PEGOUT, bridgeSupport.getTransactionType(pegoutBtcTx));
     }
 
     @Test
@@ -6006,11 +6005,11 @@ class BridgeSupportTest {
             );
         }
         migrationTxInput.setScriptSig(inputScript);
-        Assertions.assertEquals(TxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
+        Assertions.assertEquals(PegTxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
 
         when(mockFederationSupport.getRetiringFederation()).thenReturn(null);
         when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiringFederation.getP2SHScript()));
-        Assertions.assertEquals(TxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
+        Assertions.assertEquals(PegTxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
     }
 
     @Test
@@ -6066,7 +6065,7 @@ class BridgeSupportTest {
         }
         tx.getInput(0).setScriptSig(inputScript);
 
-        Assertions.assertEquals(TxType.MIGRATION, bridgeSupport.getTransactionType(tx));
+        Assertions.assertEquals(PegTxType.MIGRATION, bridgeSupport.getTransactionType(tx));
     }
 
     @Test
@@ -6122,7 +6121,7 @@ class BridgeSupportTest {
         }
         tx.getInput(0).setScriptSig(inputScript);
 
-        Assertions.assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(tx));
+        Assertions.assertEquals(PegTxType.PEGIN, bridgeSupport.getTransactionType(tx));
     }
 
     @Test
@@ -6178,7 +6177,7 @@ class BridgeSupportTest {
         }
         tx.getInput(0).setScriptSig(inputScript);
 
-        assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(tx));
+        assertEquals(PegTxType.PEGIN, bridgeSupport.getTransactionType(tx));
     }
 
     @Test
@@ -6211,7 +6210,7 @@ class BridgeSupportTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, p2shErpFederation.getRedeemScript());
 
-        assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(tx));
+        assertEquals(PegTxType.PEGIN, bridgeSupport.getTransactionType(tx));
     }
 
     @Test
@@ -6275,14 +6274,14 @@ class BridgeSupportTest {
         }
         tx.getInput(0).setScriptSig(inputScript);
 
-        assertEquals(TxType.PEGOUT, bridgeSupport.getTransactionType(tx));
+        assertEquals(PegTxType.PEGOUT, bridgeSupport.getTransactionType(tx));
     }
 
     @Test
     void getTransactionType_unknown_tx() {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstantsRegtest, mock(BridgeStorageProvider.class), mock(ActivationConfig.ForBlock.class));
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
-        Assertions.assertEquals(TxType.UNKNOWN, bridgeSupport.getTransactionType(btcTx));
+        Assertions.assertEquals(PegTxType.UNKNOWN, bridgeSupport.getTransactionType(btcTx));
     }
 
     @Test
