@@ -40,8 +40,8 @@ public abstract class BridgeConstants {
 
     protected int maxBtcHeadersPerRskBlock;
 
-    protected Coin legacyMinimumPeginTxValueInSatoshis;
-    protected Coin minimumPeginTxValueInSatoshis;
+    protected Coin legacyMinimumPeginTxValue;
+    protected Coin minimumPeginTxValue;
     protected Coin legacyMinimumPegoutTxValueInSatoshis;
     protected Coin minimumPegoutTxValueInSatoshis;
 
@@ -112,9 +112,23 @@ public abstract class BridgeConstants {
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
 
-    public Coin getLegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValueInSatoshis; }
+    /**
+     *
+     * @deprecated( in favor of {@link co.rsk.config.BridgeConstants#getMinimumPeginTxValue(ActivationConfig.ForBlock)})
+     */
+    @Deprecated
+    public Coin getLegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValue; }
 
-    public Coin getMinimumPeginTxValueInSatoshis() { return minimumPeginTxValueInSatoshis; }
+    /**
+     *
+     * @deprecated( in favor of {@link co.rsk.config.BridgeConstants#getMinimumPeginTxValue(ActivationConfig.ForBlock)})
+     */
+    @Deprecated
+    public Coin getMinimumPeginTxValueInSatoshis() { return minimumPeginTxValue; }
+
+    public Coin getMinimumPeginTxValue(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIP219) ? minimumPeginTxValue : legacyMinimumPeginTxValue;
+    }
 
     public Coin getLegacyMinimumPegoutTxValueInSatoshis() { return legacyMinimumPegoutTxValueInSatoshis; }
 
