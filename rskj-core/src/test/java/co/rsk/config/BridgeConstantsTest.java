@@ -93,4 +93,32 @@ class BridgeConstantsTest {
             assertEquals(bridgeConstants.federationActivationAgeLegacy, federationActivationAge);
         }
     }
+
+    private static Stream<Arguments> minimumPeginTxValueArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), false),
+            Arguments.of(BridgeTestNetConstants.getInstance(), false),
+            Arguments.of(BridgeRegTestConstants.getInstance(), false),
+            Arguments.of(BridgeMainNetConstants.getInstance(), true),
+            Arguments.of(BridgeTestNetConstants.getInstance(), true),
+            Arguments.of(BridgeRegTestConstants.getInstance(), true)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("minimumPeginTxValueArgProvider")
+    void test_getMinimumPeginTxValue(BridgeConstants bridgeConstants, boolean isRSKIP219Active){
+        // Arrange
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(isRSKIP219Active);
+        // Act
+        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
+
+        // assert
+        if (isRSKIP219Active){
+            assertEquals(bridgeConstants.federationActivationAge, federationActivationAge);
+        } else {
+            assertEquals(bridgeConstants.federationActivationAgeLegacy, federationActivationAge);
+        }
+    }
 }
