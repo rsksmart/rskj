@@ -61,6 +61,7 @@ import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.parameters.BlockHashParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
+import org.ethereum.rpc.parameters.TxHashParam;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -77,9 +78,7 @@ import java.util.function.UnaryOperator;
 
 import static co.rsk.util.HexUtils.*;
 import static java.lang.Math.max;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -539,10 +538,10 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getBlockTransactionCountByHash(String blockHash) {
+    public String eth_getBlockTransactionCountByHash(BlockHashParam blockHash) {
         String s = null;
         try {
-            Block b = getBlockByJSonHash(blockHash);
+            Block b = blockchain.getBlockByHash(blockHash.getHash().getBytes());
 
             if (b == null) {
                 return null;
@@ -681,10 +680,10 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public TransactionResultDTO eth_getTransactionByHash(String transactionHash) {
+    public TransactionResultDTO eth_getTransactionByHash(TxHashParam transactionHash) {
         TransactionResultDTO s = null;
         try {
-            Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
+            Keccak256 txHash = transactionHash.getHash();
             Block block = null;
 
             TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore).orElse(null);

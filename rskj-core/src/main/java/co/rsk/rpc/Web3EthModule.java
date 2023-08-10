@@ -27,6 +27,7 @@ import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.parameters.BlockHashParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
+import org.ethereum.rpc.parameters.TxHashParam;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -88,7 +89,7 @@ public interface Web3EthModule {
 
     String eth_getTransactionCount(String address, String blockId) throws Exception ;
 
-    String eth_getBlockTransactionCountByHash(String blockHash)throws Exception;
+    String eth_getBlockTransactionCountByHash(BlockHashParam blockHash)throws Exception;
 
     String eth_getBlockTransactionCountByNumber(String bnOrId)throws Exception;
 
@@ -114,7 +115,7 @@ public interface Web3EthModule {
 
     BlockResultDTO eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) throws Exception;
 
-    TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception;
+    TransactionResultDTO eth_getTransactionByHash(TxHashParam transactionHash) throws Exception;
 
     TransactionResultDTO eth_getTransactionByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam index) throws Exception;
 

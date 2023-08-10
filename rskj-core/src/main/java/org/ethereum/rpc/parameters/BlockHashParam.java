@@ -19,20 +19,32 @@ package org.ethereum.rpc.parameters;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 import java.io.IOException;
 
 @JsonDeserialize(using = BlockHashParam.Deserializer.class)
 public class BlockHashParam extends HashParam32 {
+
     private static final String HASH_TYPE = "block hash";
 
     public BlockHashParam(String hash) {
         super(HASH_TYPE, hash);
     }
 
-    public static class Deserializer extends JsonDeserializer<BlockHashParam> {
+    public static class Deserializer extends StdDeserializer<BlockHashParam> {
+
+        private static final long serialVersionUID = 8071595037666226210L;
+
+        public Deserializer() {
+            this(null);
+        }
+
+        public Deserializer(Class<?> vc) {
+            super(vc);
+        }
+
         @Override
         public BlockHashParam deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
             String hash = jp.getText();

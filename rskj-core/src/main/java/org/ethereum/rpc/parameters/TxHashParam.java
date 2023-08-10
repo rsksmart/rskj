@@ -17,10 +17,11 @@
  */
 
 package org.ethereum.rpc.parameters;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 import java.io.IOException;
 
@@ -31,13 +32,22 @@ public class TxHashParam extends HashParam32 {
         super(HASH_TYPE, hash);
     }
 
-    public static class Deserializer extends JsonDeserializer<TxHashParam> {
+    public static class Deserializer extends StdDeserializer<TxHashParam> {
+
+        private static final long serialVersionUID = 2669501504172497269L;
+
+        public Deserializer() {
+            this(null);
+        }
+
+        public Deserializer(Class<?> vc) {
+            super(vc);
+        }
 
         @Override
         public TxHashParam deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
             String hash = jp.getText();
             return new TxHashParam(hash);
-
         }
     }
 }

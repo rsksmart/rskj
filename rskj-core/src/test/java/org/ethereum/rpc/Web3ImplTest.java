@@ -79,6 +79,7 @@ import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockHashParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
+import org.ethereum.rpc.parameters.TxHashParam;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
@@ -808,8 +809,8 @@ class Web3ImplTest {
         Block block1 = createCanonicalBlock(world, txs);
 
         String hashString = tx.getHash().toHexString();
-
-        TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
+        TxHashParam txHashParam = new TxHashParam(hashString);
+        TransactionResultDTO tr = web3.eth_getTransactionByHash(txHashParam);
 
         assertNotNull(tr);
         assertEquals("0x" + hashString, tr.getHash());
@@ -846,8 +847,8 @@ class Web3ImplTest {
         transactionPool.addTransaction(tx);
 
         String hashString = tx.getHash().toHexString();
-
-        TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
+        TxHashParam txHashParam = new TxHashParam(hashString);
+        TransactionResultDTO tr = web3.eth_getTransactionByHash(txHashParam);
 
         assertNotNull(tr);
 
@@ -883,8 +884,8 @@ class Web3ImplTest {
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
         String hashString = tx.getHash().toHexString();
-
-        TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
+        TxHashParam txHashParam = new TxHashParam(hashString);
+        TransactionResultDTO tr = web3.eth_getTransactionByHash(txHashParam);
 
         Assertions.assertNull(tr);
     }
@@ -2994,9 +2995,9 @@ class Web3ImplTest {
         Block block1 = createCanonicalBlock(world, txs);
 
         String hashString = tx.getHash().toHexString();
-
+        TxHashParam txHashParam = new TxHashParam(hashString);
         TransactionReceiptDTO txReceipt = web3.eth_getTransactionReceipt(hashString);
-        TransactionResultDTO txResult = web3.eth_getTransactionByHash(hashString);
+        TransactionResultDTO txResult = web3.eth_getTransactionByHash(txHashParam);
 
         assertEquals("0x0", txReceipt.getType());
         assertEquals("0x0", txResult.getType());
