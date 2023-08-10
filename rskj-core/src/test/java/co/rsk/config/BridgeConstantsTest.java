@@ -1,5 +1,6 @@
 package co.rsk.config;
 
+import co.rsk.bitcoinj.core.Coin;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -110,15 +111,15 @@ class BridgeConstantsTest {
     void test_getMinimumPeginTxValue(BridgeConstants bridgeConstants, boolean isRSKIP219Active){
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(isRSKIP219Active);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(isRSKIP219Active);
         // Act
-        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
+        Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
 
         // assert
         if (isRSKIP219Active){
-            assertEquals(bridgeConstants.federationActivationAge, federationActivationAge);
+            assertEquals(bridgeConstants.minimumPeginTxValue, minimumPeginTxValue);
         } else {
-            assertEquals(bridgeConstants.federationActivationAgeLegacy, federationActivationAge);
+            assertEquals(bridgeConstants.legacyMinimumPeginTxValue, minimumPeginTxValue);
         }
     }
 }
