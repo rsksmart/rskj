@@ -13,26 +13,30 @@ import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 
 public class FederationErpP2shP2wshTestUtils {
-    public static void spendFromP2shP2wshAddress(
+    public static void spendFromP2shP2wshErpFed(
         NetworkParameters networkParameters,
         Script redeemScript,
         List<BtcECKey> signers,
         Sha256Hash fundTxHash,
         int outputIndex,
         Address receiver,
-        Coin prevValue,
-        Coin value) {
+        Coin inputValue,
+        boolean spendsFromEmergency) {
+
+        Coin fee = Coin.valueOf(1_000);
+        Coin outputValue = inputValue.minus(fee);
 
         BtcTransaction spendTx = new BtcTransaction(networkParameters);
-        spendTx.addInput(fundTxHash, outputIndex, redeemScript);
-        spendTx.addOutput(value, receiver);
+        spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
+        spendTx.addOutput(outputValue, receiver);
         spendTx.setVersion(BTC_TX_VERSION_2);
 
         // Create signatures
+        int inputIndex = 0;
         Sha256Hash sigHash = spendTx.hashForWitnessSignature(
-            0,
+            inputIndex,
             redeemScript,
-            prevValue,
+            inputValue,
             BtcTransaction.SigHash.ALL,
             false
         );
@@ -40,13 +44,12 @@ public class FederationErpP2shP2wshTestUtils {
         byte[] redeemScriptHash = Sha256Hash.hash(redeemScript.getProgram());
         Script scriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
         Script segwitScriptSig = new ScriptBuilder().data(scriptSig.getProgram()).build();
-
         spendTx.getInput(0).setScriptSig(segwitScriptSig);
 
-        int totalSigners = signers.size();
-        List<TransactionSignature> allTxSignatures = new ArrayList<>();
+        int requiredSignatures = signers.size() / 2 + 1;
+        List<TransactionSignature> signatures = new ArrayList<>();
 
-        for (int i = 0; i < totalSigners; i++) {
+        for (int i = 0; i < requiredSignatures; i++) {
             BtcECKey keyToSign = signers.get(i);
             BtcECKey.ECDSASignature signature = keyToSign.sign(sigHash);
             TransactionSignature txSignature = new TransactionSignature(
@@ -54,158 +57,14 @@ public class FederationErpP2shP2wshTestUtils {
                 BtcTransaction.SigHash.ALL,
                 false
             );
-            allTxSignatures.add(txSignature);
+            signatures.add(txSignature);
         }
 
-        int requiredSignatures = totalSigners / 2 + 1;
-        List<TransactionSignature> txSignatures = allTxSignatures.subList(0, requiredSignatures);
-
-        TransactionWitness txWitness = TransactionWitness.createWitnessScript(redeemScript, txSignatures);
-        spendTx.setWitness(0, txWitness);
+        byte[] notIfArgument = spendsFromEmergency ? new byte[] {1} : new byte[] {};
+        TransactionWitness txWitness = TransactionWitness.createWitnessErpScript(redeemScript, signatures, notIfArgument);
+        spendTx.setWitness(inputIndex, txWitness);
 
         // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
         System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
     }
-
-
-    public static void spendFromP2shP2wshErpStandardFed(
-        NetworkParameters networkParameters,
-        Script redeemScript,
-        List<BtcECKey> signers,
-        Sha256Hash fundTxHash,
-        int outputIndex,
-        Address receiver,
-        Coin prevValue,
-        Coin value
-    ) {
-
-        BtcTransaction spendTx = new BtcTransaction(networkParameters);
-        spendTx.setVersion(BTC_TX_VERSION_2);
-        spendTx.addInput(fundTxHash, outputIndex, redeemScript);
-        spendTx.addOutput(value, receiver);
-
-        // Create signatures
-        Sha256Hash sigHash = spendTx.hashForWitnessSignature(
-            0,
-            redeemScript,
-            prevValue,
-            BtcTransaction.SigHash.ALL,
-            false
-        );
-
-        byte[] redeemScriptHash = Sha256Hash.hash(redeemScript.getProgram());
-        Script scriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
-        Script segwitScriptSig = new ScriptBuilder().data(scriptSig.getProgram()).build();
-
-        spendTx.getInput(0).setScriptSig(segwitScriptSig);
-
-        int totalSigners = signers.size();
-        List<TransactionSignature> allTxSignatures = new ArrayList<>();
-
-        for (int i = 0; i < totalSigners; i++) {
-            BtcECKey keyToSign = signers.get(i);
-            BtcECKey.ECDSASignature signature = keyToSign.sign(sigHash);
-            TransactionSignature txSignature = new TransactionSignature(
-                signature,
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            allTxSignatures.add(txSignature);
-        }
-
-        int requiredSignatures = totalSigners / 2 + 1;
-        List<TransactionSignature> txSignatures = allTxSignatures.subList(0, requiredSignatures);
-
-        TransactionWitness txWitness = TransactionWitness.createWitnessErpScript(redeemScript, txSignatures);
-        spendTx.setWitness(0, txWitness);
-
-        int witnessScriptSize = (int) calculateWitnessScriptSize(txWitness); // HAS TO BE LOWER THAN 10000
-        String rawTx = Hex.toHexString(spendTx.bitcoinSerialize());
-        int txTotalSize = rawTx.length() / 2;
-
-        double estimatedTxVirtualSize = calculateTxSize(witnessScriptSize, txTotalSize);
-
-        Coin fee = prevValue.minus(value);
-        Coin estimatedFeeRate = fee.divide((long) estimatedTxVirtualSize);
-
-        // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
-        System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
-    }
-
-    public static void spendFromP2shP2wshErpEmergencyFed(
-        NetworkParameters networkParameters,
-        Script redeemScript,
-        long activationDelay,
-        List<BtcECKey> signers,
-        Sha256Hash fundTxHash,
-        int outputIndex,
-        Address receiver,
-        Coin prevValue,
-        Coin value
-    ) {
-        BtcTransaction spendTx = new BtcTransaction(networkParameters);
-        spendTx.setVersion(BTC_TX_VERSION_2);
-        spendTx.addInput(fundTxHash, outputIndex, redeemScript);
-        spendTx.addOutput(value, receiver);
-        spendTx.getInput(0).setSequenceNumber(activationDelay);
-
-        // Create signatures
-        Sha256Hash sigHash = spendTx.hashForWitnessSignature(
-            0,
-            redeemScript,
-            prevValue,
-            BtcTransaction.SigHash.ALL,
-            false
-        );
-
-        byte[] redeemScriptHash = Sha256Hash.hash(redeemScript.getProgram());
-        Script scriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
-        Script segwitScriptSig = new ScriptBuilder().data(scriptSig.getProgram()).build();
-
-        spendTx.getInput(0).setScriptSig(segwitScriptSig);
-
-        int totalSigners = signers.size();
-        List<TransactionSignature> allTxSignatures = new ArrayList<>();
-
-        for (int i = 0; i < totalSigners; i++) {
-            BtcECKey keyToSign = signers.get(i);
-            BtcECKey.ECDSASignature signature = keyToSign.sign(sigHash);
-            TransactionSignature txSignature = new TransactionSignature(
-                signature,
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            allTxSignatures.add(txSignature);
-        }
-
-        int requiredSignatures = totalSigners / 2 + 1;
-        List<TransactionSignature> txSignatures = allTxSignatures.subList(0, requiredSignatures);
-
-        TransactionWitness txWitness = TransactionWitness.createWitnessErpEmergencyScript(redeemScript, txSignatures);
-        spendTx.setWitness(0, txWitness);
-
-        // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
-        System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
-    }
-
-    public static double calculateTxSize(int witnessScriptSize, int txTotalSize) {
-        int estimatedBaseSize = (txTotalSize - witnessScriptSize);
-
-        // this is how tx weight is calculated
-        double estimatedTxWeight = txTotalSize + (3 * estimatedBaseSize);
-
-        // virtual size can be calculated from either of this two calculations
-        double estimatedTxVirtualSize = Math.max((0.25 * txTotalSize) + (0.75 * estimatedBaseSize), estimatedTxWeight / 4);
-
-        return estimatedTxVirtualSize;
-    }
-
-    public static double calculateWitnessScriptSize(TransactionWitness txWitness) {
-        int witnessSize = 0;
-        for (int i = 0; i < txWitness.getPushCount(); i++) {
-            witnessSize += txWitness.getPush(i).length;
-        }
-        return witnessSize;
-    }
-
 }
