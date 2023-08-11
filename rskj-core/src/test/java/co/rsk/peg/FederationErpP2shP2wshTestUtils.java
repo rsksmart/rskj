@@ -13,9 +13,11 @@ import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 
 public class FederationErpP2shP2wshTestUtils {
+
     public static void spendFromP2shP2wshErpFed(
         NetworkParameters networkParameters,
         Script redeemScript,
+        long activationDelay,
         List<BtcECKey> signers,
         Sha256Hash fundTxHash,
         int outputIndex,
@@ -30,6 +32,9 @@ public class FederationErpP2shP2wshTestUtils {
         spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
         spendTx.addOutput(outputValue, receiver);
         spendTx.setVersion(BTC_TX_VERSION_2);
+        if (spendsFromEmergency) {
+            spendTx.getInput(0).setSequenceNumber(activationDelay);
+        }
 
         // Create signatures
         int inputIndex = 0;
