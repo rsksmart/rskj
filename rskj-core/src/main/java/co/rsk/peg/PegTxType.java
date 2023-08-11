@@ -2,7 +2,6 @@ package co.rsk.peg;
 
 enum PegTxType {
     PEGIN,
-    PEGOUT,
-    MIGRATION,
+    PEGOUT_OR_MIGRATION,
     UNKNOWN
 }

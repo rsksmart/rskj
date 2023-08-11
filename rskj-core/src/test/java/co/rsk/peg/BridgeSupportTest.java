@@ -5917,7 +5917,7 @@ class BridgeSupportTest {
         }
         releaseInput1.setScriptSig(inputScript);
 
-        Assertions.assertEquals(PegTxType.PEGOUT, bridgeSupport.getTransactionType(pegoutBtcTx));
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, bridgeSupport.getTransactionType(pegoutBtcTx));
     }
 
     @Test
@@ -6005,11 +6005,11 @@ class BridgeSupportTest {
             );
         }
         migrationTxInput.setScriptSig(inputScript);
-        Assertions.assertEquals(PegTxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, bridgeSupport.getTransactionType(migrationTx));
 
         when(mockFederationSupport.getRetiringFederation()).thenReturn(null);
         when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiringFederation.getP2SHScript()));
-        Assertions.assertEquals(PegTxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, bridgeSupport.getTransactionType(migrationTx));
     }
 
     @Test
@@ -6065,7 +6065,7 @@ class BridgeSupportTest {
         }
         tx.getInput(0).setScriptSig(inputScript);
 
-        Assertions.assertEquals(PegTxType.MIGRATION, bridgeSupport.getTransactionType(tx));
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, bridgeSupport.getTransactionType(tx));
     }
 
     @Test
@@ -6274,7 +6274,7 @@ class BridgeSupportTest {
         }
         tx.getInput(0).setScriptSig(inputScript);
 
-        assertEquals(PegTxType.PEGOUT, bridgeSupport.getTransactionType(tx));
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, bridgeSupport.getTransactionType(tx));
     }
 
     @Test
