@@ -412,16 +412,13 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
-            // Specific code for pegin/pegout/migration/none txs
+            // Specific code for pegin/pegout or migration/none txs
             switch (getTransactionType(btcTx)) {
                 case PEGIN:
                     processPegIn(btcTx, rskTx, height, btcTxHash);
                     break;
-                case PEGOUT:
-                    processRelease(btcTx, btcTxHash);
-                    break;
-                case MIGRATION:
-                    processMigration(btcTx, btcTxHash);
+                case PEGOUT_OR_MIGRATION:
+                    processPegoutOrMigration(btcTx, btcTxHash);
                     break;
                 default:
                     String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTxHash);
@@ -451,7 +448,7 @@ public class BridgeSupport {
         /************************************************************************/
         if (activations.isActive(ConsensusRule.RSKIP199) && txIsFromOldFederation(btcTx)) {
             logger.debug("[getTransactionType][btc tx {}] is from the old federation, treated as a migration", btcTx.getHash());
-            return PegTxType.MIGRATION;
+            return PegTxType.PEGOUT_OR_MIGRATION;
         }
 
         if (BridgeUtils.isValidPegInTx(
@@ -476,12 +473,12 @@ public class BridgeSupport {
             activations
         )) {
             logger.debug("[getTransactionType][btc tx {}] is a migration transaction", btcTx.getHash());
-            return PegTxType.MIGRATION;
+            return PegTxType.PEGOUT_OR_MIGRATION;
         }
 
         if (BridgeUtils.isPegOutTx(btcTx, getLiveFederations(), activations)) {
             logger.debug("[getTransactionType][btc tx {}] is a peg-out", btcTx.getHash());
-            return PegTxType.PEGOUT;
+            return PegTxType.PEGOUT_OR_MIGRATION;
         }
 
         logger.debug("[getTransactionType][btc tx {}] is neither a peg-in, peg-out, nor migration", btcTx.getHash());
@@ -674,35 +671,12 @@ public class BridgeSupport {
         provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
     }
 
-    protected void processRelease(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
-        logger.debug("[processRelease] This is a release tx {}", btcTx);
-            // do-nothing
-            // We could call removeUsedUTXOs(btcTx) here, but we decided to not do that.
-            // Used utxos should had been removed when we created the release tx.
-            // Invoking removeUsedUTXOs() here would make "some" sense in theses scenarios:
-            // a) In testnet, devnet or local: we restart the RSK blockchain without changing the federation address. We don't want to have utxos that were already spent.
-            // Open problem: TxA spends TxB. registerBtcTransaction() for TxB is called, it spends a utxo the bridge is not yet aware of,
-            // so nothing is removed. Then registerBtcTransaction() for TxA and the "already spent" utxo is added as it was not spent.
-            // When is not guaranteed to be called in the chronological order, so a Federator can inform
-            // b) In prod: Federator created a tx manually or the federation was compromised and some utxos were spent. Better not try to spend them.
-            // Open problem: For performance removeUsedUTXOs() just removes 1 utxo
-
+    protected void processPegoutOrMigration(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
+        String pegoutType = btcTx.getWalletOutputs(getActiveFederationWallet(false)).size() == btcTx.getOutputs().size() ? "migration" : "pegout";
+        logger.debug("[processPegoutOrMigration] This is a {} tx {}", pegoutType, btcTx);
         markTxAsProcessed(btcTx);
-
-        // Generate new change UTXO
         saveNewUTXOs(btcTx);
-        logger.info("[processRelease] BTC Tx {} processed in RSK", btcTxHash);
-    }
-
-    protected void processMigration(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
-        logger.debug("[processMigration] This is a migration tx {}", btcTx);
-
-        markTxAsProcessed(btcTx);
-
-        // Input spent on retiring federation and a new UTXO that is created on active federation.
-        // It is probably merging multiple UTXOs from the retiring federation
-        saveNewUTXOs(btcTx);
-        logger.info("[processMigration] BTC Tx {} processed in RSK", btcTxHash);
+        logger.info("[processPegoutOrMigration] BTC Tx {} processed in RSK", btcTxHash);
     }
 
     private boolean shouldProcessPegInVersionLegacy(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx,
