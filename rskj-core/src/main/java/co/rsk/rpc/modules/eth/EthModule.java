@@ -151,7 +151,11 @@ public class EthModule
         }
     }
 
-    public String estimateGas(CallArguments args, @Nonnull Block block) {
+    public String estimateGas(CallArguments args, @Nonnull String bnOrId) {
+
+        ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId);
+        Block block = result.getBlock();
+
         String estimation = null;
         try {
             CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
@@ -174,12 +178,6 @@ public class EthModule
             LOGGER.debug("eth_estimateGas(): {}", estimation);
         }
     }
-
-    public String estimateGas(CallArguments args) {
-        Block bestBlock = blockchain.getBestBlock();
-        return estimateGas(args, bestBlock);
-    }
-
 
     protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {
         long estimatedGas = reversibleExecutionResult.getMovedRemainingGasToChild() ?

@@ -43,8 +43,10 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.*;
 import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang3.StringUtils;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -59,8 +61,6 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.rpc.validation.BnTagOrNumberValidator;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -77,9 +77,7 @@ import java.util.function.UnaryOperator;
 
 import static co.rsk.util.HexUtils.*;
 import static java.lang.Math.max;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -1074,20 +1072,10 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_estimateGas(CallArguments args, String bnOrId) {
-        Block block = null;
-        if (null == bnOrId) {
-            block = blockchain.getBestBlock();
-        } else {
-            BnTagOrNumberValidator.validate(bnOrId);
-
-            Optional<Block> optBlock = web3InformationRetriever.getBlock(bnOrId);
-            if (!optBlock.isPresent()) {
-                throw RskJsonRpcRequestException.headerNotFound();
-            }
-            block = optBlock.get();
+        if (StringUtils.isEmpty(bnOrId)) {
+            bnOrId = BlockTag.LATEST.getTag();
         }
-
-        return getEthModule().estimateGas(args, block);
+        return getEthModule().estimateGas(args, bnOrId);
     }
 
     @Override

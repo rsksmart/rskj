@@ -62,6 +62,11 @@ public class ExecutionBlockRetriever implements InternalService {
     }
 
     public Result retrieveExecutionBlock(String bnOrId) {
+
+        if(BlockTag.EARLIEST.tagEquals(bnOrId)) {
+            return Result.ofBlock(blockchain.getBlockByNumber(0));
+        }
+
         if (BlockTag.LATEST.tagEquals(bnOrId)) {
             return Result.ofBlock(blockchain.getBestBlock());
         }
@@ -89,7 +94,7 @@ public class ExecutionBlockRetriever implements InternalService {
 
         // If we got here, the specifier given is unsupported
         throw invalidParamError(String.format(
-                "Unsupported block specifier '%s'. Can only be either 'latest', " +
+                "Unsupported block specifier '%s'. Can only be either 'earliest', 'latest', " +
                         "'pending' or a specific block number (either hex - prepending '0x' or decimal).",
                 bnOrId));
     }
@@ -152,6 +157,7 @@ public class ExecutionBlockRetriever implements InternalService {
             this.finalState = finalState;
         }
 
+        @VisibleForTesting
         static Result ofBlock(Block block) {
             return new Result(block, null);
         }

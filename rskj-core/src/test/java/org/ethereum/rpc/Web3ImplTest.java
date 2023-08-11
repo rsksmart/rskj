@@ -65,6 +65,7 @@ import co.rsk.util.TestContract;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -2297,173 +2298,15 @@ class Web3ImplTest {
         Web3TestBuilder builder = new Web3TestBuilder();
         Web3Impl web3 = builder.build();
         EthModule ethModule = builder.getEthModule();
-        Blockchain blockchain = builder.getBlockchain();
-        Block expectedBlock = blockchain.getBestBlock();
         String estimatedCost = "0x5c";
-        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
+        ArgumentCaptor<String> blockCaptor = ArgumentCaptor.forClass(String.class);
 
         when(ethModule.estimateGas(eq(args),blockCaptor.capture())).thenReturn(estimatedCost);
         String result = web3.eth_estimateGas(args);
-        Block capturedBlock = blockCaptor.getValue();
-        assertEquals(expectedBlock,capturedBlock);
+        String capturedBlock = blockCaptor.getValue();
+        assertEquals(BlockTag.LATEST.getTag(),capturedBlock);
         assertEquals(estimatedCost,result);
     }
-
-    @Test
-    void estimateGasWithLatest(){
-        String estimatedCost = "0x5c";
-        CallArguments args = Mockito.mock(CallArguments.class);
-        Block lastBlock = Mockito.mock(Block.class);
-
-        Web3TestBuilder builder = new Web3TestBuilder();
-        Blockchain blockchain = builder.getBlockchain();
-        EthModule ethModule = builder.getEthModule();
-
-        Web3InformationRetriever web3InformationRetriever = new Web3InformationRetriever(
-                Mockito.mock(TransactionPool.class),
-                blockchain,
-                Mockito.mock(RepositoryLocator.class),
-                Mockito.mock(ExecutionBlockRetriever.class));
-        Web3Impl web3 = builder
-                .withWeb3InformationRetriever(web3InformationRetriever)
-                .build();
-        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
-        when(ethModule.estimateGas(eq(args),blockCaptor.capture())).thenReturn(estimatedCost);
-        when(blockchain.getBestBlock()).thenReturn(lastBlock);
-
-        String result = web3.eth_estimateGas(args, "latest");
-        Block capturedBlock = blockCaptor.getValue();
-        assertEquals(lastBlock,capturedBlock);
-        assertEquals(estimatedCost,result);
-        assertNotEquals(blockchain.getBlockByNumber(0L),capturedBlock);
-    }
-
-    @Test
-    void estimateGasWithEarliest(){
-        CallArguments args = Mockito.mock(CallArguments.class);
-        Block lastBlock = Mockito.mock(Block.class);
-        String estimatedCost = "0x5c";
-
-        Web3TestBuilder builder = new Web3TestBuilder();
-        Blockchain blockchain = builder.getBlockchain();
-        EthModule ethModule = builder.getEthModule();
-        Web3InformationRetriever web3InformationRetriever = new Web3InformationRetriever(
-                Mockito.mock(TransactionPool.class),
-                blockchain,
-                Mockito.mock(RepositoryLocator.class),
-                Mockito.mock(ExecutionBlockRetriever.class));
-        Web3Impl web3 = builder
-                .withWeb3InformationRetriever(web3InformationRetriever)
-                .build();
-
-        Block expectedBlock = blockchain.getBlockByNumber(0L);
-
-        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
-        when(blockchain.getBestBlock()).thenReturn(lastBlock);
-        when(ethModule.estimateGas(eq(args),blockCaptor.capture())).thenReturn(estimatedCost);
-
-        String result = web3.eth_estimateGas(args, "earliest");
-
-        Block capturedBlock = blockCaptor.getValue();
-        assertEquals(expectedBlock,capturedBlock);
-        assertEquals(estimatedCost,result);
-        assertNotEquals(lastBlock,capturedBlock);
-    }
-
-    @Test
-    void estimateGasWithPending(){
-        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
-        String estimatedCost = "0x5c";
-        CallArguments args = Mockito.mock(CallArguments.class);
-        Block pendingBlock = Mockito.mock(Block.class);
-
-        Web3TestBuilder builder = new Web3TestBuilder();
-        EthModule ethModule = builder.getEthModule();
-        Web3InformationRetriever web3InformationRetriever = builder.getWeb3InformationRetriever();
-        Web3Impl web3 = builder
-                .build();
-
-        when(web3InformationRetriever.getBlock("pending")).thenReturn(Optional.of(pendingBlock));
-        when(ethModule.estimateGas(eq(args),blockCaptor.capture())).thenReturn(estimatedCost);
-
-
-        String result = web3.eth_estimateGas(args, "pending");
-        Block capturedBlock = blockCaptor.getValue();
-        assertEquals(pendingBlock,capturedBlock);
-        assertEquals(estimatedCost,result);
-    }
-
-    @Test
-    void estimateSafeMustFail(){
-        Web3TestBuilder builder = new Web3TestBuilder();
-        Web3InformationRetriever web3InformationRetriever = new Web3InformationRetriever(
-                Mockito.mock(TransactionPool.class),
-                builder.getBlockchain(),
-                Mockito.mock(RepositoryLocator.class),
-                Mockito.mock(ExecutionBlockRetriever.class));
-        Web3Impl web3 = builder
-                .withWeb3InformationRetriever(web3InformationRetriever)
-                .build();
-        CallArguments args = Mockito.mock(CallArguments.class);
-
-        RskJsonRpcRequestException expectedException = Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
-            web3.eth_estimateGas(args, "safe");
-        });
-
-        assertEquals(expectedException.getCode(), -39001);
-    }
-    
-    @Test
-    void estimateFinalizedMustFail(){
-        Web3TestBuilder builder = new Web3TestBuilder();
-        Web3InformationRetriever web3InformationRetriever = new Web3InformationRetriever(
-                Mockito.mock(TransactionPool.class),
-                builder.getBlockchain(),
-                Mockito.mock(RepositoryLocator.class),
-                Mockito.mock(ExecutionBlockRetriever.class));
-        Web3Impl web3 = builder
-                .withWeb3InformationRetriever(web3InformationRetriever)
-                .build();
-        CallArguments args = Mockito.mock(CallArguments.class);
-
-        RskJsonRpcRequestException expectedException = Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
-            web3.eth_estimateGas(args, "finalized");
-        });
-
-        assertEquals(expectedException.getCode(), -39001);
-    }
-
-
-    @Test
-    void estimateUnknownBlockMustFail(){
-        String unknownBlock = "0x1234";
-        Web3TestBuilder builder = Web3TestBuilder.builder();
-        CallArguments args = Mockito.mock(CallArguments.class);
-        Web3InformationRetriever web3InformationRetriever = builder.getWeb3InformationRetriever();
-        when(web3InformationRetriever.getBlock(unknownBlock)).thenReturn(Optional.empty());
-
-        Web3Impl web3 = builder.build();
-        RskJsonRpcRequestException expectedException = Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
-            web3.eth_estimateGas(args, unknownBlock);
-        });
-        assertEquals(expectedException.getCode(), -32000);
-    }
-
-    @Test
-    void estimateInvalidBlockArgMustFail(){
-        String unknownBlock = "rnd";
-        Web3TestBuilder builder = Web3TestBuilder.builder();
-        CallArguments args = Mockito.mock(CallArguments.class);
-        Web3InformationRetriever web3InformationRetriever = builder.getWeb3InformationRetriever();
-        when(web3InformationRetriever.getBlock(unknownBlock)).thenReturn(Optional.empty());
-
-        Web3Impl web3 = builder.build();
-        RskJsonRpcRequestException expectedException = Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
-            web3.eth_estimateGas(args, unknownBlock);
-        });
-        assertEquals(expectedException.getCode(), -32602);
-    }
-
 
     private void checkSendTransaction(Byte chainId) {
         BigInteger nonce = BigInteger.ONE;

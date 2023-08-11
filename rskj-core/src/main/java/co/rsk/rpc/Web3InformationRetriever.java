@@ -25,7 +25,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
-import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.util.List;
@@ -44,6 +43,8 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
  */
 public class Web3InformationRetriever {
 
+    private static final String EARLIEST = "earliest";
+    private static final String LATEST = "latest";
     private static final String PENDING = "pending";
 
     private final TransactionPool transactionPool;
@@ -63,43 +64,31 @@ public class Web3InformationRetriever {
 
     /**
      * Retrieves the block based on the identifier.
-     *
      * @param identifier {@link Web3InformationRetriever}
      * @return An optional containing the block if found.
      * @throws RskJsonRpcRequestException if the identifier is an invalid block identifier.
      */
     public Optional<Block> getBlock(String identifier) {
-        BlockTag tag = BlockTag.fromString(identifier.toLowerCase());
-        Block block = null;
-        if (tag != null) {
-            switch (tag) {
-                case EARLIEST:
-                    block = blockchain.getBlockByNumber(0);
-                    break;
-                case LATEST:
-                    block = blockchain.getBestBlock();
-                    break;
-                case PENDING:
-                    block = executionBlockRetriever.retrieveExecutionBlock(identifier).getBlock();
-                    break;
-                case SAFE:
-                case FINALIZED:
-                default:
-                    throw RskJsonRpcRequestException.unknownBLockException();
-            }
+        Block block;
+        if (PENDING.equals(identifier)) {
+            block = executionBlockRetriever.retrieveExecutionBlock(identifier).getBlock();
+        } else if (LATEST.equals(identifier)) {
+            block = blockchain.getBestBlock();
+        } else if (EARLIEST.equals(identifier)) {
+            block = blockchain.getBlockByNumber(0);
         } else {
             block = this.blockchain.getBlockByNumber(getBlockNumber(identifier));
         }
+
         return Optional.ofNullable(block);
     }
 
     /**
      * Retrieves an {@link AccountInformationProvider} based on the identifier.
-     *
      * @param identifier {@link Web3InformationRetriever}
      * @return The {@link AccountInformationProvider}
      * @throws RskJsonRpcRequestException if the block indicated by the identifier is not found or the state for the
-     *                                    block was not found.
+     * block was not found.
      */
     public AccountInformationProvider getInformationProvider(String identifier) {
         if (PENDING.equals(identifier)) {
@@ -118,7 +107,6 @@ public class Web3InformationRetriever {
 
     /**
      * Retrieves an list of {@link Transaction} based on the identifier
-     *
      * @param identifier {@link Web3InformationRetriever}
      * @return The {@link Transaction Transactions} of {@link TransactionPool} if the identifier is {@link #PENDING},
      * if not, the ones on the specified block.

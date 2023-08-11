@@ -272,4 +272,16 @@ class ExecutionFoundBlockRetrieverTest {
                         () -> retriever.retrieveExecutionBlock("other"));
         Assertions.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
+
+    @Test
+    void testRetrieveExecutionBlockEarliest() {
+        // Mocking behavior for blockchain.getBlockByNumber(0)
+        Block mockBlock = mock(Block.class);
+        when(blockchain.getBlockByNumber(0)).thenReturn(mockBlock);
+
+        ExecutionBlockRetriever.Result result = retriever.retrieveExecutionBlock("earliest");
+
+        assertEquals(mockBlock, result.getBlock());
+        assertNull(result.getFinalState());
+    }
 }
