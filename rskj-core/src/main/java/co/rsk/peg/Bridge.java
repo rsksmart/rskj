@@ -667,7 +667,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public Long getMinimumLockTxValue(Object[] args) {
         logger.trace("getMinimumLockTxValue");
-        return bridgeSupport.getMinimumPeginTxValue().getValue();
+        return bridgeConstants.getMinimumPeginTxValue(activations).getValue();
     }
 
     public Boolean isBtcTxHashAlreadyProcessed(Object[] args) throws VMException {

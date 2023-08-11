@@ -459,7 +459,7 @@ public class BridgeSupport {
             getLiveFederations(),
             retiredFederationP2SHScript,
             btcContext,
-            bridgeConstants,
+            bridgeConstants.getMinimumPeginTxValue(activations),
             activations
         )) {
             logger.debug("[getTransactionType][btc tx {}] is a peg-in", btcTx.getHash());
@@ -2450,14 +2450,6 @@ public class BridgeSupport {
             panicProcessor.panic("lock-whitelist", e.getMessage());
             return 0;
         }
-    }
-
-    /**
-     * Returns the minimum amount of satoshis a user should send to the federation.
-     * @return the minimum amount of satoshis a user should send to the federation.
-     */
-    public Coin getMinimumPeginTxValue() {
-        return activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPeginTxValueInSatoshis() : bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
     }
 
     /**

@@ -112,20 +112,6 @@ public abstract class BridgeConstants {
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
 
-    /**
-     *
-     * @deprecated( in favor of {@link co.rsk.config.BridgeConstants#getMinimumPeginTxValue(ActivationConfig.ForBlock)})
-     */
-    @Deprecated
-    public Coin getLegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValue; }
-
-    /**
-     *
-     * @deprecated( in favor of {@link co.rsk.config.BridgeConstants#getMinimumPeginTxValue(ActivationConfig.ForBlock)})
-     */
-    @Deprecated
-    public Coin getMinimumPeginTxValueInSatoshis() { return minimumPeginTxValue; }
-
     public Coin getMinimumPeginTxValue(ActivationConfig.ForBlock activations) {
         return activations.isActive(ConsensusRule.RSKIP219) ? minimumPeginTxValue : legacyMinimumPeginTxValue;
     }
