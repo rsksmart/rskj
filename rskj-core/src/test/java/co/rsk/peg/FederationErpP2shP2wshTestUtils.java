@@ -25,12 +25,9 @@ public class FederationErpP2shP2wshTestUtils {
         Coin inputValue,
         boolean spendsFromEmergency) {
 
-        Coin fee = Coin.valueOf(1_000);
-        Coin outputValue = inputValue.minus(fee);
-
         BtcTransaction spendTx = new BtcTransaction(networkParameters);
         spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
-        spendTx.addOutput(outputValue, receiver);
+        spendTx.addOutput(inputValue, receiver); // This value will be updated once the fee is calculated
         spendTx.setVersion(BTC_TX_VERSION_2);
         if (spendsFromEmergency) {
             spendTx.getInput(0).setSequenceNumber(activationDelay);
@@ -69,7 +66,53 @@ public class FederationErpP2shP2wshTestUtils {
         TransactionWitness txWitness = TransactionWitness.createWitnessErpScript(redeemScript, signatures, notIfArgument);
         spendTx.setWitness(inputIndex, txWitness);
 
+
+        Coin satsPerByte = Coin.valueOf(10);
+        int txVirtualSize = calculateTxVirtualSize(spendTx);
+        Coin fee = satsPerByte.multiply(txVirtualSize);
+        spendTx.getOutput(0).setValue(inputValue.minus(fee));
+
         // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
         System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
+    }
+
+    public static int calculateTxBaseSize(BtcTransaction spendTx) {
+        int baseSize = 0;
+
+        int inputsQuantity = spendTx.getInputs().size();
+        for (int i = 0; i < inputsQuantity; i++) {
+            byte[] input = spendTx.getInput(i).bitcoinSerialize();
+            baseSize += input.length;
+        }
+
+        int outputsQuantity = spendTx.getOutputs().size();
+        for (int i = 0; i < outputsQuantity; i++) {
+            byte[] output = spendTx.getOutput(i).bitcoinSerialize();
+            baseSize += output.length;
+        }
+
+        baseSize += 4; // version size
+        baseSize += 1; // marker size
+        baseSize += 1; // flag size
+        baseSize += 4; // locktime size
+
+        return baseSize;
+    }
+
+    public static int calculateTxWeight(BtcTransaction spendTx) {
+        int txTotalSize = spendTx.bitcoinSerialize().length;
+        int txBaseSize = calculateTxBaseSize(spendTx);
+
+        // As described in https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki#transaction-size-calculations
+        int txWeight = txTotalSize + (3 * txBaseSize);
+        return txWeight;
+    }
+
+    public static int calculateTxVirtualSize(BtcTransaction spendTx) {
+        double txWeight = calculateTxWeight(spendTx);
+
+        // As described in https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki#transaction-size-calculations
+        int txVirtualSize = (int) Math.ceil(txWeight / 4);
+        return txVirtualSize;
     }
 }
