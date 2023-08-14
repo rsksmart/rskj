@@ -7345,7 +7345,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(isLockingCapEnabled);
 
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
-        when(bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis()).thenReturn(Coin.SATOSHI);
+        when(bridgeConstants.getMinimumPeginTxValue(activations)).thenReturn(Coin.SATOSHI);
         when(bridgeConstants.getBtcParams()).thenReturn(BridgeRegTestConstants.getInstance().getBtcParams());
         when(bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()).thenReturn(1);
         when(bridgeConstants.getGenesisFeePerKb()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFeePerKb());

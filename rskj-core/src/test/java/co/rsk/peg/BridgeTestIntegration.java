@@ -1049,7 +1049,7 @@ public class BridgeTestIntegration {
 
         byte[] data = Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
 
-        Assertions.assertArrayEquals(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encodeOutputs(bridgeConstantsalue.getLegacyMinimumPeginTxValueInSatoshis().value), bridge.execute(data));
+        Assertions.assertArrayEquals(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encodeOutputs(bridgeConstants.getMinimumPeginTxValue(activationConfig.forBlock(0)).value), bridge.execute(data));
     }
 
     @Test

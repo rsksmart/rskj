@@ -1516,7 +1516,7 @@ public class BridgeSupportTestIntegration {
                             anyList(),
                             nullable(Script.class),
                             any(Context.class),
-                            any(BridgeConstants.class),
+                            any(Coin.class),
                             any(ActivationConfig.ForBlock.class)
                     )).thenReturn(false);
             bridgeUtilsMocked.when(() ->
