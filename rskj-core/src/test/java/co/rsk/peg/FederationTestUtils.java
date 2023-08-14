@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 
 import co.rsk.bitcoinj.core.Address;
@@ -136,6 +137,39 @@ public class FederationTestUtils {
 
         // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
 //        System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
+    }
+
+    public static void addSignatures(Federation federation, List<BtcECKey> signers, BtcTransaction tx){
+        Script fedInputScript = createBaseInputScriptThatSpendsFromTheFederation(federation);
+        tx.getInput(0).setScriptSig(fedInputScript);
+
+        Sha256Hash sighash = tx.hashForSignature(
+            0,
+            federation.getRedeemScript(),
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        int totalSigners = signers.size();
+        int requiredSignatures = totalSigners / 2 + 1;
+
+        for (int i = 0; i < requiredSignatures; i++) {
+            BtcECKey privateKey = signers.get(i);
+            BtcECKey publicKey = BtcECKey.fromPublicOnly(privateKey.getPubKeyPoint().getEncoded(true));
+
+            BtcECKey.ECDSASignature sig = privateKey.sign(sighash);
+            TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+
+            int sigIndex = fedInputScript.getSigInsertionIndex(sighash, publicKey);
+            fedInputScript = ScriptBuilder.updateScriptWithSignature(
+                fedInputScript,
+                txSig.encodeToBitcoin(),
+                sigIndex,
+                1,
+                1
+            );
+        }
+        tx.getInput(0).setScriptSig(fedInputScript);
     }
 
     private static Script createInputScriptSig(
