@@ -672,8 +672,8 @@ public class BridgeSupport {
     }
 
     protected void processPegoutOrMigration(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
-        String pegoutType = btcTx.getWalletOutputs(getActiveFederationWallet(false)).size() == btcTx.getOutputs().size() ? "migration" : "pegout";
-        logger.debug("[processPegoutOrMigration] This is a {} tx {}", pegoutType, btcTx);
+        String transactionType = btcTx.getWalletOutputs(getActiveFederationWallet(false)).size() == btcTx.getOutputs().size() ? "migration" : "pegout";
+        logger.debug("[processPegoutOrMigration] This is a {} tx {}", transactionType, btcTx);
         markTxAsProcessed(btcTx);
         saveNewUTXOs(btcTx);
         logger.info("[processPegoutOrMigration] BTC Tx {} processed in RSK", btcTxHash);
