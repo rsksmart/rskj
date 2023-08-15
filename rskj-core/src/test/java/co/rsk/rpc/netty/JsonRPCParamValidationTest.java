@@ -156,7 +156,7 @@ class JsonRPCParamValidationTest {
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
         assertEquals(-32602, response.getCode());
         String message = response.getResponse().get("error").get("message").asText();
-        assertEquals("Invalid argument: abc: param should be a hex value string.", message);
+        assertEquals("Invalid argument \"abc\": param should be a hex value string.", message);
     }
 
     @Test
