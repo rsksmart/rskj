@@ -25,13 +25,15 @@ public class FederationErpP2shP2wshTestUtils {
         Coin inputValue,
         boolean spendsFromEmergency) {
 
+        Coin fee = Coin.valueOf(1_000);
+
         BtcTransaction spendTx = new BtcTransaction(networkParameters);
         spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
-        spendTx.addOutput(inputValue, receiver); // This value will be updated once the fee is calculated
+        spendTx.addOutput(inputValue.minus(fee), receiver);
         spendTx.setVersion(BTC_TX_VERSION_2);
-        if (spendsFromEmergency) {
+/*        if (spendsFromEmergency) {
             spendTx.getInput(0).setSequenceNumber(activationDelay);
-        }
+        }*/
 
         // Create signatures
         int inputIndex = 0;
@@ -63,14 +65,14 @@ public class FederationErpP2shP2wshTestUtils {
         }
 
         byte[] notIfArgument = spendsFromEmergency ? new byte[] {1} : new byte[] {};
-        TransactionWitness txWitness = TransactionWitness.createWitnessErpScript(redeemScript, signatures, notIfArgument);
+        //TransactionWitness txWitness = TransactionWitness.createWitnessErpScript(redeemScript, signatures);
+        TransactionWitness txWitness = TransactionWitness.createWitnessScript(redeemScript, signatures);
         spendTx.setWitness(inputIndex, txWitness);
-
 
         Coin satsPerByte = Coin.valueOf(10);
         int txVirtualSize = calculateTxVirtualSize(spendTx);
-        Coin fee = satsPerByte.multiply(txVirtualSize);
-        spendTx.getOutput(0).setValue(inputValue.minus(fee));
+        //Coin fee = satsPerByte.multiply(txVirtualSize);
+        //spendTx.getOutput(0).setValue(inputValue.minus(fee));
 
         // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
         System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));

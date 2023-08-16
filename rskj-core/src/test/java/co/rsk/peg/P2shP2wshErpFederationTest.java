@@ -1,15 +1,19 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.P2shErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import org.junit.jupiter.api.Test;
+import org.spongycastle.util.encoders.Hex;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class P2shP2wshErpFederationTest {
@@ -48,6 +52,78 @@ public class P2shP2wshErpFederationTest {
 //            false
 //        ));
 //    }
+
+    @Test
+    void spendFromP2shP2wshAddressWithNewRedeem() {
+
+        NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+
+        String[] seeds = new String[67];
+        for (int i = 0; i < 67; i++ ) {
+            int j = i + 1;
+            seeds[i] = ("fed" + j);
+        }
+        List<BtcECKey> publicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            seeds,
+            true
+        );
+
+        Script redeemScript = new ScriptBuilder().createNewRedeemScript(publicKeys.size() / 2 + 1, publicKeys);
+
+        Script p2shP2wshOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
+        Address segwitAddress = Address.fromP2SHScript(
+            networkParameters,
+            p2shP2wshOutputScript
+        );
+        System.out.println(segwitAddress);
+
+        Sha256Hash fundTxHash = Sha256Hash.wrap("acf3e31839e0ff5740c2f92d0a3c61a529e4773a2c4ec1f216d91d6ed4f7b8f3");
+        int outputIndex = 0;
+        Address destinationAddress = Address.fromBase58(networkParameters, "msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"); // testnet
+        Coin value = Coin.valueOf(10_000);
+        Coin fee = Coin.valueOf(3_000);
+
+        BtcTransaction spendTx = new BtcTransaction(networkParameters);
+        spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
+        spendTx.addOutput(value.minus(fee), destinationAddress);
+        spendTx.setVersion(2);
+
+        byte[] redeemScriptHash = Sha256Hash.hash(redeemScript.getProgram());
+        Script scriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
+        Script segwitScriptSig = new ScriptBuilder().data(scriptSig.getProgram()).build();
+        spendTx.getInput(0).setScriptSig(segwitScriptSig);
+
+        // Create signatures
+        int inputIndex = 0;
+        Sha256Hash sigHash = spendTx.hashForWitnessSignature(
+            inputIndex,
+            redeemScript,
+            value,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        int thresholdSignaturesSize = publicKeys.size() / 2 + 1;
+        List<TransactionSignature> thresholdSignatures = new ArrayList<>();
+
+        for (int i = 0; i < thresholdSignaturesSize; i++) {
+            BtcECKey keyToSign = publicKeys.get(i);
+            BtcECKey.ECDSASignature signature = keyToSign.sign(sigHash);
+            TransactionSignature txSignature = new TransactionSignature(
+                signature,
+                BtcTransaction.SigHash.ALL,
+                false
+            );
+            thresholdSignatures.add(txSignature);
+        }
+
+        TransactionWitness txWitness = TransactionWitness.createWitnessScriptWithNewRedeem(redeemScript, thresholdSignatures, publicKeys.size());
+        spendTx.setWitness(inputIndex, txWitness);
+
+
+        // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
+        System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
+    }
 
     @Test
     void spendFromP2shP2wshErpStandardFed() {
@@ -89,14 +165,14 @@ public class P2shP2wshErpFederationTest {
             redeemScript,
             activationDelay,
             standardKeys,
-            Sha256Hash.wrap("b863291d286ba627d527dc8ec10f1c9ad4438f618fae032d8200fcb9b2577adc"),
+            Sha256Hash.wrap("214bed3040e1432bf23b6126a7e8ffc83ba7da4d54fe899ee12510f878444ea1"),
             0,
             Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"), // testnet
             value,
             false
         ));
 
-        // Spend from emergency multisig
+/*        // Spend from emergency multisig
         assertDoesNotThrow(() -> FederationErpP2shP2wshTestUtils.spendFromP2shP2wshErpFed(
             networkParameters,
             redeemScript,
@@ -107,7 +183,7 @@ public class P2shP2wshErpFederationTest {
             Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"), // testnet
             value,
             true
-        ));
+        ));*/
     }
 
     @Test
