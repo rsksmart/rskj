@@ -26,9 +26,12 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 @JsonDeserialize(using = HexIndexParam.Deserializer.class)
-public class HexIndexParam {
+public class HexIndexParam implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final Integer index;
 
     public HexIndexParam(String indexString) {
