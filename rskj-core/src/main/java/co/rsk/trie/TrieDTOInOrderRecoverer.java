@@ -43,7 +43,7 @@ public class TrieDTOInOrderRecoverer {
             return Optional.of(fromTrieDTO(trieCollection[start], Optional.empty(), Optional.empty()));
         }
         int indexRoot = findRoot(trieCollection, start, end);
-        logger.info("-- indexRoot: {}", indexRoot);
+        //logger.info("-- indexRoot: {}, childrenSize:{}", indexRoot, trieCollection[indexRoot].getChildrenSize().value);
         Optional<TrieDTO> left = recoverSubtree(trieCollection, start, indexRoot - 1);
         Optional<TrieDTO> right = recoverSubtree(trieCollection, indexRoot + 1, end);
         return Optional.of(fromTrieDTO(trieCollection[indexRoot], left, right));
@@ -70,12 +70,12 @@ public class TrieDTOInOrderRecoverer {
             Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(rightNode.toMessage()));
             result.setRight(hash.getBytes());
         });
-        logger.info("-- ChildrenSize: {} ,Hash: {}, Left: {}, Right:{}",
+        /*logger.info("-- ChildrenSize: {} ,Hash: {}, Left: {}, Right:{}",
                 result.getChildrenSize().value,
                 getHashString(result.toMessage()).substring(0, 6),
                 left.isPresent() ? HexUtils.toJsonHex(result.getLeft()).substring(0, 6):"",
                 right.isPresent() ? HexUtils.toJsonHex(result.getRight()).substring(0, 6):"");
-
+*/
 
         return result;
     }
