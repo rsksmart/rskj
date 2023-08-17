@@ -95,8 +95,8 @@ public class P2shP2wshErpFederationNewRedeemTest {
         NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET); // testnet
         long activationDelay = 30;
 
-        String[] seeds = new String[60];
-        for (int i = 0; i < 60; i++ ) {
+        String[] seeds = new String[62];
+        for (int i = 0; i < 62; i++ ) {
             int j = i + 1;
             seeds[i] = ("fed" + j);
         }
@@ -126,7 +126,7 @@ public class P2shP2wshErpFederationNewRedeemTest {
         );
         System.out.println(segwitAddress);
 
-        Sha256Hash fundTxHash = Sha256Hash.wrap("84538a84c4026e3887f3232fad35114603aa7a18530ae4b3083471f846d252c8");
+        Sha256Hash fundTxHash = Sha256Hash.wrap("3661d179d4dfce84279dafd66d44f1dd8a002b24994e9f58902934806da01e5c");
         int outputIndex = 0;
         //Address destinationAddress = Address.fromBase58(networkParameters, "12MXsCtte9onzqaHwN5VcnwZKGd7oDSsQq"); // mainnet
         Address destinationAddress = Address.fromBase58(networkParameters, "msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"); // testnet
@@ -168,7 +168,7 @@ public class P2shP2wshErpFederationNewRedeemTest {
             thresholdSignatures.add(txSignature);
         }
 
-        TransactionWitness txWitness = TransactionWitness.createWitnessErpScriptWithNewRedeemEmergency(redeemScript, thresholdSignatures, standardKeys.size());
+        TransactionWitness txWitness = TransactionWitness.createWitnessErpScriptWithNewRedeemStandard(redeemScript, thresholdSignatures, standardKeys.size());
         spendTx.setWitness(inputIndex, txWitness);
 
 
