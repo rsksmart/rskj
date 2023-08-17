@@ -48,6 +48,8 @@ public class HexIndexParam implements Serializable {
 
     public static class Deserializer extends StdDeserializer<HexIndexParam> {
 
+        private static final long serialVersionUID = 1L;
+
         public Deserializer() {
             this(null);
         }
