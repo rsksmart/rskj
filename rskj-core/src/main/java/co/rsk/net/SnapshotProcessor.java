@@ -2,13 +2,13 @@ package co.rsk.net;
 
 import co.rsk.net.messages.StateChunkRequestMessage;
 import co.rsk.net.messages.StateChunkResponseMessage;
+import co.rsk.net.sync.PeersInformation;
+import co.rsk.net.sync.SnapSyncState;
 import co.rsk.trie.TrieDTO;
 import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
-import co.rsk.util.HexUtils;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4SafeDecompressor;
@@ -21,7 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 public class SnapshotProcessor {
 
@@ -54,7 +57,6 @@ public class SnapshotProcessor {
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
         this.chunkSizeType = chunkSizeType;
-        this.iterators = Maps.newConcurrentMap();
         this.isCompressionEnabled = isCompressionEnabled;
         this.elements = Lists.newArrayList();
     }
@@ -69,7 +71,6 @@ public class SnapshotProcessor {
         // TODO(snap-poc) deal with multiple peers algorithm here
         Peer peer = peers.get(0);
 
-        long peerBestBlock = peersInformation.getPeer(peer).getStatus().getBestBlockNumber();
         requestState(peer, 0L, 5544285l);
     }
 
@@ -96,27 +97,23 @@ public class SnapshotProcessor {
         // TODO(snap-poc) do whatever it's needed, reading just to check load
         for (int i = 0; i < trieElements.size(); i++) {
             final RLPList trieElement = (RLPList) trieElements.get(i);
-            final byte[] key = trieElement.get(0).getRLPData();
-            final int rawSize = ByteUtil.byteArrayToInt(trieElement.get(2).getRLPData());
-            byte[] value = trieElement.get(1).getRLPData();
+            final int rawSize = ByteUtil.byteArrayToInt(trieElement.get(1).getRLPData());
+            byte[] value = trieElement.get(0).getRLPData();
 
             boolean isCompressed = rawSize != UNCOMPRESSED_FLAG;
             if (isCompressed) {
                 value = decompressLz4(value, rawSize);
             }
+            this.elements.add(value);
 
             if (logger.isTraceEnabled()) {
-                final String keyString = ByteUtil.toHexString(key);
                 final String valueString = value == null ? "null" : ByteUtil.toHexString(value);
-                logger.trace("State chunk received - Key: {}, Value: {}", keyString, valueString);
+                logger.trace("State chunk received - Value: {}", valueString);
             }
         }
 
         this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
         this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
-        for (int i = 0; i < trieElements.size(); i++) {
-            this.elements.add(trieElements.get(i).getRLPData());
-        }
         logger.debug("State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
         if (!message.isComplete()) {
             // request another chunk
@@ -141,63 +138,56 @@ public class SnapshotProcessor {
 
         logger.debug("Processing state chunk request from node {}", sender.getPeerNodeID());
 
-        Long blockNumber = request.getBlockNumber() > 0L ? request.getBlockNumber() : blockchain.getBestBlock().getNumber() - 10;
-
         List<byte[]> trieEncoded = new ArrayList<>();
-        Block block = blockchain.getBlockByNumber(blockNumber);
+        Block block = blockchain.getBlockByNumber(request.getBlockNumber());
         final long to = request.getFrom() + (request.getChunkSize() * 1024);
         TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom(), to);
 
         long rawSize = 0L;
         long compressedSize = 0L;
-
-        long i = KBYTES.equals(this.chunkSizeType)? 0l : request.getFrom();
-        long limit = KBYTES.equals(this.chunkSizeType)? chunkSize * 1024 : i + chunkSize;
-
         long totalCompressingTime = 0L;
 
-        while (it.hasNext() && i < limit) {
-            IterationElement e = it.next();
-            if (logger.isTraceEnabled()) {
-                logger.trace("Single node read.");
-            }
-            byte[] key = e.getNodeKey().encode();
-            byte[] value = e.getNode().getValue();
-            byte[] effectiveValue = value;
-            int uncompressedSizeParam = UNCOMPRESSED_FLAG;
-            if (value != null && isCompressionEnabled) {
-                rawSize += value.length;
+        while (it.hasNext()) {
+            TrieDTO e = it.next();
+            if (it.hasNext() || it.isEmpty()) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Single node read.");
+                }
+                byte[] effectiveValue = e.getEncoded();
+                int uncompressedSizeParam = UNCOMPRESSED_FLAG;
+                if (effectiveValue != null && isCompressionEnabled) {
+                    rawSize += effectiveValue.length;
 
-                long startCompress = System.currentTimeMillis();
-                byte[] compressedValue = compressLz4(value);
-                long totalCompress = System.currentTimeMillis() - startCompress;
-                totalCompressingTime += totalCompress;
+                    long startCompress = System.currentTimeMillis();
+                    byte[] compressedValue = compressLz4(effectiveValue);
+                    long totalCompress = System.currentTimeMillis() - startCompress;
+                    totalCompressingTime += totalCompress;
 
-                validateCompression(key, value, compressedValue);
+                    validateCompression(effectiveValue, compressedValue);
 
-                boolean couldCompress = compressedValue.length < value.length;
-                if (couldCompress) {
-                    compressedSize += compressedValue.length;
-                    uncompressedSizeParam = value.length;
-                } else {
-                    compressedSize += value.length;
+                    boolean couldCompress = compressedValue.length < effectiveValue.length;
+                    if (couldCompress) {
+                        compressedSize += compressedValue.length;
+                        uncompressedSizeParam = effectiveValue.length;
+                    } else {
+                        compressedSize += effectiveValue.length;
+                    }
+
+                    effectiveValue = compressedValue;
+
                 }
 
-                effectiveValue = compressedValue;
+                final byte[] element = RLP.encodeList(RLP.encodeElement(effectiveValue), RLP.encodeInt(uncompressedSizeParam));
+                trieEncoded.add(element);
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Single node calculated.");
+                }
             }
-
-            final byte[] element = RLP.encodeList(RLP.encodeElement(key), RLP.encodeElement(effectiveValue), RLP.encodeInt(uncompressedSizeParam));
-            trieEncoded.add(element);
-
-            if (logger.isTraceEnabled()) {
-                logger.trace("Single node calculated.");
-            }
-
-            i = KBYTES.equals(this.chunkSizeType) ? i + element.length : i + 1;
         }
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
-        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, blockNumber, request.getFrom(), !it.hasNext());
+        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, request.getBlockNumber(), request.getFrom(), to, it.isEmpty());
 
         long totalChunkTime = System.currentTimeMillis() - startChunk;
 
@@ -207,13 +197,13 @@ public class SnapshotProcessor {
         sender.sendMessage(responseMessage);
     }
 
-    private static void validateCompression(byte[] key, byte[] value, byte[] compressedValue) {
+    private static void validateCompression(byte[] value, byte[] compressedValue) {
         // TODO(snap-poc) remove this when finishing with the compression validations
         if (logger.isTraceEnabled()) {
             if (Arrays.equals(decompressLz4(compressedValue, value.length), value)) {
-                logger.trace("===== compressed value is equal to original value for key {}", ByteUtil.toHexString(key));
+                logger.trace("===== compressed value is equal to original value for key {}", ByteUtil.toHexString(value));
             } else {
-                logger.trace("===== compressed value is different from original value for key {}", ByteUtil.toHexString(key));
+                logger.trace("===== compressed value is different from original value for key {}", ByteUtil.toHexString(value));
             }
         }
     }

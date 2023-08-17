@@ -40,7 +40,8 @@ public class StatusResolver {
      */
     public Status currentStatus() {
         Status status;
-        if (blockStore.getMinNumber() != 0) {
+        // TODO Pato remove comment
+        if (false) {//blockStore.getMinNumber() != 0) {
             status = new Status(
                     genesis.getNumber(),
                     genesis.getHash().getBytes(),
