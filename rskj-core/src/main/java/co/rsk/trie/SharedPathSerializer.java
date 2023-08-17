@@ -18,10 +18,12 @@
 package co.rsk.trie;
 
 import co.rsk.bitcoinj.core.VarInt;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 
 public class SharedPathSerializer {
@@ -96,6 +98,10 @@ public class SharedPathSerializer {
             return 0;
         }
         int lshared = sharedPath.length();
+        return calculateVarIntSize(lshared);
+    }
+
+    public static int calculateVarIntSize(int lshared) {
         if (1 <= lshared && lshared <= 32) {
             return 1;
         }
@@ -141,9 +147,9 @@ public class SharedPathSerializer {
         return TrieKeySlice.fromEncoded(encodedKey, 0, lshared, lencoded);
     }
 
-    public static TrieKeySlice deserializeBytes(ByteBuffer message, boolean sharedPrefixPresent, ByteArrayOutputStream encoder) throws IOException {
+    public static Pair<Integer, byte[]> deserializeEncoded(ByteBuffer message, boolean sharedPrefixPresent, ByteArrayOutputStream encoder) throws IOException {
         if (!sharedPrefixPresent) {
-            return TrieKeySlice.empty();
+            return null;
         }
 
         int lshared = getPathBitsLength(message);
@@ -151,10 +157,11 @@ public class SharedPathSerializer {
         int lencoded = PathEncoder.calculateEncodedLength(lshared);
         byte[] encodedKey = new byte[lencoded];
         message.get(encodedKey);
+        final byte[] result = Arrays.copyOfRange(encodedKey, 0, lencoded);
         if (encoder != null) {
-            writeBytes(encoder, lshared, encodedKey);
+            writeBytes(encoder, lshared, result);
         }
-        return TrieKeySlice.fromEncoded(encodedKey, 0, lshared, lencoded);
+        return Pair.of(lshared, result);
     }
 
     private static VarInt readVarInt(ByteBuffer message) {

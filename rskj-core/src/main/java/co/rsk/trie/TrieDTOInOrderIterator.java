@@ -25,45 +25,76 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     private final Deque<TrieDTO> visiting;
     private final TrieStore ds;
 
+    private long from;
+    private final long to;
+    private final boolean preloadChildren;
 
-    public TrieDTOInOrderIterator(TrieStore ds, byte[] root) {
-        this(ds, root, 0L);
+    public TrieDTOInOrderIterator(TrieStore ds, byte[] root, long from, long to) {
+        this(ds, root, from, to, false);
     }
 
-    public TrieDTOInOrderIterator(TrieStore ds, byte[] root, long initialChildrenSize) {
+    public TrieDTOInOrderIterator(TrieStore ds, byte[] root, long from, long to, boolean preloadChildren) {
         Objects.requireNonNull(root);
         this.ds = ds;
         this.visiting = new LinkedList<>();
+        this.from = from;
+        this.to = to;
+        this.preloadChildren = preloadChildren;
         // find the leftmost node, pushing all the intermediate nodes onto the visiting stack
-        TrieDTO nodeDTO = pushNode(root, visiting);
-        findByChildrenSize(initialChildrenSize, nodeDTO, visiting);
+        findByChildrenSize(from, getNode(root), visiting);
         // now the leftmost unvisited node is on top of the visiting stack
     }
 
     private TrieDTO findByChildrenSize(long childrenSize, TrieDTO nodeDTO, Deque<TrieDTO> visiting) {
         if (!nodeDTO.isTerminal()) {
-            if (nodeDTO.getLeftHash() != null) {
+
+            if (nodeDTO.isLeftNodeEmbedded() && nodeDTO.isRightNodeEmbedded()) {
+                return pushAndReturn(nodeDTO, visiting, childrenSize);
+            }
+
+            if (nodeDTO.isLeftNodePresent() && !nodeDTO.isLeftNodeEmbedded()) {
                 TrieDTO left = getNode(nodeDTO.getLeftHash());
-                if (childrenSize < left.getTotalSize()) {
-                    visiting.push(left);
+                long maxLeftSize = left.getTotalSize();
+                if (childrenSize <= maxLeftSize) {
+                    visiting.push(nodeDTO);
                     return findByChildrenSize(childrenSize, left, visiting);
-                } else {
-                    final long leftAndParent = left.getTotalSize() + nodeDTO.getSize();
-                    if (childrenSize <= leftAndParent) {
-                        return this.next();
-                    } else if (nodeDTO.getRightHash() != null) {
-                        this.visiting.pop(); // Remove parent when going right
-                        TrieDTO right = getNode(nodeDTO.getRightHash());
-                        final long maxSize = leftAndParent + right.getTotalSize();
-                        if (childrenSize < maxSize) {
-                            visiting.push(right);
-                            return findByChildrenSize(childrenSize - leftAndParent, right, visiting);
-                        }
-                        throw new RuntimeException("Invalid ChildrenSize " + childrenSize + ". Bigger than the size of the trie:" + maxSize);
-                    }
+                }
+                maxLeftSize += nodeDTO.getSize();
+                if (childrenSize <= maxLeftSize) {
+                    return pushAndReturn(nodeDTO, visiting, (childrenSize - left.getTotalSize()));
+                }
+            }else if (nodeDTO.isLeftNodePresent() && nodeDTO.isLeftNodeEmbedded()) {
+                if (childrenSize <= nodeDTO.getLeftSize()) {
+                    return pushAndReturn(nodeDTO, visiting, childrenSize);
+                }
+            }
+
+            if (nodeDTO.isRightNodePresent() && !nodeDTO.isRightNodeEmbedded()) {
+                TrieDTO right = getNode(nodeDTO.getRightHash());
+                long maxParentSize = nodeDTO.getTotalSize() - right.getTotalSize();
+                long maxRightSize = nodeDTO.getTotalSize();
+                if ( maxParentSize < childrenSize && childrenSize <= maxRightSize) {
+                    //System.out.println("remove:" + maxParentSize);
+                    return findByChildrenSize(childrenSize - maxParentSize, right, visiting);
+                }
+            } else if(nodeDTO.isRightNodeEmbedded()) {
+                if (childrenSize <= nodeDTO.getTotalSize()) {
+                    long leftAndParentSize = nodeDTO.getTotalSize() - nodeDTO.getRightSize();
+                    final long offset = childrenSize - leftAndParentSize;
+                    return pushAndReturn(nodeDTO, visiting, offset);
                 }
             }
         }
+        if (nodeDTO.getTotalSize() >= childrenSize) {
+            return pushAndReturn(nodeDTO, visiting, childrenSize);
+        } else {
+            return nodeDTO;
+        }
+    }
+
+    private TrieDTO pushAndReturn(TrieDTO nodeDTO, Deque<TrieDTO> visiting, long offset) {
+        this.from -= offset;
+        visiting.push(nodeDTO);
         return nodeDTO;
     }
 
@@ -73,24 +104,35 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     @Override
     @SuppressWarnings("squid:S2272") // NoSuchElementException is thrown by {@link Deque#pop()} when it's empty
     public TrieDTO next() {
-        TrieDTO visiting = this.visiting.pop();
+        TrieDTO result = this.visiting.pop();
         // if the node has a right child, its leftmost node is next
-        if (visiting.getRightHash() != null) {
-            TrieDTO rightNode = pushNode(visiting.getRightHash(), this.visiting);
+        if (result.getRightHash() != null) {
+            TrieDTO rightNode = pushNode(result.getRightHash(), this.visiting);
 
             // find the leftmost node of the right child
             pushLeftmostNode(rightNode);
             // note "node" has been replaced on the stack by its right child
         } // else: no right subtree, go back up the stack
         // next node on stack will be next returned
-        return visiting;
+        this.from += getOffset(result);
+        return result;
+    }
+
+    public static long getOffset(TrieDTO visiting) {
+        return visiting.isTerminal() ? visiting.getTotalSize() : visiting.getSize();
     }
 
     @Override
     public boolean hasNext() {
-        return !visiting.isEmpty(); // no next node left
+        return this.from < this.to && !visiting.isEmpty();
+    }
+    public boolean isEmpty() {
+        return visiting.isEmpty();
     }
 
+    public long getFrom() {
+        return from;
+    }
     /**
      * Find the leftmost node from this root, pushing all the intermediate nodes onto the visiting stack
      *
@@ -115,7 +157,7 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     private TrieDTO getNode(byte[] hash) {
         if (hash != null) {
             byte[] node = this.ds.retrieveValue(hash);
-            return TrieDTO.decodeFromMessage(node, this.ds);
+            return TrieDTO.decodeFromMessage(node, this.ds, this.preloadChildren, hash);
         } else {
             return null;
         }

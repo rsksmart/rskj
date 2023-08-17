@@ -4,7 +4,10 @@ import co.rsk.net.messages.StateChunkRequestMessage;
 import co.rsk.net.messages.StateChunkResponseMessage;
 import co.rsk.trie.TrieDTO;
 import co.rsk.trie.TrieDTOInOrderIterator;
+import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.HexUtils;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
@@ -39,6 +42,7 @@ public class SnapshotProcessor {
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
     private SnapSyncState snapSyncState;
+    private List<byte[]> elements;
 
     public SnapshotProcessor(Blockchain blockchain,
             TrieStore trieStore,
@@ -52,6 +56,7 @@ public class SnapshotProcessor {
         this.chunkSizeType = chunkSizeType;
         this.iterators = Maps.newConcurrentMap();
         this.isCompressionEnabled = isCompressionEnabled;
+        this.elements = Lists.newArrayList();
     }
 
     public void startSyncing(List<Peer> peers, SnapSyncState snapSyncState) {
@@ -65,7 +70,7 @@ public class SnapshotProcessor {
         Peer peer = peers.get(0);
 
         long peerBestBlock = peersInformation.getPeer(peer).getStatus().getBestBlockNumber();
-        requestState(peer, 0L, 0L);
+        requestState(peer, 0L, 5544285l);
     }
 
     // TODO(snap-poc) should be called on errors too
@@ -109,17 +114,25 @@ public class SnapshotProcessor {
 
         this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
         this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
+        for (int i = 0; i < trieElements.size(); i++) {
+            this.elements.add(trieElements.get(i).getRLPData());
+        }
         logger.debug("State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
         if (!message.isComplete()) {
             // request another chunk
             requestState(peer, message.getTo(), message.getBlockNumber());
         } else {
             logger.debug("State Completed! {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
-
+            logger.debug("Mapping elements...");
+            final TrieDTO[] nodeArray = this.elements.stream().map(TrieDTO::decodeFromSync).toArray(TrieDTO[]::new);
+            logger.debug("Recovering trie...");
+            Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray);
+            logger.debug("Recovered root: {}", result.get().calculateHash());
             logger.debug("Starting again the infinite loop!");
+            this.elements = Lists.newArrayList();
             this.stateSize = BigInteger.ZERO;
             this.stateChunkSize = BigInteger.ZERO;
-            requestState(peer, 0l, 0l);
+            requestState(peer, 0l, 5544285l);
         }
     }
 
@@ -132,7 +145,8 @@ public class SnapshotProcessor {
 
         List<byte[]> trieEncoded = new ArrayList<>();
         Block block = blockchain.getBlockByNumber(blockNumber);
-        TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom());
+        final long to = request.getFrom() + (request.getChunkSize() * 1024);
+        TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom(), to);
 
         long rawSize = 0L;
         long compressedSize = 0L;

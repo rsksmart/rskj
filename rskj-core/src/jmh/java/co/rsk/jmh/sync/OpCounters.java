@@ -13,6 +13,9 @@ public class OpCounters {
     public int account = 0;
     public int terminalAccount = 0;
     public int recovered = 0;
+    public int bytesReadTerminal;
+    public long bytesReadSize;
+    public int hasPath;
 
     @Setup(Level.Iteration)
     public void setupIteration() {
@@ -24,6 +27,9 @@ public class OpCounters {
         this.account = 0;
         this.terminalAccount = 0;
         this.recovered = 0;
+        this.bytesReadTerminal = 0;
+        this.bytesReadSize = 0;
+        this.hasPath = 0;
     }
 
 }
