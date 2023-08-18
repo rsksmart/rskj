@@ -418,7 +418,7 @@ public class BridgeSupport {
                     processPegIn(btcTx, rskTx, height, btcTxHash);
                     break;
                 case PEGOUT_OR_MIGRATION:
-                    processPegoutOrMigration(btcTx, btcTxHash);
+                    processPegoutOrMigration(btcTx);
                     break;
                 default:
                     String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTxHash);
@@ -671,12 +671,10 @@ public class BridgeSupport {
         provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
     }
 
-    protected void processPegoutOrMigration(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
-        String transactionType = btcTx.getWalletOutputs(getActiveFederationWallet(false)).size() == btcTx.getOutputs().size() ? "migration" : "pegout";
-        logger.debug("[processPegoutOrMigration] This is a {} tx {}", transactionType, btcTx);
+    protected void processPegoutOrMigration(BtcTransaction btcTx) throws IOException {
         markTxAsProcessed(btcTx);
         saveNewUTXOs(btcTx);
-        logger.info("[processPegoutOrMigration] BTC Tx {} processed in RSK", btcTxHash);
+        logger.info("[processPegoutOrMigration] BTC Tx {} processed in RSK", btcTx.getHash(false));
     }
 
     private boolean shouldProcessPegInVersionLegacy(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx,
