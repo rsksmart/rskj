@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(1)
 public class SnapshotSyncChunkBench {
 
-    public static final int END_ITERATION = 72;
+    public static final int END_ITERATION = 10;
     public static final int CHUNK_SIZE = 2000000;
     public static final int START_ITERATION = 0;
     public static final int START_BYTES = 0;
