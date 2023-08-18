@@ -224,6 +224,7 @@ public class P2shP2wshErpFederationNewRedeemTest {
 
         BtcTransaction spendTx = new BtcTransaction(networkParameters);
         spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
+        spendTx.getInput(0).setSequenceNumber(activationDelay);
         spendTx.addOutput(value.minus(fee), destinationAddress);
         spendTx.setVersion(2);
 
