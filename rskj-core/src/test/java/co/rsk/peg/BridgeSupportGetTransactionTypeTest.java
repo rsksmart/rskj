@@ -19,6 +19,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -67,8 +68,8 @@ class BridgeSupportGetTransactionTypeTest {
             activations
         );
 
-        org.ethereum.core.Block rskCurrentBlock = new BlockGenerator().createBlock(
-            bridgeConstants.getFederationActivationAge(activations)+activeFederation.getCreationBlockNumber(),
+        Block rskCurrentBlock = new BlockGenerator().createBlock(
+            bridgeConstants.getFederationActivationAge(activations) + activeFederation.getCreationBlockNumber(),
             1
         );
 
@@ -100,15 +101,15 @@ class BridgeSupportGetTransactionTypeTest {
         );
         when(provider.getOldFederation()).thenReturn(p2shRetiringFederation);
 
-        // Create a tx from the p2sh erp fed
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(bridgeConstants.getMinimumPeginTxValue(activations), activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, p2shRetiringFederation.getRedeemScript());
+        // Create a migrationTx from the p2sh erp fed
+        BtcTransaction migrationTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        migrationTx.addOutput(bridgeConstants.getMinimumPeginTxValue(activations), activeFederation.getAddress());
+        migrationTx.addInput(Sha256Hash.ZERO_HASH, 0, p2shRetiringFederation.getRedeemScript());
 
-        FederationTestUtils.addSignatures(p2shRetiringFederation, fedKeys, tx);
+        FederationTestUtils.addSignatures(p2shRetiringFederation, fedKeys, migrationTx);
 
         // Act
-        PegTxType transactionType = bridgeSupport.getTransactionType(tx);
+        PegTxType transactionType = bridgeSupport.getTransactionType(migrationTx);
 
         // Assert
         Assertions.assertEquals(expectedTxType, transactionType);
@@ -209,19 +210,18 @@ class BridgeSupportGetTransactionTypeTest {
             activations
         );
 
-        // Create a tx from the p2sh erp fed
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(bridgeConstants.getMinimumPeginTxValue(activations), activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, p2shErpFederation.getRedeemScript());
+        // Create a peginTx from the p2sh erp fed
+        BtcTransaction peginTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        peginTx.addOutput(bridgeConstants.getMinimumPeginTxValue(activations), activeFederation.getAddress());
+        peginTx.addInput(Sha256Hash.ZERO_HASH, 0, p2shErpFederation.getRedeemScript());
 
-        FederationTestUtils.addSignatures(p2shErpFederation, p2shFedKeys, tx);
+        FederationTestUtils.addSignatures(p2shErpFederation, p2shFedKeys, peginTx);
 
         // Act
-        PegTxType transactionType = bridgeSupport.getTransactionType(tx);
+        PegTxType transactionType = bridgeSupport.getTransactionType(peginTx);
 
         // Assert
-        PegTxType expectedTxType = PegTxType.PEGIN;
-        Assertions.assertEquals(expectedTxType, transactionType);
+        Assertions.assertEquals(PegTxType.PEGIN, transactionType);
     }
 
     private static Stream<Arguments> getTransactionType_pegin_Args() {
@@ -335,7 +335,7 @@ class BridgeSupportGetTransactionTypeTest {
     void getTransactionType_migration_tx() {
         // Arrange
         long federationActivationAge = bridgeConstants.getFederationActivationAge(mock(ActivationConfig.ForBlock.class)) + 5L;
-        org.ethereum.core.Block rskCurrentBlock = new BlockGenerator().createBlock(federationActivationAge, 1);
+        Block rskCurrentBlock = new BlockGenerator().createBlock(federationActivationAge, 1);
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBridgeConstants(bridgeConstants)
