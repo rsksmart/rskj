@@ -157,8 +157,8 @@ public class FederationTestUtils {
             BtcECKey privateKey = signers.get(i);
             BtcECKey publicKey = BtcECKey.fromPublicOnly(privateKey.getPubKeyPoint().getEncoded(true));
 
-            BtcECKey.ECDSASignature sig = privateKey.sign(sighash);
-            TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+            BtcECKey.ECDSASignature signature = privateKey.sign(sighash);
+            TransactionSignature txSig = new TransactionSignature(signature, BtcTransaction.SigHash.ALL, false);
 
             int sigIndex = fedInputScript.getSigInsertionIndex(sighash, publicKey);
             fedInputScript = ScriptBuilder.updateScriptWithSignature(
