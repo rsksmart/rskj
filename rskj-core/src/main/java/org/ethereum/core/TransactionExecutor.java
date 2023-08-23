@@ -30,6 +30,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.FhStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
 import org.ethereum.vm.exception.VMException;
@@ -420,6 +421,8 @@ public class TransactionExecutor {
 
             // Charge basic cost of the transaction
             program.spendGas(tx.transactionCost(constants, activations, signatureCache), "TRANSACTION COST");
+
+            FhStore.getInstance().clear(); // clear fh store for the tx
 
             vm.play(program);
 
