@@ -5,13 +5,21 @@ import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Blockchain;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.util.TestInjectorUtil;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 29/09/2020.
  */
 class BlocksBloomProcessorTest {
+
+    @BeforeEach
+    public void setUp() {
+        TestInjectorUtil.initEmpty();
+    }
+
     @Test
     void noBlocksBloomInProcessAtTheBeginning() {
         KeyValueDataSource dataSource = new HashMapDB();

@@ -25,8 +25,10 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
+import org.ethereum.util.TestInjectorUtil;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
@@ -35,6 +37,12 @@ import java.io.FileNotFoundException;
  * Created by ajlopez on 15/04/2020.
  */
 class VmDslTest {
+
+    @BeforeEach
+    public void setUp() {
+        TestInjectorUtil.initEmpty();
+    }
+
     @Test
     void invokeRecursiveContractsUsing400Levels() throws FileNotFoundException, DslProcessorException {
         System.gc();

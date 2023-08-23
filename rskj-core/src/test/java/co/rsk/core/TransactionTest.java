@@ -33,9 +33,11 @@ import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
+import org.ethereum.util.TestInjectorUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -49,6 +51,11 @@ class TransactionTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final byte chainId = config.getNetworkConstants().getChainId();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+
+    @BeforeEach
+    public void setUp() {
+        TestInjectorUtil.initEmpty();
+    }
 
     @Test  /* achieve public key of the sender */
     void test2() throws Exception {

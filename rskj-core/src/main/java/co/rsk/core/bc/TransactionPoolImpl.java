@@ -17,6 +17,7 @@
  */
 package co.rsk.core.bc;
 
+import co.rsk.Injector;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
@@ -76,12 +77,12 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final TxPendingValidator validator;
 
-    private final TxQuotaChecker quotaChecker;
+    private final TxQuotaChecker quotaChecker = Injector.getService(TxQuotaChecker.class);
 
     private final GasPriceTracker gasPriceTracker;
 
     @java.lang.SuppressWarnings("squid:S107")
-    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker) {
+    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, GasPriceTracker gasPriceTracker) {
         this.config = config;
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
@@ -91,7 +92,6 @@ public class TransactionPoolImpl implements TransactionPool {
         this.signatureCache = signatureCache;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
-        this.quotaChecker = txQuotaChecker;
         this.gasPriceTracker = gasPriceTracker;
 
         pendingTransactions = new TransactionSet(this.signatureCache);

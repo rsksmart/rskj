@@ -28,6 +28,7 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.util.TestInjectorUtil;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +41,11 @@ import java.util.Iterator;
  * Created by Nicolás Perez Santoro on 4/08/2020.
  */
 class ExtCodeHashDslTest {
+
+    @BeforeEach
+    public void setUp() {
+        TestInjectorUtil.initEmpty();
+    }
 
     public static final byte[] HASH_OF_EMPTY_ARRAY = Keccak256Helper.keccak256(ExtCodeHashTest.EMPTY_BYTE_ARRAY);
     private World world;
