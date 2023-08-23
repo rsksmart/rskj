@@ -193,6 +193,7 @@ class BFVPrecompiledContractTest {
         } catch (NotImplementedException e) {
             fail("bfv transcipher not ok");
         } catch (VMException e) {
+            System.out.println(e.getMessage());
             fail("execute() unexpected error");
         }
 
@@ -204,7 +205,7 @@ class BFVPrecompiledContractTest {
         long[] msgLong = toLongArray(msg, msg.length / Long.BYTES, ByteOrder.LITTLE_ENDIAN);
 
         // decrypt
-        byte[] decrypted = bfv.decrypt(result, result.length, msgLong.length,
+        byte[] decrypted = bfv.decrypt(result, result.length,
                 testCase.getBfvSK(), testCase.getBfvSK().length);
         long[] decryptedLong = toLongArray(decrypted, msgLong.length, ByteOrder.LITTLE_ENDIAN);
 
@@ -230,4 +231,6 @@ class BFVPrecompiledContractTest {
 
         return bfvTestCase;
     }
+
+
 }

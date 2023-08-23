@@ -1,6 +1,18 @@
 # local credentials
 credentials.properties
 
+# introduced in BFV branch 
+votes.json
+rskj-core/src/test/java/org/ethereum/vm/bfv/votes.json
+rskj-core/src/test/java/org/ethereum/vm/bfv/*.json
+test_add.json
+test_sub.json
+test_mul.json
+test_transcipher.json
+test_simple_hhe.json
+test_encrypt_decrypt.json
+rskj-core-5.1.0-SNAPSHOT-all.jar
+
 # Vim
 *.sw[op]
 
