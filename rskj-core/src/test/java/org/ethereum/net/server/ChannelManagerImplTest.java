@@ -42,8 +42,11 @@ import java.util.function.LongSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -70,8 +73,41 @@ class ChannelManagerImplTest {
 
     @Test
     void blockAddressIsAvailable() throws UnknownHostException {
-        ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
+        ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);
         Assertions.assertTrue(channelManagerImpl.isAddressBlockAvailable(InetAddress.getLocalHost()));
+    }
+
+    @Test
+    void blockAddressCheck_logInvalidInetAddressException() throws UnknownHostException {
+        TestSystemProperties config = mock(TestSystemProperties.class);
+        when(config.maxConnectionsAllowed()).thenReturn(1);
+        when(config.networkCIDR()).thenReturn(0);
+
+        SyncPool syncPool = mock(SyncPool.class);
+        ChannelManagerImpl channelManager = new ChannelManagerImpl(config, syncPool);
+
+        String remoteId = "remoteId";
+        NodeManager nodeManager = new NodeManager(null, config);
+
+        Channel peer = spy(new Channel(null, null, nodeManager, null, null, null, remoteId));
+        peer.setInetSocketAddress(new InetSocketAddress("127.0.0.1",5554));
+        peer.setNode(new NodeID(TestUtils.generatePeerId("peer")).getID());
+        when(peer.isProtocolsInitialized()).thenReturn(true);
+        when(peer.isActive()).thenReturn(true);
+        when(peer.isUsingNewProtocol()).thenReturn(true);
+
+        Channel otherPeer = new Channel(null, null, nodeManager, null, null, null, remoteId);
+        otherPeer.setInetSocketAddress(new InetSocketAddress("127.0.0.1",5554));
+
+        channelManager.add(peer);
+        channelManager.tryProcessNewPeers();
+
+        Logger logger = mock(Logger.class);
+        TestUtils.setFinalStatic(channelManager, "logger", logger);
+
+        Assertions.assertTrue(channelManager.isAddressBlockAvailable(otherPeer.getInetSocketAddress().getAddress()));
+
+        verify(logger).error(anyString(), any(Throwable.class));
     }
 
     @Test
