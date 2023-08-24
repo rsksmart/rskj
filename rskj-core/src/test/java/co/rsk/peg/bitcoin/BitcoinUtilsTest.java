@@ -6,6 +6,7 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.script.FastBridgeP2shErpRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
@@ -15,11 +16,11 @@ import co.rsk.peg.Federation;
 import co.rsk.peg.FederationTestUtils;
 import co.rsk.peg.P2shErpFederation;
 import co.rsk.peg.PegTestUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -59,7 +60,7 @@ class BitcoinUtilsTest {
         Script inputScript = p2SHScript.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
         btcTx.getInput(0).setScriptSig(inputScript);
 
-        Sha256Hash expectedSighash = btcTx.hashForSignature(
+        Sha256Hash expectedSigHash = btcTx.hashForSignature(
             0,
             redeemScript,
             BtcTransaction.SigHash.ALL,
@@ -67,10 +68,10 @@ class BitcoinUtilsTest {
         );
 
         // Act
-        Sha256Hash sighash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Sha256Hash sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        Assertions.assertEquals(expectedSighash, sighash);
+        Assertions.assertEquals(expectedSigHash, sigHash);
     }
 
     @Test
@@ -99,7 +100,7 @@ class BitcoinUtilsTest {
         Script fedInputScript = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
         btcTx.getInput(0).setScriptSig(fedInputScript);
 
-        Sha256Hash expectedSighash = btcTx.hashForSignature(
+        Sha256Hash expectedSigHash = btcTx.hashForSignature(
             0,
             federation.getRedeemScript(),
             BtcTransaction.SigHash.ALL,
@@ -108,10 +109,10 @@ class BitcoinUtilsTest {
         // test
 
         // Act
-        Sha256Hash sighash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Sha256Hash sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        Assertions.assertEquals(expectedSighash, sighash);
+        Assertions.assertEquals(expectedSigHash, sigHash);
     }
 
     @Test
@@ -144,7 +145,7 @@ class BitcoinUtilsTest {
         Script fedInputScript = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
         btcTx.getInput(0).setScriptSig(fedInputScript);
 
-        Sha256Hash expectedSighash = btcTx.hashForSignature(
+        Sha256Hash expectedSigHash = btcTx.hashForSignature(
             0,
             federation.getRedeemScript(),
             BtcTransaction.SigHash.ALL,
@@ -152,10 +153,63 @@ class BitcoinUtilsTest {
         );
 
         // Act
-        Sha256Hash sighash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Sha256Hash sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        Assertions.assertEquals(expectedSighash, sighash);
+        Assertions.assertEquals(expectedSigHash, sigHash);
+    }
+
+    @Test
+    void test_getFirstInputSigHash_from_flyoverFed() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+        // Arrange
+        List<BtcECKey> signers = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02")),
+            BtcECKey.fromPrivate(Hex.decode("fa03"))
+        );
+        signers.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        P2shErpFederation p2shErpFederation = new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(signers),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            btcMainnetParams,
+            bridgeMainnetConstants.getErpFedPubKeysList(),
+            bridgeMainnetConstants.getErpFedActivationDelay(),
+            activations
+        );
+
+
+        Script flyoverP2shErpRedeemScript = FastBridgeP2shErpRedeemScriptParser.createFastBridgeP2shErpRedeemScript(
+            p2shErpFederation.getRedeemScript(),
+            BitcoinTestUtils.createHash(1)
+        );
+
+        Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverP2shErpRedeemScript);
+        
+        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
+
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        btcTx.addOutput(Coin.COIN, destinationAddress);
+
+        RedeemData redeemData = RedeemData.of(p2shErpFederation.getBtcPublicKeys(), flyoverP2shErpRedeemScript);
+        Script fedInputScript = flyoverP2SH.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
+        btcTx.getInput(0).setScriptSig(fedInputScript);
+
+        Sha256Hash expectedSigHash = btcTx.hashForSignature(
+            0,
+            flyoverP2shErpRedeemScript,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        // Act
+        Sha256Hash sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+
+        // Assert
+        Assertions.assertEquals(expectedSigHash, sigHash);
     }
 
     @Test
@@ -179,7 +233,7 @@ class BitcoinUtilsTest {
         });
 
         // Assert
-        String expectedMessage = "Btc transaction with no inputs. Cannot obtained sighash for a empty btc tx.";
+        String expectedMessage = "Btc transaction with no inputs. Cannot obtained sigHash for a empty btc tx.";
         String actualMessage = exception.getMessage();
         Assertions.assertEquals(expectedMessage, actualMessage);
     }
@@ -216,7 +270,7 @@ class BitcoinUtilsTest {
         }
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
-        Sha256Hash expectedSighash = btcTx.hashForSignature(
+        Sha256Hash expectedSigHash = btcTx.hashForSignature(
             0,
             redeemScript,
             BtcTransaction.SigHash.ALL,
@@ -224,9 +278,9 @@ class BitcoinUtilsTest {
         );
 
         // Act
-        Sha256Hash sighash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Sha256Hash sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        Assertions.assertEquals(expectedSighash, sighash);
+        Assertions.assertEquals(expectedSigHash, sigHash);
     }
 }
