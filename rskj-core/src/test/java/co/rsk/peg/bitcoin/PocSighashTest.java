@@ -473,6 +473,67 @@ class PocSighashTest {
         }
     }
 
+    @Test
+    void test_redeemScript_can_be_obtained_from_input() {
+        // Arrange
+        NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
+        int erpFedActivationDelay = 720;
+
+        List<FedSigner> fedMembers = FedSigner.listOf("federator1", "federator2", "federator6");
+        List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        P2shErpFederation fed = new P2shErpFederation(
+            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
+            Instant.now(),
+            0L,
+            networkParameters,
+            erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
+            erpFedActivationDelay,
+            activations
+        );
+
+        Address expectedAddress = Address.fromBase58(
+            networkParameters,
+            "2NEfaGq4tGe6bJUxLEzGFoVyZrSrZtXRzJ7"
+        );
+        assertEquals(expectedAddress, fed.getAddress());
+
+        String RAW_FUND_TX = "0200000000010134ed7734da14ecde305347153f70be45021e8e29137205a9899630f56c68d3890100000000fdffffff02891300000000000017a914eaf58ece160a383630667cfc1ccff519ab07c472873c3e020000000000160014f885b26136ad4d61247132271795cc29ae9cec0302473044022063986423838cdd2abc51b150f11a1c399dce53f68f1bd02e4ec793db2fa3485c022007d8909a83b01c57dcee7e55f3989af949756c6b5068948b888622d2e6673ed70121028f117bfbc90d934b73d0d55afe54ee33a288cdde572bd3d006cede67f4c797a2e7262500";
+        FedUtxo utxo1 = FedUtxo.of(new BtcTransaction(networkParameters, Hex.decode(RAW_FUND_TX)), 0);
+
+        String RAW_FUND_TX2 = "020000000001013a43f0d972f5045b443c9c071bd2254f91d5b14d0b5ab5cdeab014c0ff2cc17f0200000000fdffffff027d6408000000000017a914eaf58ece160a383630667cfc1ccff519ab07c472870555dc0500000000220020617a81e635a62aa61d20fd4be369d285da2750c871016282c05a29181552d52b0400473044022048386d4e0270b68a17d3ea10d8c569c2150cb46416c82b3289f2e0ec1fe0272a02204f077bdc8f71d824a4a8a447708cb974e21c015021b94f8226a3da955024371e0147304402204fda66a5cc3503acd325671216f5dbfe4d329499321af508c4959e89072dc47802204531cb9a52c80ede1cab8ca40324ef18ddfb589a0b76f741764334f6f1e9570f014752210203307a637032952b21371f966838e03a768220f8bb663cbc2aa6d41dc71f6bbf2103fdadd0c267fc7a4890c37c6730ca124d53ad7001ee6d9ad00ed50b52a46d784552aee7262500";
+        FedUtxo utxo2 = FedUtxo.of(new BtcTransaction(networkParameters, Hex.decode(RAW_FUND_TX2)), 0);
+
+        String RAW_FUND_TX3 = "020000000001016a040fa1ec01bac865d4802083a435fef32052091d6d7bd02cc784d00d75e8400100000000fdffffff02916408000000000017a914eaf58ece160a383630667cfc1ccff519ab07c47287beefd305000000002200201ca17d3f37320ac4469faa1119824d98bbec3b1a586174901834d2b842715e7c0400473044022044033baafc0c15c8e2c3128d01f29a7c7c5c6ec790ead8c5be2610efb0e9d581022014b605cb59a5254a189a9fcd35ec94e6f4faae18f7011a41ac7663df33fbfdc50147304402206fc734a5db737ecb37056491881da15c2f8f2ca2bb9e47db7396029b9a0ad5e102206cae6f8766679c666cfa256e886e2816882623167e92fd9e272fd9712aa49d9a0147522102b9bb9ea5c5c0a56421bc7720e81e7f3e5fb9dfcbca946f01d868940efaa5da18210309eb318fe76a6b139d70e4037dd87733ced9e3ed6f851301a88938c7033d473b52ae05272500";
+        FedUtxo utxo3 = FedUtxo.of(new BtcTransaction(networkParameters, Hex.decode(RAW_FUND_TX3)), 0);
+
+        String RAW_FUND_TX4 = "0200000001a223ad7e9d4f5067a8fdddf9e4137af49d5a6dad7ea952533f701061fefd010f020000006a473044022003d999e14be1e2ea15cb16df81e14b30f26c684bcbf6fcbd07975d8648e5f04402207e99a414a0ebf1c3617944610de5ea002439a1ac56e667a60c095184c2419559012102c6bf1e099ec95510a8da3d1c67026cb65a019bad57dc2255dd56a426c629327bfdffffff0300000000000000001b6a1952534b540162db6c4b118d7259c23692b162829e6bd5e4d5b0891300000000000017a914eaf58ece160a383630667cfc1ccff519ab07c4728791200000000000001976a9145952b24450e80668e069b8152a3a38ea7f6ad44c88ace7262500";
+        FedUtxo utxo4 = FedUtxo.of(new BtcTransaction(networkParameters, Hex.decode(RAW_FUND_TX4)), 1);
+
+        List<FedUtxo> utxos = Arrays.asList(utxo1, utxo2, utxo3, utxo4);
+        Coin fees = Coin.valueOf(10_000);
+        Coin totalUtxosAmount = utxos.stream().map(fedUtxo -> fedUtxo.btcTransaction.getOutput(fedUtxo.getOutputIdx()).getValue())
+            .reduce(
+                Coin.ZERO, Coin::add
+            );
+        Coin pegoutTxAmount = totalUtxosAmount.minus(fees);
+
+        Address destinationAddress = Address.fromBase58(networkParameters, "2MtYSUzFWEQV62r92bsGX8ewE5Mgpv4xn9M");
+
+        BtcTransaction pegoutTx = new BtcTransaction(networkParameters);
+        pegoutTx.addOutput(pegoutTxAmount, destinationAddress);
+        pegoutTx.setVersion(2);
+
+        pegoutTx.getInputs().forEach((transactionInput -> {
+            Script redeemScriptFromInput = getRedeemScriptFromInput(transactionInput);
+            assertEquals(fed.getRedeemScript(), redeemScriptFromInput);
+        }));
+    }
+
     private BtcTransaction spendFromFed(
         NetworkParameters networkParameters,
         long activationDelay,
