@@ -11,7 +11,7 @@ import java.util.List;
 public class BitcoinUtils {
     private BitcoinUtils() { }
 
-    public static Sha256Hash getFirstInputSighash(BtcTransaction btcTx){
+    public static Sha256Hash getFirstInputSigHash(BtcTransaction btcTx){
         if (btcTx.getInputs().isEmpty()){
             throw new IllegalArgumentException("Btc transaction with no inputs. Cannot obtained sighash for a empty btc tx.");
         }
