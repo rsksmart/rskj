@@ -13,7 +13,7 @@ public class BitcoinUtils {
 
     public static Sha256Hash getFirstInputSigHash(BtcTransaction btcTx){
         if (btcTx.getInputs().isEmpty()){
-            throw new IllegalArgumentException("Btc transaction with no inputs. Cannot obtained sighash for a empty btc tx.");
+            throw new IllegalArgumentException("Btc transaction with no inputs. Cannot obtained sigHash for a empty btc tx.");
         }
         TransactionInput txInput = btcTx.getInput(0);
         return btcTx.hashForSignature(
