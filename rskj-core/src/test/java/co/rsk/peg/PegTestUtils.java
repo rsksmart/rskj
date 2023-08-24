@@ -92,15 +92,13 @@ public final class PegTestUtils {
 
     public static Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation) {
         Script scriptPubKey = federation.getP2SHScript();
-        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
-        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), redeemScript);
+        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), federation.getRedeemScript());
         Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
         return inputScript;
     }
 
     public static Script createBaseRedeemScriptThatSpendsFromTheFederation(Federation federation) {
-        Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
-        return redeemScript;
+        return federation.getRedeemScript();
     }
 
     public static Script createOpReturnScriptForRsk(
