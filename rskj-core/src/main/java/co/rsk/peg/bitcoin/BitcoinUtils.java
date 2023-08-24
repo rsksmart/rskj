@@ -20,6 +20,7 @@ public class BitcoinUtils {
         if (!redeemScriptOptional.isPresent()) {
             return Optional.empty();
         }
+
         return Optional.of(btcTx.hashForSignature(
             0,
             redeemScriptOptional.get(),
