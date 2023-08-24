@@ -76,22 +76,7 @@ public class IndexedBlockStore implements BlockStore {
         this.blockCache.removeBlock(block);
         this.remascCache.remove(block.getHash());
         this.blocks.delete(block.getHash().getBytes());
-
-        List<BlockInfo> binfos = this.index.getBlocksByNumber(block.getNumber());
-
-        if (binfos == null) {
-            return;
-        }
-
-        List<BlockInfo> toremove = new ArrayList<>();
-
-        for (BlockInfo binfo : binfos) {
-            if (binfo.getHash().equals(block.getHash())) {
-                toremove.add(binfo);
-            }
-        }
-
-        binfos.removeAll(toremove);
+        this.index.removeBlock(block.getNumber(), block.getHash());
     }
 
     @Override

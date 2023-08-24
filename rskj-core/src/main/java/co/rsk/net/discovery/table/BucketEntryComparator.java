@@ -25,6 +25,8 @@ import java.util.Comparator;
  * Created by mario on 21/02/17.
  */
 public class BucketEntryComparator implements Comparator<BucketEntry>, Serializable {
+    private static final long serialVersionUID = 2544618035650935907L;
+
     @Override
     public int compare(BucketEntry e1, BucketEntry e2) {
         long t1 = e1.lastSeen();

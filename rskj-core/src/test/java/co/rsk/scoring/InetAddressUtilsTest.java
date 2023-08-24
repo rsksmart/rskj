@@ -117,7 +117,7 @@ class InetAddressUtilsTest {
 
     @Test
     void parseAddressBlock() throws InvalidInetAddressException, InvalidInetAddressBlockException, UnknownHostException {
-        InetAddressCidrBlock result = InetAddressUtils.parse("192.162.12.0/24");
+        InetAddressCidrBlock result = InetAddressUtils.createCidrBlock("192.162.12.0/24");
 
         Assertions.assertNotNull(result);
         Assertions.assertArrayEquals(InetAddress.getByName("192.162.12.0").getAddress(), result.getBytes());
@@ -127,7 +127,7 @@ class InetAddressUtilsTest {
     @Test
     void parseAddressBlockWithNonNumericBits() throws InvalidInetAddressException {
         try {
-            InetAddressUtils.parse("192.162.12.0/a");
+            InetAddressUtils.createCidrBlock("192.162.12.0/a");
             Assertions.fail();
         }
         catch (InvalidInetAddressBlockException ex) {
@@ -138,7 +138,7 @@ class InetAddressUtilsTest {
     @Test
     void parseAddressBlockWithNegativeNumberOfBits() throws UnknownHostException, InvalidInetAddressException {
         try {
-            InetAddressUtils.parse("192.162.12.0/-10");
+            InetAddressUtils.createCidrBlock("192.162.12.0/-10");
             Assertions.fail();
         }
         catch (InvalidInetAddressBlockException ex) {
@@ -149,7 +149,7 @@ class InetAddressUtilsTest {
     @Test
     void parseAddressBlockWithZeroBits() throws InvalidInetAddressException {
         try {
-            InetAddressUtils.parse("192.162.12.0/0");
+            InetAddressUtils.createCidrBlock("192.162.12.0/0");
             Assertions.fail();
         }
         catch (InvalidInetAddressBlockException ex) {
@@ -160,7 +160,7 @@ class InetAddressUtilsTest {
     @Test
     void parseAddressBlockWithTooBigNumberOfBits() throws InvalidInetAddressException {
         try {
-            InetAddressUtils.parse("192.162.12.0/1000");
+            InetAddressUtils.createCidrBlock("192.162.12.0/1000");
             Assertions.fail();
         }
         catch (InvalidInetAddressBlockException ex) {

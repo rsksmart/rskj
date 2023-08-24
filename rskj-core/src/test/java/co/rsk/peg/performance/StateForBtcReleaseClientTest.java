@@ -67,7 +67,7 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             Map<Keccak256, BtcTransaction> txsWaitingForSignatures;
             try {
-                txsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
+                txsWaitingForSignatures = provider.getPegoutsWaitingForSignatures();
             } catch (IOException e) {
                 throw new RuntimeException("Exception while trying to gather txs waiting for signatures for storage initialization");
             }

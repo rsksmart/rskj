@@ -35,6 +35,8 @@ import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.ConcatKDFBytesGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -46,8 +48,11 @@ import static org.ethereum.crypto.ECKey.CURVE;
 
 public class ECIESCoder {
 
-
     public static final int KEY_SIZE = 128;
+    private static final String NO_DATA_WAS_READ_WARNING = "No data was read. It seems end of the stream has been reached.";
+    private static final Logger logger = LoggerFactory.getLogger("ECIESCoder");
+
+    private ECIESCoder(){}
 
     public static byte[] decrypt(BigInteger privKey, byte[] cipher) throws IOException, InvalidCipherTextException {
         return decrypt(privKey, cipher, null);
@@ -60,12 +65,18 @@ public class ECIESCoder {
         ByteArrayInputStream is = new ByteArrayInputStream(cipher);
         byte[] ephemBytes = new byte[2*((CURVE.getCurve().getFieldSize()+7)/8) + 1];
 
-        is.read(ephemBytes);
+        if(is.read(ephemBytes) < 0){
+            logger.warn(NO_DATA_WAS_READ_WARNING);
+        }
         ECPoint ephem = CURVE.getCurve().decodePoint(ephemBytes);
         byte[] iv = new byte[KEY_SIZE /8];
-        is.read(iv);
+        if(is.read(iv) < 0){
+            logger.warn(NO_DATA_WAS_READ_WARNING);
+        }
         byte[] cipherBody = new byte[is.available()];
-        is.read(cipherBody);
+        if(is.read(cipherBody)< 0){
+            logger.warn(NO_DATA_WAS_READ_WARNING);
+        }
 
         plaintext = decrypt(ephem, privKey, iv, cipherBody, macData);
 
@@ -106,7 +117,7 @@ public class ECIESCoder {
      *
      *  Used for Whisper V3
      */
-    public static byte[] decryptSimple(BigInteger privKey, byte[] cipher) throws IOException, InvalidCipherTextException {
+    public static byte[] decryptSimple(BigInteger privKey, byte[] cipher) throws InvalidCipherTextException {
         EthereumIESEngine iesEngine = new EthereumIESEngine(
                 new ECDHBasicAgreement(),
                 new MGF1BytesGeneratorExt(new SHA1Digest(), 1),
@@ -161,9 +172,7 @@ public class ECIESCoder {
             bos.write(iv);
             bos.write(cipher);
             return bos.toByteArray();
-        } catch (InvalidCipherTextException e) {
-            throw Throwables.propagate(e);
-        } catch (IOException e) {
+        } catch (InvalidCipherTextException | IOException e) {
             throw Throwables.propagate(e);
         }
     }
@@ -193,4 +202,5 @@ public class ECIESCoder {
         // 256 bit EC public key, IV, 256 bit MAC
         return 65 + KEY_SIZE/8 + 32;
     }
+
 }

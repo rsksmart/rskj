@@ -20,7 +20,6 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.core.RskAddress;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -37,7 +36,7 @@ import java.util.*;
  * @author Roman Mandeleil
  * @since 28.06.2014
  */
-public class TestCase {
+public class TestingCase {
 
     private String name = "";
 
@@ -65,12 +64,12 @@ public class TestCase {
     //            "callcreates": { ... }
     private List<CallCreate> callCreateList = new ArrayList<>();
 
-    public TestCase(String name, JsonNode testCaseJSONObj) throws IOException {
+    public TestingCase(String name, JsonNode testCaseJSONObj) throws IOException {
         this(testCaseJSONObj);
         this.name = name;
     }
 
-    public TestCase(JsonNode testCaseJSONObj) throws IOException {
+    public TestingCase(JsonNode testCaseJSONObj) throws IOException {
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();

@@ -5,6 +5,31 @@ plugins {
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 
+configurations {
+    jmh
+}
+
+sourceSets {
+    jmh {
+        java {
+            srcDirs = ['src/jmh/java']
+        }
+        resources {
+            srcDirs = ['src/jmh/resources']
+        }
+    }
+}
+
+testing {
+    suites {
+        integrationTest(JvmTestSuite) {
+            dependencies {
+                implementation project
+            }
+        }
+    }
+}
+
 test {
     useJUnitPlatform()
 
@@ -21,10 +46,33 @@ test {
     finalizedBy jacocoTestReport
 }
 
+integrationTest {
+    dependsOn assemble
+
+    beforeTest { descriptor ->
+        logger.lifecycle("Running integration test: ${descriptor}")
+    }
+}
+
 jacocoTestReport {
     reports {
         xml.required = true
     }
+}
+
+task parallelTest(type: Test) {
+    useJUnitPlatform()
+    //increase heap memory
+    jvmArgs '-Xss64m', '-Xmx3G'
+    //stop build after the first failing test
+    failFast = project.hasProperty("failFast")
+    //option to use the half of the available cores (it can be increased but there is no too much difference)
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+    //this is recommended in the docs, -> https://docs.gradle.org/current/userguide/performance.html#forking_options
+    forkEvery = 750
+    //save some time avoiding reports
+    reports.html.required = false
+    reports.junitXml.required = false
 }
 
 tasks.withType(Javadoc) {
@@ -108,9 +156,15 @@ ext {
             awaitilityVer  : '4.2.0',
             commonsIoVer   : '2.11.0',
             commonsCodecVer: '1.15',
+            jacksonVer     : '2.13.3',
             okhttpWsVer    : '2.7.5',
 
             rskLllVer      : '0.0.2',
+    ]
+
+    jmhLibVersions = [
+            jmh: "1.36",
+            web3j: "4.9.8",
     ]
 
     testLibs = [
@@ -122,15 +176,31 @@ ext {
             awaitilityLib           : "org.awaitility:awaitility:${testLibVersions.awaitilityVer}",
             commonsIoLib            : "commons-io:commons-io:${testLibVersions.commonsIoVer}",
             commonsCodecLib         : "commons-codec:commons-codec:${testLibVersions.commonsCodecVer}",
+            jacksonLib              : "com.fasterxml.jackson.core:jackson-databind:${testLibVersions.jacksonVer}",
             okhttpWsLib             : "com.squareup.okhttp:okhttp-ws:${testLibVersions.okhttpWsVer}",
 
             rskLllLib               : "co.rsk:lll-compiler:${testLibVersions.rskLllVer}",
     ]
+
+    jmhLibs = [
+            jmhCore                 : "org.openjdk.jmh:jmh-core:${jmhLibVersions.jmh}",
+            jmhAnnotations          : "org.openjdk.jmh:jmh-generator-annprocess:${jmhLibVersions.jmh}",
+            web3jCore               : "org.web3j:core:${jmhLibVersions.web3j}",
+    ]
+
 }
 
 // WARN: consider different setups and sure to not use GPG elements without checksums or without signature file
 // in the remote repository (see https://github.com/gradle/gradle/security/advisories/GHSA-j6wc-xfg8-jx2j)
 dependencies {
+    jmhImplementation "${jmhLibs.jmhCore}"
+    jmhImplementation "${jmhLibs.web3jCore}"
+    jmhImplementation "${libs.slf4jApiLib}"
+    jmhAnnotationProcessor "${jmhLibs.jmhAnnotations}"
+    jmhRuntimeOnly "${libs.log4jOverSlf4jLib}"
+    jmhRuntimeOnly "${libs.logbackCoreLib}"
+    jmhRuntimeOnly "${libs.logbackClassicLib}"
+
     implementation "${libs.nettyLib}"
     implementation "${libs.spongyCastleLib}"
     implementation "${libs.bouncyCastleLib}"
@@ -161,8 +231,15 @@ dependencies {
     testImplementation "${testLibs.commonsIoLib}"
     testImplementation "${testLibs.commonsCodecLib}"
     testImplementation "${testLibs.okhttpWsLib}"
-
     testImplementation "${testLibs.rskLllLib}"
+
+    integrationTestImplementation "${testLibs.junitLib}"
+    integrationTestImplementation "${testLibs.junitParams}"
+    integrationTestImplementation "${testLibs.junitSuite}"
+    integrationTestImplementation "${testLibs.mockitoLib}"
+    integrationTestImplementation "${testLibs.mockitoJupiter}"
+    integrationTestImplementation "${testLibs.jacksonLib}"
+    integrationTestImplementation "${testLibs.okhttpWsLib}"
 }
 
 javadoc {
@@ -263,6 +340,42 @@ task fatJar(type: Jar, dependsOn: jar) {
     }
 
     with jar
+}
+
+task jmhJar(type: Jar) {
+    from sourceSets.jmh.output
+    archiveClassifier = 'jmh'
+}
+
+task jmh(type: JavaExec) {
+    doLast {
+        mkdir "${buildDir}/reports/jmh"
+    }
+
+    classpath = sourceSets.jmh.runtimeClasspath
+
+    // provide -PjmhArgs="<regular jmh parameters format>", ie: -PjmhArgs="-wi 5 -i 5 -f 1 -p suite=e2e -p host=http://localhost:4444 co.rsk.jmh.web3.BenchmarkWeb3"
+    if (project.hasProperty('jmhArgs')) {
+        mainClass = 'org.openjdk.jmh.Main'
+        args(jmhArgs.split("\\s+"))
+    }
+    // provide predefined Benchmark Runner task and optionally other known parameters, ie: -Pbenchmark=BenchmarkWeb3E2ERunner -Phost=http://localhost:4444 -Pnetwork=regtest
+    else if (project.hasProperty('benchmark')) {
+        mainClass = "co.rsk.jmh.runners.${project.getProperty("benchmark")}"
+
+        def customArgs = []
+
+        if (project.hasProperty('host')) {
+            customArgs << "-p" << "host=${project.getProperty("host")}"
+        }
+
+        if (project.hasProperty('config')) {
+            customArgs << "-p" << "config=${project.getProperty("config")}"
+        }
+
+        args(customArgs)
+    }
+
 }
 
 tasks.withType(Tar) {

@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  *
  * @author Ariel Mendelzon
  */
-public class ReleaseTransactionSet {
+public class PegoutsWaitingForConfirmations {
     public static class Entry {
         // Compares entries using the lexicographical order of the btc tx's serialized bytes
         public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
@@ -40,31 +40,31 @@ public class ReleaseTransactionSet {
 
             @Override
             public int compare(Entry e1, Entry e2) {
-                return comparator.compare(e1.getTransaction().bitcoinSerialize(), e2.getTransaction().bitcoinSerialize());
+                return comparator.compare(e1.getBtcTransaction().bitcoinSerialize(), e2.getBtcTransaction().bitcoinSerialize());
             }
         };
 
-        private BtcTransaction transaction;
-        private Long rskBlockNumber;
-        private Keccak256 rskTxHash;
+        private BtcTransaction btcTransaction;
+        private Long pegoutCreationRskBlockNumber;
+        private Keccak256 pegoutCreationRskTxHash;
 
-        public Entry(BtcTransaction transaction, Long rskBlockNumber, Keccak256 rskTxHash) {
-            this.transaction = transaction;
-            this.rskBlockNumber = rskBlockNumber;
-            this.rskTxHash = rskTxHash;
+        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber, Keccak256 pegoutCreationRskTxHash) {
+            this.btcTransaction = btcTransaction;
+            this.pegoutCreationRskBlockNumber = pegoutCreationRskBlockNumber;
+            this.pegoutCreationRskTxHash = pegoutCreationRskTxHash;
         }
 
-        public Entry(BtcTransaction transaction, Long rskBlockNumber) { this(transaction, rskBlockNumber, null); }
+        public Entry(BtcTransaction btcTransaction, Long pegoutCreationRskBlockNumber) { this(btcTransaction, pegoutCreationRskBlockNumber, null); }
 
-        public BtcTransaction getTransaction() {
-            return transaction;
+        public BtcTransaction getBtcTransaction() {
+            return btcTransaction;
         }
 
-        public Long getRskBlockNumber() {
-            return rskBlockNumber;
+        public Long getPegoutCreationRskBlockNumber() {
+            return pegoutCreationRskBlockNumber;
         }
 
-        public Keccak256 getRskTxHash() { return rskTxHash; }
+        public Keccak256 getPegoutCreationRskTxHash() { return pegoutCreationRskTxHash; }
 
         @Override
         public boolean equals(Object o) {
@@ -73,30 +73,30 @@ public class ReleaseTransactionSet {
             }
 
             Entry otherEntry = (Entry) o;
-            return otherEntry.getTransaction().equals(getTransaction()) &&
-                    otherEntry.getRskBlockNumber().equals(getRskBlockNumber()) &&
-                            (otherEntry.getRskTxHash() == null && getRskTxHash() == null ||
-                                    otherEntry.getRskTxHash() != null && otherEntry.getRskTxHash().equals(getRskTxHash()));
-         }
+            return otherEntry.getBtcTransaction().equals(getBtcTransaction()) &&
+                otherEntry.getPegoutCreationRskBlockNumber().equals(getPegoutCreationRskBlockNumber()) &&
+                (otherEntry.getPegoutCreationRskTxHash() == null && getPegoutCreationRskTxHash() == null ||
+                    otherEntry.getPegoutCreationRskTxHash() != null && otherEntry.getPegoutCreationRskTxHash().equals(getPegoutCreationRskTxHash()));
+        }
 
         @Override
         public int hashCode() {
-            return Objects.hash(getTransaction(), getRskBlockNumber());
+            return Objects.hash(getBtcTransaction(), getPegoutCreationRskBlockNumber());
         }
     }
 
     private Set<Entry> entries;
 
-    public ReleaseTransactionSet(Set<Entry> entries) {
+    public PegoutsWaitingForConfirmations(Set<Entry> entries) {
         this.entries = new HashSet<>(entries);
     }
 
     public Set<Entry> getEntriesWithoutHash() {
-        return entries.stream().filter(e -> e.getRskTxHash() == null).collect(Collectors.toSet());
+        return entries.stream().filter(e -> e.getPegoutCreationRskTxHash() == null).collect(Collectors.toSet());
     }
 
     public Set<Entry> getEntriesWithHash() {
-        return entries.stream().filter(e -> e.getRskTxHash() != null).collect(Collectors.toSet());
+        return entries.stream().filter(e -> e.getPegoutCreationRskTxHash() != null).collect(Collectors.toSet());
     }
 
     public Set<Entry> getEntries() {
@@ -104,15 +104,11 @@ public class ReleaseTransactionSet {
     }
 
     public void add(BtcTransaction transaction, Long blockNumber) {
-        // Disallow duplicate transactions
-        if (entries.stream().noneMatch(e -> e.getTransaction().equals(transaction))) {
-            entries.add(new Entry(transaction, blockNumber, null));
-        }
+        add(transaction, blockNumber, null);
     }
 
     public void add(BtcTransaction transaction, Long blockNumber, Keccak256 rskTxHash) {
-        // Disallow duplicate transactions
-        if (entries.stream().noneMatch(e -> e.getTransaction().equals(transaction))) {
+        if (entries.stream().noneMatch(e -> e.getBtcTransaction().equals(transaction))) {
             entries.add(new Entry(transaction, blockNumber, rskTxHash));
         }
     }
@@ -126,30 +122,17 @@ public class ReleaseTransactionSet {
      * Sliced items are also removed from the set (thus the name, slice).
      * @param currentBlockNumber the current execution block number (height).
      * @param minimumConfirmations the minimum desired confirmations for the slice elements.
-     * @param maximumSliceSize (optional) the maximum number of elements in the slice.
-     * @return the slice of entries.
+     * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
-    public Set<Entry> sliceWithConfirmations(Long currentBlockNumber, Integer minimumConfirmations, Optional<Integer> maximumSliceSize) {
-        Set<Entry> output = new HashSet<>();
+    public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations) {
+        return entries.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations)).findFirst();
+    }
 
-        int count = 0;
-        Iterator<Entry> iterator = entries.iterator();
-        while (iterator.hasNext()) {
-            Entry entry = iterator.next();
-            if (hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations) && (!maximumSliceSize.isPresent() || count < maximumSliceSize.get())) {
-                output.add(entry);
-                iterator.remove();
-                count++;
-                if (maximumSliceSize.isPresent() && count == maximumSliceSize.get()) {
-                    break;
-                }
-            }
-        }
-
-        return output;
+    public boolean removeEntry(Entry entry){
+        return entries.remove(entry);
     }
 
     private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
-        return (currentBlockNumber - entry.getRskBlockNumber()) >= minimumConfirmations;
+        return (currentBlockNumber - entry.getPegoutCreationRskBlockNumber()) >= minimumConfirmations;
     }
 }

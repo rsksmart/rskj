@@ -32,18 +32,18 @@ public class StateTestSuite {
 
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
 
-    Map<String, StateTestCase> testCases = new HashMap<>();
+    Map<String, StateTestingCase> testCases = new HashMap<>();
 
     public StateTestSuite(String json) throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
         JavaType type = mapper.getTypeFactory().
-                constructMapType(HashMap.class, String.class, StateTestCase.class);
+                constructMapType(HashMap.class, String.class, StateTestingCase.class);
 
         testCases = new ObjectMapper().readValue(json, type);
     }
 
-    public Map<String, StateTestCase> getTestCases() {
+    public Map<String, StateTestingCase> getTestCases() {
         return testCases;
     }
 

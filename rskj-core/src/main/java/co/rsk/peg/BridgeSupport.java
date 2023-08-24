@@ -76,7 +76,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
@@ -102,11 +101,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP377;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -378,8 +379,8 @@ public class BridgeSupport {
     }
 
     /**
-     * In case of a lock tx: Transfers some SBTCs to the sender of the btc tx and keeps track of the new UTXOs available for spending.
-     * In case of a release tx: Keeps track of the change UTXOs, now available for spending.
+     * In case of a peg-in tx: Transfers some RBTCs to the sender of the btc tx and keeps track of the new UTXOs available for spending.
+     * In case of a peg-out tx: Keeps track of the change UTXOs, now available for spending.
      * @param rskTx The RSK transaction
      * @param btcTxSerialized The raw BTC tx
      * @param height The height of the BTC block that contains the tx
@@ -387,10 +388,16 @@ public class BridgeSupport {
      * @throws BlockStoreException
      * @throws IOException
      */
-    public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized)
-            throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    public void registerBtcTransaction(
+        Transaction rskTx,
+        byte[] btcTxSerialized,
+        int height,
+        byte[] pmtSerialized
+    ) throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+
         Context.propagate(btcContext);
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
+        logger.debug("[registerBtcTransaction][rsk tx {}] Processing btc tx {}", rskTx.getHash(), btcTxHash);
 
         try {
             // Check the tx was not already processed
@@ -405,6 +412,7 @@ public class BridgeSupport {
 
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
             btcTx.verify();
+            logger.debug("[registerBtcTransaction][rsk tx {}] Btc tx hash without witness {}", rskTx.getHash(), btcTx.getHash(false));
 
             // Check again that the tx was not already processed but making sure to use the txid (no witness)
             if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
@@ -423,12 +431,17 @@ public class BridgeSupport {
                     processMigration(btcTx, btcTxHash);
                     break;
                 default:
-                    logger.warn("[registerBtcTransaction] This is not a lock, a release nor a migration tx {}", btcTx);
-                    panicProcessor.panic("btclock", "This is not a lock, a release nor a migration tx " + btcTx);
+                    String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTxHash);
+                    logger.warn("[registerBtcTransaction][rsk tx {}] {}", rskTx.getHash(), message);
+                    panicProcessor.panic("btclock", message);
             }
         } catch (RegisterBtcTransactionException e) {
-            logger.warn("[registerBtcTransaction] Could not register transaction {}. Message: {}", btcTxHash,
-                    e.getMessage());
+            logger.warn(
+                "[registerBtcTransaction][rsk tx {}] Could not register transaction {}. Message: {}",
+                rskTx.getHash(),
+                btcTxHash,
+                e.getMessage()
+            );
         }
     }
 
@@ -444,6 +457,7 @@ public class BridgeSupport {
         /** Special case to migrate funds from an old federation               **/
         /************************************************************************/
         if (activations.isActive(ConsensusRule.RSKIP199) && txIsFromOldFederation(btcTx)) {
+            logger.debug("[getTransactionType][btc tx {}] is from the old federation, treated as a migration", btcTx.getHash());
             return TxType.MIGRATION;
         }
 
@@ -455,6 +469,7 @@ public class BridgeSupport {
             bridgeConstants,
             activations
         )) {
+            logger.debug("[getTransactionType][btc tx {}] is a peg-in", btcTx.getHash());
             return TxType.PEGIN;
         }
 
@@ -467,13 +482,16 @@ public class BridgeSupport {
             bridgeConstants,
             activations
         )) {
+            logger.debug("[getTransactionType][btc tx {}] is a migration transaction", btcTx.getHash());
             return TxType.MIGRATION;
         }
 
         if (BridgeUtils.isPegOutTx(btcTx, getLiveFederations(), activations)) {
+            logger.debug("[getTransactionType][btc tx {}] is a peg-out", btcTx.getHash());
             return TxType.PEGOUT;
         }
 
+        logger.debug("[getTransactionType][btc tx {}] is neither a peg-in, peg-out, nor migration", btcTx.getHash());
         return TxType.UNKNOWN;
     }
 
@@ -903,8 +921,8 @@ public class BridgeSupport {
      * Executed every now and then.
      * Performs a few tasks: processing of any pending btc funds
      * migrations from retiring federations;
-     * processing of any outstanding btc release requests; and
-     * processing of any outstanding release btc transactions.
+     * processing of any outstanding pegout requests; and
+     * processing of any outstanding confirmed pegouts.
      * @throws IOException
      * @param rskTx current RSK transaction
      */
@@ -915,9 +933,9 @@ public class BridgeSupport {
 
         processFundsMigration(rskTx);
 
-        processReleaseRequests(rskTx);
+        processPegoutRequests(rskTx);
 
-        processReleaseTransactions(rskTx);
+        processConfirmedPegouts(rskTx);
 
         updateFederationCreationBlockHeights();
     }
@@ -981,7 +999,7 @@ public class BridgeSupport {
     }
 
     private boolean federationIsInMigrationAge(Federation federation) {
-        long federationActivationAge = bridgeConstants.getFederationActivationAge();
+        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
         long ageBegin = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationBegin();
         long ageEnd = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations);
@@ -991,7 +1009,7 @@ public class BridgeSupport {
 
     private boolean federationIsPastMigrationAge(Federation federation) {
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageEnd = bridgeConstants.getFederationActivationAge() +
+        long ageEnd = bridgeConstants.getFederationActivationAge(activations) +
             bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations);
 
         return federationAge >= ageEnd;
@@ -1010,7 +1028,7 @@ public class BridgeSupport {
         Address activeFederationAddress,
         List<UTXO> availableUTXOs) throws IOException {
 
-        ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
         BtcTransaction btcTx = createResult.getLeft();
         List<UTXO> selectedUTXOs = createResult.getRight();
@@ -1025,7 +1043,7 @@ public class BridgeSupport {
             Coin amountMigrated = selectedUTXOs.stream()
                 .map(UTXO::getValue)
                 .reduce(Coin.ZERO, Coin::add);
-            releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTxHash);
+            pegoutsWaitingForConfirmations.add(btcTx, rskExecutionBlock.getNumber(), rskTxHash);
             // Log the Release request
             logger.debug(
                 "[migrateFunds] release requested. rskTXHash: {}, btcTxHash: {}, amount: {}",
@@ -1035,7 +1053,7 @@ public class BridgeSupport {
             );
             eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTx, amountMigrated);
         } else {
-            releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+            pegoutsWaitingForConfirmations.add(btcTx, rskExecutionBlock.getNumber());
         }
 
         // Mark UTXOs as spent
@@ -1054,25 +1072,24 @@ public class BridgeSupport {
      *
      * @param rskTx
      */
-    private void processReleaseRequests(Transaction rskTx) {
+    private void processPegoutRequests(Transaction rskTx) {
         final Wallet activeFederationWallet;
-        final ReleaseRequestQueue releaseRequestQueue;
+        final ReleaseRequestQueue pegoutRequests;
         final List<UTXO> availableUTXOs;
-        final ReleaseTransactionSet releaseTransactionSet;
+        final PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
 
         try {
             // (any of these could fail and would invalidate both the tx build and utxo selection, so treat as atomic)
             activeFederationWallet = getActiveFederationWallet(true);
-            releaseRequestQueue = provider.getReleaseRequestQueue();
+            pegoutRequests = provider.getReleaseRequestQueue();
             availableUTXOs = getActiveFederationBtcUTXOs();
-            releaseTransactionSet = provider.getReleaseTransactionSet();
+            pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         } catch (IOException e) {
-            logger.error("Unexpected error accessing storage while attempting to process release requests", e);
+            logger.error("Unexpected error accessing storage while attempting to process pegout requests", e);
             return;
         }
 
-        // Releases are attempted using the currently active federation
-        // wallet.
+        // Pegouts are attempted using the currently active federation wallet.
         final ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
                 btcContext.getParams(),
                 activeFederationWallet,
@@ -1082,84 +1099,83 @@ public class BridgeSupport {
         );
 
         if (activations.isActive(RSKIP271)) {
-            processPegoutsInBatch(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet, activeFederationWallet, rskTx);
+            processPegoutsInBatch(pegoutRequests, txBuilder, availableUTXOs, pegoutsWaitingForConfirmations, activeFederationWallet, rskTx);
         } else {
-            processPegoutsIndividually(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet, activeFederationWallet);
+            processPegoutsIndividually(pegoutRequests, txBuilder, availableUTXOs, pegoutsWaitingForConfirmations, activeFederationWallet);
         }
     }
 
-    private void addPegoutTxToReleaseTransactionSet(
+    private void addToPegoutsWaitingForConfirmations(
         BtcTransaction generatedTransaction,
-        ReleaseTransactionSet releaseTransactionSet,
-        Keccak256 rskTxHash,
+        PegoutsWaitingForConfirmations pegoutWaitingForConfirmations,
+        Keccak256 pegoutCreationRskTxHash,
         Coin amount
     ) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             // Add the TX
-            releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), rskTxHash);
-            // For a short time period, there could be items in the release request queue that don't have the rskTxHash
-            // (these are releases created right before the consensus rule activation, that weren't processed before its activation)
-            // We shouldn't generate the event for those releases
-            if (rskTxHash != null) {
-                // Log the Release request
-                eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, amount);
+            pegoutWaitingForConfirmations.add(generatedTransaction, rskExecutionBlock.getNumber(), pegoutCreationRskTxHash);
+            // For a short time period, there could be items in the pegout request queue that don't have the pegoutCreationRskTxHash
+            // (these are pegouts created right before the consensus rule activation, that weren't processed before its activation)
+            // We shouldn't generate the event for those pegouts
+            if (pegoutCreationRskTxHash != null) {
+                eventLogger.logReleaseBtcRequested(pegoutCreationRskTxHash.getBytes(), generatedTransaction, amount);
             }
         } else {
-            releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+            pegoutWaitingForConfirmations.add(generatedTransaction, rskExecutionBlock.getNumber());
         }
     }
 
     private void processPegoutsIndividually(
-        ReleaseRequestQueue releaseRequestQueue,
+        ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
         List<UTXO> availableUTXOs,
-        ReleaseTransactionSet releaseTransactionSet,
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet
     ) {
-        releaseRequestQueue.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry releaseRequest) -> {
+        pegoutRequests.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry pegoutRequest) -> {
             ReleaseTransactionBuilder.BuildResult result = txBuilder.buildAmountTo(
-                releaseRequest.getDestination(),
-                releaseRequest.getAmount()
+                pegoutRequest.getDestination(),
+                pegoutRequest.getAmount()
             );
 
             if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
-            // Couldn't build a transaction to release these funds
+            // Couldn't build a pegout transaction to release these funds
             // Log the event and return false so that the request remains in the
             // queue for future processing.
             // Further logging is done at the tx builder level.
                 logger.warn(
-                    "Couldn't build a release BTC tx for <{}, {}>. Reason: {}",
-                    releaseRequest.getDestination().toBase58(),
-                    releaseRequest.getAmount(),
+                    "Couldn't build a pegout transaction for <{}, {}>. Reason: {}",
+                    pegoutRequest.getDestination().toBase58(),
+                    pegoutRequest.getAmount(),
                     result.getResponseCode());
                 return false;
             }
 
             BtcTransaction generatedTransaction = result.getBtcTx();
-            addPegoutTxToReleaseTransactionSet(generatedTransaction, releaseTransactionSet, releaseRequest.getRskTxHash(), releaseRequest.getAmount());
+            addToPegoutsWaitingForConfirmations(generatedTransaction, pegoutsWaitingForConfirmations, pegoutRequest.getRskTxHash(), pegoutRequest.getAmount());
 
             // Mark UTXOs as spent
             List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
             availableUTXOs.removeAll(selectedUTXOs);
 
-            adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount(), wallet);
+            adjustBalancesIfChangeOutputWasDust(generatedTransaction, pegoutRequest.getAmount(), wallet);
 
             return true;
         });
     }
 
     private void processPegoutsInBatch(
-        ReleaseRequestQueue releaseRequestQueue,
+        ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
         List<UTXO> availableUTXOs,
-        ReleaseTransactionSet releaseTransactionSet,
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet,
         Transaction rskTx) {
         long currentBlockNumber = rskExecutionBlock.getNumber();
         long nextPegoutCreationBlockNumber = getNextPegoutCreationBlockNumber();
 
         if (currentBlockNumber >= nextPegoutCreationBlockNumber) {
-            List<ReleaseRequestQueue.Entry> pegoutEntries = releaseRequestQueue.getEntries();
+            List<ReleaseRequestQueue.Entry> pegoutEntries = pegoutRequests.getEntries();
             Coin totalPegoutValue = pegoutEntries
                 .stream()
                 .map(ReleaseRequestQueue.Entry::getAmount)
@@ -1184,7 +1200,7 @@ public class BridgeSupport {
                 if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
                     logger.warn(
                         "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
-                        releaseRequestQueue.getEntries().size(),
+                        pegoutRequests.getEntries().size(),
                         totalPegoutValue,
                         result.getResponseCode());
                     return;
@@ -1193,10 +1209,10 @@ public class BridgeSupport {
                 logger.info("[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}", result.getBtcTx().getHash(), result.getResponseCode());
 
                 BtcTransaction generatedTransaction = result.getBtcTx();
-                addPegoutTxToReleaseTransactionSet(generatedTransaction, releaseTransactionSet, rskTx.getHash(), totalPegoutValue);
+                addToPegoutsWaitingForConfirmations(generatedTransaction, pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
 
                 // Remove batched requests from the queue after successfully batching pegouts
-                releaseRequestQueue.removeEntries(pegoutEntries);
+                pegoutRequests.removeEntries(pegoutEntries);
 
                 // Mark UTXOs as spent
                 List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
@@ -1210,7 +1226,7 @@ public class BridgeSupport {
             }
 
             // update next Pegout height even if there were no request in queue
-            if (releaseRequestQueue.getEntries().isEmpty()) {
+            if (pegoutRequests.getEntries().isEmpty()) {
                 long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
                 provider.setNextPegoutHeight(nextPegoutHeight);
                 logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
@@ -1219,48 +1235,47 @@ public class BridgeSupport {
     }
 
     /**
-     * Processes the current btc release transaction set.
-     * It basically looks for transactions with enough confirmations
+     * Processes pegout waiting for confirmations.
+     * It basically looks for pegout transactions with enough confirmations
      * and marks them as ready for signing as well as removes them
      * from the set.
      * @param rskTx the RSK transaction that is causing this processing.
      */
-    private void processReleaseTransactions(Transaction rskTx) {
-        final Map<Keccak256, BtcTransaction> txsWaitingForSignatures;
-        final ReleaseTransactionSet releaseTransactionSet;
+    private void processConfirmedPegouts(Transaction rskTx) {
+        final Map<Keccak256, BtcTransaction> pegoutsWaitingForSignatures;
+        final PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
 
         try {
-            txsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
-            releaseTransactionSet = provider.getReleaseTransactionSet();
+            pegoutsWaitingForSignatures = provider.getPegoutsWaitingForSignatures();
+            pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         } catch (IOException e) {
-            logger.error("Unexpected error accessing storage while attempting to process release btc transactions", e);
+            logger.error("Unexpected error accessing storage while attempting to process confirmed pegouts", e);
             return;
         }
 
         // TODO: (Ariel Mendelzon - 07/12/2017)
         // TODO: at the moment, there can only be one btc transaction
-        // TODO: per rsk transaction in the txsWaitingForSignatures
+        // TODO: per rsk transaction in the pegoutsWaitingForSignatures
         // TODO: map, and the rest of the processing logic is
         // TODO: dependant upon this. That is the reason we
         // TODO: add only one btc transaction at a time
         // TODO: (at least at this stage).
-
-        // IMPORTANT: sliceWithEnoughConfirmations also modifies the transaction set in place
-        Set<ReleaseTransactionSet.Entry> txsWithEnoughConfirmations = releaseTransactionSet.sliceWithConfirmations(
+        Optional<PegoutsWaitingForConfirmations.Entry> nextPegoutWithEnoughConfirmations = pegoutsWaitingForConfirmations
+            .getNextPegoutWithEnoughConfirmations(
                 rskExecutionBlock.getNumber(),
-                bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
-                Optional.of(1)
-        );
-        if (txsWithEnoughConfirmations.isEmpty()) {
+                bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations()
+            );
+
+        if (!nextPegoutWithEnoughConfirmations.isPresent()) {
             return;
         }
 
-        ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
+        PegoutsWaitingForConfirmations.Entry confirmedPegout = nextPegoutWithEnoughConfirmations.get();
 
-        Keccak256 txWaitingForSignatureKey = getTxWaitingForSignatureKey(rskTx, entry);
+        Keccak256 txWaitingForSignatureKey = getPegoutWaitingForSignatureKey(rskTx, confirmedPegout);
         if (activations.isActive(ConsensusRule.RSKIP375)){
             /*
-             This check aims to prevent entry overriding. Currently, we do not accept more than one peg-out
+             This check aims to prevent confirmedPegout overriding. Currently, we do not accept more than one peg-out
              confirmation in the same update collections, but if in the future we do, then only one peg-out would be
              kept in the map, since the key used in the RSK tx hash that calls updateCollections would override the
              last one, thus resulting in losing funds. For this reason, we add this check that will alert anyone by
@@ -1268,36 +1283,37 @@ public class BridgeSupport {
              entries to have the same key. So, informing on time the existence of this critical bug to pursue
              awareness and hint to rethink the changes being added.
              */
-            checkIfEntryExistsInTxsWaitingForSignatures(txWaitingForSignatureKey, txsWaitingForSignatures);
+            checkIfEntryExistsInPegoutsWaitingForSignatures(txWaitingForSignatureKey, pegoutsWaitingForSignatures);
         }
 
-        txsWaitingForSignatures.put(txWaitingForSignatureKey, entry.getTransaction());
+        pegoutsWaitingForSignatures.put(txWaitingForSignatureKey, confirmedPegout.getBtcTransaction());
+        pegoutsWaitingForConfirmations.removeEntry(confirmedPegout);
 
         if(activations.isActive(ConsensusRule.RSKIP326)) {
-            eventLogger.logPegoutConfirmed(entry.getTransaction().getHash(), entry.getRskBlockNumber());
+            eventLogger.logPegoutConfirmed(confirmedPegout.getBtcTransaction().getHash(), confirmedPegout.getPegoutCreationRskBlockNumber());
         }
     }
 
-    private Keccak256 getTxWaitingForSignatureKey(Transaction rskTx, ReleaseTransactionSet.Entry entry) {
+    private Keccak256 getPegoutWaitingForSignatureKey(Transaction rskTx, PegoutsWaitingForConfirmations.Entry confirmedPegout) {
         if (activations.isActive(ConsensusRule.RSKIP375)){
-            return entry.getRskTxHash();
+            return confirmedPegout.getPegoutCreationRskTxHash();
         }
         // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
         if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
-            // The release transaction may have been created prior to the Consensus Rule activation
+            // The pegout waiting for confirmations may have been created prior to the Consensus Rule activation
             // therefore it won't have a rskTxHash value, fallback to this transaction's hash
-            return entry.getRskTxHash() == null ? rskTx.getHash() : entry.getRskTxHash();
+            return confirmedPegout.getPegoutCreationRskTxHash() == null ? rskTx.getHash() : confirmedPegout.getPegoutCreationRskTxHash();
         }
         return rskTx.getHash();
     }
 
-    private void checkIfEntryExistsInTxsWaitingForSignatures(Keccak256 rskTxHash, Map<Keccak256, BtcTransaction> txsWaitingForSignatures) {
-        if (txsWaitingForSignatures.containsKey(rskTxHash)) {
+    private void checkIfEntryExistsInPegoutsWaitingForSignatures(Keccak256 rskTxHash, Map<Keccak256, BtcTransaction> pegoutsWaitingForSignatures) {
+        if (pegoutsWaitingForSignatures.containsKey(rskTxHash)) {
             String message = String.format(
-                "An entry for the given rskTxHash %s already exists. Entry overriding is not allowed for txsWaitingForSignatures map.",
+                "An entry for the given rskTxHash %s already exists. Entry overriding is not allowed for pegoutsWaitingForSignatures map.",
                 rskTxHash
             );
-            logger.error("[checkIfEntryExistsInTxsWaitingForSignatures] {}", message);
+            logger.error("[checkIfEntryExistsInPegoutsWaitingForSignatures] {}", message);
             throw new IllegalStateException(message);
         }
     }
@@ -1312,7 +1328,7 @@ public class BridgeSupport {
             long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
             long curBlockHeight = rskExecutionBlock.getNumber();
 
-            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge()) {
+            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge(activations)) {
                 provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
                 provider.clearNextFederationCreationBlockHeight();
             }
@@ -1370,7 +1386,7 @@ public class BridgeSupport {
             return;
         }
 
-        BtcTransaction btcTx = provider.getRskTxsWaitingForSignatures().get(new Keccak256(rskTxHash));
+        BtcTransaction btcTx = provider.getPegoutsWaitingForSignatures().get(new Keccak256(rskTxHash));
         if (btcTx == null) {
             logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", new Keccak256(rskTxHash));
             return;
@@ -1477,7 +1493,7 @@ public class BridgeSupport {
 
         if (BridgeUtils.hasEnoughSignatures(btcContext, btcTx)) {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
-            provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
+            provider.getPegoutsWaitingForSignatures().remove(new Keccak256(rskTxHash));
 
             eventLogger.logReleaseBtc(btcTx, rskTxHash);
         } else if (logger.isDebugEnabled()) {
@@ -1495,7 +1511,7 @@ public class BridgeSupport {
      * @return a StateForFederator serialized in RLP
      */
     public byte[] getStateForBtcReleaseClient() throws IOException {
-        StateForFederator stateForFederator = new StateForFederator(provider.getRskTxsWaitingForSignatures());
+        StateForFederator stateForFederator = new StateForFederator(provider.getPegoutsWaitingForSignatures());
         return stateForFederator.getEncoded();
     }
 
@@ -2098,7 +2114,7 @@ public class BridgeSupport {
             // Preserve federation change info
             long nextFederationCreationBlockHeight = rskExecutionBlock.getNumber();
             provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
-            Script oldFederationP2SHScript = oldFederation.getP2SHScript();
+            Script oldFederationP2SHScript = activations.isActive(RSKIP377)? oldFederation.getStandardP2SHScript(): oldFederation.getP2SHScript();
             provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
         }
 
@@ -2663,7 +2679,7 @@ public class BridgeSupport {
         if (nextFederationCreationBlockHeightOpt.isPresent()) {
             long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
             long curBlockHeight = rskExecutionBlock.getNumber();
-            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge()) {
+            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge(activations)) {
                 return nextFederationCreationBlockHeight;
             }
         }
@@ -2691,7 +2707,8 @@ public class BridgeSupport {
 
         int pegoutRequestsCount = getQueuedPegoutsCount();
 
-        if (!activations.isActive(RSKIP271) || pegoutRequestsCount == 0) {
+        if (!activations.isActive(ConsensusRule.RSKIP385) &&
+                (!activations.isActive(ConsensusRule.RSKIP271) || pegoutRequestsCount == 0)) {
             return Coin.ZERO;
         }
 
@@ -3044,6 +3061,10 @@ public class BridgeSupport {
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
             BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
+            if (activations.isActive(ConsensusRule.RSKIP376)){
+                migrationBtcTx.setVersion(BTC_TX_VERSION_2);
+            }
+
             migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);
 
             SendRequest sr = SendRequest.forTx(migrationBtcTx);
@@ -3137,10 +3158,10 @@ public class BridgeSupport {
         ReleaseTransactionBuilder.BuildResult buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
         if (buildReturnResult.getResponseCode() == ReleaseTransactionBuilder.Response.SUCCESS) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                provider.getReleaseTransactionSet().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber(), rskTxHash);
+                provider.getPegoutsWaitingForConfirmations().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber(), rskTxHash);
                 eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), buildReturnResult.getBtcTx(), totalAmount);
             } else {
-                provider.getReleaseTransactionSet().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber());
+                provider.getPegoutsWaitingForConfirmations().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber());
             }
             logger.info("Rejecting peg-in tx built Successfully: Refund to address: {}. RskTxHash: {}. Value {}.", btcRefundAddress, rskTxHash, totalAmount);
         } else {
@@ -3183,7 +3204,7 @@ public class BridgeSupport {
     private boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height) {
         // If the address is not whitelisted, then return the funds
         // using the exact same utxos sent to us.
-        // That is, build a release transaction and get it in the release transaction set.
+        // That is, build a pegout waiting for confirmations and get it in the pegoutWaitingForConfirmations set.
         // Otherwise, transfer SBTC to the sender of the BTC
         // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
         LockWhitelist lockWhitelist = provider.getLockWhitelist();

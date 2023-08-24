@@ -26,11 +26,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.Charset;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
@@ -47,7 +43,7 @@ public class Node implements Serializable {
     public Node(String enodeURL) {
         try {
             URI uri = new URI(enodeURL);
-            if (!uri.getScheme().equals("enode")) {
+            if (!"enode".equals(uri.getScheme())) {
                 throw new RuntimeException("expecting URL in the format enode://PUBKEY@HOST:PORT");
             }
             this.id = Hex.decode(uri.getUserInfo());
@@ -78,12 +74,12 @@ public class Node implements Serializable {
             idB = nodeRLP.get(2).getRLPData();
         }
 
-        String host = new String(hostB, Charset.forName("UTF-8"));
-        int port = byteArrayToInt(portB);
+        String nodeHost = new String(hostB, StandardCharsets.UTF_8);
+        int nodePort = byteArrayToInt(portB);
 
         this.id = idB;
-        this.host = host;
-        this.port = port;
+        this.host = nodeHost;
+        this.port = nodePort;
     }
 
 
@@ -132,10 +128,9 @@ public class Node implements Serializable {
                 ", id=" + getHexId() +
                 '}';
     }
-
     @Override
     public int hashCode() {
-        return Objects.hash(host, port, id);
+        return Objects.hash(host, port, Arrays.hashCode(id));
     }
 
     @Override
@@ -152,7 +147,7 @@ public class Node implements Serializable {
             return false;
         }
 
-        // TODO(mc): do we need to check host and port too?
-        return Arrays.equals(id, ((Node) o).id);
+        Node node = (Node) o;
+        return port == node.port && Arrays.equals(id, node.id) && Objects.equals(host, node.host);
     }
 }

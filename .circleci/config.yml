@@ -74,6 +74,9 @@ jobs:
           name: rskj tests
           command: ./gradlew --no-daemon --stacktrace test
       - run:
+          name: rskj integration tests
+          command: ./gradlew --no-daemon --stacktrace integrationTest
+      - run:
           name: Save test results
           command: |
             mkdir -p ~/junit/

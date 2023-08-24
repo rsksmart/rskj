@@ -44,7 +44,7 @@ public class P2shErpFederation extends ErpFederation {
     public final Script getStandardRedeemScript() {
         if (standardRedeemScript == null) {
             standardRedeemScript = P2shErpFederationRedeemScriptParser.extractStandardRedeemScript(
-                    getRedeemScript().getChunks()
+                getRedeemScript().getChunks()
             );
         }
         return standardRedeemScript;

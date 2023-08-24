@@ -53,6 +53,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class KeyCrypterAes implements KeyCrypter {
 
+    private static final long serialVersionUID = 9049267187425810811L;
+
     /**
      * The size of an AES block in bytes.
      * This is also the length of the initialisation vector.

@@ -106,7 +106,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
-        long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge();
+        long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge(activations);
 
         CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics();

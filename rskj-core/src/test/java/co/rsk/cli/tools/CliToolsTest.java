@@ -76,7 +76,9 @@ import java.util.Random;
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.generateBytesFromRandom;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -292,7 +294,7 @@ class CliToolsTest {
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ConnectBlocks connectBlocksCliTool = new ConnectBlocks();
@@ -345,7 +347,7 @@ class CliToolsTest {
         doReturn(new BlockFactory(ActivationConfigsForTest.all())).when(rskContext).getBlockFactory();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ImportBlocks importBlocksCliTool = new ImportBlocks();
@@ -373,12 +375,14 @@ class CliToolsTest {
 
         String databaseDir = tempDir.resolve("db").toAbsolutePath().toString();
         String[] args = new String[]{"--file", stateFile.getAbsolutePath()};
+        Path unitrieDbPath = Paths.get(databaseDir, "unitrie");
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(databaseDir).when(rskSystemProperties).databaseDir();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(DbKind.ROCKS_DB).when(rskContext).getDbKind(databaseDir);
+        doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ImportState importStateCliTool = new ImportState();
@@ -518,15 +522,16 @@ class CliToolsTest {
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
 
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
         doReturn(true).when(rskSystemProperties).databaseReset();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(DbKind.ROCKS_DB).when(rskContext).getDbKind(Mockito.anyString());
 
         NodeStopper stopper = mock(NodeStopper.class);
 
         DbMigrate dbMigrateCliTool = new DbMigrate();
-        dbMigrateCliTool.execute(new String[]{"-t", "rocksdb"}, () -> rskContext, stopper);
+        dbMigrateCliTool.execute(new String[]{"-t", "leveldb"}, () -> rskContext, stopper);
 
         String nodeIdPropsFileLine = null;
 
@@ -547,9 +552,7 @@ class CliToolsTest {
         }
 
         Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
-        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
-        Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
-        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
+        Assertions.assertEquals("keyvalue.datasource=LEVEL_DB", dbKindPropsFileLine);
     }
 
     @Test
@@ -725,7 +728,7 @@ class CliToolsTest {
     }
 
     @Test
-    public void testErrorHandlingInPicocli() {
+    void testErrorHandlingInPicocli() {
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
 
@@ -749,7 +752,7 @@ class CliToolsTest {
 
         dummyTool.execute(new String[]{}, () -> rskContext, stopper);
 
-        verify(stopper, times(1)).stop(Mockito.eq(1));
+        verify(stopper, times(1)).stop(1);
     }
 
     @Test

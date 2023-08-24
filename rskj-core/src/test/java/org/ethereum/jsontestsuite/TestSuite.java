@@ -32,23 +32,23 @@ import java.util.List;
  */
 public class TestSuite {
 
-    List<TestCase> testList = new ArrayList<>();
+    List<TestingCase> testList = new ArrayList<>();
 
     public TestSuite(JsonNode testCaseJSONObj) throws IOException {
         for (Iterator<String> it = testCaseJSONObj.fieldNames(); it.hasNext(); ) {
             String key = it.next();
 
             JsonNode testCaseJSON = testCaseJSONObj.get(key);
-            TestCase testCase = new TestCase(key, testCaseJSON);
+            TestingCase testCase = new TestingCase(key, testCaseJSON);
             testList.add(testCase);
         }
     }
 
-    public List<TestCase> getAllTests(){
+    public List<TestingCase> getAllTests(){
         return testList;
     }
 
-    public Iterator<TestCase> iterator() {
+    public Iterator<TestingCase> iterator() {
         return testList.iterator();
     }
 }

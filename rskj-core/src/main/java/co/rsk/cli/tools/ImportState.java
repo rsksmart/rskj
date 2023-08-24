@@ -22,6 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
 import picocli.CommandLine;
 import org.ethereum.datasource.KeyValueDataSourceUtils;
@@ -30,6 +31,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
@@ -53,8 +55,10 @@ public class ImportState extends PicoCliToolRskContextAware {
     public Integer call() throws IOException {
         RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
+        Path unitrieDbPath = Paths.get(databaseDir, "unitrie");
+        DbKind currentDbKind = ctx.getDbKind(databaseDir);
 
-        KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
+        KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(unitrieDbPath, currentDbKind);
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             importState(reader, trieDB);

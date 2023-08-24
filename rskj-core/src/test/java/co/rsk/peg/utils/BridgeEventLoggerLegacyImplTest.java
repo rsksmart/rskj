@@ -45,6 +45,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -105,7 +106,7 @@ class BridgeEventLoggerLegacyImplTest {
     void testLogUpdateCollectionsAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         Transaction anyTx = any();
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(anyTx));
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(anyTx));
     }
 
     @Test
@@ -147,7 +148,7 @@ class BridgeEventLoggerLegacyImplTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         BtcECKey federatorPublicKey = new BtcECKey();
         byte[] bytes = rskTxHash.getBytes();
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(federatorPublicKey, btcTxMock, bytes));
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(federatorPublicKey, btcTxMock, bytes));
     }
 
     @Test
@@ -185,7 +186,7 @@ class BridgeEventLoggerLegacyImplTest {
 
         // Act
         byte[] bytes = rskTxHash.getBytes();
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtc(btcTxMock, bytes));
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtc(btcTxMock, bytes));
     }
 
     @Test
@@ -269,7 +270,7 @@ class BridgeEventLoggerLegacyImplTest {
         }
 
         // Assert new federation activation block number
-        Assertions.assertEquals(15L + constantsMock.getFederationActivationAge(), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
+        Assertions.assertEquals(15L + constantsMock.getFederationActivationAge(activations), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
     }
 
     @Test
@@ -278,7 +279,7 @@ class BridgeEventLoggerLegacyImplTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         // Act
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class)));
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class)));
     }
 
     /**********************************

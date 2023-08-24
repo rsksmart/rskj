@@ -20,7 +20,7 @@ package co.rsk.jsontestsuite;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
-import org.ethereum.jsontestsuite.CryptoTestCase;
+import org.ethereum.jsontestsuite.CryptoTestingCase;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -46,10 +46,10 @@ class LocalCryptoTest {
 
         ObjectMapper mapper = new ObjectMapper();
         JavaType type = mapper.getTypeFactory().
-                constructMapType(HashMap.class, String.class, CryptoTestCase.class);
+                constructMapType(HashMap.class, String.class, CryptoTestingCase.class);
 
 
-        HashMap<String , CryptoTestCase> testSuite =
+        HashMap<String , CryptoTestingCase> testSuite =
                 mapper.readValue(json, type);
 
         for (String key : testSuite.keySet()){

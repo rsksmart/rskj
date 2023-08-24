@@ -32,9 +32,6 @@ import java.util.stream.Collectors;
  */
 
 public class Filter {
-    abstract static class FilterEvent {
-        public abstract Object getJsonEventObject();
-    }
 
     private List<FilterEvent> events = new ArrayList<>();
     private int processedEvents = 0;
@@ -87,5 +84,13 @@ public class Filter {
 
     public void newPendingTx(Transaction tx) {
         // add TransactionReceipt for PendingTx
+    }
+
+    public interface FilterEvent {
+        Object getJsonEventObject();
+    }
+
+    protected int eventsSize() {
+        return events.size();
     }
 }

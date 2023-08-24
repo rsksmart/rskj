@@ -88,7 +88,7 @@ public abstract class CliToolRskContextAware {
 
             RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
 
-            KeyValueDataSourceUtils.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
+            KeyValueDataSourceUtils.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir());
 
             onExecute(args, ctx);
 

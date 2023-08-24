@@ -203,7 +203,7 @@ public class PeerScoringManager {
     public void banAddress(String address) throws InvalidInetAddressException {
         boolean isAddressBlock = InetAddressUtils.hasMask(address);
         if (isAddressBlock) {
-            this.banAddressBlock(InetAddressUtils.parse(address));
+            this.banAddressBlock(InetAddressUtils.createCidrBlock(address));
         } else {
             this.banAddress(InetAddressUtils.getAddressForBan(address));
         }
@@ -232,7 +232,7 @@ public class PeerScoringManager {
     public void unbanAddress(String address) throws InvalidInetAddressException {
         boolean isAddressBlock = InetAddressUtils.hasMask(address);
         if (isAddressBlock) {
-            this.unbanAddressBlock(InetAddressUtils.parse(address));
+            this.unbanAddressBlock(InetAddressUtils.createCidrBlock(address));
         } else {
             this.unbanAddress(InetAddressUtils.getAddressForBan(address));
         }

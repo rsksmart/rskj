@@ -92,10 +92,6 @@ public class PeersInformation {
         reportEventToPeerScoring(peer, eventType, message, arguments);
     }
 
-    private int getScore(NodeID peerId) {
-        return peerScoringManager.getPeerScoring(peerId).getScore();
-    }
-
     public int count() {
         return peerStatuses.size();
     }
@@ -225,6 +221,10 @@ public class PeersInformation {
         }
 
         return Integer.compare(score, scoreOther);
+    }
+
+    private int getScore(NodeID peerId) {
+        return peerScoringManager.getPeerScoring(peerId).getScore();
     }
 
     private int comparePeerTotalDifficulty(
