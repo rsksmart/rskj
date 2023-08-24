@@ -53,7 +53,7 @@ class BitcoinUtilsTest {
         Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
 
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
-        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, redeemScript);
+        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         RedeemData redeemData = RedeemData.of(pubKeys, redeemScript);
@@ -96,7 +96,7 @@ class BitcoinUtilsTest {
         Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
 
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
-        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, federation.getRedeemScript());
+        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         Script fedInputScript = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
@@ -183,13 +183,10 @@ class BitcoinUtilsTest {
             activations
         );
 
-
         Script flyoverP2shErpRedeemScript = FastBridgeP2shErpRedeemScriptParser.createFastBridgeP2shErpRedeemScript(
             p2shErpFederation.getRedeemScript(),
             BitcoinTestUtils.createHash(1)
         );
-
-        Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverP2shErpRedeemScript);
         
         Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
 
@@ -198,7 +195,8 @@ class BitcoinUtilsTest {
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         RedeemData redeemData = RedeemData.of(p2shErpFederation.getBtcPublicKeys(), flyoverP2shErpRedeemScript);
-        Script fedInputScript = flyoverP2SH.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
+        Script flyoverP2sh = ScriptBuilder.createP2SHOutputScript(flyoverP2shErpRedeemScript);
+        Script fedInputScript = flyoverP2sh.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
         btcTx.getInput(0).setScriptSig(fedInputScript);
 
         Sha256Hash expectedSigHash = btcTx.hashForSignature(
@@ -219,16 +217,25 @@ class BitcoinUtilsTest {
     @Test
     void test_getFirstInputSigHash_no_input() {
         // Arrange
-        List<BtcECKey> signers = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
-        );
-        signers.sort(BtcECKey.PUBKEY_COMPARATOR);
-
         Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
 
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+        btcTx.addOutput(Coin.COIN, destinationAddress);
+
+        // Act
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+
+        // Assert
+        Assertions.assertFalse(sigHash.isPresent());
+    }
+
+    @Test
+    void test_getFirstInputSigHash_invalid_input_no_redeem_script() {
+        // Arrange
+        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
+
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         // Act
@@ -262,7 +269,7 @@ class BitcoinUtilsTest {
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
 
         for (int i = 1; i <= 50; i++) {
-            btcTx.addInput(BitcoinTestUtils.createHash(1), 0, redeemScript);
+            btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
             RedeemData redeemData = RedeemData.of(pubKeys, redeemScript);
 
             Script inputScript = p2SHScript.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
