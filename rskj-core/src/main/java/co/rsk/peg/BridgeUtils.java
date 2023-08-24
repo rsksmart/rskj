@@ -850,7 +850,7 @@ public class BridgeUtils {
         return baseSize + signingSize;
     }
 
-    private static Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
+    public static Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
         Script inputScript = txInput.getScriptSig();
         List<ScriptChunk> chunks = inputScript.getChunks();
         if (chunks == null || chunks.isEmpty()) {

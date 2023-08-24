@@ -4,31 +4,27 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.peg.BridgeUtils;
 
-import java.util.List;
+import java.util.Optional;
 
 public class BitcoinUtils {
     private BitcoinUtils() { }
 
-    public static Sha256Hash getFirstInputSigHash(BtcTransaction btcTx){
+    public static Optional<Sha256Hash> getFirstInputSigHash(BtcTransaction btcTx){
         if (btcTx.getInputs().isEmpty()){
-            throw new IllegalArgumentException("Btc transaction with no inputs. Cannot obtained sigHash for a empty btc tx.");
+            return Optional.empty();
         }
         TransactionInput txInput = btcTx.getInput(0);
-        return btcTx.hashForSignature(
+        Optional<Script> redeemScriptOptional = BridgeUtils.extractRedeemScriptFromInput(txInput);
+        if (!redeemScriptOptional.isPresent()) {
+            return Optional.empty();
+        }
+        return Optional.of(btcTx.hashForSignature(
             0,
-            getRedeemScript(txInput),
+            redeemScriptOptional.get(),
             BtcTransaction.SigHash.ALL,
             false
-        );
-    }
-
-    private static Script getRedeemScript(TransactionInput txInput) {
-        Script inputScript = txInput.getScriptSig();
-        List<ScriptChunk> chunks = inputScript.getChunks();
-        // Last chunk of the scriptSig contains the redeem script
-        byte[] program = chunks.get(chunks.size() - 1).data;
-        return new Script(program);
+        ));
     }
 }
