@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 class BitcoinUtilsTest {
@@ -68,10 +69,11 @@ class BitcoinUtilsTest {
         );
 
         // Act
-        Sha256Hash sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        Assertions.assertEquals(expectedSigHash, sigHash);
+        Assertions.assertTrue(sigHash.isPresent());
+        Assertions.assertEquals(expectedSigHash, sigHash.get());
     }
 
     @Test
@@ -106,13 +108,13 @@ class BitcoinUtilsTest {
             BtcTransaction.SigHash.ALL,
             false
         );
-        // test
 
         // Act
-        Sha256Hash sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        Assertions.assertEquals(expectedSigHash, sigHash);
+        Assertions.assertTrue(sigHash.isPresent());
+        Assertions.assertEquals(expectedSigHash, sigHash.get());
     }
 
     @Test
@@ -153,10 +155,11 @@ class BitcoinUtilsTest {
         );
 
         // Act
-        Sha256Hash sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        Assertions.assertEquals(expectedSigHash, sigHash);
+        Assertions.assertTrue(sigHash.isPresent());
+        Assertions.assertEquals(expectedSigHash, sigHash.get());
     }
 
     @Test
@@ -206,10 +209,11 @@ class BitcoinUtilsTest {
         );
 
         // Act
-        Sha256Hash sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        Assertions.assertEquals(expectedSigHash, sigHash);
+        Assertions.assertTrue(sigHash.isPresent());
+        Assertions.assertEquals(expectedSigHash, sigHash.get());
     }
 
     @Test
@@ -228,14 +232,10 @@ class BitcoinUtilsTest {
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         // Act
-        Exception exception = Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            BitcoinUtils.getFirstInputSigHash(btcTx);
-        });
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        String expectedMessage = "Btc transaction with no inputs. Cannot obtained sigHash for a empty btc tx.";
-        String actualMessage = exception.getMessage();
-        Assertions.assertEquals(expectedMessage, actualMessage);
+        Assertions.assertFalse(sigHash.isPresent());
     }
 
     @Test
@@ -278,9 +278,10 @@ class BitcoinUtilsTest {
         );
 
         // Act
-        Sha256Hash sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        Assertions.assertEquals(expectedSigHash, sigHash);
+        Assertions.assertTrue(sigHash.isPresent());
+        Assertions.assertEquals(expectedSigHash, sigHash.get());
     }
 }
