@@ -75,12 +75,9 @@ class BridgeSupportGetTransactionTypeTest {
 
         when(provider.getNewFederation()).thenReturn(activeFederation);
 
-        List<BtcECKey> fedKeys = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
+        List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03"}, true
         );
-        fedKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
         P2shErpFederation p2shRetiringFederation = new P2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(fedKeys),
@@ -175,11 +172,10 @@ class BridgeSupportGetTransactionTypeTest {
 
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
 
-        List<BtcECKey> multiSigKeys = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
+        List<BtcECKey> multiSigKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03"}, true
         );
+
         multiSigKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         Script redeemScript = ScriptBuilder.createRedeemScript((multiSigKeys.size() / 2) + 1, multiSigKeys);
 
@@ -258,12 +254,9 @@ class BridgeSupportGetTransactionTypeTest {
             .withProvider(provider)
             .build();
 
-        List<BtcECKey> fedKeys = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
+        List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03"}, true
         );
-        fedKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
         Federation activeFederation = new Federation(
             FederationTestUtils.getFederationMembersWithBtcKeys(fedKeys),
@@ -307,12 +300,9 @@ class BridgeSupportGetTransactionTypeTest {
         Federation activeFederation = FederationTestUtils.getFederation(100, 200, 300);
         when(provider.getNewFederation()).thenReturn(activeFederation);
 
-        List<BtcECKey> retiringFedKeys = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
-        );
-        retiringFedKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        List<BtcECKey> retiringFedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03"}, true
+        );;
 
         Federation retiringFederation = new Federation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedKeys),
