@@ -57,6 +57,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
@@ -1025,6 +1026,9 @@ public class BridgeSupport {
             pegoutsWaitingForConfirmations.add(btcTx, rskExecutionBlock.getNumber());
         }
 
+        // Store sigHash to be able to identify tx type
+        savePegoutTxSigHash(btcTx);
+
         // Mark UTXOs as spent
         availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
             utxo.getHash().equals(selectedUtxo.getHash()) && utxo.getIndex() == selectedUtxo.getIndex()
@@ -1179,6 +1183,7 @@ public class BridgeSupport {
 
                 BtcTransaction generatedTransaction = result.getBtcTx();
                 addToPegoutsWaitingForConfirmations(generatedTransaction, pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
+                savePegoutTxSigHash(generatedTransaction);
 
                 // Remove batched requests from the queue after successfully batching pegouts
                 pegoutRequests.removeEntries(pegoutEntries);
@@ -1201,6 +1206,17 @@ public class BridgeSupport {
                 logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
             }
         }
+    }
+
+    private void savePegoutTxSigHash(BtcTransaction pegoutTx) {
+        if (!activations.isActive(ConsensusRule.RSKIP379)){
+            return;
+        }
+        Optional<Sha256Hash> pegoutTxSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
+        if (!pegoutTxSigHash.isPresent()){
+            throw new IllegalStateException(String.format("SigHash could not be obtained from btc tx %s", pegoutTx.getHash()));
+        }
+        provider.setPegoutTxSigHash(pegoutTxSigHash.get());
     }
 
     /**
