@@ -433,6 +433,10 @@ public class RLP {
                 offset = 1 + nbytes;
             }
 
+            if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
+                throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
+            }
+
             if (position + length > msgData.length) {
                 throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
             }
@@ -490,6 +494,10 @@ public class RLP {
         for (int k = 0; k < size; k++) {
             length <<= 8;
             length += bytes[position + k] & 0xff;
+        }
+
+        if (length < 0) {
+            throw new RLPException("The length of the RLP item can't be negative");
         }
 
         return length;
