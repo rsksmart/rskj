@@ -1022,7 +1022,7 @@ public class BridgeSupport {
             pegoutsWaitingForConfirmations.add(btcTx, rskExecutionBlock.getNumber());
         }
 
-        // Store sigHash to be able to identify tx type
+        // Store pegoutTxSigHash to be able to identify the tx type
         savePegoutTxSigHash(btcTx);
 
         // Mark UTXOs as spent
