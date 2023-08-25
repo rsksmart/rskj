@@ -475,6 +475,7 @@ class PowpegMigrationTest {
             bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size()
         );
 
+        // Assert sigHashes were added for each new migration tx created
         bridgeSupport.save();
         bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().stream()
             .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
@@ -764,9 +765,8 @@ class PowpegMigrationTest {
         }
 
         verifyPegouts(bridgeStorageProvider);
-        verifyPegoutTxSigHashIndex(activations, bridgeStorageProvider, lastPegout.getBtcTransaction());
-
         // Assert sigHash was added
+        verifyPegoutTxSigHashIndex(activations, bridgeStorageProvider, lastPegout.getBtcTransaction());
 
         // Confirm the peg-outs
         blockNumber = blockNumber + bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
