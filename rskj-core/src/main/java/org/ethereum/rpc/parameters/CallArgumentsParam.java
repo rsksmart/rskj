@@ -43,8 +43,8 @@ public class CallArgumentsParam implements Serializable {
     }
 
     private void validateAddressProperty(String propertyValue, String propertyName) {
-        if (propertyValue == null || propertyValue.isEmpty()) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid param " + propertyName + ": empty or null.");
+        if (propertyValue == null) {
+            return;
         }
 
         if (!isPropertyValidHex(propertyValue)) {

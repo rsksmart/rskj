@@ -10,23 +10,17 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import java.io.IOException;
 import java.io.Serializable;
 
-@JsonDeserialize(using = HexRawDataParam.Deserializer.class)
-public class HexRawDataParam implements Serializable {
+@JsonDeserialize(using = HexDataParam.Deserializer.class)
+public class HexDataParam implements Serializable {
     private static final long serialVersionUID = 1L;
-
-    private static final int HASH_BYTE_LENGTH = 148;
 
     private final byte[] rawDataBytes;
 
-    public HexRawDataParam(String rawData){
+    public HexDataParam(String rawData){
         try {
             this.rawDataBytes = HexUtils.stringHexToByteArray(rawData);
         } catch (Exception e) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid data format. " + e.getMessage());
-        }
-
-        if (HASH_BYTE_LENGTH != rawDataBytes.length) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid data: incorrect length.");
         }
     }
 
@@ -34,7 +28,7 @@ public class HexRawDataParam implements Serializable {
         return rawDataBytes;
     }
 
-    public static class Deserializer extends StdDeserializer<HexRawDataParam> {
+    public static class Deserializer extends StdDeserializer<HexDataParam> {
         private static final long serialVersionUID = 1L;
 
         public Deserializer() { this(null); }
@@ -42,9 +36,9 @@ public class HexRawDataParam implements Serializable {
         public Deserializer(Class<?> vc) { super(vc); }
 
         @Override
-        public HexRawDataParam deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
+        public HexDataParam deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
             String hexRawData = jp.getText();
-            return new HexRawDataParam(hexRawData);
+            return new HexDataParam(hexRawData);
         }
     }
 }
