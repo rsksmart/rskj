@@ -55,8 +55,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     private static final Logger logger = LoggerFactory.getLogger("sync");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
 
-    private static final Logger loggerSnapExperiment = LoggerFactory.getLogger("snapExperiment");
-
     private final CompositeEthereumListener ethereumListener;
     /**
      * Header list sent in GET_BLOCK_BODIES message,
@@ -150,14 +148,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                     }
 
                     if (this.messageHandler != null) {
-
                         NodeMsgTraceInfo nodeMsgTraceInfo = new NodeMsgTraceInfo(msgTraceId, sessionId);
-
-                        if (message.getMessageType() == MessageType.BLOCK_MESSAGE) {
-                            BlockMessage blockMessage = (BlockMessage) message;
-                            loggerSnapExperiment.debug("BlockMessage block: [{}] arrived at: [{}]", blockMessage.getBlock().getNumber(), System.currentTimeMillis());
-                        }
-
                         this.messageHandler.postMessage(channel, message, nodeMsgTraceInfo);
                     }
                     break;
