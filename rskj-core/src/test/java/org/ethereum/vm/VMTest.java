@@ -648,6 +648,16 @@ public abstract class VMTest {
         assertEquals(DataWord.valueOf(42), program.getStack().pop());
     }
 
+    @Test  // PUSH0 OP
+    void testPUSH0() {
+        program = getProgram(compile("PUSH0"));
+        String expected = "0000000000000000000000000000000000000000000000000000000000000000";
+
+        program.fullTrace();
+        vm.step(program);
+
+        assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
+    }
     @Test  // PUSH1 OP
     void testPUSH1() {
 
@@ -3381,6 +3391,7 @@ public abstract class VMTest {
         when(activations.isActive(ConsensusRule.RSKIP90)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP89)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP150)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP398)).thenReturn(true);
         return activations;
     }
 

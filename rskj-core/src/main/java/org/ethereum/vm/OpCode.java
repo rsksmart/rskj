@@ -326,7 +326,10 @@ public enum OpCode {
 
 
     /*  Push Operations */
-
+    /**
+     * (0x5f) Pushes the constant value 0 onto the stack.
+     */
+    PUSH0(0x5f, 0, 1, BASE_TIER),
     /**
      * (0x60) Place 1-byte item on stack
      */

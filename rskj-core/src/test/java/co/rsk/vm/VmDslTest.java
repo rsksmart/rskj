@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
+import java.nio.ByteBuffer;
 
 /**
  * Created by ajlopez on 15/04/2020.
@@ -105,5 +106,65 @@ class VmDslTest {
 
         Assertions.assertNotNull(status);
         Assertions.assertEquals(0, status.length);
+    }
+
+    @Test
+    void testPush0() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/push0test.txt");
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        processor.processCommands(parser);
+
+        Block block2 = world.getBlockByName("b02");
+        Assertions.assertNotNull(block2);
+        Assertions.assertEquals(1, block2.getTransactionsList().size());
+
+        Transaction creationTransactionNew = world.getTransactionByName("txCreateNew");
+        Assertions.assertNotNull(creationTransactionNew);
+        TransactionReceipt creationTransactionReceiptNew = world.getTransactionReceiptByName("txCallNew");
+        Assertions.assertNotNull(creationTransactionReceiptNew);
+        byte[] statusCreationNew = creationTransactionReceiptNew.getStatus();
+        Assertions.assertNotNull(statusCreationNew);
+        Assertions.assertEquals(1, statusCreationNew.length);
+        Assertions.assertEquals(1, statusCreationNew[0]);
+
+        Transaction callTransactionNew = world.getTransactionByName("txCallNew");
+        Assertions.assertNotNull(callTransactionNew);
+        TransactionReceipt callTransactionReceiptNew = world.getTransactionReceiptByName("txCallNew");
+        Assertions.assertNotNull(callTransactionReceiptNew);
+        byte[] statusCallNew = callTransactionReceiptNew.getStatus();
+        Assertions.assertNotNull(statusCallNew);
+        Assertions.assertEquals(1, statusCallNew.length);
+        Assertions.assertEquals(1, statusCallNew[0]);
+
+        short newGas = ByteBuffer.wrap(callTransactionReceiptNew.getGasUsed()).getShort();
+
+        Block block4 = world.getBlockByName("b04");
+        Assertions.assertNotNull(block4);
+        Assertions.assertEquals(1, block4.getTransactionsList().size());
+
+
+        Transaction creationTransactionOld = world.getTransactionByName("txCreateOld");
+        Assertions.assertNotNull(creationTransactionOld);
+        TransactionReceipt creationTransactionReceiptOld = world.getTransactionReceiptByName("txCreateOld");
+        Assertions.assertNotNull(creationTransactionReceiptOld);
+        byte[] statusCreationOld = creationTransactionReceiptNew.getStatus();
+        Assertions.assertNotNull(statusCreationOld);
+        Assertions.assertEquals(1, statusCreationOld.length);
+        Assertions.assertEquals(1, statusCreationOld[0]);
+
+        Transaction callTransactionOld = world.getTransactionByName("txCallOld");
+        Assertions.assertNotNull(callTransactionOld);
+        TransactionReceipt callTransactionReceiptOld = world.getTransactionReceiptByName("txCallOld");
+        Assertions.assertNotNull(callTransactionReceiptOld);
+        byte[] statusCallOld = callTransactionReceiptOld.getStatus();
+        Assertions.assertNotNull(statusCallOld);
+        Assertions.assertEquals(1, statusCallOld.length);
+        Assertions.assertEquals(1, statusCallOld[0]);
+
+        short oldGas = ByteBuffer.wrap(callTransactionReceiptOld.getGasUsed()).getShort();
+        Assertions.assertTrue(newGas < oldGas);
     }
 }
