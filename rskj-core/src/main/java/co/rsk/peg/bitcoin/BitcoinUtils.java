@@ -9,21 +9,23 @@ import co.rsk.peg.BridgeUtils;
 import java.util.Optional;
 
 public class BitcoinUtils {
+    private static final int FIRST_INPUT_INDEX = 0;
+
     private BitcoinUtils() { }
 
     public static Optional<Sha256Hash> getFirstInputSigHash(BtcTransaction btcTx){
         if (btcTx.getInputs().isEmpty()){
             return Optional.empty();
         }
-        TransactionInput txInput = btcTx.getInput(0);
-        Optional<Script> redeemScriptOptional = BridgeUtils.extractRedeemScriptFromInput(txInput);
-        if (!redeemScriptOptional.isPresent()) {
+        TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
+        Optional<Script> redeemScript = BridgeUtils.extractRedeemScriptFromInput(txInput);
+        if (!redeemScript.isPresent()) {
             return Optional.empty();
         }
 
         return Optional.of(btcTx.hashForSignature(
             0,
-            redeemScriptOptional.get(),
+            redeemScript.get(),
             BtcTransaction.SigHash.ALL,
             false
         ));
