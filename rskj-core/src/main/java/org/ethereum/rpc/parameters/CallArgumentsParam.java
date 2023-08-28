@@ -11,33 +11,24 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.List;
 
 @JsonDeserialize(using = CallArgumentsParam.Deserializer.class)
 public class CallArgumentsParam implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private static final List<String> ADDRESS_PROPERTIES = Arrays.asList("to", "from");
-    private static final List<String> NUMBER_PROPERTIES = Arrays.asList("gas", "gasPrice", "gasLimit", "nonce", "chainId", "value");
-
-    private final CallArguments callArguments;
+    private transient final CallArguments callArguments;
 
     public CallArgumentsParam(CallArguments callArguments) {
-        Field[] fields = CallArguments.class.getDeclaredFields();
-        Arrays.stream(fields).forEach(field -> {
-            String fieldName = field.getName();
-            Object fieldValue = null;
-            try {
-                field.setAccessible(true);
-                fieldValue = field.get(callArguments);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-            validateProperty(fieldValue, fieldName);
-        });
+        validateAddressProperty(callArguments.getFrom(), "from");
+        validateAddressProperty(callArguments.getTo(), "to");
+        validateNumberProperty(callArguments.getGas(), "gas");
+        validateNumberProperty(callArguments.getGasPrice(), "gasPrice");
+        validateNumberProperty(callArguments.getGasLimit(), "gasLimit");
+        validateNumberProperty(callArguments.getNonce(), "nonce");
+        validateNumberProperty(callArguments.getChainId(), "chainId");
+        validateNumberProperty(callArguments.getValue(), "value");
+        validateDataProperty(callArguments.getData());
 
         this.callArguments = callArguments;
     }
@@ -82,16 +73,6 @@ public class CallArgumentsParam implements Serializable {
 
         if(!isPropertyValidHex(propertyValue)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid param data: invalid character in hex input.");
-        }
-    }
-
-    private void validateProperty(Object propertyValue, String propertyName) {
-        if(ADDRESS_PROPERTIES.contains(propertyName)) {
-            validateAddressProperty((String) propertyValue, propertyName);
-        } else if(NUMBER_PROPERTIES.contains(propertyName)) {
-            validateNumberProperty((String) propertyValue, propertyName);
-        } else if(propertyName.equals("data")) {
-            validateDataProperty((String) propertyValue);
         }
     }
 

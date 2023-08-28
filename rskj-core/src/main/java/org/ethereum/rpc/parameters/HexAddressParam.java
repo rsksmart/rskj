@@ -14,7 +14,7 @@ import java.io.Serializable;
 public class HexAddressParam implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private final RskAddress address;
+    private transient final RskAddress address;
 
     public HexAddressParam(String hexAddress) {
         if (hexAddress == null || hexAddress.isEmpty()) {
