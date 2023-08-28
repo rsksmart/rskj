@@ -55,6 +55,7 @@ public class BlockSyncService {
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private final RskSystemProperties config;
     private final BlockValidator blockHeaderValidator;
+    private static final Logger loggerSnapExperiment = LoggerFactory.getLogger("snapExperiment");
 
     // this is tightly coupled with NodeProcessorService and SyncProcessor,
     // and we should use the same objects everywhere to ensure consistency
@@ -205,7 +206,7 @@ public class BlockSyncService {
             }
 
             connectionsResult.put(block.getHash(), blockchain.tryToConnect(block));
-
+            loggerSnapExperiment.debug("BlockMessage block executed: [{}] from: [{}]", block.getNumber(), sender.getPeerNodeID());
             if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
                 this.store.removeBlock(block);
                 connected.add(block);
