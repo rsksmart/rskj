@@ -479,19 +479,25 @@ class PocSighashTest {
         NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
         int erpFedActivationDelay = 720;
 
-        List<FedSigner> fedMembers = FedSigner.listOf("federator1", "federator2", "federator6");
+        List<FedSigner> fedSigners = FedSigner.listOf("federator1", "federator2", "federator6");
         List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
+        List<FederationMember> fedMembers = fedSigners.stream().map(FedSigner::getFed).collect(Collectors.toList());
+
+        List<BtcECKey> erpPubKeys = erpFedMembers.stream().map(
+            FedSigner::getFed
+        ).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
+
         P2shErpFederation fed = new P2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
+            fedMembers,
             Instant.now(),
             0L,
             networkParameters,
-            erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
+            erpPubKeys,
             erpFedActivationDelay,
             activations
         );
