@@ -16,14 +16,13 @@ import co.rsk.peg.Federation;
 import co.rsk.peg.FederationTestUtils;
 import co.rsk.peg.P2shErpFederation;
 import co.rsk.peg.PegTestUtils;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,20 +30,27 @@ import java.util.stream.Collectors;
 class BitcoinUtilsTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
+    private static final int FIRST_OUTPUT_INDEX = 0;
+    private static final int FIRST_INPUT_INDEX = 0;
+
+    List<BtcECKey> signers;
+    List<BtcECKey> pubKeys;
+    Address destinationAddress;
+
+    @BeforeEach
+    void init() {
+        signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03"}, true
+        );
+        pubKeys = signers.stream().map(BtcECKey::getPubKeyPoint).map(BtcECKey::fromPublicOnly)
+            .collect(Collectors.toList());
+
+        destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
+    }
 
     @Test
     void test_getFirstInputSigHash_from_multisig() {
         // Arrange
-        List<BtcECKey> signers = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
-        );
-
-        List<BtcECKey> pubKeys = signers.stream().map(BtcECKey::getPubKeyPoint).map(BtcECKey::fromPublicOnly)
-            .collect(Collectors.toList());
-        signers.sort(BtcECKey.PUBKEY_COMPARATOR);
-
         int totalSigners = signers.size();
         int requiredSignatures = totalSigners / 2 + 1;
 
@@ -53,16 +59,16 @@ class BitcoinUtilsTest {
         Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
 
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
-        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        btcTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         RedeemData redeemData = RedeemData.of(pubKeys, redeemScript);
         Script p2SHScript = ScriptBuilder.createP2SHOutputScript(requiredSignatures, pubKeys);
         Script inputScript = p2SHScript.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
-        btcTx.getInput(0).setScriptSig(inputScript);
+        btcTx.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         Sha256Hash expectedSigHash = btcTx.hashForSignature(
-            0,
+            FIRST_INPUT_INDEX,
             redeemScript,
             BtcTransaction.SigHash.ALL,
             false
@@ -79,13 +85,6 @@ class BitcoinUtilsTest {
     @Test
     void test_getFirstInputSigHash_from_fed() {
         // Arrange
-        List<BtcECKey> signers = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
-        );
-        signers.sort(BtcECKey.PUBKEY_COMPARATOR);
-
         Federation federation = new Federation(
             FederationTestUtils.getFederationMembersWithBtcKeys(signers),
             Instant.ofEpochMilli(1000L),
@@ -93,17 +92,15 @@ class BitcoinUtilsTest {
             btcMainnetParams
         );
 
-        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
-
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
-        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        btcTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         Script fedInputScript = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
-        btcTx.getInput(0).setScriptSig(fedInputScript);
+        btcTx.getInput(FIRST_INPUT_INDEX).setScriptSig(fedInputScript);
 
         Sha256Hash expectedSigHash = btcTx.hashForSignature(
-            0,
+            FIRST_INPUT_INDEX,
             federation.getRedeemScript(),
             BtcTransaction.SigHash.ALL,
             false
@@ -119,15 +116,8 @@ class BitcoinUtilsTest {
 
     @Test
     void test_getFirstInputSigHash_from_p2shFed() {
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
         // Arrange
-        List<BtcECKey> signers = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
-        );
-        signers.sort(BtcECKey.PUBKEY_COMPARATOR);
-
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
         P2shErpFederation federation = new P2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(signers),
             Instant.ofEpochMilli(1000L),
@@ -138,17 +128,15 @@ class BitcoinUtilsTest {
             activations
         );
 
-        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
-
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
-        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        btcTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         Script fedInputScript = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
-        btcTx.getInput(0).setScriptSig(fedInputScript);
+        btcTx.getInput(FIRST_INPUT_INDEX).setScriptSig(fedInputScript);
 
         Sha256Hash expectedSigHash = btcTx.hashForSignature(
-            0,
+            FIRST_INPUT_INDEX,
             federation.getRedeemScript(),
             BtcTransaction.SigHash.ALL,
             false
@@ -164,14 +152,8 @@ class BitcoinUtilsTest {
 
     @Test
     void test_getFirstInputSigHash_from_flyoverFed() {
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
         // Arrange
-        List<BtcECKey> signers = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
-        );
-        signers.sort(BtcECKey.PUBKEY_COMPARATOR);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
 
         P2shErpFederation p2shErpFederation = new P2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(signers),
@@ -187,8 +169,6 @@ class BitcoinUtilsTest {
             p2shErpFederation.getRedeemScript(),
             BitcoinTestUtils.createHash(1)
         );
-        
-        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
 
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
         btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -197,10 +177,10 @@ class BitcoinUtilsTest {
         RedeemData redeemData = RedeemData.of(p2shErpFederation.getBtcPublicKeys(), flyoverP2shErpRedeemScript);
         Script flyoverP2sh = ScriptBuilder.createP2SHOutputScript(flyoverP2shErpRedeemScript);
         Script fedInputScript = flyoverP2sh.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
-        btcTx.getInput(0).setScriptSig(fedInputScript);
+        btcTx.getInput(FIRST_INPUT_INDEX).setScriptSig(fedInputScript);
 
         Sha256Hash expectedSigHash = btcTx.hashForSignature(
-            0,
+            FIRST_INPUT_INDEX,
             flyoverP2shErpRedeemScript,
             BtcTransaction.SigHash.ALL,
             false
@@ -217,8 +197,6 @@ class BitcoinUtilsTest {
     @Test
     void test_getFirstInputSigHash_no_input() {
         // Arrange
-        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
-
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
@@ -248,16 +226,6 @@ class BitcoinUtilsTest {
     @Test
     void test_getFirstInputSigHash_many_inputs() {
         // Arrange
-        List<BtcECKey> signers = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
-        );
-
-        List<BtcECKey> pubKeys = signers.stream().map(BtcECKey::getPubKeyPoint).map(BtcECKey::fromPublicOnly)
-            .collect(Collectors.toList());
-        signers.sort(BtcECKey.PUBKEY_COMPARATOR);
-
         int totalSigners = signers.size();
         int requiredSignatures = totalSigners / 2 + 1;
 
@@ -278,7 +246,7 @@ class BitcoinUtilsTest {
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         Sha256Hash expectedSigHash = btcTx.hashForSignature(
-            0,
+            FIRST_INPUT_INDEX,
             redeemScript,
             BtcTransaction.SigHash.ALL,
             false
