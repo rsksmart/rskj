@@ -176,15 +176,13 @@ public class ReleaseWitnessTransactionBuilder {
                 .limit(requiredSignatures)
                 .collect(Collectors.toList());
 
-            TransactionWitness txWitness = TransactionWitness.createWitnessScript(redeemScript, txSignatures);
+            TransactionWitness txWitness = TransactionWitness.createWitnessErpScript(redeemScript, txSignatures);
 
             int txInputsSize = btcTx.getInputs().size();
             for (int i = 0; i < txInputsSize; i++) {
                 btcTx.getInput(i).setScriptSig(segwitScriptSig);
                 btcTx.setWitness(i, txWitness);
             }
-
-            System.out.println(btcTx.hasWitness()); // true
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {
