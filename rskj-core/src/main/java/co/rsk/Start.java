@@ -27,24 +27,22 @@ import javax.annotation.Nonnull;
  * The entrypoint for the RSK full node
  */
 public class Start {
-
     private static final Logger logger = LoggerFactory.getLogger("start");
-
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
-
         RskContext ctx = null;
         try {
             ctx = new RskContext(args);
-
+            if (ctx.isVersionOrHelpRequested()) {
+                ctx.close();
+                System.exit(0);
+            }
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);
-
             if (ctx != null) {
                 ctx.close();
             }
-
             System.exit(1);
         }
     }

@@ -19,6 +19,7 @@ package co.rsk;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.cli.CliArgs;
+import co.rsk.cli.RskCli;
 import co.rsk.config.*;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
@@ -250,26 +251,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
+
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
 
     private volatile boolean closed;
 
     /***** Constructors ***********************************************************************************************/
-
     public RskContext(String[] args) {
-        this(args, false);
-    }
-
-    public RskContext(String[] args, boolean ignoreUnmatchedArgs) {
-        this(new CliArgs.Parser<>(
-                NodeCliOptions.class,
-                NodeCliFlags.class,
-                ignoreUnmatchedArgs
-        ).parse(args));
-    }
-
-    private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
-        this.cliArgs = cliArgs;
+        RskCli rskCli = new RskCli();
+        rskCli.load(args);
+        this.cliArgs = rskCli.getCliArgs();
         initializeNativeLibs();
     }
 
@@ -1178,6 +1169,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return peerScoringReporterService;
     }
 
+    public synchronized boolean isVersionOrHelpRequested() {
+        checkIfNotClosed();
+
+        return cliArgs.getFlags().contains(NodeCliFlags.VERSION) || cliArgs.getFlags().contains(NodeCliFlags.HELP);
+    }
+
     public boolean isClosed() {
         return closed;
     }
@@ -1255,6 +1252,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return dbPathToDbKindMap.computeIfAbsent(dbPath,
                 KeyValueDataSourceUtils::getDbKindValueFromDbKindFile);
     }
+
 
     /***** Protected Methods ******************************************************************************************/
 
