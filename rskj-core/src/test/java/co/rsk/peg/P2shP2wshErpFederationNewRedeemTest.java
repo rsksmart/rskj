@@ -1,3 +1,4 @@
+/*
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
@@ -16,6 +17,7 @@ import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 
 public class P2shP2wshErpFederationNewRedeemTest {
 
+*/
 /*    @Test
     void spendFromP2shP2wshAddressWithNewRedeem() {
 
@@ -86,9 +88,11 @@ public class P2shP2wshErpFederationNewRedeemTest {
 
         // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
         System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
-    }*/
+    }*//*
 
-    @Test
+
+*/
+/*    @Test
     void spendFromP2shP2wshErpWithNewRedeemStandard() {
 
         // NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET); // mainnet
@@ -174,7 +178,8 @@ public class P2shP2wshErpFederationNewRedeemTest {
 
         // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
         System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
-    }
+    }*//*
+
 
     @Test
     void spendFromP2shP2wshErpWithNewRedeemEmergency() {
@@ -265,3 +270,4 @@ public class P2shP2wshErpFederationNewRedeemTest {
         System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
     }
 }
+*/

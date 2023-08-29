@@ -167,31 +167,10 @@ public class ReleaseTransactionBuilder {
                 .filter(utxo ->
                     btcTx.getInputs().stream().anyMatch(input ->
                         input.getOutpoint().getHash().equals(utxo.getHash()) &&
-                        input.getOutpoint().getIndex() == utxo.getIndex()
+                            input.getOutpoint().getIndex() == utxo.getIndex()
                     )
                 )
                 .collect(Collectors.toList());
-
-            List<ScriptChunk> scriptSigChunks = btcTx.getInput(0).getScriptSig().getChunks();
-            int scriptSigChunksSize = scriptSigChunks.size();
-            ScriptChunk redeemScriptChunk = scriptSigChunks.get(scriptSigChunksSize - 1);
-            byte[] redeemScriptData = redeemScriptChunk.data;
-            byte[] redeemScriptHash = Sha256Hash.hash(redeemScriptData);
-
-            Script witnessScript = btcTx.getInput(0).getScriptSig();
-            int requiredSignatures = scriptSigChunksSize - 2;
-            List<TransactionSignature> txSignatures = Stream
-                .generate(TransactionSignature::dummy)
-                .limit(requiredSignatures)
-                .collect(Collectors.toList());
-            TransactionWitness txWitness = TransactionWitness.createWitnessScript(witnessScript, txSignatures);
-
-            Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
-            int txInputsSize = btcTx.getInputs().size();
-            for (int i = 0; i < txInputsSize; i++) {
-                btcTx.getInput(i).setScriptSig(segwitScriptSig);
-                btcTx.setWitness(i, txWitness);
-            }
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {

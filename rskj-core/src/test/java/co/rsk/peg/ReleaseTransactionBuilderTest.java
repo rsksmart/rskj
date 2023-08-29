@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -143,7 +144,7 @@ class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    void build_pegout_tx_from_p2shp2wsh_erp_federation() {
+    void build_pegout_tx_from_p2sh_erp_federation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
@@ -209,7 +210,8 @@ class ReleaseTransactionBuilderTest {
             pegoutAmount
         );
 
-        Assertions.assertTrue(result.getBtcTx().hasWitness());
+        System.out.println(Hex.toHexString(result.getBtcTx().bitcoinSerialize()));
+
         Assertions.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
     }
 

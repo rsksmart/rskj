@@ -3,6 +3,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.P2shErpFederationRedeemScriptParser;
+import co.rsk.bitcoinj.script.P2shP2wshErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeTestNetConstants;
@@ -76,7 +77,7 @@ public class P2shP2wshErpFederationTest {
 
         Script standardRedeem = new ScriptBuilder().createRedeemScript(standardKeys.size()/2+1, standardKeys);
         Script emergencyRedeem = new ScriptBuilder().createRedeemScript(emergencyKeys.size()/2+1, emergencyKeys);
-        Script redeemScript = P2shErpFederationRedeemScriptParser.createP2shP2wshErpRedeemScript(standardRedeem, emergencyRedeem, activationDelay);
+        Script redeemScript = P2shP2wshErpFederationRedeemScriptParser.createP2shP2wshErpRedeemScript(standardRedeem, emergencyRedeem, activationDelay);
 
         Script p2shP2wshOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
         Address segwitAddress = Address.fromP2SHScript(
@@ -93,7 +94,7 @@ public class P2shP2wshErpFederationTest {
             redeemScript,
             activationDelay,
             standardKeys,
-            Sha256Hash.wrap("214bed3040e1432bf23b6126a7e8ffc83ba7da4d54fe899ee12510f878444ea1"),
+            Sha256Hash.wrap("567684f1db8b8deefe6e17c7074f1d7b3b9b9dca20c9fcb95824cd000d04ca06"),
             0,
             Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP"), // testnet
             value,
@@ -135,7 +136,7 @@ public class P2shP2wshErpFederationTest {
 
         Script standardRedeem = new ScriptBuilder().createRedeemScript(standardKeys.size()/2+1, standardKeys);
         Script emergencyRedeem = new ScriptBuilder().createRedeemScript(emergencyKeys.size()/2+1, emergencyKeys);
-        Script redeemScript = P2shErpFederationRedeemScriptParser.createP2shP2wshErpRedeemScriptWithFlyover(standardRedeem, emergencyRedeem, flyoverDerivationPath, activationDelay);
+        Script redeemScript = P2shP2wshErpFederationRedeemScriptParser.createP2shP2wshErpRedeemScriptWithFlyover(standardRedeem, emergencyRedeem, flyoverDerivationPath, activationDelay);
 
         Script p2shP2wshOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
         Address segwitAddress = Address.fromP2SHScript(

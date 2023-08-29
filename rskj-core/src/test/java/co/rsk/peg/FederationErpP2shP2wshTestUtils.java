@@ -64,57 +64,72 @@ public class FederationErpP2shP2wshTestUtils {
             signatures.add(txSignature);
         }
 
-        byte[] notIfArgument = spendsFromEmergency ? new byte[] {1} : new byte[] {};
-        //TransactionWitness txWitness = TransactionWitness.createWitnessErpScript(redeemScript, signatures);
-        TransactionWitness txWitness = TransactionWitness.createWitnessScript(redeemScript, signatures);
+        TransactionWitness txWitness = TransactionWitness.createWitnessErpStandardScript(redeemScript, signatures);
         spendTx.setWitness(inputIndex, txWitness);
 
+        int size;
+        int totalSize;
+        int baseSize;
+
+        int inputsQuantity = spendTx.getInputs().size();
+        int outputsQuantity = spendTx.getOutputs().size();
+
+        baseSize = calculateTxBaseSize(spendTx, inputsQuantity, outputsQuantity);
+        totalSize = 1 + 1; // 1 byte before inputs + 1 byte before outputs
+        totalSize += baseSize + estimatedBytesForSigning(redeemScript.getProgram().length, requiredSignatures, inputsQuantity);
+
+        size = calculateWitnessTxVirtualSize(baseSize, totalSize);
+
         Coin satsPerByte = Coin.valueOf(10);
-        int txVirtualSize = calculateTxVirtualSize(spendTx);
-        //Coin fee = satsPerByte.multiply(txVirtualSize);
-        //spendTx.getOutput(0).setValue(inputValue.minus(fee));
+        Coin estimatedFee = satsPerByte.multiply(size);
 
         // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
         System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
     }
 
-    public static int calculateTxBaseSize(BtcTransaction spendTx) {
+    public static int calculateTxBaseSize(BtcTransaction spendTx, int inputsQuantity, int outputsQuantity) {
         int baseSize = 0;
 
-        int inputsQuantity = spendTx.getInputs().size();
         for (int i = 0; i < inputsQuantity; i++) {
             byte[] input = spendTx.getInput(i).bitcoinSerialize();
+            System.out.println(Hex.toHexString(input));
             baseSize += input.length;
         }
 
-        int outputsQuantity = spendTx.getOutputs().size();
         for (int i = 0; i < outputsQuantity; i++) {
             byte[] output = spendTx.getOutput(i).bitcoinSerialize();
+            System.out.println(Hex.toHexString(output));
             baseSize += output.length;
         }
 
-        baseSize += 4; // version size
-        baseSize += 1; // marker size
-        baseSize += 1; // flag size
-        baseSize += 4; // locktime size
+        baseSize += 4; // version
+        baseSize += 1; // marker
+        baseSize += 1; // flag
+        baseSize += 4; // locktime
 
         return baseSize;
     }
 
-    public static int calculateTxWeight(BtcTransaction spendTx) {
-        int txTotalSize = spendTx.bitcoinSerialize().length;
-        int txBaseSize = calculateTxBaseSize(spendTx);
+
+    public static int calculateWitnessTxWeight(int txBaseSize, int txTotalSize) {
 
         // As described in https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki#transaction-size-calculations
         int txWeight = txTotalSize + (3 * txBaseSize);
         return txWeight;
     }
 
-    public static int calculateTxVirtualSize(BtcTransaction spendTx) {
-        double txWeight = calculateTxWeight(spendTx);
+    public static int calculateWitnessTxVirtualSize(int txBaseSize, int txTotalSize) {
+        double txWeight = calculateWitnessTxWeight(txBaseSize, txTotalSize);
 
         // As described in https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki#transaction-size-calculations
         int txVirtualSize = (int) Math.ceil(txWeight / 4);
         return txVirtualSize;
+    }
+
+    public static int estimatedBytesForSigning(int redeemScriptSize, int requiredSignatures, int inputsQuantity) {
+        int estimatedBytesForSignatures = requiredSignatures * 73;
+        estimatedBytesForSignatures += 1 + 1; // empty byte before sigs, op_notif argument
+        int someBytes = 3; // redeem script size in hexa
+        return (estimatedBytesForSignatures + redeemScriptSize + someBytes) * inputsQuantity;
     }
 }

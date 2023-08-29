@@ -167,7 +167,6 @@ public class ReleaseWitnessTransactionBuilder {
             byte[] redeemScriptHash = Sha256Hash.hash(redeemScript.getProgram());
             Script scriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
             Script segwitScriptSig = new ScriptBuilder().data(scriptSig.getProgram()).build();
-            btcTx.getInput(0).setScriptSig(segwitScriptSig);
 
             int requiredSignatures = signers.size() / 2 + 1;
 
@@ -176,7 +175,7 @@ public class ReleaseWitnessTransactionBuilder {
                 .limit(requiredSignatures)
                 .collect(Collectors.toList());
 
-            TransactionWitness txWitness = TransactionWitness.createWitnessErpScript(redeemScript, txSignatures);
+            TransactionWitness txWitness = TransactionWitness.createWitnessErpStandardScript(redeemScript, txSignatures);
 
             int txInputsSize = btcTx.getInputs().size();
             for (int i = 0; i < txInputsSize; i++) {

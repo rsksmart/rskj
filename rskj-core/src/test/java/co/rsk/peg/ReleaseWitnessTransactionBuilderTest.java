@@ -1,7 +1,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.P2shErpFederationRedeemScriptParser;
+import co.rsk.bitcoinj.script.P2shP2wshErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
@@ -56,7 +56,7 @@ public class ReleaseWitnessTransactionBuilderTest {
     }
 
     @Test
-    void fees_from_p2shp2wsh_erp_federation() {
+    void build_pegout_tx_from_p2shp2wsh_erp_federation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
@@ -64,8 +64,8 @@ public class ReleaseWitnessTransactionBuilderTest {
 
         List<BtcECKey> standardKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{
-                "fed1", "fed2", "fed3", "fed4", "fed5"
-                //, "fed6", "fed7", "fed8", "fed9"
+                "fed1", "fed2", "fed3"
+                //, "fed4", "fed5", "fed6", "fed7", "fed8", "fed9"
             },
             true
         );
@@ -75,7 +75,7 @@ public class ReleaseWitnessTransactionBuilderTest {
 
         Script standardRedeem = new ScriptBuilder().createRedeemScript(standardKeys.size()/2+1, standardKeys);
         Script emergencyRedeem = new ScriptBuilder().createRedeemScript(emergencyKeys.size()/2+1, emergencyKeys);
-        Script redeemScript = P2shErpFederationRedeemScriptParser.createP2shP2wshErpRedeemScript(standardRedeem, emergencyRedeem, activationDelay);
+        Script redeemScript = P2shP2wshErpFederationRedeemScriptParser.createP2shP2wshErpRedeemScript(standardRedeem, emergencyRedeem, activationDelay);
 
         Script p2shP2wshOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
         Address segwitAddress = Address.fromP2SHScript(
@@ -96,9 +96,17 @@ public class ReleaseWitnessTransactionBuilderTest {
 
         List<UTXO> utxos = Arrays.asList(
             new UTXO(
-                Sha256Hash.wrap("6dcf5ab88b689fa5faad3444098137ef2536a327877e815103a9194b99cde584"),
+                Sha256Hash.of(new byte[]{1}),
                 0,
-                Coin.valueOf(10_000),
+                Coin.COIN,
+                0,
+                false,
+                p2shErpFederation.getP2SHScript()
+            ),
+            new UTXO(
+                Sha256Hash.of(new byte[]{1}),
+                0,
+                Coin.COIN,
                 0,
                 false,
                 p2shErpFederation.getP2SHScript()
@@ -124,7 +132,7 @@ public class ReleaseWitnessTransactionBuilderTest {
         );
 
         Address pegoutRecipient = Address.fromBase58(networkParameters,"msgc5Gtz2L9MVhXPDrFRCYPa16QgoZ2EjP");
-        Coin pegoutAmount = Coin.valueOf(9_500);
+        Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
 
         ReleaseWitnessTransactionBuilder.BuildResult result = releaseWitnessTransactionBuilder.buildAmountTo(
             pegoutRecipient,
