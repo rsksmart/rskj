@@ -23,10 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.messages.BlockMessage;
-import co.rsk.net.messages.Message;
-import co.rsk.net.messages.MessageType;
-import co.rsk.net.messages.MessageVisitor;
+import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
@@ -239,6 +236,12 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         // also, while queue implementation stays unbounded, offer() will never return false
         messageCounter.increment(sender);
         MessageTask messageTask = new MessageTask(sender, message, score, nodeMsgTraceInfo);
+
+        if (messageTask.getMessage().getMessageType() == MessageType.BLOCK_MESSAGE) {
+            BlockMessage blockMessage = (BlockMessage) messageTask.getMessage();
+            loggerSnapExperiment.debug("BlockMessage block arrived: [{}] from: [{}]", blockMessage.getBlock().getNumber(), messageTask.sender.getPeerNodeID());
+        }
+
         boolean messageAdded = this.queue.offer(messageTask);
         if (!messageAdded) {
             messageCounter.decrement(sender);
@@ -305,11 +308,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                     long startNanos = System.nanoTime();
                     logStart(task);
                     this.processMessage(task.getSender(), task.getMessage());
-                    if (task.getMessage().getMessageType() == MessageType.BLOCK_MESSAGE) {
-                        BlockMessage message = (BlockMessage) task.getMessage();
-                        loggerSnapExperiment.debug("BlockMessage block: [{}] took: [{}]milliseconds", message.getBlock().getNumber(), task.getNodeMsgTraceInfo().getLifeTimeInSeconds()*1000);
-                        loggerSnapExperiment.debug("BlockMessage block: [{}] was processed at: [{}]", message.getBlock().getNumber(), System.currentTimeMillis());
-                    }
                     logEnd(task, startNanos);
                 } else {
                     logger.trace("No task");
