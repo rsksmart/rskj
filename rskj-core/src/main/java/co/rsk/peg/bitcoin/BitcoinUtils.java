@@ -24,7 +24,7 @@ public class BitcoinUtils {
         }
 
         return Optional.of(btcTx.hashForSignature(
-            0,
+            FIRST_INPUT_INDEX,
             redeemScript.get(),
             BtcTransaction.SigHash.ALL,
             false
