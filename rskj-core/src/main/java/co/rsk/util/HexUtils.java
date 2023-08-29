@@ -353,10 +353,6 @@ public class HexUtils {
      * decodes a hexadecimal encoded with the 0x prefix into a integer
      */
     public static int jsonHexToInt(final String param) {
-        if (!hasHexPrefix(param)) {
-            throw invalidParamError(INCORRECT_HEX_SYNTAX);
-        }
-
         String preResult = removeHexPrefix(param);
 
         return Integer.parseInt(preResult, 16);

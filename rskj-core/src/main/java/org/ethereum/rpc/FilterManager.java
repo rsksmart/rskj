@@ -23,6 +23,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.*;
@@ -71,6 +72,11 @@ public class FilterManager {
 
     public boolean removeFilter(int id) {
         synchronized (filterLock) {
+
+            Filter filter = installedFilters.get(id);
+            if (filter == null) {
+                throw new RskJsonRpcRequestException(-32000, "filter not found");
+            }
             return installedFilters.remove(id) != null;
         }
     }
@@ -82,7 +88,7 @@ public class FilterManager {
             Filter filter = installedFilters.get(id);
 
             if (filter == null) {
-                return null;
+                throw new RskJsonRpcRequestException(-32000, "filter not found");
             }
 
             if (newevents) {

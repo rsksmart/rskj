@@ -59,6 +59,10 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.validation.BlockHashValidator;
+import org.ethereum.rpc.validation.HexIndexValidator;
+import org.ethereum.rpc.validation.HexValueValidator;
+import org.ethereum.rpc.validation.TransactionHashValidator;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -75,9 +79,7 @@ import java.util.function.UnaryOperator;
 
 import static co.rsk.util.HexUtils.*;
 import static java.lang.Math.max;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -538,6 +540,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getBlockTransactionCountByHash(String blockHash) {
+        BlockHashValidator.isValid(blockHash);
         String s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
@@ -645,6 +648,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public BlockResultDTO eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) {
+        BlockHashValidator.isValid(blockHash);
         BlockResultDTO s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
@@ -676,6 +680,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public TransactionResultDTO eth_getTransactionByHash(String transactionHash) {
+        TransactionHashValidator.isValid(transactionHash);
         TransactionResultDTO s = null;
         try {
             Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
@@ -714,6 +719,9 @@ public class Web3Impl implements Web3 {
 
     @Override
     public TransactionResultDTO eth_getTransactionByBlockHashAndIndex(String blockHash, String index) {
+        BlockHashValidator.isValid(blockHash);
+        HexIndexValidator.isValid(index);
+
         TransactionResultDTO s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
@@ -783,6 +791,8 @@ public class Web3Impl implements Web3 {
 
     @Override
     public BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) {
+        BlockHashValidator.isValid(blockHash);
+        HexIndexValidator.isValid(uncleIdx);
         BlockResultDTO s = null;
 
         try {
@@ -869,6 +879,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_newFilter(FilterRequest fr) throws Exception {
+        fr.isValid();
         String str = null;
         try {
             Filter filter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore, config.getRpcEthGetLogsMaxBlockToQuery(),config.getRpcEthGetLogsMaxLogsToReturn());
@@ -915,14 +926,16 @@ public class Web3Impl implements Web3 {
 
     @Override
     public boolean eth_uninstallFilter(String id) {
+        HexValueValidator.isValid(id);
         Boolean s = null;
-
         try {
             if (id == null) {
                 return false;
             }
 
-            return filterManager.removeFilter(stringHexToBigInteger(id).intValue());
+            String filterId = id;
+
+            return filterManager.removeFilter(stringHexToBigInteger(filterId).intValue());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_uninstallFilter({}): {}", id, s);
@@ -933,6 +946,7 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getFilterChanges(String id) {
         logger.debug("eth_getFilterChanges ...");
+        HexValueValidator.isValid(id);
 
         // TODO(mc): this is a quick solution that seems to work with OpenZeppelin tests, but needs to be reviewed
         // We do the same as in Ganache: mine a block in each request to getFilterChanges so block filters work
@@ -957,11 +971,13 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getFilterLogs(String id) {
         logger.debug("eth_getFilterLogs ...");
+        HexValueValidator.isValid(id);
 
         Object[] s = null;
 
         try {
             s = getFilterEvents(id, false);
+
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getFilterLogs({}): {}", id, Arrays.toString(s));
@@ -978,6 +994,7 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getLogs(FilterRequest fr) throws Exception {
         logger.debug("eth_getLogs ...");
+        fr.isValid();
         String id = eth_newFilter(fr);
         Object[] ret = eth_getFilterLogs(id);
         eth_uninstallFilter(id);

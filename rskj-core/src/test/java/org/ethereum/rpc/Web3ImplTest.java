@@ -77,6 +77,8 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.validation.BlockHashValidator;
+import org.ethereum.rpc.validation.TransactionHashValidator;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
@@ -106,6 +108,9 @@ class Web3ImplTest {
 
     private static final String BALANCE_10K_HEX = "0x2710"; //10.000
     private static final String CALL_RESPOND = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+    private static final String INVALID_HEX_HASH_STRING = "0xsv79281ade274e7d8372313a396482a4266ac38b9eae349a8924337b98f5e4fe";
+    private static final String INVALID_LENGTH_HASH_STRING = "0x8479281ade274e";
+    private static final int INVALID_PARAM_ERROR_CODE = -32602;
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
@@ -827,6 +832,38 @@ class Web3ImplTest {
     }
 
     @Test
+    void whenGetTransactionByHashWithInvalidTransactionHash_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getTransactionByHash(INVALID_HEX_HASH_STRING);
+                });
+
+        assertTrue(ex.getMessage().contains(TransactionHashValidator.INVALID_HEX_MESSAGE));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
+    }
+
+    @Test
+    void whenGetTransactionByHashWithInvalidTransactionHashLength_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getTransactionByHash(INVALID_LENGTH_HASH_STRING);
+                });
+
+        assertTrue(ex.getMessage().contains(TransactionHashValidator.INVALID_LENGTH_MESSAGE));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
+    }
+
+    @Test
     void getPendingTransactionByHash() {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -909,6 +946,63 @@ class Web3ImplTest {
         assertEquals("0x" + hashString, tr.getHash());
 
         assertEquals("0x" + blockHashString, tr.getBlockHash());
+    }
+
+    @Test
+    void whenGetTransactionByBlockHashAndIndexWithInvalidBLockHash_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getTransactionByBlockHashAndIndex(INVALID_HEX_HASH_STRING, "0x0");
+                });
+
+        assertTrue(ex.getMessage().contains(BlockHashValidator.INVALID_HEX_MESSAGE));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
+    }
+
+    @Test
+    void whenGetTransactionByBlockHashAndIndexWithInvalidBLockHashLength_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getTransactionByBlockHashAndIndex(INVALID_LENGTH_HASH_STRING, "0x0");
+                });
+
+        assertTrue(ex.getMessage().contains(BlockHashValidator.INVALID_LENGTH_MESSAGE));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
+    }
+
+    @Test
+    void whenGetTransactionByBlockHashAndIndexWithInvalidIndex_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
+        Account acc2 = new AccountBuilder().name("acc2").build();
+        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+        Block block1 = createCanonicalBlock(world, txs);
+
+        String blockHashString = block1.getHash().toHexString();
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getTransactionByBlockHashAndIndex(blockHashString, "0");
+                });
+
+        assertTrue(ex.getMessage().contains("param should be a hex value string"));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
     }
 
     @Test
@@ -1256,6 +1350,38 @@ class Web3ImplTest {
     }
 
     @Test
+    void whenGetBlockByHashWithInvalidBLockHash_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getBlockByHash(INVALID_HEX_HASH_STRING, false);
+        });
+
+        assertTrue(ex.getMessage().contains(BlockHashValidator.INVALID_HEX_MESSAGE));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
+    }
+
+    @Test
+    void whenGetBlockByHashWithInvalidBLockHashLength_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getBlockByHash(INVALID_LENGTH_HASH_STRING, false);
+                });
+
+        assertTrue(ex.getMessage().contains(BlockHashValidator.INVALID_LENGTH_MESSAGE));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
+    }
+
+    @Test
     void getBlockByHashWithFullTransactionsAsResult() {
         World world = new World();
 
@@ -1571,6 +1697,103 @@ class Web3ImplTest {
         assertEquals(0, result.getUncles().size());
         assertEquals(0, result.getTransactions().size());
         assertEquals("0x" + ByteUtil.toHexString(blockE.getTxTrieRoot()), result.getTransactionsRoot());
+    }
+
+    @Test
+    void whenGetUncleByBlockHashAndIndexWithInvalidBLockHash_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getUncleByBlockHashAndIndex(INVALID_HEX_HASH_STRING, "0x00");
+                });
+
+        assertTrue(ex.getMessage().contains(BlockHashValidator.INVALID_HEX_MESSAGE));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
+    }
+
+    @Test
+    void whenGetUncleByBlockHashAndIndexWithInvalidBLockHashLength_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getUncleByBlockHashAndIndex(INVALID_LENGTH_HASH_STRING, "0x00");
+                });
+
+        assertTrue(ex.getMessage().contains(BlockHashValidator.INVALID_LENGTH_MESSAGE));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
+    }
+
+    @Test
+    void whenGetUncleByBlockHashAndIndexWithInvalidIndex_throwInvalidParamError() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
+
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block blockA = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockA.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockA));
+
+        Block blockB = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockB.setBitcoinMergedMiningHeader(new byte[]{0x02});
+        assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockB));
+
+        Block blockC = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockC.setBitcoinMergedMiningHeader(new byte[]{0x03});
+        assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockC));
+
+        // block D must have a higher difficulty than block E and its uncles so it doesn't fall behind due to a reorg
+        Block blockD = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(100).parent(blockA).build();
+        blockD.setBitcoinMergedMiningHeader(new byte[]{0x04});
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockD));
+
+        Transaction tx = new TransactionBuilder()
+                .sender(acc1)
+                .gasLimit(BigInteger.valueOf(100000))
+                .gasPrice(BigInteger.ONE)
+                .build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+
+        List<BlockHeader> blockEUncles = Arrays.asList(blockB.getHeader(), blockC.getHeader());
+        Block blockE = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockA).uncles(blockEUncles)
+                .transactions(txs).buildWithoutExecution();
+
+        blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
+
+        assertEquals(1, blockE.getTransactionsList().size());
+        Assertions.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
+
+        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
+        blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockF));
+
+        String blockFhash = "0x" + blockF.getHash();
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getUncleByBlockHashAndIndex(blockFhash, "0");
+                });
+
+        assertTrue(ex.getMessage().contains("param should be a hex value string"));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
     }
 
     @Test
@@ -2986,5 +3209,56 @@ class Web3ImplTest {
 
         assertEquals("0x0", txReceipt.getType());
         assertEquals("0x0", txResult.getType());
+    }
+
+    @Test
+    void getBlockTransactionCountByHash() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        block1.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+
+        String block1HashString = "0x" + block1.getHash();
+
+        String result = web3.eth_getBlockTransactionCountByHash(block1HashString);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void whenGetBlockTransactionCountByHashWithInvalidBLockHash_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getBlockTransactionCountByHash(INVALID_HEX_HASH_STRING);
+                });
+
+        assertTrue(ex.getMessage().contains(BlockHashValidator.INVALID_HEX_MESSAGE));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
+    }
+
+    @Test
+    void whenGetBlockTransactionCountByHashWithInvalidBLockHashLength_throwInvalidParamError() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        RskJsonRpcRequestException ex = assertThrowsExactly(
+                RskJsonRpcRequestException.class,
+                () -> {
+                    web3.eth_getBlockTransactionCountByHash(INVALID_LENGTH_HASH_STRING);
+                });
+
+        assertTrue(ex.getMessage().contains(BlockHashValidator.INVALID_LENGTH_MESSAGE));
+        assertEquals(INVALID_PARAM_ERROR_CODE, ex.getCode());
     }
 }

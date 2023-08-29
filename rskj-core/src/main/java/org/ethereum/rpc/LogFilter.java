@@ -243,7 +243,7 @@ public class LogFilter extends Filter {
         Keccak256 keccak256BlockHash = new Keccak256(HexUtils.stringHexToByteArray(blockHash));
         Block blockByHash = blockchain.getBlockByHash(keccak256BlockHash.getBytes());
         if (blockByHash == null) {
-            return;
+            throw RskJsonRpcRequestException.unknownBlock("unknown block");
         }
 
         processBlocks(blockByHash, blockByHash, filter, blockchain, blocksBloomStore);

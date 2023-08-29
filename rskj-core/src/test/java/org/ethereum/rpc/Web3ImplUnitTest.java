@@ -1,34 +1,22 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2023 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.ethereum.rpc;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.ethereum.TestUtils;
-import org.ethereum.core.*;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.PeerServer;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.BuildInfo;
-import org.ethereum.vm.DataWord;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
@@ -49,6 +37,28 @@ import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.HexUtils;
+import org.ethereum.TestUtils;
+import org.ethereum.core.*;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.BuildInfo;
+import org.ethereum.vm.DataWord;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigInteger;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 class Web3ImplUnitTest {
 
@@ -335,5 +345,19 @@ class Web3ImplUnitTest {
         String result = target.eth_getUncleCountByBlockNumber(identifier);
 
         assertEquals("0x2", result);
+    }
+
+    @Test
+    void eth_uninstallFilter_with_noHexId() {
+        String id = "id";
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> target.eth_uninstallFilter(id));
+        assertEquals(-32602,  exception.getCode());
+    }
+
+    @Test
+    void eth_uninstallFilter_with_WrongHexId() {
+        String id = "0x123j";
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> target.eth_uninstallFilter(id));
+        assertEquals(-32602,  exception.getCode());
     }
 }
