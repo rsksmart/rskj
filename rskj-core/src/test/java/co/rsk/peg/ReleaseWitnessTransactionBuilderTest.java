@@ -136,8 +136,7 @@ public class ReleaseWitnessTransactionBuilderTest {
 
         ReleaseWitnessTransactionBuilder.BuildResult result = releaseWitnessTransactionBuilder.buildAmountTo(
             pegoutRecipient,
-            pegoutAmount,
-            true
+            pegoutAmount
         );
 
         System.out.println(Hex.toHexString(result.getBtcTx().bitcoinSerialize()));

@@ -106,11 +106,10 @@ public class ReleaseWitnessTransactionBuilder {
         return feePerKb;
     }
 
-    public BuildResult buildAmountTo(Address to, Coin amount, boolean isSegwit) {
+    public BuildResult buildAmountTo(Address to, Coin amount) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(amount, to);
             sr.changeAddress = changeAddress;
-            sr.isSegwit = isSegwit;
         }, String.format("sending %s to %s", amount, to));
     }
 
@@ -141,6 +140,8 @@ public class ReleaseWitnessTransactionBuilder {
         btcTx.setVersion(BTC_TX_VERSION_2);
 
         SendRequest sr = SendRequest.forTx(btcTx);
+        sr.isSegwit = true;
+
         // Default settings
         defaultSettingsConfigurator.configure(sr);
         // Specific settings
