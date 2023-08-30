@@ -33,6 +33,7 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.HexUtils;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ReceivedTxSignatureCache;
@@ -44,6 +45,8 @@ import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.util.BuildInfo;
 import org.junit.jupiter.api.Test;
+
+import java.math.BigInteger;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -84,5 +87,44 @@ class Web3EthModuleTest {
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         assertThat(web3.eth_chainId(), is("0x21"));
+    }
+
+    @Test
+    void eth_hasrate() {
+        EthModule ethModule = mock(EthModule.class);
+        HashRateCalculator hc = mock(HashRateCalculator.class);
+        when(hc.calculateNodeHashRate(any())).thenReturn(BigInteger.valueOf(0));
+
+        Web3EthModule web3 = new Web3RskImpl(
+                mock(Ethereum.class),
+                mock(Blockchain.class, RETURNS_DEEP_STUBS),
+                mock(RskSystemProperties.class),
+                mock(MinerClient.class),
+                mock(MinerServer.class),
+                mock(PersonalModule.class),
+                ethModule,
+                mock(EvmModule.class),
+                mock(TxPoolModule.class),
+                mock(MnrModule.class),
+                mock(DebugModule.class),
+                null, mock(RskModule.class),
+                mock(ChannelManager.class),
+                mock(PeerScoringManager.class),
+                mock(NetworkStateExporter.class),
+                mock(BlockStore.class),
+                mock(ReceiptStore.class),
+                mock(PeerServer.class),
+                mock(BlockProcessor.class),
+                hc,
+                mock(ConfigCapabilities.class),
+                mock(BuildInfo.class),
+                mock(BlocksBloomStore.class),
+                mock(Web3InformationRetriever.class),
+                mock(SyncProcessor.class),
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        String expectedValue = HexUtils.toQuantityJsonHex(BigInteger.ZERO);
+        String result = web3.eth_hashrate();
+        assertThat(expectedValue, is(result));
     }
 }
