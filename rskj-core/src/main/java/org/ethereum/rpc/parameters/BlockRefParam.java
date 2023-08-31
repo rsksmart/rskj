@@ -19,8 +19,8 @@ import java.util.Map;
 public class BlockRefParam implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private static final List<String> IDENTIFIERS = Arrays.asList("earliest", "latest", "pending");
-    private static final List<String> BLOCK_INPUT_KEYS = Arrays.asList("blockHash", "blockNumber");
+    private static final List<String> IDENTIFIERS_TO_VALIDATE = Arrays.asList("earliest", "latest", "pending");
+    private static final List<String> BLOCK_INPUT_KEYS_TO_VALIDATE = Arrays.asList("blockHash", "blockNumber");
 
     private final String identifier;
     private final Map<String, String> inputs;
@@ -37,7 +37,7 @@ public class BlockRefParam implements Serializable {
     }
 
     private void validateString(String identifier) {
-        if(!IDENTIFIERS.contains(identifier)
+        if(!IDENTIFIERS_TO_VALIDATE.contains(identifier)
                 && !Utils.isDecimalString(identifier)
                 && !Utils.isHexadecimalString(identifier)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block identifier '" + identifier + "'");
@@ -45,8 +45,7 @@ public class BlockRefParam implements Serializable {
     }
 
     private void validateMap(Map<String, String> inputs) {
-        if(!inputs.containsKey(BLOCK_INPUT_KEYS.get(0))
-        && !inputs.containsKey(BLOCK_INPUT_KEYS.get(1))) {
+        if(inputs.keySet().stream().noneMatch(BLOCK_INPUT_KEYS_TO_VALIDATE::contains)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block input");
         }
     }
