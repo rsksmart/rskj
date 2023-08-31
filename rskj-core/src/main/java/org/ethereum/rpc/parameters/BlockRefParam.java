@@ -68,7 +68,17 @@ public class BlockRefParam implements Serializable {
 
         @Override
         public BlockRefParam deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-            BlockRef blockRef = mapper.readValue(jp, BlockRef.class);
+            Object objectParam = mapper.readValue(jp, Object.class);
+            BlockRef blockRef;
+
+            if(objectParam instanceof String) {
+                blockRef =  new BlockRef(objectParam.toString());
+            } else if (objectParam instanceof Map) {
+                blockRef =  new BlockRef((Map<String, String>) objectParam);
+            } else {
+                throw RskJsonRpcRequestException.invalidParamError("Invalid input");
+            }
+
             return new BlockRefParam(blockRef);
         }
     }
