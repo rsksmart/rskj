@@ -67,6 +67,8 @@ import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
@@ -306,7 +308,7 @@ class TransactionModuleTest {
         Assertions.assertNotEquals(expectedValue, gasLimit);
 
         CallArguments args = getContractCallTransactionParameters(method, gasLimit, srcAddr, contractAddress, repository);
-        String gas = web3.eth_estimateGas(args);
+        String gas = web3.eth_estimateGas(new CallArgumentsParam(args));
         byte[] gasReturnedBytes = Hex.decode(gas.substring("0x".length()));
         BigInteger gasReturned = BigIntegers.fromUnsignedByteArray(gasReturnedBytes);
         int gasReturnedInt = gasReturned.intValueExact();
@@ -332,7 +334,7 @@ class TransactionModuleTest {
 
         String rawData = ByteUtil.toHexString(tx.getEncoded());
 
-        return web3.eth_sendRawTransaction(rawData);
+        return web3.eth_sendRawTransaction(new HexDataParam(rawData));
     }
 
     private Transaction getTransactionFromBlockWhichWasSend(BlockChainImpl blockchain, String tx) {
@@ -350,13 +352,13 @@ class TransactionModuleTest {
     private String sendContractCreationTransaction(RskAddress srcaddr, Web3Impl web3, RepositorySnapshot repository) {
         CallArguments args = getContractCreationTransactionParameters(srcaddr, web3, repository);
 
-        return web3.eth_sendTransaction(args);
+        return web3.eth_sendTransaction(new CallArgumentsParam(args));
     }
 
     private String sendTransaction(Web3Impl web3, RepositorySnapshot repository) {
         CallArguments args = getTransactionParameters(web3, repository);
 
-        return web3.eth_sendTransaction(args);
+        return web3.eth_sendTransaction(new CallArgumentsParam(args));
     }
 
     ////////////////////////////////////////////////

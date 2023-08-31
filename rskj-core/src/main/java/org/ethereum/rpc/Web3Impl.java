@@ -60,6 +60,10 @@ import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.BlockRefParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
 import org.ethereum.rpc.parameters.TxHashParam;
 import org.ethereum.util.BuildInfo;
@@ -400,7 +404,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_call(CallArguments args, Map<String, String> inputs) {
-        return invokeByBlockRef(inputs, blockNumber -> this.eth_call(args, blockNumber));
+        return invokeByBlockRef(inputs, blockNumber -> this.eth_call(new CallArgumentsParam(args), new BlockIdentifierParam(blockNumber)));
     }
 
     @Override
@@ -409,7 +413,15 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getBalance(String address, String block) {
+    public String eth_getBalance(HexAddressParam address, BlockRefParam blockRefParam) {
+        if(blockRefParam.getIdentifier() != null) {
+            return this.eth_getBalance(address, blockRefParam.getIdentifier());
+        } else {
+            return this.eth_getBalance(address, blockRefParam.getInputs());
+        }
+    }
+
+    private String eth_getBalance(HexAddressParam address, String block) {
         /* HEX String  - an integer block number
          *  String "earliest"  for the earliest/genesis block
          *  String "latest"  - for the latest mined block
@@ -418,14 +430,14 @@ public class Web3Impl implements Web3 {
 
         AccountInformationProvider accountInformationProvider = web3InformationRetriever.getInformationProvider(block);
 
-        RskAddress addr = new RskAddress(address);
+        RskAddress addr = address.getAddress();
         Coin balance = accountInformationProvider.getBalance(addr);
 
         return toQuantityJsonHex(balance.asBigInteger());
     }
 
-    @Override
-    public String eth_getBalance(String address, Map<String, String> inputs) {
+
+    private String eth_getBalance(HexAddressParam address, Map<String, String> inputs) {
         return invokeByBlockRef(inputs, blockNumber -> this.eth_getBalance(address, blockNumber));
     }
 
@@ -439,7 +451,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getBalance(String address) {
+    public String eth_getBalance(HexAddressParam address) {
         return eth_getBalance(address, "latest");
     }
 
@@ -476,7 +488,15 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getTransactionCount(String address, Map<String, String> inputs) {
+    public String eth_getTransactionCount(HexAddressParam address, BlockRefParam blockRefParam) {
+        if(blockRefParam.getIdentifier() != null) {
+            return this.eth_getTransactionCount(address, blockRefParam.getIdentifier());
+        } else {
+            return this.eth_getTransactionCount(address, blockRefParam.getInputs());
+        }
+    }
+
+    private String eth_getTransactionCount(HexAddressParam address, Map<String, String> inputs) {
         return invokeByBlockRef(inputs, blockNumber -> this.eth_getTransactionCount(address, blockNumber));
     }
 
@@ -510,11 +530,10 @@ public class Web3Impl implements Web3 {
         return toInvokeByBlockNumber.apply(toQuantityJsonHex(block.getNumber()));
     }
 
-    @Override
-    public String eth_getTransactionCount(String address, String blockId) {
+    private String eth_getTransactionCount(HexAddressParam address, String blockId) {
         String s = null;
         try {
-            RskAddress addr = new RskAddress(address);
+            RskAddress addr = address.getAddress();
             AccountInformationProvider accountInformationProvider = web3InformationRetriever
                     .getInformationProvider(blockId);
             BigInteger nonce = accountInformationProvider.getNonce(addr);
@@ -776,10 +795,10 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) {
+    public TransactionReceiptDTO eth_getTransactionReceipt(TxHashParam transactionHash) {
         logger.trace("eth_getTransactionReceipt({})", transactionHash);
 
-        byte[] hash = stringHexToByteArray(transactionHash);
+        byte[] hash = stringHexToByteArray(transactionHash.getHash().toHexString());
         TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore).orElse(null);
 
         if (txInfo == null) {

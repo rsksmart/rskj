@@ -36,6 +36,9 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.program.ProgramResult;
@@ -101,7 +104,7 @@ class EthModuleTest {
                 config.getCallGasCap());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
-        String actualResult = eth.call(args, "latest");
+        String actualResult = eth.call(new CallArgumentsParam(args), new BlockIdentifierParam("latest"));
 
         assertEquals(expectedResult, actualResult);
     }
@@ -141,7 +144,7 @@ class EthModuleTest {
                 config.getCallGasCap());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
-        String actualResult = eth.call(args, "latest");
+        String actualResult = eth.call(new CallArgumentsParam(args), new BlockIdentifierParam("latest"));
 
         assertEquals(expectedResult, actualResult);
     }
@@ -186,7 +189,7 @@ class EthModuleTest {
                 config.getCallGasCap());
 
         try {
-            eth.call(args, "latest");
+            eth.call(new CallArgumentsParam(args), new BlockIdentifierParam("latest"));
         } catch (RskJsonRpcRequestException e) {
             assertThat(e.getMessage(), Matchers.containsString("deposit too big"));
         }
@@ -217,7 +220,7 @@ class EthModuleTest {
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
         // Hash of the actual transaction builded inside the sendTransaction
-        String txResult = ethModuleTransaction.sendTransaction(args);
+        String txResult = ethModuleTransaction.sendTransaction(new CallArgumentsParam(args));
 
         assertEquals(txExpectedResult, txResult);
     }
@@ -245,7 +248,7 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(args));
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(new CallArgumentsParam(args)));
     }
 
     @Test
@@ -274,7 +277,7 @@ class EthModuleTest {
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
         String rawData = ByteUtil.toHexString(tx.getEncoded());
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendRawTransaction(rawData));
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendRawTransaction(new HexDataParam(rawData)));
     }
 
     @Test
@@ -293,10 +296,10 @@ class EthModuleTest {
 
         // Then
         try {
-            ethModuleTransaction.sendTransaction(argsMock);
+            ethModuleTransaction.sendTransaction(new CallArgumentsParam(argsMock));
             fail("RskJsonRpcRequestException should be thrown");
         } catch (RskJsonRpcRequestException ex) {
-            verify(argsMock, times(2)).getFrom();
+            verify(argsMock, times(4)).getFrom();
             assertEquals("Could not find account for address: " + addressFrom.toJsonString(), ex.getMessage());
         }
     }

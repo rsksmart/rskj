@@ -18,10 +18,11 @@
 
 package co.rsk.rpc.modules.eth;
 
-import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 
 public interface EthModuleTransaction {
-    String sendTransaction(CallArguments args);
+    String sendTransaction(CallArgumentsParam args);
 
-    String sendRawTransaction(String rawData);
+    String sendRawTransaction(HexDataParam rawData);
 }

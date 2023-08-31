@@ -18,6 +18,8 @@
 
 package co.rsk.rpc.modules.eth;
 
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +39,7 @@ public class EthModuleWalletDisabled implements EthModuleWallet {
     }
 
     @Override
-    public String sign(String addr, String data) {
+    public String sign(HexAddressParam addr, HexDataParam data) {
         LOGGER.debug("eth_sign({}, {}): {}", addr, data, null);
         throw invalidParamError("Local wallet is disabled in this node");
     }
