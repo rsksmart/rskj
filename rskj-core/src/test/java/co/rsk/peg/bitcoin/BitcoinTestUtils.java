@@ -4,15 +4,22 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import co.rsk.bitcoinj.script.ScriptChunk;
 import org.ethereum.crypto.HashUtil;
 
 public class BitcoinTestUtils {
+
+    private static final int FIRST_SIGNATURE_INDEX = 1;
 
     public static List<BtcECKey> getBtcEcKeysFromSeeds(String[] seeds, boolean sorted) {
         List<BtcECKey> keys = Arrays
@@ -47,5 +54,14 @@ public class BitcoinTestUtils {
         bytes[3] = (byte) (0xFF & nHash >> 24);
 
         return Sha256Hash.wrap(bytes);
+    }
+
+    public static Optional<BtcECKey.ECDSASignature> extractFirstSignature(TransactionInput txInput) {
+        Script txInputScriptSig = txInput.getScriptSig();
+        List<ScriptChunk> chunks = txInputScriptSig.getChunks();
+        if (chunks.isEmpty())
+            return Optional.empty();
+        byte[] firstSignatureData = chunks.get(FIRST_SIGNATURE_INDEX).data;
+        return Optional.of(TransactionSignature.decodeFromDER(firstSignatureData));
     }
 }
