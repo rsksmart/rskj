@@ -141,11 +141,11 @@ public interface Web3EthModule {
 
     String eth_newPendingTransactionFilter();
 
-    boolean eth_uninstallFilter(String id);
+    boolean eth_uninstallFilter(HexIndexParam id);
 
-    Object[] eth_getFilterChanges(String id);
+    Object[] eth_getFilterChanges(HexIndexParam id);
 
-    Object[] eth_getFilterLogs(String id);
+    Object[] eth_getFilterLogs(HexIndexParam id);
 
     Object[] eth_getLogs(FilterRequestParam fr) throws Exception;
 
