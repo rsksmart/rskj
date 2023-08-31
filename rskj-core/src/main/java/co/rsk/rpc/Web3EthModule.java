@@ -26,6 +26,11 @@ import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.parameters.BlockHashParam;
 import org.ethereum.rpc.parameters.FilterRequestParam;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.BlockRefParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
 import org.ethereum.rpc.parameters.TxHashParam;
 
@@ -37,15 +42,15 @@ public interface Web3EthModule {
         return getEthModule().accounts();
     }
 
-    default String eth_sign(String addr, String data) {
+    default String eth_sign(HexAddressParam addr, HexDataParam data) {
         return getEthModule().sign(addr, data);
     }
 
-    default String eth_call(CallArguments args, String bnOrId) {
+    default String eth_call(CallArgumentsParam args, BlockIdentifierParam bnOrId) {
         return getEthModule().call(args, bnOrId);
     }
 
-    default String eth_estimateGas(CallArguments args) {
+    default String eth_estimateGas(CallArgumentsParam args) {
         return getEthModule().estimateGas(args);
     }
 
@@ -75,19 +80,15 @@ public interface Web3EthModule {
 
     String eth_call(CallArguments args, Map<String, String> blockRef) throws Exception; // NOSONAR
 
-    String eth_getBalance(String address, String block) throws Exception;
+    String eth_getBalance(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 
-    String eth_getBalance(String address) throws Exception;
-
-    String eth_getBalance(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
+    String eth_getBalance(HexAddressParam address) throws Exception;
 
     String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) throws Exception; // NOSONAR
 
     String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception;
 
-    String eth_getTransactionCount(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
-
-    String eth_getTransactionCount(String address, String blockId) throws Exception ;
+    String eth_getTransactionCount(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 
     String eth_getBlockTransactionCountByHash(BlockHashParam blockHash)throws Exception;
 
@@ -103,11 +104,11 @@ public interface Web3EthModule {
 
     String eth_getCode(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
 
-    default String eth_sendRawTransaction(String rawData) {
+    default String eth_sendRawTransaction(HexDataParam rawData) {
         return getEthModule().sendRawTransaction(rawData);
     }
 
-    default String eth_sendTransaction(CallArguments args) {
+    default String eth_sendTransaction(CallArgumentsParam args) {
         return getEthModule().sendTransaction(args);
     }
 
@@ -121,7 +122,7 @@ public interface Web3EthModule {
 
     TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(String bnOrId, String index) throws Exception;
 
-    TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception;
+    TransactionReceiptDTO eth_getTransactionReceipt(TxHashParam transactionHash) throws Exception;
 
     BlockResultDTO eth_getUncleByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam uncleIdx) throws Exception;
 

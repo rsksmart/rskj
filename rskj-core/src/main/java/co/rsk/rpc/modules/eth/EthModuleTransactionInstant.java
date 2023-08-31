@@ -27,8 +27,9 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.vm.program.ProgramResult;
 
 import co.rsk.core.Wallet;
@@ -64,7 +65,7 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
     }
 
     @Override
-    public synchronized String sendTransaction(CallArguments args) {
+    public synchronized String sendTransaction(CallArgumentsParam args) {
         try {
             this.blockExecutor.setRegisterProgramResults(true);
 
@@ -80,7 +81,7 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
     }
 
     @Override
-    public String sendRawTransaction(String rawData) {
+    public String sendRawTransaction(HexDataParam rawData) {
         try {
             this.blockExecutor.setRegisterProgramResults(true);
 

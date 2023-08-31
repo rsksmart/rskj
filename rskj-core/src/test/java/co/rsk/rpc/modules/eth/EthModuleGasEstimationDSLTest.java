@@ -30,6 +30,7 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.vm.GasCost;
@@ -288,7 +289,7 @@ class EthModuleGasEstimationDSLTest {
         callArguments.setGas(HexUtils.toQuantityJsonHex(gasEstimationCap + 1_000_000_000)); // exceeding the gas cap
         callArguments.setData("0x31fe52e8"); // call outOfGas()
 
-        String estimatedGas = eth.estimateGas(callArguments);
+        String estimatedGas = eth.estimateGas(new CallArgumentsParam(callArguments));
         assertEquals("0x67c280", estimatedGas);
 
         assertEquals(gasEstimationCap, Long.decode(estimatedGas).longValue());
@@ -785,7 +786,7 @@ class EthModuleGasEstimationDSLTest {
     }
 
     private long estimateGas(EthModuleTestUtils.EthModuleGasEstimation eth, CallArguments args) {
-        return Long.parseLong(eth.estimateGas(args).substring("0x".length()), 16);
+        return Long.parseLong(eth.estimateGas(new CallArgumentsParam(args)).substring("0x".length()), 16);
     }
 
     // todo this is duplicated code, should be extracted into a test util

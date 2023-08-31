@@ -28,11 +28,12 @@ import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.util.HexUtils;
 
@@ -47,15 +48,15 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     }
 
     @Override
-    public String sign(String addr, String data) {
+    public String sign(HexAddressParam addr, HexDataParam data) {
         String s = null;
         try {
-            Account account = this.wallet.getAccount(new RskAddress(addr));
+            Account account = this.wallet.getAccount(addr.getAddress());
             if (account == null) {
                 throw invalidParamError("Account not found");
             }
 
-            return s = this.sign(data, account.getEcKey());
+            return s = this.sign(data.getRawDataBytes(), account.getEcKey());
         } finally {
             LOGGER.debug("eth_sign({}, {}): {}", addr, data, s);
         }
@@ -71,8 +72,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         }
     }
 
-    private String sign(String data, ECKey ecKey) {
-        byte[] dataHash = HexUtils.stringHexToByteArray(data);
+    private String sign(byte[] dataHash, ECKey ecKey) {
         // 0x19 = 25, length should be an ascii decimals, message - original
         String prefix = (char) 25 + "Ethereum Signed Message:\n" + dataHash.length;
 

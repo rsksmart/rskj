@@ -18,6 +18,29 @@
 
 package org.ethereum.rpc;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+
+import java.math.BigInteger;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
+import org.ethereum.rpc.dto.TransactionReceiptDTO;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.TxHashParam;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RskTestFactory;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.Wallet;
@@ -362,7 +385,7 @@ class Web3ImplLogsTest {
         assertEquals(1, logs.length);
 
         String txhash = ((LogFilterElement) logs[0]).transactionHash;
-        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
+        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(new TxHashParam(txhash));
 
         assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[0]).address);
     }
@@ -380,7 +403,7 @@ class Web3ImplLogsTest {
         assertEquals(1, logs.length);
 
         String txhash = ((LogFilterElement) logs[0]).transactionHash;
-        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
+        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(new TxHashParam(txhash));
 
         assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[0]).address);
     }
@@ -397,7 +420,7 @@ class Web3ImplLogsTest {
         assertEquals(2, logs.length);
 
         String txhash = ((LogFilterElement) logs[0]).transactionHash;
-        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
+        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(new TxHashParam(txhash));
 
         assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[0]).address);
         assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[1]).address);
@@ -415,7 +438,7 @@ class Web3ImplLogsTest {
         assertEquals(3, logs.length);
 
         String txHash1 = "0x" + transactions.get(0).getHash().toHexString();
-        TransactionReceiptDTO txReceipt1 = web3.eth_getTransactionReceipt(txHash1);
+        TransactionReceiptDTO txReceipt1 = web3.eth_getTransactionReceipt(new TxHashParam(txHash1));
         String contractAddress = txReceipt1.getContractAddress();
         LogFilterElement logs1 = (LogFilterElement) logs[0];
         assertEquals(contractAddress, logs1.address);
@@ -426,7 +449,7 @@ class Web3ImplLogsTest {
         assertArrayEquals(receipt1Logs.topics, logs1.topics);
 
         String txHash2 = "0x" + transactions.get(1).getHash().toHexString();
-        TransactionReceiptDTO txReceipt2 = web3.eth_getTransactionReceipt(txHash2);
+        TransactionReceiptDTO txReceipt2 = web3.eth_getTransactionReceipt(new TxHashParam(txHash2));
         LogFilterElement logs2 = (LogFilterElement) logs[1];
         assertEquals(contractAddress, logs2.address);
         assertEquals(txHash2, logs2.transactionHash);
@@ -436,7 +459,7 @@ class Web3ImplLogsTest {
         assertArrayEquals(receipt2Logs.topics, logs2.topics);
 
         String txHash3 = "0x" + transactions.get(2).getHash().toHexString();
-        TransactionReceiptDTO txReceipt3 = web3.eth_getTransactionReceipt(txHash3);
+        TransactionReceiptDTO txReceipt3 = web3.eth_getTransactionReceipt(new TxHashParam(txHash3));
         LogFilterElement logs3 = (LogFilterElement) logs[2];
         assertEquals(contractAddress, logs3.address);
         assertEquals(txHash3, logs3.transactionHash);
@@ -465,7 +488,7 @@ class Web3ImplLogsTest {
         assertEquals(2, logs.length);
 
         String txhash = ((LogFilterElement) logs[0]).transactionHash;
-        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
+        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(new TxHashParam(txhash));
 
         assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[0]).address);
         assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[1]).address);
@@ -850,7 +873,7 @@ class Web3ImplLogsTest {
         assertEquals(1, logs.length);
         assertEquals(blockHash, ((LogFilterElement) logs[0]).blockHash);
         String txhash = ((LogFilterElement) logs[0]).transactionHash;
-        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
+        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(new TxHashParam(txhash));
         assertEquals(txdto.getContractAddress(), ((LogFilterElement) logs[0]).address);
     }
 

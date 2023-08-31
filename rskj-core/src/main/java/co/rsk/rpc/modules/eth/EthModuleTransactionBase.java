@@ -30,6 +30,8 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.TransactionArgumentsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +39,6 @@ import org.slf4j.LoggerFactory;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.net.TransactionGateway;
-import co.rsk.util.HexUtils;
 
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
@@ -56,7 +57,12 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     }
 
     @Override
-    public synchronized String sendTransaction(CallArguments args) {
+    public synchronized String sendTransaction(CallArgumentsParam argsParam) {
+        CallArguments args = argsParam.getCallArguments();
+
+        if(args.getFrom() == null) {
+            throw invalidParamError("from is null");
+        }
 
         Account senderAccount = this.wallet.getAccount(new RskAddress(args.getFrom()));
 
@@ -97,10 +103,10 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     }
 
     @Override
-    public String sendRawTransaction(String rawData) {
+    public String sendRawTransaction(HexDataParam rawData) {
         String s = null;
         try {
-            Transaction tx = new ImmutableTransaction(HexUtils.stringHexToByteArray(rawData));
+            Transaction tx = new ImmutableTransaction(rawData.getRawDataBytes());
 
             if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
                 throw invalidParamError("Missing parameter, gasPrice, gas or value");
