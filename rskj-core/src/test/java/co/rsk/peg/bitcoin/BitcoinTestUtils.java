@@ -6,20 +6,20 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
+import co.rsk.bitcoinj.script.RedeemScriptParser;
+import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import co.rsk.bitcoinj.script.ScriptChunk;
 import org.ethereum.crypto.HashUtil;
 
 public class BitcoinTestUtils {
-
-    private static final int FIRST_SIGNATURE_INDEX = 1;
 
     public static List<BtcECKey> getBtcEcKeysFromSeeds(String[] seeds, boolean sorted) {
         List<BtcECKey> keys = Arrays
@@ -56,12 +56,32 @@ public class BitcoinTestUtils {
         return Sha256Hash.wrap(bytes);
     }
 
-    public static Optional<BtcECKey.ECDSASignature> extractFirstSignature(TransactionInput txInput) {
-        Script txInputScriptSig = txInput.getScriptSig();
-        List<ScriptChunk> chunks = txInputScriptSig.getChunks();
-        if (chunks.isEmpty())
-            return Optional.empty();
-        byte[] firstSignatureData = chunks.get(FIRST_SIGNATURE_INDEX).data;
-        return Optional.of(TransactionSignature.decodeFromDER(firstSignatureData));
+    public static List<BtcECKey.ECDSASignature> extractSignatures(TransactionInput txInput) {
+        Script scriptSig = txInput.getScriptSig();
+        List<ScriptChunk> chunks = scriptSig.getChunks();
+        Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
+        RedeemScriptParser parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
+
+        int lastChunk;
+        RedeemScriptParser.MultiSigType multiSigType = parser.getMultiSigType();
+
+        if (multiSigType == RedeemScriptParser.MultiSigType.STANDARD_MULTISIG
+                || multiSigType == RedeemScriptParser.MultiSigType.FAST_BRIDGE_MULTISIG
+        ) {
+            lastChunk = chunks.size() - 1;
+        } else {
+            lastChunk = chunks.size() - 2;
+        }
+
+        List<BtcECKey.ECDSASignature> signatures = new ArrayList<>();
+        for (int i = 1; i < lastChunk; i++) {
+            ScriptChunk chunk = chunks.get(i);
+            if (!chunk.isOpCode() && chunk.data.length == 0) {
+                continue;
+            } else {
+                signatures.add(TransactionSignature.decodeFromDER(chunk.data));
+            }
+        }
+        return signatures;
     }
 }
