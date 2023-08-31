@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * InetAddressBlock represents a range of InetAddress as in CIDR subnet
+ * InetAddressCidrBlock represents a range of InetAddress as in CIDR subnet
  */
 public class InetAddressCidrBlock {
     private final String description;

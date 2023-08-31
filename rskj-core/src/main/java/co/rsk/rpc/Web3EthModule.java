@@ -72,7 +72,7 @@ public interface Web3EthModule {
 
     boolean eth_mining();
 
-    BigInteger eth_hashrate();
+    String eth_hashrate();
 
     String eth_gasPrice();
 

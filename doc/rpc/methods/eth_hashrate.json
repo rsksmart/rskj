@@ -4,7 +4,7 @@
   "params": [],
   "result": {
     "name": "hashesPerSecond",
-    "description": "Integer (hex) of the number of hashes per second",
+    "description": "hex value of the number of hashes per second",
     "schema": {
       "$ref": "#/components/schemas/IntegerHex"
     }
