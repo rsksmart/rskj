@@ -60,6 +60,7 @@ import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.FilterRequestParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
 import org.ethereum.rpc.parameters.TxHashParam;
 import org.ethereum.util.BuildInfo;
@@ -880,7 +881,11 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_newFilter(FilterRequest fr) throws Exception {
+    public String eth_newFilter(FilterRequestParam filterRequestParam) throws Exception {
+        return newFilter(filterRequestParam.toFilterRequest());
+    }
+
+    private String newFilter(FilterRequest fr){
         String str = null;
         try {
             Filter filter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore, config.getRpcEthGetLogsMaxBlockToQuery(), config.getRpcEthGetLogsMaxLogsToReturn());
@@ -894,7 +899,6 @@ public class Web3Impl implements Web3 {
             }
         }
     }
-
     @Override
     public String eth_newBlockFilter() {
         String s = null;
@@ -990,7 +994,7 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getLogs(FilterRequest fr) throws Exception {
         logger.debug("eth_getLogs ...");
-        String id = eth_newFilter(fr);
+        String id = newFilter(fr);
         Object[] ret = eth_getFilterLogs(id);
         eth_uninstallFilter(id);
         return ret;

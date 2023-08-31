@@ -18,28 +18,6 @@
 
 package org.ethereum.rpc;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-
-import java.math.BigInteger;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.ethereum.core.*;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
-import org.ethereum.rpc.dto.TransactionReceiptDTO;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RskTestFactory;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.Wallet;
@@ -65,7 +43,32 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.HexUtils;
+import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
+import org.ethereum.rpc.dto.TransactionReceiptDTO;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.FilterRequestParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.TopicParam;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RskTestFactory;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import java.math.BigInteger;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 30/11/2016.
@@ -138,8 +141,7 @@ class Web3ImplLogsTest {
 
     @Test
     void newFilterInEmptyBlockchain() throws Exception {
-        FilterRequest fr = new FilterRequest();
-        fr.setFromBlock("earliest");
+        FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("earliest"), null,null,null,null);
         String id = web3.eth_newFilter(fr);
 
         assertNotNull(id);
@@ -147,8 +149,7 @@ class Web3ImplLogsTest {
 
     @Test
     void newFilterGetLogsInEmptyBlockchain() throws Exception {
-        FilterRequest fr = new FilterRequest();
-        fr.setFromBlock("earliest");
+        FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("earliest"), null,null,null,null);
         String id = web3.eth_newFilter(fr);
         Object[] logs = web3.eth_getFilterLogs(id);
 
@@ -164,8 +165,7 @@ class Web3ImplLogsTest {
                                           repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
-        FilterRequest fr = new FilterRequest();
-        fr.setFromBlock("latest");
+        FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("latest"), null,null,null,null);
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -207,9 +207,10 @@ class Web3ImplLogsTest {
         ).trieStore(trieStore).parent(genesis).transactions(txs).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
-        FilterRequest fr = new FilterRequest();
-        fr.setAddress( ByteUtil.toHexString(tx.getContractAddress().getBytes()));
-        fr.setTopics(new Object[] { "06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad1" });
+        HexAddressParam hexAddressParam = new HexAddressParam((tx.getContractAddress().toJsonString()));
+        TopicParam[][] topics = new TopicParam[][] { new TopicParam[] { new TopicParam("06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad1") } };
+        FilterRequestParam fr = new FilterRequestParam(null, null,hexAddressParam,topics,null);
+
         String id = web3.eth_newFilter(fr);
 
         Object[] logs = web3.eth_getFilterLogs(id);
@@ -229,8 +230,7 @@ class Web3ImplLogsTest {
 
         web3.personal_newAccountWithSeed("notDefault");
 
-        FilterRequest fr = new FilterRequest();
-        fr.setFromBlock("earliest");
+        FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("earliest"), null,null,null,null);
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -256,8 +256,7 @@ class Web3ImplLogsTest {
 
     @Test
     void newFilterGetChangesInEmptyBlockchain() throws Exception {
-        FilterRequest fr = new FilterRequest();
-        fr.setFromBlock("earliest");
+        FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("earliest"), null,null,null,null);
         String id = web3.eth_newFilter(fr);
         Object[] logs = web3.eth_getFilterChanges(id);
 
@@ -274,8 +273,7 @@ class Web3ImplLogsTest {
 
         web3.personal_newAccountWithSeed("notDefault");
 
-        FilterRequest fr = new FilterRequest();
-        fr.setFromBlock("earliest");
+        FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("earliest"), null,null,null,null);
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -936,8 +934,7 @@ class Web3ImplLogsTest {
                                           repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
-        FilterRequest fr = new FilterRequest();
-        fr.setFromBlock("earliest");
+        FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("earliest"), null,null,null,null);
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -965,8 +962,7 @@ class Web3ImplLogsTest {
                                           repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
-        FilterRequest fr = new FilterRequest();
-        fr.setFromBlock("earliest");
+        FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("earliest"), null,null,null,null);
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -1010,8 +1006,7 @@ class Web3ImplLogsTest {
                                           repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
-        FilterRequest fr = new FilterRequest();
-        fr.setFromBlock("earliest");
+        FilterRequestParam fr = new FilterRequestParam(new BlockIdentifierParam("earliest"), null,null,null,null);
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -1099,8 +1094,7 @@ class Web3ImplLogsTest {
         ).trieStore(trieStore).parent(block2).transactions(txs3).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
-        FilterRequest fr = new FilterRequest();
-        fr.setAddress( "0x" + mainAddress);
+        FilterRequestParam fr = new FilterRequestParam(null, null,new HexAddressParam("0x" + mainAddress),null,null);
         String id = web3.eth_newFilter(fr);
 
         Object[] logs = web3.eth_getFilterLogs(id);

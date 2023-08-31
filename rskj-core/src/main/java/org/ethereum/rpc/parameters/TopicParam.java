@@ -20,7 +20,7 @@ package org.ethereum.rpc.parameters;
 public class TopicParam extends HashParam32 {
     private static final String HASH_TYPE = "topic";
 
-    TopicParam(String hash) {
+    public TopicParam(String hash) {
         super(HASH_TYPE, hash);
     }
 }

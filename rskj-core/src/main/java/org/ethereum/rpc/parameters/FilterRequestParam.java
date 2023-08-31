@@ -23,8 +23,11 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import org.ethereum.rpc.FilterRequest;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @JsonDeserialize(using = FilterRequestParam.Deserializer.class)
 public class FilterRequestParam {
@@ -35,12 +38,13 @@ public class FilterRequestParam {
     private final BlockIdentifierParam toBlock;
     @JsonProperty
     private final HexAddressParam address;
-    @JsonProperty
-    private final TopicArrayParam[] topics;
+//    @JsonProperty
+//    private final TopicArrayParam[] topics;
+    private final TopicParam[][] topics;
     @JsonProperty
     private final BlockHashParam blockHash;
 
-    public FilterRequestParam(BlockIdentifierParam fromBlock, BlockIdentifierParam toBlock, HexAddressParam address, TopicArrayParam[] topics, BlockHashParam blockHash) {
+    public FilterRequestParam(BlockIdentifierParam fromBlock, BlockIdentifierParam toBlock, HexAddressParam address, TopicParam[][] topics, BlockHashParam blockHash) {
         this.fromBlock = fromBlock;
         this.toBlock = toBlock;
         this.address = address;
@@ -60,12 +64,49 @@ public class FilterRequestParam {
         return address;
     }
 
-    public TopicArrayParam[] getTopics() {
+    public TopicParam[][] getTopics() {
         return topics;
     }
 
     public BlockHashParam getBlockHash() {
         return blockHash;
+    }
+
+    public FilterRequest toFilterRequest() {
+        String fb = this.fromBlock == null ? null : this.fromBlock.getIdentifier();
+        String tb = this.toBlock == null ? null : this.toBlock.getIdentifier();
+        String ad = this.address == null ? null : this.address.getAddress().toJsonString();
+        String bh = this.blockHash == null ? null : this.blockHash.getHash().toJsonString();
+        Object[] tp = this.topics == null ? null : this.parseTopicArrayToObjectArray();
+
+        FilterRequest filterRequest = new FilterRequest();
+        filterRequest.setAddress(ad);
+        filterRequest.setBlockHash(bh);
+        filterRequest.setFromBlock(fb);
+        filterRequest.setToBlock(tb);
+        filterRequest.setTopics(tp);
+
+        return filterRequest;
+    }
+
+    public Object[] parseTopicArrayToObjectArray() {
+        if (this.topics == null) {
+            return null;
+        }
+        Object[] result = new Object[this.topics.length];
+        for (int i = 0; i < this.topics.length; i++) {
+            TopicParam[] topicArray = this.topics[i];
+            if (topicArray.length == 1) {
+                result[i] = topicArray[0].getHash().toJsonString();
+            } else {
+                List<String> arrayList = new ArrayList<>();
+                for (int j = 0; j < topicArray.length; j++) {
+                    arrayList.add(topicArray[j].getHash().toJsonString());
+                }
+                result[i] = arrayList;
+            }
+        }
+        return result;
     }
 
     public static class Deserializer extends StdDeserializer<FilterRequestParam> {
@@ -86,30 +127,30 @@ public class FilterRequestParam {
             BlockIdentifierParam toBlock = node.has("toBlock") ? new BlockIdentifierParam(node.get("toBlock").asText()) : null;
             HexAddressParam address = node.has("address") ? new HexAddressParam(node.get("address").asText()) : null;
             BlockHashParam blockHash = node.has("blockHash") ? new BlockHashParam(node.get("blockHash").asText()) : null;
-            TopicArrayParam[] topics = node.has("topics") ? getTopicsArray(node.get("topics")) : null;
+            TopicParam[][] topics = node.has("topics") ? getTopicArray(node.get("topics")) : null;
 
             return new FilterRequestParam(fromBlock, toBlock, address, topics, blockHash);
         }
 
-        private TopicArrayParam[] getTopicsArray(JsonNode node) {
+        private TopicParam[][] getTopicArray(JsonNode node) {
             if (node == null || node.isNull()) {
-                return new TopicArrayParam[0];
+                return new TopicParam[0][0];
             }
             if (node.isArray()) {
-                TopicArrayParam[] topics = new TopicArrayParam[node.size()];
+                TopicParam[][] topics = new TopicParam[node.size()][];
                 for (int i = 0; i < node.size(); i++) {
                     JsonNode subNode = node.get(i);
                     if (subNode.isArray()) {
                         TopicParam[] topicParams = getTopics(subNode);
-                        topics[i] = new TopicArrayParam(topicParams);
+                        topics[i] = topicParams;
                     } else {
-                        topics[i] = new TopicArrayParam(new TopicParam(subNode.asText()));
+                        topics[i] = new TopicParam[]{new TopicParam(subNode.asText())};
                     }
                 }
                 return topics;
             }
             TopicParam topicParam = new TopicParam(node.asText());
-            return new TopicArrayParam[]{new TopicArrayParam(topicParam)};
+            return new TopicParam[][]{new TopicParam[]{topicParam}};
         }
 
         private TopicParam[] getTopics(JsonNode jsonNode) {

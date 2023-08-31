@@ -26,6 +26,7 @@ import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.FilterRequestParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
 import org.ethereum.rpc.parameters.TxHashParam;
 
@@ -135,7 +136,7 @@ public interface Web3EthModule {
 
     Map<String, CompilationResultDTO> eth_compileSolidity(String contract);
 
-    String eth_newFilter(FilterRequest fr) throws Exception;
+    String eth_newFilter(FilterRequestParam fr) throws Exception;
 
     String eth_newBlockFilter();
 
