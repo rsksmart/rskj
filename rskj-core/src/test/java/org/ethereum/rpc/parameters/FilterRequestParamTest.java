@@ -49,7 +49,7 @@ class FilterRequestParamTest {
         assertEquals("0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", filterRequestParam.getBlockHash().getHash().toJsonString());
         assertEquals("0x1", filterRequestParam.getFromBlock().getIdentifier());
         assertEquals("0x2", filterRequestParam.getToBlock().getIdentifier());
-        assertEquals("0x7857288e171c6159c5576d1bd9ac40c0c48a771c", filterRequestParam.getAddress().getAddress().toJsonString());
+        assertEquals("0x7857288e171c6159c5576d1bd9ac40c0c48a771c", filterRequestParam.getAddress()[0].getAddress().toJsonString());
         assertEquals("0x000000000000000000000000000000006d696e696e675f6665655f746f706963", filterRequestParam.getTopics()[0][0].getHash().toJsonString());
     }
 
@@ -66,7 +66,7 @@ class FilterRequestParamTest {
         assertEquals(2, topics.length);
         TopicParam[] topicParam = topics[1];
         assertEquals(2, topicParam.length);
-        assertEquals("0x0000000000000000000000000000000000000000000000000000000000001111",topicParam[0].getHash().toJsonString());
+        assertEquals("0x0000000000000000000000000000000000000000000000000000000000001111", topicParam[0].getHash().toJsonString());
     }
 
     @Test
@@ -113,7 +113,7 @@ class FilterRequestParamTest {
         FilterRequestParam filterRequestParam = new FilterRequestParam(
                 new BlockIdentifierParam("0x1"),
                 new BlockIdentifierParam("0x2"),
-                new HexAddressParam("0x7857288e171c6159c5576d1bd9ac40c0c48a771c"),
+                new HexAddressParam[]{new HexAddressParam("0x7857288e171c6159c5576d1bd9ac40c0c48a771c")},
                 new TopicParam[][]{
                         new TopicParam[]{
                                 new TopicParam("0x000000000000000000000000000000006d696e696e675f6665655f746f706963"),

@@ -20,7 +20,6 @@ package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.FilterRequest;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -148,7 +147,7 @@ public interface Web3EthModule {
 
     Object[] eth_getFilterLogs(String id);
 
-    Object[] eth_getLogs(FilterRequest fr) throws Exception;
+    Object[] eth_getLogs(FilterRequestParam fr) throws Exception;
 
     BigInteger eth_netHashrate();
 

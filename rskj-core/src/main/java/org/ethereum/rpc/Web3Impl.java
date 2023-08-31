@@ -992,9 +992,9 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public Object[] eth_getLogs(FilterRequest fr) throws Exception {
+    public Object[] eth_getLogs(FilterRequestParam fr) throws Exception {
         logger.debug("eth_getLogs ...");
-        String id = newFilter(fr);
+        String id = newFilter(fr.toFilterRequest());
         Object[] ret = eth_getFilterLogs(id);
         eth_uninstallFilter(id);
         return ret;
