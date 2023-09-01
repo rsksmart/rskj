@@ -16,6 +16,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,6 +44,22 @@ class BridgeSupportSigHashTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
 
+    private BridgeStorageProvider provider;
+
+    @BeforeEach
+    void init() throws IOException {
+        provider = mock(BridgeStorageProvider.class);
+
+        when(provider.getFeePerKb())
+            .thenReturn(Coin.MILLICOIN);
+
+        when(provider.getPegoutsWaitingForSignatures())
+            .thenReturn(new TreeMap<>());
+
+        when(provider.getPegoutsWaitingForConfirmations())
+            .thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>()));
+    }
+
     private static Stream<Arguments> pegoutTxIndexArgsProvider() {
         return Stream.of(
             Arguments.of(ActivationConfigsForTest.fingerroot500().forBlock(0)),
@@ -53,8 +70,6 @@ class BridgeSupportSigHashTest {
     @MethodSource("pegoutTxIndexArgsProvider")
     void test_pegoutTxIndex_when_pegout_batch_is_created(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-
         List<UTXO> fedUTXOs = PegTestUtils.createUTXOs(10, bridgeMainnetConstants.getGenesisFederation().getAddress());
         when(provider.getNewFederationBtcUTXOs())
             .thenReturn(fedUTXOs);
@@ -62,12 +77,7 @@ class BridgeSupportSigHashTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(3)));
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-        when(provider.getPegoutsWaitingForConfirmations())
-            .thenReturn(pegoutsWaitingForConfirmations);
-
-        when(provider.getPegoutsWaitingForSignatures())
-            .thenReturn(new TreeMap<>());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBridgeConstants(bridgeMainnetConstants)
@@ -105,20 +115,10 @@ class BridgeSupportSigHashTest {
     @MethodSource("pegoutTxIndexArgsProvider")
     void test_pegoutTxIndex_when_migration_tx_is_created(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-
-        when(provider.getFeePerKb())
-            .thenReturn(Coin.MILLICOIN);
-
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
 
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-        when(provider.getPegoutsWaitingForConfirmations())
-            .thenReturn(pegoutsWaitingForConfirmations);
-
-        when(provider.getPegoutsWaitingForSignatures())
-            .thenReturn(new TreeMap<>());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
         Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
         long newFedCreationBlockNumber = 5L;
@@ -185,20 +185,10 @@ class BridgeSupportSigHashTest {
     @MethodSource("pegoutTxIndexArgsProvider")
     void test_pegoutTxIndex_when_migration_and_pegout_batch_tx_are_created(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-
-        when(provider.getFeePerKb())
-            .thenReturn(Coin.MILLICOIN);
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(3)));
-
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
-        when(provider.getPegoutsWaitingForConfirmations())
-            .thenReturn(pegoutsWaitingForConfirmations);
-
-        when(provider.getPegoutsWaitingForSignatures())
-            .thenReturn(new TreeMap<>());
 
         Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
 
