@@ -121,10 +121,11 @@ class BridgeSupportSigHashTest {
             .thenReturn(new TreeMap<>());
 
         Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
+        long newFedCreationBlockNumber = 5L;
         Federation newFederation = new Federation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            5L,
+            newFedCreationBlockNumber,
             btcMainnetParams
         );
         when(provider.getOldFederation())
@@ -137,9 +138,10 @@ class BridgeSupportSigHashTest {
         when(provider.getOldFederationBtcUTXOs())
             .thenReturn(utxos);
 
-        // Advance blockchain to migration phase
+        // Advance blockchain to migration phase. Migration phase starts 1 block after migration age is reached.
         long migrationAge = bridgeMainnetConstants.getFederationActivationAge(activations) +
-                                bridgeMainnetConstants.getFundsMigrationAgeSinceActivationBegin() + 6;
+                                bridgeMainnetConstants.getFundsMigrationAgeSinceActivationBegin() +
+                                newFedCreationBlockNumber + 1;
         BlockGenerator blockGenerator = new BlockGenerator();
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(migrationAge, 1);
 
@@ -199,10 +201,12 @@ class BridgeSupportSigHashTest {
             .thenReturn(new TreeMap<>());
 
         Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
+
+        long newFedCreationBlockNumber = 5L;
         Federation newFederation = new Federation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            5L,
+            newFedCreationBlockNumber,
             btcMainnetParams
         );
         when(provider.getOldFederation())
@@ -219,9 +223,10 @@ class BridgeSupportSigHashTest {
         when(provider.getNewFederationBtcUTXOs())
             .thenReturn(utxosNew);
 
-        // Advance blockchain to migration phase
+        // Advance blockchain to migration phase. Migration phase starts 1 block after migration age is reached.
         long migrationAge = bridgeMainnetConstants.getFederationActivationAge(activations) +
-                                bridgeMainnetConstants.getFundsMigrationAgeSinceActivationBegin() + 6;
+                                bridgeMainnetConstants.getFundsMigrationAgeSinceActivationBegin() +
+                                newFedCreationBlockNumber + 1;
 
         BlockGenerator blockGenerator = new BlockGenerator();
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(migrationAge, 1);
@@ -241,7 +246,7 @@ class BridgeSupportSigHashTest {
 
         // Assertions
 
-        // Assert one pegout was added to pegoutsWaitingForConfirmations from the creation of a pegout batch
+        // Assert two pegouts was added to pegoutsWaitingForConfirmations from the creation of each pegout batch for the migration and pegout
         assertEquals(2, pegoutsWaitingForConfirmations.getEntries().size());
 
         if (activations.isActive(ConsensusRule.RSKIP379)){

@@ -611,13 +611,11 @@ class PowpegMigrationTest {
     }
 
     private void verifyPegoutTxSigHashIndex(ActivationConfig.ForBlock activations, BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTx) {
+        Optional<Sha256Hash> lastPegoutSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
+        assertTrue(lastPegoutSigHash.isPresent());
         if (activations.isActive(ConsensusRule.RSKIP379)){
-            Optional<Sha256Hash> lastPegoutSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
-            assertTrue(lastPegoutSigHash.isPresent());
             assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
         } else {
-            Optional<Sha256Hash> lastPegoutSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
-            assertTrue(lastPegoutSigHash.isPresent());
             assertFalse(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
         }
     }
