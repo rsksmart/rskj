@@ -56,29 +56,28 @@ public class BitcoinTestUtils {
         return Sha256Hash.wrap(bytes);
     }
 
-    public static List<BtcECKey.ECDSASignature> extractSignatures(TransactionInput txInput) {
+    public static List<BtcECKey.ECDSASignature> extractSignaturesFromTxInput(TransactionInput txInput) {
         Script scriptSig = txInput.getScriptSig();
         List<ScriptChunk> chunks = scriptSig.getChunks();
         Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
         RedeemScriptParser parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
 
-        int lastChunk;
+        // This chunk may be 0 or 1 depending on if the federation is spending funds from standard multisig or erp
+        int flowOpCodeChunk;
         RedeemScriptParser.MultiSigType multiSigType = parser.getMultiSigType();
 
         if (multiSigType == RedeemScriptParser.MultiSigType.STANDARD_MULTISIG
                 || multiSigType == RedeemScriptParser.MultiSigType.FAST_BRIDGE_MULTISIG
         ) {
-            lastChunk = chunks.size() - 1;
+            flowOpCodeChunk = chunks.size() - 1;
         } else {
-            lastChunk = chunks.size() - 2;
+            flowOpCodeChunk = chunks.size() - 2;
         }
 
         List<BtcECKey.ECDSASignature> signatures = new ArrayList<>();
-        for (int i = 1; i < lastChunk; i++) {
+        for (int i = 1; i < flowOpCodeChunk; i++) {
             ScriptChunk chunk = chunks.get(i);
-            if (!chunk.isOpCode() && chunk.data.length == 0) {
-                continue;
-            } else {
+            if (chunk.isOpCode() || chunk.data.length > 0) {
                 signatures.add(TransactionSignature.decodeFromDER(chunk.data));
             }
         }
