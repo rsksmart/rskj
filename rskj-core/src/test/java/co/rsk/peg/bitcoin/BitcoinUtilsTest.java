@@ -89,7 +89,7 @@ class BitcoinUtilsTest {
         List<BtcECKey> pubKeys = redeemScriptParser.getPubKeys();
         Assertions.assertFalse(pubKeys.isEmpty());
 
-        List<BtcECKey.ECDSASignature> signatures = BitcoinTestUtils.extractSignatures(txInput);
+        List<BtcECKey.ECDSASignature> signatures = BitcoinTestUtils.extractSignaturesFromTxInput(txInput);
         Assertions.assertFalse(signatures.isEmpty());
 
         // Act
