@@ -10,14 +10,10 @@ import org.ethereum.util.Utils;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
 
 @JsonDeserialize(using = BlockIdentifierParam.Deserializer.class)
 public class BlockIdentifierParam implements Serializable {
     private static final long serialVersionUID = 1L;
-
-    private static final List<String> STRING_IDENTIFIERS = Arrays.asList("earliest", "latest", "pending");
 
     private final String identifier;
 
