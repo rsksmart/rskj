@@ -20,12 +20,12 @@ package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.FilterRequest;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.FilterRequestParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
 import org.ethereum.rpc.parameters.TxHashParam;
 
@@ -135,19 +135,19 @@ public interface Web3EthModule {
 
     Map<String, CompilationResultDTO> eth_compileSolidity(String contract);
 
-    String eth_newFilter(FilterRequest fr) throws Exception;
+    String eth_newFilter(FilterRequestParam fr) throws Exception;
 
     String eth_newBlockFilter();
 
     String eth_newPendingTransactionFilter();
 
-    boolean eth_uninstallFilter(String id);
+    boolean eth_uninstallFilter(HexIndexParam id);
 
-    Object[] eth_getFilterChanges(String id);
+    Object[] eth_getFilterChanges(HexIndexParam id);
 
-    Object[] eth_getFilterLogs(String id);
+    Object[] eth_getFilterLogs(HexIndexParam id);
 
-    Object[] eth_getLogs(FilterRequest fr) throws Exception;
+    Object[] eth_getLogs(FilterRequestParam fr) throws Exception;
 
     BigInteger eth_netHashrate();
 
