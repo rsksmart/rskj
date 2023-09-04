@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.Utils;
 
@@ -21,7 +22,7 @@ public class BlockIdentifierParam implements Serializable {
     private final String identifier;
 
     public BlockIdentifierParam(String identifier) {
-        if(!STRING_IDENTIFIERS.contains(identifier)
+        if(BlockTag.fromString(identifier) == null
             && !Utils.isDecimalString(identifier)
             && !Utils.isHexadecimalString(identifier)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block identifier '" + identifier + "'");

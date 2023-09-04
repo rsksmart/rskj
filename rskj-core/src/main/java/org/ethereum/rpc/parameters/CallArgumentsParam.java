@@ -1,79 +1,101 @@
 package org.ethereum.rpc.parameters;
 
-import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigInteger;
 
 @JsonDeserialize(using = CallArgumentsParam.Deserializer.class)
-public class CallArgumentsParam implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class CallArgumentsParam {
 
-    private transient final CallArguments callArguments;
+    private final HexAddressParam from;
+    private final HexAddressParam to;
+    private final HexNumberParam gas;
+    private final HexNumberParam gasPrice;
+    private final HexNumberParam gasLimit;
+    private final HexNumberParam nonce;
+    private final HexNumberParam chainId;
+    private final HexNumberParam value;
+    private final HexDataParam data;
 
-    public CallArgumentsParam(CallArguments callArguments) {
-        validateAddressProperty(callArguments.getFrom(), "from");
-        validateAddressProperty(callArguments.getTo(), "to");
-        validateNumberProperty(callArguments.getGas(), "gas");
-        validateNumberProperty(callArguments.getGasPrice(), "gasPrice");
-        validateNumberProperty(callArguments.getGasLimit(), "gasLimit");
-        validateNumberProperty(callArguments.getNonce(), "nonce");
-        validateNumberProperty(callArguments.getChainId(), "chainId");
-        validateNumberProperty(callArguments.getValue(), "value");
-        validateDataProperty(callArguments.getData());
-
-        this.callArguments = callArguments;
+    public CallArgumentsParam(HexAddressParam from, HexAddressParam to, HexNumberParam gas,
+                              HexNumberParam gasPrice, HexNumberParam gasLimit, HexNumberParam nonce,
+                              HexNumberParam chainId, HexNumberParam value, HexDataParam data) {
+        this.from = from;
+        this.to = to;
+        this.gas = gas;
+        this.gasPrice = gasPrice;
+        this.gasLimit = gasLimit;
+        this.nonce = nonce;
+        this.chainId = chainId;
+        this.value = value;
+        this.data = data;
     }
 
-    public CallArguments getCallArguments() {
+    public HexAddressParam getFrom() {
+        return from;
+    }
+
+    public HexAddressParam getTo() {
+        return to;
+    }
+
+    public HexNumberParam getGas() {
+        return gas;
+    }
+
+    public HexNumberParam getGasPrice() {
+        return gasPrice;
+    }
+
+    public HexNumberParam getGasLimit() {
+        return gasLimit;
+    }
+
+    public HexNumberParam getNonce() {
+        return nonce;
+    }
+
+    public HexNumberParam getChainId() {
+        return chainId;
+    }
+
+    public HexNumberParam getValue() {
+        return value;
+    }
+
+    public HexDataParam getData() {
+        return data;
+    }
+
+    public CallArguments toCallArguments() {
+        String caFrom = this.from == null ? null : this.from.getAddress().toJsonString();
+        String caTo = this.to == null ? null : this.to.getAddress().toJsonString();
+        String caGas = this.gas == null ? null : this.gas.getHexNumber();
+        String caGasPrice = this.gasPrice == null ? null : this.gasPrice.getHexNumber();
+        String caGasLimit = this.gasLimit == null ? null : this.gasLimit.getHexNumber();
+        String caNonce = this.nonce == null ? null : this.nonce.getHexNumber();
+        String caChainId = this.chainId == null ? null : this.chainId.getHexNumber();
+        String caValue = this.value == null ? null : this.value.getHexNumber();
+        String caData = this.data == null ? null : this.data.getAsHexString();
+
+        CallArguments callArguments = new CallArguments();
+        callArguments.setFrom(caFrom);
+        callArguments.setTo(caTo);
+        callArguments.setGas(caGas);
+        callArguments.setGasPrice(caGasPrice);
+        callArguments.setGasLimit(caGasLimit);
+        callArguments.setNonce(caNonce);
+        callArguments.setChainId(caChainId);
+        callArguments.setValue(caValue);
+        callArguments.setData(caData);
+
         return callArguments;
-    }
-
-    private boolean isPropertyValidHex(String propertyValue) {
-        boolean hasPrefix = HexUtils.hasHexPrefix(propertyValue);
-        return HexUtils.isHex(propertyValue.toLowerCase(), hasPrefix ? 2 : 0);
-    }
-
-    private void validateAddressProperty(String propertyValue, String propertyName) {
-        if (propertyValue == null) {
-            return;
-        }
-
-        if (!isPropertyValidHex(propertyValue)) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid param " + propertyName + ": invalid character in hex input.");
-        }
-    }
-
-    private void validateNumberProperty(String propertyValue, String propertyName) {
-        if(propertyValue == null) {
-            return;
-        }
-
-        if (!isPropertyValidHex(propertyValue)) {
-            try {
-                new BigInteger(propertyValue);
-            } catch(Exception e) {
-                throw RskJsonRpcRequestException.invalidParamError("Invalid param " + propertyName + ": value must be a valid hex or string number.");
-            }
-        }
-    }
-
-    private void validateDataProperty(String propertyValue) {
-        if(propertyValue == null) {
-            return;
-        }
-
-        if(!isPropertyValidHex(propertyValue)) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid param data: invalid character in hex input.");
-        }
     }
 
     public static class Deserializer extends StdDeserializer<CallArgumentsParam> {
@@ -86,8 +108,18 @@ public class CallArgumentsParam implements Serializable {
 
         @Override
         public CallArgumentsParam deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-            CallArguments callArguments = mapper.readValue(jp, CallArguments.class);
-            return new CallArgumentsParam(callArguments);
+            JsonNode node =  jp.getCodec().readTree(jp);
+            HexAddressParam from = node.has("from") ? new HexAddressParam(node.get("from").asText()) : null;
+            HexAddressParam to = node.has("to") ? new HexAddressParam(node.get("to").asText()) : null;
+            HexNumberParam gas = node.has("gas") ? new HexNumberParam(node.get("gas").asText()) : null;
+            HexNumberParam gasPrice = node.has("gasPrice") ? new HexNumberParam(node.get("gasPrice").asText()) : null;
+            HexNumberParam gasLimit = node.has("gasLimit") ? new HexNumberParam(node.get("gasLimit").asText()) : null;
+            HexNumberParam nonce = node.has("nonce") ? new HexNumberParam(node.get("nonce").asText()) : null;
+            HexNumberParam chainId = node.has("chainId") ? new HexNumberParam(node.get("chainId").asText()) : null;
+            HexNumberParam value = node.has("value") ? new HexNumberParam(node.get("value").asText()) : null;
+            HexDataParam data = node.has("data") ? new HexDataParam(node.get("data").asText()) : null;
+
+            return new CallArgumentsParam(from, to, gas, gasPrice, gasLimit, nonce, chainId, value, data);
         }
     }
 }

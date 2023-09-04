@@ -1,105 +1,175 @@
 package org.ethereum.rpc.parameters;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CallArgumentsParamTest {
-    private CallArguments buildCallArguments() {
-        CallArguments callArguments = new CallArguments();
 
-        callArguments.setFrom("0x7986b3df570230288501eea3d890bd66948c9b79");
-        callArguments.setTo("0xE7B8E91401bF4d1669f54Dc5f98109D7EfBC4EEa");
-        callArguments.setGas("0x76c0");
-        callArguments.setGasPrice("0x9184e72a000");
-        callArguments.setValue("0x9184e72a");
-        callArguments.setData("0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675");
-        callArguments.setNonce("0x1");
-        callArguments.setChainId("0x539");
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-        return callArguments;
+    private final String FROM = "0x7986b3df570230288501eea3d890bd66948c9b79";
+    private final String TO = "0xe7b8e91401bf4d1669f54dc5f98109d7efbc4eea";
+    private final String GAS = "0x76c0";
+    private final String GAS_PRICE = "0x9184e72a000";
+    private final String VALUE = "0x9184e72a";
+    private final String DATA = "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675";
+    private final String NONCE = "0x1";
+    private final String CHAIN_ID = "0x539";
+
+    @Test
+    public void testValidCallArgumentsParam() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"from\": \"" + FROM + "\"," +
+                "            \"to\" : \"" + TO + "\"," +
+                "            \"gas\": \"" + GAS + "\"," +
+                "            \"gasPrice\":\"" + GAS_PRICE + "\"," +
+                "            \"value\":\"" + VALUE + "\"," +
+                "            \"data\": \"" + DATA + "\", " +
+                "            \"nonce\": \"" + NONCE + "\", " +
+                "            \"chainId\": \"" + CHAIN_ID + "\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNotNull(callArgumentsParam);
+
+        assertEquals(FROM, callArgumentsParam.getFrom().getAddress().toJsonString());
+        assertEquals(TO, callArgumentsParam.getTo().getAddress().toJsonString());
+        assertEquals(GAS, callArgumentsParam.getGas().getHexNumber());
+        assertEquals(GAS_PRICE, callArgumentsParam.getGasPrice().getHexNumber());
+        assertEquals(VALUE, callArgumentsParam.getValue().getHexNumber());
+        assertEquals(DATA, callArgumentsParam.getData().getAsHexString());
+        assertEquals(NONCE, callArgumentsParam.getNonce().getHexNumber());
+        assertEquals(CHAIN_ID, callArgumentsParam.getChainId().getHexNumber());
     }
 
     @Test
-    public void testValidCallArgumentsParam() {
-        CallArguments validCallArguments = buildCallArguments();
+    public void testInvalidFromInCallArgumentsParam() throws JsonProcessingException {
+        String from = "0x7986b3df570230288501eea3d890bd66948c9b7s";
 
-        CallArgumentsParam callArgumentsParam = new CallArgumentsParam(validCallArguments);
+        String callArgumentsInput = "{\n" +
+                "            \"from\": \"" + from + "\"}";
 
-        assertEquals(validCallArguments.getFrom(), callArgumentsParam.getCallArguments().getFrom());
-        assertEquals(validCallArguments.getTo(), callArgumentsParam.getCallArguments().getTo());
-        assertEquals(validCallArguments.getGas(), callArgumentsParam.getCallArguments().getGas());
-        assertEquals(validCallArguments.getGasPrice(), callArgumentsParam.getCallArguments().getGasPrice());
-        assertEquals(validCallArguments.getValue(), callArgumentsParam.getCallArguments().getValue());
-        assertEquals(validCallArguments.getData(), callArgumentsParam.getCallArguments().getData());
-        assertEquals(validCallArguments.getNonce(), callArgumentsParam.getCallArguments().getNonce());
-        assertEquals(validCallArguments.getChainId(), callArgumentsParam.getCallArguments().getChainId());
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+
+        assertThrows(RskJsonRpcRequestException.class, () -> objectMapper.convertValue(jsonNode, CallArgumentsParam.class));
     }
 
     @Test
-    public void testInvalidFromInCallArgumentsParam() {
-        CallArguments invalidCallArguments = buildCallArguments();
-        invalidCallArguments.setFrom("0x7986b3df570230288501eea3d890bd66948c9bzx");
+    public void testInvalidToInCallArgumentsParam() throws JsonProcessingException {
+        String to = "0xe7b8e91401bf4d1669f54dc5f98109d7efbc4esw";
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new CallArgumentsParam(invalidCallArguments));
+        String callArgumentsInput = "{\n" +
+                "            \"to\": \"" + to + "\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+
+        assertThrows(RskJsonRpcRequestException.class, () -> objectMapper.convertValue(jsonNode, CallArgumentsParam.class));
     }
 
     @Test
-    public void testInvalidToInCallArgumentsParam() {
-        CallArguments invalidCallArguments = buildCallArguments();
-        invalidCallArguments.setTo("0xE7B8E91401bF4d1669f54Dc5f98109D7EfBC4Eqw");
+    public void testInvalidGasInCallArgumentsParam() throws JsonProcessingException {
+        String gas = "0x76cz";
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new CallArgumentsParam(invalidCallArguments));
+        String callArgumentsInput = "{\n" +
+                "            \"gas\": \"" + gas + "\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+
+        assertThrows(RskJsonRpcRequestException.class, () -> objectMapper.convertValue(jsonNode, CallArgumentsParam.class));
     }
 
     @Test
-    public void testInvalidGasInCallArgumentsParam() {
-        CallArguments invalidCallArguments = buildCallArguments();
-        invalidCallArguments.setGas("0x76cZ");
+    public void testInvalidGasPriceInCallArgumentsParam() throws JsonProcessingException {
+        String gasPrice = "0x9184e72a0zq";
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new CallArgumentsParam(invalidCallArguments));
+        String callArgumentsInput = "{\n" +
+                "            \"gasPrice\": \"" + gasPrice + "\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+
+        assertThrows(RskJsonRpcRequestException.class, () -> objectMapper.convertValue(jsonNode, CallArgumentsParam.class));
     }
 
     @Test
-    public void testInvalidGasPriceInCallArgumentsParam() {
-        CallArguments invalidCallArguments = buildCallArguments();
-        invalidCallArguments.setGasPrice("12tb45");
+    public void testInvalidValueInCallArgumentsParam() throws JsonProcessingException {
+        String value = "0x9184e7tq";
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new CallArgumentsParam(invalidCallArguments));
+        String callArgumentsInput = "{\n" +
+                "            \"value\": \"" + value + "\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+
+        assertThrows(RskJsonRpcRequestException.class, () -> objectMapper.convertValue(jsonNode, CallArgumentsParam.class));
     }
 
     @Test
-    public void testInvalidValueInCallArgumentsParam() {
-        CallArguments invalidCallArguments = buildCallArguments();
-        invalidCallArguments.setValue("0x9184e7gt");
+    public void testInvalidDataInCallArgumentsParam() throws JsonProcessingException {
+        String data = "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f0724456pl";
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new CallArgumentsParam(invalidCallArguments));
+        String callArgumentsInput = "{\n" +
+                "            \"data\": \"" + data + "\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+
+        assertThrows(RskJsonRpcRequestException.class, () -> objectMapper.convertValue(jsonNode, CallArgumentsParam.class));
     }
 
     @Test
-    public void testInvalidDataInCallArgumentsParam() {
-        CallArguments invalidCallArguments = buildCallArguments();
-        invalidCallArguments.setData("0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445phm");
+    public void testInvalidNonceInCallArgumentsParam() throws JsonProcessingException {
+        String nonce = "0xj";
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new CallArgumentsParam(invalidCallArguments));
+        String callArgumentsInput = "{\n" +
+                "            \"nonce\": \"" + nonce + "\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+
+        assertThrows(RskJsonRpcRequestException.class, () -> objectMapper.convertValue(jsonNode, CallArgumentsParam.class));
     }
 
     @Test
-    public void testInvalidNonceInCallArgumentsParam() {
-        CallArguments invalidCallArguments = buildCallArguments();
-        invalidCallArguments.setNonce("0xJ");
+    public void testInvalidChainIdInCallArgumentsParam() throws JsonProcessingException {
+        String chainId = "0xb2r";
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new CallArgumentsParam(invalidCallArguments));
+        String callArgumentsInput = "{\n" +
+                "            \"chainId\": \"" + chainId + "\"}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+
+        assertThrows(RskJsonRpcRequestException.class, () -> objectMapper.convertValue(jsonNode, CallArgumentsParam.class));
     }
 
     @Test
-    public void testInvalidChainIdInCallArgumentsParam() {
-        CallArguments invalidCallArguments = buildCallArguments();
-        invalidCallArguments.setChainId("0xB2R");
+    public void testToCallArguments() {
+        CallArgumentsParam callArgumentsParam = new CallArgumentsParam(
+                new HexAddressParam(FROM),
+                new HexAddressParam(TO),
+                new HexNumberParam(GAS),
+                new HexNumberParam(GAS_PRICE),
+                null,
+                new HexNumberParam(NONCE),
+                new HexNumberParam(CHAIN_ID),
+                new HexNumberParam(VALUE),
+                new HexDataParam(DATA)
+        );
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new CallArgumentsParam(invalidCallArguments));
+        CallArguments callArguments = callArgumentsParam.toCallArguments();
+
+        assertEquals(FROM, callArguments.getFrom());
+        assertEquals(TO, callArguments.getTo());
+        assertEquals(GAS, callArguments.getGas());
+        assertEquals(GAS_PRICE, callArguments.getGasPrice());
+        assertEquals(NONCE, callArguments.getNonce());
+        assertEquals(CHAIN_ID, callArguments.getChainId());
+        assertEquals(VALUE, callArguments.getValue());
+        assertEquals(DATA, callArguments.getData());
     }
 }

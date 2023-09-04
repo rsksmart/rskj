@@ -1,5 +1,6 @@
 package org.ethereum.rpc.parameters;
 
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class BlockIdentifierParamTest {
     @Test
     public void testValidStringBlockIdentifier() {
-        String validBlockIdentifier = "latest";
+        String validBlockIdentifier = BlockTag.LATEST.getTag();
 
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam(validBlockIdentifier);
 
