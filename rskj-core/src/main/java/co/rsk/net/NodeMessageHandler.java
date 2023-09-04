@@ -52,7 +52,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
-
+    private static final Logger loggerSnapExperiment = LoggerFactory.getLogger("snapExperiment");
     private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private static final int QUEUED_TIME_TO_WARN_LIMIT = 2; // seconds
     private static final int QUEUED_TIME_TO_WARN_PERIOD = 10; // seconds
