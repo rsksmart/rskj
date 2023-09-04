@@ -42,7 +42,6 @@ class BitcoinUtilsTest {
         LinkedList<BtcECKey> keys = new LinkedList<>(pubKeys);
         LinkedList<BtcECKey.ECDSASignature> sigs = new LinkedList<>(signatures);
 
-        boolean valid = true;
         while (sigs.size() > 0){
             BtcECKey pubKey = keys.pollFirst();
             BtcECKey.ECDSASignature signature = sigs.getFirst();
@@ -50,11 +49,10 @@ class BitcoinUtilsTest {
                 sigs.pollFirst();
             }
             if (sigs.size() > keys.size()) {
-                valid = false;
-                break;
+                return false;
             }
         }
-        return valid;
+        return sigs.isEmpty();
     }
 
     private static Stream<Arguments> pegoutOrMigrationArgProvider() {
@@ -90,16 +88,15 @@ class BitcoinUtilsTest {
         Assertions.assertFalse(pubKeys.isEmpty());
 
         List<BtcECKey.ECDSASignature> signatures = BitcoinTestUtils.extractSignaturesFromTxInput(txInput);
-        Assertions.assertFalse(signatures.isEmpty());
+        Assertions.assertEquals(signatures.size(), pubKeys.size() / 2 + 1);
 
         // Act
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
         Assertions.assertTrue(firstInputSigHash.isPresent());
 
         // Assert
-        boolean valid = isSigHashValid(firstInputSigHash.get(), pubKeys, signatures);
         // It will be false if the extracted inputSigHash is different from the inputSigHash used for generating the signature.
-        Assertions.assertTrue(valid);
+        Assertions.assertTrue(isSigHashValid(firstInputSigHash.get(), pubKeys, signatures));
     }
 
     private static Stream<Arguments> peginArgProvider() {
