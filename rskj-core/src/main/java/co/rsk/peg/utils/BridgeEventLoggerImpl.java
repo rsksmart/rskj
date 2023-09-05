@@ -177,8 +177,8 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
-    @Override
-    public void logReleaseBtcRequestReceived(String sender, Address btcDestinationAddress, Coin amount) {
+    // @Override
+    public void logReleaseBtcRequestReceived(String sender, LegacyAddress btcDestinationAddress, Coin amount) {
         if (activations.isActive(ConsensusRule.RSKIP326)) {
             logReleaseBtcRequestReceived(sender, btcDestinationAddress.toString(), amount);
         } else {

@@ -17,25 +17,7 @@
  */
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.AddressFormatException;
-import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.BtcBlockChain;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.CheckpointManager;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.InsufficientMoneyException;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.StoredBlock;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.core.UTXOProviderException;
-import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
@@ -496,7 +478,7 @@ public class BridgeSupport {
     }
 
     private boolean txIsFromOldFederation(BtcTransaction btcTx) {
-        Address oldFederationAddress = Address.fromBase58(bridgeConstants.getBtcParams(), bridgeConstants.getOldFederationAddress());
+        LegacyAddress oldFederationAddress = LegacyAddress.fromBase58(bridgeConstants.getBtcParams(), bridgeConstants.getOldFederationAddress());
         Script p2shScript = ScriptBuilder.createP2SHOutputScript(oldFederationAddress.getHash160());
 
         for (int i = 0; i < btcTx.getInputs().size(); i++) {
@@ -1806,7 +1788,7 @@ public class BridgeSupport {
      * Returns the federation bitcoin address.
      * @return the federation bitcoin address.
      */
-    public Address getFederationAddress() {
+    public LegacyAddress getFederationAddress() {
         return getActiveFederation().getAddress();
     }
 
@@ -1865,7 +1847,7 @@ public class BridgeSupport {
      * Returns the retiring federation bitcoin address.
      * @return the retiring federation bitcoin address, null if no retiring federation exists
      */
-    public Address getRetiringFederationAddress() {
+    public LegacyAddress getRetiringFederationAddress() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return null;
@@ -2381,7 +2363,7 @@ public class BridgeSupport {
      */
     public Integer addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
         try {
-            Address address = getParsedAddress(addressBase58);
+            LegacyAddress address = getParsedAddress(addressBase58);
             Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
             return this.addLockWhitelistAddress(tx, new OneOffWhiteListEntry(address, maxTransferValueCoin));
         } catch (AddressFormatException e) {
@@ -2392,7 +2374,7 @@ public class BridgeSupport {
 
     public Integer addUnlimitedLockWhitelistAddress(Transaction tx, String addressBase58) {
         try {
-            Address address = getParsedAddress(addressBase58);
+            LegacyAddress address = getParsedAddress(addressBase58);
             return this.addLockWhitelistAddress(tx, new UnlimitedWhiteListEntry(address));
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
@@ -2731,7 +2713,7 @@ public class BridgeSupport {
         Keccak256 derivationArgumentsHash,
         Address userRefundAddress,
         RskAddress lbcAddress,
-        Address lpBtcAddress,
+        LegacyAddress lpBtcAddress,
         boolean shouldTransferToContract
     ) throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         if (!BridgeUtils.isContractTx(rskTx)) {
@@ -2797,11 +2779,11 @@ public class BridgeSupport {
         }
 
         FlyoverFederationInformation flyoverActiveFederationInformation = createFlyoverFederationInformation(flyoverDerivationHash);
-        Address flyoverActiveFederationAddress = flyoverActiveFederationInformation.getFlyoverFederationAddress(bridgeConstants.getBtcParams());
+        LegacyAddress flyoverActiveFederationAddress = flyoverActiveFederationInformation.getFlyoverFederationAddress(bridgeConstants.getBtcParams());
         Federation retiringFederation = getRetiringFederation();
         Optional<FlyoverFederationInformation> flyoverRetiringFederationInformation = Optional.empty();
 
-        List<Address> addresses = new ArrayList<>(2);
+        List<LegacyAddress> addresses = new ArrayList<>(2);
         addresses.add(flyoverActiveFederationAddress);
 
         if (activations.isActive(RSKIP293) && retiringFederation != null) {
@@ -3135,8 +3117,8 @@ public class BridgeSupport {
         }
     }
 
-    private Address getParsedAddress(String base58Address) throws AddressFormatException {
-        return Address.fromBase58(btcContext.getParams(), base58Address);
+    private LegacyAddress getParsedAddress(String base58Address) throws AddressFormatException {
+        return LegacyAddress.fromBase58(btcContext.getParams(), base58Address);
     }
 
     private void generateRejectionRelease(

@@ -1,6 +1,7 @@
 package co.rsk.peg.flyover;
 
 import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
 import org.spongycastle.util.encoders.Hex;
@@ -39,8 +40,8 @@ public class FlyoverFederationInformation {
         return this.flyoverFederationRedeemScriptHash.clone();
     }
 
-    public Address getFlyoverFederationAddress(NetworkParameters networkParameters) {
-        return Address.fromP2SHHash(networkParameters, this.flyoverFederationRedeemScriptHash);
+    public LegacyAddress getFlyoverFederationAddress(NetworkParameters networkParameters) {
+        return LegacyAddress.fromP2SHHash(networkParameters, this.flyoverFederationRedeemScriptHash);
     }
 
     @Override

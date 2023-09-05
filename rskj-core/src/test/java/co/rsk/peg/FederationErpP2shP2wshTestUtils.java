@@ -21,7 +21,7 @@ public class FederationErpP2shP2wshTestUtils {
         List<BtcECKey> signers,
         Sha256Hash fundTxHash,
         int outputIndex,
-        Address receiver,
+        LegacyAddress receiver,
         Coin inputValue,
         boolean spendsFromEmergency) {
 

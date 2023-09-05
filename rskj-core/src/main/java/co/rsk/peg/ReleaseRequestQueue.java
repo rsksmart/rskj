@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.crypto.Keccak256;
 
 import java.util.ArrayList;
@@ -36,21 +37,21 @@ import java.util.stream.Collectors;
  */
 public class ReleaseRequestQueue {
     public static class Entry {
-        private Address destination;
+        private LegacyAddress destination;
         private Coin amount;
         private Keccak256 rskTxHash;
 
-        public Entry(Address destination, Coin amount, Keccak256 rskTxHash) {
+        public Entry(LegacyAddress destination, Coin amount, Keccak256 rskTxHash) {
             this.destination = destination;
             this.amount = amount;
             this.rskTxHash = rskTxHash;
         }
 
-        public Entry(Address destination, Coin amount) {
+        public Entry(LegacyAddress destination, Coin amount) {
             this(destination, amount, null);
         }
 
-        public Address getDestination() {
+        public LegacyAddress getDestination() {
             return destination;
         }
 

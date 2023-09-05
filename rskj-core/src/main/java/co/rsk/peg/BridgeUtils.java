@@ -17,26 +17,10 @@
  */
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
-import co.rsk.bitcoinj.core.ScriptException;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.core.Utils;
-import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
-import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
@@ -163,7 +147,7 @@ public class BridgeUtils {
         NetworkParameters networkParameters,
         Context context,
         BtcTransaction btcTx,
-        List<Address> addresses
+        List<LegacyAddress> addresses
     ) {
         if (addresses == null || addresses.isEmpty()){
             return Coin.ZERO;
@@ -202,7 +186,7 @@ public class BridgeUtils {
             BridgeConstants bridgeConstants,
             Context context,
             BtcTransaction btcTx,
-            List<Address> addresses
+            List<LegacyAddress> addresses
     ){
         return isAnyUTXOAmountBelowMinimum(
                 activations,
@@ -248,7 +232,7 @@ public class BridgeUtils {
         BridgeConstants bridgeConstants,
         Context context,
         BtcTransaction btcTx,
-        List<Address> addresses
+        List<LegacyAddress> addresses
     ) {
         Coin totalAmount = getAmountSentToAddresses(
             activations,
@@ -280,7 +264,7 @@ public class BridgeUtils {
      * @param addresses
      * @return a simple wallet instance with the give list of address added as watched addresses
      */
-    private static WatchedBtcWallet createWatchedBtcWalletFromAddresses(Context context, List<Address> addresses) {
+    private static WatchedBtcWallet createWatchedBtcWalletFromAddresses(Context context, List<LegacyAddress> addresses) {
         WatchedBtcWallet wallet = new WatchedBtcWallet(context);
         long now = Utils.currentTimeMillis() / 1000L;
         wallet.addWatchedAddresses(addresses, now);
@@ -294,7 +278,7 @@ public class BridgeUtils {
      * @param addresses
      * @return total amount sent to the given list of addresses.
      */
-    private static Coin getAmountSentToAddresses(Context context, BtcTransaction btcTx, List<Address> addresses) {
+    private static Coin getAmountSentToAddresses(Context context, BtcTransaction btcTx, List<LegacyAddress> addresses) {
         return getAmountSentToWallet(btcTx, createWatchedBtcWalletFromAddresses(context, addresses));
     }
 
@@ -313,7 +297,7 @@ public class BridgeUtils {
         NetworkParameters networkParameters,
         Context context,
         BtcTransaction btcTx,
-        List<Address> addresses
+        List<LegacyAddress> addresses
 
     ) {
         if (activations.isActive(ConsensusRule.RSKIP293)){
@@ -334,7 +318,7 @@ public class BridgeUtils {
      * @param addresses
      * @return the list of UTXOs in the given btcTx sent to the given list of address
      */
-    private static List<UTXO> getUTXOsSentToAddresses(Context context, BtcTransaction btcTx, List<Address> addresses) {
+    private static List<UTXO> getUTXOsSentToAddresses(Context context, BtcTransaction btcTx, List<LegacyAddress> addresses) {
         Wallet wallet = BridgeUtils.createWatchedBtcWalletFromAddresses(context, addresses);
         return btcTx.getWalletOutputs(wallet).stream().map(
             txOutput -> new UTXO(
@@ -416,7 +400,7 @@ public class BridgeUtils {
                         redeemScriptParser.getMultiSigType() == MultiSigType.FAST_BRIDGE_P2SH_ERP_FED)) {
                         String message = "Tried to register a transaction with a P2SH ERP federation redeem script before RSKIP353 activation";
                         logger.warn("[isValidPegInTx] {}", message);
-                        throw new ScriptException(message);
+                        throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, message);
                     }
                     Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
                     if (activeFederations.stream().anyMatch(federation -> federation.getStandardRedeemScript().equals(inputStandardRedeemScript))) {
@@ -781,7 +765,7 @@ public class BridgeUtils {
         return false;
     }
 
-    public static byte[] serializeBtcAddressWithVersion(ActivationConfig.ForBlock activations, Address btcAddress) {
+    public static byte[] serializeBtcAddressWithVersion(ActivationConfig.ForBlock activations, LegacyAddress btcAddress) {
         byte[] hash160 = btcAddress.getHash160();
         byte[] version = BigInteger.valueOf(btcAddress.getVersion()).toByteArray();
         if (activations.isActive(RSKIP284)) {
@@ -819,7 +803,7 @@ public class BridgeUtils {
         byte[] hashBytes = new byte[20];
         System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
 
-        return new Address(networkParameters, version, hashBytes);
+        return new LegacyAddress(networkParameters, true, hashBytes);
     }
 
     public static int getRegularPegoutTxSize(ActivationConfig.ForBlock activations, @Nonnull Federation federation) {

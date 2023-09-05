@@ -19,19 +19,20 @@ package co.rsk.peg.whitelist;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.LegacyAddress;
 
 public class OneOffWhiteListEntry implements LockWhitelistEntry {
-    private final Address address;
+    private final LegacyAddress address;
     private final Coin maxTransferValueField;
 
     private boolean consumed = false;
 
-    public OneOffWhiteListEntry(Address address, Coin maxTransferValue) {
+    public OneOffWhiteListEntry(LegacyAddress address, Coin maxTransferValue) {
         this.address = address;
         this.maxTransferValueField = maxTransferValue;
     }
 
-    public Address address() {
+    public LegacyAddress address() {
         return this.address;
     }
 
