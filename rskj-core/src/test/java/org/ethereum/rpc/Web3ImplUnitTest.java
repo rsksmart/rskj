@@ -28,6 +28,7 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockRefParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.util.BuildInfo;
+import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -262,7 +263,7 @@ class Web3ImplUnitTest {
         final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
 
         doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_call(argsForCall,blockRef);
+        String result = spyTarget.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall),blockRef);
         assertEquals(expectedData, result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }

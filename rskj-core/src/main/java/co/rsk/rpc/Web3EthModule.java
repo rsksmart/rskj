@@ -19,7 +19,6 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
-import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -78,7 +77,7 @@ public interface Web3EthModule {
 
     String eth_blockNumber();
 
-    String eth_call(CallArguments args, Map<String, String> blockRef) throws Exception; // NOSONAR
+    String eth_call(CallArgumentsParam args, Map<String, String> blockRef) throws Exception; // NOSONAR
 
     String eth_getBalance(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 

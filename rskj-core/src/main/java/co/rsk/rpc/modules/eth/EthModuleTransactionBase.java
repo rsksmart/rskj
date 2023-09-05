@@ -58,7 +58,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
     @Override
     public synchronized String sendTransaction(CallArgumentsParam argsParam) {
-        CallArguments args = argsParam.getCallArguments();
+        CallArguments args = argsParam.toCallArguments();
 
         if(args.getFrom() == null) {
             throw invalidParamError("from is null");

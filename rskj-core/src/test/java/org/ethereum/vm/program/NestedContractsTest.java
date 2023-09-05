@@ -35,7 +35,7 @@ import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
-import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -113,7 +113,7 @@ class NestedContractsTest {
         final String contractA = getContractAddressString(TX_CONTRACTA);
         CallArguments args = buildArgs(contractA, Hex.toHexString(BUY_FUNCTION.encode(0)));
         try {
-            ethModule.call(new CallArgumentsParam(args), new BlockIdentifierParam("latest"));
+            ethModule.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
             fail();
         } catch (RskJsonRpcRequestException e) {
             MatcherAssert.assertThat(e.getMessage(), Matchers.containsString("Negative value"));
@@ -121,7 +121,7 @@ class NestedContractsTest {
 
         //Success Call -> 2 > 0
         args = buildArgs(contractA, Hex.toHexString(BUY_FUNCTION.encode(2)));
-        final String call = ethModule.call(new CallArgumentsParam(args), new BlockIdentifierParam("latest"));
+        final String call = ethModule.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
         //assertEquals("0x" + DataWord.valueOf(2).toString(), call);
     }
 
@@ -153,12 +153,12 @@ class NestedContractsTest {
         //Failed Call ContractA.buy(0) -> 0 > 0
         final String contractA = getContractAddressString("tx03");
         CallArguments args = buildArgs(contractA, Hex.toHexString(BUY_FUNCTION.encode(0)));
-        String call = ethModule.call(new CallArgumentsParam(args), new BlockIdentifierParam("latest"));
+        String call = ethModule.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
         assertEquals("0x" + DataWord.valueOf(0).toString(), call);
 
         //Success Call -> 2 > 0
         args = buildArgs(contractA, Hex.toHexString(BUY_FUNCTION.encode(2)));
-        call = ethModule.call(new CallArgumentsParam(args), new BlockIdentifierParam("latest"));
+        call = ethModule.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
         assertEquals("0x" + DataWord.valueOf(2).toString(), call);
 
     }

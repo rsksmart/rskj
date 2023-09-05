@@ -126,7 +126,7 @@ public class EthModule
 
     public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId) {
         String hReturn = null;
-        CallArguments args = argsParam.getCallArguments();
+        CallArguments args = argsParam.toCallArguments();
         try {
             ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
             Block block = result.getBlock();
@@ -159,7 +159,7 @@ public class EthModule
         String estimation = null;
         Block bestBlock = blockchain.getBestBlock();
         try {
-            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args.getCallArguments());
+            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args.toCallArguments());
 
             TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
                     bestBlock,

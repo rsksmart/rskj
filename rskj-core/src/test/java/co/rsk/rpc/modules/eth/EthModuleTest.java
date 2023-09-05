@@ -37,7 +37,6 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
-import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
@@ -59,13 +58,7 @@ import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 class EthModuleTest {
 
@@ -109,7 +102,7 @@ class EthModuleTest {
                 config.getCallGasCap());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
-        String actualResult = eth.call(new CallArgumentsParam(args), new BlockIdentifierParam("latest"));
+        String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
 
         assertEquals(expectedResult, actualResult);
     }
@@ -149,7 +142,7 @@ class EthModuleTest {
                 config.getCallGasCap());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
-        String actualResult = eth.call(new CallArgumentsParam(args), new BlockIdentifierParam("latest"));
+        String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
 
         assertEquals(expectedResult, actualResult);
     }
@@ -194,7 +187,7 @@ class EthModuleTest {
                 config.getCallGasCap());
 
         try {
-            eth.call(new CallArgumentsParam(args), new BlockIdentifierParam("latest"));
+            eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
         } catch (RskJsonRpcRequestException e) {
             assertThat(e.getMessage(), Matchers.containsString("deposit too big"));
         }
@@ -225,7 +218,7 @@ class EthModuleTest {
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
         // Hash of the actual transaction builded inside the sendTransaction
-        String txResult = ethModuleTransaction.sendTransaction(new CallArgumentsParam(args));
+        String txResult = ethModuleTransaction.sendTransaction(TransactionFactoryHelper.toCallArgumentsParam(args));
 
         assertEquals(txExpectedResult, txResult);
     }
@@ -253,7 +246,7 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(new CallArgumentsParam(args)));
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(TransactionFactoryHelper.toCallArgumentsParam(args)));
     }
 
     @Test
@@ -301,10 +294,9 @@ class EthModuleTest {
 
         // Then
         try {
-            ethModuleTransaction.sendTransaction(new CallArgumentsParam(argsMock));
+            ethModuleTransaction.sendTransaction(TransactionFactoryHelper.toCallArgumentsParam(argsMock));
             fail("RskJsonRpcRequestException should be thrown");
         } catch (RskJsonRpcRequestException ex) {
-            verify(argsMock, times(4)).getFrom();
             assertEquals("Could not find account for address: " + addressFrom.toJsonString(), ex.getMessage());
         }
     }

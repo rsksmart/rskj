@@ -87,6 +87,7 @@ import org.ethereum.rpc.parameters.HexIndexParam;
 import org.ethereum.rpc.parameters.TxHashParam;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -513,70 +514,70 @@ class Web3ImplTest {
         //[ {argsForCall}, { "blockNumber": "0x0" } -> return contract call respond at given args for call in genesis block
     void callByBlockNumber() {
         final ChainParams chain = createChainWithACall(false);
-        assertByBlockNumber(CALL_RESPOND, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+        assertByBlockNumber(CALL_RESPOND, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return  contract call respond at given address in genesis block
     void callByBlockHash() {
         final ChainParams chain = createChainWithACall(false);
-        assertByBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+        assertByBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
     void callByNonExistentBlockHash() {
         final ChainParams chain = createChainWithACall(false);
-        assertNonExistentBlockHash(blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+        assertNonExistentBlockHash(blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
     void callByNonExistentBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithACall(false);
-        assertNonBlockHashWhenCanonical(blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+        assertNonBlockHashWhenCanonical(blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
     void callByNonExistentBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithACall(false);
-        assertNonBlockHashWhenIsNotCanonical(blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+        assertNonBlockHashWhenIsNotCanonical(blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         // [ {argsForCall} { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
     void callByNonCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithACall(true);
-        assertNonCanonicalBlockHashWhenCanonical(chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+        assertNonCanonicalBlockHashWhenCanonical(chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return  contract call respond at given address in genesis block
     void callByCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithACall(false);
-        assertCanonicalBlockHashWhenCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+        assertCanonicalBlockHashWhenCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return  contract call respond at given address in genesis block
     void callByCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithACall(false);
-        assertCanonicalBlockHashWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+        assertCanonicalBlockHashWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         // [ {argsForCall}, { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return  contract call respond at given address in specified block
     void callByNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithACall(true);
-        assertNonCanonicalBlockHashWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+        assertNonCanonicalBlockHashWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         // [ {argsForCall}, { "blockHash": "0x<non-canonical-block-hash>" } -> return  contract call respond at given address in specified bloc
     void callByNonCanonicalBlockHash() {
         final ChainParams chain = createChainWithACall(true);
-        assertNonCanonicalBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+        assertNonCanonicalBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
@@ -1787,7 +1788,7 @@ class Web3ImplTest {
         argsForCall.setTo(HexUtils.toJsonHex(tx.getContractAddress().getBytes()));
         argsForCall.setData("0xead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
 
-        String result = web3.eth_call(new CallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
+        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
 
         assertEquals("0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000", result);
     }
@@ -1834,7 +1835,7 @@ class Web3ImplTest {
         argsForCall.setTo(HexUtils.toJsonHex(tx.getContractAddress().getBytes()));
         argsForCall.setData("0xead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
 
-        String result = web3.eth_call(new CallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
+        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
 
         assertEquals("0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000", result);
     }
@@ -1867,7 +1868,7 @@ class Web3ImplTest {
         argsForCall.setTo(HexUtils.toUnformattedJsonHex(tx.getContractAddress().getBytes()));
         argsForCall.setData(HexUtils.toUnformattedJsonHex(func.encode()));
 
-        String result = web3.eth_call(new CallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
+        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
 
         assertEquals("0x", result);
     }
@@ -2340,8 +2341,9 @@ class Web3ImplTest {
         if (chainId != null) {
             args.setChainId(HexUtils.toJsonHex(new byte[]{chainId}));
         }
+        CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
-        String txHash = web3.eth_sendTransaction(new CallArgumentsParam(args));
+        String txHash = web3.eth_sendTransaction(argsParam);
 
         // ***** Verifies tx hash
         String to = toAddress.substring(2);
@@ -2351,7 +2353,7 @@ class Web3ImplTest {
                 .gasPrice(gasPrice)
                 .gasLimit(gasLimit)
                 .destination(Hex.decode(to))
-                .data(args.getData() == null ? null : Hex.decode(args.getData()))
+                .data(args.getData() == null ? null : Hex.decode(args.getData().substring(2)))
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(value)
                 .build();
@@ -2410,7 +2412,7 @@ class Web3ImplTest {
         argsForCall.setTo(HexUtils.toJsonHex(tx.getContractAddress().getBytes()));
         argsForCall.setData(HexUtils.toJsonHex(noreturn.functions.get("noreturn").encodeSignature()));
 
-        String result = web3.eth_call(new CallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
+        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
 
         Assertions.assertEquals("0x", result);
     }
