@@ -99,20 +99,20 @@ class BitcoinUtilsTest {
         Assertions.assertTrue(isSigHashValid(firstInputSigHash.get(), pubKeys, signatures));
     }
 
-    private static Stream<Arguments> peginArgProvider() {
+    private static Stream<Arguments> p2pkhArgProvider() {
         return Stream.of(
-            // PEGIN BECH32 - https://www.blockchain.com/explorer/transactions/btc/aeb98f9a7632efefcd8f9d89b881a0d7a80e4e5c501482f8c9a57db1d7e919c0
-            Arguments.of("010000000001012ee5f3cf0cf707d9fb1233653c3c8dfc96850cdf80ba716d4b4917d1ded876220000000000ffffffff0320a107000000000017a914056d0d9c5b14dd720d9f61fdb3f557c074f95cef8700000000000000001b6a1952534b5401a0df67b9589bd0527af41f66294a846da513e1f9f3c201000000000016001402bd283849dbe761ee7a8e9d902a5dee1f9807f20248304502210080e065d2ed38d819d26869e3ea25918adaa62fbaf1ce3a98e809a5c6a3c0beb10220669234d087835efcbccf21dbf225fee2abea4e37d29abead8a6da660812c450b01210210a19836ab556cc76f66ad8536fb613869db9676d123a7e56a1488369b646ed100000000"),
+            // PEGIN V1 - https://mempool.space/tx/1aea355c7372f10d4c718b9263d63e4b67142ac1416df1dc741f96dd5ca07759
+            Arguments.of("010000000127526c70380d29772e5644ce4f0aec10f77dc478953adc1c3168efb99e62fe34010000006b483045022100f10466b2949269d744bb8473d8e3eca448e07a78d0677eae2b06aa821a5b3e53022045f72e56c7c1e0e9ef09d70737d9de7ca26d8c979c96fd55383948b3244adb8d012102ccf02ed837fd89cd9fd2a10af55f7316f8cfe26986918c87fa592ff268c3a253ffffffff020000000000000000306a2e52534b54016afd53e774eddec304398b2388048d0436f8716801b361100809c2b3872160f7b8161dd3c50742442d1e3b0f000000000017a914596cff92a275960df9cb2ab9df0ff69faa2b1d8a8700000000"),
             // PEGIN legacy - https://www.blockchain.com/explorer/transactions/btc/529682fd067ba26a8406c809c605cde166d6818d0495f3c32bc74d100422fc30
             Arguments.of("02000000022ccf58addb0abd17bb89b8371d0359cfe56ea023b0cf0571e0ccd3917889c522000000006a47304402202cc1339e9090b57fa290a2c8506e82b360e07da2deeec0a56789f2623145668b02201b2d5d5c4d67f8ba217de8fc3269f70881b5669b5262daa29130271db7e0f7bd012103dd1adad32f93448dd9c86ea772c24152e9f85be8e116c336079d87f342b97badfdffffffdd9e3403bab1d06816b3547011cffafed2630606a3811b36ce2b61b80e34eab4000000006b483045022100b4986ebe1336d6468ddeec9461374b955e38d55e76f0e4c4f3d78df1c75e4298022052ed4e50f940680c81bc7299b69c81c7122f4250582035669f838328165548c9012103dd1adad32f93448dd9c86ea772c24152e9f85be8e116c336079d87f342b97badfdffffff0225a107000000000017a9142c1bab6ea51fdaf85c8366bd2b1502eaa69b6ae6871f221800000000001976a9140eda35d81e2a8537beebbbcdf63e3483be01269288acb1cd0b00"),
-            // FLYOVER PEGIN - https://live.blockcypher.com/btc-testnet/tx/d3356587d46ccc887c577eff8d78bff4e81735fd5fcd6511499edc04d7f0c4e9/
+            // FLYOVER - https://live.blockcypher.com/btc-testnet/tx/d3356587d46ccc887c577eff8d78bff4e81735fd5fcd6511499edc04d7f0c4e9/
             Arguments.of("020000000161733fc13d12e74a99ba4f79ea3cbcb6dc1714d21474b0611b2fe5adbfb592ef020000006a473044022016f565d5a69195deb489101ff20af2bca28a38f15915e9ad773b1b9bd9c6013c022041e61ce5d89182478a8ad1602308a7a1cea0b730552ca8ba2a9d3368f9bd8f9201210205cd73583ce9a42bda0bff53f52398e04c703dd8aa5de03dcf780e26e2ba4ca1fdffffff02237a08000000000017a914012c4ac8c51ba78e04a8531d3c5788e7a6af51e4872f98ab01000000001976a91435309691021c3e612408bcbc63220222e3cf746388acf4282500")
         );
     }
 
     @ParameterizedTest
-    @MethodSource("peginArgProvider")
-    void test_getFirstInputSigHash_pegin(String btcTxHex) {
+    @MethodSource("p2pkhArgProvider")
+    void getfirstInputSighHash_fail_for_p2pkh_due_to_no_redeem_script(String btcTxHex) {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode(btcTxHex));
 
@@ -121,6 +121,42 @@ class BitcoinUtilsTest {
 
         // Assert
         Assertions.assertFalse(firstInputSigHash.isPresent());
+    }
+
+    @Test
+    void getfirstInputSighHash_fail_for_bech32() {
+        // PEGIN BECH32 - https://www.blockchain.com/explorer/transactions/btc/aeb98f9a7632efefcd8f9d89b881a0d7a80e4e5c501482f8c9a57db1d7e919c0
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001012ee5f3cf0cf707d9fb1233653c3c8dfc96850cdf80ba716d4b4917d1ded876220000000000ffffffff0320a107000000000017a914056d0d9c5b14dd720d9f61fdb3f557c074f95cef8700000000000000001b6a1952534b5401a0df67b9589bd0527af41f66294a846da513e1f9f3c201000000000016001402bd283849dbe761ee7a8e9d902a5dee1f9807f20248304502210080e065d2ed38d819d26869e3ea25918adaa62fbaf1ce3a98e809a5c6a3c0beb10220669234d087835efcbccf21dbf225fee2abea4e37d29abead8a6da660812c450b01210210a19836ab556cc76f66ad8536fb613869db9676d123a7e56a1488369b646ed100000000"));
+        // Act
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+
+        // Assert
+
+        // For bech32 tx ScriptSig is empty. No chunks. Since there are no scriptSig no redeemScript is extracted,
+        // therefore no sigHash is returned. getFirstInputSigHash method only returns a SigHash when redeemScript is extracted.
+        Assertions.assertFalse(firstInputSigHash.isPresent());
+    }
+
+    @Test
+    void getfirstInputSighHash_p2sh_pegin_v1() {
+        // https://mempool.space/testnet/tx/2d3d0ac33fbcacab56cab594a68f9bd95c4786204e575bfb2297154d68cc115b
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode("02000000017a04759c9582155575ca7e9b0549765d324b975501f48c5c3a8416a1226d62bf00000000d900473044022021fbc3bec74c2c65cb8edcebc03c4b7ec56185086fdf9a0f1578ce6e24a2cd570220626c8fcfa71a26365674b226e5cd3c33029b55a7bfe748923e3b773a36d7223401473044022055f9728a0fdc3533af8f4021f25ce78caaf6d76942969c31a860ebc64c2cee80022041c805e53ad25f8f41fe41def5ced4dacc0028d98df655c3b1b08d8e99f2549a01475221027451384fe9d38e1da80f2d50030bcc4264d3cb657165341cf2fdf901236033212102cf8cc726acd796084e77091f448af9bd872ce4736abb05c2ea90635106574e4552aefdffffff0300000000000000001b6a1952534b540162db6c4b118d7259c23692b162829e6bd5e4d5b099de0a000000000017a9141dee6852dffce78d819a6215f33f6876babef5e0871d4238000000000017a9145d6469cc1a459cc9fbb5ac5e2909865f8d3b442d8772c92500"));
+        TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
+
+        Optional<Script> redeemScriptFromInput = BridgeUtils.extractRedeemScriptFromInput(txInput);
+        Assertions.assertTrue(redeemScriptFromInput.isPresent());
+        RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(redeemScriptFromInput.get().getChunks());
+        List<BtcECKey> pubKeys = redeemScriptParser.getPubKeys();
+        Assertions.assertFalse(pubKeys.isEmpty());
+
+        List<BtcECKey.ECDSASignature> signatures = BitcoinTestUtils.extractSignaturesFromTxInput(txInput);
+        Assertions.assertEquals(signatures.size(), pubKeys.size() / 2 + 1);
+
+        // Act
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        // Assert
+        Assertions.assertTrue(firstInputSigHash.isPresent());
+        Assertions.assertTrue(isSigHashValid(firstInputSigHash.get(), pubKeys, signatures));
     }
 
     @Test
