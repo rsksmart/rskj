@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import co.rsk.bitcoinj.script.ScriptChunk;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 
 public class BitcoinTestUtils {
@@ -58,32 +57,16 @@ public class BitcoinTestUtils {
     }
 
     public static List<BtcECKey.ECDSASignature> extractSignaturesFromTxInput(TransactionInput txInput) {
-        String btcHexSignaturesPrefix = "30";
         Script scriptSig = txInput.getScriptSig();
         List<ScriptChunk> chunks = scriptSig.getChunks();
         Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
         RedeemScriptParser parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
 
-        // This is the last chunk after the signatures.
-        int lastSigChunk;
-        RedeemScriptParser.MultiSigType multiSigType = parser.getMultiSigType();
-
-        if (multiSigType == RedeemScriptParser.MultiSigType.STANDARD_MULTISIG
-                || multiSigType == RedeemScriptParser.MultiSigType.FAST_BRIDGE_MULTISIG
-        ) {
-            lastSigChunk = chunks.size() - 1;
-        } else {
-            lastSigChunk = chunks.size() - 2;
-        }
-
         List<BtcECKey.ECDSASignature> signatures = new ArrayList<>();
-        for (int i = 1; i < lastSigChunk; i++) {
+        for (int i = 1; i <= parser.getM(); i++) {
             ScriptChunk chunk = chunks.get(i);
             if (!chunk.isOpCode() && chunk.data.length > 0) {
-                // Bitcoin signatures always starts with the prefix ‘30’.
-                if (Hex.toHexString(chunk.data).startsWith(btcHexSignaturesPrefix)){
-                    signatures.add(TransactionSignature.decodeFromDER(chunk.data));
-                }
+                signatures.add(TransactionSignature.decodeFromDER(chunk.data));
             }
         }
         return signatures;
