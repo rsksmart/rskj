@@ -1,5 +1,6 @@
 package org.ethereum.rpc.parameters;
 
+import co.rsk.core.RskAddress;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -74,15 +75,35 @@ public class CallArgumentsParam {
     }
 
     public CallArguments toCallArguments() {
-        String caFrom = Optional.ofNullable(this.from).map(prop -> prop.getAddress().toJsonString()).orElse(null);
-        String caTo = Optional.ofNullable(this.to).map(prop -> prop.getAddress().toJsonString()).orElse(null);
-        String caGas = Optional.ofNullable(this.gas).map(HexNumberParam::getHexNumber).orElse(null);
-        String caGasPrice = Optional.ofNullable(this.gasPrice).map(HexNumberParam::getHexNumber).orElse(null);
-        String caGasLimit = Optional.ofNullable(this.gasLimit).map(HexNumberParam::getHexNumber).orElse(null);
-        String caNonce = Optional.ofNullable(this.nonce).map(HexNumberParam::getHexNumber).orElse(null);
-        String caChainId = Optional.ofNullable(this.chainId).map(HexNumberParam::getHexNumber).orElse(null);
-        String caValue = Optional.ofNullable(this.value).map(HexNumberParam::getHexNumber).orElse(null);
-        String caData = Optional.ofNullable(this.data).map(HexDataParam::getAsHexString).orElse(null);
+        String caFrom = Optional.ofNullable(this.from)
+                .map(HexAddressParam::getAddress)
+                .map(RskAddress::toJsonString)
+                .orElse(null);
+        String caTo = Optional.ofNullable(this.to)
+                .map(HexAddressParam::getAddress)
+                .map(RskAddress::toJsonString)
+                .orElse(null);
+        String caGas = Optional.ofNullable(this.gas)
+                .map(HexNumberParam::getHexNumber)
+                .orElse(null);
+        String caGasPrice = Optional.ofNullable(this.gasPrice)
+                .map(HexNumberParam::getHexNumber)
+                .orElse(null);
+        String caGasLimit = Optional.ofNullable(this.gasLimit)
+                .map(HexNumberParam::getHexNumber)
+                .orElse(null);
+        String caNonce = Optional.ofNullable(this.nonce)
+                .map(HexNumberParam::getHexNumber)
+                .orElse(null);
+        String caChainId = Optional.ofNullable(this.chainId)
+                .map(HexNumberParam::getHexNumber)
+                .orElse(null);
+        String caValue = Optional.ofNullable(this.value)
+                .map(HexNumberParam::getHexNumber)
+                .orElse(null);
+        String caData = Optional.ofNullable(this.data)
+                .map(HexDataParam::getAsHexString)
+                .orElse(null);
 
         CallArguments callArguments = new CallArguments();
         callArguments.setFrom(caFrom);
@@ -109,39 +130,48 @@ public class CallArgumentsParam {
         public CallArgumentsParam deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
             JsonNode node =  jp.getCodec().readTree(jp);
 
-            HexAddressParam from = Optional.ofNullable(node).map(n -> n.get("from"))
+            HexAddressParam from = Optional.ofNullable(node)
+                    .map(n -> n.get("from"))
                     .map(JsonNode::asText)
                     .map(HexAddressParam::new)
                     .orElse(null);
-            HexAddressParam to = Optional.ofNullable(node).map(n -> n.get("to"))
+            HexAddressParam to = Optional.ofNullable(node)
+                    .map(n -> n.get("to"))
                     .map(JsonNode::asText)
                     .map(HexAddressParam::new)
                     .orElse(null);
-            HexNumberParam gas = Optional.ofNullable(node).map(n -> n.get("gas"))
+            HexNumberParam gas = Optional.ofNullable(node)
+                    .map(n -> n.get("gas"))
                     .map(JsonNode::asText)
                     .map(HexNumberParam::new)
                     .orElse(null);
-            HexNumberParam gasPrice = Optional.ofNullable(node).map(n -> n.get("gasPrice"))
+            HexNumberParam gasPrice = Optional.ofNullable(node)
+                    .map(n -> n.get("gasPrice"))
                     .map(JsonNode::asText)
                     .map(HexNumberParam::new)
                     .orElse(null);
-            HexNumberParam gasLimit = Optional.ofNullable(node).map(n -> n.get("gasLimit"))
+            HexNumberParam gasLimit = Optional.ofNullable(node)
+                    .map(n -> n.get("gasLimit"))
                     .map(JsonNode::asText)
                     .map(HexNumberParam::new)
                     .orElse(null);
-            HexNumberParam nonce = Optional.ofNullable(node).map(n -> n.get("nonce"))
+            HexNumberParam nonce = Optional.ofNullable(node)
+                    .map(n -> n.get("nonce"))
                     .map(JsonNode::asText)
                     .map(HexNumberParam::new)
                     .orElse(null);
-            HexNumberParam chainId = Optional.ofNullable(node).map(n -> n.get("chainId"))
+            HexNumberParam chainId = Optional.ofNullable(node)
+                    .map(n -> n.get("chainId"))
                     .map(JsonNode::asText)
                     .map(HexNumberParam::new)
                     .orElse(null);
-            HexNumberParam value = Optional.ofNullable(node).map(n -> n.get("value"))
+            HexNumberParam value = Optional.ofNullable(node)
+                    .map(n -> n.get("value"))
                     .map(JsonNode::asText)
                     .map(HexNumberParam::new)
                     .orElse(null);
-            HexDataParam data = Optional.ofNullable(node).map(n -> n.get("data"))
+            HexDataParam data = Optional.ofNullable(node)
+                    .map(n -> n.get("data"))
                     .map(JsonNode::asText)
                     .map(HexDataParam::new)
                     .orElse(null);
