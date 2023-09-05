@@ -88,7 +88,7 @@ class BitcoinUtilsTest {
         Assertions.assertFalse(pubKeys.isEmpty());
 
         List<BtcECKey.ECDSASignature> signatures = BitcoinTestUtils.extractSignaturesFromTxInput(txInput);
-        Assertions.assertEquals(signatures.size(), pubKeys.size() / 2 + 1);
+        Assertions.assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
@@ -150,7 +150,7 @@ class BitcoinUtilsTest {
         Assertions.assertFalse(pubKeys.isEmpty());
 
         List<BtcECKey.ECDSASignature> signatures = BitcoinTestUtils.extractSignaturesFromTxInput(txInput);
-        Assertions.assertEquals(signatures.size(), pubKeys.size() / 2 + 1);
+        Assertions.assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
