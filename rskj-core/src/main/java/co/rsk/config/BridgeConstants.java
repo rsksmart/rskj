@@ -40,8 +40,8 @@ public abstract class BridgeConstants {
 
     protected int maxBtcHeadersPerRskBlock;
 
-    protected Coin legacyMinimumPeginTxValueInSatoshis;
-    protected Coin minimumPeginTxValueInSatoshis;
+    protected Coin legacyMinimumPeginTxValue;
+    protected Coin minimumPeginTxValue;
     protected Coin legacyMinimumPegoutTxValueInSatoshis;
     protected Coin minimumPegoutTxValueInSatoshis;
 
@@ -112,9 +112,9 @@ public abstract class BridgeConstants {
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
 
-    public Coin getLegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValueInSatoshis; }
-
-    public Coin getMinimumPeginTxValueInSatoshis() { return minimumPeginTxValueInSatoshis; }
+    public Coin getMinimumPeginTxValue(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIP219) ? minimumPeginTxValue : legacyMinimumPeginTxValue;
+    }
 
     public Coin getLegacyMinimumPegoutTxValueInSatoshis() { return legacyMinimumPegoutTxValueInSatoshis; }
 
