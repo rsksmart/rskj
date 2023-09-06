@@ -977,12 +977,25 @@ class RLPTest {
     void lengthOfLengthGreaterThanMaxIntegerOverflows() {
         try {
             // Integer.MAX_VALUE + 1
-            byte[] encoded = new byte[] { (byte)(183 + 4), (byte)0x80, (byte)0xff, (byte)0xff, (byte)0xff };
+            byte[] encoded = new byte[] { (byte)(192 + 55 + 4), (byte)0x7F, (byte)0xff, (byte)0xff, (byte)0xff };
             RLP.decodeBigInteger(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
             Assertions.assertEquals("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have", ex.getMessage());
+        }
+    }
+
+    @Test
+    void lengthOfLengthLessThanZero() {
+        try {
+            // Integer.MAX_VALUE + 1
+            byte[] encoded = new byte[] { (byte)(183 + 4), (byte)0x80, (byte)0xff, (byte)0xff, (byte)0xff };
+            RLP.decodeBigInteger(encoded, 0);
+            Assertions.fail();
+        }
+        catch (RLPException ex) {
+            Assertions.assertEquals("The length of the RLP item can't be negative", ex.getMessage());
         }
     }
 
