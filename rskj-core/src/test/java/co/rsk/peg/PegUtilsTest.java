@@ -59,17 +59,17 @@ class PegUtilsTest {
         BtcTransaction btcTransaction = mock(BtcTransaction.class);
 
         // Act
-        RegisterBtcTransactionException exception = Assertions.assertThrows(RegisterBtcTransactionException.class, () -> {
+        IllegalStateException exception = Assertions.assertThrows(IllegalStateException.class, () -> {
             PegUtils.getTransactionType(fingerrootActivations, provider, liveFederationWallet, btcTransaction);
         });
 
         // Assert
-        String expectedMessage = "Can't call PegUtil.getTransactionType before RSKIP379 activation.";
+        String expectedMessage = "Can't call this method before RSKIP379 activation.";
         Assertions.assertEquals(expectedMessage, exception.getMessage());
     }
 
     @Test
-    void test_getTransactionType_tx_sending_funds_to_unknown_address() throws RegisterBtcTransactionException {
+    void test_getTransactionType_tx_sending_funds_to_unknown_address() {
         // Arrange
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
@@ -92,7 +92,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegin_below_minimum_active_fed() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegin_below_minimum_active_fed() {
         // Arrange
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
@@ -115,7 +115,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegin_active_fed() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegin_active_fed() {
         // Arrange
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
@@ -138,7 +138,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegin_output_to_active_fed_and_other_addresses() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegin_output_to_active_fed_and_other_addresses() {
         // Arrange
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
@@ -164,7 +164,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegin_multiple_outputs_to_active_fed() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegin_multiple_outputs_to_active_fed() {
         // Arrange
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
@@ -190,7 +190,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegin_output_to_retiring_fed_and_other_addresses() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegin_output_to_retiring_fed_and_other_addresses() {
         // Arrange
         Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -228,7 +228,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegin_retiring_fed() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegin_retiring_fed() {
         // Arrange
         Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -264,7 +264,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegin_multiple_outputs_to_retiring_fed() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegin_multiple_outputs_to_retiring_fed() {
         // Arrange
         Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -303,7 +303,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegin_outputs_to_active_and_retiring_fed() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegin_outputs_to_active_and_retiring_fed() {
         // Arrange
         Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -341,7 +341,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegin_outputs_to_active_and_retiring_fed_and_other_address() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegin_outputs_to_active_and_retiring_fed_and_other_address() {
         // Arrange
         Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -381,7 +381,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegout_no_change_output() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegout_no_change_output() {
         // Arrange
         Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -420,7 +420,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_pegout_no_change_output_sighash_no_exists_in_provider() throws RegisterBtcTransactionException {
+    void test_getTransactionType_pegout_no_change_output_sighash_no_exists_in_provider() {
         // Arrange
         Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -450,7 +450,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_standard_pegout() throws RegisterBtcTransactionException {
+    void test_getTransactionType_standard_pegout() {
         // Arrange
         Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -490,7 +490,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_standard_pegout_sighash_no_exists_in_provider() throws RegisterBtcTransactionException {
+    void test_getTransactionType_standard_pegout_sighash_no_exists_in_provider() {
         // Arrange
         Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -521,7 +521,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_migration() throws RegisterBtcTransactionException {
+    void test_getTransactionType_migration() {
         // Arrange
         Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -572,7 +572,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_migration_sighash_no_exists_in_provider() throws RegisterBtcTransactionException {
+    void test_getTransactionType_migration_sighash_no_exists_in_provider() {
         // Arrange
         Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
 
@@ -615,7 +615,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_migration_from_retired_fed() throws RegisterBtcTransactionException {
+    void test_getTransactionType_migration_from_retired_fed() {
         // Arrange
         Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
@@ -657,7 +657,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_flyover() throws RegisterBtcTransactionException {
+    void test_getTransactionType_flyover() {
         // Arrange
         Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFed));
@@ -702,7 +702,7 @@ class PegUtilsTest {
     }
 
     @Test
-    void test_getTransactionType_flyover_segwit() throws RegisterBtcTransactionException {
+    void test_getTransactionType_flyover_segwit() {
         // Arrange
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
         NetworkParameters btcTestNetParams = bridgeTestNetConstants.getBtcParams();
