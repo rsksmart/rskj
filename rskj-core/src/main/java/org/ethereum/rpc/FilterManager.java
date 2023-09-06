@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.filterNotFound;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -82,7 +83,7 @@ public class FilterManager {
             Filter filter = installedFilters.get(id);
 
             if (filter == null) {
-                return null;
+                throw filterNotFound("filter not found");
             }
 
             if (newevents) {

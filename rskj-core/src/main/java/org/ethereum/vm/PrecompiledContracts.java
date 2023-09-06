@@ -118,14 +118,14 @@ public class PrecompiledContracts {
 
     // this maps needs to be updated by hand any time a new pcc is added
     public static final Map<RskAddress, ConsensusRule> CONSENSUS_ENABLED_ADDRESSES = Collections.unmodifiableMap(
-        Stream.of(
-            new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
-            new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
-            new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153)
-        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+            Stream.of(
+                    new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
+                    new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
+                    new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153)
+            ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
     private static ECRecover ecRecover = new ECRecover();
@@ -136,6 +136,7 @@ public class PrecompiledContracts {
     private final RskSystemProperties config;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final SignatureCache signatureCache;
+    private final RemascConfig remascConfig;
 
     public PrecompiledContracts(RskSystemProperties config,
                                 BridgeSupportFactory bridgeSupportFactory,
@@ -143,6 +144,7 @@ public class PrecompiledContracts {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.signatureCache = signatureCache;
+        this.remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
     }
 
 
@@ -174,7 +176,6 @@ public class PrecompiledContracts {
             return bigIntegerModexp;
         }
         if (address.equals(REMASC_ADDR_DW)) {
-            RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
             return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig());
         }
 
@@ -211,9 +212,12 @@ public class PrecompiledContracts {
 
         public abstract long getGasForData(byte[] data);
 
-        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {}
+        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+        }
 
-        public List<ProgramSubtrace> getSubtraces() { return Collections.emptyList(); }
+        public List<ProgramSubtrace> getSubtraces() {
+            return Collections.emptyList();
+        }
 
         public abstract byte[] execute(byte[] data) throws VMException;
     }
@@ -289,8 +293,7 @@ public class PrecompiledContracts {
             byte[] result = null;
             if (data == null) {
                 result = HashUtil.ripemd160(ByteUtil.EMPTY_BYTE_ARRAY);
-            }
-            else {
+            } else {
                 result = HashUtil.ripemd160(data);
             }
 
@@ -352,12 +355,12 @@ public class PrecompiledContracts {
 
     /**
      * Computes modular exponentiation on big numbers
-     *
+     * <p>
      * format of data[] array:
      * [length_of_BASE] [length_of_EXPONENT] [length_of_MODULUS] [BASE] [EXPONENT] [MODULUS]
      * where every length is a 32-byte left-padded integer representing the number of bytes.
      * Call data is assumed to be infinitely right-padded with zero bytes.
-     *
+     * <p>
      * Returns an output as a byte array with the same length as the modulus
      */
     public static class BigIntegerModexp extends PrecompiledContract {
@@ -372,7 +375,7 @@ public class PrecompiledContracts {
 
         @Override
         public long getGasForData(byte[] data) {
-            byte[] safeData = data==null?EMPTY_BYTE_ARRAY:data;
+            byte[] safeData = data == null ? EMPTY_BYTE_ARRAY : data;
 
             int baseLen = parseLen(safeData, BASE);
             int expLen = parseLen(safeData, EXPONENT);

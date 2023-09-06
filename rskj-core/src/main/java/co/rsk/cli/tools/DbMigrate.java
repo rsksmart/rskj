@@ -107,7 +107,7 @@ public class DbMigrate extends PicoCliToolRskContextAware {
             throw new IllegalArgumentException("Db to migrate not specified. Please specify in the first argument.");
         }
 
-        DbKind sourceDbKind = ctx.getRskSystemProperties().databaseKind();
+        DbKind sourceDbKind = ctx.getDbKind(ctx.getRskSystemProperties().databaseDir());
         DbKind targetDbKind = DbKind.ofName(this.targetdb);
 
         if (sourceDbKind == targetDbKind) {
@@ -132,7 +132,7 @@ public class DbMigrate extends PicoCliToolRskContextAware {
                     .forEach(this::migrate);
         }
 
-        KeyValueDataSourceUtils.validateDbKind(targetDbKind, targetDbDir, true);
+        KeyValueDataSourceUtils.validateDbKind(targetDbKind, targetDbDir);
 
         String nodeIdFilePath = "/" + NODE_ID_FILE;
 

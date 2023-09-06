@@ -1,5 +1,6 @@
 package co.rsk.config;
 
+import co.rsk.bitcoinj.core.Coin;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -91,6 +92,34 @@ class BridgeConstantsTest {
             assertEquals(bridgeConstants.federationActivationAge, federationActivationAge);
         } else {
             assertEquals(bridgeConstants.federationActivationAgeLegacy, federationActivationAge);
+        }
+    }
+
+    private static Stream<Arguments> minimumPeginTxValueArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), false),
+            Arguments.of(BridgeTestNetConstants.getInstance(), false),
+            Arguments.of(BridgeRegTestConstants.getInstance(), false),
+            Arguments.of(BridgeMainNetConstants.getInstance(), true),
+            Arguments.of(BridgeTestNetConstants.getInstance(), true),
+            Arguments.of(BridgeRegTestConstants.getInstance(), true)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("minimumPeginTxValueArgProvider")
+    void test_getMinimumPeginTxValue(BridgeConstants bridgeConstants, boolean isRSKIP219Active){
+        // Arrange
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(isRSKIP219Active);
+        // Act
+        Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
+
+        // assert
+        if (isRSKIP219Active){
+            assertEquals(bridgeConstants.minimumPeginTxValue, minimumPeginTxValue);
+        } else {
+            assertEquals(bridgeConstants.legacyMinimumPeginTxValue, minimumPeginTxValue);
         }
     }
 }

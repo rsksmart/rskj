@@ -343,13 +343,13 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public BigInteger eth_hashrate() {
+    public String eth_hashrate() {
         BigInteger hashesPerHour = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
         BigInteger hashesPerSecond = hashesPerHour.divide(BigInteger.valueOf(Duration.ofHours(1).getSeconds()));
 
         logger.debug("eth_hashrate(): {}", hashesPerSecond);
 
-        return hashesPerSecond;
+        return HexUtils.toQuantityJsonHex(hashesPerSecond);
     }
 
     @Override

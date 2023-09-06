@@ -20,16 +20,16 @@ class NotParameterizedKeyValueDataSourceTest {
 
     @Test
     void testShouldValidateKindWithEmptyDbDirAndResetDbFalseSuccessfully() {
-        KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, tempDir.toString(), false);
+        KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, tempDir.toString());
     }
 
     @Test()
-    void testShouldThrowErrorWhenValidatingDifferentKinds() throws IOException {
+    void testShouldNotThrowErrorWhenValidatingDifferentKinds() throws IOException {
         FileWriter fileWriter = new FileWriter(new File(tempDir.toString(), KeyValueDataSourceUtils.DB_KIND_PROPERTIES_FILE));
         fileWriter.write("keyvalue.datasource=ROCKS_DB\n");
         fileWriter.close();
         String path = tempDir.toString();
-        Assertions.assertThrows(IllegalStateException.class, () -> KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, path, false));
+        Assertions.assertDoesNotThrow(() -> KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, path));
     }
 
     @Test()
@@ -39,7 +39,7 @@ class NotParameterizedKeyValueDataSourceTest {
         fileWriter.write("keyvalue.datasource=ROCKS_DB\n");
         fileWriter.close();
         String path = file.getPath();
-        Assertions.assertThrows(IllegalStateException.class, () -> KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, path, false));
+        Assertions.assertThrows(IllegalStateException.class, () -> KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, path));
     }
 
     @Test
@@ -73,7 +73,7 @@ class NotParameterizedKeyValueDataSourceTest {
 
         dbKindFile.delete();
         DbKind dbKindFallback = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
-        Assertions.assertEquals(DbKind.LEVEL_DB, dbKindFallback, "When missing DbKind, LEVEL_DB should be returned as fallback");
+        Assertions.assertEquals(DbKind.ROCKS_DB, dbKindFallback, "When missing DbKind, LEVEL_DB should be returned as fallback");
     }
 
     @Test
@@ -95,35 +95,28 @@ class NotParameterizedKeyValueDataSourceTest {
     @Test
     void validateDbKindNoFolder() throws IOException {
         String dbPathNoDir = Files.createFile(Paths.get(tempDir.toString(), "no_file")).toAbsolutePath().toString();
-        Assertions.assertThrows(IllegalStateException.class, () -> KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, dbPathNoDir, false));
+        Assertions.assertThrows(IllegalStateException.class, () -> KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, dbPathNoDir));
     }
 
     @Test
     void validateDbKindMissingFolder() {
         String dbPath = tempDir.toString();
-        KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, dbPath, false);
+        KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, dbPath);
         DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindLevel, "When DbKind file is missing validation should create it with the provided value");
     }
 
     @Test
-    void validateDbKindExistingFolderDifferentDbWithoutResetThrows() {
+    void validateDbKindExistingFolderDifferentDbWithoutResetShouldNotThrowError() {
         String dbPath = tempDir.toString();
         KeyValueDataSourceUtils.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
-
-        try {
-            KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, dbPath, false);
-            Assertions.fail("Should've thrown exception due to already existing dbKind file without reset flag");
-        } catch (RuntimeException re) {
-            Assertions.assertTrue(re.getMessage().startsWith("DbKind mismatch. You have selected"));
-        }
+        Assertions.assertDoesNotThrow(() -> KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, dbPath));
     }
 
     @Test
     void validateDbKindExistingFolderDifferentDbWithResetGeneratesNewFileThrows() {
         String dbPath = tempDir.toString();
-        KeyValueDataSourceUtils.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
-        KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, dbPath, true);
+        KeyValueDataSourceUtils.validateDbKind(DbKind.LEVEL_DB, dbPath);
         DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
         Assertions.assertEquals(DbKind.LEVEL_DB, dbKindLevel, "When DbKind changes and reset flag is specified on validation, new DbKind file should be generated");
     }
@@ -132,7 +125,7 @@ class NotParameterizedKeyValueDataSourceTest {
     void validateDbKindExistingFolderSameDbWithoutResetDoesNothing() {
         String dbPath = tempDir.toString();
         KeyValueDataSourceUtils.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
-        KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, dbPath, false);
+        KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, dbPath);
         DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindLevel, "When same DB without reset specified on validation, nothing changes on DbKind file");
     }
@@ -141,7 +134,7 @@ class NotParameterizedKeyValueDataSourceTest {
     void validateDbKindExistingFolderSameDbWithResetDoesNothing() {
         String dbPath = tempDir.toString();
         KeyValueDataSourceUtils.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
-        KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, dbPath, true);
+        KeyValueDataSourceUtils.validateDbKind(DbKind.ROCKS_DB, dbPath);
         DbKind dbKindLevel = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(dbPath);
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindLevel, "When same DB and reset specified on validation, nothing changes on DbKind file");
     }

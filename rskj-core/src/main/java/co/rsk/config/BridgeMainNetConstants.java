@@ -68,9 +68,9 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        legacyMinimumPeginTxValueInSatoshis = Coin.valueOf(1_000_000);
+        legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         legacyMinimumPegoutTxValueInSatoshis = Coin.valueOf(800_000);
-        minimumPeginTxValueInSatoshis = Coin.valueOf(500_000);
+        minimumPeginTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValueInSatoshis = Coin.valueOf(400_000);
 
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
