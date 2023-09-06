@@ -40,6 +40,7 @@ import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
@@ -503,7 +504,7 @@ public class BridgeUtils {
         int inputsSize = tx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
             TransactionInput txInput = tx.getInput(i);
-            Optional<Script> redeemScriptOptional = extractRedeemScriptFromInput(tx.getInput(i));
+            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(tx.getInput(i));
             if (!redeemScriptOptional.isPresent()) {
                 continue;
             }
@@ -848,30 +849,5 @@ public class BridgeUtils {
         int signingSize = federation.getNumberOfSignaturesRequired() * inputs * SIGNATURE_MULTIPLIER;
 
         return baseSize + signingSize;
-    }
-
-    public static Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
-        Script inputScript = txInput.getScriptSig();
-        List<ScriptChunk> chunks = inputScript.getChunks();
-        if (chunks == null || chunks.isEmpty()) {
-            return Optional.empty();
-        }
-
-        byte[] program = chunks.get(chunks.size() - 1).data;
-        if (program == null) {
-            return Optional.empty();
-        }
-
-        try {
-            Script redeemScript = new Script(program);
-            return Optional.of(redeemScript);
-        } catch (ScriptException e) {
-            logger.debug(
-                "[extractRedeemScriptFromInput] Failed to extract redeem script from tx input {}. {}",
-                txInput,
-                e.getMessage()
-            );
-            return Optional.empty();
-        }
     }
 }
