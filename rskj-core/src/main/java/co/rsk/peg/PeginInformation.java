@@ -2,6 +2,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
@@ -26,8 +27,8 @@ public class PeginInformation {
 
     private int protocolVersion;
     private RskAddress rskDestinationAddress;
-    private Address btcRefundAddress;
-    private Address senderBtcAddress;
+    private LegacyAddress btcRefundAddress;
+    private LegacyAddress senderBtcAddress;
     private TxSenderAddressType senderBtcAddressType;
 
     public PeginInformation(
@@ -49,11 +50,11 @@ public class PeginInformation {
         return this.rskDestinationAddress;
     }
 
-    public Address getBtcRefundAddress() {
+    public LegacyAddress getBtcRefundAddress() {
         return this.btcRefundAddress;
     }
 
-    public Address getSenderBtcAddress() {
+    public LegacyAddress getSenderBtcAddress() {
         return this.senderBtcAddress;
     }
 
@@ -122,7 +123,7 @@ public class PeginInformation {
     }
 
     private void parseFromPeginInstructionsVersion1(PeginInstructionsVersion1 peginInstructions) {
-        Optional<Address> btcRefundAddressOptional = peginInstructions.getBtcRefundAddress();
+        Optional<LegacyAddress> btcRefundAddressOptional = peginInstructions.getBtcRefundAddress();
         if (btcRefundAddressOptional.isPresent()) {
             this.btcRefundAddress = btcRefundAddressOptional.get();
             logger.trace("[parseFromPeginInstructionsVersion1] BTC refund address: {}", btcRefundAddressOptional.get());

@@ -1,6 +1,7 @@
 package co.rsk.peg.pegininstructions;
 
 import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import java.util.Arrays;
 import java.util.Optional;
@@ -14,7 +15,7 @@ public class PeginInstructionsVersion1 extends PeginInstructionsBase {
     private static final int P2SH_ADDRESS_TYPE = 2;
 
     private final NetworkParameters params;
-    private Optional<Address> btcRefundAddress;
+    private Optional<LegacyAddress> btcRefundAddress;
 
     public PeginInstructionsVersion1(NetworkParameters params) {
         super(1);
@@ -41,17 +42,17 @@ public class PeginInstructionsVersion1 extends PeginInstructionsBase {
         int btcRefundAddressType = ByteUtil.byteArrayToInt(btcRefundAddressTypeBytes);
         byte[] hash = Arrays.copyOfRange(data, 26, data.length);
 
-        Address parsedBtcRefundAddress;
+        LegacyAddress parsedBtcRefundAddress;
 
         switch (btcRefundAddressType) {
             case P2PKH_ADDRESS_TYPE:
                 // Uses pubKeyHash
-                parsedBtcRefundAddress = new Address(this.params, hash);
+                parsedBtcRefundAddress = new LegacyAddress(this.params, hash);
                 logger.debug("[parseAdditionalData] Obtained P2PKH BTC address: {}",parsedBtcRefundAddress);
                 break;
             case P2SH_ADDRESS_TYPE:
                 // Uses scriptPubKeyHash
-                parsedBtcRefundAddress = new Address(this.params, this.params.getP2SHHeader(), hash);
+                parsedBtcRefundAddress = new LegacyAddress(this.params, true, hash);
                 logger.debug("[parseAdditionalData] Obtained P2SH BTC address: {}",parsedBtcRefundAddress);
                 break;
             default:
@@ -63,7 +64,7 @@ public class PeginInstructionsVersion1 extends PeginInstructionsBase {
         this.btcRefundAddress = Optional.of(parsedBtcRefundAddress);
     }
 
-    public Optional<Address> getBtcRefundAddress() {
+    public Optional<LegacyAddress> getBtcRefundAddress() {
         return this.btcRefundAddress;
     }
 }

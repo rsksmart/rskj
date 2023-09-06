@@ -70,7 +70,7 @@ public class ReleaseWitnessTransactionBuilder {
 
     private final NetworkParameters params;
     private final Wallet wallet;
-    private final Address changeAddress;
+    private final LegacyAddress changeAddress;
     private final Script redeemScript;
     private final List<BtcECKey> signers;
     private final Coin feePerKb;
@@ -79,7 +79,7 @@ public class ReleaseWitnessTransactionBuilder {
     public ReleaseWitnessTransactionBuilder(
         NetworkParameters params,
         Wallet wallet,
-        Address changeAddress,
+        LegacyAddress changeAddress,
         Script redeemScript,
         List<BtcECKey> signers,
         Coin feePerKb,
@@ -106,7 +106,7 @@ public class ReleaseWitnessTransactionBuilder {
         return feePerKb;
     }
 
-    public BuildResult buildAmountTo(Address to, Coin amount) {
+    public BuildResult buildAmountTo(LegacyAddress to, Coin amount) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(amount, to);
             sr.changeAddress = changeAddress;
@@ -122,7 +122,7 @@ public class ReleaseWitnessTransactionBuilder {
         }, String.format("batching %d pegouts", entries.size()));
     }
 
-    public BuildResult buildEmptyWalletTo(Address to) {
+    public BuildResult buildEmptyWalletTo(LegacyAddress to) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(Coin.ZERO, to);
             sr.changeAddress = to;

@@ -20,6 +20,7 @@ package co.rsk.peg.whitelist;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.*;
@@ -36,18 +37,18 @@ import java.util.stream.Collectors;
 public class LockWhitelist {
 
     private static final Comparator<Address> LEXICOGRAPHICAL_COMPARATOR
-        = Comparator.comparing(Address::getHash160, UnsignedBytes.lexicographicalComparator());
+        = Comparator.comparing(LegacyAddress::getHash160, UnsignedBytes.lexicographicalComparator());
 
-    private SortedMap<Address, LockWhitelistEntry> whitelistedAddresses;
+    private SortedMap<LegacyAddress, LockWhitelistEntry> whitelistedAddresses;
     private int disableBlockHeight;
 
-    public LockWhitelist(Map<Address, LockWhitelistEntry> whitelistedAddresses) {
+    public LockWhitelist(Map<LegacyAddress, LockWhitelistEntry> whitelistedAddresses) {
         this(whitelistedAddresses, Integer.MAX_VALUE);
     }
 
-    public LockWhitelist(Map<Address, LockWhitelistEntry> whitelistedAddresses, int disableBlockHeight) {
+    public LockWhitelist(Map<LegacyAddress, LockWhitelistEntry> whitelistedAddresses, int disableBlockHeight) {
         // Save a copy so that this can't be modified from the outside
-        SortedMap<Address, LockWhitelistEntry> sortedWhitelistedAddresses = new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
+        SortedMap<LegacyAddress, LockWhitelistEntry> sortedWhitelistedAddresses = new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
         sortedWhitelistedAddresses.putAll(whitelistedAddresses);
         this.whitelistedAddresses = sortedWhitelistedAddresses;
         this.disableBlockHeight = disableBlockHeight;
@@ -59,7 +60,7 @@ public class LockWhitelist {
 
     public boolean isWhitelisted(byte[] address) {
         return whitelistedAddresses.keySet().stream()
-                .map(Address::getHash160)
+                .map(LegacyAddress::getHash160)
                 .anyMatch(hash -> Arrays.equals(hash, address));
     }
 
@@ -98,7 +99,7 @@ public class LockWhitelist {
         return this.whitelistedAddresses.get(address);
     }
 
-    public boolean put(Address address, LockWhitelistEntry entry) {
+    public boolean put(LegacyAddress address, LockWhitelistEntry entry) {
         if (whitelistedAddresses.containsKey(address)) {
             return false;
         }

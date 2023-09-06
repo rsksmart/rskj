@@ -83,14 +83,14 @@ public class ReleaseTransactionBuilder {
 
     private final NetworkParameters params;
     private final Wallet wallet;
-    private final Address changeAddress;
+    private final LegacyAddress changeAddress;
     private final Coin feePerKb;
     private final ActivationConfig.ForBlock activations;
 
     public ReleaseTransactionBuilder(
         NetworkParameters params,
         Wallet wallet,
-        Address changeAddress,
+        LegacyAddress changeAddress,
         Coin feePerKb,
         ActivationConfig.ForBlock activations
     ) {
@@ -113,7 +113,7 @@ public class ReleaseTransactionBuilder {
         return feePerKb;
     }
 
-    public BuildResult buildAmountTo(Address to, Coin amount) {
+    public BuildResult buildAmountTo(LegacyAddress to, Coin amount) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(amount, to);
             sr.changeAddress = changeAddress;
@@ -129,7 +129,7 @@ public class ReleaseTransactionBuilder {
         }, String.format("batching %d pegouts", entries.size()));
     }
 
-    public BuildResult buildEmptyWalletTo(Address to) {
+    public BuildResult buildEmptyWalletTo(LegacyAddress to) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(Coin.ZERO, to);
             sr.changeAddress = to;

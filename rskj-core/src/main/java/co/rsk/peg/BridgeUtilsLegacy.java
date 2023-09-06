@@ -1,11 +1,6 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
@@ -55,7 +50,7 @@ public class BridgeUtilsLegacy {
     }
 
     @Deprecated
-    protected static Address deserializeBtcAddressWithVersionLegacy(
+    protected static LegacyAddress deserializeBtcAddressWithVersionLegacy(
         NetworkParameters networkParameters,
         ActivationConfig.ForBlock activations,
         byte[] addressBytes) throws BridgeIllegalArgumentException {
@@ -74,7 +69,7 @@ public class BridgeUtilsLegacy {
         byte[] hashBytes = new byte[20];
         System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
 
-        return new Address(networkParameters, version, hashBytes);
+        return new LegacyAddress(networkParameters, false, hashBytes);
     }
 
     /**

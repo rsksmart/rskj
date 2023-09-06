@@ -110,11 +110,11 @@ public class ReleaseRequestQueue {
         entries.removeAll(entriesToRemove);
     }
 
-    public void add(Address destination, Coin amount, Keccak256 rskTxHash) {
+    public void add(LegacyAddress destination, Coin amount, Keccak256 rskTxHash) {
         entries.add(new Entry(destination, amount, rskTxHash));
     }
 
-    public void add(Address destination, Coin amount) {
+    public void add(LegacyAddress destination, Coin amount) {
         entries.add(new Entry(destination, amount, null));
     }
 

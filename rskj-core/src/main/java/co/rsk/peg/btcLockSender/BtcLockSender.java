@@ -2,6 +2,7 @@ package co.rsk.peg.btcLockSender;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.core.RskAddress;
 
 public interface BtcLockSender {
@@ -18,7 +19,7 @@ public interface BtcLockSender {
 
     TxSenderAddressType getTxSenderAddressType();
 
-    Address getBTCAddress();
+    LegacyAddress getBTCAddress();
 
     RskAddress getRskAddress();
 }

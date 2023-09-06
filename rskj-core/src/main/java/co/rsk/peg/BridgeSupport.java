@@ -555,7 +555,7 @@ public class BridgeSupport {
         PeginInformation peginInformation,
         Coin totalAmount) throws IOException, RegisterBtcTransactionException {
 
-        Address senderBtcAddress = peginInformation.getSenderBtcAddress();
+        LegacyAddress senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
 
         if (!BridgeUtils.txIsProcessableInLegacyVersion(senderBtcAddressType, activations)) {
@@ -642,7 +642,7 @@ public class BridgeSupport {
         PeginInformation peginInformation,
         Coin amount) throws IOException {
 
-        Address btcRefundAddress = peginInformation.getBtcRefundAddress();
+        LegacyAddress btcRefundAddress = peginInformation.getBtcRefundAddress();
         if (btcRefundAddress != null) {
             generateRejectionRelease(btcTx, btcRefundAddress, rskTx, amount);
         } else {
@@ -792,7 +792,7 @@ public class BridgeSupport {
 
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
+        LegacyAddress btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
 
         requestRelease(btcDestinationAddress, value, rskTx);
     }
@@ -821,7 +821,7 @@ public class BridgeSupport {
      * @param value the amount of BTC to release.
      * @throws IOException
      */
-    private void requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
+    private void requestRelease(LegacyAddress destinationAddress, Coin value, Transaction rskTx) throws IOException {
         Optional<RejectedPegoutReason> optionalRejectedPegoutReason = Optional.empty();
         if (activations.isActive(RSKIP219)) {
             int pegoutSize = getRegularPegoutTxSize(activations, getActiveFederation());
@@ -1007,7 +1007,7 @@ public class BridgeSupport {
     private void migrateFunds(
         Keccak256 rskTxHash,
         Wallet retiringFederationWallet,
-        Address activeFederationAddress,
+        LegacyAddress activeFederationAddress,
         List<UTXO> availableUTXOs) throws IOException {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
@@ -2711,7 +2711,7 @@ public class BridgeSupport {
         int height,
         byte[] pmtSerialized,
         Keccak256 derivationArgumentsHash,
-        Address userRefundAddress,
+        LegacyAddress userRefundAddress,
         RskAddress lbcAddress,
         LegacyAddress lpBtcAddress,
         boolean shouldTransferToContract
@@ -2788,7 +2788,7 @@ public class BridgeSupport {
 
         if (activations.isActive(RSKIP293) && retiringFederation != null) {
             flyoverRetiringFederationInformation = Optional.of(createFlyoverFederationInformation(flyoverDerivationHash, retiringFederation));
-            Address flyoverRetiringFederationAddress = flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(
+            LegacyAddress flyoverRetiringFederationAddress = flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(
                 bridgeConstants.getBtcParams()
             );
             addresses.add(flyoverRetiringFederationAddress);
@@ -2913,7 +2913,7 @@ public class BridgeSupport {
 
     private WalletProvider createFlyoverWalletProvider(
         List<FlyoverFederationInformation> fbFederations) {
-        return (BtcTransaction btcTx, List<Address> addresses) -> {
+        return (BtcTransaction btcTx, List<LegacyAddress> addresses) -> {
             List<UTXO> utxosList = BridgeUtils.getUTXOsSentToAddresses(
                 activations,
                 bridgeConstants.getBtcParams(),
@@ -2935,8 +2935,8 @@ public class BridgeSupport {
 
     protected Keccak256 getFlyoverDerivationHash(
         Keccak256 derivationArgumentsHash,
-        Address userRefundAddress,
-        Address lpBtcAddress,
+        LegacyAddress userRefundAddress,
+        LegacyAddress lpBtcAddress,
         RskAddress lbcAddress
     ) {
         byte[] flyoverDerivationHashData = derivationArgumentsHash.getBytes();
@@ -3038,7 +3038,7 @@ public class BridgeSupport {
         return manager.getCheckpointBefore(time);
     }
 
-    private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet originWallet, Address destinationAddress) {
+    private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet originWallet, LegacyAddress destinationAddress) {
         Coin expectedMigrationValue = originWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
@@ -3123,8 +3123,8 @@ public class BridgeSupport {
 
     private void generateRejectionRelease(
         BtcTransaction btcTx,
-        Address btcRefundAddress,
-        List<Address> spendingAddresses,
+        LegacyAddress btcRefundAddress,
+        List<LegacyAddress> spendingAddresses,
         Keccak256 rskTxHash,
         Coin totalAmount,
         WalletProvider walletProvider) throws IOException {
@@ -3154,11 +3154,11 @@ public class BridgeSupport {
 
     private void generateRejectionRelease(
         BtcTransaction btcTx,
-        Address senderBtcAddress,
+        LegacyAddress senderBtcAddress,
         Transaction rskTx,
         Coin totalAmount
     ) throws IOException {
-        WalletProvider createWallet = (BtcTransaction btcTransaction, List<Address> addresses) -> {
+        WalletProvider createWallet = (BtcTransaction btcTransaction, List<LegacyAddress> addresses) -> {
             // Build the list of UTXOs in the BTC transaction sent to either the active
             // or retiring federation
             List<UTXO> utxosToUs = btcTx.getWalletOutputs(

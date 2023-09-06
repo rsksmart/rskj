@@ -627,7 +627,7 @@ public class BridgeUtils {
         return true;
     }
 
-    public static Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
+    public static LegacyAddress recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
         org.ethereum.crypto.ECKey key = tx.getKey();
         byte[] pubKey = key.getPubKey(true);
         return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
@@ -784,7 +784,7 @@ public class BridgeUtils {
         return btcAddressBytes;
     }
 
-    public static Address deserializeBtcAddressWithVersion(
+    public static LegacyAddress deserializeBtcAddressWithVersion(
         NetworkParameters networkParameters,
         ActivationConfig.ForBlock activations,
         byte[] addressBytes) throws BridgeIllegalArgumentException {
