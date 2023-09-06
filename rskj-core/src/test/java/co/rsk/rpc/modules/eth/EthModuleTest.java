@@ -37,6 +37,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
@@ -246,7 +247,8 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(TransactionFactoryHelper.toCallArgumentsParam(args)));
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
     }
 
     @Test
@@ -275,7 +277,8 @@ class EthModuleTest {
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
         String rawData = ByteUtil.toHexString(tx.getEncoded());
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendRawTransaction(new HexDataParam(rawData)));
+        HexDataParam hexDataParam = new HexDataParam(rawData);
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendRawTransaction(hexDataParam));
     }
 
     @Test
@@ -292,9 +295,10 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPoolMock, transactionGatewayMock);
 
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(argsMock);
         // Then
         try {
-            ethModuleTransaction.sendTransaction(TransactionFactoryHelper.toCallArgumentsParam(argsMock));
+            ethModuleTransaction.sendTransaction(callArgumentsParam);
             fail("RskJsonRpcRequestException should be thrown");
         } catch (RskJsonRpcRequestException ex) {
             assertEquals("Could not find account for address: " + addressFrom.toJsonString(), ex.getMessage());

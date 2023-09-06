@@ -35,6 +35,7 @@ import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -112,8 +113,10 @@ class NestedContractsTest {
         //Failed Call ContractA.buy(0) -> 0 > 0
         final String contractA = getContractAddressString(TX_CONTRACTA);
         CallArguments args = buildArgs(contractA, Hex.toHexString(BUY_FUNCTION.encode(0)));
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
         try {
-            ethModule.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
+            ethModule.call(callArgumentsParam, blockIdentifierParam);
             fail();
         } catch (RskJsonRpcRequestException e) {
             MatcherAssert.assertThat(e.getMessage(), Matchers.containsString("Negative value"));

@@ -56,7 +56,9 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
                 throw invalidParamError("Account not found");
             }
 
-            return s = this.sign(data.getRawDataBytes(), account.getEcKey());
+            s = this.sign(data.getRawDataBytes(), account.getEcKey());
+
+            return s;
         } finally {
             LOGGER.debug("eth_sign({}, {}): {}", addr, data, s);
         }
