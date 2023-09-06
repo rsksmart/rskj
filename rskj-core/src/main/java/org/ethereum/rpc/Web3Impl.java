@@ -85,6 +85,7 @@ import static co.rsk.util.HexUtils.*;
 import static java.lang.Math.max;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
+@SuppressWarnings("java:S100")
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 

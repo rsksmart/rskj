@@ -36,6 +36,7 @@ import org.ethereum.rpc.parameters.TxHashParam;
 import java.math.BigInteger;
 import java.util.Map;
 
+@SuppressWarnings({"java:S100", "java:S112"})
 public interface Web3EthModule {
     default String[] eth_accounts() {
         return getEthModule().accounts();
