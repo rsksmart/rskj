@@ -70,7 +70,10 @@ class BridgeSupportSigHashTest {
     @MethodSource("pegoutTxIndexArgsProvider")
     void test_pegoutTxIndex_when_pegout_batch_is_created(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
-        List<UTXO> fedUTXOs = PegTestUtils.createUTXOs(10, bridgeMainnetConstants.getGenesisFederation().getAddress());
+        List<UTXO> fedUTXOs = PegTestUtils.createUTXOs(
+            10,
+            bridgeMainnetConstants.getGenesisFederation().getAddress()
+        );
         when(provider.getNewFederationBtcUTXOs())
             .thenReturn(fedUTXOs);
 
@@ -97,17 +100,11 @@ class BridgeSupportSigHashTest {
             PegoutsWaitingForConfirmations.Entry pegoutBatchTx = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
             Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(pegoutBatchTx.getBtcTransaction());
             assertTrue(firstInputSigHash.isPresent());
-            verify(provider, times(1)).setPegoutTxSigHash(
-                firstInputSigHash.get()
-            );
+            verify(provider, times(1)).setPegoutTxSigHash(firstInputSigHash.get());
         } else {
-            verify(provider, never()).hasPegoutTxSigHash(
-                any()
-            );
+            verify(provider, never()).hasPegoutTxSigHash(any());
             // verify no sigHash was added to sigHashes list before RSKIP379
-            verify(provider, never()).setPegoutTxSigHash(
-                any()
-            );
+            verify(provider, never()).setPegoutTxSigHash(any());
         }
     }
 
@@ -164,20 +161,18 @@ class BridgeSupportSigHashTest {
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
 
         if (activations.isActive(ConsensusRule.RSKIP379)){
-            PegoutsWaitingForConfirmations.Entry migrationTx = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
+            PegoutsWaitingForConfirmations.Entry migrationTx = pegoutsWaitingForConfirmations.
+                getEntries().
+                stream().
+                findFirst().
+                get();
             Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx.getBtcTransaction());
             assertTrue(firstInputSigHash.isPresent());
-            verify(provider, times(1)).setPegoutTxSigHash(
-                firstInputSigHash.get()
-            );
+            verify(provider, times(1)).setPegoutTxSigHash(firstInputSigHash.get());
         } else {
-            verify(provider, never()).hasPegoutTxSigHash(
-                any()
-            );
+            verify(provider, never()).hasPegoutTxSigHash(any());
             // verify no sigHash was added to sigHashes list before RSKIP379
-            verify(provider, never()).setPegoutTxSigHash(
-                any()
-            );
+            verify(provider, never()).setPegoutTxSigHash(any());
         }
     }
 
@@ -264,24 +259,16 @@ class BridgeSupportSigHashTest {
             Optional<Sha256Hash> migrationTxSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx.getBtcTransaction());
             assertTrue(migrationTxSigHash.isPresent());
 
-            verify(provider, times(1)).setPegoutTxSigHash(
-                migrationTxSigHash.get()
-            );
+            verify(provider, times(1)).setPegoutTxSigHash(migrationTxSigHash.get());
 
             Optional<Sha256Hash> pegoutBatchTxSigHash = BitcoinUtils.getFirstInputSigHash(pegoutBatchTx.getBtcTransaction());
             assertTrue(pegoutBatchTxSigHash.isPresent());
 
-            verify(provider, times(1)).setPegoutTxSigHash(
-                pegoutBatchTxSigHash.get()
-            );
+            verify(provider, times(1)).setPegoutTxSigHash(pegoutBatchTxSigHash.get());
         } else {
-            verify(provider, never()).hasPegoutTxSigHash(
-                any()
-            );
+            verify(provider, never()).hasPegoutTxSigHash(any());
             // verify no sigHash was added to sigHashes list before RSKIP379
-            verify(provider, never()).setPegoutTxSigHash(
-                any()
-            );
+            verify(provider, never()).setPegoutTxSigHash(any());
         }
     }
 }
