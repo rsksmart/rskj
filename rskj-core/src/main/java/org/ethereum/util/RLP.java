@@ -416,7 +416,7 @@ public class RLP {
         return decodeElement(msgData, position).getKey();
     }
 
-    private static Pair<RLPElement, Integer> decodeElement(byte[] msgData, int position) {
+    private static Pair<RLPElement, Integer> decodeElement(byte[] msgData, int position) { // NOSONAR
         int b0 = msgData[position] & 0xff;
 
         if (b0 >= 192) {
