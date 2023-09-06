@@ -1,9 +1,0 @@
-
-# DSL test file
-# it's like blocks01.txt
-# but without connecting the created blocks
-# to exercise ConnectBlocks CLI tool
-
-# Create two blocks, starting from genesis block
-block_chain g00 b01 b02
-

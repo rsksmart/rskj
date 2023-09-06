@@ -1,8 +1,0 @@
-{
-  "BlockNumberHex": {
-    "title": "blockNumberHex",
-    "type": "string",
-    "description": "The hex representation of the block's height",
-    "$ref": "#/components/schemas/IntegerHex"
-  }
-}

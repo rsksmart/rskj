@@ -1,9 +1,0 @@
-{
- "DifficultyTest1" : {
-		"parentTimestamp" : "0xff6f9889aec4a8ab",
-		"parentDifficulty" : "0xcfb97a9",
-		"currentTimestamp" : "0xff6f9889aec4a8ab",
-		"currentBlockNumber" : "0x01",
-		"currentDifficulty" : "0x20C85580"
-	}
-}
