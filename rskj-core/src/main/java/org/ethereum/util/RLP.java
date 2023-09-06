@@ -416,7 +416,7 @@ public class RLP {
         return decodeElement(msgData, position).getKey();
     }
 
-    private static Pair<RLPElement, Integer> decodeElement(byte[] msgData, int position) {
+    private static Pair<RLPElement, Integer> decodeElement(byte[] msgData, int position) { // NOSONAR
         int b0 = msgData[position] & 0xff;
 
         if (b0 >= 192) {
@@ -431,6 +431,10 @@ public class RLP {
                 int nbytes = b0 - 247;
                 length = 1 + nbytes + bytesToLength(msgData, position + 1, nbytes);
                 offset = 1 + nbytes;
+            }
+
+            if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
+                throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
             }
 
             if (position + length > msgData.length) {
@@ -490,6 +494,10 @@ public class RLP {
         for (int k = 0; k < size; k++) {
             length <<= 8;
             length += bytes[position + k] & 0xff;
+        }
+
+        if (length < 0) {
+            throw new RLPException("The length of the RLP item can't be negative");
         }
 
         return length;
