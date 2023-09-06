@@ -19,9 +19,9 @@ public class PegUtils {
         BridgeStorageProvider provider,
         Wallet liveFederationsWallet,
         BtcTransaction btcTransaction
-    ) throws RegisterBtcTransactionException {
+    ) {
         if (!activations.isActive(ConsensusRule.RSKIP379)){
-            throw new RegisterBtcTransactionException("Can't call PegUtil.getTransactionType before RSKIP379 activation.");
+            throw new IllegalStateException("Can't call this method before RSKIP379 activation.");
         }
 
         List<TransactionOutput> liveFederationOutputs = btcTransaction.getWalletOutputs(liveFederationsWallet);
