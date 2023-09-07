@@ -27,6 +27,7 @@ public class SnapshotProcessor implements InternalService {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
     private static final String KBYTES = "kbytes";
+    public static final long DELAY_BTW_RUNS = 20 * 60 * 1000;
 
     private final NodeManager nodeManager;
     private final PeerClientFactory peerClientFactory;
@@ -98,6 +99,10 @@ public class SnapshotProcessor implements InternalService {
         } else {
             logger.debug("State Completed! {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
 
+            try {
+                Thread.sleep(DELAY_BTW_RUNS);
+            } catch (InterruptedException ignored) {
+            }
             logger.debug("Starting again the infinite loop!");
             this.stateSize = BigInteger.ZERO;
             this.stateChunkSize = BigInteger.ZERO;
