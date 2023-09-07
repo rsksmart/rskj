@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
@@ -269,6 +270,19 @@ public final class PegTestUtils {
             Instant.ofEpochMilli(1000L),
             0L,
             bridgeConstants.getBtcParams()
+        );
+    }
+
+    public static Federation createP2shErpFederation(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<BtcECKey> federationKeys) {
+        federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        return new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            bridgeConstants.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(),
+            activations
         );
     }
 
