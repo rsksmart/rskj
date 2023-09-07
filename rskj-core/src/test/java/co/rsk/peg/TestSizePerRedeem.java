@@ -71,7 +71,7 @@ public class TestSizePerRedeem {
 
         int redeemScriptLength = redeemScript.getProgram().length;
         int thresholdSignaturesSize = standardKeys.size() / 2 + 1;
-        int weightPerInput = calculateWeightPerInput(thresholdSignaturesSize, redeemScriptLength);
+        int weightPerInput = calculateWeightPerInputForCurrentRedeem(thresholdSignaturesSize, redeemScriptLength);
         int maxStandardWeight = 400000;
 
         List <UTXO> utxos = new ArrayList<>();
@@ -87,11 +87,11 @@ public class TestSizePerRedeem {
             utxos.add(utxo);
         }
 
-        Sha256Hash fundTxHash = Sha256Hash.wrap("32a3715b8eea5189f008d981ed909f8ca65ba5c78696368dbdb61b4e2e512208"); //utxos.get(0).getHash();
+        Sha256Hash fundTxHash = utxos.get(0).getHash();
         int approximatedWeight = spendTx.bitcoinSerialize().length;
         int index = 0;
 
-        while (approximatedWeight + weightPerInput < maxStandardWeight /* + 4000 && index < 160*/) {
+        while (approximatedWeight + weightPerInput < maxStandardWeight) {
             spendTx.addInput(fundTxHash, index, new Script(new byte[]{}));
             spendTx.getInput(index).setScriptSig(segwitScriptSig);
 
@@ -133,8 +133,8 @@ public class TestSizePerRedeem {
         NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET); // testnet
         long activationDelay = 30;
 
-        String[] seeds = new String[61];
-        for (int i = 0; i < 61; i++ ) {
+        String[] seeds = new String[62];
+        for (int i = 0; i < 62; i++ ) {
             int j = i + 1;
             seeds[i] = ("fed" + j);
         }
@@ -183,7 +183,7 @@ public class TestSizePerRedeem {
 
         int redeemScriptLength = redeemScript.getProgram().length;
         int thresholdSignaturesSize = standardKeys.size() / 2 + 1;
-        int weightPerInput = calculateWeightPerInput(thresholdSignaturesSize, redeemScriptLength);
+        int weightPerInput = calculateWeightPerInputForNewRedeem(thresholdSignaturesSize, redeemScriptLength);
         int maxStandardWeight = 400000;
 
         List <UTXO> utxos = new ArrayList<>();
@@ -241,7 +241,23 @@ public class TestSizePerRedeem {
         System.out.println(Hex.toHexString(spendTx.bitcoinSerialize()));
     }
 
-    public int calculateWeightPerInput(int thresholdSignaturesSize, int redeemScriptSize) {
+    public int calculateWeightPerInputForCurrentRedeem(int thresholdSignaturesSize, int redeemScriptSize) {
+        int bytesPerInput = 0;
+        int weightPerInput = 0;
+
+        bytesPerInput += 40; // for prevTxHash, index, nSequence
+        bytesPerInput += 36; // script sig
+        weightPerInput += bytesPerInput * 3; // until here we have the baseSize per input
+
+        bytesPerInput += thresholdSignaturesSize * 73; // signatures
+        bytesPerInput += 1; // op notif
+        bytesPerInput += redeemScriptSize; // redeem size
+        weightPerInput += bytesPerInput;
+
+        return weightPerInput;
+    }
+
+    public int calculateWeightPerInputForNewRedeem(int thresholdSignaturesSize, int redeemScriptSize) {
         int bytesPerInput = 0;
         int weightPerInput = 0;
 
@@ -257,4 +273,5 @@ public class TestSizePerRedeem {
 
         return weightPerInput;
     }
+
 }
