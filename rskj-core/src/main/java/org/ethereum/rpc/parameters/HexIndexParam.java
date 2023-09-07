@@ -23,21 +23,19 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.IOException;
 import java.io.Serializable;
 
 @JsonDeserialize(using = HexIndexParam.Deserializer.class)
-public class HexIndexParam implements Serializable {
+public class HexIndexParam extends HexStringParam implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final Integer index;
 
     public HexIndexParam(String indexString) {
-        if (!HexUtils.hasHexPrefix(indexString) || !HexUtils.isHex(indexString,2)) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid argument \"" + indexString + "\": param should be a hex value string.");
-        }
+        validateHexString(indexString);
+
         String preResult = HexUtils.removeHexPrefix(indexString);
         this.index = Integer.parseInt(preResult, 16);
     }
