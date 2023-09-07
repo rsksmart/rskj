@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static co.rsk.peg.PegTestUtils.createFederation;
+import static co.rsk.peg.PegTestUtils.createP2shErpFederation;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -37,18 +38,40 @@ class PegUtilsTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
-    ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
-
-    private BridgeStorageProvider provider;
+    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
 
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
-    private Address unknownAddress;
+
+    private BridgeStorageProvider provider;
+    private Address userAddress;
+
+    private Federation retiredFed;
+    private List<BtcECKey> retiringFedSigners;
+    private Federation retiringFederation;
+    private List<BtcECKey> activeFedSigners;
+    private Federation activeFederation;
+    private Wallet liveFederationsWallet;
+
 
     @BeforeEach
     void init() {
         provider = mock(BridgeStorageProvider.class);
-        unknownAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown");
+        userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
+
+        retiredFed = bridgeMainnetConstants.getGenesisFederation();
+
+        retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03"}, true
+        );
+        retiringFederation = createFederation(bridgeMainnetConstants, retiringFedSigners);
+
+        activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true
+        );
+        activeFederation = createP2shErpFederation(bridgeMainnetConstants, activations, activeFedSigners);
+
+        liveFederationsWallet = new BridgeBtcWallet(context, Arrays.asList(activeFederation, retiringFederation));
     }
 
     @Test
@@ -71,19 +94,15 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_tx_sending_funds_to_unknown_address() {
         // Arrange
-        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addOutput(minimumPeginTxValue, unknownAddress);
+        btcTransaction.addOutput(Coin.COIN, userAddress);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -117,19 +136,15 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_active_fed() {
         // Arrange
-        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -140,22 +155,18 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_output_to_active_fed_and_other_addresses() {
         // Arrange
-        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addOutput(Coin.COIN, unknownAddress);
-        btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
+        btcTransaction.addInput(BitcoinTestUtils.createHash(2), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        btcTransaction.addOutput(Coin.COIN, userAddress);
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
         btcTransaction.addOutput(Coin.COIN, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown2"));
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -166,22 +177,18 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_multiple_outputs_to_active_fed() {
         // Arrange
-        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
         for (int i = 0; i < 10; i++) {
-            btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
+            btcTransaction.addInput(BitcoinTestUtils.createHash(i), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
         }
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -208,11 +215,10 @@ class PegUtilsTest {
         );
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFed, activeFed));
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addOutput(Coin.COIN, unknownAddress);
-        btcTransaction.addOutput(minimumPeginTxValue, retiringFed.getAddress());
+        btcTransaction.addOutput(Coin.COIN, userAddress);
+        btcTransaction.addOutput(Coin.COIN, retiringFed.getAddress());
         btcTransaction.addOutput(Coin.COIN, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown2"));
 
         // Act
@@ -230,32 +236,15 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_retiring_fed() {
         // Arrange
-        Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
-
-        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        P2shErpFederation activeFed = new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(signers),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            btcMainnetParams,
-            bridgeMainnetConstants.getErpFedPubKeysList(),
-            bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
-        );
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFed, activeFed));
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addOutput(minimumPeginTxValue, retiringFed.getAddress());
+        btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -266,35 +255,18 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_multiple_outputs_to_retiring_fed() {
         // Arrange
-        Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
-
-        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        P2shErpFederation activeFed = new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(signers),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            btcMainnetParams,
-            bridgeMainnetConstants.getErpFedPubKeysList(),
-            bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
-        );
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFed, activeFed));
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
         for (int i = 0; i < 10; i++) {
-            btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-            btcTransaction.addOutput(minimumPeginTxValue, retiringFed.getAddress());
+            btcTransaction.addInput(BitcoinTestUtils.createHash(i), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+            btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
         }
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -305,34 +277,17 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_outputs_to_active_and_retiring_fed() {
         // Arrange
-        Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
-
-        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        P2shErpFederation activeFed = new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(signers),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            btcMainnetParams,
-            bridgeMainnetConstants.getErpFedPubKeysList(),
-            bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
-        );
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFed, activeFed));
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addOutput(minimumPeginTxValue, activeFed.getAddress());
-        btcTransaction.addOutput(minimumPeginTxValue, retiringFed.getAddress());
+        btcTransaction.addInput(BitcoinTestUtils.createHash(2), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
+        btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -343,36 +298,19 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_outputs_to_active_and_retiring_fed_and_other_address() {
         // Arrange
-        Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
-
-        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        P2shErpFederation activeFed = new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(signers),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            btcMainnetParams,
-            bridgeMainnetConstants.getErpFedPubKeysList(),
-            bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
-        );
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFed, activeFed));
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addOutput(Coin.COIN, unknownAddress);
-        btcTransaction.addOutput(minimumPeginTxValue, activeFed.getAddress());
-        btcTransaction.addOutput(minimumPeginTxValue, retiringFed.getAddress());
-        btcTransaction.addOutput(Coin.COIN, unknownAddress);
+        btcTransaction.addInput(BitcoinTestUtils.createHash(2), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        btcTransaction.addOutput(Coin.COIN, userAddress);
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
+        btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
+        btcTransaction.addOutput(Coin.COIN, userAddress);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -383,24 +321,18 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegout_no_change_output() {
         // Arrange
-        Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
-
-        Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
-
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFed));
-
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
 
-        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(activeFed.getRedeemScript());
-        Script inputScript = p2SHScript.createEmptyInputScript(null, activeFed.getRedeemScript());
+        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(activeFederation.getRedeemScript());
+        Script inputScript = p2SHScript.createEmptyInputScript(null, activeFederation.getRedeemScript());
 
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
-            activeFed.getRedeemScript(),
+            activeFederation.getRedeemScript(),
             BtcTransaction.SigHash.ALL,
             false
         );
@@ -411,7 +343,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -422,18 +354,12 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegout_no_change_output_sighash_no_exists_in_provider() {
         // Arrange
-        Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
-
-        Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
-
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFed));
-
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
 
-        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(activeFed.getRedeemScript());
-        Script inputScript = p2SHScript.createEmptyInputScript(null, activeFed.getRedeemScript());
+        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(activeFederation.getRedeemScript());
+        Script inputScript = p2SHScript.createEmptyInputScript(null, activeFederation.getRedeemScript());
 
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
@@ -441,7 +367,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -452,25 +378,19 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_standard_pegout() {
         // Arrange
-        Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
-
-        Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
-
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFed));
-
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
-        btcTransaction.addOutput(Coin.COIN, activeFed.getAddress());
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(activeFed.getRedeemScript());
-        Script inputScript = p2SHScript.createEmptyInputScript(null, activeFed.getRedeemScript());
+        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(activeFederation.getRedeemScript());
+        Script inputScript = p2SHScript.createEmptyInputScript(null, activeFederation.getRedeemScript());
 
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
-            activeFed.getRedeemScript(),
+            activeFederation.getRedeemScript(),
             BtcTransaction.SigHash.ALL,
             false
         );
@@ -481,7 +401,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -492,19 +412,13 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_standard_pegout_sighash_no_exists_in_provider() {
         // Arrange
-        Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
-
-        Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
-
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFed));
-
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
-        btcTransaction.addOutput(Coin.COIN, activeFed.getAddress());
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(activeFed.getRedeemScript());
-        Script inputScript = p2SHScript.createEmptyInputScript(null, activeFed.getRedeemScript());
+        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(activeFederation.getRedeemScript());
+        Script inputScript = p2SHScript.createEmptyInputScript(null, activeFederation.getRedeemScript());
 
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
@@ -512,7 +426,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -523,37 +437,21 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_migration() {
         // Arrange
-        Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
-
-        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        P2shErpFederation activeFed = new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(signers),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            btcMainnetParams,
-            bridgeMainnetConstants.getErpFedPubKeysList(),
-            bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
-        );
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFed, activeFed));
-
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash fundTxHash = BitcoinTestUtils.createHash(1);
         btcTransaction.addInput(fundTxHash, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addInput(fundTxHash, 1, new Script(new byte[]{}));
         btcTransaction.addInput(fundTxHash, 2, new Script(new byte[]{}));
 
-        btcTransaction.addOutput(Coin.COIN, activeFed.getAddress());
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiringFed.getRedeemScript());
-        Script inputScript = p2SHScript.createEmptyInputScript(null, retiringFed.getRedeemScript());
+        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiringFederation.getRedeemScript());
+        Script inputScript = p2SHScript.createEmptyInputScript(null, retiringFederation.getRedeemScript());
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
-            retiringFed.getRedeemScript(),
+            retiringFederation.getRedeemScript(),
             BtcTransaction.SigHash.ALL,
             false
         );
@@ -563,7 +461,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -574,39 +472,23 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_migration_sighash_no_exists_in_provider() {
         // Arrange
-        Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
-
-        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        P2shErpFederation activeFed = new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(signers),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            btcMainnetParams,
-            bridgeMainnetConstants.getErpFedPubKeysList(),
-            bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
-        );
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFed, activeFed));
-
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash fundTxHash = BitcoinTestUtils.createHash(1);
         btcTransaction.addInput(fundTxHash, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addInput(fundTxHash, 1, new Script(new byte[]{}));
         btcTransaction.addInput(fundTxHash, 2, new Script(new byte[]{}));
 
-        btcTransaction.addOutput(Coin.COIN, activeFed.getAddress());
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiringFed.getRedeemScript());
-        Script inputScript = p2SHScript.createEmptyInputScript(null, retiringFed.getRedeemScript());
+        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiringFederation.getRedeemScript());
+        Script inputScript = p2SHScript.createEmptyInputScript(null, retiringFederation.getRedeemScript());
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -617,18 +499,9 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_migration_from_retired_fed() {
         // Arrange
-        Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
-        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        Federation retiredFed = createFederation(bridgeMainnetConstants, signers);
-
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFed));
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, retiredFed.getP2SHScript());
-        btcTransaction.addOutput(minimumPeginTxValue, activeFed.getAddress());
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
         Script inputScript = p2SHScript.createEmptyInputScript(null, retiredFed.getRedeemScript());
@@ -648,7 +521,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
@@ -659,9 +532,6 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_flyover() {
         // Arrange
-        Federation activeFed = bridgeMainnetConstants.getGenesisFederation();
-        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFed));
-
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -677,7 +547,7 @@ class PegUtilsTest {
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
-            activeFed.getRedeemScript(),
+            activeFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
         );
 
@@ -693,7 +563,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationWallet,
+            liveFederationsWallet,
             btcTransaction
         );
 
