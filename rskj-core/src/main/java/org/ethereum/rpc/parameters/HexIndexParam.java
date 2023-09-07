@@ -34,7 +34,7 @@ public class HexIndexParam extends HexStringParam implements Serializable {
     private final Integer index;
 
     public HexIndexParam(String indexString) {
-        validateHexString(indexString);
+        super(indexString);
 
         String preResult = HexUtils.removeHexPrefix(indexString);
         this.index = Integer.parseInt(preResult, 16);

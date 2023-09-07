@@ -15,7 +15,7 @@ public class HexDurationParam extends HexStringParam implements Serializable {
     private final Long duration;
 
     public HexDurationParam(String hexDurationStr) {
-        validateHexString(hexDurationStr);
+        super(hexDurationStr);
 
         this.duration = Long.parseLong(hexDurationStr.substring(2), 16);
     }
