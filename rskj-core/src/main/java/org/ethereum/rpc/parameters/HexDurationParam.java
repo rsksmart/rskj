@@ -6,12 +6,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 import java.io.IOException;
-import java.io.Serializable;
 
 @JsonDeserialize(using = HexDurationParam.Deserializer.class)
-public class HexDurationParam extends HexStringParam implements Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class HexDurationParam extends HexStringParam {
     private final Long duration;
 
     public HexDurationParam(String hexDurationStr) {

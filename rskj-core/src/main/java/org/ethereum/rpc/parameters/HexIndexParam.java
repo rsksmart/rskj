@@ -25,12 +25,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 import java.io.IOException;
-import java.io.Serializable;
 
 @JsonDeserialize(using = HexIndexParam.Deserializer.class)
-public class HexIndexParam extends HexStringParam implements Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class HexIndexParam extends HexStringParam {
     private final Integer index;
 
     public HexIndexParam(String indexString) {
