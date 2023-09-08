@@ -26,8 +26,6 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.logfilter.BlocksBloomStore;
-import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
@@ -44,17 +42,13 @@ import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleTransactionBase;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
-import co.rsk.rpc.modules.evm.EvmModule;
-import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.rsk.RskModuleImpl;
-import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
-import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
@@ -2425,9 +2419,11 @@ class Web3ImplTest {
 
         Web3RskImpl web3 = (Web3RskImpl) createWeb3();
 
+        HexIndexParam hexIndexParam = new HexIndexParam("0x01");
+
         RskJsonRpcRequestException exception = Assertions.assertThrowsExactly(
                 expectedException.getClass(),
-                () -> web3.eth_getFilterChanges("0x01"),
+                () -> web3.eth_getFilterChanges(hexIndexParam),
                 "filter not found"
         );
 
@@ -2445,9 +2441,11 @@ class Web3ImplTest {
 
         Web3RskImpl web3 = (Web3RskImpl) createWeb3();
 
+        HexIndexParam hexIndexParam = new HexIndexParam("0x01");
+
         RskJsonRpcRequestException exception = Assertions.assertThrowsExactly(
                 expectedException.getClass(),
-                () -> web3.eth_getFilterLogs("0x01"),
+                () -> web3.eth_getFilterLogs(hexIndexParam),
                 "filter not found"
         );
 
