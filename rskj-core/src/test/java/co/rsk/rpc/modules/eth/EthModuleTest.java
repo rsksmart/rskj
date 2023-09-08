@@ -47,7 +47,6 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,6 +58,8 @@ import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class EthModuleTest {
@@ -393,7 +394,10 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        eth.call(args, "latest");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+
+        eth.call(callArgumentsParam, blockIdentifierParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(executor, times(1))
@@ -436,7 +440,10 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        eth.call(args, "latest");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+
+        eth.call(callArgumentsParam, blockIdentifierParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(executor, times(1))
@@ -481,7 +488,10 @@ class EthModuleTest {
                 config.getCallGasCap());
 
 
-        eth.call(args, "latest");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+
+        eth.call(callArgumentsParam, blockIdentifierParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(executor, times(1))
@@ -523,7 +533,9 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        eth.estimateGas(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        eth.estimateGas(callArgumentsParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
@@ -565,7 +577,9 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        eth.estimateGas(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        eth.estimateGas(callArgumentsParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
@@ -608,7 +622,9 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        eth.estimateGas(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        eth.estimateGas(callArgumentsParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
@@ -640,7 +656,9 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-        ethModuleTransaction.sendTransaction(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        ethModuleTransaction.sendTransaction(callArgumentsParam);
 
         ArgumentCaptor<Transaction> transactionCaptor = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionGateway, times(1))
@@ -672,7 +690,9 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-        ethModuleTransaction.sendTransaction(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        ethModuleTransaction.sendTransaction(callArgumentsParam);
 
         ArgumentCaptor<Transaction> transactionCaptor = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionGateway, times(1))
@@ -705,7 +725,9 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-        ethModuleTransaction.sendTransaction(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        ethModuleTransaction.sendTransaction(callArgumentsParam);
 
         ArgumentCaptor<Transaction> transactionCaptor = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionGateway, times(1))
