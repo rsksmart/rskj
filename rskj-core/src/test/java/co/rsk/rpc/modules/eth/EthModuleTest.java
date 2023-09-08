@@ -36,6 +36,9 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.program.ProgramResult;
@@ -44,7 +47,6 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,10 +61,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 class EthModuleTest {
 
@@ -106,7 +104,7 @@ class EthModuleTest {
                 config.getCallGasCap());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
-        String actualResult = eth.call(args, "latest");
+        String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
 
         assertEquals(expectedResult, actualResult);
     }
@@ -146,7 +144,7 @@ class EthModuleTest {
                 config.getCallGasCap());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
-        String actualResult = eth.call(args, "latest");
+        String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
 
         assertEquals(expectedResult, actualResult);
     }
@@ -191,7 +189,7 @@ class EthModuleTest {
                 config.getCallGasCap());
 
         try {
-            eth.call(args, "latest");
+            eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
         } catch (RskJsonRpcRequestException e) {
             assertThat(e.getMessage(), Matchers.containsString("deposit too big"));
         }
@@ -222,7 +220,7 @@ class EthModuleTest {
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
         // Hash of the actual transaction builded inside the sendTransaction
-        String txResult = ethModuleTransaction.sendTransaction(args);
+        String txResult = ethModuleTransaction.sendTransaction(TransactionFactoryHelper.toCallArgumentsParam(args));
 
         assertEquals(txExpectedResult, txResult);
     }
@@ -250,7 +248,8 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(args));
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(callArgumentsParam));
     }
 
     @Test
@@ -279,7 +278,8 @@ class EthModuleTest {
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
         String rawData = ByteUtil.toHexString(tx.getEncoded());
-        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendRawTransaction(rawData));
+        HexDataParam hexDataParam = new HexDataParam(rawData);
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendRawTransaction(hexDataParam));
     }
 
     @Test
@@ -296,12 +296,12 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPoolMock, transactionGatewayMock);
 
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(argsMock);
         // Then
         try {
-            ethModuleTransaction.sendTransaction(argsMock);
+            ethModuleTransaction.sendTransaction(callArgumentsParam);
             fail("RskJsonRpcRequestException should be thrown");
         } catch (RskJsonRpcRequestException ex) {
-            verify(argsMock, times(2)).getFrom();
             assertEquals("Could not find account for address: " + addressFrom.toJsonString(), ex.getMessage());
         }
     }
@@ -394,7 +394,10 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        eth.call(args, "latest");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+
+        eth.call(callArgumentsParam, blockIdentifierParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(executor, times(1))
@@ -437,7 +440,10 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        eth.call(args, "latest");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+
+        eth.call(callArgumentsParam, blockIdentifierParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(executor, times(1))
@@ -482,7 +488,10 @@ class EthModuleTest {
                 config.getCallGasCap());
 
 
-        eth.call(args, "latest");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+
+        eth.call(callArgumentsParam, blockIdentifierParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(executor, times(1))
@@ -524,7 +533,9 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        eth.estimateGas(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        eth.estimateGas(callArgumentsParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
@@ -566,7 +577,9 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        eth.estimateGas(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        eth.estimateGas(callArgumentsParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
@@ -609,7 +622,9 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        eth.estimateGas(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        eth.estimateGas(callArgumentsParam);
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
@@ -641,7 +656,9 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-        ethModuleTransaction.sendTransaction(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        ethModuleTransaction.sendTransaction(callArgumentsParam);
 
         ArgumentCaptor<Transaction> transactionCaptor = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionGateway, times(1))
@@ -673,7 +690,9 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-        ethModuleTransaction.sendTransaction(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        ethModuleTransaction.sendTransaction(callArgumentsParam);
 
         ArgumentCaptor<Transaction> transactionCaptor = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionGateway, times(1))
@@ -706,7 +725,9 @@ class EthModuleTest {
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-        ethModuleTransaction.sendTransaction(args);
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        ethModuleTransaction.sendTransaction(callArgumentsParam);
 
         ArgumentCaptor<Transaction> transactionCaptor = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionGateway, times(1))

@@ -25,7 +25,10 @@ import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.BlockRefParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.util.BuildInfo;
+import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,12 +104,12 @@ class Web3ImplUnitTest {
         when(retriever.getInformationProvider(id))
                 .thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
-                () -> target.eth_getBalance(addr, id));
+                () -> target.eth_getBalance(new HexAddressParam(addr), new BlockRefParam(new BlockRef(id))));
     }
 
     @Test
     void eth_getBalance() {
-        String id = "id";
+        String id = "0x00";
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
 
@@ -115,7 +118,7 @@ class Web3ImplUnitTest {
         when(aip.getBalance(expectedAddress))
                 .thenReturn(new Coin(BigInteger.ONE));
 
-        String result = target.eth_getBalance(addr, id);
+        String result = target.eth_getBalance(new HexAddressParam(addr),new BlockRefParam(new BlockRef(id)));
         assertEquals("0x1", result);
     }
 
@@ -130,7 +133,7 @@ class Web3ImplUnitTest {
         };
         final Web3Impl spyTarget = spy(target);
         doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_getBalance(addr, blockRef);
+        String result = spyTarget.eth_getBalance(new HexAddressParam(addr), new BlockRefParam(new BlockRef(blockRef)));
         assertEquals("0x1", result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
@@ -260,7 +263,7 @@ class Web3ImplUnitTest {
         final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
 
         doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_call(argsForCall,blockRef);
+        String result = spyTarget.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall),blockRef);
         assertEquals(expectedData, result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
@@ -276,7 +279,7 @@ class Web3ImplUnitTest {
         };
         final Web3Impl spyTarget = spy(target);
         doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_getTransactionCount(addr, blockRef);
+        String result = spyTarget.eth_getTransactionCount(new HexAddressParam(addr), new BlockRefParam(new BlockRef(blockRef)));
         assertEquals("0x1", result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }

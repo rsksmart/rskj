@@ -38,6 +38,10 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -120,10 +124,11 @@ public class EthModule
         return state.stateToMap();
     }
 
-    public String call(CallArguments args, String bnOrId) {
+    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId) {
         String hReturn = null;
+        CallArguments args = argsParam.toCallArguments();
         try {
-            ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId);
+            ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
             Block block = result.getBlock();
             Trie finalState = result.getFinalState();
             ProgramResult res;
@@ -150,11 +155,11 @@ public class EthModule
         }
     }
 
-    public String estimateGas(CallArguments args) {
+    public String estimateGas(CallArgumentsParam args) {
         String estimation = null;
         Block bestBlock = blockchain.getBestBlock();
         try {
-            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args.toCallArguments());
 
             TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
                     bestBlock,
@@ -194,17 +199,17 @@ public class EthModule
     }
 
     @Override
-    public String sendTransaction(CallArguments args) {
+    public String sendTransaction(CallArgumentsParam args) {
         return ethModuleTransaction.sendTransaction(args);
     }
 
     @Override
-    public String sendRawTransaction(String rawData) {
+    public String sendRawTransaction(HexDataParam rawData) {
         return ethModuleTransaction.sendRawTransaction(rawData);
     }
 
     @Override
-    public String sign(String addr, String data) {
+    public String sign(HexAddressParam addr, HexDataParam data) {
         return ethModuleWallet.sign(addr, data);
     }
 
