@@ -51,7 +51,6 @@ class PegUtilsTest {
     private Federation retiringFederation;
     private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
-    private Wallet liveFederationsWallet;
 
 
     @BeforeEach
@@ -69,9 +68,7 @@ class PegUtilsTest {
         activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true
         );
-        activeFederation = createP2shErpFederation(bridgeMainnetConstants, activations, activeFedSigners);
-
-        liveFederationsWallet = new BridgeBtcWallet(context, Arrays.asList(activeFederation, retiringFederation));
+        activeFederation = createP2shErpFederation(bridgeMainnetConstants, activeFedSigners);
     }
 
     @Test
@@ -94,6 +91,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_tx_sending_funds_to_unknown_address() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
@@ -102,7 +101,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -136,6 +135,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_active_fed() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
@@ -144,7 +145,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -155,6 +156,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_output_to_active_fed_and_other_addresses() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addInput(BitcoinTestUtils.createHash(2), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -166,7 +169,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -177,6 +180,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_multiple_outputs_to_active_fed() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
         for (int i = 0; i < 10; i++) {
@@ -188,7 +193,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -236,6 +241,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_retiring_fed() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFederation, activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
@@ -244,7 +251,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -255,6 +262,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_multiple_outputs_to_retiring_fed() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFederation, activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
         for (int i = 0; i < 10; i++) {
@@ -266,7 +275,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -277,6 +286,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_outputs_to_active_and_retiring_fed() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFederation, activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addInput(BitcoinTestUtils.createHash(2), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -287,7 +298,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -298,6 +309,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_outputs_to_active_and_retiring_fed_and_other_address() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFederation, activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addInput(BitcoinTestUtils.createHash(2), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -310,7 +323,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -321,6 +334,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegout_no_change_output() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
@@ -343,7 +358,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -353,6 +368,8 @@ class PegUtilsTest {
 
     @Test
     void test_getTransactionType_pegout_no_change_output_sighash_no_exists_in_provider() {
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -367,7 +384,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -378,6 +395,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_standard_pegout() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
@@ -401,7 +420,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -412,6 +431,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_standard_pegout_sighash_no_exists_in_provider() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
@@ -426,7 +447,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -437,6 +458,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_migration() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFederation, activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash fundTxHash = BitcoinTestUtils.createHash(1);
         btcTransaction.addInput(fundTxHash, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -461,7 +484,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -472,6 +495,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_migration_sighash_no_exists_in_provider() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFederation, activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash fundTxHash = BitcoinTestUtils.createHash(1);
         btcTransaction.addInput(fundTxHash, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -488,7 +513,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -499,6 +524,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_migration_from_retired_fed() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, retiredFed.getP2SHScript());
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
@@ -521,7 +548,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 
@@ -532,6 +559,8 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_flyover() {
         // Arrange
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -563,7 +592,7 @@ class PegUtilsTest {
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            liveFederationsWallet,
+            liveFederationWallet,
             btcTransaction
         );
 

@@ -46,6 +46,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.mockito.Mockito;
 
 /**
  * Created by oscar on 05/08/2016.
@@ -273,7 +274,7 @@ public final class PegTestUtils {
         );
     }
 
-    public static Federation createP2shErpFederation(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<BtcECKey> federationKeys) {
+    public static Federation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         return new P2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
@@ -282,7 +283,7 @@ public final class PegTestUtils {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations
+            Mockito.mock(ActivationConfig.ForBlock.class)
         );
     }
 
