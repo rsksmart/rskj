@@ -10,7 +10,7 @@ executors:
     resource_class: medium+
   sonarqube-executor:
     docker:
-      - image: openjdk:11-jdk
+      - image: eclipse-temurin:17-jdk
     working_directory: /app
   mit-executor:
     docker:
@@ -47,6 +47,7 @@ jobs:
       - run:
           name: Run SonarQube analysis
           command: |
+            apt-get update && apt-get install -yqq git
             extra_flags=""
             if [ -n "$CIRCLE_PULL_REQUEST" ]; then
               # https://community.sonarsource.com/t/no-code-or-issue-found-in-pull-request-decorations-github-circleci/8496

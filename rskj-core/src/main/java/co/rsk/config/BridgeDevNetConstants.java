@@ -73,9 +73,9 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        legacyMinimumPeginTxValueInSatoshis = Coin.valueOf(1_000_000);
+        legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         legacyMinimumPegoutTxValueInSatoshis = Coin.valueOf(500_000);
-        minimumPeginTxValueInSatoshis = Coin.valueOf(500_000);
+        minimumPeginTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValueInSatoshis = Coin.valueOf(250_000);
 
         // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'

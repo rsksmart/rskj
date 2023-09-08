@@ -180,33 +180,19 @@ public class BridgeUtils {
     }
 
     /**
-     * @param activations     the network HF activations configuration
-     * @param bridgeConstants the Bridge constants
-     * @return the minimum amount value defined for a pegin transaction
-     */
-    public static Coin getMinimumPegInTxValue(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) {
-        return activations.isActive(ConsensusRule.RSKIP219) ?
-            bridgeConstants.getMinimumPeginTxValueInSatoshis() :
-            bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
-    }
-
-    /**
-     * @param activations
-     * @param bridgeConstants
+     * @param minimumPegInTxValue
      * @param btcTx
      * @param addresses
      * @return true if any UTXO in the given btcTX is below the minimum pegin tx value
      */
     public static boolean isAnyUTXOAmountBelowMinimum(
-            ActivationConfig.ForBlock activations,
-            BridgeConstants bridgeConstants,
+            Coin minimumPegInTxValue,
             Context context,
             BtcTransaction btcTx,
             List<Address> addresses
     ){
         return isAnyUTXOAmountBelowMinimum(
-                activations,
-                bridgeConstants,
+                minimumPegInTxValue,
                 btcTx,
                 createWatchedBtcWalletFromAddresses(
                     context,
@@ -216,19 +202,16 @@ public class BridgeUtils {
     }
 
     /**
-     * @param activations
-     * @param bridgeConstants
+     * @param minimumPegInTxValue
      * @param btcTx
      * @param wallet
      * @return true if any UTXO in the given btcTX is below the minimum pegin tx value
      */
     private static boolean isAnyUTXOAmountBelowMinimum(
-            ActivationConfig.ForBlock activations,
-            BridgeConstants bridgeConstants,
+            Coin minimumPegInTxValue,
             BtcTransaction btcTx,
             Wallet wallet
     ){
-        Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
         return btcTx.getWalletOutputs(wallet).stream().anyMatch(transactionOutput ->
                 transactionOutput.getValue().isLessThan(minimumPegInTxValue)
         );
@@ -264,9 +247,9 @@ public class BridgeUtils {
         }
 
         if (activations.isActive(RSKIP293)){
-            Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
+            Coin minimumPegInTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
 
-            if (isAnyUTXOAmountBelowMinimum(activations, bridgeConstants, context, btcTx, addresses)){
+            if (isAnyUTXOAmountBelowMinimum(minimumPegInTxValue, context, btcTx, addresses)){
                 logger.debug("[validateFlyoverPeginValue] UTXOs amount sent to federation can't be below the minimum {}.",
                     minimumPegInTxValue.value);
                 return FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
@@ -376,7 +359,7 @@ public class BridgeUtils {
      * @param activeFederations the active federations
      * @param retiredFederationP2SHScript the retired federation P2SHScript. Could be {@code null}.
      * @param btcContext the BTC Context
-     * @param bridgeConstants the Bridge constants
+     * @param minimumPegInTxValue minimum peg-in tx value allowed
      * @param activations the network HF activations configuration
      * @return true if this is a valid peg-in transaction
      */
@@ -385,7 +368,7 @@ public class BridgeUtils {
         List<Federation> activeFederations,
         Script retiredFederationP2SHScript,
         Context btcContext,
-        BridgeConstants bridgeConstants,
+        Coin minimumPegInTxValue,
         ActivationConfig.ForBlock activations) {
 
         // First, check tx is not a typical release tx (tx spending from any of the federation addresses and
@@ -440,12 +423,10 @@ public class BridgeUtils {
             null
         );
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
-        Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
 
         boolean isUTXOsOrTxAmountBelowMinimum =
             activations.isActive(RSKIP293) ? isAnyUTXOAmountBelowMinimum(
-                activations,
-                bridgeConstants,
+                minimumPegInTxValue,
                 tx,
                 federationsWallet
             ) : valueSentToMe.isLessThan(minimumPegInTxValue); // Legacy minimum validation against the total amount
@@ -486,7 +467,7 @@ public class BridgeUtils {
             Collections.singletonList(federation),
             null,
             btcContext,
-            bridgeConstants,
+            bridgeConstants.getMinimumPeginTxValue(activations),
             activations
         );
     }
