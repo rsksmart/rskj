@@ -31,6 +31,7 @@ import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
 import org.ethereum.rpc.parameters.TxHashParam;
 
 import java.math.BigInteger;
@@ -84,9 +85,7 @@ public interface Web3EthModule {
 
     String eth_getBalance(HexAddressParam address) throws Exception;
 
-    String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) throws Exception; // NOSONAR
-
-    String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception;
+    String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam) throws Exception;
 
     String eth_getTransactionCount(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 

@@ -27,6 +27,7 @@ import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockRefParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
@@ -140,31 +141,39 @@ class Web3ImplUnitTest {
 
     @Test
     void eth_getStorageAt_stateCannotBeRetrieved() {
-        String id = "id";
+        String id = "0x00";
         String addr = "0x0011223344556677880011223344556677889900";
         String storageIdx = "0x01";
+
+        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
+        BlockRefParam blockRefParam = new BlockRefParam(new BlockRef(id));
 
         when(retriever.getInformationProvider(id))
                 .thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
-                () -> target.eth_getStorageAt(addr, storageIdx, id));
+                () -> target.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam));
     }
 
     @Test
     void eth_getStorageAt() {
-        String id = "id";
+        String id = "0x00";
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
         String storageIdx = "0x01";
         DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
+
+        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
+        BlockRefParam blockRefParam = new BlockRefParam(new BlockRef(id));
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
         when(retriever.getInformationProvider(id)).thenReturn(aip);
         when(aip.getStorageValue(expectedAddress, expectedIdx))
                 .thenReturn(DataWord.ONE);
 
-        String result = target.eth_getStorageAt(addr, storageIdx, id);
+        String result = target.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam);
         assertEquals("0x0000000000000000000000000000000000000000000000000000000000000001",
                 result);
     }
@@ -181,8 +190,13 @@ class Web3ImplUnitTest {
         };
         final Web3Impl spyTarget = spy(target);
         final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000001";
+
+        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
+        BlockRefParam blockRefParam = new BlockRefParam(new BlockRef(blockRef));
+
         doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_getStorageAt(addr, storageIdx, blockRef);
+        String result = spyTarget.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam);
         assertEquals(expectedData, result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
@@ -190,18 +204,22 @@ class Web3ImplUnitTest {
 
     @Test
     void eth_getStorageAtEmptyCell() {
-        String id = "id";
+        String id = "0x00";
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
         String storageIdx = "0x01";
         DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
+
+        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
+        BlockRefParam blockRefParam = new BlockRefParam(new BlockRef(id));
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
         when(retriever.getInformationProvider(id)).thenReturn(aip);
         when(aip.getStorageValue(expectedAddress, expectedIdx))
                 .thenReturn(null);
 
-        String result = target.eth_getStorageAt(addr, storageIdx, id);
+        String result = target.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam);
         assertEquals("0x0",
                 result);
     }

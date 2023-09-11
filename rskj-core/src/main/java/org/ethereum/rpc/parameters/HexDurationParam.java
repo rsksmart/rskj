@@ -14,7 +14,11 @@ public class HexDurationParam extends HexStringParam {
     public HexDurationParam(String hexDurationStr) {
         super(hexDurationStr);
 
-        this.duration = Long.parseLong(hexDurationStr.substring(2), 16);
+        if(hexDurationStr.isEmpty()) {
+            this.duration = null;
+        } else {
+            this.duration = Long.parseLong(hexDurationStr.substring(2), 16);
+        }
     }
 
     public Long getDuration() {

@@ -29,12 +29,17 @@ import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDurationParam;
+import org.ethereum.rpc.parameters.HexKeyParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionArgumentsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -121,8 +126,9 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     @Override
-    public String importRawKey(String key, String passphrase) {
+    public String importRawKey(HexKeyParam keyParam, String passphrase) {
         String s = null;
+        String key = Optional.ofNullable(keyParam).map(HexKeyParam::getHexKey).orElse(null);
         try {
             if (key != null && key.startsWith("0x")) {
                 key = key.substring(2);
@@ -136,8 +142,9 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     @Override
-    public String sendTransaction(CallArguments args, String passphrase) throws Exception {
+    public String sendTransaction(CallArgumentsParam argsParam, String passphrase) throws Exception {
         String s = null;
+        CallArguments args = argsParam.toCallArguments();
         try {
             return s = sendTransaction(args, getAccount(args.getFrom(), passphrase));
         } finally {
@@ -146,15 +153,15 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     @Override
-    public boolean unlockAccount(String address, String passphrase, String duration) {
-        return unlockAccount(new RskAddress(address), passphrase, duration);
+    public boolean unlockAccount(HexAddressParam address, String passphrase, HexDurationParam duration) {
+        return unlockAccount(address.getAddress(), passphrase, duration);
     }
 
-    private boolean unlockAccount(RskAddress addr, String passphrase, String duration) {
+    private boolean unlockAccount(RskAddress addr, String passphrase, HexDurationParam duration) {
         long dur = (long) 1000 * 60 * 30;
-        if (duration != null && duration.length() > 0) {
+        if (duration != null && duration.getDuration() != null) {
             try {
-                dur = convertFromJsonHexToLong(duration);
+                dur = duration.getDuration();
             } catch (Exception e) {
                 throw invalidParamError("Can't parse duration param", e);
             }
@@ -164,15 +171,15 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     @Override
-    public boolean lockAccount(String address) {
-        return this.wallet.lockAccount(new RskAddress(address));
+    public boolean lockAccount(HexAddressParam address) {
+        return this.wallet.lockAccount(address.getAddress());
     }
 
     @Override
-    public String dumpRawKey(String address) throws Exception {
+    public String dumpRawKey(HexAddressParam address) throws Exception {
         String s = null;
         try {
-            Account account = wallet.getAccount(new RskAddress(convertFromJsonHexToHex(address)));
+            Account account = wallet.getAccount(address.getAddress());
             if (account == null) {
                 throw new Exception("Address private key is locked or could not be found in this node");
             }
