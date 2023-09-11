@@ -28,12 +28,14 @@ public class SnapshotProcessor implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
     private static final String KBYTES = "kbytes";
     public static final long DELAY_BTW_RUNS = 20 * 60 * 1000;
+    public static final int CHUNK_MAX = 1600;
+    public static final int CHUNK_MIN = 100;
 
     private final NodeManager nodeManager;
     private final PeerClientFactory peerClientFactory;
     private final Blockchain blockchain;
     private final TrieStore trieStore;
-    private final int chunkSize;
+    private int chunkSize;
     private final String chunkSizeType;
 
     private boolean connected;
@@ -48,13 +50,13 @@ public class SnapshotProcessor implements InternalService {
             Blockchain blockchain,
             TrieStore trieStore,
             PeerClientFactory peerClientFactory,
-            int chunkSize, String chunkSizeType) {
+            String chunkSizeType) {
         this.nodeManager = nodeManager;
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.peerClientFactory = peerClientFactory;
         this.connected = false;
-        this.chunkSize = chunkSize;
+        this.chunkSize = 100;
         this.chunkSizeType = chunkSizeType;
         this.iterators = Maps.newConcurrentMap();
     }
@@ -97,13 +99,15 @@ public class SnapshotProcessor implements InternalService {
             // request another chunk
             requestState(peer, message.getFrom() + trieElements.size(), message.getBlockNumber());
         } else {
-            logger.debug("State Completed! {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
+            logger.debug("State Completed! {} chunks ({} bytes) - chunk size = {}", this.stateSize.toString(), this.stateChunkSize.toString(), this.chunkSize);
 
             try {
                 Thread.sleep(DELAY_BTW_RUNS);
             } catch (InterruptedException ignored) {
             }
-            logger.debug("Starting again the infinite loop!");
+            this.chunkSize = this.chunkSize * 2;
+            this.chunkSize = this.chunkSize > CHUNK_MAX ? CHUNK_MIN : this.chunkSize;
+            logger.debug("Starting again the infinite loop! With chunk size = {}", this.chunkSize);
             this.stateSize = BigInteger.ZERO;
             this.stateChunkSize = BigInteger.ZERO;
             requestState(peer, 0l, 0l);
