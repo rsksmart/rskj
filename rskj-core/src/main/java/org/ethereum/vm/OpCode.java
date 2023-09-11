@@ -650,6 +650,13 @@ public enum OpCode {
      */
     DELEGATECALL(0xf4, 6, 1, SPECIAL_TIER),
 
+
+    /**
+     * (0xf6)  similar in idea to DELEGATECALL, but used specifically for Proxy Calls, only the address to the template code
+     * is required, all remainingGas is sent, all CALLDATA is sent, return data is put on 0 byte offset of memory and all return data size is returned
+     */
+    DELEGATECALL2(0xf6, 1, 1, SPECIAL_TIER),
+
     /**
      * (0xf5) Skinny CREATE2, same as CREATE but with deterministic address
      */

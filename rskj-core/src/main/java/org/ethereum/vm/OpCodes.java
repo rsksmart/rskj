@@ -636,6 +636,9 @@ public class OpCodes {
      */
     public static final byte OP_CREATE2 =(byte)0xf5;
 
+    static final byte OP_DELEGATECALL2 = (byte)0xf6;
+
+
     /**
      *  opcode that can be used to call another contract (or itself) while disallowing any
      *  modifications to the state during the call (and its subcalls, if present).

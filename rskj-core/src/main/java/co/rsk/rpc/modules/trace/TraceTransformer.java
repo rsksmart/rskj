@@ -149,7 +149,7 @@ public class TraceTransformer {
     public static TraceAction toAction(TraceType traceType, InvokeData invoke, CallType callType, byte[] creationInput, String creationMethod, DataWord codeAddress) {
         String from;
 
-        if (callType == CallType.DELEGATECALL) {
+        if (callType == CallType.DELEGATECALL || callType == CallType.DELEGATECALL2) {
             from = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
         }
         else {
@@ -178,7 +178,7 @@ public class TraceTransformer {
             input = HexUtils.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));;
             value = HexUtils.toQuantityJsonHex(callValue.getData());
 
-            if (callType == CallType.DELEGATECALL) {
+            if (callType == CallType.DELEGATECALL || callType == CallType.DELEGATECALL2) {
                 // The code address should not be null in a DELEGATECALL case
                 // but handling the case here
                 if (codeAddress != null) {

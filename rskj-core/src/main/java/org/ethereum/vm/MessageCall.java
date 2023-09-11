@@ -31,13 +31,14 @@ public class MessageCall {
         CALLCODE,
         DELEGATECALL,
         STATICCALL,
-        POST;
+        POST,
+        DELEGATECALL2;
 
         /**
          *  Indicates that the code is executed in the context of the caller
          */
         public boolean isStateless() {
-            return this == CALLCODE || this == DELEGATECALL;
+            return this == CALLCODE || this == DELEGATECALL || this == DELEGATECALL2;
         }
 
         public static MsgType fromOpcode(OpCode opCode) {
@@ -45,6 +46,7 @@ public class MessageCall {
                 case CALL: return CALL;
                 case CALLCODE: return CALLCODE;
                 case DELEGATECALL: return DELEGATECALL;
+                case DELEGATECALL2: return DELEGATECALL2;
                 case STATICCALL: return STATICCALL;
                 default:
                     throw new RuntimeException("Invalid call opcode: " + opCode);

@@ -820,8 +820,8 @@ public class Program {
 
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, DataWord.valueOf(contextAddress.getBytes()),
-                msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
-                msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
+                (msg.getType() == MsgType.DELEGATECALL || msg.getType() == MsgType.DELEGATECALL2) ? getCallerAddress() : getOwnerAddress(),
+                (msg.getType() == MsgType.DELEGATECALL || msg.getType() == MsgType.DELEGATECALL2) ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(),
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 

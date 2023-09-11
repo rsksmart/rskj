@@ -765,6 +765,15 @@ public class VM {
         return calcMemGas(oldMemSize, newMemSize, copySize);
     }
 
+    private long computeDataCopyGas(DataWord offset, DataWord size) {
+        long copySize = Program.limitToMaxLong(size);
+        checkSizeArgument(copySize);
+        long newMemSize = memNeeded(offset, copySize);
+        return calcMemGas(oldMemSize, newMemSize, copySize);
+    }
+
+
+
     protected void doCODESIZE() {
         if (computeGas) {
             if (op == OpCode.EXTCODESIZE) {
@@ -1510,6 +1519,100 @@ public class VM {
         program.step();
     }
 
+    protected void doCALL2(){
+
+
+        DataWord lengthData = program.getDataSize(); //Equivalent to CALLDATASIZE without a stack push
+
+        //Include the dynamic Gas used for the CALLDATACOPY
+        if (computeGas) {
+            //Calculate all the required static gas:
+            // 1 CALLDATACOPY + 4 PUSH0 + 3 PUSH_X + 1 RETURNDATACOPY + 1 GAS
+            gasCost = GasCost.add(OpCode.CALLDATACOPY.getTier().asInt(),OpCode.PUSH0.getTier().asInt() * 4);
+            gasCost = GasCost.add(gasCost, OpCode.PUSH1.getTier().asInt()*3);
+            gasCost = GasCost.add(gasCost, OpCode.RETURNDATACOPY.getTier().asInt());
+            gasCost = GasCost.add(gasCost, computeDataCopyGas(DataWord.ZERO, lengthData)); // CALLDATACOPY dynamic part
+            gasCost = GasCost.add(gasCost, OpCode.GAS.getTier().asInt());
+            //We have also the static cost of CALLDATASIZE and RETURNDATASIZE, but in reality those op push the value to the stack, something
+            //that we're not doing here. So for now I opted to leave that static part out of the calculation.
+
+            //Spend all the static cost plus the already dynamic cost beforehand
+            program.spendGas(gasCost,OpCode.DELEGATECALL2.name());
+            gasCost = 0L;
+        }
+
+        DataWord codeAddress = program.stackPop();
+        DataWord gas = DataWord.valueOf(program.getRemainingGas()); //Gas equivalent of OP_GAS Opcode  staticGas = OP_GAS
+        ActivationConfig.ForBlock activations = program.getActivations();
+
+        // EXECUTION OF CALLDATA COPY - START
+        // We copy the calldata at the beginning of the memory
+        DataWord memOffsetData = DataWord.ZERO;
+        DataWord dataOffsetData = DataWord.ZERO;
+
+        byte[] msgData = program.getDataCopy(dataOffsetData, lengthData);
+
+        if (isLogEnabled) {
+            hint = "data: " + ByteUtil.toHexString(msgData);
+        }
+
+        program.memorySave(memOffsetData.intValue(), msgData);
+        // EXECUTION OF CALLDATACOPY - END
+
+        //4 PUSH operations - gas already charged as the static gas for DELEGATECALL2
+        program.stackPush(DataWord.ZERO);
+        program.stackPush(DataWord.ZERO);
+        program.stackPush(lengthData);
+        program.stackPush(DataWord.ZERO);
+
+
+        //Execution of the call
+        MessageCall msg = getMessageCall(gas, codeAddress, activations);
+
+        PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
+
+        if (precompiledContract != null) {
+            program.callToPrecompiledAddress(msg, precompiledContract);
+        } else {
+            program.callToAddress(msg);
+        }
+
+        DataWord success = program.stackPop();
+
+        //RETURNDATACOPY - START
+
+        DataWord returnBufferSize = program.getReturnDataBufferSize(); //This should consider the cost of RETURNDATASIZE but it reality here we are not pushing the value to the stack
+
+        //Spend the dynamic gas part, now that we now the size of the return buffer
+        if (computeGas) {
+            program.spendGas(computeDataCopyGas(DataWord.ZERO, returnBufferSize), OpCode.RETURNDATACOPY.name());
+        }
+
+        msgData = program.getReturnDataBufferData(dataOffsetData, returnBufferSize)
+                .orElseThrow(() -> {
+                    long returnDataSize = program.getReturnDataBufferSize().longValueSafe();
+                    return new RuntimeException(String.format(
+                            "Illegal RETURNDATACOPY arguments: offset (%s) + size (%s) > RETURNDATASIZE (%d)",
+                            dataOffsetData, lengthData, returnDataSize));
+                });
+
+        if (isLogEnabled) {
+            hint = "data: " + ByteUtil.toHexString(msgData);
+        }
+
+        program.memorySave(memOffsetData.intValueSafe(), msgData);
+        // RETURNDATACOPY - END
+
+
+        //gas cost already charged
+        program.stackPush(returnBufferSize); // This is an extra PUSH we're adding
+        program.stackPush(memOffsetData); // This could be considered PUSH0 because it's always 0
+        program.stackPush(success); // This is an extra PUSH1 we're doing so it should be added to the cost
+
+        program.step();
+
+    }
+
     private MessageCall getMessageCall(DataWord gas, DataWord codeAddress, ActivationConfig.ForBlock activations) {
         DataWord value = calculateCallValue(activations);
 
@@ -1587,10 +1690,10 @@ public class VM {
         DataWord value;
         if (activations.isActive(RSKIP103)) {
             // value is always zero in a DELEGATECALL or STATICCALL operation
-            value = op == OpCode.DELEGATECALL || op == OpCode.STATICCALL ? DataWord.ZERO : program.stackPop();
+            value = op == OpCode.DELEGATECALL || op == OpCode.DELEGATECALL2 || op == OpCode.STATICCALL ? DataWord.ZERO : program.stackPop();
         } else {
             // value is always zero in a DELEGATECALL operation
-            value = op == OpCode.DELEGATECALL ? DataWord.ZERO : program.stackPop();
+            value = op == OpCode.DELEGATECALL || op == OpCode.DELEGATECALL2 ? DataWord.ZERO : program.stackPop();
         }
         return value;
     }
@@ -1982,6 +2085,10 @@ public class VM {
             case OpCodes.OP_DELEGATECALL:
                 doCALL();
             break;
+            case OpCodes.OP_DELEGATECALL2:
+                doCALL2();
+                break;
+
             case OpCodes.OP_STATICCALL:
                 if (!activations.isActive(RSKIP91)) {
                     throw Program.ExceptionHelper.invalidOpCode(program);
