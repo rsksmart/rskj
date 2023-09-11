@@ -75,7 +75,7 @@ public class ParallelizeTransactionHandler {
     // complete the execution. So, there is no way for the ParallelTransactionHandler to track the keys if the execution
     // fails since the Precompiled contract rolls back the repository.
     // Therefore, the tx is added to the sequential sublist to avoid possible race conditions.
-    public Optional<Long> addTxSentToPrecompiledContract(Transaction tx, long gasUsedByTx) {
+    public Optional<Long> addTxToSequentialSublist(Transaction tx, long gasUsedByTx) {
         TransactionSublist sequentialSublist = getSequentialSublist();
 
         if (sublistDoesNotHaveEnoughGas(tx, sequentialSublist)) {

@@ -35,6 +35,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
     private long totalGas;
     private int i;
     private final boolean registerProgramResults;
+    private final boolean precompiledContractsAllowed;
     private Coin totalPaidFees;
 
     public TransactionListExecutor(
@@ -55,6 +56,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
             int firstTxIndex,
             Coin totalPaidFees,
             boolean remascEnabled,
+            boolean precompiledContractsAllowed,
             long sublistGasLimit) {
         this.block = block;
         this.transactionExecutorFactory = transactionExecutorFactory;
@@ -74,6 +76,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
         this.i = firstTxIndex;
         this.totalPaidFees = totalPaidFees;
         this.remascEnabled = remascEnabled;
+        this.precompiledContractsAllowed = precompiledContractsAllowed;
         this.sublistGasLimit = sublistGasLimit;
     }
 
@@ -100,9 +103,12 @@ public class TransactionListExecutor implements Callable<Boolean> {
                     deletedAccounts,
                     true,
                     sublistGasLimit);
-            boolean transactionExecuted = txExecutor.executeTransaction();
+            boolean transactionSucceeded = txExecutor.executeTransaction();
+            if (!this.precompiledContractsAllowed && txExecutor.precompiledContractHasBeenCalled()) {
+                transactionSucceeded = false;
+            }
 
-            if (!acceptInvalidTransactions && !transactionExecuted) {
+            if (!acceptInvalidTransactions && !transactionSucceeded) {
                 if (discardIfInvalid(tx, numberOfTransactions, isRemascTransaction)) {
                     return false;
                 }

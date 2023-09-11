@@ -152,7 +152,6 @@ public class StateTestRunner {
                 null,
                 null,
                 new BlockExecutor(
-                        config.getActivationConfig(),
                         new RepositoryLocator(trieStore, stateRootHandler),
                         new TransactionExecutorFactory(
                                 config,
@@ -163,7 +162,7 @@ public class StateTestRunner {
                                 precompiledContracts,
                                 new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                         ),
-                        config.isRemascEnabled()),
+                        config),
                 stateRootHandler
         );
 

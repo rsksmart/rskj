@@ -696,12 +696,12 @@ class ParallelizeTransactionHandlerTest {
 
         Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> sequentialSublistGasUsedAfterBigTx = handler.addTxSentToPrecompiledContract(bigTx, gasUsedByBigTx);
+        Optional<Long> sequentialSublistGasUsedAfterBigTx = handler.addTxToSequentialSublist(bigTx, gasUsedByBigTx);
         Assertions.assertTrue(sequentialSublistGasUsedAfterBigTx.isPresent());
         Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialSublistNumber));
         Assertions.assertEquals(gasUsedByBigTx, (long) sequentialSublistGasUsedAfterBigTx.get());
 
-        Optional<Long> sequentialSublistGasUsedAfterTx = handler.addTxSentToPrecompiledContract(tx, gasUsedByTx);
+        Optional<Long> sequentialSublistGasUsedAfterTx = handler.addTxToSequentialSublist(tx, gasUsedByTx);
         Assertions.assertFalse(sequentialSublistGasUsedAfterTx.isPresent());
 
         Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialSublistNumber));
@@ -714,7 +714,7 @@ class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
         Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
-        Optional<Long> sequentialSublistGasUsed = handler.addTxSentToPrecompiledContract(tx, gasUsedByTx);
+        Optional<Long> sequentialSublistGasUsed = handler.addTxToSequentialSublist(tx, gasUsedByTx);
 
         Assertions.assertTrue(sequentialSublistGasUsed.isPresent());
         Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
@@ -729,7 +729,7 @@ class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
         Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
-        Optional<Long> sequentialSublistGasUsed = handler.addTxSentToPrecompiledContract(tx, gasUsedByTx);
+        Optional<Long> sequentialSublistGasUsed = handler.addTxToSequentialSublist(tx, gasUsedByTx);
 
         Assertions.assertTrue(sequentialSublistGasUsed.isPresent());
         Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));

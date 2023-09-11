@@ -35,6 +35,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -47,17 +48,27 @@ class ParallelExecutionStateTest {
     public static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
 
     private World createWorld(int rskip144) {
+        return createWorld(rskip144, null);
+    }
+
+    private World createWorld(int rskip144, @Nullable Boolean concurrentPrecompiledContractsEnabled) {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(rskip144))
         );
+        if (concurrentPrecompiledContractsEnabled != null) {
+            config.setConcurrentPrecompiledContractsEnabled(concurrentPrecompiledContractsEnabled);
+        }
 
-        World world = new World(receiptStore, config);
-        return world;
+        return new World(receiptStore, config);
     }
 
     private World createWorldAndProcess(String dsl, int rskip144ActivationHeight) throws DslProcessorException {
-        World world = createWorld(rskip144ActivationHeight);
+        return createWorldAndProcess(dsl, rskip144ActivationHeight, null);
+    }
+
+    private World createWorldAndProcess(String dsl, int rskip144ActivationHeight, @Nullable Boolean concurrentPrecompiledContractsEnabled) throws DslProcessorException {
+        World world = createWorld(rskip144ActivationHeight, concurrentPrecompiledContractsEnabled);
 
         DslParser parser = new DslParser(dsl);
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -833,7 +844,7 @@ class ParallelExecutionStateTest {
     }
 
     @Test
-    void whenATxCallsAPrecompiledItShouldGoToSequential() throws DslProcessorException {
+    void whenATxCallsAPrecompiledItShouldGoToSequentialIfDisabled() throws DslProcessorException {
         World parallel = this.createWorldAndProcess(
                 "account_new acc1 10000000\n" +
                 "transaction_build tx01\n" +
@@ -853,14 +864,41 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "assert_best b01\n" +
                 "assert_tx_success tx01\n" +
-                "\n", 0);
+                "\n", 0, false);
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
     @Test
-    void whenATxSendsValueToAPrecompiledItShouldGoToSequential() throws DslProcessorException {
+    void whenATxCallsAPrecompiledItShouldGoToParallelIfEnabled() throws DslProcessorException {
+        World parallel = this.createWorldAndProcess(
+                "account_new acc1 10000000\n" +
+                        "transaction_build tx01\n" +
+                        "    sender acc1\n" +
+                        "    receiverAddress " + PrecompiledContracts.IDENTITY_ADDR +"\n"+
+                        "    data " + "1234" + "\n" +
+                        "    gas 1000000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_build b01\n" +
+                        "    parent g00\n" +
+                        "    gasLimit 7500000\n" +
+                        "    transactions tx01\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_connect b01\n" +
+                        "\n" +
+                        "assert_best b01\n" +
+                        "assert_tx_success tx01\n" +
+                        "\n", 0, true);
+
+        Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenATxSendsValueToAPrecompiledItShouldGoToSequentialIfDisabled() throws DslProcessorException {
         World parallel = this.createWorldAndProcess(
                 "account_new acc1 10000000\n" +
                         "transaction_build tx01\n" +
@@ -880,14 +918,41 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
-                        "\n", 0);
+                        "\n", 0, false);
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
     @Test
-    void whenATxCallsAPrecompiledThatThrowsAnExceptionShouldGoToSequential() throws DslProcessorException {
+    void whenATxSendsValueToAPrecompiledItShouldGoToParallelIfEnabled() throws DslProcessorException {
+        World parallel = this.createWorldAndProcess(
+                "account_new acc1 10000000\n" +
+                        "transaction_build tx01\n" +
+                        "    sender acc1\n" +
+                        "    receiverAddress " + PrecompiledContracts.IDENTITY_ADDR +"\n"+
+                        "    value 1000\n" +
+                        "    gas 1000000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_build b01\n" +
+                        "    parent g00\n" +
+                        "    gasLimit 7500000\n" +
+                        "    transactions tx01\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_connect b01\n" +
+                        "\n" +
+                        "assert_best b01\n" +
+                        "assert_tx_success tx01\n" +
+                        "\n", 0, true);
+
+        Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenATxCallsAPrecompiledThatThrowsAnExceptionShouldGoToSequentialIfDisabled() throws DslProcessorException {
         // TX01 throws an exception, though, there is no way to check from out of the execution if the precompiled contract call has failed.
         World parallel = this.createWorldAndProcess(
                 "account_new acc1 10000000\n" +
@@ -908,14 +973,42 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
-                        "\n", 0);
+                        "\n", 0, false);
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
     @Test
-    void whenATxCallsAContractThatCallsAPrecompiledShouldGoToSequential() throws DslProcessorException {
+    void whenATxCallsAPrecompiledThatThrowsAnExceptionShouldGoToParallelIfEnabled() throws DslProcessorException {
+        // TX01 throws an exception, though, there is no way to check from out of the execution if the precompiled contract call has failed.
+        World parallel = this.createWorldAndProcess(
+                "account_new acc1 10000000\n" +
+                        "transaction_build tx01\n" +
+                        "    sender acc1\n" +
+                        "    receiverAddress " + PrecompiledContracts.BRIDGE_ADDR +"\n"+
+                        "    data " + "e674f5e80000000000000000000000000000000000000000000000000000000001000006" + "\n" +
+                        "    gas 1000000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_build b01\n" +
+                        "    parent g00\n" +
+                        "    gasLimit 7500000\n" +
+                        "    transactions tx01\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_connect b01\n" +
+                        "\n" +
+                        "assert_best b01\n" +
+                        "assert_tx_success tx01\n" +
+                        "\n", 0, true);
+
+        Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenATxCallsAContractThatCallsAPrecompiledShouldGoToSequentialIfDisabled() throws DslProcessorException {
         World parallel = this.createWorldAndProcess(
                 "account_new acc1 10000000\n" +
                         "transaction_build tx01\n" +
@@ -944,14 +1037,50 @@ class ParallelExecutionStateTest {
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
                         "assert_tx_success tx02\n" +
-                        "\n", 0);
+                        "\n", 0, false);
 
         Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
     @Test
-    void whenATxCallsAContractThatCallsAPrecompiledAndRevertsShouldGoToSequential() throws DslProcessorException {
+    void whenATxCallsAContractThatCallsAPrecompiledShouldGoToParallelIfEnabled() throws DslProcessorException {
+        World parallel = this.createWorldAndProcess(
+                "account_new acc1 10000000\n" +
+                        "transaction_build tx01\n" +
+                        "    sender acc1\n" +
+                        "    receiverAddress 00\n" +
+                        "    data " + PROXY_SMART_CONTRACT_BYTECODE + PrecompiledContracts.IDENTITY_ADDR + "\n" +
+                        "    gas 1200000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "transaction_build tx02\n" +
+                        "    sender acc1\n" +
+                        "    contract tx01\n" +
+                        "    data " + "688c62c5000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000145b38da6a701c568545dcfcb03fcb875f56beddc4000000000000000000000000" + "\n" +
+                        "    nonce 1\n" +
+                        "    gas 1000000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_build b01\n" +
+                        "    parent g00\n" +
+                        "    gasLimit 7500000\n" +
+                        "    transactions tx01 tx02\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_connect b01\n" +
+                        "\n" +
+                        "assert_best b01\n" +
+                        "assert_tx_success tx01\n" +
+                        "assert_tx_success tx02\n" +
+                        "\n", 0, true);
+
+        Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{2}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenATxCallsAContractThatCallsAPrecompiledAndRevertsShouldGoToSequentialIfDisabled() throws DslProcessorException {
         World parallel = this.createWorldAndProcess(
                 "account_new acc1 10000000\n" +
                         "transaction_build tx01\n" +
@@ -979,7 +1108,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
-                        "\n", 0);
+                        "\n", 0, false);
 
         Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(FAILED_STATUS, parallel.getTransactionReceiptByName("tx02").getStatus());
@@ -987,8 +1116,44 @@ class ParallelExecutionStateTest {
     }
 
     @Test
-    void whenAnInternalTxCallsAContractThatCallsAPrecompiledShouldGoToSequential() throws DslProcessorException {
-        World parallel = createWorld(0);
+    void whenATxCallsAContractThatCallsAPrecompiledAndRevertsShouldGoToParallelIfEnabled() throws DslProcessorException {
+        World parallel = this.createWorldAndProcess(
+                "account_new acc1 10000000\n" +
+                        "transaction_build tx01\n" +
+                        "    sender acc1\n" +
+                        "    receiverAddress 00\n" +
+                        "    data " + PROXY_SMART_CONTRACT_BYTECODE + PrecompiledContracts.BRIDGE_ADDR + "\n" +
+                        "    gas 1200000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "transaction_build tx02\n" +
+                        "    sender acc1\n" +
+                        "    contract tx01\n" +
+                        "    data " + "688c62c500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000024e674f5e8000000000000000000000000000000000000000000000000000000000100000600000000000000000000000000000000000000000000000000000000" + "\n" +
+                        "    nonce 1\n" +
+                        "    gas 1000000\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_build b01\n" +
+                        "    parent g00\n" +
+                        "    gasLimit 7500000\n" +
+                        "    transactions tx01 tx02\n" +
+                        "    build\n" +
+                        "\n" +
+                        "block_connect b01\n" +
+                        "\n" +
+                        "assert_best b01\n" +
+                        "assert_tx_success tx01\n" +
+                        "\n", 0, true);
+
+        Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(FAILED_STATUS, parallel.getTransactionReceiptByName("tx02").getStatus());
+        Assertions.assertArrayEquals(new short[]{2}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenAnInternalTxCallsAContractThatCallsAPrecompiledShouldGoToSequentialIfDisabled() throws DslProcessorException {
+        World parallel = createWorld(0, false);
         WorldDslProcessor processor = new WorldDslProcessor(parallel);
         String dsl = deployProxyTo(PrecompiledContracts.IDENTITY_ADDR);
         DslParser parser = new DslParser(dsl);
@@ -1012,8 +1177,33 @@ class ParallelExecutionStateTest {
     }
 
     @Test
-    void whenAnInternalTxCallsAContractThatCallsAPrecompiledAndRevertsShouldGoToSequential() throws DslProcessorException {
-        World parallel = createWorld(0);
+    void whenAnInternalTxCallsAContractThatCallsAPrecompiledShouldGoToParallelIfEnabled() throws DslProcessorException {
+        World parallel = createWorld(0, true);
+        WorldDslProcessor processor = new WorldDslProcessor(parallel);
+        String dsl = deployProxyTo(PrecompiledContracts.IDENTITY_ADDR);
+        DslParser parser = new DslParser(dsl);
+        processor.processCommands(parser);
+
+        Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+
+        RskAddress proxyContract = new RskAddress(HashUtil.calcNewAddr(parallel.getAccountByName("acc1").getAddress().getBytes(), BigInteger.ZERO.toByteArray()));
+        String dataInputToCallProxyToProxyThatReverts = "688c62c5000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000145fd6eb55d12e759a21c09ef703fe0cba1dc9d88d000000000000000000000000";
+        String transactionAssertions = "assert_tx_success tx02\n" +
+                "assert_tx_success tx03\n" +
+                "\n";
+        String dslNext =
+                deployProxyToProxyCallAContractAndAssert(proxyContract, dataInputToCallProxyToProxyThatReverts, transactionAssertions);
+
+        DslParser parserNext = new DslParser(dslNext);
+        processor.processCommands(parserNext);
+        Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{2}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenAnInternalTxCallsAContractThatCallsAPrecompiledAndRevertsShouldGoToSequentialIfDisabled() throws DslProcessorException {
+        World parallel = createWorld(0, false);
         WorldDslProcessor processor = new WorldDslProcessor(parallel);
         String dsl = deployProxyTo(PrecompiledContracts.BRIDGE_ADDR);
         DslParser parser = new DslParser(dsl);
@@ -1035,6 +1225,32 @@ class ParallelExecutionStateTest {
         Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(FAILED_STATUS, parallel.getTransactionReceiptByName("tx03").getStatus());
         Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void whenAnInternalTxCallsAContractThatCallsAPrecompiledAndRevertsShouldGoToParallelIfEnabled() throws DslProcessorException {
+        World parallel = createWorld(0, true);
+        WorldDslProcessor processor = new WorldDslProcessor(parallel);
+        String dsl = deployProxyTo(PrecompiledContracts.BRIDGE_ADDR);
+        DslParser parser = new DslParser(dsl);
+        processor.processCommands(parser);
+
+        Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
+
+        RskAddress proxyContract = new RskAddress(HashUtil.calcNewAddr(parallel.getAccountByName("acc1").getAddress().getBytes(), BigInteger.ZERO.toByteArray()));
+        String dataInputToCallProxyToProxy = "688c62c500000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000024e674f5e8000000000000000000000000000000000000000000000000000000000100000600000000000000000000000000000000000000000000000000000000";
+        String transactionAssertions = "assert_tx_success tx02\n" +
+                "\n";
+
+        String dslNext =
+                deployProxyToProxyCallAContractAndAssert(proxyContract, dataInputToCallProxyToProxy, transactionAssertions);
+
+        DslParser parserNext = new DslParser(dslNext);
+        processor.processCommands(parserNext);
+        Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
+        Assertions.assertArrayEquals(FAILED_STATUS, parallel.getTransactionReceiptByName("tx03").getStatus());
+        Assertions.assertArrayEquals(new short[]{2}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
     }
 
     private static String deployProxyToProxyCallAContractAndAssert(RskAddress proxyContract, String dataInputToCallProxyToProxyThatReverts, String transactionAssertions) {

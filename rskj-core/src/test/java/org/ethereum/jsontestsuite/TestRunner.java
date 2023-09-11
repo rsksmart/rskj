@@ -163,10 +163,9 @@ public class TestRunner {
                 null,
                 new DummyBlockValidator(),
                 new BlockExecutor(
-                        config.getActivationConfig(),
                         new RepositoryLocator(trieStore, stateRootHandler),
                         transactionExecutorFactory,
-                        config.isRemascEnabled()),
+                        config),
                 stateRootHandler
         );
 

@@ -18,6 +18,7 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.*;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -29,6 +30,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
@@ -59,20 +61,21 @@ public class BlockExecutor {
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final ActivationConfig activationConfig;
-    private boolean remascEnabled;
+    private final boolean remascEnabled;
+    private final boolean concurrentPrecompiledContractsEnabled;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     private boolean registerProgramResults;
 
     public BlockExecutor(
-            ActivationConfig activationConfig,
             RepositoryLocator repositoryLocator,
             TransactionExecutorFactory transactionExecutorFactory,
-            boolean remascEnabled) {
+            RskSystemProperties systemProperties) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
-        this.activationConfig = activationConfig;
-        this.remascEnabled = remascEnabled;
+        this.activationConfig = systemProperties.getActivationConfig();
+        this.remascEnabled = systemProperties.isRemascEnabled();
+        this.concurrentPrecompiledContractsEnabled = systemProperties.isConcurrentPrecompiledContractsEnabled();
     }
 
     /**
@@ -458,6 +461,7 @@ public class BlockExecutor {
                     start,
                     Coin.ZERO,
                     remascEnabled,
+                    concurrentPrecompiledContractsEnabled,
                     sublistGasLimit
             );
             completionService.submit(txListExecutor);
@@ -475,13 +479,13 @@ public class BlockExecutor {
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             } catch (InterruptedException e) {
-                logger.warn("block: [{}] execution was interrupted", block.getNumber());
+                logger.warn("block: [{}]/[{}] execution was interrupted", block.getNumber(), block.getHash());
                 logger.trace("", e);
                 Thread.currentThread().interrupt();
                 profiler.stop(metric);
                 return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
             } catch (ExecutionException e) {
-                logger.warn("block: [{}] execution failed", block.getNumber());
+                logger.warn("block: [{}]/[{}] execution failed", block.getNumber(), block.getHash());
                 logger.trace("", e);
                 profiler.stop(metric);
                 return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
@@ -490,7 +494,7 @@ public class BlockExecutor {
 
         // Review collision
         if (readWrittenKeysTracker.detectCollision()) {
-            logger.warn("block: [{}] execution failed", block.getNumber());
+            logger.warn("block: [{}]/[{}] execution failed. Block data: [{}]", block.getNumber(), block.getHash(), ByteUtil.toHexString(block.getEncoded()));
             profiler.stop(metric);
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
@@ -533,6 +537,7 @@ public class BlockExecutor {
                 start,
                 totalPaidFees,
                 remascEnabled,
+                true, // precompiled Contracts are always allowed in a sequential list
                 sublistGasLimit
         );
         Boolean success = txListExecutor.call();
@@ -634,7 +639,7 @@ public class BlockExecutor {
                     tx,
                     tx.isRemascTransaction(txindex, transactionsList.size()),
                     txExecutor.getGasConsumed(),
-                    txExecutor.precompiledContractHasBeenCalled());
+                    !concurrentPrecompiledContractsEnabled && txExecutor.precompiledContractHasBeenCalled());
 
             if (!acceptInvalidTransactions && !sublistGasAccumulated.isPresent()) {
                 if (!discardInvalidTxs) {
@@ -742,15 +747,13 @@ public class BlockExecutor {
         return receipts;
     }
 
-    private Optional<Long> addTxToSublistAndGetAccumulatedGas(IReadWrittenKeysTracker readWrittenKeysTracker, ParallelizeTransactionHandler parallelizeTransactionHandler, Transaction tx, boolean isRemascTransaction, long gasUsed, boolean precompiledContractHasBeenCalled) {
+    private Optional<Long> addTxToSublistAndGetAccumulatedGas(IReadWrittenKeysTracker readWrittenKeysTracker, ParallelizeTransactionHandler parallelizeTransactionHandler, Transaction tx, boolean isRemascTransaction, long gasUsed, boolean isSequentialSublistRequired) {
         Optional<Long> sublistGasAccumulated;
 
-        if (precompiledContractHasBeenCalled) {
-            if (isRemascTransaction) {
-                sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, gasUsed);
-            } else {
-                sublistGasAccumulated = parallelizeTransactionHandler.addTxSentToPrecompiledContract(tx, gasUsed);
-            }
+        if (isRemascTransaction) {
+            sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, gasUsed);
+        } else if (isSequentialSublistRequired) {
+            sublistGasAccumulated = parallelizeTransactionHandler.addTxToSequentialSublist(tx, gasUsed);
         } else {
             sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getThisThreadReadKeys(), readWrittenKeysTracker.getThisThreadWrittenKeys(), gasUsed);
         }
@@ -782,8 +785,8 @@ public class BlockExecutor {
     }
 
     private BlockResult getBlockResultAndLogExecutionInterrupted(Block block, Metric metric, Transaction tx) {
-        logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                    block.getNumber(), tx.getHash());
+        logger.warn("block: [{}]/[{}] execution interrupted because of invalid tx: [{}]",
+                    block.getNumber(), block.getHash(), tx.getHash());
         profiler.stop(metric);
         return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
     }

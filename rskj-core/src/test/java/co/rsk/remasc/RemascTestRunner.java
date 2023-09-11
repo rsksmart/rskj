@@ -137,7 +137,6 @@ class RemascTestRunner {
                 builder.getConfig().getActivationConfig(), blockTxSignatureCache);
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory, blockTxSignatureCache);
         BlockExecutor blockExecutor = new BlockExecutor(
-                builder.getConfig().getActivationConfig(),
                 builder.getRepositoryLocator(),
                 new TransactionExecutorFactory(
                         builder.getConfig(),
@@ -148,7 +147,7 @@ class RemascTestRunner {
                         precompiledContracts,
                         blockTxSignatureCache
                 ),
-                builder.getConfig().isRemascEnabled());
+                builder.getConfig());
 
         Random random = new Random(RemascTestRunner.class.hashCode());
         for(int i = 0; i <= this.initialHeight; i++) {

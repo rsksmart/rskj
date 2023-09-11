@@ -316,7 +316,6 @@ public class WorldDslProcessor {
             final TestSystemProperties config = new TestSystemProperties();
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
-                    config.getActivationConfig(),
                     new RepositoryLocator(world.getTrieStore(), stateRootHandler),
                     new TransactionExecutorFactory(
                             config,
@@ -327,7 +326,7 @@ public class WorldDslProcessor {
                             null,
                             world.getBlockTxSignatureCache()
                     ),
-                    config.isRemascEnabled());
+                    config);
             executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);
             parent = block;

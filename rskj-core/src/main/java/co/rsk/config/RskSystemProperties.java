@@ -62,6 +62,8 @@ public class RskSystemProperties extends SystemProperties {
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
 
+    private boolean concurrentPrecompiledContractsEnabled = true;
+
     private List<ModuleDescription> moduleDescriptions;
 
     public RskSystemProperties(ConfigLoader loader) {
@@ -224,6 +226,14 @@ public class RskSystemProperties extends SystemProperties {
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     public boolean isRemascEnabled() {
         return remascEnabled;
+    }
+
+    public boolean isConcurrentPrecompiledContractsEnabled() {
+        return concurrentPrecompiledContractsEnabled;
+    }
+
+    public void setConcurrentPrecompiledContractsEnabled(boolean enabled) {
+        this.concurrentPrecompiledContractsEnabled = enabled;
     }
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC

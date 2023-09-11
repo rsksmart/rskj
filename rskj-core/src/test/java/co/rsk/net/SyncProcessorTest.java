@@ -804,7 +804,6 @@ class SyncProcessorTest {
                 config.getActivationConfig(), signatureCache);
 
         BlockExecutor blockExecutor = new BlockExecutor(
-                config.getActivationConfig(),
                 new RepositoryLocator(blockChainBuilder.getTrieStore(), stateRootHandler),
                 new TransactionExecutorFactory(
                         config,
@@ -815,7 +814,7 @@ class SyncProcessorTest {
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
-                config.isRemascEnabled());
+                config);
         Assertions.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis.getHeader());
         Assertions.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());

@@ -247,10 +247,9 @@ public class BlockChainBuilder {
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
                 transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         BlockExecutor blockExecutor = new BlockExecutor(
-                config.getActivationConfig(),
                 repositoryLocator,
                 transactionExecutorFactory,
-                config.isRemascEnabled());
+                config);
         BlockChainImpl blockChain = new BlockChainLoader(
                 blockStore,
                 receiptStore,

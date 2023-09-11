@@ -1478,7 +1478,6 @@ public class BlockExecutorTest {
         BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         return new BlockExecutor(
-                cfg.getActivationConfig(),
                 new RepositoryLocator(store, stateRootHandler),
                 new TransactionExecutorFactory(
                         cfg,
@@ -1489,7 +1488,7 @@ public class BlockExecutorTest {
                         new PrecompiledContracts(cfg, bridgeSupportFactory, signatureCache),
                         signatureCache
                 ),
-                cfg.isRemascEnabled());
+                cfg);
     }
 
     public static class TestObjects {

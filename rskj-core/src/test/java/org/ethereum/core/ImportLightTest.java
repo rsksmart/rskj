@@ -86,10 +86,9 @@ class ImportLightTest {
                 listener,
                 new DummyBlockValidator(),
                 new BlockExecutor(
-                        config.getActivationConfig(),
                         repositoryLocator,
                         transactionExecutorFactory,
-                        config.isRemascEnabled()),
+                        config),
                 stateRootHandler
         );
 

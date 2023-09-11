@@ -118,7 +118,6 @@ public class BlockBuilder {
         if (blockChain != null) {
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
-                    config.getActivationConfig(),
                     new RepositoryLocator(trieStore, stateRootHandler),
                     new TransactionExecutorFactory(
                             config,
@@ -129,7 +128,7 @@ public class BlockBuilder {
                             new PrecompiledContracts(config, bridgeSupportFactory, new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                     ),
-                    config.isRemascEnabled());
+                    config);
             executor.executeAndFill(block, parent.getHeader());
         }
 

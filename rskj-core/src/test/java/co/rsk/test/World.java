@@ -179,7 +179,6 @@ public class World {
 
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
-                    config.getActivationConfig(),
                     new RepositoryLocator(getTrieStore(), stateRootHandler),
                     new TransactionExecutorFactory(
                             config,
@@ -190,7 +189,7 @@ public class World {
                             new PrecompiledContracts(config, bridgeSupportFactory, blockTxSignatureCache),
                             blockTxSignatureCache
                     ),
-                    config.isRemascEnabled());
+                    config);
         }
 
         return this.blockExecutor;
