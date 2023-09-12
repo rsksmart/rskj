@@ -65,7 +65,10 @@ import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.BlockRefParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDurationParam;
 import org.ethereum.rpc.parameters.HexIndexParam;
+import org.ethereum.rpc.parameters.HexKeyParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
 import org.ethereum.rpc.parameters.TxHashParam;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
@@ -458,22 +461,29 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) {
+    public String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam) {
+        if(blockRefParam.getIdentifier() != null) {
+            return this.eth_getStorageAt(address, storageIdx, blockRefParam.getIdentifier());
+        } else {
+            return this.eth_getStorageAt(address, storageIdx, blockRefParam.getInputs());
+        }
+    }
+
+    private String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, Map<String, String> blockRef) {
         return invokeByBlockRef(blockRef, blockNumber -> this.eth_getStorageAt(address, storageIdx, blockNumber));
     }
 
-    @Override
-    public String eth_getStorageAt(String address, String storageIdx, String blockId) {
+    private String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, String blockId) {
         String s = null;
 
         try {
-            RskAddress addr = new RskAddress(address);
+            RskAddress addr = address.getAddress();
 
             AccountInformationProvider accountInformationProvider =
                     web3InformationRetriever.getInformationProvider(blockId);
 
             DataWord sv = accountInformationProvider
-                    .getStorageValue(addr, DataWord.valueOf(HexUtils.strHexOrStrNumberToByteArray(storageIdx)));
+                    .getStorageValue(addr, DataWord.valueOf(HexUtils.strHexOrStrNumberToByteArray(storageIdx.getHexNumber())));
 
             if (sv == null) {
                 s = "0x0";
@@ -1071,12 +1081,12 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String personal_importRawKey(String key, String passphrase) {
+    public String personal_importRawKey(HexKeyParam key, String passphrase) {
         return personalModule.importRawKey(key, passphrase);
     }
 
     @Override
-    public String personal_dumpRawKey(String address) throws Exception {
+    public String personal_dumpRawKey(HexAddressParam address) throws Exception {
         return personalModule.dumpRawKey(address);
     }
 
@@ -1086,17 +1096,17 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String personal_sendTransaction(CallArguments args, String passphrase) throws Exception {
+    public String personal_sendTransaction(CallArgumentsParam args, String passphrase) throws Exception {
         return personalModule.sendTransaction(args, passphrase);
     }
 
     @Override
-    public boolean personal_unlockAccount(String address, String passphrase, String duration) {
+    public boolean personal_unlockAccount(HexAddressParam address, String passphrase, HexDurationParam duration) {
         return personalModule.unlockAccount(address, passphrase, duration);
     }
 
     @Override
-    public boolean personal_lockAccount(String address) {
+    public boolean personal_lockAccount(HexAddressParam address) {
         return personalModule.lockAccount(address);
     }
 
