@@ -216,19 +216,4 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         }
         return tx.getHash().toJsonString();
     }
-
-    private String convertFromJsonHexToHex(String x) throws Exception {
-        if (!x.startsWith("0x")) {
-            throw new Exception("Incorrect hex syntax");
-        }
-
-        return x.substring(2);
-    }
-
-    private long convertFromJsonHexToLong(String x) throws Exception {
-        if (!x.startsWith("0x")) {
-            throw new Exception("Incorrect hex syntax");
-        }
-        return Long.parseLong(x.substring(2), 16);
-    }
 }
