@@ -285,7 +285,34 @@ public enum MessageType {
             boolean complete = rlpComplete == null ? Boolean.FALSE : rlpComplete[0] != 0;
             return new StateChunkResponseMessage(id, chunkOfTrieKeys, blockNumber, from, to, complete);
         }
-    };
+    },
+    SNAP_STATUS_REQUEST_MESSAGE(22) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            byte[] rlpBlockNumber = list.get(0).getRLPData();
+            long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
+            return new SnapStatusRequestMessage(blockNumber);
+        }
+    },
+    SNAP_STATUS_RESPONSE_MESSAGE(23) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            byte[] rlpdata = list.get(0).getRLPData();
+            long number = rlpdata == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpdata).longValue();
+            byte[] hash = list.get(1).getRLPData();
+
+            if (list.size() == 2) {
+                return new StatusMessage(new Status(number, hash));
+            }
+
+            byte[] parentHash = list.get(2).getRLPData();
+            byte[] rlpTotalDifficulty = list.get(3).getRLPData();
+            BlockDifficulty totalDifficulty = rlpTotalDifficulty == null ? BlockDifficulty.ZERO : RLP.parseBlockDifficulty(rlpTotalDifficulty);
+
+            return new StatusMessage(new Status(number, hash, parentHash, totalDifficulty));
+        }
+    },
+    ;
 
     private int type;
 

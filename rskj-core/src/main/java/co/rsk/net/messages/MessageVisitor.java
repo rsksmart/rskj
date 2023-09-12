@@ -196,6 +196,19 @@ public class MessageVisitor {
         this.snapshotProcessor.processStateChunkResponse(sender, message);
     }
 
+    public void apply(SnapStatusRequestMessage message) {
+        logger.debug("snapshot chunk response : {}", message);
+
+        this.snapshotProcessor.processSnapStatusRequest(sender, message.getBlockNumber());
+    }
+
+    public void apply(SnapStatusResponseMessage message) {
+
+        final SnapStatus snapStatus = message.getSnapStatus();
+        logger.trace("Process snap-status {} {}", snapStatus.getTrieSize(), snapStatus.getRootHash());
+        this.snapshotProcessor.processSnapStatusResponse(sender, message);
+    }
+
     public void apply(TransactionsMessage message) {
         if (blockProcessor.hasBetterBlockToSync()) {
             loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());

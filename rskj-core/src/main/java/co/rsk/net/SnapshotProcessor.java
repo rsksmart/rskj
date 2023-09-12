@@ -1,7 +1,6 @@
 package co.rsk.net;
 
-import co.rsk.net.messages.StateChunkRequestMessage;
-import co.rsk.net.messages.StateChunkResponseMessage;
+import co.rsk.net.messages.*;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SnapSyncState;
 import co.rsk.trie.TrieDTO;
@@ -69,9 +68,16 @@ public class SnapshotProcessor {
         this.stateChunkSize = BigInteger.ZERO;
 
         // TODO(snap-poc) deal with multiple peers algorithm here
+        // currentChunk arranca en 0
+        // if (!peers.isEmpty()) {
+        //      peer = peers.getPeer();
+        //      requestState(peer, currentChunk, blockNumber)
+        //}
         Peer peer = peers.get(0);
 
-        requestState(peer, 0L, 5544285l);
+        // request trieSize y rootHash
+        // requestState(peer, 0L, 5544285l);
+        requestSnapStatus(peer, 0L, 5544285l);
     }
 
     // TODO(snap-poc) should be called on errors too
@@ -224,10 +230,41 @@ public class SnapshotProcessor {
         return  dst;
     }
 
+    private void requestSnapStatus(Peer peer, long from, long blockNumber) {
+        SnapStatusRequestMessage message = new SnapStatusRequestMessage(blockNumber);
+        peer.sendMessage(message);
+
+        requestState(peer, 0L, 5544285l);
+    }
     private void requestState(Peer peer, long from, long blockNumber) {
         logger.debug("Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
         StateChunkRequestMessage message = new StateChunkRequestMessage(messageId++, blockNumber, from, chunkSize);
+
+        // arma el mensage de triestatus
         peer.sendMessage(message);
     }
 
+    public void processSnapStatusResponse(Peer sender, SnapStatusResponseMessage responseMessage) {
+        // byte[] rootHash = responseMessage.getRootHash();
+        // long trieSize = responseMessage.getTrieSize()
+
+        // como uso esta informacion? donde la guardo?
+    }
+
+    public void processSnapStatusRequest(Peer sender, long blockNumber) {
+        byte[] rootHash;
+        long trieSize;
+
+        // todo()
+        // agarro el block number
+        // armo un trie que va hasta este block number
+        // calculo el root hash
+        // calculo el trie size
+
+
+        // una vez con esos datos, hago un return del SnapStatusRequestMessage
+        SnapStatus responseStatus = new SnapStatus(trieSize, rootHash);
+        SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(responseStatus);
+        sender.sendMessage(responseMessage);
+    }
 }
