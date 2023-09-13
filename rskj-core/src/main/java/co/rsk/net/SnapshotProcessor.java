@@ -46,6 +46,9 @@ public class SnapshotProcessor {
     private SnapSyncState snapSyncState;
     private List<byte[]> elements;
 
+    private long remoteTrieSize;
+    private byte[] remoteRootHash;
+
     public SnapshotProcessor(Blockchain blockchain,
             TrieStore trieStore,
             PeersInformation peersInformation,
@@ -245,26 +248,45 @@ public class SnapshotProcessor {
     }
 
     public void processSnapStatusResponse(Peer sender, SnapStatusResponseMessage responseMessage) {
-        // byte[] rootHash = responseMessage.getRootHash();
-        // long trieSize = responseMessage.getTrieSize()
-
         // como uso esta informacion? donde la guardo?
+        // posibles steps:
+        // 1 - los guardo en una variable interna???
+        SnapStatus status = responseMessage.getSnapStatus();
+
+        this.remoteRootHash = status.getRootHash();
+        this.remoteTrieSize = status.getTrieSize();
+
+        // 2 - mando a hacer el sync
+        // 3 - termina el sync
+        // 4 - calculo (de la misma manera) el rootHash y el trieSize
+        // 5 - los comparo, de ser iguales OK, no NOK
     }
 
     public void processSnapStatusRequest(Peer sender, long blockNumber) {
-        byte[] rootHash;
-        long trieSize;
+        long trieSize = 0;
 
-        // todo()
-        // agarro el block number
-        // armo un trie que va hasta este block number
-        // calculo el root hash
-        // calculo el trie size
+        Block block = blockchain.getBlockByNumber(blockNumber);
 
+        // calculo el root hash (?)
+        byte[] rootHash = block.getStateRoot();
 
-        // una vez con esos datos, hago un return del SnapStatusRequestMessage
-        SnapStatus responseStatus = new SnapStatus(trieSize, rootHash);
-        SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(responseStatus);
+        // calculo el trie size (esta bien el rootHash que estoy usando?)
+        Optional<TrieDTO> opt =  trieStore.retrieveDTO(rootHash);
+
+        if (opt.isPresent()) {
+            trieSize = opt.get().getSize();
+        }
+
+        SnapStatus status = new SnapStatus(trieSize, rootHash);
+        SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(status);
         sender.sendMessage(responseMessage);
+    }
+
+    private boolean validateTrie(long blockNumber) {
+        Block block = blockchain.getBlockByNumber(blockNumber);
+        byte[] rootHash = block.getStateRoot();
+        long trieSize =  trieStore.retrieveDTO(rootHash).get().getSize();
+
+        return trieSize == remoteTrieSize && Arrays.equals(rootHash, remoteRootHash);
     }
 }
