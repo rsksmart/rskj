@@ -44,6 +44,7 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -101,7 +102,8 @@ public class TransactionExecutor {
     private final long sublistGasLimit;
 
     private boolean localCall = false;
-    private boolean precompiledContractHasBeenCalledFlag = false;
+
+    private final Set<RskAddress> precompiledContractsCalled = new HashSet<>();
 
     private final boolean postponeFeePayment;
 
@@ -313,7 +315,7 @@ public class TransactionExecutor {
         this.subtraces = new ArrayList<>();
 
         if (precompiledContract != null) {
-            this.precompiledContractHasBeenCalledFlag = true;
+            this.precompiledContractsCalled.add(targetAddress);
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
             profiler.stop(metric);
@@ -434,7 +436,7 @@ public class TransactionExecutor {
             // This line checks whether the invoked smart contract calls a Precompiled contract.
             // This flag is then taken by the Parallel transaction handler, if the tx calls a precompiled contract,
             // it should be executed sequentially.
-            precompiledContractHasBeenCalledFlag |= program.precompiledContractHasBeenCalled();
+            this.precompiledContractsCalled.addAll(program.precompiledContractsCalled());
 
             result = program.getResult();
             gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
@@ -688,7 +690,8 @@ public class TransactionExecutor {
 
     public Coin getPaidFees() { return paidFees; }
 
-    public boolean precompiledContractHasBeenCalled() {
-        return this.precompiledContractHasBeenCalledFlag;
+    @Nonnull
+    public Set<RskAddress> precompiledContractsCalled() {
+        return this.precompiledContractsCalled.isEmpty() ? Collections.emptySet() : new HashSet<>(this.precompiledContractsCalled);
     }
 }

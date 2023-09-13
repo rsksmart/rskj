@@ -35,7 +35,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
     private long totalGas;
     private int i;
     private final boolean registerProgramResults;
-    private final boolean precompiledContractsAllowed;
+    private final Set<RskAddress> concurrentContractsDisallowed;
     private Coin totalPaidFees;
 
     public TransactionListExecutor(
@@ -56,7 +56,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
             int firstTxIndex,
             Coin totalPaidFees,
             boolean remascEnabled,
-            boolean precompiledContractsAllowed,
+            Set<RskAddress> concurrentContractsDisallowed,
             long sublistGasLimit) {
         this.block = block;
         this.transactionExecutorFactory = transactionExecutorFactory;
@@ -76,7 +76,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
         this.i = firstTxIndex;
         this.totalPaidFees = totalPaidFees;
         this.remascEnabled = remascEnabled;
-        this.precompiledContractsAllowed = precompiledContractsAllowed;
+        this.concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(concurrentContractsDisallowed));
         this.sublistGasLimit = sublistGasLimit;
     }
 
@@ -104,7 +104,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
                     true,
                     sublistGasLimit);
             boolean transactionSucceeded = txExecutor.executeTransaction();
-            if (!this.precompiledContractsAllowed && txExecutor.precompiledContractHasBeenCalled()) {
+            if (!this.concurrentContractsDisallowed.isEmpty() && txExecutor.precompiledContractsCalled().stream().anyMatch(this.concurrentContractsDisallowed::contains)) {
                 transactionSucceeded = false;
             }
 

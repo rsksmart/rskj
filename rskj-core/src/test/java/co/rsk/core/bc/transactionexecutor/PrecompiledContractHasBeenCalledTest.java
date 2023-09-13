@@ -68,40 +68,40 @@ public class PrecompiledContractHasBeenCalledTest {
     void whenATxCallsAPrecompiledContractPrecompiledContractHasBeenCalledFlagShouldBeTrue() {
         byte[] arbitraryData = Hex.decode("00112233");
         long value = 0L;
-        boolean precompiledHasBeenCalled = true;
+        Set<RskAddress> precompiledContractsCalled = Collections.singleton(PrecompiledContracts.IDENTITY_ADDR);
         boolean hasRevert = false;
         boolean threwAnException = false;
         RskAddress destination = PrecompiledContracts.IDENTITY_ADDR;
-        executeATransactionAndAssert(getABlockWithATx(track, config, arbitraryData, value, destination, sender), txIndex, precompiledHasBeenCalled, hasRevert, threwAnException);
+        executeATransactionAndAssert(getABlockWithATx(track, config, arbitraryData, value, destination, sender), txIndex, precompiledContractsCalled, hasRevert, threwAnException);
     }
 
 
     @Test
     void whenATxSendsValueToAPrecompiledContractPrecompiledContractHasBeenCalledFlagShouldBeTrue() {
         int value = 1;
-        boolean precompiledHasBeenCalled = true;
+        Set<RskAddress> precompiledContractsCalled = Collections.singleton(PrecompiledContracts.IDENTITY_ADDR);
         boolean hasRevert = false;
         boolean threwAnException = false;
         RskAddress destination = PrecompiledContracts.IDENTITY_ADDR;
-        executeATransactionAndAssert(getABlockWithATx(track, config, null, value, destination, sender), txIndex, precompiledHasBeenCalled, hasRevert, threwAnException);
+        executeATransactionAndAssert(getABlockWithATx(track, config, null, value, destination, sender), txIndex, precompiledContractsCalled, hasRevert, threwAnException);
     }
 
     @Test
     void whenATxCallsAPrecompiledContractAndThrowsAnExceptionPrecompiledContractHasBeenCalledFlagShouldBeTrue() {
         byte[] dataThatThrowsAnException = Hex.decode("e674f5e80000000000000000000000000000000000000000000000000000000001000006");
         int value = 0;
-        boolean precompiledHasBeenCalled = true;
+        Set<RskAddress> precompiledContractsCalled = Collections.singleton(PrecompiledContracts.BRIDGE_ADDR);
         boolean hasRevert = false;
         boolean threwAnException = true;
         RskAddress destination = PrecompiledContracts.BRIDGE_ADDR;
-        executeATransactionAndAssert(getABlockWithATx(track, config, dataThatThrowsAnException, value, destination, sender), txIndex, precompiledHasBeenCalled, hasRevert, threwAnException);
+        executeATransactionAndAssert(getABlockWithATx(track, config, dataThatThrowsAnException, value, destination, sender), txIndex, precompiledContractsCalled, hasRevert, threwAnException);
     }
 
     @Test
     void ifAnAccountSendsValueToAnAccountPrecompiledContractHasBeenCalledFlagShouldBeFalse() {
         Coin balance_before = track.getBalance(receiver.getAddress());
-        executeATransactionAndAssert(getABlockWithATx(track, config, null, 1, receiver.getAddress(), sender), txIndex, false, false, false);
-        Assertions.assertEquals(balance_before.add(Coin.valueOf(1)), track.getBalance(receiver.getAddress()));;
+        executeATransactionAndAssert(getABlockWithATx(track, config, null, 1, receiver.getAddress(), sender), txIndex, Collections.emptySet(), false, false);
+        Assertions.assertEquals(balance_before.add(Coin.valueOf(1)), track.getBalance(receiver.getAddress()));
     }
 
     @Test
@@ -121,8 +121,8 @@ public class PrecompiledContractHasBeenCalledTest {
         txs.add(tx2);
 
         Block aBlockWithATxToAPrecompiledContract = new BlockGenerator(Constants.regtest(), config.getActivationConfig()).createChildBlock(getGenesisBlock(config, track), txs, uncles, difficulty, minGasPrice);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, false, false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, Collections.emptySet(), false, false);
     }
 
     @Test
@@ -142,8 +142,8 @@ public class PrecompiledContractHasBeenCalledTest {
         txs.add(tx2);
 
         Block aBlockWithATxToAPrecompiledContract = new BlockGenerator(Constants.regtest(), config.getActivationConfig()).createChildBlock(getGenesisBlock(config, track), txs, uncles, difficulty, minGasPrice);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, false, true, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, Collections.emptySet(), true, false);
     }
 
     @Test
@@ -163,8 +163,8 @@ public class PrecompiledContractHasBeenCalledTest {
         txs.add(tx2);
 
         Block aBlockWithATxToAPrecompiledContract = new BlockGenerator(Constants.regtest(), config.getActivationConfig()).createChildBlock(getGenesisBlock(config, track), txs, uncles, difficulty, minGasPrice);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, true, false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, Collections.singleton(PrecompiledContracts.IDENTITY_ADDR), false, false);
     }
 
     @Test
@@ -183,9 +183,9 @@ public class PrecompiledContractHasBeenCalledTest {
         txs.add(tx1);
 
         Block aBlockWithATxToAPrecompiledContract = new BlockGenerator(Constants.regtest(), config.getActivationConfig()).createChildBlock(getGenesisBlock(config, track), txs, uncles, difficulty, minGasPrice);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
         // As the Precompiled throws an exception, the contract hits the require, and thus reverts.
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, true, true, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, Collections.singleton(PrecompiledContracts.BRIDGE_ADDR), true, false);
     }
 
     @Test
@@ -211,9 +211,9 @@ public class PrecompiledContractHasBeenCalledTest {
         txs.add(tx2);
 
         Block aBlockWithATxToAPrecompiledContract = new BlockGenerator(Constants.regtest(), config.getActivationConfig()).createChildBlock(getGenesisBlock(config, track), txs, uncles, difficulty, minGasPrice);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, false, false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, Collections.emptySet(), false, false);
     }
 
     @Test
@@ -239,9 +239,9 @@ public class PrecompiledContractHasBeenCalledTest {
         txs.add(tx2);
 
         Block aBlockWithATxToAPrecompiledContract = new BlockGenerator(Constants.regtest(), config.getActivationConfig()).createChildBlock(getGenesisBlock(config, track), txs, uncles, difficulty, minGasPrice);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, false, true, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, Collections.emptySet(), true, false);
     }
 
     @Test
@@ -268,9 +268,9 @@ public class PrecompiledContractHasBeenCalledTest {
 
         Block aBlockWithATxToAPrecompiledContract = new BlockGenerator(Constants.regtest(), config.getActivationConfig()).createChildBlock(getGenesisBlock(config, track), txs, uncles, difficulty, minGasPrice);
 
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, true, false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, Collections.singleton(PrecompiledContracts.IDENTITY_ADDR), false, false);
     }
 
     @Test
@@ -296,9 +296,9 @@ public class PrecompiledContractHasBeenCalledTest {
         txs.add(tx2);
 
         Block aBlockWithATxToAPrecompiledContract = new BlockGenerator(Constants.regtest(), config.getActivationConfig()).createChildBlock(getGenesisBlock(config, track), txs, uncles, difficulty, minGasPrice);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, false, false, false);
-        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, true, true, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex++, Collections.emptySet(), false, false);
+        executeATransactionAndAssert(aBlockWithATxToAPrecompiledContract, txIndex, Collections.singleton(PrecompiledContracts.BRIDGE_ADDR), true, false);
     }
 
     private static TransactionExecutorFactory getTransactionExecutorFactory(TestSystemProperties config) {
@@ -318,12 +318,12 @@ public class PrecompiledContractHasBeenCalledTest {
         );
     }
 
-    private void executeATransactionAndAssert(Block aBlock, int transactionIndex, boolean precompiledHasBeenCalled, boolean hasRevert, boolean threwAnException) {
+    private void executeATransactionAndAssert(Block aBlock, int transactionIndex, Set<RskAddress> precompiledContractsCalled, boolean hasRevert, boolean threwAnException) {
         TransactionExecutor transactionExecutor = transactionExecutorFactory.newInstance(aBlock.getTransactionsList().get(transactionIndex), transactionIndex, aBlock.getCoinbase(),
                 track, aBlock, 0L);
 
         boolean txExecuted = transactionExecutor.executeTransaction();
-        assertExecutionFlagAndIfRevertedOrThrewAnException(transactionExecutor, txExecuted, precompiledHasBeenCalled, hasRevert, threwAnException);
+        assertExecutionFlagAndIfRevertedOrThrewAnException(transactionExecutor, txExecuted, precompiledContractsCalled, hasRevert, threwAnException);
     }
 
     private static BigInteger incrementNonce(BigInteger nonce) {
@@ -341,10 +341,10 @@ public class PrecompiledContractHasBeenCalledTest {
         return new RskAddress(HashUtil.calcNewAddr(aSender.getAddress().getBytes(), nonce.toByteArray()));
     }
 
-    private static void assertExecutionFlagAndIfRevertedOrThrewAnException(TransactionExecutor txExecutor, boolean txExecuted, boolean precompiledHasBeenCalled, boolean hasRevert, boolean threwAnException) {
+    private static void assertExecutionFlagAndIfRevertedOrThrewAnException(TransactionExecutor txExecutor, boolean txExecuted, Set<RskAddress> precompiledContractsCalled, boolean hasRevert, boolean threwAnException) {
         Assertions.assertTrue(txExecuted);
         ProgramResult transactionResult = txExecutor.getResult();
-        Assertions.assertEquals(precompiledHasBeenCalled, txExecutor.precompiledContractHasBeenCalled());
+        Assertions.assertEquals(precompiledContractsCalled, txExecutor.precompiledContractsCalled());
         Exception exception = transactionResult.getException();
         if (threwAnException) {
             Assertions.assertNotNull(exception);

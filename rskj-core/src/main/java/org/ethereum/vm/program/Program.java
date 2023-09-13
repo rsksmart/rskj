@@ -112,7 +112,7 @@ public class Program {
     private final Set<DataWord> deletedAccountsInBlock;
 
     private final SignatureCache signatureCache;
-    private boolean precompiledContractHasBeenCalled = false;
+    private final Set<RskAddress> precompiledContractsCalled = new HashSet<>();
 
     public Program(
             VmConfig config,
@@ -835,7 +835,7 @@ public class Program {
 
         getTrace().merge(program.getTrace());
         getResult().merge(childResult);
-        this.precompiledContractHasBeenCalled |= program.precompiledContractHasBeenCalled;
+        this.precompiledContractsCalled.addAll(program.precompiledContractsCalled());
 
         boolean childCallSuccessful = true;
 
@@ -1333,7 +1333,7 @@ public class Program {
     }
 
     public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
-        this.precompiledContractHasBeenCalled = true;
+        this.precompiledContractsCalled.add(new RskAddress(msg.getCodeAddress()));
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), " call deep limit reach");
@@ -1488,8 +1488,9 @@ public class Program {
         return invoke.byTestingSuite();
     }
 
-    public boolean precompiledContractHasBeenCalled() {
-        return this.precompiledContractHasBeenCalled;
+    @Nonnull
+    public Set<RskAddress> precompiledContractsCalled() {
+        return precompiledContractsCalled.isEmpty() ? Collections.emptySet() : new HashSet<>(this.precompiledContractsCalled);
     }
 
     public interface ProgramOutListener {

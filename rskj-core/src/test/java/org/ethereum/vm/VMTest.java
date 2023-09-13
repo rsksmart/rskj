@@ -3369,7 +3369,7 @@ public abstract class VMTest {
     @Test
     void whenProgramIsInitializedPrecompiledCalledShouldBeFalse() {
         Program program = getProgram(new byte[]{});
-        Assertions.assertFalse(program.precompiledContractHasBeenCalled());
+        Assertions.assertTrue(program.precompiledContractsCalled().isEmpty());
     }
 
     @Test
@@ -3386,7 +3386,7 @@ public abstract class VMTest {
                 " CALL"
         ));
         vm.steps(program, Long.MAX_VALUE);
-        Assertions.assertTrue(program.precompiledContractHasBeenCalled());
+        Assertions.assertFalse(program.precompiledContractsCalled().isEmpty());
         Assertions.assertFalse(program.getResult().isRevert());
     }
 
@@ -3406,7 +3406,7 @@ public abstract class VMTest {
                 " CALL"
         ));
         vm.steps(program, Long.MAX_VALUE);
-        Assertions.assertFalse(program.precompiledContractHasBeenCalled());
+        Assertions.assertTrue(program.precompiledContractsCalled().isEmpty());
         Assertions.assertFalse(program.getResult().isRevert());
     }
 

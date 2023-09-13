@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.List;
+import java.util.*;
 
 import static co.rsk.core.bc.transactionexecutor.PrecompiledContractHasBeenCalledTest.PROXY_SMART_CONTRACT_BYTECODE;
 import static co.rsk.core.bc.transactionexecutor.PrecompiledContractHasBeenCalledTest.PROXY_TO_PROXY_SMART_CONTRACT_BYTECODE;
@@ -51,13 +51,13 @@ class ParallelExecutionStateTest {
         return createWorld(rskip144, null);
     }
 
-    private World createWorld(int rskip144, @Nullable Boolean concurrentPrecompiledContractsEnabled) {
+    private World createWorld(int rskip144, @Nullable Set<RskAddress> concurrentContractsDisallowed) {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(rskip144))
         );
-        if (concurrentPrecompiledContractsEnabled != null) {
-            config.setConcurrentPrecompiledContractsEnabled(concurrentPrecompiledContractsEnabled);
+        if (concurrentContractsDisallowed != null) {
+            config.setConcurrentContractsDisallowed(concurrentContractsDisallowed);
         }
 
         return new World(receiptStore, config);
@@ -67,8 +67,8 @@ class ParallelExecutionStateTest {
         return createWorldAndProcess(dsl, rskip144ActivationHeight, null);
     }
 
-    private World createWorldAndProcess(String dsl, int rskip144ActivationHeight, @Nullable Boolean concurrentPrecompiledContractsEnabled) throws DslProcessorException {
-        World world = createWorld(rskip144ActivationHeight, concurrentPrecompiledContractsEnabled);
+    private World createWorldAndProcess(String dsl, int rskip144ActivationHeight, @Nullable Set<RskAddress> concurrentContractsDisallowed) throws DslProcessorException {
+        World world = createWorld(rskip144ActivationHeight, concurrentContractsDisallowed);
 
         DslParser parser = new DslParser(dsl);
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -864,7 +864,7 @@ class ParallelExecutionStateTest {
                 "\n" +
                 "assert_best b01\n" +
                 "assert_tx_success tx01\n" +
-                "\n", 0, false);
+                "\n", 0, Collections.singleton(PrecompiledContracts.IDENTITY_ADDR));
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
@@ -891,7 +891,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
-                        "\n", 0, true);
+                        "\n", 0, Collections.emptySet());
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
@@ -918,7 +918,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
-                        "\n", 0, false);
+                        "\n", 0, Collections.singleton(PrecompiledContracts.IDENTITY_ADDR));
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
@@ -945,7 +945,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
-                        "\n", 0, true);
+                        "\n", 0, Collections.emptySet());
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
@@ -973,7 +973,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
-                        "\n", 0, false);
+                        "\n", 0, Collections.singleton(PrecompiledContracts.BRIDGE_ADDR));
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
@@ -1001,7 +1001,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
-                        "\n", 0, true);
+                        "\n", 0, Collections.emptySet());
 
         Assertions.assertEquals(1, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
@@ -1037,7 +1037,7 @@ class ParallelExecutionStateTest {
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
                         "assert_tx_success tx02\n" +
-                        "\n", 0, false);
+                        "\n", 0, Collections.singleton(PrecompiledContracts.IDENTITY_ADDR));
 
         Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{1}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
@@ -1073,7 +1073,7 @@ class ParallelExecutionStateTest {
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
                         "assert_tx_success tx02\n" +
-                        "\n", 0, true);
+                        "\n", 0, Collections.emptySet());
 
         Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(new short[]{2}, parallel.getBlockChain().getBestBlock().getHeader().getTxExecutionSublistsEdges());
@@ -1108,7 +1108,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
-                        "\n", 0, false);
+                        "\n", 0, Collections.singleton(PrecompiledContracts.BRIDGE_ADDR));
 
         Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(FAILED_STATUS, parallel.getTransactionReceiptByName("tx02").getStatus());
@@ -1144,7 +1144,7 @@ class ParallelExecutionStateTest {
                         "\n" +
                         "assert_best b01\n" +
                         "assert_tx_success tx01\n" +
-                        "\n", 0, true);
+                        "\n", 0, Collections.emptySet());
 
         Assertions.assertEquals(2, parallel.getBlockChain().getBestBlock().getTransactionsList().size());
         Assertions.assertArrayEquals(FAILED_STATUS, parallel.getTransactionReceiptByName("tx02").getStatus());
@@ -1153,7 +1153,7 @@ class ParallelExecutionStateTest {
 
     @Test
     void whenAnInternalTxCallsAContractThatCallsAPrecompiledShouldGoToSequentialIfDisabled() throws DslProcessorException {
-        World parallel = createWorld(0, false);
+        World parallel = createWorld(0, Collections.singleton(PrecompiledContracts.IDENTITY_ADDR));
         WorldDslProcessor processor = new WorldDslProcessor(parallel);
         String dsl = deployProxyTo(PrecompiledContracts.IDENTITY_ADDR);
         DslParser parser = new DslParser(dsl);
@@ -1178,7 +1178,7 @@ class ParallelExecutionStateTest {
 
     @Test
     void whenAnInternalTxCallsAContractThatCallsAPrecompiledShouldGoToParallelIfEnabled() throws DslProcessorException {
-        World parallel = createWorld(0, true);
+        World parallel = createWorld(0, Collections.emptySet());
         WorldDslProcessor processor = new WorldDslProcessor(parallel);
         String dsl = deployProxyTo(PrecompiledContracts.IDENTITY_ADDR);
         DslParser parser = new DslParser(dsl);
@@ -1203,7 +1203,7 @@ class ParallelExecutionStateTest {
 
     @Test
     void whenAnInternalTxCallsAContractThatCallsAPrecompiledAndRevertsShouldGoToSequentialIfDisabled() throws DslProcessorException {
-        World parallel = createWorld(0, false);
+        World parallel = createWorld(0, Collections.singleton(PrecompiledContracts.BRIDGE_ADDR));
         WorldDslProcessor processor = new WorldDslProcessor(parallel);
         String dsl = deployProxyTo(PrecompiledContracts.BRIDGE_ADDR);
         DslParser parser = new DslParser(dsl);
@@ -1229,7 +1229,7 @@ class ParallelExecutionStateTest {
 
     @Test
     void whenAnInternalTxCallsAContractThatCallsAPrecompiledAndRevertsShouldGoToParallelIfEnabled() throws DslProcessorException {
-        World parallel = createWorld(0, true);
+        World parallel = createWorld(0, Collections.emptySet());
         WorldDslProcessor processor = new WorldDslProcessor(parallel);
         String dsl = deployProxyTo(PrecompiledContracts.BRIDGE_ADDR);
         DslParser parser = new DslParser(dsl);

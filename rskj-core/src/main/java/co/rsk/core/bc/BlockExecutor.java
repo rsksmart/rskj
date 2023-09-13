@@ -62,7 +62,7 @@ public class BlockExecutor {
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final ActivationConfig activationConfig;
     private final boolean remascEnabled;
-    private final boolean concurrentPrecompiledContractsEnabled;
+    private final Set<RskAddress> concurrentContractsDisallowed;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     private boolean registerProgramResults;
@@ -75,7 +75,7 @@ public class BlockExecutor {
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.activationConfig = systemProperties.getActivationConfig();
         this.remascEnabled = systemProperties.isRemascEnabled();
-        this.concurrentPrecompiledContractsEnabled = systemProperties.isConcurrentPrecompiledContractsEnabled();
+        this.concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(systemProperties.concurrentContractsDisallowed()));
     }
 
     /**
@@ -461,7 +461,7 @@ public class BlockExecutor {
                     start,
                     Coin.ZERO,
                     remascEnabled,
-                    concurrentPrecompiledContractsEnabled,
+                    concurrentContractsDisallowed,
                     sublistGasLimit
             );
             completionService.submit(txListExecutor);
@@ -537,7 +537,7 @@ public class BlockExecutor {
                 start,
                 totalPaidFees,
                 remascEnabled,
-                true, // precompiled Contracts are always allowed in a sequential list
+                Collections.emptySet(), // precompiled contracts are always allowed in a sequential list, as there's no concurrency in it
                 sublistGasLimit
         );
         Boolean success = txListExecutor.call();
@@ -639,7 +639,7 @@ public class BlockExecutor {
                     tx,
                     tx.isRemascTransaction(txindex, transactionsList.size()),
                     txExecutor.getGasConsumed(),
-                    !concurrentPrecompiledContractsEnabled && txExecutor.precompiledContractHasBeenCalled());
+                    txExecutor.precompiledContractsCalled().stream().anyMatch(this.concurrentContractsDisallowed::contains));
 
             if (!acceptInvalidTransactions && !sublistGasAccumulated.isPresent()) {
                 if (!discardInvalidTxs) {
