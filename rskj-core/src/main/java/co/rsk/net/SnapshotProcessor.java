@@ -1,5 +1,6 @@
 package co.rsk.net;
 
+import co.rsk.net.compression.Compressor;
 import co.rsk.net.messages.StateChunkRequestMessage;
 import co.rsk.net.messages.StateChunkResponseMessage;
 import co.rsk.net.sync.PeersInformation;
@@ -31,6 +32,7 @@ public class SnapshotProcessor {
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
     private static final String KBYTES = "kbytes";
     private static final int UNCOMPRESSED_FLAG = -1;
+    public static final long BLOCK_NUMBER = 5637110l;
 
     private final Blockchain blockchain;
     private final TrieStore trieStore;
@@ -71,7 +73,7 @@ public class SnapshotProcessor {
         // TODO(snap-poc) deal with multiple peers algorithm here
         Peer peer = peers.get(0);
 
-        requestState(peer, 0L, 5544285l);
+        requestState(peer, 0L, BLOCK_NUMBER);
     }
 
     // TODO(snap-poc) should be called on errors too
@@ -102,7 +104,7 @@ public class SnapshotProcessor {
 
             boolean isCompressed = rawSize != UNCOMPRESSED_FLAG;
             if (isCompressed) {
-                value = decompressLz4(value, rawSize);
+                value = Compressor.decompressLz4(value, rawSize);
             }
             this.elements.add(value);
 
@@ -159,22 +161,23 @@ public class SnapshotProcessor {
                     rawSize += effectiveValue.length;
 
                     long startCompress = System.currentTimeMillis();
-                    byte[] compressedValue = compressLz4(effectiveValue);
+                    byte[] compressedValue = Compressor.compressLz4(effectiveValue);
                     long totalCompress = System.currentTimeMillis() - startCompress;
                     totalCompressingTime += totalCompress;
 
-                    validateCompression(effectiveValue, compressedValue);
+                    if(logger.isTraceEnabled()){
+                        boolean valid = Compressor.validateCompression(effectiveValue, compressedValue);
+                        logger.trace("===== compressed validation = {}, for key {}", valid, ByteUtil.toHexString(effectiveValue));
+                    }
 
                     boolean couldCompress = compressedValue.length < effectiveValue.length;
                     if (couldCompress) {
                         compressedSize += compressedValue.length;
                         uncompressedSizeParam = effectiveValue.length;
+                        effectiveValue = compressedValue;
                     } else {
                         compressedSize += effectiveValue.length;
                     }
-
-                    effectiveValue = compressedValue;
-
                 }
 
                 final byte[] element = RLP.encodeList(RLP.encodeElement(effectiveValue), RLP.encodeInt(uncompressedSizeParam));
@@ -195,33 +198,6 @@ public class SnapshotProcessor {
 
         logger.debug("Sending state chunk of {} bytes to node {}, compressing time {}ms, totalTime {}ms, compressionFactor {}", chunkBytes.length, sender.getPeerNodeID(), totalCompressingTime, totalChunkTime, compressionFactor);
         sender.sendMessage(responseMessage);
-    }
-
-    private static void validateCompression(byte[] value, byte[] compressedValue) {
-        // TODO(snap-poc) remove this when finishing with the compression validations
-        if (logger.isTraceEnabled()) {
-            if (Arrays.equals(decompressLz4(compressedValue, value.length), value)) {
-                logger.trace("===== compressed value is equal to original value for key {}", ByteUtil.toHexString(value));
-            } else {
-                logger.trace("===== compressed value is different from original value for key {}", ByteUtil.toHexString(value));
-            }
-        }
-    }
-
-    private static byte[] compressLz4(byte[] src) {
-        LZ4Factory lz4Factory = LZ4Factory.safeInstance();
-        LZ4Compressor fastCompressor = lz4Factory.fastCompressor();
-        int maxCompressedLength = fastCompressor.maxCompressedLength(src.length);
-        byte[] dst = new byte[maxCompressedLength];
-        int compressedLength = fastCompressor.compress(src, 0, src.length, dst, 0, maxCompressedLength);
-        return Arrays.copyOf(dst, compressedLength);
-    }
-
-    private static byte[] decompressLz4(byte[] src, int expandedSize) {
-        LZ4SafeDecompressor decompressor = LZ4Factory.safeInstance().safeDecompressor();
-        byte[] dst = new byte[expandedSize];
-        decompressor.decompress(src, dst);
-        return  dst;
     }
 
     private void requestState(Peer peer, long from, long blockNumber) {
