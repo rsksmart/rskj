@@ -10,7 +10,7 @@ public abstract class HexStringParam {
         }
 
         if (!HexUtils.hasHexPrefix(hexString) || !HexUtils.isHex(hexString,2)) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid argument \"" + hexString + "\": param should be a hex value string.");
+            throw RskJsonRpcRequestException.invalidParamError("Invalid argument " + hexString + ": param should be a hex value string.");
         }
     }
 }

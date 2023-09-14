@@ -91,17 +91,17 @@ public interface Web3EthModule {
 
     String eth_getBlockTransactionCountByHash(BlockHashParam blockHash)throws Exception;
 
-    String eth_getBlockTransactionCountByNumber(String bnOrId)throws Exception;
+    String eth_getBlockTransactionCountByNumber(BlockIdentifierParam bnOrId)throws Exception;
 
-    String eth_getUncleCountByBlockHash(String blockHash)throws Exception;
+    String eth_getUncleCountByBlockHash(BlockHashParam blockHash)throws Exception;
 
-    String eth_getUncleCountByBlockNumber(String bnOrId)throws Exception;
+    String eth_getUncleCountByBlockNumber(BlockIdentifierParam bnOrId)throws Exception;
 
-    default String eth_getCode(String address, String blockId) {
+    String eth_getCode(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
+
+    default String getCode(HexAddressParam address, String blockId) {
         return getEthModule().getCode(address, blockId);
     }
-
-    String eth_getCode(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
 
     default String eth_sendRawTransaction(HexDataParam rawData) {
         return getEthModule().sendRawTransaction(rawData);
@@ -113,19 +113,19 @@ public interface Web3EthModule {
 
     BlockResultDTO eth_getBlockByHash(BlockHashParam blockHash, Boolean fullTransactionObjects) throws Exception;
 
-    BlockResultDTO eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) throws Exception;
+    BlockResultDTO eth_getBlockByNumber(BlockIdentifierParam bnOrId, Boolean fullTransactionObjects) throws Exception;
 
     TransactionResultDTO eth_getTransactionByHash(TxHashParam transactionHash) throws Exception;
 
     TransactionResultDTO eth_getTransactionByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam index) throws Exception;
 
-    TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(String bnOrId, String index) throws Exception;
+    TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(BlockIdentifierParam bnOrId, HexIndexParam index) throws Exception;
 
     TransactionReceiptDTO eth_getTransactionReceipt(TxHashParam transactionHash) throws Exception;
 
     BlockResultDTO eth_getUncleByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam uncleIdx) throws Exception;
 
-    BlockResultDTO eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) throws Exception;
+    BlockResultDTO eth_getUncleByBlockNumberAndIndex(BlockIdentifierParam blockId, HexIndexParam uncleIdx) throws Exception;
 
     String[] eth_getCompilers();
 

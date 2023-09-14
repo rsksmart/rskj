@@ -413,8 +413,16 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getCode(String address, Map<String, String> inputs) {
-        return invokeByBlockRef(inputs, blockNumber -> this.eth_getCode(address, blockNumber));
+    public String eth_getCode(HexAddressParam address, BlockRefParam blockRefParam) {
+        if (blockRefParam.getIdentifier() != null) {
+            return this.getCode(address, blockRefParam.getIdentifier());
+        } else {
+            return this.eth_getCode(address, blockRefParam.getInputs());
+        }
+    }
+
+    private String eth_getCode(HexAddressParam address, Map<String, String> inputs) {
+        return invokeByBlockRef(inputs, blockNumber -> this.getCode(address, blockNumber));
     }
 
     @Override
@@ -607,11 +615,11 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getBlockTransactionCountByNumber(String bnOrId) {
+    public String eth_getBlockTransactionCountByNumber(BlockIdentifierParam bnOrId) {
         String s = null;
         try {
 
-            List<Transaction> txs = web3InformationRetriever.getTransactions(bnOrId);
+            List<Transaction> txs = web3InformationRetriever.getTransactions(bnOrId.getIdentifier());
 
             s = toQuantityJsonHex(txs.size());
             return s;
@@ -623,7 +631,8 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getUncleCountByBlockHash(String blockHash) {
+    public String eth_getUncleCountByBlockHash(BlockHashParam blockHashParam) {
+        String blockHash = blockHashParam.getHash().toString();
         Block b = getBlockByJSonHash(blockHash);
         if (b == null) {
             throw blockNotFound(String.format("Block with hash %s not found", blockHash));
@@ -634,12 +643,13 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getUncleCountByBlockNumber(String bnOrId) {
-        return web3InformationRetriever.getBlock(bnOrId)
+    public String eth_getUncleCountByBlockNumber(BlockIdentifierParam identifierParam) {
+        String bnorId = identifierParam.getIdentifier();
+        return web3InformationRetriever.getBlock(bnorId)
                 .map(Block::getUncleList)
                 .map(List::size)
                 .map(HexUtils::toQuantityJsonHex)
-                .orElseThrow(() -> blockNotFound(String.format("Block %s not found", bnOrId)));
+                .orElseThrow(() -> blockNotFound(String.format("Block %s not found", bnorId)));
     }
 
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
@@ -694,8 +704,10 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public BlockResultDTO eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) {
+    public BlockResultDTO eth_getBlockByNumber(BlockIdentifierParam identifierParam, Boolean fullTransactionObjects) {
         BlockResultDTO s = null;
+        String bnOrId = identifierParam.getIdentifier();
+
         try {
 
             s = web3InformationRetriever.getBlock(bnOrId)
@@ -783,15 +795,16 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(String bnOrId, String index) {
+    public TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(BlockIdentifierParam identifierParam, HexIndexParam index) {
         TransactionResultDTO s = null;
+        String bnOrId = identifierParam.getIdentifier();
         try {
             Optional<Block> block = web3InformationRetriever.getBlock(bnOrId);
             if (!block.isPresent()) {
                 return null;
             }
 
-            int idx = jsonHexToInt(index);
+            int idx = index.getIndex();
             List<Transaction> txs = web3InformationRetriever.getTransactions(bnOrId);
             if (idx >= txs.size()) {
                 return null;
@@ -864,15 +877,17 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public BlockResultDTO eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) {
+    public BlockResultDTO eth_getUncleByBlockNumberAndIndex(BlockIdentifierParam identifierParam, HexIndexParam uncleIdx) {
         BlockResultDTO s = null;
+        String blockId = identifierParam.getIdentifier();
+
         try {
             Optional<Block> block = web3InformationRetriever.getBlock(blockId);
 
             if (!block.isPresent()) {
                 return null;
             }
-            int idx = jsonHexToInt(uncleIdx);
+            int idx = uncleIdx.getIndex();
             s = getUncleResultDTO(idx, block.get());
 
             return s;
