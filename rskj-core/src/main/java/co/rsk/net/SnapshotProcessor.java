@@ -30,20 +30,20 @@ import java.util.Optional;
 public class SnapshotProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
-    private static final String KBYTES = "kbytes";
     private static final int UNCOMPRESSED_FLAG = -1;
     public static final long BLOCK_NUMBER = 5637110l;
+    public static final long DELAY_BTW_RUNS = 20 * 60 * 1000;
+    public static final int CHUNK_MAX = 1600;
+    public static final int CHUNK_MIN = 100;
 
     private final Blockchain blockchain;
     private final TrieStore trieStore;
-    private final int chunkSize;
-    private final String chunkSizeType;
+    private int chunkSize;
     private final PeersInformation peersInformation;
 
     private final boolean isCompressionEnabled;
 
     private long messageId = 0;
-    private boolean enabled = false;
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
     private SnapSyncState snapSyncState;
@@ -52,13 +52,12 @@ public class SnapshotProcessor {
     public SnapshotProcessor(Blockchain blockchain,
             TrieStore trieStore,
             PeersInformation peersInformation,
-            int chunkSize, String chunkSizeType,
+            int chunkSize,
             boolean isCompressionEnabled) {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
-        this.chunkSize = chunkSize;
-        this.chunkSizeType = chunkSizeType;
+        this.chunkSize = CHUNK_MIN;
         this.isCompressionEnabled = isCompressionEnabled;
         this.elements = Lists.newArrayList();
     }
@@ -121,13 +120,20 @@ public class SnapshotProcessor {
             // request another chunk
             requestState(peer, message.getTo(), message.getBlockNumber());
         } else {
-            logger.debug("State Completed! {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
+            logger.debug("State Completed! {} chunks ({} bytes) - chunk size = {}",
+                    this.stateSize.toString(), this.stateChunkSize.toString(), this.chunkSize);
             logger.debug("Mapping elements...");
             final TrieDTO[] nodeArray = this.elements.stream().map(TrieDTO::decodeFromSync).toArray(TrieDTO[]::new);
             logger.debug("Recovering trie...");
             Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray);
             logger.debug("Recovered root: {}", result.get().calculateHash());
-            logger.debug("Starting again the infinite loop!");
+            try {
+                Thread.sleep(DELAY_BTW_RUNS);
+            } catch (InterruptedException ignored) {
+            }
+            this.chunkSize = this.chunkSize * 2;
+            this.chunkSize = this.chunkSize > CHUNK_MAX ? CHUNK_MIN : this.chunkSize;
+            logger.debug("Starting again the infinite loop! With chunk size = {}", this.chunkSize);
             this.elements = Lists.newArrayList();
             this.stateSize = BigInteger.ZERO;
             this.stateChunkSize = BigInteger.ZERO;

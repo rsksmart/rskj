@@ -1942,7 +1942,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getTrieStore(),
                     getPeersInformation(),
                     getRskSystemProperties().getSnapshotChunkSize(),
-                    getRskSystemProperties().getSnapshotChunkSizeType(),
                     getRskSystemProperties().isSnapshotSyncCompressionEnabled()
             );
         }
