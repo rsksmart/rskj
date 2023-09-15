@@ -217,14 +217,14 @@ public class EthModule
         return HexUtils.toJsonHex(new byte[]{chainId});
     }
 
-    public String getCode(String address, String blockId) {
+    public String getCode(HexAddressParam address, String blockId) {
         if (blockId == null) {
             throw new NullPointerException();
         }
 
         String s = null;
+        RskAddress addr = address.getAddress();
         try {
-            RskAddress addr = new RskAddress(address);
 
             AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
 
@@ -242,7 +242,7 @@ public class EthModule
             return s;
         } finally {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("eth_getCode({}, {}): {}", address, blockId, s);
+                LOGGER.debug("eth_getCode({}, {}): {}", addr.toHexString(), blockId, s);
             }
         }
     }

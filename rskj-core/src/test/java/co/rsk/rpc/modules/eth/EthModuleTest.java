@@ -38,6 +38,7 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
@@ -336,7 +337,8 @@ class EthModuleTest {
                 config.getCallGasCap()
         );
 
-        String addr = eth.getCode(TestUtils.generateAddress("addr").toHexString(), "pending");
+        HexAddressParam addressParam = new HexAddressParam(TestUtils.generateAddress("addr").toHexString());
+        String addr = eth.getCode(addressParam, "pending");
         MatcherAssert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
     }
 
