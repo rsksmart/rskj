@@ -19,7 +19,10 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.*;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.TransactionListExecutor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
@@ -39,9 +42,11 @@ import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
@@ -66,6 +71,29 @@ public class BlockExecutor {
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     private boolean registerProgramResults;
+
+    private final ExecutionServiceFactory defaultFactory = new ExecutionServiceFactory() {
+        private static final long KEEP_ALIVE_TIME_IN_SECS = 15*60L; /* 15 minutes */
+        @Nonnull
+        @Override
+        protected ExecutorService createExecutionService() {
+            ThreadPoolExecutorImpl executorService = new ThreadPoolExecutorImpl(KEEP_ALIVE_TIME_IN_SECS, "DefaultBlockExecutorWorker");
+            logger.info("Created 'Default' ExecutorService with max pool size: [{}]", executorService.getMaximumPoolSize());
+
+            return executorService;
+        }
+    };
+    private final ExecutionServiceFactory traceBlockFactory = new ExecutionServiceFactory() {
+        private static final long KEEP_ALIVE_TIME_IN_SECS = 60L; /* 1 minute */
+        @Nonnull
+        @Override
+        protected ExecutorService createExecutionService() {
+            ThreadPoolExecutorImpl executorService = new ThreadPoolExecutorImpl(KEEP_ALIVE_TIME_IN_SECS, "TraceBlockExecutorWorker");
+            logger.info("Created 'Trace' ExecutorService with max pool size: [{}]", executorService.getMaximumPoolSize());
+
+            return executorService;
+        }
+    };
 
     public BlockExecutor(
             RepositoryLocator repositoryLocator,
@@ -272,16 +300,14 @@ public class BlockExecutor {
     /**
      * Execute a block while saving the execution trace in the trace processor
      */
-    public void traceBlock(
-            ProgramTraceProcessor programTraceProcessor,
-            int vmTraceOptions,
-            Block block,
-            BlockHeader parent,
-            boolean discardInvalidTxs,
-            boolean ignoreReadyToExecute) {
-            execute(
-                Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs, ignoreReadyToExecute, false
-        );
+    public void traceBlock(ProgramTraceProcessor programTraceProcessor,
+                           int vmTraceOptions,
+                           Block block,
+                           BlockHeader parent,
+                           boolean discardInvalidTxs,
+                           boolean ignoreReadyToExecute) {
+        execute(Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs,
+                ignoreReadyToExecute, false, traceBlockFactory);
     }
 
     public BlockResult execute(
@@ -291,13 +317,23 @@ public class BlockExecutor {
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions,
-            boolean saveState
-        ) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber())) {
-                return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
-            } else {
-                return executeInternal(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
-            }
+            boolean saveState) {
+        return execute(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState, defaultFactory);
+    }
+
+    public BlockResult execute(@Nullable ProgramTraceProcessor programTraceProcessor,
+                               int vmTraceOptions,
+                               Block block,
+                               BlockHeader parent,
+                               boolean discardInvalidTxs,
+                               boolean acceptInvalidTransactions,
+                               boolean saveState,
+                               @Nonnull ExecutionServiceFactory factory) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber())) {
+            return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState, factory);
+        } else {
+            return executeInternal(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
+        }
     }
 
     // executes the block before RSKIP 144
@@ -410,7 +446,8 @@ public class BlockExecutor {
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions,
-            boolean saveState) {
+            boolean saveState,
+            @Nonnull ExecutionServiceFactory factory) {
         boolean vmTrace = programTraceProcessor != null;
         logger.trace("Start executeParallel.");
         loggingApplyBlock(block);
@@ -434,8 +471,7 @@ public class BlockExecutor {
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
         readWrittenKeysTracker.clear();
 
-        ExecutorService executorService = Executors.newFixedThreadPool(Constants.getTransactionExecutionThreads());
-        ExecutorCompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
+        ExecutorCompletionService<Boolean> completionService = new ExecutorCompletionService<>(factory.getOrCreateExecutionService());
         List<TransactionListExecutor> transactionListExecutors = new ArrayList<>();
         long sublistGasLimit = getSublistGasLimit(block);
 
@@ -468,13 +504,12 @@ public class BlockExecutor {
             transactionListExecutors.add(txListExecutor);
             start = end;
         }
-        executorService.shutdown();
 
         for (int i = 0; i < transactionListExecutors.size(); i++) {
             try {
                 Future<Boolean> success = completionService.take();
                 if (!Boolean.TRUE.equals(success.get())) {
-                    executorService.shutdownNow();
+                    transactionListExecutors.forEach(TransactionListExecutor::stop);
                     profiler.stop(metric);
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
@@ -823,5 +858,67 @@ public class BlockExecutor {
     public void setRegisterProgramResults(boolean value) {
         this.registerProgramResults = value;
         this.transactionResults.clear();
+    }
+
+    private abstract static class ExecutionServiceFactory {
+
+        private volatile ExecutorService executorService;
+
+        @Nonnull
+        protected abstract ExecutorService createExecutionService();
+
+        ExecutorService getOrCreateExecutionService() { // Double-Checked Locking
+            if (executorService != null) {
+                return executorService;
+            }
+            synchronized (this) {
+                if (executorService == null) {
+                    executorService = Objects.requireNonNull(createExecutionService());
+                }
+            }
+            return executorService;
+        }
+    }
+
+    private static final class ThreadPoolExecutorImpl extends ThreadPoolExecutor {
+
+        static final int MAX_POOL_SIZE = Math.min(Constants.getTransactionExecutionThreads(), Runtime.getRuntime().availableProcessors());
+
+        public ThreadPoolExecutorImpl(long keepAliveTimeInSecs, String threadNamePrefix) {
+            super(0, MAX_POOL_SIZE, keepAliveTimeInSecs, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>(), new ThreadFactoryImpl(threadNamePrefix));
+        }
+
+        @Override
+        protected void beforeExecute(Thread t, Runnable r) {
+            logger.debug("[{}]: before execution", t);
+            super.beforeExecute(t, r);
+        }
+
+        @Override
+        protected void afterExecute(Runnable r, Throwable t) {
+            super.afterExecute(r, t);
+            if (t == null) {
+                logger.debug("[{}]: after execution", Thread.currentThread());
+            } else {
+                logger.warn("[{}]: failed execution", Thread.currentThread(), t);
+            }
+        }
+    }
+
+    private static final class ThreadFactoryImpl implements ThreadFactory {
+        private final AtomicInteger cnt = new AtomicInteger(0);
+        private final String namePrefix;
+
+        ThreadFactoryImpl(String namePrefix) {
+            this.namePrefix = namePrefix;
+        }
+
+        @Override
+        public Thread newThread(@Nonnull Runnable r) {
+            String threadName = namePrefix + "-" + cnt.getAndIncrement();
+            logger.info("New block execution thread '{}' has been created", threadName);
+            return new Thread(r, threadName);
+        }
     }
 }

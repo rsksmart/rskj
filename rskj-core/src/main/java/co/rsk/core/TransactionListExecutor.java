@@ -38,6 +38,8 @@ public class TransactionListExecutor implements Callable<Boolean> {
     private final Set<RskAddress> concurrentContractsDisallowed;
     private Coin totalPaidFees;
 
+    private volatile boolean stopped;
+
     public TransactionListExecutor(
             List<Transaction> transactions,
             Block block,
@@ -82,8 +84,11 @@ public class TransactionListExecutor implements Callable<Boolean> {
 
     @Override
     public Boolean call() {
-        long totalGasUsed = 0;
+        if (stopped) {
+            return false;
+        }
 
+        long totalGasUsed = 0;
         for (Transaction tx : transactions) {
 
             int numberOfTransactions = block.getTransactionsList().size();
@@ -104,6 +109,10 @@ public class TransactionListExecutor implements Callable<Boolean> {
                     true,
                     sublistGasLimit);
             boolean transactionSucceeded = txExecutor.executeTransaction();
+            if (stopped) {
+                return false;
+            }
+
             if (!this.concurrentContractsDisallowed.isEmpty() && txExecutor.precompiledContractsCalled().stream().anyMatch(this.concurrentContractsDisallowed::contains)) {
                 transactionSucceeded = false;
             }
@@ -233,5 +242,9 @@ public class TransactionListExecutor implements Callable<Boolean> {
 
     public long getTotalGas() {
         return this.totalGas;
+    }
+
+    public void stop() {
+        this.stopped = true;
     }
 }
