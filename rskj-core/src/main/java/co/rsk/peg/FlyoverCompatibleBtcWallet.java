@@ -2,8 +2,9 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+// import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
+// import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+import co.rsk.bitcoinj.script.FastBridgeParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
@@ -47,7 +48,7 @@ public abstract class FlyoverCompatibleBtcWallet extends BridgeBtcWallet {
             Script flyoverRedeemScript;
 
             if (parser.getMultiSigType() == MultiSigType.ERP_FED) {
-                flyoverRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+                flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
                     fedRedeemScript,
                     Sha256Hash.wrap(flyoverFederationInformationInstance
                         .getDerivationHash()
@@ -55,7 +56,7 @@ public abstract class FlyoverCompatibleBtcWallet extends BridgeBtcWallet {
                     )
                 );
             } else {
-                flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+                flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
                     fedRedeemScript,
                     Sha256Hash.wrap(flyoverFederationInformationInstance
                         .getDerivationHash()

@@ -1047,7 +1047,7 @@ class PowpegMigrationTest {
         );
         Keccak256 derivationHash = new Keccak256(HashUtil.keccak256(infoToHash));
 
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
             recipientFederation.getRedeemScript(),
             Sha256Hash.wrap(derivationHash.toHexString())
             // Parsing to Sha256Hash in order to use helper. Does not change functionality

@@ -1,7 +1,8 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+// import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+import co.rsk.bitcoinj.script.FastBridgeParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -149,7 +150,7 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
                 int blocksToGenerate = Helper.randomInRange(minBtcBlocks, maxBtcBlocks);
                 BtcBlock lastBlock = Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
 
-                Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+                Script flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
                         bridgeConstants.getGenesisFederation().getRedeemScript(),
                         Sha256Hash.wrap(
                                 getFLyoverDerivationHash(

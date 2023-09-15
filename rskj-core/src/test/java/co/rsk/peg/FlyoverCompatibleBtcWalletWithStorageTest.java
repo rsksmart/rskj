@@ -8,8 +8,9 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+// import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
+// import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+import co.rsk.bitcoinj.script.FastBridgeParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
@@ -86,7 +87,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
 
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
             federation.getRedeemScript(), Sha256Hash.wrap(derivationArgumentsHash.getBytes()));
 
         Script p2SHOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
@@ -116,7 +117,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
 
-        Script flyoverRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+        Script flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
             erpFederation.getRedeemScript(),
             Sha256Hash.wrap(derivationArgumentsHash.getBytes()
             )

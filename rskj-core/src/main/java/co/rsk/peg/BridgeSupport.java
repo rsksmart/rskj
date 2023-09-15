@@ -37,7 +37,7 @@ import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.core.UTXOProviderException;
 import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+import co.rsk.bitcoinj.script.FastBridgeParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -2872,7 +2872,7 @@ public class BridgeSupport {
     }
 
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash, Federation federation) {
-        Script flyoverScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverScript = FastBridgeParser.createFastBridgeRedeemScript(
             federation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
         );

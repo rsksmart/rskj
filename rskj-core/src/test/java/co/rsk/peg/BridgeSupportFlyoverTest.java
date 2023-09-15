@@ -28,7 +28,8 @@ import co.rsk.bitcoinj.core.ScriptException;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionWitness;
 import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+// import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+import co.rsk.bitcoinj.script.FastBridgeParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -3284,7 +3285,7 @@ class BridgeSupportFlyoverTest {
             signatureCache
         );
 
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
             bridgeConstantsRegtest.getGenesisFederation().getRedeemScript(),
             PegTestUtils.createHash(1)
         );
@@ -3333,7 +3334,7 @@ class BridgeSupportFlyoverTest {
         Federation fed = bridgeConstantsRegtest.getGenesisFederation();
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
 
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
             fed.getRedeemScript(),
             Sha256Hash.wrap(derivationHash.getBytes())
         );
@@ -3446,7 +3447,7 @@ class BridgeSupportFlyoverTest {
     }
 
     private Address getFlyoverFederationAddress() {
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
             bridgeConstantsRegtest.getGenesisFederation().getRedeemScript(),
             PegTestUtils.createHash(1)
         );

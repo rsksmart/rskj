@@ -7,8 +7,9 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+// import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
+// import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+import co.rsk.bitcoinj.script.FastBridgeParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
@@ -94,7 +95,7 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
         RedeemData redeemData = flyoverCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
             federation.getP2SHScript().getPubKeyHash());
 
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
             federation.getRedeemScript(), Sha256Hash.wrap(flyoverFederationInformation.getDerivationHash().getBytes())
         );
 
@@ -120,7 +121,7 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
         RedeemData redeemData = flyoverCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
             erpFederation.getP2SHScript().getPubKeyHash());
 
-        Script flyoverRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+        Script flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
             erpFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverFederationInformation.getDerivationHash().getBytes())
         );

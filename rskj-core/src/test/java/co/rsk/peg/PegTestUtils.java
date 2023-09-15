@@ -27,7 +27,8 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+import co.rsk.bitcoinj.script.FastBridgeParser;
+    //.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
@@ -240,7 +241,7 @@ public final class PegTestUtils {
     }
 
     public static Address getFlyoverAddressFromRedeemScript(BridgeConstants bridgeConstants, Script redeemScript, Sha256Hash derivationArgumentHash) {
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeParser.createFastBridgeRedeemScript(
             redeemScript,
             derivationArgumentHash
         );
