@@ -1,7 +1,6 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
-// import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.FastBridgeParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
