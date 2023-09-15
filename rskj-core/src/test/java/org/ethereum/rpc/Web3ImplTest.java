@@ -65,6 +65,7 @@ import co.rsk.util.TestContract;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -92,6 +93,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -2290,6 +2292,22 @@ class Web3ImplTest {
         assertEquals(originalAccountSize + 1, wallet.getAccountAddresses().size(), "The number of accounts was increased");
     }
 
+    @Test
+    void estimateGasWithNoBlock(){
+        CallArguments args = Mockito.mock(CallArguments.class);
+        Web3TestBuilder builder = new Web3TestBuilder();
+        Web3Impl web3 = builder.build();
+        EthModule ethModule = builder.getEthModule();
+        String estimatedCost = "0x5c";
+        ArgumentCaptor<String> blockCaptor = ArgumentCaptor.forClass(String.class);
+
+        when(ethModule.estimateGas(eq(args),blockCaptor.capture())).thenReturn(estimatedCost);
+        String result = web3.eth_estimateGas(args);
+        String capturedBlock = blockCaptor.getValue();
+        assertEquals(BlockTag.LATEST.getTag(),capturedBlock);
+        assertEquals(estimatedCost,result);
+    }
+
     private void checkSendTransaction(Byte chainId) {
         BigInteger nonce = BigInteger.ONE;
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
@@ -2711,6 +2729,7 @@ class Web3ImplTest {
                 null,
                 signatureCache);
     }
+
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(
             BlockStore blockStore, BlockTxSignatureCache blockTxSignatureCache) {

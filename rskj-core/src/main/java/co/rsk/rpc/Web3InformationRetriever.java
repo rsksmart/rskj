@@ -18,21 +18,20 @@
 
 package co.rsk.rpc;
 
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-
-import java.util.List;
-import java.util.Optional;
-
+import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.util.HexUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-import co.rsk.core.bc.AccountInformationProvider;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.util.HexUtils;
+import java.util.List;
+import java.util.Optional;
+
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 /**
  * Retrieves information requested by web3 based on the block identifier:

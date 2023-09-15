@@ -61,4 +61,5 @@ public class RskJsonRpcRequestException extends RuntimeException {
     public static RskJsonRpcRequestException filterNotFound(String message) {
         return new RskJsonRpcRequestException(-32000, message);
     }
+    
 }
