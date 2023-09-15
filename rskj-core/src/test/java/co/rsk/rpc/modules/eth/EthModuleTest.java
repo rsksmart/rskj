@@ -51,24 +51,16 @@ import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyByte;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class EthModuleTest {
 
     public static final String TEST_DATA = "0x603d80600c6000396000f3007c01000000000000000000000000000000000000000000000000000000006000350463c6888fa18114602d57005b6007600435028060005260206000f3";
-    
+
     private final TestSystemProperties config = new TestSystemProperties();
-    private SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+    private final SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
     @Test
     void callSmokeTest() {
@@ -505,11 +497,12 @@ class EthModuleTest {
     void whenExecuteEstimateGasWithDataParameter_callExecutorWithData() {
         CallArguments args = new CallArguments();
         args.setData(TEST_DATA);
-        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         Block block = mock(Block.class);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        when(blockResult.getBlock()).thenReturn(block);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
         Blockchain blockchain = mock(Blockchain.class);
-        when(blockchain.getBestBlock())
-                .thenReturn(block);
 
         ProgramResult executorResult = mock(ProgramResult.class);
         TransactionExecutor transactionExecutor = mock(TransactionExecutor.class);
@@ -517,7 +510,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         EthModule eth = new EthModule(
@@ -537,11 +530,11 @@ class EthModuleTest {
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
-        eth.estimateGas(callArgumentsParam);
+        eth.estimateGas(callArgumentsParam, new BlockIdentifierParam("latest"));
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
         assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), dataCaptor.getValue());
     }
 
@@ -549,11 +542,12 @@ class EthModuleTest {
     void whenExecuteEstimateGasWithInputParameter_callExecutorWithInput() {
         CallArguments args = new CallArguments();
         args.setInput(TEST_DATA);
-        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         Block block = mock(Block.class);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        when(blockResult.getBlock()).thenReturn(block);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
         Blockchain blockchain = mock(Blockchain.class);
-        when(blockchain.getBestBlock())
-                .thenReturn(block);
 
         ProgramResult executorResult = mock(ProgramResult.class);
         TransactionExecutor transactionExecutor = mock(TransactionExecutor.class);
@@ -561,7 +555,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         EthModule eth = new EthModule(
@@ -581,11 +575,11 @@ class EthModuleTest {
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
-        eth.estimateGas(callArgumentsParam);
+        eth.estimateGas(callArgumentsParam, new BlockIdentifierParam("latest"));
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
         assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
     }
 
@@ -594,11 +588,12 @@ class EthModuleTest {
         CallArguments args = new CallArguments();
         args.setData(TEST_DATA);
         args.setInput(TEST_DATA);
-        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         Block block = mock(Block.class);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        when(blockResult.getBlock()).thenReturn(block);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
         Blockchain blockchain = mock(Blockchain.class);
-        when(blockchain.getBestBlock())
-                .thenReturn(block);
 
         ProgramResult executorResult = mock(ProgramResult.class);
         TransactionExecutor transactionExecutor = mock(TransactionExecutor.class);
@@ -606,7 +601,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         EthModule eth = new EthModule(
@@ -626,11 +621,11 @@ class EthModuleTest {
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
-        eth.estimateGas(callArgumentsParam);
+        eth.estimateGas(callArgumentsParam, new BlockIdentifierParam("latest"));
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(blockchain.getBestBlock()), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
         assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
     }
 

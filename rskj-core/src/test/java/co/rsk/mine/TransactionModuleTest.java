@@ -308,7 +308,7 @@ class TransactionModuleTest {
         Assertions.assertNotEquals(expectedValue, gasLimit);
 
         CallArguments args = getContractCallTransactionParameters(method, gasLimit, srcAddr, contractAddress, repository);
-        String gas = web3.eth_estimateGas(TransactionFactoryHelper.toCallArgumentsParam(args));
+        String gas = web3.eth_estimateGas(TransactionFactoryHelper.toCallArgumentsParam(args), null);
         byte[] gasReturnedBytes = Hex.decode(gas.substring("0x".length()));
         BigInteger gasReturned = BigIntegers.fromUnsignedByteArray(gasReturnedBytes);
         int gasReturnedInt = gasReturned.intValueExact();

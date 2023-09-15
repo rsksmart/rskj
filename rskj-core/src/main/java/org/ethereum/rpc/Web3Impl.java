@@ -45,6 +45,7 @@ import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -59,22 +60,13 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.parameters.BlockHashParam;
-import org.ethereum.rpc.parameters.FilterRequestParam;
-import org.ethereum.rpc.parameters.BlockIdentifierParam;
-import org.ethereum.rpc.parameters.BlockRefParam;
-import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexAddressParam;
-import org.ethereum.rpc.parameters.HexDurationParam;
-import org.ethereum.rpc.parameters.HexIndexParam;
-import org.ethereum.rpc.parameters.HexKeyParam;
-import org.ethereum.rpc.parameters.HexNumberParam;
-import org.ethereum.rpc.parameters.TxHashParam;
+import org.ethereum.rpc.parameters.*;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -1123,6 +1115,19 @@ public class Web3Impl implements Web3 {
     @Override
     public boolean personal_lockAccount(HexAddressParam address) {
         return personalModule.lockAccount(address);
+    }
+
+    @Override
+    public String eth_estimateGas(CallArgumentsParam args) {
+        return eth_estimateGas(args, null);
+    }
+
+    @Override
+    public String eth_estimateGas(CallArgumentsParam args, @Nullable BlockIdentifierParam bnOrId) {
+        if (bnOrId == null) {
+            bnOrId = new BlockIdentifierParam(BlockTag.LATEST.getTag());
+        }
+        return getEthModule().estimateGas(args, bnOrId);
     }
 
     @Override

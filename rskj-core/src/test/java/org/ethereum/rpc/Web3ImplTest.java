@@ -59,6 +59,7 @@ import co.rsk.util.TestContract;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
+import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -77,17 +78,7 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.rpc.parameters.BlockHashParam;
-import org.ethereum.rpc.parameters.BlockIdentifierParam;
-import org.ethereum.rpc.parameters.BlockRefParam;
-import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexAddressParam;
-import org.ethereum.rpc.parameters.HexDataParam;
-import org.ethereum.rpc.parameters.HexDurationParam;
-import org.ethereum.rpc.parameters.HexIndexParam;
-import org.ethereum.rpc.parameters.HexKeyParam;
-import org.ethereum.rpc.parameters.HexNumberParam;
-import org.ethereum.rpc.parameters.TxHashParam;
+import org.ethereum.rpc.parameters.*;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
@@ -98,6 +89,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -2360,6 +2352,22 @@ class Web3ImplTest {
         web3.personal_newAccountWithSeed("testAccount");
 
         assertEquals(originalAccountSize + 1, wallet.getAccountAddresses().size(), "The number of accounts was increased");
+    }
+
+    @Test
+    void estimateGasWithNoBlock() {
+        CallArgumentsParam args = Mockito.mock(CallArgumentsParam.class);
+        Web3TestBuilder builder = new Web3TestBuilder();
+        Web3Impl web3 = builder.build();
+        EthModule ethModule = builder.getEthModule();
+        String estimatedCost = "0x5c";
+        ArgumentCaptor<BlockIdentifierParam> blockCaptor = ArgumentCaptor.forClass(BlockIdentifierParam.class);
+
+        when(ethModule.estimateGas(eq(args),blockCaptor.capture())).thenReturn(estimatedCost);
+        String result = web3.eth_estimateGas(args);
+        BlockIdentifierParam capturedBlock = blockCaptor.getValue();
+        assertEquals(BlockTag.LATEST.getTag(), capturedBlock.getIdentifier());
+        assertEquals(estimatedCost,result);
     }
 
     private void checkSendTransaction(Byte chainId) {

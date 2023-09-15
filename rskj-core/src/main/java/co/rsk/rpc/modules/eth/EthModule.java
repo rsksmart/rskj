@@ -48,6 +48,7 @@ import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
@@ -155,15 +156,17 @@ public class EthModule
         }
     }
 
-    public String estimateGas(CallArgumentsParam args) {
+    public String estimateGas(CallArgumentsParam args, @Nonnull BlockIdentifierParam bnOrId) {
+        ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
+        Block block = result.getBlock();
+
         String estimation = null;
-        Block bestBlock = blockchain.getBestBlock();
         try {
             CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args.toCallArguments());
 
             TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
-                    bestBlock,
-                    bestBlock.getCoinbase(),
+                    block,
+                    block.getCoinbase(),
                     hexArgs.getGasPrice(),
                     hexArgs.gasLimitForGasEstimation(gasEstimationCap),
                     hexArgs.getToAddress(),

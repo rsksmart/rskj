@@ -51,10 +51,6 @@ public interface Web3EthModule {
         return getEthModule().call(args, bnOrId);
     }
 
-    default String eth_estimateGas(CallArgumentsParam args) {
-        return getEthModule().estimateGas(args);
-    }
-
     default Map<String, Object> eth_bridgeState() throws Exception {
         return getEthModule().bridgeState();
     }
@@ -62,6 +58,9 @@ public interface Web3EthModule {
     default String eth_chainId() {
         return getEthModule().chainId();
     }
+
+    String eth_estimateGas(CallArgumentsParam args);
+    String eth_estimateGas(CallArgumentsParam args, BlockIdentifierParam bnOrId);
 
     EthModule getEthModule();
 
