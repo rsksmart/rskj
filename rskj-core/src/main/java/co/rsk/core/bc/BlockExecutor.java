@@ -72,28 +72,13 @@ public class BlockExecutor {
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     private boolean registerProgramResults;
 
-    private final ExecutionServiceFactory defaultFactory = new ExecutionServiceFactory() {
-        private static final long KEEP_ALIVE_TIME_IN_SECS = 15*60L; /* 15 minutes */
-        @Nonnull
-        @Override
-        protected ExecutorService createExecutionService() {
-            ThreadPoolExecutorImpl executorService = new ThreadPoolExecutorImpl(KEEP_ALIVE_TIME_IN_SECS, "DefaultBlockExecutorWorker");
-            logger.info("Created 'Default' ExecutorService with max pool size: [{}]", executorService.getMaximumPoolSize());
-
-            return executorService;
-        }
-    };
-    private final ExecutionServiceFactory traceBlockFactory = new ExecutionServiceFactory() {
-        private static final long KEEP_ALIVE_TIME_IN_SECS = 60L; /* 1 minute */
-        @Nonnull
-        @Override
-        protected ExecutorService createExecutionService() {
-            ThreadPoolExecutorImpl executorService = new ThreadPoolExecutorImpl(KEEP_ALIVE_TIME_IN_SECS, "TraceBlockExecutorWorker");
-            logger.info("Created 'Trace' ExecutorService with max pool size: [{}]", executorService.getMaximumPoolSize());
-
-            return executorService;
-        }
-    };
+    /**
+     * An array of ExecutorService's of size `Constants.getTransactionExecutionThreads()`. Each parallel list uses an executor
+     * at specific index of this array, so that threads chosen by thread pools cannot be "reused" for executing parallel
+     * lists from same block. Otherwise, that could lead to non-determinism, when trie keys collision may not be detected
+     * on some circumstances.
+     */
+    private final ExecutorService[] execServices;
 
     public BlockExecutor(
             RepositoryLocator repositoryLocator,
@@ -104,6 +89,12 @@ public class BlockExecutor {
         this.activationConfig = systemProperties.getActivationConfig();
         this.remascEnabled = systemProperties.isRemascEnabled();
         this.concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(systemProperties.concurrentContractsDisallowed()));
+
+        int numOfParallelList = Constants.getTransactionExecutionThreads();
+        this.execServices = new ExecutorService[numOfParallelList];
+        for (int i = 0; i < numOfParallelList; i++) {
+            execServices[i] = new ThreadPoolExecutorImpl(i);
+        }
     }
 
     /**
@@ -307,18 +298,7 @@ public class BlockExecutor {
                            boolean discardInvalidTxs,
                            boolean ignoreReadyToExecute) {
         execute(Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs,
-                ignoreReadyToExecute, false, traceBlockFactory);
-    }
-
-    public BlockResult execute(
-            @Nullable ProgramTraceProcessor programTraceProcessor,
-            int vmTraceOptions,
-            Block block,
-            BlockHeader parent,
-            boolean discardInvalidTxs,
-            boolean acceptInvalidTransactions,
-            boolean saveState) {
-        return execute(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState, defaultFactory);
+                ignoreReadyToExecute, false);
     }
 
     public BlockResult execute(@Nullable ProgramTraceProcessor programTraceProcessor,
@@ -327,10 +307,9 @@ public class BlockExecutor {
                                BlockHeader parent,
                                boolean discardInvalidTxs,
                                boolean acceptInvalidTransactions,
-                               boolean saveState,
-                               @Nonnull ExecutionServiceFactory factory) {
+                               boolean saveState) {
         if (activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber())) {
-            return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState, factory);
+            return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
         } else {
             return executeInternal(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
         }
@@ -446,8 +425,7 @@ public class BlockExecutor {
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions,
-            boolean saveState,
-            @Nonnull ExecutionServiceFactory factory) {
+            boolean saveState) {
         boolean vmTrace = programTraceProcessor != null;
         logger.trace("Start executeParallel.");
         loggingApplyBlock(block);
@@ -471,7 +449,14 @@ public class BlockExecutor {
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
         readWrittenKeysTracker.clear();
 
-        ExecutorCompletionService<Boolean> completionService = new ExecutorCompletionService<>(factory.getOrCreateExecutionService());
+        ExecutorCompletionService<Boolean> completionService = new ExecutorCompletionService<>(new Executor() {
+            private final AtomicInteger parallelListIndex = new AtomicInteger(0); // 'parallelListIndex' should not exceed Constants.getTransactionExecutionThreads()
+
+            @Override
+            public void execute(@Nonnull Runnable command) {
+                execServices[parallelListIndex.getAndIncrement()].execute(command);
+            }
+        });
         List<TransactionListExecutor> transactionListExecutors = new ArrayList<>();
         long sublistGasLimit = getSublistGasLimit(block);
 
@@ -860,33 +845,17 @@ public class BlockExecutor {
         this.transactionResults.clear();
     }
 
-    private abstract static class ExecutionServiceFactory {
-
-        private volatile ExecutorService executorService;
-
-        @Nonnull
-        protected abstract ExecutorService createExecutionService();
-
-        ExecutorService getOrCreateExecutionService() { // Double-Checked Locking
-            if (executorService != null) {
-                return executorService;
-            }
-            synchronized (this) {
-                if (executorService == null) {
-                    executorService = Objects.requireNonNull(createExecutionService());
-                }
-            }
-            return executorService;
-        }
-    }
-
+    /**
+     * This implementation mimics a thread pool returned by {@link Executors#newCachedThreadPool()}, meaning that
+     * its core pool size is zero and maximum pool size is unbounded, while each thead created has keep-alive time - 15 mins.
+     */
     private static final class ThreadPoolExecutorImpl extends ThreadPoolExecutor {
+        private static final long KEEP_ALIVE_TIME_IN_SECS = 15*60L; /* 15 minutes */
 
-        static final int MAX_POOL_SIZE = Math.min(Constants.getTransactionExecutionThreads(), Runtime.getRuntime().availableProcessors());
-
-        public ThreadPoolExecutorImpl(long keepAliveTimeInSecs, String threadNamePrefix) {
-            super(0, MAX_POOL_SIZE, keepAliveTimeInSecs, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<>(), new ThreadFactoryImpl(threadNamePrefix));
+        public ThreadPoolExecutorImpl(int parallelListIndex) {
+            super(0, Integer.MAX_VALUE,
+                    KEEP_ALIVE_TIME_IN_SECS, TimeUnit.SECONDS,
+                    new SynchronousQueue<>(), new ThreadFactoryImpl(parallelListIndex));
         }
 
         @Override
@@ -906,18 +875,21 @@ public class BlockExecutor {
         }
     }
 
+    /**
+     * A utility class that helps to specify a proper thread name in the form of `BlockExecutorWorker-<ParallelListIndex>-<ThreadCounter>`.
+     */
     private static final class ThreadFactoryImpl implements ThreadFactory {
         private final AtomicInteger cnt = new AtomicInteger(0);
-        private final String namePrefix;
+        private final int parallelListIndex;
 
-        ThreadFactoryImpl(String namePrefix) {
-            this.namePrefix = namePrefix;
+        ThreadFactoryImpl(int parallelListIndex) {
+            this.parallelListIndex = parallelListIndex;
         }
 
         @Override
         public Thread newThread(@Nonnull Runnable r) {
-            String threadName = namePrefix + "-" + cnt.getAndIncrement();
-            logger.info("New block execution thread '{}' has been created", threadName);
+            String threadName = "BlockExecutorWorker-" + parallelListIndex + "-" + cnt.getAndIncrement();
+            logger.info("New block execution thread [{}] for parallel list [{}] has been created", threadName, parallelListIndex);
             return new Thread(r, threadName);
         }
     }
