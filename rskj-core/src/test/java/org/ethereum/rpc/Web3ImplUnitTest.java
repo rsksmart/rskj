@@ -131,7 +131,7 @@ class Web3ImplUnitTest {
         String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8");
             }
         };
         final Web3Impl spyTarget = spy(target);
@@ -187,7 +187,7 @@ class Web3ImplUnitTest {
         final String storageIdx = "0x01";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8");
             }
         };
         final Web3Impl spyTarget = spy(target);
@@ -256,7 +256,7 @@ class Web3ImplUnitTest {
         final String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8");
             }
         };
         final Web3Impl spyTarget = spy(target);
@@ -276,7 +276,7 @@ class Web3ImplUnitTest {
         argsForCall.setData("ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8");
             }
         };
         final Web3Impl spyTarget = spy(target);
@@ -294,7 +294,7 @@ class Web3ImplUnitTest {
         String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8");
             }
         };
         final Web3Impl spyTarget = spy(target);
