@@ -66,7 +66,7 @@ jobs:
                 -Dsonar.organization=rsksmart \
                 -Dsonar.host.url="$SONAR_URL" \
                 -Dsonar.login="$SONAR_TOKEN"
-  rskj-tests:
+  rskj-unit-tests:
     executor: rskj-executor
     steps:
       - attach_workspace:
@@ -74,6 +74,26 @@ jobs:
       - run:
           name: rskj tests
           command: ./gradlew --no-daemon --stacktrace test
+      - run:
+          name: Save test results
+          command: |
+            mkdir -p ~/junit/
+            find rskj-core/build/test-results -type f -name "*.xml" \
+                -exec cp {} ~/junit/ \;
+          when: always
+      - store_test_results:
+          path: ~/junit
+      - store_artifacts:
+          path: ~/junit
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  rskj-int-tests:
+    executor: rskj-executor
+    steps:
+      - attach_workspace:
+          at: /app
       - run:
           name: rskj integration tests
           command: ./gradlew --no-daemon --stacktrace integrationTest
@@ -166,12 +186,15 @@ workflows:
   build-and-test:
     jobs:
       - build
-      - rskj-tests:
+      - rskj-unit-tests:
+          requires:
+            - build
+      - rskj-int-tests:
           requires:
             - build
       - sonarqube:
           requires:
-            - rskj-tests
+            - rskj-unit-tests
       - mining-tests:
           requires:
-            - rskj-tests
+            - rskj-unit-tests
