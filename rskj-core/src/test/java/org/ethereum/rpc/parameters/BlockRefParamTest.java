@@ -1,6 +1,5 @@
 package org.ethereum.rpc.parameters;
 
-import org.ethereum.rpc.BlockRef;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
@@ -15,9 +14,8 @@ public class BlockRefParamTest {
     @Test
     public void testValidIdentifier() {
         String identifier = "latest";
-        BlockRef blockRef = new BlockRef(identifier);
 
-        BlockRefParam blockRefParam = new BlockRefParam(blockRef);
+        BlockRefParam blockRefParam = new BlockRefParam(identifier);
 
         assertEquals(identifier, blockRefParam.getIdentifier());
         assertNull(blockRefParam.getInputs());
@@ -27,12 +25,11 @@ public class BlockRefParamTest {
     public void testValidInputs() {
         Map<String, String> inputs = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3");
             }
         };
-        BlockRef blockRef = new BlockRef(inputs);
 
-        BlockRefParam blockRefParam = new BlockRefParam(blockRef);
+        BlockRefParam blockRefParam = new BlockRefParam(inputs);
 
         assertEquals(inputs, blockRefParam.getInputs());
         assertNull(blockRefParam.getIdentifier());
@@ -41,28 +38,61 @@ public class BlockRefParamTest {
     @Test
     public void testInvalidIdentifierString() {
         String invalidStringIdentifier = "first";
-        BlockRef blockRef = new BlockRef(invalidStringIdentifier);
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(blockRef));
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(invalidStringIdentifier));
     }
 
     @Test
     public void testInvalidIdentifierHexString() {
         String invalidStringIdentifier = "0x1aw";
-        BlockRef blockRef = new BlockRef(invalidStringIdentifier);
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(blockRef));
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(invalidStringIdentifier));
     }
 
     @Test
     public void testInvalidInputsInvalidKey() {
         Map<String, String> inputs = new HashMap<String, String>() {
             {
-                put("invalidKey", "0x0011223344556677880011223344556677889900");
+                put("invalidKey", "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3");
             }
         };
-        BlockRef blockRef = new BlockRef(inputs);
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(blockRef));
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(inputs));
+    }
+
+    @Test
+    public void testInvalidInputsInvalidBlockHash() {
+        Map<String, String> inputs = new HashMap<String, String>() {
+            {
+                put("blockHash", "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fxk");
+                put("requireCanonical", "false");
+            }
+        };
+
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(inputs));
+    }
+
+    @Test
+    public void testInvalidInputsInvalidBlockNumber() {
+        Map<String, String> inputs = new HashMap<String, String>() {
+            {
+                put("blockNumber", "0x76ty");
+                put("requireCanonical", "false");
+            }
+        };
+
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(inputs));
+    }
+
+    @Test
+    public void testInvalidInputsInvalidRequireCanonical() {
+        Map<String, String> inputs = new HashMap<String, String>() {
+            {
+                put("blockNumber", "0x76c0");
+                put("requireCanonical", "first");
+            }
+        };
+
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockRefParam(inputs));
     }
 }

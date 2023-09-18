@@ -2,10 +2,11 @@ package org.ethereum.rpc.parameters;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import org.ethereum.rpc.BlockRef;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.Utils;
 
@@ -19,35 +20,52 @@ import java.util.Map;
 public class BlockRefParam implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    private static final String REQUIRED_CANONICAL_KEY = "requireCanonical";
+    private static final String BLOCK_HASH_KEY = "blockHash";
+    private static final String BLOCK_NUMBER_KEY = "blockNumber";
+    private static final List<String> BLOCK_INPUT_KEYS_TO_VALIDATE = Arrays.asList(BLOCK_HASH_KEY, BLOCK_NUMBER_KEY);
     private static final List<String> IDENTIFIERS_TO_VALIDATE = Arrays.asList("earliest", "latest", "pending");
-    private static final List<String> BLOCK_INPUT_KEYS_TO_VALIDATE = Arrays.asList("blockHash", "blockNumber");
 
-    private final String identifier;
-    private final Map<String, String> inputs;
+    private String identifier;
+    private Map<String, String> inputs;
 
-    public BlockRefParam(BlockRef blockRef) {
-        if(blockRef.getIdentifier() != null) {
-            validateString(blockRef.getIdentifier());
-        } else {
-            validateMap(blockRef.getInputs());
-        }
-
-        this.identifier = blockRef.getIdentifier();
-        this.inputs = blockRef.getInputs();
-    }
-
-    private void validateString(String identifier) {
+    public BlockRefParam(String identifier) {
         if(!IDENTIFIERS_TO_VALIDATE.contains(identifier)
                 && !Utils.isDecimalString(identifier)
                 && !Utils.isHexadecimalString(identifier)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block identifier '" + identifier + "'");
         }
+
+        this.identifier = identifier;
     }
 
-    private void validateMap(Map<String, String> inputs) {
+    public BlockRefParam(Map<String, String> inputs) {
         if(inputs.keySet().stream().noneMatch(BLOCK_INPUT_KEYS_TO_VALIDATE::contains)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid block input");
         }
+
+        validateMapItems(inputs);
+
+        this.inputs = inputs;
+    }
+
+    private void validateMapItems(Map<String, String> inputs) {
+        inputs.forEach((key, value) -> {
+            switch (key) {
+                case REQUIRED_CANONICAL_KEY:
+                    if(!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
+                        throw RskJsonRpcRequestException.invalidParamError(String
+                                .format("Invalid input: %s must be a String \"true\" or \"false\"", REQUIRED_CANONICAL_KEY));
+                    }
+                    break;
+                case BLOCK_HASH_KEY:
+                    new BlockHashParam(value);
+                    break;
+                case BLOCK_NUMBER_KEY:
+                    new HexNumberParam(value);
+                    break;
+            }
+        });
     }
 
     public String getIdentifier() {
@@ -68,18 +86,17 @@ public class BlockRefParam implements Serializable {
 
         @Override
         public BlockRefParam deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-            Object objectParam = mapper.readValue(jp, Object.class);
-            BlockRef blockRef;
+            JsonNode node = jp.getCodec().readTree(jp);
+            JsonNodeType nodeType = node.getNodeType();
 
-            if(objectParam instanceof String) {
-                blockRef =  new BlockRef(objectParam.toString());
-            } else if (objectParam instanceof Map) {
-                blockRef =  new BlockRef((Map<String, String>) objectParam);
+            if(nodeType == JsonNodeType.STRING) {
+                return new BlockRefParam(node.asText());
+            } else if(nodeType == JsonNodeType.OBJECT) {
+                Map<String, String> inputs = mapper.convertValue(node, Map.class);
+                return new BlockRefParam(inputs);
             } else {
                 throw RskJsonRpcRequestException.invalidParamError("Invalid input");
             }
-
-            return new BlockRefParam(blockRef);
         }
     }
 }

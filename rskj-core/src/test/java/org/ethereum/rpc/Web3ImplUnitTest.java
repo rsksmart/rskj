@@ -107,7 +107,7 @@ class Web3ImplUnitTest {
         when(retriever.getInformationProvider(id))
                 .thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
-                () -> target.eth_getBalance(new HexAddressParam(addr), new BlockRefParam(new BlockRef(id))));
+                () -> target.eth_getBalance(new HexAddressParam(addr), new BlockRefParam(id)));
     }
 
     @Test
@@ -121,7 +121,7 @@ class Web3ImplUnitTest {
         when(aip.getBalance(expectedAddress))
                 .thenReturn(new Coin(BigInteger.ONE));
 
-        String result = target.eth_getBalance(new HexAddressParam(addr),new BlockRefParam(new BlockRef(id)));
+        String result = target.eth_getBalance(new HexAddressParam(addr),new BlockRefParam(id));
         assertEquals("0x1", result);
     }
 
@@ -136,7 +136,7 @@ class Web3ImplUnitTest {
         };
         final Web3Impl spyTarget = spy(target);
         doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_getBalance(new HexAddressParam(addr), new BlockRefParam(new BlockRef(blockRef)));
+        String result = spyTarget.eth_getBalance(new HexAddressParam(addr), new BlockRefParam(blockRef));
         assertEquals("0x1", result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
@@ -149,7 +149,7 @@ class Web3ImplUnitTest {
 
         HexAddressParam hexAddressParam =  new HexAddressParam(addr);
         HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
-        BlockRefParam blockRefParam = new BlockRefParam(new BlockRef(id));
+        BlockRefParam blockRefParam = new BlockRefParam(id);
 
         when(retriever.getInformationProvider(id))
                 .thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
@@ -168,7 +168,7 @@ class Web3ImplUnitTest {
 
         HexAddressParam hexAddressParam =  new HexAddressParam(addr);
         HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
-        BlockRefParam blockRefParam = new BlockRefParam(new BlockRef(id));
+        BlockRefParam blockRefParam = new BlockRefParam(id);
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
         when(retriever.getInformationProvider(id)).thenReturn(aip);
@@ -195,7 +195,7 @@ class Web3ImplUnitTest {
 
         HexAddressParam hexAddressParam =  new HexAddressParam(addr);
         HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
-        BlockRefParam blockRefParam = new BlockRefParam(new BlockRef(blockRef));
+        BlockRefParam blockRefParam = new BlockRefParam(blockRef);
 
         doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
         String result = spyTarget.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam);
@@ -214,7 +214,7 @@ class Web3ImplUnitTest {
 
         HexAddressParam hexAddressParam =  new HexAddressParam(addr);
         HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
-        BlockRefParam blockRefParam = new BlockRefParam(new BlockRef(id));
+        BlockRefParam blockRefParam = new BlockRefParam(id);
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
         when(retriever.getInformationProvider(id)).thenReturn(aip);
@@ -262,7 +262,7 @@ class Web3ImplUnitTest {
         final Web3Impl spyTarget = spy(target);
         final String expectedData =  "0x010203";
         doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_getCode(new HexAddressParam(addr), new BlockRefParam(new BlockRef(blockRef)));
+        String result = spyTarget.eth_getCode(new HexAddressParam(addr), new BlockRefParam(blockRef));
         assertEquals(expectedData, result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
@@ -299,7 +299,7 @@ class Web3ImplUnitTest {
         };
         final Web3Impl spyTarget = spy(target);
         doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_getTransactionCount(new HexAddressParam(addr), new BlockRefParam(new BlockRef(blockRef)));
+        String result = spyTarget.eth_getTransactionCount(new HexAddressParam(addr), new BlockRefParam(blockRef));
         assertEquals("0x1", result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }

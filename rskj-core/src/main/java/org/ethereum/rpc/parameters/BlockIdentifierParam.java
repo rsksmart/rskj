@@ -18,6 +18,10 @@ public class BlockIdentifierParam implements Serializable {
     private final String identifier;
 
     public BlockIdentifierParam(String identifier) {
+        if (identifier == null || identifier.isEmpty()) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid block identifier: empty or null.");
+        }
+
         if(BlockTag.fromString(identifier) == null
             && !Utils.isDecimalString(identifier)
             && !Utils.isHexadecimalString(identifier)) {

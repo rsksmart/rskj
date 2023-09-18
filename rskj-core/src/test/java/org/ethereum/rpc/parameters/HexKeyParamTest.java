@@ -22,5 +22,7 @@ public class HexKeyParamTest {
         String invalidHexValue = "0xcd3376bb711cb332ee3fb2ca04c6a8b9f70c316fcdf7a1f44ef4c79994832zxt";
 
         assertThrows(RskJsonRpcRequestException.class, () -> new HexKeyParam(invalidHexValue));
+        assertThrows(RskJsonRpcRequestException.class, () -> new HexKeyParam(null));
+        assertThrows(RskJsonRpcRequestException.class, () -> new HexKeyParam(""));
     }
 }

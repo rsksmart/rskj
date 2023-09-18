@@ -1,6 +1,5 @@
 package org.ethereum.rpc.parameters;
 
-import co.rsk.core.RskAddress;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,7 +8,6 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.ethereum.rpc.CallArguments;
 
 import java.io.IOException;
-import java.util.Optional;
 
 @JsonDeserialize(using = CallArgumentsParam.Deserializer.class)
 public class CallArgumentsParam {
@@ -75,35 +73,16 @@ public class CallArgumentsParam {
     }
 
     public CallArguments toCallArguments() {
-        String caFrom = Optional.ofNullable(this.from)
-                .map(HexAddressParam::getAddress)
-                .map(RskAddress::toJsonString)
-                .orElse(null);
-        String caTo = Optional.ofNullable(this.to)
-                .map(HexAddressParam::getAddress)
-                .map(RskAddress::toJsonString)
-                .orElse(null);
-        String caGas = Optional.ofNullable(this.gas)
-                .map(HexNumberParam::getHexNumber)
-                .orElse(null);
-        String caGasPrice = Optional.ofNullable(this.gasPrice)
-                .map(HexNumberParam::getHexNumber)
-                .orElse(null);
-        String caGasLimit = Optional.ofNullable(this.gasLimit)
-                .map(HexNumberParam::getHexNumber)
-                .orElse(null);
-        String caNonce = Optional.ofNullable(this.nonce)
-                .map(HexNumberParam::getHexNumber)
-                .orElse(null);
-        String caChainId = Optional.ofNullable(this.chainId)
-                .map(HexNumberParam::getHexNumber)
-                .orElse(null);
-        String caValue = Optional.ofNullable(this.value)
-                .map(HexNumberParam::getHexNumber)
-                .orElse(null);
-        String caData = Optional.ofNullable(this.data)
-                .map(HexDataParam::getAsHexString)
-                .orElse(null);
+
+        String caFrom = this.from == null ? null : this.from.getAddress().toJsonString();
+        String caTo = this.to == null ? null : this.to.getAddress().toJsonString();
+        String caGas = this.gas == null ? null : this.gas.getHexNumber();
+        String caGasPrice = this.gasPrice == null ? null : this.gasPrice.getHexNumber();
+        String caGasLimit = this.gasLimit == null ? null : this.gasLimit.getHexNumber();
+        String caNonce = this.nonce == null ? null : this.nonce.getHexNumber();
+        String caChainId = this.chainId == null ? null : this.chainId.getHexNumber();
+        String caValue = this.value == null ? null : this.value.getHexNumber();
+        String caData = this.data == null ? null : this.data.getAsHexString();
 
         CallArguments callArguments = new CallArguments();
         callArguments.setFrom(caFrom);
@@ -130,51 +109,17 @@ public class CallArgumentsParam {
         public CallArgumentsParam deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
             JsonNode node =  jp.getCodec().readTree(jp);
 
-            HexAddressParam from = Optional.ofNullable(node)
-                    .map(n -> n.get("from"))
-                    .map(JsonNode::asText)
-                    .map(HexAddressParam::new)
-                    .orElse(null);
-            HexAddressParam to = Optional.ofNullable(node)
-                    .map(n -> n.get("to"))
-                    .map(JsonNode::asText)
-                    .map(HexAddressParam::new)
-                    .orElse(null);
-            HexNumberParam gas = Optional.ofNullable(node)
-                    .map(n -> n.get("gas"))
-                    .map(JsonNode::asText)
-                    .map(HexNumberParam::new)
-                    .orElse(null);
-            HexNumberParam gasPrice = Optional.ofNullable(node)
-                    .map(n -> n.get("gasPrice"))
-                    .map(JsonNode::asText)
-                    .map(HexNumberParam::new)
-                    .orElse(null);
-            HexNumberParam gasLimit = Optional.ofNullable(node)
-                    .map(n -> n.get("gasLimit"))
-                    .map(JsonNode::asText)
-                    .map(HexNumberParam::new)
-                    .orElse(null);
-            HexNumberParam nonce = Optional.ofNullable(node)
-                    .map(n -> n.get("nonce"))
-                    .map(JsonNode::asText)
-                    .map(HexNumberParam::new)
-                    .orElse(null);
-            HexNumberParam chainId = Optional.ofNullable(node)
-                    .map(n -> n.get("chainId"))
-                    .map(JsonNode::asText)
-                    .map(HexNumberParam::new)
-                    .orElse(null);
-            HexNumberParam value = Optional.ofNullable(node)
-                    .map(n -> n.get("value"))
-                    .map(JsonNode::asText)
-                    .map(HexNumberParam::new)
-                    .orElse(null);
-            HexDataParam data = Optional.ofNullable(node)
-                    .map(n -> n.get("data"))
-                    .map(JsonNode::asText)
-                    .map(HexDataParam::new)
-                    .orElse(null);
+            BlockIdentifierParam fromBlock = node.has("fromBlock") ? new BlockIdentifierParam(node.get("fromBlock").asText()) : null;
+
+            HexAddressParam from = node.has("from") ? new HexAddressParam(node.get("from").asText()) : null;
+            HexAddressParam to = node.has("to") ? new HexAddressParam(node.get("to").asText()) : null;
+            HexNumberParam gas = node.has("gas") ? new HexNumberParam(node.get("gas").asText()) : null;
+            HexNumberParam gasPrice = node.has("gasPrice") ? new HexNumberParam(node.get("gasPrice").asText()) : null;
+            HexNumberParam gasLimit = node.has("gasLimit") ? new HexNumberParam(node.get("gasLimit").asText()) : null;
+            HexNumberParam nonce = node.has("nonce") ? new HexNumberParam(node.get("nonce").asText()) : null;
+            HexNumberParam chainId = node.has("chainId") ? new HexNumberParam(node.get("chainId").asText()) : null;
+            HexNumberParam value = node.has("value") ? new HexNumberParam(node.get("value").asText()) : null;
+            HexDataParam data = node.has("data") ? new HexDataParam(node.get("data").asText()) : null;
 
             return new CallArgumentsParam(from, to, gas, gasPrice, gasLimit, nonce, chainId, value, data);
         }

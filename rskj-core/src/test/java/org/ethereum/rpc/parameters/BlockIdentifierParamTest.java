@@ -42,5 +42,7 @@ public class BlockIdentifierParamTest {
 
         assertThrows(RskJsonRpcRequestException.class, () -> new BlockIdentifierParam(invalidStringIdentifier));
         assertThrows(RskJsonRpcRequestException.class, () -> new BlockIdentifierParam(invalidHexIdentifier));
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockIdentifierParam(null));
+        assertThrows(RskJsonRpcRequestException.class, () -> new BlockIdentifierParam(""));
     }
 }
