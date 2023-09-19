@@ -69,7 +69,7 @@ public class EthModuleTestUtils {
                 null,
                 new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
                 new ExecutionBlockRetriever(world.getBlockChain(), null, null),
-                null,
+                world.getRepositoryLocator(),
                 null,
                 null,
                 world.getBridgeSupportFactory(),
