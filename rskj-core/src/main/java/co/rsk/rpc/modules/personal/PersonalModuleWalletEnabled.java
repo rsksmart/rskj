@@ -128,7 +128,11 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     @Override
     public String importRawKey(HexKeyParam keyParam, String passphrase) {
         String s = null;
-        String key = Optional.ofNullable(keyParam).map(HexKeyParam::getHexKey).orElse(null);
+        String key = Optional.ofNullable(keyParam).map(HexKeyParam::getHexKey)
+                .orElseThrow(
+                        () -> RskJsonRpcRequestException.invalidParamError("Key cannot be null.")
+                );
+
         try {
             if (key != null && key.startsWith("0x")) {
                 key = key.substring(2);

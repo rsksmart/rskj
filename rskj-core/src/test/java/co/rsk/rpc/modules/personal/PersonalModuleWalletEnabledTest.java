@@ -3,9 +3,9 @@ package co.rsk.rpc.modules.personal;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
-import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.HexKeyParam;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
@@ -26,7 +26,7 @@ class PersonalModuleWalletEnabledTest {
     @Test
     void importRawKey_KeyIsNull_ThrowsNullPointerException() {
         PersonalModuleWalletEnabled personalModuleWalletEnabled = createPersonalModuleWalletEnabled(null);
-        Assertions.assertThrows(DecoderException.class, () -> personalModuleWalletEnabled.importRawKey(null, "passphrase1"));
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> personalModuleWalletEnabled.importRawKey(null, "passphrase1"));
     }
 
     @Test

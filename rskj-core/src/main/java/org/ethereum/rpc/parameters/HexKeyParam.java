@@ -17,10 +17,6 @@ public class HexKeyParam implements Serializable {
     private final String hexKey;
 
     public HexKeyParam(String hexKey) {
-        if (hexKey == null || hexKey.isEmpty()) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid key: empty or null.");
-        }
-
         boolean hasPrefix = HexUtils.hasHexPrefix(hexKey);
         if (!HexUtils.isHex(hexKey.toLowerCase(), hasPrefix ? 2 : 0)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid param " + hexKey + ": value must be a valid hex.");
