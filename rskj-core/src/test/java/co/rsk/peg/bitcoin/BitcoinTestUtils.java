@@ -3,6 +3,7 @@ package co.rsk.peg.bitcoin;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.nio.charset.StandardCharsets;
@@ -16,6 +17,7 @@ public class BitcoinTestUtils {
     public static List<BtcECKey> getBtcEcKeysFromSeeds(String[] seeds, boolean sorted) {
         List<BtcECKey> keys = Arrays
             .stream(seeds)
+            //.map(seed -> BtcECKey.fromPrivate(Sha256Hash.hash(seed.getBytes(StandardCharsets.UTF_8))))
             .map(seed -> BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
             .collect(Collectors.toList());
 

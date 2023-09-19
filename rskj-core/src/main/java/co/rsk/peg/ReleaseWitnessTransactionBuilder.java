@@ -22,12 +22,9 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,18 +33,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
-import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKMULTISIG;
 
-/**
- * Given a set of UTXOs, a ReleaseTransactionBuilder
- * knows how to build a release transaction
- * of a certain amount to a certain address,
- * and how to signal the used UTXOs so they
- * can be invalidated.
- *
- * @author Ariel Mendelzon
- */
-public class ReleaseTransactionBuilder {
+public class ReleaseWitnessTransactionBuilder {
 
     public static final int BTC_TX_VERSION_2 = 2;
 
@@ -79,24 +66,30 @@ public class ReleaseTransactionBuilder {
         void configure(SendRequest sr);
     }
 
-    private static final Logger logger = LoggerFactory.getLogger("ReleaseTransactionBuilder");
+    private static final Logger logger = LoggerFactory.getLogger("ReleaseWitnessTransactionBuilder");
 
     private final NetworkParameters params;
     private final Wallet wallet;
     private final Address changeAddress;
+    private final Script redeemScript;
+    private final List<BtcECKey> signers;
     private final Coin feePerKb;
     private final ActivationConfig.ForBlock activations;
 
-    public ReleaseTransactionBuilder(
+    public ReleaseWitnessTransactionBuilder(
         NetworkParameters params,
         Wallet wallet,
         Address changeAddress,
+        Script redeemScript,
+        List<BtcECKey> signers,
         Coin feePerKb,
         ActivationConfig.ForBlock activations
     ) {
         this.params = params;
         this.wallet = wallet;
         this.changeAddress = changeAddress;
+        this.redeemScript = redeemScript;
+        this.signers = signers;
         this.feePerKb = feePerKb;
         this.activations = activations;
     }
@@ -138,17 +131,17 @@ public class ReleaseTransactionBuilder {
     }
 
     private BuildResult buildWithConfiguration(
-            SendRequestConfigurator sendRequestConfigurator,
-            String operationDescription) {
+        SendRequestConfigurator sendRequestConfigurator,
+        String operationDescription) {
 
         // Build a tx and send request and configure it
         BtcTransaction btcTx = new BtcTransaction(params);
 
-        if (activations.isActive(ConsensusRule.RSKIP201)) {
-            btcTx.setVersion(BTC_TX_VERSION_2);
-        }
+        btcTx.setVersion(BTC_TX_VERSION_2);
 
         SendRequest sr = SendRequest.forTx(btcTx);
+        sr.isSegwit = true;
+
         // Default settings
         defaultSettingsConfigurator.configure(sr);
         // Specific settings
@@ -171,6 +164,25 @@ public class ReleaseTransactionBuilder {
                     )
                 )
                 .collect(Collectors.toList());
+
+            byte[] redeemScriptHash = Sha256Hash.hash(redeemScript.getProgram());
+            Script scriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
+            Script segwitScriptSig = new ScriptBuilder().data(scriptSig.getProgram()).build();
+
+            int requiredSignatures = signers.size() / 2 + 1;
+
+            List<TransactionSignature> txSignatures = Stream
+                .generate(TransactionSignature::dummy)
+                .limit(requiredSignatures)
+                .collect(Collectors.toList());
+
+            TransactionWitness txWitness = TransactionWitness.createWitnessErpStandardScript(redeemScript, txSignatures);
+
+            int txInputsSize = btcTx.getInputs().size();
+            for (int i = 0; i < txInputsSize; i++) {
+                btcTx.getInput(i).setScriptSig(segwitScriptSig);
+                btcTx.setWitness(i, txWitness);
+            }
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {
@@ -212,3 +224,4 @@ public class ReleaseTransactionBuilder {
     }
 
 }
+
