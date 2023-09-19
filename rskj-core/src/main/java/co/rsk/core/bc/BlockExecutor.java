@@ -449,20 +449,24 @@ public class BlockExecutor {
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
         readWrittenKeysTracker.clear();
 
-        ExecutorCompletionService<Boolean> completionService = new ExecutorCompletionService<>(new Executor() {
+        short[] txExecutionEdges = block.getHeader().getTxExecutionSublistsEdges();
+
+        // if the number of parallel lists is less than 2, then there's no need to execute in another thread. The work can
+        // be done in the same thread (in-line) without any threads switching.
+        ExecutorCompletionService<Boolean> completionService = new ExecutorCompletionService<>(txExecutionEdges.length > 1 ? new Executor() {
             private final AtomicInteger parallelListIndex = new AtomicInteger(0); // 'parallelListIndex' should not exceed Constants.getTransactionExecutionThreads()
 
             @Override
             public void execute(@Nonnull Runnable command) {
                 execServices[parallelListIndex.getAndIncrement()].execute(command);
             }
-        });
+        } : Runnable::run);
         List<TransactionListExecutor> transactionListExecutors = new ArrayList<>();
         long sublistGasLimit = getSublistGasLimit(block);
 
         short start = 0;
 
-        for (short end : block.getHeader().getTxExecutionSublistsEdges()) {
+        for (short end : txExecutionEdges) {
             List<Transaction> sublist = block.getTransactionsList().subList(start, end);
             TransactionListExecutor txListExecutor = new TransactionListExecutor(
                     sublist,
@@ -574,7 +578,7 @@ public class BlockExecutor {
                 block,
                 new LinkedList<>(executedTransactions.values()),
                 new LinkedList<>(receipts.values()),
-                block.getHeader().getTxExecutionSublistsEdges(),
+                txExecutionEdges,
                 totalGasUsed,
                 totalBlockPaidFees,
                 vmTrace ? null : track.getTrie()
