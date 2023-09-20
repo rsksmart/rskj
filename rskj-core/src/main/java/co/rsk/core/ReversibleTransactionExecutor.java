@@ -43,9 +43,10 @@ public class ReversibleTransactionExecutor {
     }
 
     public TransactionExecutor estimateGas(Block executionBlock, RskAddress coinbase, byte[] gasPrice, byte[] gasLimit,
-                                                                byte[] toAddress, byte[] value, byte[] data, RskAddress fromAddress) {
+                                           byte[] toAddress, byte[] value, byte[] data, RskAddress fromAddress,
+                                           RepositorySnapshot snapshot) {
         return reversibleExecution(
-                repositoryLocator.snapshotAt(executionBlock.getHeader()),
+                snapshot,
                 executionBlock,
                 coinbase,
                 gasPrice,
