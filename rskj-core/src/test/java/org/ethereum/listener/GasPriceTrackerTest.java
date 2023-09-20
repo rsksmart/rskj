@@ -1,7 +1,7 @@
 package org.ethereum.listener;
 
 import co.rsk.core.Coin;
-import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.bridge.simples.SimpleRskTransaction;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;

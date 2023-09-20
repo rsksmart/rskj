@@ -22,7 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.net.NodeID;
-import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.bridge.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;

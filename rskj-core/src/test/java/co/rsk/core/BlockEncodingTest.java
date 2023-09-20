@@ -19,7 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.core.bc.BlockHashesHelper;
-import co.rsk.peg.PegTestUtils;
+import co.rsk.bridge.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.BlockFactory;

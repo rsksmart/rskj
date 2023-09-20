@@ -18,7 +18,7 @@
 
 package co.rsk.pcc.blockheader;
 
-import co.rsk.peg.performance.PrecompiledContractPerformanceTest;
+import co.rsk.bridge.performance.PrecompiledContractPerformanceTest;
 import org.junit.jupiter.api.Disabled;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;

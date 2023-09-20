@@ -21,7 +21,7 @@ package co.rsk.core;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockHashesHelper;
-import co.rsk.peg.PegTestUtils;
+import co.rsk.bridge.PegTestUtils;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;

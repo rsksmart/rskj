@@ -25,7 +25,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.BridgeUtils;
+import co.rsk.bridge.BridgeUtils;
 import co.rsk.util.ListArrayUtil;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;

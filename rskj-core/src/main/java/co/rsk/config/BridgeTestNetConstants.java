@@ -21,9 +21,9 @@ package co.rsk.config;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.Federation;
-import co.rsk.peg.FederationMember;
+import co.rsk.bridge.AddressBasedAuthorizer;
+import co.rsk.bridge.Federation;
+import co.rsk.bridge.FederationMember;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 

@@ -26,8 +26,8 @@ import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.bridge.BridgeSupportFactory;
+import co.rsk.bridge.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -55,11 +55,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.List;
 

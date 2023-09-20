@@ -25,7 +25,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
-import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.bridge.BridgeSupportFactory;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;

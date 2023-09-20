@@ -23,7 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.pcc.NativeContract;
-import co.rsk.peg.Bridge;
+import co.rsk.bridge.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.CreationData;

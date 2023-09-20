@@ -18,7 +18,7 @@
 package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.peg.utils.MerkleTreeUtils;
+import co.rsk.bridge.utils.MerkleTreeUtils;
 import org.ethereum.config.Constants;
 
 import java.util.Arrays;

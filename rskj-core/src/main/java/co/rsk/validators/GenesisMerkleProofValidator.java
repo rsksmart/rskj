@@ -20,7 +20,7 @@ package co.rsk.validators;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
+import co.rsk.bridge.utils.PartialMerkleTreeFormatUtils;
 
 import java.util.ArrayList;
 import java.util.List;

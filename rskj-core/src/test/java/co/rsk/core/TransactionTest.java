@@ -19,8 +19,8 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.bridge.BridgeSupportFactory;
+import co.rsk.bridge.RepositoryBtcBlockStoreWithCache;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;

@@ -4,13 +4,13 @@ import static org.mockito.Mockito.mock;
 
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.config.BridgeConstants;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.BridgeSupport;
-import co.rsk.peg.BtcBlockStoreWithCache.Factory;
-import co.rsk.peg.FederationSupport;
-import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.bridge.BridgeStorageProvider;
+import co.rsk.bridge.BridgeSupport;
+import co.rsk.bridge.BtcBlockStoreWithCache.Factory;
+import co.rsk.bridge.FederationSupport;
+import co.rsk.bridge.btcLockSender.BtcLockSenderProvider;
+import co.rsk.bridge.pegininstructions.PeginInstructionsProvider;
+import co.rsk.bridge.utils.BridgeEventLogger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 

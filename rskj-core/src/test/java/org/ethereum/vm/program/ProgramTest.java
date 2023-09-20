@@ -20,7 +20,7 @@ package org.ethereum.vm.program;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.Bridge;
+import co.rsk.bridge.Bridge;
 import com.google.common.collect.Sets;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
