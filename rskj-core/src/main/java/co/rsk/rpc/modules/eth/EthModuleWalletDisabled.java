@@ -18,8 +18,6 @@
 
 package co.rsk.rpc.modules.eth;
 
-import org.ethereum.rpc.parameters.HexAddressParam;
-import org.ethereum.rpc.parameters.HexDataParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
