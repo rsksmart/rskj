@@ -60,6 +60,7 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.*;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
@@ -419,7 +420,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getBalance(HexAddressParam address, BlockRefParam blockRefParam) {
-        if(blockRefParam.getIdentifier() != null) {
+        if (blockRefParam.getIdentifier() != null) {
             return this.eth_getBalance(address, blockRefParam.getIdentifier());
         } else {
             return this.eth_getBalance(address, blockRefParam.getInputs());
@@ -462,7 +463,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam) {
-        if(blockRefParam.getIdentifier() != null) {
+        if (blockRefParam.getIdentifier() != null) {
             return this.eth_getStorageAt(address, storageIdx, blockRefParam.getIdentifier());
         } else {
             return this.eth_getStorageAt(address, storageIdx, blockRefParam.getInputs());
@@ -501,7 +502,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getTransactionCount(HexAddressParam address, BlockRefParam blockRefParam) {
-        if(blockRefParam.getIdentifier() != null) {
+        if (blockRefParam.getIdentifier() != null) {
             return this.eth_getTransactionCount(address, blockRefParam.getIdentifier());
         } else {
             return this.eth_getTransactionCount(address, blockRefParam.getInputs());
@@ -1079,11 +1080,17 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String personal_newAccountWithSeed(String seed) {
+        if (seed == null) {
+            throw RskJsonRpcRequestException.invalidParamError("Seed is null");
+        }
         return personalModule.newAccountWithSeed(seed);
     }
 
     @Override
     public String personal_newAccount(String passphrase) {
+        if (passphrase == null) {
+            throw RskJsonRpcRequestException.invalidParamError("Passphrase is null");
+        }
         return personalModule.newAccount(passphrase);
     }
 
