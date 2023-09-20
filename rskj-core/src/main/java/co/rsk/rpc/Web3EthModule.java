@@ -44,7 +44,7 @@ public interface Web3EthModule {
     }
 
     default String eth_sign(HexAddressParam addr, HexDataParam data) {
-        return getEthModule().sign(addr, data);
+        return getEthModule().sign(addr.getAddress().toHexString(), data.getAsHexString());
     }
 
     default String eth_call(CallArgumentsParam args, BlockIdentifierParam bnOrId) {

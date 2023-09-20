@@ -39,7 +39,7 @@ public class EthModuleWalletDisabled implements EthModuleWallet {
     }
 
     @Override
-    public String sign(HexAddressParam addr, HexDataParam data) {
+    public String sign(String addr, String data) {
         LOGGER.debug("eth_sign({}, {}): {}", addr, data, null);
         throw invalidParamError("Local wallet is disabled in this node");
     }

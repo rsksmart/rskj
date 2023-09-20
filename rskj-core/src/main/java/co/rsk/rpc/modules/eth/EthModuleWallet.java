@@ -18,12 +18,9 @@
 
 package co.rsk.rpc.modules.eth;
 
-import org.ethereum.rpc.parameters.HexAddressParam;
-import org.ethereum.rpc.parameters.HexDataParam;
-
 public interface EthModuleWallet {
 
     String[] accounts();
 
-    String sign(HexAddressParam addr, HexDataParam data);
+    String sign(String addr, String data);
 }

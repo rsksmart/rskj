@@ -212,7 +212,7 @@ public class EthModule
     }
 
     @Override
-    public String sign(HexAddressParam addr, HexDataParam data) {
+    public String sign(String addr, String data) {
         return ethModuleWallet.sign(addr, data);
     }
 
