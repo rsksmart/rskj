@@ -5,10 +5,20 @@ import org.ethereum.util.RLP;
 import java.math.BigInteger;
 
 public class SnapStatusResponseMessage extends Message {
-    private SnapStatus snapStatus;
+    private final long trieSize;
+    private final byte[] rootHash;
 
-    public SnapStatusResponseMessage(SnapStatus status) {
-        this.snapStatus = status;
+
+    public long getTrieSize() {
+        return this.trieSize;
+    }
+
+    public byte[] getRootHash() {
+        return this.rootHash;
+    }
+    public SnapStatusResponseMessage(long trieSize, byte[] rootHash) {
+        this.trieSize = trieSize;
+        this.rootHash = rootHash;
     }
 
     @Override
@@ -18,14 +28,10 @@ public class SnapStatusResponseMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        byte[] trieSize = RLP.encodeBigInteger(BigInteger.valueOf(snapStatus.getTrieSize()));
-        byte[] rootHash = RLP.encodeElement(snapStatus.getRootHash());
+        byte[] trieSize = RLP.encodeBigInteger(BigInteger.valueOf(this.trieSize));
+        byte[] rootHash = RLP.encodeElement(this.rootHash);
 
         return RLP.encodeList(trieSize, rootHash);
-    }
-
-    public SnapStatus getSnapStatus() {
-        return this.snapStatus;
     }
 
     @Override

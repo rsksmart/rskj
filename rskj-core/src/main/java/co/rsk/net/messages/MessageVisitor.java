@@ -197,15 +197,13 @@ public class MessageVisitor {
     }
 
     public void apply(SnapStatusRequestMessage message) {
-        logger.debug("snapshot chunk response : {}", message);
+        logger.debug("snapshot status request message apply : {}", message);
 
-        this.snapshotProcessor.processSnapStatusRequest(sender, message.getBlockNumber());
+        this.snapshotProcessor.processSnapStatusRequest(sender);
     }
 
-    public void apply(SnapStatusResponseMessage message) {
-
-        final SnapStatus snapStatus = message.getSnapStatus();
-        logger.trace("Process snap-status {} {}", snapStatus.getTrieSize(), snapStatus.getRootHash());
+    public void apply(SnapStatusResponseMessage message)  {
+        logger.debug("snapshot status response message apply {} {}", message.getTrieSize(), message.getRootHash());
         this.snapshotProcessor.processSnapStatusResponse(sender, message);
     }
 
