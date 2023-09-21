@@ -40,7 +40,7 @@ public class HexNumberParam implements Serializable {
             try {
                 new BigInteger(hexNumber);
             } catch(Exception e) {
-                throw RskJsonRpcRequestException.invalidParamError("Invalid param " + hexNumber + ": value must be a valid hex or string number.");
+                throw RskJsonRpcRequestException.invalidParamError("Invalid param " + hexNumber + ": value must be a valid hex or string number.", e);
             }
         }
 

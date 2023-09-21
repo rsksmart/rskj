@@ -37,7 +37,7 @@ public abstract class HashParam32 {
         try {
             hashBytes = HexUtils.stringHexToByteArray(hash);
         } catch (Exception e) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid " + hashType + " format: invalid hex value");
+            throw RskJsonRpcRequestException.invalidParamError("Invalid " + hashType + " format: invalid hex value", e);
         }
 
         if (HASH_BYTE_LENGTH != hashBytes.length) {

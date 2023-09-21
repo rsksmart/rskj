@@ -38,7 +38,7 @@ public class HexDataParam implements Serializable {
         try {
             this.rawDataBytes = HexUtils.stringHexToByteArray(rawData);
         } catch (Exception e) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid data format: invalid hex value");
+            throw RskJsonRpcRequestException.invalidParamError("Invalid data format: invalid hex value.", e);
         }
     }
 
