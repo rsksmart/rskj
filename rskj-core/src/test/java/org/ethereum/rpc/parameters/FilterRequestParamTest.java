@@ -136,4 +136,20 @@ class FilterRequestParamTest {
 
     }
 
+    @Test
+    void canHandleNullTopics() throws JsonProcessingException {
+        String filterRequestInput = "{\n" +
+                "            \"topics\":[\"0x000000000000000000000000000000006d696e696e675f6665655f746f706963\", null, [\"0x000000000000000000000000000000006d696e696e675f6665655f746f706963\",null]]}";
+        JsonNode jsonNode = objectMapper.readTree(filterRequestInput);
+        FilterRequestParam filterRequestParam = objectMapper.convertValue(jsonNode, FilterRequestParam.class);
+        FilterRequest fr = objectMapper.convertValue(jsonNode, FilterRequest.class);
+
+        assertNotNull(filterRequestParam);
+        assertEquals("0x000000000000000000000000000000006d696e696e675f6665655f746f706963", filterRequestParam.getTopics()[0][0].getHash().toJsonString());
+        FilterRequest filterRequest = filterRequestParam.toFilterRequest();
+        assertNotNull(filterRequest);
+        assertEquals(3, filterRequest.getTopics().length);
+        assertEquals(2, ((List<String>) filterRequest.getTopics()[2]).size());
+
+    }
 }

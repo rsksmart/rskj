@@ -99,21 +99,17 @@ public class FilterRequestParam {
 
     private Object[] parseTopicArrayToObjectArray() {
         if (this.topics == null) {
-            return null;
+            return new Object[0];
         }
         Object[] result = new Object[this.topics.length];
         for (int i = 0; i < this.topics.length; i++) {
             TopicParam[] topicArray = this.topics[i];
             if (topicArray.length == 1) {
-                if (topicArray[0] != null) {
-                    result[i] = topicArray[0].getHash().toJsonString();
-                }
+                result[i] = topicArray[0] != null ? topicArray[0].getHash().toJsonString() : null;
             } else {
                 List<String> arrayList = new ArrayList<>();
-                for (int j = 0; j < topicArray.length; j++) {
-                    if (topicArray[j] != null) {
-                        arrayList.add(topicArray[j].getHash().toJsonString());
-                    }
+                for (TopicParam topicParam : topicArray) {
+                    arrayList.add(topicParam != null ? topicParam.getHash().toJsonString() : null);
                 }
                 result[i] = arrayList;
             }
@@ -172,7 +168,8 @@ public class FilterRequestParam {
                         TopicParam[] topicParams = getTopics(subNode);
                         topics[i] = topicParams;
                     } else {
-                        topics[i] = new TopicParam[]{new TopicParam(subNode.asText())};
+                        TopicParam subNodeTopic = subNode.asText().contentEquals("null") ? null : new TopicParam(subNode.asText());
+                        topics[i] = new TopicParam[]{subNodeTopic};
                     }
                 }
                 return topics;
@@ -184,10 +181,12 @@ public class FilterRequestParam {
         private TopicParam[] getTopics(JsonNode jsonNode) {
             TopicParam[] topicParams = new TopicParam[jsonNode.size()];
             for (int j = 0; j < jsonNode.size(); j++) {
-                topicParams[j] = new TopicParam(jsonNode.get(j).asText());
+                JsonNode subNode = jsonNode.get(j);
+                topicParams[j] = subNode.asText().contentEquals("null") ? null : new TopicParam(subNode.asText());
             }
             return topicParams;
         }
+
     }
 
 }
