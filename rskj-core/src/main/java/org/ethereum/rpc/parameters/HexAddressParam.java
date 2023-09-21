@@ -41,7 +41,7 @@ public class HexAddressParam implements Serializable {
         try {
             this.address = new RskAddress(hexAddress);
         } catch (Exception e) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid address format. " + e);
+            throw RskJsonRpcRequestException.invalidParamError("Invalid address format: invalid hex value");
         }
     }
 

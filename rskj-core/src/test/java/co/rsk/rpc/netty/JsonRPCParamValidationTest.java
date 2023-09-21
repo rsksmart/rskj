@@ -92,7 +92,7 @@ class JsonRPCParamValidationTest {
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
         assertEquals(-32602, response.getCode());
         String message = response.getResponse().get("error").get("message").asText();
-        assertEquals("Invalid block hash format. exception decoding Hex string: invalid characters encountered in Hex string", message);
+        assertEquals("Invalid block hash format: invalid hex value", message);
     }
 
     @Test
@@ -192,7 +192,7 @@ class JsonRPCParamValidationTest {
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
         assertEquals(-32602, response.getCode());
         String message = response.getResponse().get("error").get("message").asText();
-        assertEquals("Invalid transaction hash format. exception decoding Hex string: invalid characters encountered in Hex string", message);
+        assertEquals("Invalid transaction hash format: invalid hex value", message);
     }
 
     @Test
