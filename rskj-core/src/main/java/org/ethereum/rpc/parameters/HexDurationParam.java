@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.IOException;
 
@@ -31,10 +32,14 @@ public class HexDurationParam extends HexStringParam {
     public HexDurationParam(String hexDurationStr) {
         super(hexDurationStr);
 
-        if(hexDurationStr.isEmpty()) {
+        if (hexDurationStr.isEmpty()) {
             this.duration = null;
         } else {
-            this.duration = Long.parseLong(hexDurationStr.substring(2), 16);
+            try {
+                this.duration = Long.parseLong(hexDurationStr.substring(2), 16);
+            } catch (NumberFormatException e) {
+                throw RskJsonRpcRequestException.invalidParamError("Invalid duration param: value must be a valid hex number.", e);
+            }
         }
     }
 
