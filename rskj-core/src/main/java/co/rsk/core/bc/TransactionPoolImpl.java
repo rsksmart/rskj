@@ -272,7 +272,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         if (!senderCanPayPendingTransactionsAndNewTx(tx, currentRepository)) {
             // discard this tx to prevent spam
-            return TransactionPoolAddResult.withError("insufficient funds to pay for pending and new transaction");
+            return TransactionPoolAddResult.withError("insufficient funds to pay for pending and new transactions");
         }
 
         pendingTransactions.addTransaction(tx);
@@ -469,7 +469,11 @@ public class TransactionPoolImpl implements TransactionPool {
 
         Coin accumTxCost = Coin.ZERO;
         for (Transaction t : transactions) {
-            accumTxCost = accumTxCost.add(getTxBaseCost(t));
+            boolean isReplacedTx = Arrays.equals(t.getNonce(), newTx.getNonce());
+            // do not consider replaced transaction for the calculations
+            if (!isReplacedTx) {
+                accumTxCost = accumTxCost.add(getTxBaseCost(t));
+            }
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));

@@ -24,6 +24,7 @@ import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
@@ -159,6 +160,10 @@ public class EthModule
     public String estimateGas(CallArgumentsParam args, @Nonnull BlockIdentifierParam bnOrId) {
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
+        Trie finalState = result.getFinalState();
+        RepositorySnapshot snapshot = finalState == null
+                ? repositoryLocator.snapshotAt(block.getHeader())
+                : new MutableRepository(new TrieStoreImpl(new HashMapDB()), finalState);
 
         String estimation = null;
         try {
@@ -172,7 +177,8 @@ public class EthModule
                     hexArgs.getToAddress(),
                     hexArgs.getValue(),
                     hexArgs.getData(),
-                    hexArgs.getFromAddress()
+                    hexArgs.getFromAddress(),
+                    snapshot
             );
 
             estimation = internalEstimateGas(executor.getResult());
