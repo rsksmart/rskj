@@ -1,5 +1,6 @@
 package co.rsk.pcc;
 
+import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.FhStore;
@@ -13,6 +14,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 // todo(fedejinich) refactor duplicated code in add and sub
 public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
@@ -208,12 +212,39 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
 
                 byte[] result = bfv.decrypt(encrypted, encrypted.length, bfvSK, bfvSK.length);
 
+//                HexUtils.encodeToHexByteArray(result);
 //                long[] res = parseDecrypt(result, 4);
                 byte[] dec = shrink(result, 4 * Long.BYTES);
+
+//                long[] l = new long[dec.length/Long.BYTES];
+//                ByteBuffer d = ByteBuffer.wrap(dec).order(ByteOrder.LITTLE_ENDIAN);
+//                for(int i = 0; i < dec.length; i = i+8) {
+//                    d.position(i);
+//                    l[i] = d.getLong();
+//                }
+
+
+                Op.reverse(dec);
 
                 return dec;
             }
         };
+
+        private static void reverse(byte[] array) {
+            if (array == null) {
+                return;
+            }
+            int i = 0;
+            int j = array.length - 1;
+            byte tmp;
+            while (j > i) {
+                tmp = array[j];
+                array[j] = array[i];
+                array[i] = tmp;
+                j--;
+                i++;
+            }
+        }
         private static byte[] shrink(byte[] original, int newSize) {
             // Ensure the new size is valid.
             if (newSize < 0 || newSize > original.length) {
