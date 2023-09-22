@@ -37,9 +37,11 @@ class HexIndexParamTest {
     void testInvalidHexIndexParam() {
         String invalidHexValue = "123"; // Missing hex prefix
         String nonNumericHexValue = "0xabcz"; // Non-valid hex value
+        String invalidIndex = "0xf1652d8322a880e520f996f7d28b645814a58a202d7d2ab7f058e5566fe4f9f3"; // Invalid index
 
         assertThrows(RskJsonRpcRequestException.class, () -> new HexIndexParam(invalidHexValue));
         assertThrows(RskJsonRpcRequestException.class, () -> new HexIndexParam(nonNumericHexValue));
+        assertThrows(RskJsonRpcRequestException.class, () -> new HexIndexParam(invalidIndex));
     }
 
 }

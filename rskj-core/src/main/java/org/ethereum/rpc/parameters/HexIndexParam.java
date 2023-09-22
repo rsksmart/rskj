@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.IOException;
 
@@ -33,7 +34,11 @@ public class HexIndexParam extends HexStringParam {
         super(indexString);
 
         String preResult = HexUtils.removeHexPrefix(indexString);
-        this.index = Integer.parseInt(preResult, 16);
+        try {
+            this.index = Integer.parseInt(preResult, 16);
+        } catch (NumberFormatException e) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid index param: value must be a valid hex number.", e);
+        }
     }
 
     public Integer getIndex() {
