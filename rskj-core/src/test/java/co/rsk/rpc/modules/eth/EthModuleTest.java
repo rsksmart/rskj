@@ -510,7 +510,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         EthModule eth = new EthModule(
@@ -520,7 +520,7 @@ class EthModuleTest {
                 null,
                 reversibleTransactionExecutor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 new BridgeSupportFactory(
@@ -534,7 +534,7 @@ class EthModuleTest {
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any(), any());
         assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getData()), dataCaptor.getValue());
     }
 
@@ -555,7 +555,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         EthModule eth = new EthModule(
@@ -565,7 +565,7 @@ class EthModuleTest {
                 null,
                 reversibleTransactionExecutor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 new BridgeSupportFactory(
@@ -579,7 +579,7 @@ class EthModuleTest {
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any(), any());
         assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
     }
 
@@ -601,7 +601,7 @@ class EthModuleTest {
                 .thenReturn(executorResult);
 
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
-        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any()))
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(transactionExecutor);
 
         EthModule eth = new EthModule(
@@ -611,7 +611,7 @@ class EthModuleTest {
                 null,
                 reversibleTransactionExecutor,
                 retriever,
-                null,
+                mock(RepositoryLocator.class),
                 null,
                 null,
                 new BridgeSupportFactory(
@@ -625,7 +625,7 @@ class EthModuleTest {
 
         ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(reversibleTransactionExecutor, times(1))
-                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any());
+                .estimateGas(eq(block), any(), any(), any(), any(), any(), dataCaptor.capture(), any(), any());
         assertArrayEquals(HexUtils.strHexOrStrNumberToByteArray(args.getInput()), dataCaptor.getValue());
     }
 
