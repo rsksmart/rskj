@@ -168,7 +168,7 @@ public class FilterRequestParam {
                         TopicParam[] topicParams = getTopics(subNode);
                         topics[i] = topicParams;
                     } else {
-                        TopicParam subNodeTopic = subNode.asText().contentEquals("null") ? null : new TopicParam(subNode.asText());
+                        TopicParam subNodeTopic = subNode.isNull() ? null : new TopicParam(subNode.asText());
                         topics[i] = new TopicParam[]{subNodeTopic};
                     }
                 }
@@ -182,7 +182,7 @@ public class FilterRequestParam {
             TopicParam[] topicParams = new TopicParam[jsonNode.size()];
             for (int j = 0; j < jsonNode.size(); j++) {
                 JsonNode subNode = jsonNode.get(j);
-                topicParams[j] = subNode.asText().contentEquals("null") ? null : new TopicParam(subNode.asText());
+                topicParams[j] = subNode.isNull() ? null : new TopicParam(subNode.asText());
             }
             return topicParams;
         }
