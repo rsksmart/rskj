@@ -206,7 +206,7 @@ public class BlockSyncService {
             }
 
             connectionsResult.put(block.getHash(), blockchain.tryToConnect(block));
-            loggerSnapExperiment.debug("BlockMessage block executed: [{}] from: [{}]", block.getNumber(), sender.getPeerNodeID());
+            loggerSnapExperiment.debug("BlockMessage block executed number: [{}] hash: [{}] from: [{}]", block.getNumber(), block.getPrintableHash(), sender.getPeerNodeID());
             if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
                 this.store.removeBlock(block);
                 connected.add(block);
