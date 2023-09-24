@@ -236,7 +236,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
         if (messageTask.getMessage().getMessageType() == MessageType.BLOCK_MESSAGE) {
             BlockMessage blockMessage = (BlockMessage) messageTask.getMessage();
-            loggerSnapExperiment.debug("BlockMessage block arrived: [{}] from: [{}]", blockMessage.getBlock().getNumber(), messageTask.sender.getPeerNodeID());
+            loggerSnapExperiment.debug("BlockMessage block arrived number: [{}] hash: [{}] from: [{}]", blockMessage.getBlock().getNumber(), blockMessage.getBlock().getPrintableHash(), messageTask.sender.getPeerNodeID());
         }
 
         boolean messageAdded = this.queue.offer(messageTask);
