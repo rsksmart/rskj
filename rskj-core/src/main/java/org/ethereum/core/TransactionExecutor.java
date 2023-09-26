@@ -422,7 +422,7 @@ public class TransactionExecutor {
             // Charge basic cost of the transaction
             program.spendGas(tx.transactionCost(constants, activations, signatureCache), "TRANSACTION COST");
 
-            FhStore.getInstance().clear(); // clear fh store for the tx
+//            FhStore.getInstance().clear(); // clear fh store for the tx
 
             vm.play(program);
 
