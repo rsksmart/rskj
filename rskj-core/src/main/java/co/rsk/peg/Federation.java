@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 
-public class Federation {
+public abstract class Federation {
     protected final List<FederationMember> members;
     protected final Instant creationTime;
     protected final long creationBlockNumber;
@@ -49,7 +49,7 @@ public class Federation {
     protected Script p2shScript;
     protected Address address;
 
-    public Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber,  NetworkParameters btcParams) {
+    public Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber, NetworkParameters btcParams) {
         // Sorting members ensures same order of federation members for same members
         // Immutability provides protection against unwanted modification, thus making the Federation instance
         // effectively immutable
@@ -91,18 +91,7 @@ public class Federation {
         return creationBlockNumber;
     }
 
-    public Script getRedeemScript() {
-        if (redeemScript == null) {
-            redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
-        }
-
-        return redeemScript;
-    }
-
-    public Script getStandardRedeemScript() {
-        return getRedeemScript();
-    }
-
+    public abstract Script getRedeemScript();
     public Script getP2SHScript() {
         if (p2shScript == null) {
             p2shScript = ScriptBuilder.createP2SHOutputScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
@@ -111,12 +100,11 @@ public class Federation {
         return p2shScript;
     }
 
-    public Script getStandardP2SHScript() {
-        return getP2SHScript();
-    }
-
     public Address getAddress() {
         if (address == null) {
+            // for now, it is ok to this method to be like this.
+            // when we add bech32 it should change, because the calculation of the address
+            // would be different.
             address = Address.fromP2SHScript(btcParams, getP2SHScript());
         }
 
@@ -152,33 +140,12 @@ public class Federation {
         return this.members.contains(federationMember);
     }
 
-    @Override
     public String toString() {
         return String.format("%d of %d signatures federation", getNumberOfSignaturesRequired(), members.size());
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
+    public abstract boolean equals(Object other);
 
-        if (other == null || this.getClass() != other.getClass()) {
-            return false;
-        }
-
-        Federation otherFederation = (Federation) other;
-
-        return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
-            this.getSize() == otherFederation.getSize() &&
-            this.getCreationTime().equals(otherFederation.getCreationTime()) &&
-            this.creationBlockNumber == otherFederation.creationBlockNumber &&
-            this.btcParams.equals(otherFederation.btcParams) &&
-            this.members.equals(otherFederation.members) &&
-            this.getRedeemScript().equals(otherFederation.getRedeemScript());
-    }
-
-    @Override
     public int hashCode() {
         // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
         // well-defined hashCode()s
