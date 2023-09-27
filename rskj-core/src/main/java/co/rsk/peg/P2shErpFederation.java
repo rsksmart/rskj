@@ -8,6 +8,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
 import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,13 @@ public class P2shErpFederation extends ErpFederation {
 
     @Override
     public final Script getRedeemScript() {
+        // not sure if i should add this here or not. I think not but just in case
+        if (!activations.isActive(ConsensusRule.RSKIP284) &&
+            btcParams.getId().equals(NetworkParameters.ID_TESTNET)) {
+            logger.debug("[getRedeemScript] Returning hardcoded redeem script");
+            return new Script(ERP_TESTNET_REDEEM_SCRIPT_BYTES);
+        }
+
         if (redeemScript == null) {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
             redeemScript = P2shErpFederationRedeemScriptParser.createP2shErpRedeemScript(
@@ -48,5 +56,28 @@ public class P2shErpFederation extends ErpFederation {
             );
         }
         return standardRedeemScript;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        }
+
+        P2shErpFederation otherP2shErpFederation = (P2shErpFederation) other;
+
+        return this.getNumberOfSignaturesRequired() == otherP2shErpFederation.getNumberOfSignaturesRequired() &&
+            this.getSize() == otherP2shErpFederation.getSize() &&
+            this.getCreationTime().equals(otherP2shErpFederation.getCreationTime()) &&
+            this.creationBlockNumber == otherP2shErpFederation.creationBlockNumber &&
+            this.btcParams.equals(otherP2shErpFederation.btcParams) &&
+            this.members.equals(otherP2shErpFederation.members) &&
+            this.getRedeemScript().equals(otherP2shErpFederation.getRedeemScript()) &&
+            this.erpPubKeys.equals(otherP2shErpFederation.erpPubKeys) &&
+            this.activationDelay == otherP2shErpFederation.activationDelay;
     }
 }
