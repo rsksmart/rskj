@@ -24,12 +24,12 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Immutable representation of an RSK Federation in the context of
  * a specific BTC network.
  *
- * @author Ariel Mendelzon
  */
 
 public class StandardMultisigFederation extends Federation {
@@ -52,6 +52,7 @@ public class StandardMultisigFederation extends Federation {
         return redeemScript;
     }
 
+    // TODO: define what it means that two federations are "equal"
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -71,5 +72,17 @@ public class StandardMultisigFederation extends Federation {
             this.btcParams.equals(otherFederation.btcParams) &&
             this.members.equals(otherFederation.members) &&
             this.getRedeemScript().equals(otherFederation.getRedeemScript());
+    }
+
+    @Override
+    public int hashCode() {
+        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
+        // well-defined hashCode()s
+        return Objects.hash(
+            getCreationTime(),
+            this.creationBlockNumber,
+            getNumberOfSignaturesRequired(),
+            getBtcPublicKeys()
+        );
     }
 }

@@ -29,13 +29,6 @@ public class P2shErpFederation extends ErpFederation {
 
     @Override
     public final Script getRedeemScript() {
-        // not sure if i should add this here or not. I think not but just in case
-        if (!activations.isActive(ConsensusRule.RSKIP284) &&
-            btcParams.getId().equals(NetworkParameters.ID_TESTNET)) {
-            logger.debug("[getRedeemScript] Returning hardcoded redeem script");
-            return new Script(ERP_TESTNET_REDEEM_SCRIPT_BYTES);
-        }
-
         if (redeemScript == null) {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
             redeemScript = P2shErpFederationRedeemScriptParser.createP2shErpRedeemScript(
@@ -58,6 +51,8 @@ public class P2shErpFederation extends ErpFederation {
         return standardRedeemScript;
     }
 
+
+    // TODO: define what it means that two federations are "equal"
     @Override
     public boolean equals(Object other) {
         if (this == other) {

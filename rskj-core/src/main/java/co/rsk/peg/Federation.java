@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
  * Immutable representation of an RSK Federation in the context of
  * a specific BTC network.
  *
- * @author Ariel Mendelzon
  */
 
 public abstract class Federation {
@@ -75,6 +74,7 @@ public abstract class Federation {
             .collect(Collectors.toList());
     }
 
+    // TODO: take a look at this. We should check the threshold at the redeemScript.
     public int getNumberOfSignaturesRequired() {
         return members.size() / 2 + 1;
     }
@@ -94,7 +94,7 @@ public abstract class Federation {
     public abstract Script getRedeemScript();
     public Script getP2SHScript() {
         if (p2shScript == null) {
-            p2shScript = ScriptBuilder.createP2SHOutputScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
+            p2shScript = ScriptBuilder.createP2SHOutputScript(getRedeemScript());
         }
 
         return p2shScript;
@@ -140,20 +140,10 @@ public abstract class Federation {
         return this.members.contains(federationMember);
     }
 
+    // TODO: take a look at this
+    @Override
     public String toString() {
         return String.format("%d of %d signatures federation", getNumberOfSignaturesRequired(), members.size());
     }
 
-    public abstract boolean equals(Object other);
-
-    public int hashCode() {
-        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
-        // well-defined hashCode()s
-        return Objects.hash(
-            getCreationTime(),
-            this.creationBlockNumber,
-            getNumberOfSignaturesRequired(),
-            getBtcPublicKeys()
-        );
-    }
 }
