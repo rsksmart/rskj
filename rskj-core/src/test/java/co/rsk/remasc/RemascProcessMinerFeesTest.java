@@ -707,7 +707,7 @@ class RemascProcessMinerFeesTest {
 //                remasc.call();
 //            }
 //        }
-        long txCreateContractGasLimit = 53755 + 32000;
+        long txCreateContractGasLimit = 46995 + 32000;
         Transaction txCreateContract = Transaction
                 .builder()
                 .nonce(Coin.valueOf(1))

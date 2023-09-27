@@ -134,7 +134,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Estimate the gas to use
         long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(35728, estimatedGas);
+        assertEquals(35520, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -195,7 +195,7 @@ class EthModuleGasEstimationDSLTest {
 
         long clearStorageGasUsed = callConstantResult.getGasUsed();
         long clearStorageEstimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(26909, clearStorageEstimatedGas);
+        assertEquals(26649, clearStorageEstimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
@@ -220,7 +220,7 @@ class EthModuleGasEstimationDSLTest {
                 "0000000000000000000000000000000000000000000000000000000000000001"); // setValue(1,1)
         long updateStorageGasUsed = eth.callConstant(args, block).getGasUsed();
         long updateStorageEstimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(26973, updateStorageEstimatedGas);
+        assertEquals(26661, updateStorageEstimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -255,7 +255,7 @@ class EthModuleGasEstimationDSLTest {
         ProgramResult anotherCallConstantResult = eth.callConstant(args, block);
         long anotherClearStorageGasUsed = anotherCallConstantResult.getGasUsed();
         long anotherClearStorageEstimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(26909, anotherClearStorageEstimatedGas);
+        assertEquals(26649, anotherClearStorageEstimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
@@ -325,7 +325,7 @@ class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(40771, estimatedGas);
+        assertEquals(40563, estimatedGas);
 
         assertTrue(estimatedGas > callConstantGasUsed);
         assertEquals(callConstant.getMaxGasUsed() + GasCost.STIPEND_CALL, estimatedGas);
@@ -401,7 +401,7 @@ class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(48841, estimatedGas);
+        assertEquals(48633, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -477,7 +477,7 @@ class EthModuleGasEstimationDSLTest {
         assertTrue(callConstant.isCallWithValuePerformed());
 
         long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(39459, estimatedGas);
+        assertEquals(39251, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -550,7 +550,7 @@ class EthModuleGasEstimationDSLTest {
         assertTrue(callConstant.isCallWithValuePerformed());
 
         long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(48674, estimatedGas);
+        assertEquals(48466, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -603,7 +603,7 @@ class EthModuleGasEstimationDSLTest {
 
         // Estimate the gas to use
         long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(34996, estimatedGas);
+        assertEquals(34788, estimatedGas);
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
@@ -684,7 +684,7 @@ class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(84210, estimatedGas);
+        assertEquals(84002, estimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
@@ -760,7 +760,7 @@ class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args, BlockTag.LATEST.getTag());
-        assertEquals(84200, estimatedGas);
+        assertEquals(83992, estimatedGas);
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
