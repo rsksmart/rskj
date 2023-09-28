@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.peg.utils.EcKeyUtils;
 import java.time.Instant;
 import java.util.Collections;
@@ -47,6 +48,17 @@ public abstract class ErpFederation extends Federation {
     }
 
     public abstract Script getStandardRedeemScript();
+
+    @Override
+    public int getNumberOfSignaturesRequired() {
+        List<ScriptChunk> standardRedeemScriptChunks = getStandardRedeemScript().getChunks();
+
+        // the threshold of a multisig is the first chunk of the redeemScript
+        // and the standardRedeemScript represents a multisig
+        ScriptChunk thresholdChunk = standardRedeemScriptChunks.get(0);
+        String thresholdString = thresholdChunk.toString();
+        return thresholdString.charAt(thresholdString.length() - 1);
+    }
 
     public Script getStandardP2SHScript() {
         if (standardP2SHScript == null) {

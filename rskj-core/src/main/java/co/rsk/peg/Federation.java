@@ -75,9 +75,7 @@ public abstract class Federation {
     }
 
     // TODO: take a look at this. We should check the threshold at the redeemScript.
-    public int getNumberOfSignaturesRequired() {
-        return members.size() / 2 + 1;
-    }
+    public abstract int getNumberOfSignaturesRequired();
 
     public Instant getCreationTime() {
         return creationTime;
@@ -102,9 +100,6 @@ public abstract class Federation {
 
     public Address getAddress() {
         if (address == null) {
-            // for now, it is ok to this method to be like this.
-            // when we add bech32 it should change, because the calculation of the address
-            // would be different.
             address = Address.fromP2SHScript(btcParams, getP2SHScript());
         }
 
@@ -143,7 +138,7 @@ public abstract class Federation {
     // TODO: take a look at this
     @Override
     public String toString() {
-        return String.format("%d of %d signatures federation", getNumberOfSignaturesRequired(), members.size());
+        return String.format("Got federation with address %s", getAddress());
     }
 
 }

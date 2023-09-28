@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import co.rsk.peg.StandardMultisigFederation;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -58,7 +59,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
-        genesisFederation = new Federation(
+        genesisFederation = new StandardMultisigFederation(
             federationMembers,
             genesisFederationAddressCreatedAt,
             1L,

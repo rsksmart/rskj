@@ -6,6 +6,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import co.rsk.peg.StandardMultisigFederation;
 import com.google.common.collect.Lists;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
@@ -53,7 +54,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400l);
 
-        genesisFederation = new Federation(
+        genesisFederation = new StandardMultisigFederation(
             federationMembers,
             genesisFederationAddressCreatedAt,
             1L,

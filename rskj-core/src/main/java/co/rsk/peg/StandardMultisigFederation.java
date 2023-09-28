@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 
 import java.time.Instant;
 import java.util.List;
@@ -50,6 +51,17 @@ public class StandardMultisigFederation extends Federation {
         }
 
         return redeemScript;
+    }
+
+    @Override
+    public int getNumberOfSignaturesRequired() {
+        List<ScriptChunk> standardRedeemScriptChunks = getRedeemScript().getChunks();
+
+        // the threshold of a multisig is the first chunk of the redeemScript
+        // and the standardRedeemScript represents a multisig
+        ScriptChunk thresholdChunk = standardRedeemScriptChunks.get(0);
+        String thresholdString = thresholdChunk.toString();
+        return (int) thresholdString.charAt(thresholdString.length() - 1);
     }
 
     // TODO: define what it means that two federations are "equal"

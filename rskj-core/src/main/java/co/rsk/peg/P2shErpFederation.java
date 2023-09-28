@@ -8,7 +8,6 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
 import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +64,8 @@ public class P2shErpFederation extends ErpFederation {
 
         P2shErpFederation otherP2shErpFederation = (P2shErpFederation) other;
 
-        return this.getNumberOfSignaturesRequired() == otherP2shErpFederation.getNumberOfSignaturesRequired() &&
+        return //this.getAddress() == otherP2shErpFederation.getAddress();
+        this.getNumberOfSignaturesRequired() == otherP2shErpFederation.getNumberOfSignaturesRequired() &&
             this.getSize() == otherP2shErpFederation.getSize() &&
             this.getCreationTime().equals(otherP2shErpFederation.getCreationTime()) &&
             this.creationBlockNumber == otherP2shErpFederation.creationBlockNumber &&
