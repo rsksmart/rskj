@@ -60,8 +60,7 @@ public class StandardMultisigFederation extends Federation {
         // the threshold of a multisig is the first chunk of the redeemScript
         // and the standardRedeemScript represents a multisig
         ScriptChunk thresholdChunk = standardRedeemScriptChunks.get(0);
-        String thresholdString = thresholdChunk.toString();
-        return (int) thresholdString.charAt(thresholdString.length() - 1);
+        return Integer.parseInt(thresholdChunk.toString());
     }
 
     // TODO: define what it means that two federations are "equal"
