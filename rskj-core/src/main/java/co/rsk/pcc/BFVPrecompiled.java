@@ -46,28 +46,25 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
         return result;
     }
 
+//    public void addFhStore(FhStore fhStore) {
+//        this.fhStore = fhStore;
+//    }
+
     public enum Op {
         ADD // addition
         {
             @Override
             public long gasForData(byte[] data) {
-//                throw new NotImplementedException("bfv add gas should be implemented");
                 return 1;
             }
 
             @Override
             public byte[] executeOperation(byte[] data, BFV bfv) {
-//                ByteBuffer buffer = ByteBuffer.wrap(data, 63, 32);
-//                ByteBuffer buffer = ByteBuffer.wrap(data, 31, 32);
-//                buffer.position(0);
-
                 byte[] op1Hash = new byte[DataWord.BYTES];
                 byte[] op2Hash = new byte[DataWord.BYTES];
 
-//                System.arraycopy(data, 31, op1Hash, 0, 32);
                 System.arraycopy(data, 0, op1Hash, 0, 32);
                 System.arraycopy(data, 32, op2Hash, 0, 32);
-//                System.arraycopy(data, 63, op2Hash, 0, 32);
 
                 byte[] op1 = FhStore.getInstance().get(op1Hash).getData();
                 byte[] op2 = FhStore.getInstance().get(op2Hash).getData();
@@ -85,7 +82,6 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
         {
             @Override
             public long gasForData(byte[] data) {
-//                throw new NotImplementedException("bfv sub gas should be implemented");
                 return 1;
             }
 
@@ -111,7 +107,6 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
         {
             @Override
             public long gasForData(byte[] data) {
-//                throw new NotImplementedException("bfv mul gas should be implemented");
                 return 1;
             }
 
@@ -212,19 +207,9 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
 
                 byte[] result = bfv.decrypt(encrypted, encrypted.length, bfvSK, bfvSK.length);
 
-//                HexUtils.encodeToHexByteArray(result);
-//                long[] res = parseDecrypt(result, 4);
                 byte[] dec = shrink(result, 4 * Long.BYTES);
 
-//                long[] l = new long[dec.length/Long.BYTES];
-//                ByteBuffer d = ByteBuffer.wrap(dec).order(ByteOrder.LITTLE_ENDIAN);
-//                for(int i = 0; i < dec.length; i = i+8) {
-//                    d.position(i);
-//                    l[i] = d.getLong();
-//                }
-
-
-                Op.reverse(dec);
+                Op.reverse(dec); // as little endian
 
                 return dec;
             }
