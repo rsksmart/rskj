@@ -8,6 +8,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
 import java.util.List;
 
+import co.rsk.bitcoinj.script.ScriptChunk;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -76,7 +77,7 @@ public class LegacyErpFederation extends ErpFederation {
         }
     }
 
-    // TODO: define what it means that two federations are "equal"
+    // TODO: define what it means that two federations are "equal". isnt it enough with the address?
     @Override
     public boolean equals(Object other) {
         if (this == other) {
