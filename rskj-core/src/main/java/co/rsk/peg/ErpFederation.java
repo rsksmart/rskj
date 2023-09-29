@@ -49,7 +49,14 @@ public abstract class ErpFederation extends Federation {
 
     public abstract Script getStandardRedeemScript();
 
-    @Override
+    public Script getStandardP2SHScript() {
+        if (standardP2SHScript == null) {
+            standardP2SHScript = ScriptBuilder.createP2SHOutputScript(getStandardRedeemScript());
+        }
+
+        return standardP2SHScript;
+    }
+
     public int getNumberOfSignaturesRequired() {
         List<ScriptChunk> standardRedeemScriptChunks = getStandardRedeemScript().getChunks();
 
@@ -57,14 +64,6 @@ public abstract class ErpFederation extends Federation {
         // and the standardRedeemScript represents a multisig
         ScriptChunk thresholdChunk = standardRedeemScriptChunks.get(0);
         return Integer.parseInt(thresholdChunk.toString());
-    }
-
-    public Script getStandardP2SHScript() {
-        if (standardP2SHScript == null) {
-            standardP2SHScript = ScriptBuilder.createP2SHOutputScript(getStandardRedeemScript());
-        }
-
-        return standardP2SHScript;
     }
 
     @Override

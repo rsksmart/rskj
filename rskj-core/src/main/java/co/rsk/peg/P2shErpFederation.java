@@ -26,7 +26,6 @@ public class P2shErpFederation extends ErpFederation {
         super(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay, activations);
     }
 
-    @Override
     public final Script getRedeemScript() {
         if (redeemScript == null) {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
@@ -40,7 +39,6 @@ public class P2shErpFederation extends ErpFederation {
         return redeemScript;
     }
 
-    @Override
     public final Script getStandardRedeemScript() {
         if (standardRedeemScript == null) {
             standardRedeemScript = P2shErpFederationRedeemScriptParser.extractStandardRedeemScript(
@@ -48,31 +46,5 @@ public class P2shErpFederation extends ErpFederation {
             );
         }
         return standardRedeemScript;
-    }
-
-
-    // TODO: define what it means that two federations are "equal"
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (other == null || this.getClass() != other.getClass()) {
-            return false;
-        }
-
-        P2shErpFederation otherP2shErpFederation = (P2shErpFederation) other;
-
-        return //this.getAddress() == otherP2shErpFederation.getAddress();
-        this.getNumberOfSignaturesRequired() == otherP2shErpFederation.getNumberOfSignaturesRequired() &&
-            this.getSize() == otherP2shErpFederation.getSize() &&
-            this.getCreationTime().equals(otherP2shErpFederation.getCreationTime()) &&
-            this.creationBlockNumber == otherP2shErpFederation.creationBlockNumber &&
-            this.btcParams.equals(otherP2shErpFederation.btcParams) &&
-            this.members.equals(otherP2shErpFederation.members) &&
-            this.getRedeemScript().equals(otherP2shErpFederation.getRedeemScript()) &&
-            this.erpPubKeys.equals(otherP2shErpFederation.erpPubKeys) &&
-            this.activationDelay == otherP2shErpFederation.activationDelay;
     }
 }

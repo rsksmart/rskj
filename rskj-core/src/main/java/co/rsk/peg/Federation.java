@@ -74,7 +74,6 @@ public abstract class Federation {
             .collect(Collectors.toList());
     }
 
-    // TODO: take a look at this. We should check the threshold at the redeemScript.
     public abstract int getNumberOfSignaturesRequired();
 
     public Instant getCreationTime() {
@@ -141,4 +140,18 @@ public abstract class Federation {
         return String.format("Got federation with address %s", getAddress());
     }
 
+    public boolean equals(Object other){
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        }
+
+        Federation otherFederation = (Federation) other;
+        return this.getAddress() == otherFederation.getAddress();
+    }
+
+    public abstract int hashCode();
 }

@@ -44,7 +44,6 @@ public class StandardMultisigFederation extends Federation {
         super(members, creationTime, creationBlockNumber, btcParams);
     }
 
-    @Override
     public Script getRedeemScript() {
         if (redeemScript == null) {
             redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
@@ -53,39 +52,15 @@ public class StandardMultisigFederation extends Federation {
         return redeemScript;
     }
 
-    @Override
     public int getNumberOfSignaturesRequired() {
         List<ScriptChunk> standardRedeemScriptChunks = getRedeemScript().getChunks();
 
         // the threshold of a multisig is the first chunk of the redeemScript
-        // and the standardRedeemScript represents a multisig
+        // and this fed is a standard multisig
         ScriptChunk thresholdChunk = standardRedeemScriptChunks.get(0);
         return Integer.parseInt(thresholdChunk.toString());
     }
 
-    // TODO: define what it means that two federations are "equal"
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (other == null || this.getClass() != other.getClass()) {
-            return false;
-        }
-
-        StandardMultisigFederation otherFederation = (StandardMultisigFederation) other;
-
-        return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
-            this.getSize() == otherFederation.getSize() &&
-            this.getCreationTime().equals(otherFederation.getCreationTime()) &&
-            this.creationBlockNumber == otherFederation.creationBlockNumber &&
-            this.btcParams.equals(otherFederation.btcParams) &&
-            this.members.equals(otherFederation.members) &&
-            this.getRedeemScript().equals(otherFederation.getRedeemScript());
-    }
-
-    @Override
     public int hashCode() {
         // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
         // well-defined hashCode()s
