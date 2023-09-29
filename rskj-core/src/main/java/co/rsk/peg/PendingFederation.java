@@ -119,7 +119,7 @@ public final class PendingFederation {
 
         if (activations.isActive(ConsensusRule.RSKIP201)) {
             logger.info("[buildFederation] Going to create an ERP Federation");
-            return new ErpFederation(
+            return new LegacyErpFederation(
                 members,
                 creationTime,
                 blockNumber,
@@ -130,7 +130,7 @@ public final class PendingFederation {
             );
         }
 
-        return new Federation(
+        return new StandardMultisigFederation(
                 members,
                 creationTime,
                 blockNumber,

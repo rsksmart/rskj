@@ -24,13 +24,15 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import java.util.List;
+
+import co.rsk.peg.StandardMultisigFederation;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public abstract class BridgeConstants {
     protected String btcParamsString;
 
-    protected Federation genesisFederation;
+    protected StandardMultisigFederation genesisFederation;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
@@ -94,7 +96,7 @@ public abstract class BridgeConstants {
         return btcParamsString;
     }
 
-    public Federation getGenesisFederation() { return genesisFederation; }
+    public StandardMultisigFederation getGenesisFederation() { return genesisFederation; }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;
