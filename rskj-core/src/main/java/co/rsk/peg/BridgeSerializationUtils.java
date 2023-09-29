@@ -273,7 +273,7 @@ public class BridgeSerializationUtils {
             federationMembers.add(member);
         }
 
-        return new Federation(federationMembers, creationTime, creationBlockNumber, networkParameters);
+        return new StandardMultisigFederation(federationMembers, creationTime, creationBlockNumber, networkParameters);
     }
 
     /**
@@ -326,7 +326,7 @@ public class BridgeSerializationUtils {
             BridgeSerializationUtils::deserializeFederationMember
         );
 
-        return new ErpFederation(
+        return new LegacyErpFederation(
             federation.getMembers(),
             federation.creationTime,
             federation.getCreationBlockNumber(),
