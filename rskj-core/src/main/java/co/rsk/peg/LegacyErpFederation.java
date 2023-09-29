@@ -34,7 +34,6 @@ public class LegacyErpFederation extends ErpFederation {
         validateRedeemScript();
     }
 
-    @Override
     public Script getRedeemScript() {
         if (!activations.isActive(ConsensusRule.RSKIP284) &&
             btcParams.getId().equals(NetworkParameters.ID_TESTNET)) {
@@ -54,7 +53,6 @@ public class LegacyErpFederation extends ErpFederation {
         return redeemScript;
     }
 
-    @Override
     public Script getStandardRedeemScript() {
         if (standardRedeemScript == null) {
             // i think is not quite right to just "fix" the standardRedeemScript in the buggy fed.
@@ -75,30 +73,6 @@ public class LegacyErpFederation extends ErpFederation {
             logger.debug("[validateRedeemScript] {}", message);
             throw new FederationCreationException(message);
         }
-    }
-
-    // TODO: define what it means that two federations are "equal". isnt it enough with the address?
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (other == null || this.getClass() != other.getClass()) {
-            return false;
-        }
-
-        LegacyErpFederation otherErpFederation = (LegacyErpFederation) other;
-
-        return this.getNumberOfSignaturesRequired() == otherErpFederation.getNumberOfSignaturesRequired() &&
-            this.getSize() == otherErpFederation.getSize() &&
-            this.getCreationTime().equals(otherErpFederation.getCreationTime()) &&
-            this.creationBlockNumber == otherErpFederation.creationBlockNumber &&
-            this.btcParams.equals(otherErpFederation.btcParams) &&
-            this.members.equals(otherErpFederation.members) &&
-            this.getRedeemScript().equals(otherErpFederation.getRedeemScript()) &&
-            this.erpPubKeys.equals(otherErpFederation.erpPubKeys) &&
-            this.activationDelay == otherErpFederation.activationDelay;
     }
 }
 
