@@ -68,6 +68,20 @@ public abstract class ErpFederation extends Federation {
     }
 
     @Override
+    public boolean equals(Object other){
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        }
+
+        ErpFederation otherFederation = (ErpFederation) other;
+        return this.getAddress() == otherFederation.getAddress();
+    }
+
+    @Override
     public int hashCode() {
         // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
         // well-defined hashCode()s
