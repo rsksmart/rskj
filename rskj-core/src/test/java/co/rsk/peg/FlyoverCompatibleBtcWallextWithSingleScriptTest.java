@@ -41,14 +41,14 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        federation = new Federation(
+        federation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        erpFederation = new ErpFederation(
+        erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,

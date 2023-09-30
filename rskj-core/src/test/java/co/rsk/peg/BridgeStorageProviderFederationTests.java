@@ -614,7 +614,7 @@ class BridgeStorageProviderFederationTests {
                     activations
                 );
             case ERP_FEDERATION_FORMAT_VERSION:
-                return new ErpFederation(
+                return new LegacyErpFederation(
                     members,
                     Instant.now(),
                     1L,
@@ -624,7 +624,7 @@ class BridgeStorageProviderFederationTests {
                     activations
                 );
             default:
-                return new Federation(
+                return new StandardMultisigFederation(
                     members,
                     Instant.now(),
                     1L,

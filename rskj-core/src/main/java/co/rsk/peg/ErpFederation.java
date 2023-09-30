@@ -57,6 +57,7 @@ public abstract class ErpFederation extends Federation {
         return standardP2SHScript;
     }
 
+    @Override
     public int getNumberOfSignaturesRequired() {
         List<ScriptChunk> standardRedeemScriptChunks = getStandardRedeemScript().getChunks();
 

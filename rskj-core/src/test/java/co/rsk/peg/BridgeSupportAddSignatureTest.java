@@ -75,7 +75,7 @@ class BridgeSupportAddSignatureTest {
         );
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = new Federation(
+        Federation activeFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
                 Instant.ofEpochMilli(1000L),
                 0L,
@@ -133,7 +133,7 @@ class BridgeSupportAddSignatureTest {
                 BtcECKey.fromPrivate(Hex.decode("fa02")));
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation retiringFederation = new Federation(
+        Federation retiringFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
                 Instant.ofEpochMilli(1000L),
                 0L,
@@ -147,7 +147,7 @@ class BridgeSupportAddSignatureTest {
         );
         activeFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = new Federation(
+        Federation activeFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
                 Instant.ofEpochMilli(1000L),
                 0L,
@@ -191,7 +191,7 @@ class BridgeSupportAddSignatureTest {
         );
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation retiringFederation = new Federation(
+        Federation retiringFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
                 Instant.ofEpochMilli(1000L),
                 0L,
@@ -205,7 +205,7 @@ class BridgeSupportAddSignatureTest {
         );
         activeFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = new Federation(
+        Federation activeFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
                 Instant.ofEpochMilli(1000L),
                 0L,

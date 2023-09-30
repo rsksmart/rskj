@@ -90,7 +90,7 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void first_output_pay_fees() {
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
@@ -164,7 +164,7 @@ class ReleaseTransactionBuilderTest {
         // Use mainnet constants to test a real situation
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),

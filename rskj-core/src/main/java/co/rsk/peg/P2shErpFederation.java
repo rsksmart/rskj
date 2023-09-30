@@ -26,6 +26,7 @@ public class P2shErpFederation extends ErpFederation {
         super(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay, activations);
     }
 
+    @Override
     public final Script getRedeemScript() {
         if (redeemScript == null) {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
@@ -39,6 +40,7 @@ public class P2shErpFederation extends ErpFederation {
         return redeemScript;
     }
 
+    @Override
     public final Script getStandardRedeemScript() {
         if (standardRedeemScript == null) {
             standardRedeemScript = P2shErpFederationRedeemScriptParser.extractStandardRedeemScript(
