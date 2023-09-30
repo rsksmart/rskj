@@ -151,7 +151,7 @@ class BridgeSerializationUtilsTest {
         };
 
         // Only actual keys serialized are BTC keys, so we don't really care about RSK or MST keys
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                 BtcECKey.fromPublicOnly(publicKeyBytes[1]),
@@ -302,7 +302,7 @@ class BridgeSerializationUtilsTest {
             members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
         }
 
-        Federation testFederation = new Federation(
+        Federation testFederation = new StandardMultisigFederation(
             members, Instant.now(), 123, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
@@ -787,7 +787,7 @@ class BridgeSerializationUtilsTest {
         };
 
         // Only actual keys serialized are BTC keys, so deserialization will fill RSK and MST keys with those
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(
                 BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                 BtcECKey.fromPublicOnly(publicKeyBytes[1]),
@@ -1246,7 +1246,7 @@ class BridgeSerializationUtilsTest {
                 members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
             }
 
-            Federation testFederation = new Federation(
+            Federation testFederation = new StandardMultisigFederation(
                 members,
                 Instant.now(),
                 123,
@@ -1259,7 +1259,7 @@ class BridgeSerializationUtilsTest {
                 bridgeConstants.getBtcParams()
             );
 
-            Federation testErpFederation = new ErpFederation(
+            Federation testErpFederation = new LegacyErpFederation(
                 members,
                 Instant.now(),
                 123,

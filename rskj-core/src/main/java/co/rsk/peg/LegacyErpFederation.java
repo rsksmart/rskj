@@ -34,6 +34,7 @@ public class LegacyErpFederation extends ErpFederation {
         validateRedeemScript();
     }
 
+    @Override
     public Script getRedeemScript() {
         if (!activations.isActive(ConsensusRule.RSKIP284) &&
             btcParams.getId().equals(NetworkParameters.ID_TESTNET)) {
@@ -53,6 +54,7 @@ public class LegacyErpFederation extends ErpFederation {
         return redeemScript;
     }
 
+    @Override
     public Script getStandardRedeemScript() {
         if (standardRedeemScript == null) {
             // i think is not quite right to just "fix" the standardRedeemScript in the buggy fed.

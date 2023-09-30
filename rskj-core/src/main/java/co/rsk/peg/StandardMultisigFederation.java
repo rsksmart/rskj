@@ -44,6 +44,7 @@ public class StandardMultisigFederation extends Federation {
         super(members, creationTime, creationBlockNumber, btcParams);
     }
 
+    @Override
     public Script getRedeemScript() {
         if (redeemScript == null) {
             redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
@@ -52,6 +53,7 @@ public class StandardMultisigFederation extends Federation {
         return redeemScript;
     }
 
+    @Override
     public int getNumberOfSignaturesRequired() {
         List<ScriptChunk> standardRedeemScriptChunks = getRedeemScript().getChunks();
 
@@ -61,6 +63,7 @@ public class StandardMultisigFederation extends Federation {
         return Integer.parseInt(thresholdChunk.toString());
     }
 
+    @Override
     public int hashCode() {
         // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
         // well-defined hashCode()s

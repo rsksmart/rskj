@@ -135,7 +135,7 @@ class PowpegMigrationTest {
         Federation originalPowpeg;
         switch (oldPowPegFederationType) {
             case erp:
-                originalPowpeg = new ErpFederation(
+                originalPowpeg = new LegacyErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
                     0,
@@ -591,14 +591,14 @@ class PowpegMigrationTest {
             if (oldPowPegFederationType == FederationType.erp || oldPowPegFederationType == FederationType.p2sh){
                 assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
             }
-            assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+            assertEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
         } else {
             if (oldPowPegFederationType == FederationType.erp || oldPowPegFederationType == FederationType.p2sh){
                 assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
-                assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+                assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
             } else {
                 assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
-                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
             }
         }
     }
@@ -620,10 +620,10 @@ class PowpegMigrationTest {
                 Script inputStandardRedeemScript = RedeemScriptParserFactory.get(result.getChunks()).extractStandardRedeemScript();
 
                 Optional<Federation> spendingFederationOptional = Optional.empty();
-                if (inputStandardRedeemScript.equals(activeFederation.getStandardRedeemScript())) {
+                if (inputStandardRedeemScript.equals(activeFederation instanceof ErpFederation ? ((ErpFederation) activeFederation).getStandardRedeemScript() : activeFederation.getRedeemScript())) {
                     spendingFederationOptional = Optional.of(activeFederation);
                 } else if (retiringFederation != null &&
-                    inputStandardRedeemScript.equals(retiringFederation.getStandardRedeemScript())) {
+                    inputStandardRedeemScript.equals(retiringFederation instanceof ErpFederation ? ((ErpFederation) retiringFederation).getStandardRedeemScript() : retiringFederation.getRedeemScript()) ) {
                     spendingFederationOptional = Optional.of(retiringFederation);
                 } else {
                     fail("pegout scriptsig does not match any Federation");

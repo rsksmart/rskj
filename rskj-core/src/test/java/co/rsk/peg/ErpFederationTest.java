@@ -143,7 +143,7 @@ class ErpFederationTest {
             .collect(Collectors.toList());
 
         // Recreate federation
-        ErpFederation federationWithUncompressedKeys = new ErpFederation(
+        ErpFederation federationWithUncompressedKeys = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -170,7 +170,7 @@ class ErpFederationTest {
 
         RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
-            Federation erpFederation = new ErpFederation(
+            Federation erpFederation = new LegacyErpFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
@@ -243,7 +243,7 @@ class ErpFederationTest {
         List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        assertThrows(VerificationException.class, () -> new ErpFederation(
+        assertThrows(VerificationException.class, () -> new LegacyErpFederation(
             federationMembersFromPks,
             creationTime,
             0L,
@@ -259,7 +259,7 @@ class ErpFederationTest {
         List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        assertThrows(VerificationException.class, () -> new ErpFederation(
+        assertThrows(VerificationException.class, () -> new LegacyErpFederation(
             federationMembersFromPks,
             creationTime,
             0L,
@@ -275,7 +275,7 @@ class ErpFederationTest {
         List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        assertThrows(VerificationException.class, () -> new ErpFederation(
+        assertThrows(VerificationException.class, () -> new LegacyErpFederation(
             federationMembersFromPks,
             creationTime,
             0L,
@@ -291,7 +291,7 @@ class ErpFederationTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -309,7 +309,7 @@ class ErpFederationTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -329,7 +329,7 @@ class ErpFederationTest {
 
     @Test
     void getRedeemScript_after_RSKIP_284_testnet() {
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -349,7 +349,7 @@ class ErpFederationTest {
 
     @Test
     void getRedeemScript_after_RSKIP_284_mainnet() {
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -378,7 +378,7 @@ class ErpFederationTest {
 
     @Test
     void testEquals_same() {
-        Federation otherFederation = new ErpFederation(
+        Federation otherFederation = new LegacyErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
@@ -393,7 +393,7 @@ class ErpFederationTest {
 
     @Test
     void testEquals_differentNumberOfMembers() {
-        Federation otherFederation = new ErpFederation(
+        Federation otherFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
@@ -408,7 +408,7 @@ class ErpFederationTest {
 
     @Test
     void testEquals_differentCreationTime() {
-        Federation otherFederation = new ErpFederation(
+        Federation otherFederation = new LegacyErpFederation(
             federation.getMembers(),
             Instant.now(),
             federation.getCreationBlockNumber(),
@@ -423,7 +423,7 @@ class ErpFederationTest {
 
     @Test
     void testEquals_differentCreationBlockNumber() {
-        Federation otherFederation = new ErpFederation(
+        Federation otherFederation = new LegacyErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber() + 1,
@@ -438,7 +438,7 @@ class ErpFederationTest {
 
     @Test
     void testEquals_differentNetworkParameters() {
-        Federation otherFederation = new ErpFederation(
+        Federation otherFederation = new LegacyErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
@@ -453,7 +453,7 @@ class ErpFederationTest {
 
     @Test
     void testEquals_differentMembers() {
-        Federation otherFederation = new ErpFederation(
+        Federation otherFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(101, 201, 301),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
@@ -475,7 +475,7 @@ class ErpFederationTest {
         when(activationsPost.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
         // Both federations created before RSKIP284 with the same data, should have the same redeem script
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -485,7 +485,7 @@ class ErpFederationTest {
             activationsPre
         );
 
-        Federation otherErpFederation = new ErpFederation(
+        Federation otherErpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -498,7 +498,7 @@ class ErpFederationTest {
         assertEquals(erpFederation, otherErpFederation);
 
         // One federation created after RSKIP284 with the same data, should have different redeem script
-        otherErpFederation = new ErpFederation(
+        otherErpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -511,7 +511,7 @@ class ErpFederationTest {
         Assertions.assertNotEquals(erpFederation, otherErpFederation);
 
         // The other federation created after RSKIP284 with the same data, should have same redeem script
-        erpFederation = new ErpFederation(
+        erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -551,7 +551,7 @@ class ErpFederationTest {
         List<FederationMember> federationMembersWithBtcKeys = FederationTestUtils.getFederationMembersWithBtcKeys(standardMultisigKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
-        assertThrows(FederationCreationException.class, () -> new ErpFederation(
+        assertThrows(FederationCreationException.class, () -> new LegacyErpFederation(
             federationMembersWithBtcKeys,
             creationTime,
             0L,
@@ -704,7 +704,7 @@ class ErpFederationTest {
     private void createErpFederation(BridgeConstants constants, boolean isRskip293Active) {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -744,7 +744,7 @@ class ErpFederationTest {
             Collections.singletonList(ConsensusRule.RSKIP293);
         ActivationConfig activations = ActivationConfigsForTest.hop400(except);
 
-        ErpFederation erpFed = new ErpFederation(
+        ErpFederation erpFed = new LegacyErpFederation(
             FederationMember.getFederationMembersFromKeys(standardKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
@@ -777,7 +777,7 @@ class ErpFederationTest {
     }
 
     private ErpFederation createDefaultErpFederation() {
-        return new ErpFederation(
+        return new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,

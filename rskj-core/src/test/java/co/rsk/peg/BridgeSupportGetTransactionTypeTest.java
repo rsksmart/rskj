@@ -128,7 +128,7 @@ class BridgeSupportGetTransactionTypeTest {
             .withProvider(provider)
             .build();
 
-        Federation activeFederation = new Federation(
+        Federation activeFederation = new StandardMultisigFederation(
             bridgeRegTestConstants.getGenesisFederation().getMembers(),
             bridgeRegTestConstants.getGenesisFederation().getCreationTime(),
             5L,
@@ -258,7 +258,7 @@ class BridgeSupportGetTransactionTypeTest {
             new String[]{"fa01", "fa02", "fa03"}, true
         );
 
-        Federation activeFederation = new Federation(
+        Federation activeFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(fedKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -304,7 +304,7 @@ class BridgeSupportGetTransactionTypeTest {
             new String[]{"fa01", "fa02", "fa03"}, true
         );;
 
-        Federation retiringFederation = new Federation(
+        Federation retiringFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedKeys),
             Instant.ofEpochMilli(1000L),
             0L,

@@ -970,7 +970,7 @@ class BridgeSupportTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
 
-        Federation federation1 = new Federation(
+        Federation federation1 = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -983,7 +983,7 @@ class BridgeSupportTest {
             BtcECKey.fromPrivate(Hex.decode("fb02")),
             BtcECKey.fromPrivate(Hex.decode("fb03")));
 
-        Federation federation2 = new Federation(
+        Federation federation2 = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
             Instant.ofEpochMilli(2000L),
             0L,
@@ -1140,7 +1140,7 @@ class BridgeSupportTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
 
-        Federation federation1 = new Federation(
+        Federation federation1 = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -1153,7 +1153,7 @@ class BridgeSupportTest {
             BtcECKey.fromPrivate(Hex.decode("fb02")),
             BtcECKey.fromPrivate(Hex.decode("fb03")));
 
-        Federation federation2 = new Federation(
+        Federation federation2 = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
             Instant.ofEpochMilli(2000L),
             0L,
@@ -1324,7 +1324,7 @@ class BridgeSupportTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
 
-        Federation fed = new Federation(
+        Federation fed = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(fedKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -1416,7 +1416,7 @@ class BridgeSupportTest {
 
         Federation oldFederation = bridgeConstantsRegtest.getGenesisFederation();
 
-        Federation newFederation = new Federation(
+        Federation newFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
@@ -1479,7 +1479,7 @@ class BridgeSupportTest {
 
         Federation oldFederation = bridgeConstantsRegtest.getGenesisFederation();
 
-        Federation newFederation = new Federation(
+        Federation newFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
@@ -1544,7 +1544,7 @@ class BridgeSupportTest {
 
         Federation oldFederation = bridgeConstantsRegtest.getGenesisFederation();
 
-        Federation newFederation = new Federation(
+        Federation newFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
@@ -1607,7 +1607,7 @@ class BridgeSupportTest {
 
         Federation oldFederation = bridgeConstantsRegtest.getGenesisFederation();
 
-        Federation newFederation = new Federation(
+        Federation newFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
@@ -1671,7 +1671,7 @@ class BridgeSupportTest {
 
         Federation oldFederation = bridgeConstantsRegtest.getGenesisFederation();
 
-        Federation newFederation = new Federation(
+        Federation newFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
@@ -1734,7 +1734,7 @@ class BridgeSupportTest {
 
         Federation oldFederation = bridgeConstantsRegtest.getGenesisFederation();
 
-        Federation newFederation = new Federation(
+        Federation newFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
@@ -2115,7 +2115,7 @@ class BridgeSupportTest {
 
         // Set state to make concur a pegout migration tx and pegout batch creation on the same updateCollection
         Federation oldFederation = bridgeConstants.getGenesisFederation();
-        Federation newFederation = new Federation(
+        Federation newFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
@@ -6410,13 +6410,13 @@ class BridgeSupportTest {
             oldFedMembers.add(FederationMember.getFederationMemberFromKey(new BtcECKey()));
         }
 
-        Federation oldFed = new Federation(
+        Federation oldFed = new StandardMultisigFederation(
             oldFedMembers,
             Instant.now(),
             0,
             btcRegTestParams
         );
-        Federation newFed = new Federation(
+        Federation newFed = new StandardMultisigFederation(
             Arrays.asList(
                 FederationMember.getFederationMemberFromKey(new BtcECKey()),
                 FederationMember.getFederationMemberFromKey(new BtcECKey()),

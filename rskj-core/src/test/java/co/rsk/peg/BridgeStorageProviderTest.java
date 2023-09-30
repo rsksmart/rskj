@@ -402,7 +402,7 @@ class BridgeStorageProviderTest {
     @Test
     void getNewFederation_erp_fed() {
         Federation newFederation = buildMockFederation(100, 200, 300);
-        ErpFederation erpFederation = new ErpFederation(
+        ErpFederation erpFederation = new LegacyErpFederation(
             newFederation.getMembers(),
             newFederation.getCreationTime(),
             newFederation.getCreationBlockNumber(),
@@ -546,7 +546,7 @@ class BridgeStorageProviderTest {
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         Federation newFederation = buildMockFederation(100, 200, 300);
 
-        ErpFederation erpFederation = new ErpFederation(
+        ErpFederation erpFederation = new LegacyErpFederation(
             newFederation.getMembers(),
             newFederation.getCreationTime(),
             newFederation.getCreationBlockNumber(),
@@ -680,7 +680,7 @@ class BridgeStorageProviderTest {
     void getOldFederation_erp_fed() {
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         Federation oldFederation = buildMockFederation(100, 200, 300);
-        ErpFederation erpFederation = new ErpFederation(
+        ErpFederation erpFederation = new LegacyErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
             oldFederation.getCreationBlockNumber(),
@@ -820,7 +820,7 @@ class BridgeStorageProviderTest {
 
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         Federation oldFederation = buildMockFederation(100, 200, 300);
-        ErpFederation erpFederation = new ErpFederation(
+        ErpFederation erpFederation = new LegacyErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
             oldFederation.getCreationBlockNumber(),
@@ -3912,7 +3912,7 @@ class BridgeStorageProviderTest {
     }
 
     private Federation buildMockFederation(Integer... pks) {
-        return new Federation(
+        return new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersFromPks(pks),
             Instant.ofEpochMilli(1000),
             0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
