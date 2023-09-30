@@ -140,18 +140,9 @@ public abstract class Federation {
         return String.format("Got federation with address %s", getAddress());
     }
 
-    public boolean equals(Object other){
-        if (this == other) {
-            return true;
-        }
+    @Override
+    public abstract boolean equals(Object other);
 
-        if (other == null || this.getClass() != other.getClass()) {
-            return false;
-        }
-
-        Federation otherFederation = (Federation) other;
-        return this.getAddress() == otherFederation.getAddress();
-    }
-
+    @Override
     public abstract int hashCode();
 }
