@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public class BitcoinUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger("BitcoinUtils");
+    private static final Logger logger = LoggerFactory.getLogger(BitcoinUtils.class);
     private static final int FIRST_INPUT_INDEX = 0;
 
     private BitcoinUtils() { }
