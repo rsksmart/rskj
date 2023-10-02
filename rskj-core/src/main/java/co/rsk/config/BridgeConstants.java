@@ -32,7 +32,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 public abstract class BridgeConstants {
     protected String btcParamsString;
 
-    protected StandardMultisigFederation genesisFederation;
+    protected Federation genesisFederation;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
@@ -96,7 +96,7 @@ public abstract class BridgeConstants {
         return btcParamsString;
     }
 
-    public StandardMultisigFederation getGenesisFederation() { return genesisFederation; }
+    public StandardMultisigFederation getGenesisFederation() { return (StandardMultisigFederation) genesisFederation; }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;

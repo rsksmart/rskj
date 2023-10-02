@@ -49,4 +49,26 @@ public class P2shErpFederation extends ErpFederation {
         }
         return standardRedeemScript;
     }
+
+    @Override
+    public boolean equals(Object other){
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        }
+
+        P2shErpFederation otherErpFederation = (P2shErpFederation) other;
+        return this.getNumberOfSignaturesRequired() == otherErpFederation.getNumberOfSignaturesRequired() &&
+            this.getSize() == otherErpFederation.getSize() &&
+            this.getCreationTime().equals(otherErpFederation.getCreationTime()) &&
+            this.creationBlockNumber == otherErpFederation.creationBlockNumber &&
+            this.btcParams.equals(otherErpFederation.btcParams) &&
+            this.members.equals(otherErpFederation.members) &&
+            this.getRedeemScript().equals(otherErpFederation.getRedeemScript()) &&
+            this.erpPubKeys.equals(otherErpFederation.erpPubKeys) &&
+            this.activationDelay == otherErpFederation.activationDelay;
+    }
 }

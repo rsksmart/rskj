@@ -54,16 +54,6 @@ public class StandardMultisigFederation extends Federation {
     }
 
     @Override
-    public int getNumberOfSignaturesRequired() {
-        List<ScriptChunk> standardRedeemScriptChunks = getRedeemScript().getChunks();
-
-        // the threshold of a multisig is the first chunk of the redeemScript
-        // and this fed is a standard multisig
-        ScriptChunk thresholdChunk = standardRedeemScriptChunks.get(0);
-        return Integer.parseInt(thresholdChunk.toString());
-    }
-
-    @Override
     public boolean equals(Object other){
         if (this == other) {
             return true;
@@ -74,7 +64,13 @@ public class StandardMultisigFederation extends Federation {
         }
 
         StandardMultisigFederation otherFederation = (StandardMultisigFederation) other;
-        return this.getAddress() == otherFederation.getAddress();
+        return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
+            this.getSize() == otherFederation.getSize() &&
+            this.getCreationTime().equals(otherFederation.getCreationTime()) &&
+            this.creationBlockNumber == otherFederation.creationBlockNumber &&
+            this.btcParams.equals(otherFederation.btcParams) &&
+            this.members.equals(otherFederation.members) &&
+            this.getRedeemScript().equals(otherFederation.getRedeemScript());
     }
 
     @Override

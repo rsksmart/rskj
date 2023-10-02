@@ -1253,6 +1253,7 @@ class BridgeSerializationUtilsTest {
                 bridgeConstants.getBtcParams()
             );
             byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
+            System.out.println(serializedTestFederation);
 
             Federation deserializedTestFederation = BridgeSerializationUtils.deserializeFederation(
                 serializedTestFederation,
@@ -1269,14 +1270,18 @@ class BridgeSerializationUtilsTest {
                 activations
             );
             byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
+            System.out.println(serializedTestErpFederation);
 
-            Federation deserializedTestErpFederation = BridgeSerializationUtils.deserializeErpFederation(
+            Federation deserializedTestErpFederation = BridgeSerializationUtils.deserializeLegacyErpFederation(
                 serializedTestErpFederation,
                 bridgeConstants,
                 activations
             );
+            System.out.println(deserializedTestErpFederation);
 
             Assertions.assertEquals(testFederation, deserializedTestFederation);
+            System.out.println(testFederation);
+            System.out.println(deserializedTestFederation);
             Assertions.assertEquals(testErpFederation, deserializedTestErpFederation);
             assertNotEquals(testFederation, deserializedTestErpFederation);
             assertNotEquals(testErpFederation, deserializedTestFederation);

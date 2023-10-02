@@ -1029,7 +1029,7 @@ public class BridgeStorageProvider {
     ) {
         switch (version) {
             case ERP_FEDERATION_FORMAT_VERSION:
-                return BridgeSerializationUtils.deserializeErpFederation(
+                return BridgeSerializationUtils.deserializeLegacyErpFederation(
                     data,
                     bridgeConstants,
                     activations

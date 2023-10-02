@@ -776,7 +776,7 @@ class ErpFederationTest {
         );
     }
 
-    private ErpFederation createDefaultErpFederation() {
+    private LegacyErpFederation createDefaultErpFederation() {
         return new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -827,7 +827,7 @@ class ErpFederationTest {
         assertEquals(ScriptOpCodes.OP_NOTIF, script[index++]);
 
         // Next byte should equal M, from an M/N multisig
-        int m = defaultMultisigKeys.size() / 2 + 1;
+        int m = defaultMultisigKeys.size() / 2 + 1; // da 8
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(m)), script[index++]);
 
         // Assert public keys
