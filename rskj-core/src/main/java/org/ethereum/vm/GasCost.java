@@ -74,6 +74,7 @@ public class GasCost {
     public static final long CREATE_DATA = 200; // paid for each new byte of code
     public static final long REPLACE_DATA = 50; // paid for each byte of code replaced
     public static final long TX_NO_ZERO_DATA = 68;
+    public static final long TX_NO_ZERO_DATA_EIP2028 = 16; // https://eips.ethereum.org/EIPS/eip-2028
     public static final long TX_ZERO_DATA = 4;
     public static final long TRANSACTION = 21000;
     public static final long TRANSACTION_DEFAULT = 90000; //compatibility with ethereum (mmarquez)

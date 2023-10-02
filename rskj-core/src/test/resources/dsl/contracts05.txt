@@ -22,5 +22,5 @@ assert_best b01
 assert_balance 0000000000000000000000000000000000000002 5000
 
 # Gas applied (10000000 - 21344 - 5000)
-assert_balance acc1 9973656
+assert_balance acc1 9973864
 

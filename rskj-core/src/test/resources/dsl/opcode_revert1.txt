@@ -19,7 +19,7 @@ block_connect b01
 # Assert best block
 assert_best b01
 
-assert_balance acc1 9857039
+assert_balance acc1 9873263
 
 transaction_build tx02
     sender acc1
@@ -42,7 +42,7 @@ block_connect b02
 assert_best b02
 
 # spend 99527 gas running the contract
-assert_balance acc1 9756792
+assert_balance acc1 9773224
 
 transaction_build tx03
     sender acc1
@@ -65,4 +65,4 @@ block_connect b03
 assert_best b03
 
 # spend only 21424 because the contract uses the revert OPCODE
-assert_balance acc1 9735368
+assert_balance acc1 9752008

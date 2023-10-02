@@ -86,7 +86,7 @@ class DslFilesTest {
 
         Assertions.assertNotEquals(BigInteger.ZERO, gasUsed);
         // According to TestRPC and geth, the gas used is 0x010c2d
-        Assertions.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("010c2d")), gasUsed);
+        Assertions.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("fd59")), gasUsed);
     }
 
     @Test
