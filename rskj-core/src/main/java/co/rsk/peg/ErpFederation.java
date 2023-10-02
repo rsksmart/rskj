@@ -32,11 +32,6 @@ public abstract class ErpFederation extends Federation {
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
         this.activations = activations;
-
-        // Try getting the redeem script in order to validate it can be built
-        // using the given public keys and csv value
-        getRedeemScript(); // NOSONAR
-        getStandardRedeemScript(); // NOSONAR
     }
 
     public List<BtcECKey> getErpPubKeys() {
@@ -58,16 +53,6 @@ public abstract class ErpFederation extends Federation {
     }
 
     @Override
-    public int getNumberOfSignaturesRequired() {
-        List<ScriptChunk> standardRedeemScriptChunks = getStandardRedeemScript().getChunks();
-
-        // the threshold of a multisig is the first chunk of the redeemScript
-        // and the standardRedeemScript represents a multisig
-        ScriptChunk thresholdChunk = standardRedeemScriptChunks.get(0);
-        return Integer.parseInt(thresholdChunk.toString());
-    }
-
-    @Override
     public boolean equals(Object other){
         if (this == other) {
             return true;
@@ -77,8 +62,17 @@ public abstract class ErpFederation extends Federation {
             return false;
         }
 
-        ErpFederation otherFederation = (ErpFederation) other;
-        return this.getAddress() == otherFederation.getAddress();
+        ErpFederation otherErpFederation = (ErpFederation) other;
+        return this.getNumberOfSignaturesRequired() == otherErpFederation.getNumberOfSignaturesRequired() &&
+            this.getSize() == otherErpFederation.getSize() &&
+            this.getCreationTime().equals(otherErpFederation.getCreationTime()) &&
+            this.creationBlockNumber == otherErpFederation.creationBlockNumber &&
+            this.btcParams.equals(otherErpFederation.btcParams) &&
+            this.members.equals(otherErpFederation.members) &&
+            this.getRedeemScript().equals(otherErpFederation.getRedeemScript()) &&
+            this.erpPubKeys.equals(otherErpFederation.erpPubKeys) &&
+            this.activationDelay == otherErpFederation.activationDelay;
+
     }
 
     @Override

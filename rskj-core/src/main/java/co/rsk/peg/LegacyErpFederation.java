@@ -31,7 +31,11 @@ public class LegacyErpFederation extends ErpFederation {
 
         super(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay, activations);
 
+        // Try getting the redeem script in order to validate it can be built
+        // using the given public keys and csv value
+        getRedeemScript();
         validateRedeemScript();
+        getStandardRedeemScript();
     }
 
     @Override
@@ -44,7 +48,13 @@ public class LegacyErpFederation extends ErpFederation {
 
         if (redeemScript == null) {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
-            redeemScript = ErpFederationRedeemScriptParser.createErpRedeemScriptDeprecated(
+            redeemScript = activations.isActive(ConsensusRule.RSKIP293) ?
+                ErpFederationRedeemScriptParser.createErpRedeemScript(
+                    ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
+                    ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
+                    activationDelay
+                ) :
+                ErpFederationRedeemScriptParser.createErpRedeemScriptDeprecated(
                     ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
                     ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
                     activationDelay
@@ -64,6 +74,29 @@ public class LegacyErpFederation extends ErpFederation {
             );
         }
         return standardRedeemScript;
+    }
+
+    @Override
+    public boolean equals(Object other){
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        }
+
+        LegacyErpFederation otherErpFederation = (LegacyErpFederation) other;
+        return this.getNumberOfSignaturesRequired() == otherErpFederation.getNumberOfSignaturesRequired() &&
+            this.getSize() == otherErpFederation.getSize() &&
+            this.getCreationTime().equals(otherErpFederation.getCreationTime()) &&
+            this.creationBlockNumber == otherErpFederation.creationBlockNumber &&
+            this.btcParams.equals(otherErpFederation.btcParams) &&
+            this.members.equals(otherErpFederation.members) &&
+            this.getRedeemScript().equals(otherErpFederation.getRedeemScript()) &&
+            this.erpPubKeys.equals(otherErpFederation.erpPubKeys) &&
+            this.activationDelay == otherErpFederation.activationDelay;
+
     }
 
     private void validateRedeemScript() {

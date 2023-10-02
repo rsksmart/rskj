@@ -315,7 +315,7 @@ public class BridgeSerializationUtils {
         );
     }
 
-    public static ErpFederation deserializeErpFederation(
+    public static LegacyErpFederation deserializeLegacyErpFederation(
         byte[] data,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations

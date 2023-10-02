@@ -74,7 +74,9 @@ public abstract class Federation {
             .collect(Collectors.toList());
     }
 
-    public abstract int getNumberOfSignaturesRequired();
+    public int getNumberOfSignaturesRequired() {
+        return getMembers().size() / 2 +1 ;
+    };
 
     public Instant getCreationTime() {
         return creationTime;
@@ -139,10 +141,4 @@ public abstract class Federation {
     public String toString() {
         return String.format("Got federation with address %s", getAddress());
     }
-
-    @Override
-    public abstract boolean equals(Object other);
-
-    @Override
-    public abstract int hashCode();
 }
