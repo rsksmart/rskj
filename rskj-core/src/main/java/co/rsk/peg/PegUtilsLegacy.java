@@ -39,6 +39,8 @@ public class PegUtilsLegacy {
 
     private static final Logger logger = LoggerFactory.getLogger("PetUtilsLegacy");
 
+    private PegUtilsLegacy() {}
+
     /**
      * Legacy version for identifying if a tx is a pegout
      * Use instead {@link co.rsk.peg.PegUtils#getTransactionType}
@@ -123,7 +125,7 @@ public class PegUtilsLegacy {
      * @return true if it is a peg-out. Otherwise returns false.
      */
     @Deprecated
-    private static boolean txIsFromOldFederation(BtcTransaction btcTx, Address oldFederationAddress) {
+    public static boolean txIsFromOldFederation(BtcTransaction btcTx, Address oldFederationAddress) {
         Script p2shScript = ScriptBuilder.createP2SHOutputScript(oldFederationAddress.getHash160());
 
         for (int i = 0; i < btcTx.getInputs().size(); i++) {
@@ -285,7 +287,6 @@ public class PegUtilsLegacy {
      * @param activeFederation
      * @param retiringFederation
      * @param retiredFederationP2SHScript
-     * @param oldFederationAddress
      * @param activations
      * @param minimumPeginTxValue
      * @param btcContext
@@ -297,7 +298,6 @@ public class PegUtilsLegacy {
         Federation activeFederation,
         Federation retiringFederation,
         Script retiredFederationP2SHScript,
-        Address oldFederationAddress,
         ActivationConfig.ForBlock activations,
         Coin minimumPeginTxValue,
         Context btcContext
@@ -306,14 +306,6 @@ public class PegUtilsLegacy {
         liveFederations.add(activeFederation);
         if (retiringFederation != null) {
             liveFederations.add(retiringFederation);
-        }
-
-        /************************************************************************/
-        /** Special case to migrate funds from an old federation               **/
-        /************************************************************************/
-        if (activations.isActive(ConsensusRule.RSKIP199) && txIsFromOldFederation(btcTx, oldFederationAddress)) {
-            logger.debug("[getTransactionType][btc tx {}] is from the old federation, treated as a migration", btcTx.getHash());
-            return PegTxType.PEGOUT_OR_MIGRATION;
         }
 
         if (isValidPegInTx(
