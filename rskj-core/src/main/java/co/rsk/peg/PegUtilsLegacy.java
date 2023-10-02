@@ -37,7 +37,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 @Deprecated
 public class PegUtilsLegacy {
 
-    private static final Logger logger = LoggerFactory.getLogger("PetUtilsLegacy");
+    private static final Logger logger = LoggerFactory.getLogger(PegUtilsLegacy.class);
 
     private PegUtilsLegacy() {}
 
@@ -50,6 +50,7 @@ public class PegUtilsLegacy {
      * @param activations
      * @return true if it is a peg-out. Otherwise, returns false.
      */
+    @Deprecated
     public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
         return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(Federation::getStandardP2SHScript).toArray(Script[]::new));
     }
@@ -64,7 +65,7 @@ public class PegUtilsLegacy {
      * @return true if it is a peg-out. Otherwise, returns false.
      */
     @Deprecated
-    public static boolean isPegOutTx(BtcTransaction btcTx, ActivationConfig.ForBlock activations, Script ... fedStandardP2shScripts) {
+    protected static boolean isPegOutTx(BtcTransaction btcTx, ActivationConfig.ForBlock activations, Script ... fedStandardP2shScripts) {
         int inputsSize = btcTx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
             TransactionInput txInput = btcTx.getInput(i);
@@ -95,7 +96,7 @@ public class PegUtilsLegacy {
     }
 
     @Deprecated
-    public static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
+    protected static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
         try {
             TransactionInput txInput = tx.getInput(index);
 
@@ -125,7 +126,7 @@ public class PegUtilsLegacy {
      * @return true if it is a peg-out. Otherwise returns false.
      */
     @Deprecated
-    public static boolean txIsFromOldFederation(BtcTransaction btcTx, Address oldFederationAddress) {
+    protected static boolean txIsFromOldFederation(BtcTransaction btcTx, Address oldFederationAddress) {
         Script p2shScript = ScriptBuilder.createP2SHOutputScript(oldFederationAddress.getHash160());
 
         for (int i = 0; i < btcTx.getInputs().size(); i++) {
@@ -147,6 +148,7 @@ public class PegUtilsLegacy {
      * @param activations the network HF activations configuration
      * @return true if this is a valid peg-in transaction
      */
+    @Deprecated
     public static boolean isValidPegInTx(
         BtcTransaction tx,
         Federation federation,
@@ -175,7 +177,8 @@ public class PegUtilsLegacy {
      * @param activations the network HF activations configuration
      * @return true if this is a valid peg-in transaction
      */
-    public static boolean isValidPegInTx(
+    @Deprecated
+    protected static boolean isValidPegInTx(
         BtcTransaction tx,
         List<Federation> activeFederations,
         Script retiredFederationP2SHScript,
@@ -252,6 +255,7 @@ public class PegUtilsLegacy {
         return false;
     }
 
+    @Deprecated
     protected static boolean isMigrationTx(
         BtcTransaction btcTx,
         Federation activeFederation,
@@ -352,7 +356,8 @@ public class PegUtilsLegacy {
      * @param addresses
      * @return true if any UTXO in the given btcTX is below the minimum pegin tx value
      */
-    public static boolean isAnyUTXOAmountBelowMinimum(
+    @Deprecated
+    protected static boolean isAnyUTXOAmountBelowMinimum(
         Coin minimumPegInTxValue,
         Context context,
         BtcTransaction btcTx,
@@ -375,6 +380,7 @@ public class PegUtilsLegacy {
      * @param wallet
      * @return true if any UTXO in the given btcTX is below the minimum pegin tx value
      */
+    @Deprecated
     protected static boolean isAnyUTXOAmountBelowMinimum(
         Coin minimumPegInTxValue,
         BtcTransaction btcTx,
