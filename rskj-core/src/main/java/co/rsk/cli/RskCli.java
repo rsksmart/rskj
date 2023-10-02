@@ -53,8 +53,8 @@ public class RskCli implements Runnable {
     @CommandLine.Option(names = {"-r", "--reset"}, description = "Reset the database")
     private boolean dbReset;
 
-    @CommandLine.Option(names = {"--import"}, description = "Import database")
-    private String dbImport;
+    @CommandLine.Option(names = {"-i", "--import"}, description = "Import database")
+    private boolean dbImport;
 
     // config flags
     @CommandLine.Option(names = {"--verify-config"}, description = "Verify configuration")
@@ -110,9 +110,8 @@ public class RskCli implements Runnable {
             activatedFlags.add(NodeCliFlags.DB_RESET);
         }
 
-        if (dbImport != null) {
+        if (dbImport) {
             activatedFlags.add(NodeCliFlags.DB_IMPORT);
-            paramValueMap.put("import", dbImport);
         }
 
         if (verifyConfig) {
@@ -129,12 +128,10 @@ public class RskCli implements Runnable {
 
         if (rpcCors != null) {
             activatedOptions.put(NodeCliOptions.RPC_CORS, rpcCors);
-            paramValueMap.put("rpc-cors", rpcCors);
         }
 
         if (basePath != null) {
             activatedOptions.put(NodeCliOptions.BASE_PATH, basePath);
-            paramValueMap.put("base-path", basePath);
         }
 
         if (xArguments != null) {
