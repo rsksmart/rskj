@@ -152,8 +152,13 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         }
 
         // start "short" / "backward" sync
-        syncEventsHandler.onLongSyncUpdate(false, null);
-        syncEventsHandler.backwardSyncing(peerForBackwardSync.get());
+//    mato el backwards sync
+//        import a -XmX memoria max de heap settearloa 8gb
+        // hago un -import
+        // -Xmx8G
+        //--main --import=rockdb
+        //syncEventsHandler.onLongSyncUpdate(false, null);
+       // syncEventsHandler.backwardSyncing(peerForBackwardSync.get());
         return true;
     }
 
