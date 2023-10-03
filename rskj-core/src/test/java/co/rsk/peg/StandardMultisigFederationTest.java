@@ -45,7 +45,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
-class FederationTest {
+class StandardMultisigFederationTest {
     private Federation federation;
     private List<BtcECKey> sortedPublicKeys;
     private List<ECKey> rskPubKeys;
