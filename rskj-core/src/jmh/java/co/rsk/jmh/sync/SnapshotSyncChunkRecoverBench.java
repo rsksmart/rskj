@@ -1,13 +1,11 @@
 package co.rsk.jmh.sync;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.SnapshotProcessor;
 import co.rsk.trie.*;
 import co.rsk.util.HexUtils;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.Keccak256Helper;
 import org.openjdk.jmh.annotations.*;
-import org.spongycastle.util.Arrays;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +31,7 @@ public class SnapshotSyncChunkRecoverBench {
             System.out.println(" -------- Blockchain...");
             this.trieStore = contextState.getContext().getTrieStore();
             System.out.println(" -------- TrieStore...");//333493 - 228
-            this.root = contextState.getBlockchain().getBlockByNumber(5544285l).getStateRoot();//getBestBlock().getStateRoot();
+            this.root = contextState.getBlockchain().getBlockByNumber(5637110l).getStateRoot();//getBestBlock().getStateRoot();
             this.totalSize = contextState.getNode(this.root).get().getTotalSize();
             System.out.println(" -------- Size..." + this.totalSize);
             //this.setupInvocation();
@@ -108,7 +106,9 @@ public class SnapshotSyncChunkRecoverBench {
             }
         }*/
         System.out.println(" -------- Recovering...");
-        Optional<TrieDTO> recovered = TrieDTOInOrderRecoverer.recoverTrie(result);
+        Optional<TrieDTO> recovered = TrieDTOInOrderRecoverer.recoverTrie(result, (trieDTO)->{
+            //this.trieStore.saveDTO(trieDTO);
+        });
         byte[] recoveredBytes = recovered.get().toMessage();
         Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(recoveredBytes));
         System.out.println("Root: " + HexUtils.toJsonHex(this.root));

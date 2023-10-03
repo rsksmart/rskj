@@ -152,8 +152,8 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         }
 
         // start "short" / "backward" sync
-        syncEventsHandler.onLongSyncUpdate(false, null);
-        syncEventsHandler.backwardSyncing(peerForBackwardSync.get());
+        //syncEventsHandler.onLongSyncUpdate(false, null);
+        //syncEventsHandler.backwardSyncing(peerForBackwardSync.get());
         return true;
     }
 

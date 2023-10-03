@@ -69,7 +69,9 @@ public class SnapshotSyncRecoverBench {
         final TrieDTO[] nodeArray = this.nodes.stream().map(TrieDTO::decodeFromSync).toArray(TrieDTO[]::new);
         this.nodes.clear();
         System.out.println(" -------- Recovering...");
-        Optional<TrieDTO> recovered = TrieDTOInOrderRecoverer.recoverTrie(nodeArray);
+        Optional<TrieDTO> recovered = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, (trieDTO)->{
+            //this.trieStore.saveDTO(trieDTO);
+        });
         byte[] recoveredBytes = recovered.get().toMessage();
         Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(recoveredBytes));
         System.out.println("Original:" + HexUtils.toJsonHex(this.root) + " , recovered: "+"0x" + hash.toHexString());

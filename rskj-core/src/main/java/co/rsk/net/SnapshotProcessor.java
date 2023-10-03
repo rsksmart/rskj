@@ -10,9 +10,6 @@ import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
 import com.google.common.collect.Lists;
-import net.jpountz.lz4.LZ4Compressor;
-import net.jpountz.lz4.LZ4Factory;
-import net.jpountz.lz4.LZ4SafeDecompressor;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.util.ByteUtil;
@@ -23,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,8 +29,8 @@ public class SnapshotProcessor {
     private static final int UNCOMPRESSED_FLAG = -1;
     public static final long BLOCK_NUMBER = 5637110l;
     public static final long DELAY_BTW_RUNS = 20 * 60 * 1000;
-    public static final int CHUNK_MAX = 1600;
-    public static final int CHUNK_MIN = 100;
+    public static final int CHUNK_MAX = 5000;
+    public static final int CHUNK_MIN = 2000;
 
     private final Blockchain blockchain;
     private final TrieStore trieStore;
@@ -120,13 +116,7 @@ public class SnapshotProcessor {
             // request another chunk
             requestState(peer, message.getTo(), message.getBlockNumber());
         } else {
-            logger.debug("State Completed! {} chunks ({} bytes) - chunk size = {}",
-                    this.stateSize.toString(), this.stateChunkSize.toString(), this.chunkSize);
-            logger.debug("Mapping elements...");
-            final TrieDTO[] nodeArray = this.elements.stream().map(TrieDTO::decodeFromSync).toArray(TrieDTO[]::new);
-            logger.debug("Recovering trie...");
-            Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray);
-            logger.debug("Recovered root: {}", result.get().calculateHash());
+            rebuildStateAndSave();
             try {
                 Thread.sleep(DELAY_BTW_RUNS);
             } catch (InterruptedException ignored) {
@@ -139,6 +129,16 @@ public class SnapshotProcessor {
             this.stateChunkSize = BigInteger.ZERO;
             requestState(peer, 0l, 5544285l);
         }
+    }
+
+    private void rebuildStateAndSave() {
+        logger.debug("State Completed! {} chunks ({} bytes) - chunk size = {}",
+                this.stateSize.toString(), this.stateChunkSize.toString(), this.chunkSize);
+        logger.debug("Mapping elements...");
+        final TrieDTO[] nodeArray = this.elements.stream().map(TrieDTO::decodeFromSync).toArray(TrieDTO[]::new);
+        logger.debug("Recovering trie...");
+        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, this.trieStore::saveDTO);
+        logger.debug("Recovered root: {}", result.get().calculateHash());
     }
 
     public void processStateChunkRequest(Peer sender, StateChunkRequestMessage request) {

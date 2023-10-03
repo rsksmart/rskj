@@ -18,6 +18,8 @@
 
 package co.rsk.trie;
 
+import co.rsk.crypto.Keccak256;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
@@ -28,11 +30,11 @@ import java.util.Optional;
 
 /**
  * TrieStoreImpl store and retrieve Trie node by hash
- *
+ * <p>
  * It saves/retrieves the serialized form (byte array) of a Trie node
- *
+ * <p>
  * Internally, it uses a key value data source
- *
+ * <p>
  * Created by ajlopez on 08/01/2017.
  */
 public class TrieStoreImpl implements TrieStore {
@@ -142,7 +144,7 @@ public class TrieStoreImpl implements TrieStore {
     }
 
     @Override
-    public void flush(){
+    public void flush() {
         this.store.flush();
     }
 
@@ -174,6 +176,22 @@ public class TrieStoreImpl implements TrieStore {
 
         TrieDTO trie = TrieDTO.decodeFromMessage(message, this);
         return Optional.of(trie);
+    }
+
+    @Override
+    public void saveDTO(TrieDTO trieDTO) {
+        byte[] message = trieDTO.toMessage();
+        byte[] messageHash = getValueHash(message);
+        this.store.put(messageHash, message);
+        if (trieDTO.isHasLongVal()) {
+            byte[] value = trieDTO.getValue();
+            byte[] valueHash = getValueHash(value);
+            this.store.put(valueHash, value);
+        }
+    }
+
+    private static byte[] getValueHash(byte[] message) {
+        return new Keccak256(Keccak256Helper.keccak256(message)).getBytes();
     }
 
     @Override

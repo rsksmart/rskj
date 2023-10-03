@@ -339,6 +339,9 @@ public class TrieDTO {
         return this.path;
     }
 
+    public boolean isHasLongVal() {
+        return hasLongVal;
+    }
     @Override
     public String toString() {
         return "Node{" + HexUtils.toJsonHex(this.path) + "}:" + this.childrenSize.value;

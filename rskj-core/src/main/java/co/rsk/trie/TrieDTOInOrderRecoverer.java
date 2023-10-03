@@ -19,23 +19,24 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.util.HexUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.crypto.Keccak256Helper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class TrieDTOInOrderRecoverer {
 
     private static final Logger logger = LoggerFactory.getLogger(TrieDTOInOrderRecoverer.class);
 
-    public static Optional<TrieDTO> recoverTrie(TrieDTO[] trieCollection) {
-        return recoverSubtree(trieCollection, 0, trieCollection.length - 1);
+    public static Optional<TrieDTO> recoverTrie(TrieDTO[] trieCollection, Consumer<? super TrieDTO> processTrieDTO) {
+        Optional<TrieDTO> result = recoverSubtree(trieCollection, 0, trieCollection.length - 1, processTrieDTO);
+        result.ifPresent(processTrieDTO);
+        return result;
     }
 
-    private static Optional<TrieDTO> recoverSubtree(TrieDTO[] trieCollection, int start, int end) {
+    private static Optional<TrieDTO> recoverSubtree(TrieDTO[] trieCollection, int start, int end, Consumer<? super TrieDTO> processTrieDTO) {
         if (end - start < 0) {
             return Optional.empty();
         }
@@ -44,8 +45,10 @@ public class TrieDTOInOrderRecoverer {
         }
         int indexRoot = findRoot(trieCollection, start, end);
         //logger.info("-- indexRoot: {}, childrenSize:{}", indexRoot, trieCollection[indexRoot].getChildrenSize().value);
-        Optional<TrieDTO> left = recoverSubtree(trieCollection, start, indexRoot - 1);
-        Optional<TrieDTO> right = recoverSubtree(trieCollection, indexRoot + 1, end);
+        Optional<TrieDTO> left = recoverSubtree(trieCollection, start, indexRoot - 1, processTrieDTO);
+        left.ifPresent(processTrieDTO);
+        Optional<TrieDTO> right = recoverSubtree(trieCollection, indexRoot + 1, end, processTrieDTO);
+        right.ifPresent(processTrieDTO);
         return Optional.of(fromTrieDTO(trieCollection[indexRoot], left, right));
     }
 
