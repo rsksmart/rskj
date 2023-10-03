@@ -20,10 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class SnapshotProcessor {
 
@@ -117,7 +116,7 @@ public class SnapshotProcessor {
 
         this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
         this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
-        logger.debug("State progress: {} chunks ({} bytes / {} (total trieSize) - {}%)", this.stateSize.toString(), this.stateChunkSize.toString(), this.remoteTrieSize, this.stateSize.multiply(BigInteger.valueOf(100)).divide(BigInteger.valueOf(this.remoteTrieSize)));
+        logger.debug("State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
         if (!message.isComplete()) {
             // request another chunk
             requestState(peer, message.getTo(), message.getBlockNumber());
@@ -145,15 +144,20 @@ public class SnapshotProcessor {
         logger.debug("Processing state chunk request from node {}", sender.getPeerNodeID());
 
         List<byte[]> trieEncoded = new ArrayList<>();
+        logger.debug("snapshot list");
         Block block = blockchain.getBlockByNumber(request.getBlockNumber());
+        logger.debug("snapshot block");
         final long to = request.getFrom() + (request.getChunkSize() * 1024);
+        logger.debug("snapshot it");
         TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom(), to);
+        logger.debug("snapshot iterator built");
 
         long rawSize = 0L;
         long compressedSize = 0L;
         long totalCompressingTime = 0L;
 
         while (it.hasNext()) {
+            logger.debug("snapshot it has next");
             TrieDTO e = it.next();
             if (it.hasNext() || it.isEmpty()) {
                 if (logger.isTraceEnabled()) {
@@ -278,4 +282,64 @@ public class SnapshotProcessor {
         logger.debug("validating snapshot sync trie");
         return trieSize == remoteTrieSize && Arrays.equals(rootHash, remoteRootHash);
     }
+
+/*    public class ChunkTask {
+        private final long blockNumber;
+        private final long from;
+        private final int chunkSize;
+
+        public ChunkTask(long blockNumber, long from, int chunkSize) {
+            this.blockNumber = blockNumber;
+            this.from = from;
+            this.chunkSize = chunkSize;
+        }
+
+        public void execute(Peer peer) {
+            requestState(peer, from, blockNumber);
+        }
+    }
+    private void createChunkTask(long blockNumber, long from, int chunkSize) throws InterruptedException {
+        ChunkTask chunkTask = new ChunkTask(blockNumber, from, chunkSize);
+        chunkTasks.put(chunkTask);
+    }
+
+    private void executeChunkTask(Peer peer) {
+        ChunkTask chunkTask = chunkTasks.poll();
+        //  checkear if (chunkTask != null)
+        chunkTask.execute(peer);
+    }
+
+    private void generateTasks() {
+        long from = 0;
+        logger.debug("snapshot generating snapshot tasks");
+
+        while (from < remoteTrieSize) {
+            logger.debug("task: {} < {}", from, remoteTrieSize);
+            ChunkTask task = new ChunkTask(BLOCKNUM, from, chunkSize);
+            chunkTasks.add(task);
+            from += chunkSize * 1024L;
+        }
+    }
+
+    private void startProcessing(List<Peer> peers) {
+        assignNextTask(peers.get(0));
+        assignNextTask(peers.get(1));
+
+        // once i get to more peers it would be
+        // for (Peer peer : peers) {
+        //     asignNextTask(peer)
+        // }
+    }
+
+    private void assignNextTask(Peer peer) {
+        ChunkTask task = chunkTasks.poll();
+        if (task != null) {
+            task.execute(peer);
+        }
+    }
+
+    private void continueWork(Peer peer) {
+        // for now, using the same peer
+        assignNextTask(peer);
+    }*/
 }
