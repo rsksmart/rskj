@@ -29,7 +29,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -76,7 +75,7 @@ public abstract class Federation {
 
     public int getNumberOfSignaturesRequired() {
         return getMembers().size() / 2 +1 ;
-    };
+    }
 
     public Instant getCreationTime() {
         return creationTime;
