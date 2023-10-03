@@ -109,15 +109,15 @@ class RocksDbDataSourceTest {
         Set<ByteArrayWrapper> deleteKeys = ImmutableSet.of(ByteUtil.wrap(keyToDelete1), ByteUtil.wrap(keyToDelete2));
 
         try (MockedConstruction<WriteBatch> writeBatchMockedConstruction = Mockito.mockConstruction(WriteBatch.class,
-                (mock, context) -> doThrow(new RocksDBException(dbExceptionMessage)).when(mock).delete(any())
+                (mock, context) -> doThrow(new RocksDBException(dbExceptionMessage)).when(mock).delete(any(byte[].class))
         )) {
             RuntimeException updateException = assertThrows(RuntimeException.class, () -> dataSource.updateBatch(batch, deleteKeys));
             assertEquals(RocksDBException.class.getName() + ": " + dbExceptionMessage, updateException.getMessage());
 
             WriteBatch writeBatch1 = writeBatchMockedConstruction.constructed().get(1);
-            verify(writeBatch1, times(1)).delete(any());
+            verify(writeBatch1, times(1)).delete(any(byte[].class));
             WriteBatch writeBatch2 = writeBatchMockedConstruction.constructed().get(1);
-            verify(writeBatch2, times(1)).delete(any());
+            verify(writeBatch2, times(1)).delete(any(byte[].class));
         } catch (RocksDBException e) {
             throw new RuntimeException(e);
         }
