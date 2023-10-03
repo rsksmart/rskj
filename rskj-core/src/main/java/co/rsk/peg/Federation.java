@@ -136,9 +136,8 @@ public abstract class Federation {
         return this.members.contains(federationMember);
     }
 
-    // TODO: define if we want to change this method or not
     @Override
     public String toString() {
-        return String.format("%d of %d signatures federation", getNumberOfSignaturesRequired(), members.size());
+        return String.format("Got %d of %d signatures federation with address %s", getNumberOfSignaturesRequired(), members.size(), getAddress());
     }
 }
