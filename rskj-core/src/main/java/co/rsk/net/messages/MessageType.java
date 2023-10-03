@@ -290,26 +290,22 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             byte[] rlpBlockNumber = list.get(0).getRLPData();
+
             long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
+
             return new SnapStatusRequestMessage(blockNumber);
         }
     },
     SNAP_STATUS_RESPONSE_MESSAGE(23) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            byte[] rlpdata = list.get(0).getRLPData();
-            long number = rlpdata == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpdata).longValue();
-            byte[] hash = list.get(1).getRLPData();
+            byte[] rlpBlock = list.get(0).getRLPData();
+            byte[] rlpTrieSize = list.get(1).getRLPData();
 
-            if (list.size() == 2) {
-                return new StatusMessage(new Status(number, hash));
-            }
+            Block block = blockFactory.decodeBlock(rlpBlock);
+            long trieSize = rlpTrieSize == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpTrieSize).longValue();
 
-            byte[] parentHash = list.get(2).getRLPData();
-            byte[] rlpTotalDifficulty = list.get(3).getRLPData();
-            BlockDifficulty totalDifficulty = rlpTotalDifficulty == null ? BlockDifficulty.ZERO : RLP.parseBlockDifficulty(rlpTotalDifficulty);
-
-            return new StatusMessage(new Status(number, hash, parentHash, totalDifficulty));
+            return new SnapStatusResponseMessage(block, trieSize);
         }
     },
     ;

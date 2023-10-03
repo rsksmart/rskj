@@ -1,14 +1,25 @@
 package co.rsk.net.messages;
 
 
+import org.ethereum.core.Block;
 import org.ethereum.util.RLP;
 import java.math.BigInteger;
 
 public class SnapStatusResponseMessage extends Message {
-    private SnapStatus snapStatus;
+    private final Block block;
+    private final long trieSize;
 
-    public SnapStatusResponseMessage(SnapStatus status) {
-        this.snapStatus = status;
+    public Block getBlock() {
+        return this.block;
+    }
+
+    public long getTrieSize() {
+        return this.trieSize;
+    }
+
+    public SnapStatusResponseMessage(Block block, long trieSize) {
+        this.block = block;
+        this.trieSize = trieSize;
     }
 
     @Override
@@ -18,14 +29,10 @@ public class SnapStatusResponseMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        byte[] trieSize = RLP.encodeBigInteger(BigInteger.valueOf(snapStatus.getTrieSize()));
-        byte[] rootHash = RLP.encodeElement(snapStatus.getRootHash());
+        byte[] rlpBlock = RLP.encode(this.block.getEncoded());
+        byte[] rlpTrieSize = RLP.encodeBigInteger(BigInteger.valueOf(this.trieSize));
 
-        return RLP.encodeList(trieSize, rootHash);
-    }
-
-    public SnapStatus getSnapStatus() {
-        return this.snapStatus;
+        return RLP.encodeList(rlpBlock, rlpTrieSize);
     }
 
     @Override
