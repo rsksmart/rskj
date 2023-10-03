@@ -5,16 +5,19 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import co.rsk.core.bc.BlockChainFlusher;
+import co.rsk.net.TransactionGateway;
 import co.rsk.util.NodeStopper;
 import co.rsk.Flusher;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
+import co.rsk.util.RLPException;
+import org.apache.commons.lang3.NotImplementedException;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.RLP;
+import org.ethereum.util.TransactionArgumentsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +26,8 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.trie.Trie;
 import co.rsk.util.HexUtils;
+
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class RskModuleImpl implements RskModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -34,19 +39,22 @@ public class RskModuleImpl implements RskModule {
     private final Flusher flusher;
 
     private final NodeStopper nodeStopper;
+    private final TransactionGateway transactionGateway;
 
     public RskModuleImpl(Blockchain blockchain,
                          BlockStore blockStore,
                          ReceiptStore receiptStore,
                          Web3InformationRetriever web3InformationRetriever,
                          Flusher flusher,
-                         NodeStopper nodeStopper) {
+                         NodeStopper nodeStopper,
+                         TransactionGateway transactionGateway) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.web3InformationRetriever = web3InformationRetriever;
         this.flusher = flusher;
         this.nodeStopper = nodeStopper;
+        this.transactionGateway = transactionGateway;
     }
 
     public RskModuleImpl(Blockchain blockchain,
@@ -54,12 +62,52 @@ public class RskModuleImpl implements RskModule {
                          ReceiptStore receiptStore,
                          Web3InformationRetriever web3InformationRetriever,
                          Flusher flusher) {
-        this(blockchain, blockStore, receiptStore, web3InformationRetriever, flusher, System::exit);
+        this(blockchain, blockStore, receiptStore, web3InformationRetriever, flusher, System::exit, null);
+    }
+
+    public RskModuleImpl(Blockchain blockchain,
+                         BlockStore blockStore,
+                         ReceiptStore receiptStore,
+                         Web3InformationRetriever web3InformationRetriever,
+                         Flusher flusher,
+                         TransactionGateway transactionGateway) {
+        this(blockchain, blockStore, receiptStore, web3InformationRetriever, flusher, System::exit, transactionGateway);
     }
 
     @Override
     public void flush() {
         flusher.forceFlush();
+    }
+
+    @Override
+    public String sendEncryptedTransaction(String rawData) {
+        String s = null;
+        try {
+            EncryptedTransaction tx = new EncryptedTransaction(HexUtils.stringHexToByteArray(rawData));
+
+            if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
+                throw invalidParamError("Missing parameter, gasPrice, gas or value");
+            }
+
+            // todo(fedejinich) i think i don't need this
+//            if (!tx.acceptTransactionSignature(constants.getChainId())) {
+//                throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
+//            }
+
+            TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);
+            if (!result.transactionsWereAdded()) {
+                throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
+            }
+
+            return s = tx.getHash().toJsonString();
+        } catch (RLPException e) {
+            throw invalidParamError("Invalid input: " + e.getMessage(), e);
+        } finally {
+            // todo(fedejinich) support this
+//            if (LOGGER.isDebugEnabled()) {
+//                LOGGER.debug("rsk_sendEncryptedTransaction({}): {}", rawData, s);
+//            }
+        }
     }
 
     @Override

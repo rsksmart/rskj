@@ -2570,7 +2570,7 @@ class Web3ImplTest {
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
-        RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever, flusher, nodeStopper);
+        RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever, flusher, nodeStopper, transactionGateway);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(

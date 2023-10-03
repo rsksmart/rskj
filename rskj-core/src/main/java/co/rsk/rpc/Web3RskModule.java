@@ -46,5 +46,9 @@ public interface Web3RskModule {
         getRskModule().flush();
     }
 
+    default String rsk_sendEncryptedTransaction(String rawData) {
+        return getRskModule().sendEncryptedTransaction(rawData);
+    }
+
     RskModule getRskModule();
 }
