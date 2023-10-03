@@ -414,7 +414,7 @@ public class TransactionExecutor {
 
         logger.trace("Go transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
-        //Set the deleted accounts in the block in the remote case there is a CREATE2 creating a deleted account
+        // Set the deleted accounts in the block in the remote case there is a CREATE2 creating a deleted account
 
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.VM_EXECUTE);
         try {

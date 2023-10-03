@@ -5,8 +5,11 @@ import java.util.Map;
 
 public class FhStore {
 
+    // todo(fedejinich) i should use byte[] for the external world, and bytearraywrapper for the internal state
+
     private static FhStore instance;
     private Map<ByteArrayWrapper, ByteArrayWrapper> cache = new HashMap<>();
+    private Map<String, ByteArrayWrapper> encryptedParams = new HashMap<>();
 
     private FhStore() {}
 
@@ -28,7 +31,15 @@ public class FhStore {
         cache.put(new ByteArrayWrapper(hash), new ByteArrayWrapper(value));
     }
 
-    public ByteArrayWrapper get(byte[] hash) {
+    public ByteArrayWrapper getEncryptedData(byte[] hash) {
         return cache.get(new ByteArrayWrapper(hash)); // Updated to wrap hash into ByteArrayWrapper for correct retrieval
+    }
+
+    public ByteArrayWrapper getEncryptedParam(String name) {
+        return this.encryptedParams.get(name);
+    }
+
+    public void putEncryptedParam(String name, byte[] hash) {
+        this.encryptedParams.put(name, new ByteArrayWrapper(hash));
     }
 }

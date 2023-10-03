@@ -83,6 +83,7 @@ public class PrecompiledContracts {
     public static final String BFV_MUL_STR = "0000000000000000000000000000000001000013";
     public static final String BFV_TRAN_STR = "0000000000000000000000000000000001000014";
     public static final String BFV_DECRYPT_STR = "0000000000000000000000000000000001000016";
+    public static final String BFV_ENCRYPTED_PARAMS_STR = "0000000000000000000000000000000001000017";
 
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
@@ -102,6 +103,7 @@ public class PrecompiledContracts {
     public static final DataWord BFV_MUL_DW = DataWord.valueFromHex(BFV_MUL_STR);
     public static final DataWord BFV_TRAN_DW = DataWord.valueFromHex(BFV_TRAN_STR);
     public static final DataWord BFV_DECRYPT_DW = DataWord.valueFromHex(BFV_DECRYPT_STR);
+    public static final DataWord BFV_ENCRYPTED_PARAMS_DW = DataWord.valueFromHex(BFV_ENCRYPTED_PARAMS_STR);
 
     public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
     public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
@@ -119,8 +121,10 @@ public class PrecompiledContracts {
     public static final RskAddress BFV_ADD_ADDR = new RskAddress(BFV_ADD_DW);
     public static final RskAddress BFV_SUB_ADDR = new RskAddress(BFV_SUB_DW);
     public static final RskAddress BFV_MUL_ADDR = new RskAddress(BFV_MUL_DW);
+    // todo(fedejinich) remove this precompiled, we don't need it
     public static final RskAddress BFV_TRAN_ADDR = new RskAddress(BFV_TRAN_DW);
     public static final RskAddress BFV_DECRYPT_ADDR = new RskAddress(BFV_DECRYPT_DW);
+    public static final RskAddress BFV_ENCRYPTED_PARAMS_ADDR = new RskAddress(BFV_ENCRYPTED_PARAMS_DW);
 
     public static final List<RskAddress> GENESIS_ADDRESSES = Collections.unmodifiableList(Arrays.asList(
             ECRECOVER_ADDR,
@@ -144,6 +148,7 @@ public class PrecompiledContracts {
                     new AbstractMap.SimpleEntry<>(BFV_SUB_ADDR, ConsensusRule.RSKIPBFV),
                     new AbstractMap.SimpleEntry<>(BFV_MUL_ADDR, ConsensusRule.RSKIPBFV),
                     new AbstractMap.SimpleEntry<>(BFV_TRAN_ADDR, ConsensusRule.RSKIPBFV),
+                    new AbstractMap.SimpleEntry<>(BFV_ENCRYPTED_PARAMS_ADDR, ConsensusRule.RSKIPBFV),
                     new AbstractMap.SimpleEntry<>(BFV_DECRYPT_ADDR, ConsensusRule.RSKIPBFV))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
@@ -240,6 +245,10 @@ public class PrecompiledContracts {
 
         if (activations.isActive(ConsensusRule.RSKIPBFV) && address.equals(BFV_DECRYPT_DW)) {
             return new BFVPrecompiled(BFVPrecompiled.Op.DECRYPT);
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIPBFV) && address.equals(BFV_ENCRYPTED_PARAMS_DW)) {
+            return new BFVPrecompiled(BFVPrecompiled.Op.ENCRYPTED_PARAMS);
         }
 
         return null;

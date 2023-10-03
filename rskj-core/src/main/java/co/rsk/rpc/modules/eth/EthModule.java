@@ -31,6 +31,7 @@ import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
+import co.rsk.util.RLPException;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -314,5 +315,9 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress()
         );
+    }
+
+    public String sendEncryptedTransaction(String rawData) {
+        return ethModuleTransaction.sendEncryptedTransaction(rawData);
     }
 }

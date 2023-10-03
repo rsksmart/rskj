@@ -47,7 +47,8 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
 
     @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
-        if (BigInteger.valueOf(tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber), signatureCache)).compareTo(tx.getGasLimitAsInteger()) <= 0) {
+        if (BigInteger.valueOf(tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber), signatureCache))
+                .compareTo(tx.getGasLimitAsInteger()) <= 0) {
             return TransactionValidationResult.ok();
         }
 

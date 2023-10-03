@@ -27,6 +27,12 @@ import java.util.List;
  * @since 21.04.14
  */
 public class RLPList extends RLPItem implements RLPElement {
+
+    // todo(fedejinich) should I try to avoid this?
+    public List<RLPElement> getElements() {
+        return elements;
+    }
+
     private List<RLPElement> elements;
     private final int offset;
 

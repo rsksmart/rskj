@@ -24,4 +24,5 @@ public interface EthModuleTransaction {
     String sendTransaction(CallArguments args);
 
     String sendRawTransaction(String rawData);
+    String sendEncryptedTransaction(String rawData);
 }

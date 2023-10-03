@@ -14,9 +14,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 // todo(fedejinich) refactor duplicated code in add and sub
 public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
@@ -66,8 +63,8 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 System.arraycopy(data, 0, op1Hash, 0, 32);
                 System.arraycopy(data, 32, op2Hash, 0, 32);
 
-                byte[] op1 = FhStore.getInstance().get(op1Hash).getData();
-                byte[] op2 = FhStore.getInstance().get(op2Hash).getData();
+                byte[] op1 = FhStore.getInstance().getEncryptedData(op1Hash).getData();
+                byte[] op2 = FhStore.getInstance().getEncryptedData(op2Hash).getData();
 
                 byte[] result = bfv.add(op1, op1.length, op2, op2.length);
 
@@ -131,6 +128,7 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 return bfv.mul(op1, op1Len, op2, op2Len, rk, rkLen);
             }
         },
+        // todo(fedejinich) remove this precompiled, we don't need it
         TRAN // transcipher from PASTA
         {
             @Override
@@ -203,7 +201,7 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 VotingMocks votingMocks = getMocks();
                 byte[] bfvSK = votingMocks.getBfvSK();
 
-                byte[] encrypted = FhStore.getInstance().get(data).getData();
+                byte[] encrypted = FhStore.getInstance().getEncryptedData(data).getData();
 
                 byte[] result = bfv.decrypt(encrypted, encrypted.length, bfvSK, bfvSK.length);
 
@@ -213,9 +211,25 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
 
                 return dec;
             }
-        };
 
-        private static void reverse(byte[] array) {
+        },
+        ENCRYPTED_PARAMS {
+            @Override
+            public long gasForData(byte[] data) {
+                return 1;
+            }
+
+            @Override
+            public byte[] executeOperation(byte[] data, BFV bfv) {
+                // todo(fedejinich) find a better way to do this
+                String param = new String(HexUtils.stringHexToByteArray(HexUtils.toJsonHex(data))).trim();
+                byte[] hash = FhStore.getInstance().getEncryptedParam(param).getData();
+
+                return hash;
+            }
+
+        };
+        public static void reverse(byte[] array) {
             if (array == null) {
                 return;
             }

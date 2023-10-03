@@ -212,7 +212,7 @@ class BFVPrecompiledContractTest {
         Assertions.assertArrayEquals(msgLong, decryptedLong);
     }
 
-    private long[] toLongArray(byte[] message, int size, ByteOrder order) {
+    public static long[] toLongArray(byte[] message, int size, ByteOrder order) {
         ByteBuffer buff = ByteBuffer.wrap(message).order(order);
         long[] result = new long[size];
         for (int i = 0; i < result.length; i++) {
