@@ -494,8 +494,8 @@ public class BridgeUtils {
 
     public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
         return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(fed ->
-            fed instanceof ErpFederation ? ((ErpFederation) fed).getStandardRedeemScript()
-                : fed.getRedeemScript()
+            fed instanceof ErpFederation ? ((ErpFederation) fed).getStandardP2SHScript()
+                : fed.getP2SHScript()
             ).toArray(Script[]::new));
     }
 
@@ -521,7 +521,9 @@ public class BridgeUtils {
             }
 
             Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-            if (Stream.of(p2shScript).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
+            if (Stream.of(p2shScript).anyMatch(federationPayScript ->
+                federationPayScript.equals(outputScript))) {
+                System.out.println();
                 return true;
             }
         }
