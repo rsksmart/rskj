@@ -284,7 +284,7 @@ public class Web3Impl implements Web3 {
                 }
             }
 
-            return s = Integer.toString(version);
+            return s = HexUtils.toQuantityJsonHex(version);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("rsk_protocolVersion(): {}", s);

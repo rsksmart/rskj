@@ -86,7 +86,7 @@ assert_best b04
 assert_balance tx01 10000
 
 # check sender balance, before next transaction
-assert_balance acc1 8557429
+assert_balance acc1 8618789
 
 transaction_build tx05
     sender acc1
@@ -112,7 +112,7 @@ assert_best b05
 assert_balance tx01 10000
 
 # check sender balance, it should pay the total cost (8589589 - 25000)
-assert_balance acc1 8532429
+assert_balance acc1 8593789
 
 transaction_build tx06
     sender acc1

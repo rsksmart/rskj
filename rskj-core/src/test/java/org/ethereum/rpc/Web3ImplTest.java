@@ -149,7 +149,7 @@ class Web3ImplTest {
 
         String netVersion = web3.eth_protocolVersion();
 
-        assertEquals(0, netVersion.compareTo("1"), "RSK net version different than one");
+        assertEquals(0, netVersion.compareTo("0x1"), "RSK net version different than one");
     }
 
     @Test

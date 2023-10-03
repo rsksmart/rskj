@@ -109,7 +109,7 @@ class TxValidatorIntrinsicGasLimitValidatorTest {
                 .builder()
                 .nonce(BigInteger.ZERO)
                 .gasPrice(BigInteger.ZERO)
-                .gasLimit(BigInteger.valueOf(21071))
+                .gasLimit(BigInteger.valueOf(21019))
                 .destination(new ECKey().getAddress())
                 .data(Hex.decode("0001"))
                 .chainId(Constants.REGTEST_CHAIN_ID)

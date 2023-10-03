@@ -283,17 +283,17 @@ class TransactionModuleTest {
         BigInteger nonce = repository.getAccountState(srcAddr).getNonce();
         RskAddress contractAddress = new RskAddress(HashUtil.calcNewAddr(srcAddr.getBytes(), nonce.toByteArray()));
         int gasLimit = 5000000; // start with 5M
-        int consumed = checkEstimateGas(callCallWithValue, 33472 + GasCost.STIPEND_CALL, gasLimit, srcAddr, contractAddress, web3, repository);
+        int consumed = checkEstimateGas(callCallWithValue, 33264 + GasCost.STIPEND_CALL, gasLimit, srcAddr, contractAddress, web3, repository);
 
         // Now that I know the estimation, call again using the estimated value
         // it should not fail. We set the gasLimit to the expected value plus 1 to
         // differentiate between OOG and success.
-        int consumed2 = checkEstimateGas(callCallWithValue, 33472 + GasCost.STIPEND_CALL, consumed + 1, srcAddr, contractAddress, web3, repository);
+        int consumed2 = checkEstimateGas(callCallWithValue, 33264 + GasCost.STIPEND_CALL, consumed + 1, srcAddr, contractAddress, web3, repository);
 
         Assertions.assertEquals(consumed, consumed2);
 
-        consumed = checkEstimateGas(callUnfill, 46942, gasLimit, srcAddr, contractAddress, web3, repository);
-        consumed2 = checkEstimateGas(callUnfill, 46942, consumed + 1, srcAddr, contractAddress, web3, repository);
+        consumed = checkEstimateGas(callUnfill, 46734, gasLimit, srcAddr, contractAddress, web3, repository);
+        consumed2 = checkEstimateGas(callUnfill, 46734, consumed + 1, srcAddr, contractAddress, web3, repository);
 
         Assertions.assertEquals(consumed, consumed2);
     }
