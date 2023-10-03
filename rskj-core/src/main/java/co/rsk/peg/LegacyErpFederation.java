@@ -76,29 +76,6 @@ public class LegacyErpFederation extends ErpFederation {
         return standardRedeemScript;
     }
 
-    @Override
-    public boolean equals(Object other){
-        if (this == other) {
-            return true;
-        }
-
-        if (other == null || this.getClass() != other.getClass()) {
-            return false;
-        }
-
-        LegacyErpFederation otherErpFederation = (LegacyErpFederation) other;
-        return this.getNumberOfSignaturesRequired() == otherErpFederation.getNumberOfSignaturesRequired() &&
-            this.getSize() == otherErpFederation.getSize() &&
-            this.getCreationTime().equals(otherErpFederation.getCreationTime()) &&
-            this.creationBlockNumber == otherErpFederation.creationBlockNumber &&
-            this.btcParams.equals(otherErpFederation.btcParams) &&
-            this.members.equals(otherErpFederation.members) &&
-            this.getRedeemScript().equals(otherErpFederation.getRedeemScript()) &&
-            this.erpPubKeys.equals(otherErpFederation.erpPubKeys) &&
-            this.activationDelay == otherErpFederation.activationDelay;
-
-    }
-
     private void validateRedeemScript() {
         if (activations.isActive(ConsensusRule.RSKIP293) &&
             this.redeemScript.equals(new Script(ERP_TESTNET_REDEEM_SCRIPT_BYTES))) {

@@ -72,7 +72,6 @@ public abstract class ErpFederation extends Federation {
             this.getRedeemScript().equals(otherErpFederation.getRedeemScript()) &&
             this.erpPubKeys.equals(otherErpFederation.erpPubKeys) &&
             this.activationDelay == otherErpFederation.activationDelay;
-
     }
 
     @Override
