@@ -299,11 +299,13 @@ public enum MessageType {
     SNAP_STATUS_RESPONSE_MESSAGE(23) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            byte[] rlpTrieSize = list.get(0).getRLPData();
-            byte[] rlpRootHash = list.get(1).getRLPData();
+            byte[] rlpBlock = list.get(0).getRLPData();
+            byte[] rlpTrieSize = list.get(1).getRLPData();
+
+            Block block = blockFactory.decodeBlock(rlpBlock);
             long trieSize = rlpTrieSize == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpTrieSize).longValue();
 
-            return new SnapStatusResponseMessage(trieSize, rlpRootHash);
+            return new SnapStatusResponseMessage(block, trieSize);
         }
     },
     ;

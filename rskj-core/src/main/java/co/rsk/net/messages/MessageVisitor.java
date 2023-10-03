@@ -203,7 +203,7 @@ public class MessageVisitor {
     }
 
     public void apply(SnapStatusResponseMessage message)  {
-        logger.debug("snapshot status response message apply {} {}", message.getTrieSize(), message.getRootHash());
+        logger.debug("snapshot status response message apply {} {}", message.getBlock(), message.getTrieSize());
         this.snapshotProcessor.processSnapStatusResponse(sender, message);
     }
 

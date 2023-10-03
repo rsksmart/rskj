@@ -30,6 +30,7 @@ public class SnapshotProcessor {
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
     private static final String KBYTES = "kbytes";
     private static final int UNCOMPRESSED_FLAG = -1;
+    private static final long BLOCKNUM = 5544285l;
 
     private final Blockchain blockchain;
     private final TrieStore trieStore;
@@ -69,13 +70,8 @@ public class SnapshotProcessor {
 
         this.stateSize = BigInteger.ZERO;
         this.stateChunkSize = BigInteger.ZERO;
-
+        // get more than one peer, use the peer queue
         // TODO(snap-poc) deal with multiple peers algorithm here
-        // currentChunk arranca en 0
-        // if (!peers.isEmpty()) {
-        //      peer = peers.getPeer();
-        //      requestState(peer, currentChunk, blockNumber)
-        //}
         Peer peer = peers.get(0);
         logger.debug("start snapshot sync");
         requestSnapStatus(peer);
@@ -121,7 +117,7 @@ public class SnapshotProcessor {
 
         this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
         this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
-        logger.debug("State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
+        logger.debug("State progress: {} chunks ({} bytes / {} (total trieSize) - {}%)", this.stateSize.toString(), this.stateChunkSize.toString(), this.remoteTrieSize, this.stateSize.multiply(BigInteger.valueOf(100)).divide(BigInteger.valueOf(this.remoteTrieSize)));
         if (!message.isComplete()) {
             // request another chunk
             requestState(peer, message.getTo(), message.getBlockNumber());
@@ -250,10 +246,11 @@ public class SnapshotProcessor {
     }
 
     public void processSnapStatusResponse(Peer sender, SnapStatusResponseMessage responseMessage) {
-        this.remoteRootHash = responseMessage.getRootHash();
+        Block block = responseMessage.getBlock();
+        this.remoteRootHash = block.getStateRoot();
         this.remoteTrieSize = responseMessage.getTrieSize();
 
-        logger.debug("processing snapshot status response");
+        logger.debug("processing snapshot status response rootHash: {} triesize: {}", remoteRootHash, remoteTrieSize);
 
         requestState(sender, 0L, 5544285l);
     }
@@ -267,14 +264,13 @@ public class SnapshotProcessor {
         byte[] rootHash = block.getStateRoot();
         Optional<TrieDTO> opt =  trieStore.retrieveDTO(rootHash);
 
-        // chequear si es getTotal o getSize
         if (opt.isPresent()) {
             trieSize = opt.get().getTotalSize();
         } else {
             logger.debug("trie is notPresent");
         }
-        logger.debug("procesing snapshot status request 2");
-        SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(trieSize, rootHash);
+        logger.debug("procesing snapshot status request 2: roothash: {} triesize: {}", rootHash, trieSize);
+        SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(block, trieSize);
         sender.sendMessage(responseMessage);
     }
 
