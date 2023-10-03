@@ -144,20 +144,15 @@ public class SnapshotProcessor {
         logger.debug("Processing state chunk request from node {}", sender.getPeerNodeID());
 
         List<byte[]> trieEncoded = new ArrayList<>();
-        logger.debug("snapshot list");
         Block block = blockchain.getBlockByNumber(request.getBlockNumber());
-        logger.debug("snapshot block");
         final long to = request.getFrom() + (request.getChunkSize() * 1024);
-        logger.debug("snapshot it");
         TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom(), to);
-        logger.debug("snapshot iterator built");
 
         long rawSize = 0L;
         long compressedSize = 0L;
         long totalCompressingTime = 0L;
 
         while (it.hasNext()) {
-            logger.debug("snapshot it has next");
             TrieDTO e = it.next();
             if (it.hasNext() || it.isEmpty()) {
                 if (logger.isTraceEnabled()) {
