@@ -8,7 +8,6 @@ import co.rsk.peg.utils.EcKeyUtils;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 public abstract class ErpFederation extends Federation {
@@ -49,19 +48,5 @@ public abstract class ErpFederation extends Federation {
         }
 
         return standardP2SHScript;
-    }
-
-    @Override
-    public int hashCode() {
-        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
-        // well-defined hashCode()s
-        return Objects.hash(
-            getCreationTime(),
-            this.creationBlockNumber,
-            getNumberOfSignaturesRequired(),
-            getBtcPublicKeys(),
-            getErpPubKeys(),
-            getActivationDelay()
-        );
     }
 }

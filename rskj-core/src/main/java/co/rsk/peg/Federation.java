@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -152,5 +153,14 @@ public abstract class Federation {
 
         Federation otherFederation = (Federation) other;
         return this.getAddress().equals(otherFederation.getAddress());
+    }
+
+    @Override
+    public int hashCode() {
+        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
+        // well-defined hashCode()s
+        return Objects.hash(
+            getAddress()
+        );
     }
 }
