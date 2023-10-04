@@ -24,7 +24,6 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Immutable representation of an RSK Federation in the context of
@@ -50,17 +49,5 @@ public class StandardMultisigFederation extends Federation {
         }
 
         return redeemScript;
-    }
-
-    @Override
-    public int hashCode() {
-        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
-        // well-defined hashCode()s
-        return Objects.hash(
-            getCreationTime(),
-            this.creationBlockNumber,
-            getNumberOfSignaturesRequired(),
-            getBtcPublicKeys()
-        );
     }
 }
