@@ -25,7 +25,6 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import java.util.List;
 
-import co.rsk.peg.StandardMultisigFederation;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
