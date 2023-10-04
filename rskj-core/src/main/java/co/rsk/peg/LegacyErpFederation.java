@@ -37,9 +37,7 @@ public class LegacyErpFederation extends ErpFederation {
 
         // Try getting the redeem script in order to validate it can be built
         // using the given public keys and csv value
-        getRedeemScript();
         validateRedeemScript();
-        getStandardRedeemScript();
     }
 
     @Override
