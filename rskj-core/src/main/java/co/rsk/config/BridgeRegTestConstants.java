@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
 import co.rsk.peg.StandardMultisigFederation;
 import org.bouncycastle.util.encoders.Hex;

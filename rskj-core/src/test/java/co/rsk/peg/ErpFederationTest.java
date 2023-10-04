@@ -407,36 +407,6 @@ class ErpFederationTest {
     }
 
     @Test
-    void testEquals_differentCreationTime() {
-        Federation otherFederation = new LegacyErpFederation(
-            federation.getMembers(),
-            Instant.now(),
-            federation.getCreationBlockNumber(),
-            federation.getBtcParams(),
-            federation.getErpPubKeys(),
-            federation.getActivationDelay(),
-            activations
-        );
-
-        Assertions.assertNotEquals(federation, otherFederation);
-    }
-
-    @Test
-    void testEquals_differentCreationBlockNumber() {
-        Federation otherFederation = new LegacyErpFederation(
-            federation.getMembers(),
-            federation.getCreationTime(),
-            federation.getCreationBlockNumber() + 1,
-            federation.getBtcParams(),
-            federation.getErpPubKeys(),
-            federation.getActivationDelay(),
-            activations
-        );
-
-        Assertions.assertNotEquals(federation, otherFederation);
-    }
-
-    @Test
     void testEquals_differentNetworkParameters() {
         Federation otherFederation = new LegacyErpFederation(
             federation.getMembers(),

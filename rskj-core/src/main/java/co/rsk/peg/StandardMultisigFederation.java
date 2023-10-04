@@ -21,7 +21,6 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
 
 import java.time.Instant;
 import java.util.List;
@@ -51,26 +50,6 @@ public class StandardMultisigFederation extends Federation {
         }
 
         return redeemScript;
-    }
-
-    @Override
-    public boolean equals(Object other){
-        if (this == other) {
-            return true;
-        }
-
-        if (other == null || this.getClass() != other.getClass()) {
-            return false;
-        }
-
-        StandardMultisigFederation otherFederation = (StandardMultisigFederation) other;
-        return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
-            this.getSize() == otherFederation.getSize() &&
-            this.getCreationTime().equals(otherFederation.getCreationTime()) &&
-            this.creationBlockNumber == otherFederation.creationBlockNumber &&
-            this.btcParams.equals(otherFederation.btcParams) &&
-            this.members.equals(otherFederation.members) &&
-            this.getRedeemScript().equals(otherFederation.getRedeemScript());
     }
 
     @Override

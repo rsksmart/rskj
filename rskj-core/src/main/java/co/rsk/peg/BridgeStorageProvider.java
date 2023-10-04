@@ -48,8 +48,8 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
-    private static final int FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
-    private static final int ERP_FEDERATION_FORMAT_VERSION = 2000;
+    private static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
+    private static final int LEGACY_ERP_FEDERATION_FORMAT_VERSION = 2000;
     private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
 
     // Dummy value to use when saved Fast Bridge Derivation Argument Hash
@@ -367,12 +367,12 @@ public class BridgeStorageProvider {
             } else if (activations.isActive(RSKIP201) && newFederation instanceof ErpFederation) {
                 saveStorageVersion(
                     NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                    ERP_FEDERATION_FORMAT_VERSION
+                    LEGACY_ERP_FEDERATION_FORMAT_VERSION
                 );
             } else {
                 saveStorageVersion(
                     NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                    FEDERATION_FORMAT_VERSION_MULTIKEY
+                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY
                 );
             }
             serializer = BridgeSerializationUtils::serializeFederation;
@@ -428,12 +428,12 @@ public class BridgeStorageProvider {
             } else if (activations.isActive(RSKIP201) && oldFederation instanceof ErpFederation) {
                 saveStorageVersion(
                     OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    ERP_FEDERATION_FORMAT_VERSION
+                    LEGACY_ERP_FEDERATION_FORMAT_VERSION
                 );
             } else {
                 saveStorageVersion(
                     OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    FEDERATION_FORMAT_VERSION_MULTIKEY
+                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY
                 );
             }
 
@@ -480,7 +480,7 @@ public class BridgeStorageProvider {
             RepositorySerializer<PendingFederation> serializer = BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys;
 
             if (activations.isActive(RSKIP123)) {
-                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), FEDERATION_FORMAT_VERSION_MULTIKEY);
+                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY);
                 serializer = BridgeSerializationUtils::serializePendingFederation;
             }
 
@@ -1028,7 +1028,7 @@ public class BridgeStorageProvider {
         BridgeConstants bridgeConstants
     ) {
         switch (version) {
-            case ERP_FEDERATION_FORMAT_VERSION:
+            case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
                 return BridgeSerializationUtils.deserializeLegacyErpFederation(
                     data,
                     bridgeConstants,
