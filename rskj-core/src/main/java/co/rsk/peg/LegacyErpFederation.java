@@ -14,6 +14,11 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * @deprecated This class represents a Legacy ERP Federation that is non-standard.
+ *             It has been deprecated but it must be kept because of backwards compatibility.
+ */
+
 @Deprecated
 public class LegacyErpFederation extends ErpFederation {
     private static final Logger logger = LoggerFactory.getLogger(LegacyErpFederation.class);

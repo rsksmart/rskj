@@ -47,7 +47,7 @@ public abstract class Federation {
     protected Script p2shScript;
     protected Address address;
 
-    public Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber, NetworkParameters btcParams) {
+    protected Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber, NetworkParameters btcParams) {
         // Sorting members ensures same order of federation members for same members
         // Immutability provides protection against unwanted modification, thus making the Federation instance
         // effectively immutable
@@ -74,7 +74,7 @@ public abstract class Federation {
     }
 
     public int getNumberOfSignaturesRequired() {
-        return getMembers().size() / 2 +1 ;
+        return members.size() / 2 +1 ;
     }
 
     public Instant getCreationTime() {
@@ -138,5 +138,19 @@ public abstract class Federation {
     @Override
     public String toString() {
         return String.format("Got %d of %d signatures federation with address %s", getNumberOfSignaturesRequired(), members.size(), getAddress());
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        }
+
+        Federation otherFederation = (Federation) other;
+        return this.getAddress().equals(otherFederation.getAddress());
     }
 }

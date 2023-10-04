@@ -96,7 +96,7 @@ public abstract class BridgeConstants {
         return btcParamsString;
     }
 
-    public StandardMultisigFederation getGenesisFederation() { return (StandardMultisigFederation) genesisFederation; }
+    public Federation getGenesisFederation() { return genesisFederation; }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;

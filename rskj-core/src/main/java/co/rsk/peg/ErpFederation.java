@@ -18,7 +18,7 @@ public abstract class ErpFederation extends Federation {
     protected Script standardRedeemScript;
     protected Script standardP2SHScript;
 
-    public ErpFederation(
+    protected ErpFederation(
         List<FederationMember> members,
         Instant creationTime,
         long creationBlockNumber,
@@ -49,28 +49,6 @@ public abstract class ErpFederation extends Federation {
         }
 
         return standardP2SHScript;
-    }
-
-    @Override
-    public boolean equals(Object other){
-        if (this == other) {
-            return true;
-        }
-
-        if (other == null || this.getClass() != other.getClass()) {
-            return false;
-        }
-
-        ErpFederation otherErpFederation = (ErpFederation) other;
-        return this.getNumberOfSignaturesRequired() == otherErpFederation.getNumberOfSignaturesRequired() &&
-            this.getSize() == otherErpFederation.getSize() &&
-            this.getCreationTime().equals(otherErpFederation.getCreationTime()) &&
-            this.creationBlockNumber == otherErpFederation.creationBlockNumber &&
-            this.btcParams.equals(otherErpFederation.btcParams) &&
-            this.members.equals(otherErpFederation.members) &&
-            this.getRedeemScript().equals(otherErpFederation.getRedeemScript()) &&
-            this.erpPubKeys.equals(otherErpFederation.erpPubKeys) &&
-            this.activationDelay == otherErpFederation.activationDelay;
     }
 
     @Override

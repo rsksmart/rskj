@@ -246,7 +246,7 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationWithSerializer
-    private static Federation deserializeFederationWithDeserializer(
+    private static Federation deserializeStandardMultisigFederationWithDeserializer(
         byte[] data,
         NetworkParameters networkParameters,
         FederationMemberDesserializer federationMemberDesserializer) {
@@ -288,7 +288,7 @@ public class BridgeSerializationUtils {
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationOnlyBtcKeys
     public static Federation deserializeFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
-        return deserializeFederationWithDeserializer(data, networkParameters,
+        return deserializeStandardMultisigFederationWithDeserializer(data, networkParameters,
                 (pubKeyBytes -> FederationMember.getFederationMemberFromKey(BtcECKey.fromPublicOnly(pubKeyBytes))));
     }
 
@@ -308,7 +308,7 @@ public class BridgeSerializationUtils {
         byte[] data,
         NetworkParameters networkParameters
     ) {
-        return deserializeFederationWithDeserializer(
+        return deserializeStandardMultisigFederationWithDeserializer(
             data,
             networkParameters,
             BridgeSerializationUtils::deserializeFederationMember
@@ -320,7 +320,7 @@ public class BridgeSerializationUtils {
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations
     ) {
-        Federation federation = deserializeFederationWithDeserializer(
+        Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
             bridgeConstants.getBtcParams(),
             BridgeSerializationUtils::deserializeFederationMember
@@ -342,7 +342,7 @@ public class BridgeSerializationUtils {
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations
     ) {
-        Federation federation = deserializeFederationWithDeserializer(
+        Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
             bridgeConstants.getBtcParams(),
             BridgeSerializationUtils::deserializeFederationMember
