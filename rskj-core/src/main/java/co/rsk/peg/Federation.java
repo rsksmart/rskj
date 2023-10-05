@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 
@@ -29,7 +30,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -57,6 +57,8 @@ public abstract class Federation {
         this.creationTime = creationTime.truncatedTo(ChronoUnit.MILLIS);
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
+
+        //validateFederationValues();
     }
 
     public List<FederationMember> getMembers() {
@@ -157,10 +159,16 @@ public abstract class Federation {
 
     @Override
     public int hashCode() {
-        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
-        // well-defined hashCode()s
-        return Objects.hash(
-            getAddress()
-        );
+        return getAddress().hashCode();
+    }
+
+    private void validateFederationValues() {
+        if (creationBlockNumber <= 0) {
+            String message = String.format(
+                "Provided creation block number %d must be larger than 0",
+                creationBlockNumber
+            );
+            throw new VerificationException(message);
+        }
     }
 }

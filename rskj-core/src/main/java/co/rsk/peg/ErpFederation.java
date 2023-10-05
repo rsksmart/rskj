@@ -2,6 +2,8 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.utils.EcKeyUtils;
@@ -30,6 +32,8 @@ public abstract class ErpFederation extends Federation {
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
         this.activations = activations;
+
+        validateErpFederationValues();
     }
 
     public List<BtcECKey> getErpPubKeys() {
@@ -48,5 +52,24 @@ public abstract class ErpFederation extends Federation {
         }
 
         return standardP2SHScript;
+    }
+
+    private void validateErpFederationValues() {
+        if (erpPubKeys == null) {
+            String message = String.format(
+                "Provided erpPubKeys is empty"
+            );
+            throw new VerificationException(message);
+        }
+
+        long max_csv_value = ErpFederationRedeemScriptParser.MAX_CSV_VALUE;
+        if (activationDelay <= 0 || activationDelay > max_csv_value) {
+            String message = String.format(
+                "Provided csv value %d must be larger than 0 and lower than %d",
+                activationDelay,
+                max_csv_value
+            );
+            throw new VerificationException(message);
+        }
     }
 }

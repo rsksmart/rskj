@@ -246,7 +246,7 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationWithSerializer
-    private static Federation deserializeStandardMultisigFederationWithDeserializer(
+    private static StandardMultisigFederation deserializeStandardMultisigFederationWithDeserializer(
         byte[] data,
         NetworkParameters networkParameters,
         FederationMemberDesserializer federationMemberDesserializer) {
@@ -287,7 +287,7 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationOnlyBtcKeys
-    public static Federation deserializeFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
+    public static Federation deserializeStandardMultisigFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
         return deserializeStandardMultisigFederationWithDeserializer(data, networkParameters,
                 (pubKeyBytes -> FederationMember.getFederationMemberFromKey(BtcECKey.fromPublicOnly(pubKeyBytes))));
     }
@@ -304,7 +304,7 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederation
-    public static Federation deserializeFederation(
+    public static StandardMultisigFederation deserializeStandardMultisigFederation(
         byte[] data,
         NetworkParameters networkParameters
     ) {

@@ -202,7 +202,7 @@ class BridgeSerializationUtilsTest {
 
         byte[] data = RLP.encodeList(rlpFirstElement, rlpSecondElement, rlpKeyList);
 
-        Federation deserializedFederation = BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Federation deserializedFederation = BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
 
         Assertions.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
         Assertions.assertEquals(4, deserializedFederation.getNumberOfSignaturesRequired());
@@ -228,7 +228,7 @@ class BridgeSerializationUtilsTest {
         boolean thrown = false;
 
         try {
-            BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (Exception e) {
             Assertions.assertTrue(e.getMessage().contains("Expected 3 elements"));
             thrown = true;
@@ -330,7 +330,7 @@ class BridgeSerializationUtilsTest {
     void deserializeFederation_wrongListSize() {
         byte[] serialized = RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0]));
         NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Exception ex = Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeFederation(serialized, networkParameters));
+        Exception ex = Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeStandardMultisigFederation(serialized, networkParameters));
         Assertions.assertTrue(ex.getMessage().contains("Invalid serialized Federation"));
     }
 
@@ -344,7 +344,7 @@ class BridgeSerializationUtilsTest {
 
 
         NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Exception ex = Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeFederation(serialized, networkParameters));
+        Exception ex = Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeStandardMultisigFederation(serialized, networkParameters));
         Assertions.assertTrue(ex.getMessage().contains("Invalid serialized FederationMember"));
     }
 
@@ -802,7 +802,7 @@ class BridgeSerializationUtilsTest {
         );
 
         byte[] result = BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
-        Federation deserializedFederation = BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(result, networkParms);
+        Federation deserializedFederation = BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(result, networkParms);
         MatcherAssert.assertThat(federation, is(deserializedFederation));
     }
 
@@ -1254,7 +1254,7 @@ class BridgeSerializationUtilsTest {
             );
             byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
 
-            Federation deserializedTestFederation = BridgeSerializationUtils.deserializeFederation(
+            Federation deserializedTestFederation = BridgeSerializationUtils.deserializeStandardMultisigFederation(
                 serializedTestFederation,
                 bridgeConstants.getBtcParams()
             );
