@@ -162,7 +162,7 @@ public abstract class Federation {
         return getAddress().hashCode();
     }
 
-    private void validateFederationValues() {
+/*    private void validateFederationValues() {
         if (creationBlockNumber <= 0) {
             String message = String.format(
                 "Provided creation block number %d must be larger than 0",
@@ -170,5 +170,5 @@ public abstract class Federation {
             );
             throw new VerificationException(message);
         }
-    }
+    }*/
 }

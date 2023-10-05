@@ -56,9 +56,7 @@ public abstract class ErpFederation extends Federation {
 
     private void validateErpFederationValues() {
         if (erpPubKeys == null) {
-            String message = String.format(
-                "Provided erpPubKeys is empty"
-            );
+            String message = "Provided erpPubKeys is empty";
             throw new VerificationException(message);
         }
 
