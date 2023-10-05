@@ -43,8 +43,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-class ErpFederationTest {
-    private ErpFederation federation;
+class LegacyErpFederationTest {
+    private LegacyErpFederation federation;
     private List<BtcECKey> defaultKeys;
     private List<BtcECKey> emergencyKeys;
     private long activationDelayValue;
@@ -61,7 +61,7 @@ class ErpFederationTest {
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        federation = createDefaultErpFederation();
+        federation = createDefaultLegacyErpFederation();
     }
 
     @Test
@@ -87,7 +87,7 @@ class ErpFederationTest {
     @Test
     void getRedeemScript_after_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        federation = createDefaultErpFederation();
+        federation = createDefaultLegacyErpFederation();
         Script redeemScript = federation.getRedeemScript();
 
         validateErpRedeemScript(
@@ -102,7 +102,7 @@ class ErpFederationTest {
         Script preRskip293RedeemScript = federation.getRedeemScript();
 
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        federation = createDefaultErpFederation();
+        federation = createDefaultLegacyErpFederation();
         Script postRskip293RedeemScript = federation.getRedeemScript();
 
         Assertions.assertNotEquals(preRskip293RedeemScript, postRskip293RedeemScript);
@@ -146,7 +146,7 @@ class ErpFederationTest {
         ErpFederation federationWithUncompressedKeys = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             uncompressedErpKeys,
             activationDelayValue,
@@ -173,7 +173,7 @@ class ErpFederationTest {
             Federation erpFederation = new LegacyErpFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                0L,
+                1,
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
                 generatedScript.emergencyFed,
                 generatedScript.timelock,
@@ -205,7 +205,7 @@ class ErpFederationTest {
             Federation erpFederation = new P2shErpFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                0L,
+                1,
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
                 generatedScript.emergencyFed,
                 generatedScript.timelock,
@@ -246,7 +246,7 @@ class ErpFederationTest {
         assertThrows(VerificationException.class, () -> new LegacyErpFederation(
             federationMembersFromPks,
             creationTime,
-            0L,
+            1,
             btcParams,
             emergencyKeys,
             -100L,
@@ -262,7 +262,7 @@ class ErpFederationTest {
         assertThrows(VerificationException.class, () -> new LegacyErpFederation(
             federationMembersFromPks,
             creationTime,
-            0L,
+            1,
             btcParams,
             emergencyKeys,
             0,
@@ -278,7 +278,7 @@ class ErpFederationTest {
         assertThrows(VerificationException.class, () -> new LegacyErpFederation(
             federationMembersFromPks,
             creationTime,
-            0L,
+            1,
             btcParams,
             emergencyKeys,
             ErpFederationRedeemScriptParser.MAX_CSV_VALUE + 1,
@@ -294,7 +294,7 @@ class ErpFederationTest {
         Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             emergencyKeys,
             activationDelayValue,
@@ -312,7 +312,7 @@ class ErpFederationTest {
         Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
             emergencyKeys,
             activationDelayValue,
@@ -332,7 +332,7 @@ class ErpFederationTest {
         Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             emergencyKeys,
             activationDelayValue,
@@ -352,7 +352,7 @@ class ErpFederationTest {
         Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
             emergencyKeys,
             activationDelayValue,
@@ -448,7 +448,7 @@ class ErpFederationTest {
         Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             emergencyKeys,
             activationDelayValue,
@@ -458,7 +458,7 @@ class ErpFederationTest {
         Federation otherErpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             emergencyKeys,
             activationDelayValue,
@@ -471,7 +471,7 @@ class ErpFederationTest {
         otherErpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             emergencyKeys,
             activationDelayValue,
@@ -484,7 +484,7 @@ class ErpFederationTest {
         erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             emergencyKeys,
             activationDelayValue,
@@ -524,7 +524,7 @@ class ErpFederationTest {
         assertThrows(FederationCreationException.class, () -> new LegacyErpFederation(
             federationMembersWithBtcKeys,
             creationTime,
-            0L,
+            1,
             btcParams,
             emergencyMultisigKeys,
             activationDelay,
@@ -677,7 +677,7 @@ class ErpFederationTest {
         Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             constants.getBtcParams(),
             constants.getErpFedPubKeysList(),
             constants.getErpFedActivationDelay(),
@@ -717,7 +717,7 @@ class ErpFederationTest {
         ErpFederation erpFed = new LegacyErpFederation(
             FederationMember.getFederationMembersFromKeys(standardKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             networkParameters,
             emergencyKeys,
             activationDelay,
@@ -746,11 +746,11 @@ class ErpFederationTest {
         );
     }
 
-    private LegacyErpFederation createDefaultErpFederation() {
+    private LegacyErpFederation createDefaultLegacyErpFederation() {
         return new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            1,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             emergencyKeys,
             activationDelayValue,
@@ -797,7 +797,7 @@ class ErpFederationTest {
         assertEquals(ScriptOpCodes.OP_NOTIF, script[index++]);
 
         // Next byte should equal M, from an M/N multisig
-        int m = defaultMultisigKeys.size() / 2 + 1; // da 8
+        int m = defaultMultisigKeys.size() / 2 + 1;
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(m)), script[index++]);
 
         // Assert public keys
