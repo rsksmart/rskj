@@ -256,7 +256,7 @@ public class SnapshotProcessor {
         generateTasks();
 
         //requestState(sender, 0L, BLOCKNUM);
-        startProcessing(peers);
+        startProcessing();
     }
 
     public void processSnapStatusRequest(Peer sender) {
@@ -312,8 +312,8 @@ public class SnapshotProcessor {
         logger.debug("generated: {} snapshot chunk tasks", chunkTasks.size());
     }
 
-    private void startProcessing(List<Peer> peers) {
-        assignNextTask(peers.get(0));
+    private void startProcessing() {
+        assignNextTask(getNextPeer());
     }
 
     private void assignNextTask(Peer peer) {
@@ -324,10 +324,24 @@ public class SnapshotProcessor {
             logger.debug("no more tasks");
         }
     }
+    private int chunksProcessed = 0;
+    private int currentPeerIndex = 0;
+    private void continueWork(Peer currentPeer) {
+        if (chunksProcessed >= 100) {
+            currentPeer = getNextPeer();
+            chunksProcessed = 0;
+        }
+        assignNextTask(currentPeer);
+        chunksProcessed++;
+    }
 
-
-    private void continueWork(Peer peer) {
-        // for now, using the same peer
-        assignNextTask(peer);
+    private Peer getNextPeer() {
+        if (peers.isEmpty()) {
+            logger.debug("snapshot: no more peers");
+            return null;
+        }
+        Peer nextPeer = peers.get(currentPeerIndex);
+        currentPeerIndex = (currentPeerIndex + 1) % peers.size();
+        return nextPeer;
     }
 }
