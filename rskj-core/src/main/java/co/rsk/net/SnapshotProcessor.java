@@ -301,34 +301,27 @@ public class SnapshotProcessor {
 
     private void generateTasks() {
         long from = 0;
-        logger.debug("snapshot generating snapshot tasks");
+        logger.debug("generating snapshot chunk tasks");
 
         while (from < remoteTrieSize) {
-           // logger.debug("task: {} < {}", from, remoteTrieSize);
             ChunkTask task = new ChunkTask(BLOCKNUM, from, chunkSize);
             logger.debug("task: {} < {}", task.from, remoteTrieSize);
             chunkTasks.add(task);
             from += chunkSize * 1024L;
         }
-        logger.debug("snapshot generated snapshot tasks");
+        logger.debug("generated: {} snapshot chunk tasks", chunkTasks.size());
     }
 
     private void startProcessing(List<Peer> peers) {
-        long i = 0;
-        logger.debug("starting snapshot processing");
-        while (assignNextTask(peers.get(0))) {
-            logger.debug("asigning next task: {}", i++);
-        }
+        assignNextTask(peers.get(0));
     }
 
-    private boolean assignNextTask(Peer peer) {
-        ChunkTask chunkTask = chunkTasks.peek();
+    private void assignNextTask(Peer peer) {
+        ChunkTask chunkTask = chunkTasks.poll();
         if (chunkTask != null) {
             chunkTask.execute(peer);
-            return true;
         } else {
             logger.debug("no more tasks");
-            return false;
         }
     }
 
