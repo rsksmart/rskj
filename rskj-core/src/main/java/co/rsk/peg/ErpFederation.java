@@ -67,7 +67,7 @@ public abstract class ErpFederation extends Federation {
                 activationDelay,
                 maxCsvValue
             );
-            throw new VerificationException(message);
+            throw new FederationCreationException(message);
         }
     }
 }
