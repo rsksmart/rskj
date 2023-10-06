@@ -74,7 +74,7 @@ class FederationSupportTest {
         when(provider.getNewFederation())
             .thenReturn(null);
         when(bridgeConstants.getGenesisFederation())
-            .thenReturn((StandardMultisigFederation) genesisFederation);
+            .thenReturn(genesisFederation);
 
         assertThat(federationSupport.getActiveFederation(), is(genesisFederation));
     }

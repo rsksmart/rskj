@@ -121,7 +121,7 @@ class StandardMultisigFederationTest {
     }
 
     @Test
-    void testArrayEquals_P2SHScript() {
+    void getP2SHScript() {
         ScriptBuilder p2shScriptBuilder = new ScriptBuilder();
         p2shScriptBuilder.op(ScriptOpCodes.OP_HASH160);
         p2shScriptBuilder.data(Hex.decode("57f76bf3ab818811c740929ac7a5e3ef8c7a34b9"));
@@ -129,11 +129,11 @@ class StandardMultisigFederationTest {
 
         Script p2shScript = p2shScriptBuilder.build();
 
-        Assertions.assertArrayEquals(federation.getP2SHScript().getProgram(), p2shScript.getProgram());
+        Assertions.assertEquals(federation.getP2SHScript(), p2shScript);
     }
 
     @Test
-    void testEquals_Address() {
+    void getAddress() {
         Assertions.assertEquals("2N1GMB8gxHYR5HLPSRgf9CJ9Lunjb9CTnKB", federation.getAddress().toBase58());
     }
 
