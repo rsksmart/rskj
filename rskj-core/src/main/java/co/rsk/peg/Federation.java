@@ -56,9 +56,6 @@ public abstract class Federation {
         this.creationTime = creationTime.truncatedTo(ChronoUnit.MILLIS);
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
-
-        // TODO
-        // validateFederationValues();
     }
 
     public List<FederationMember> getMembers() {
@@ -161,15 +158,4 @@ public abstract class Federation {
     public int hashCode() {
         return getAddress().hashCode();
     }
-
-/*  TODO implement this check
-    private void validateFederationValues() {
-        if (creationBlockNumber <= 0) {
-            String message = String.format(
-                "Provided creation block number %d must be larger than 0",
-                creationBlockNumber
-            );
-            throw new VerificationException(message);
-        }
-    }*/
 }

@@ -333,7 +333,7 @@ public class BridgeStorageProvider {
                     return null;
                 }
                 if (storageVersion.isPresent()) {
-                    return deserializeFederationAccordingToVersion(data, storageVersion.get(), bridgeConstants); // ACA ES EL ERROR
+                    return deserializeFederationAccordingToVersion(data, storageVersion.get(), bridgeConstants);
                 }
 
                 return BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(data, networkParameters);

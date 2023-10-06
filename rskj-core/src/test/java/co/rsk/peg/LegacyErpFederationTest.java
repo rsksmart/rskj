@@ -243,7 +243,7 @@ class LegacyErpFederationTest {
         List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        assertThrows(VerificationException.class, () -> new LegacyErpFederation(
+        assertThrows(FederationCreationException.class, () -> new LegacyErpFederation(
             federationMembersFromPks,
             creationTime,
             1,
@@ -259,7 +259,7 @@ class LegacyErpFederationTest {
         List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        assertThrows(VerificationException.class, () -> new LegacyErpFederation(
+        assertThrows(FederationCreationException.class, () -> new LegacyErpFederation(
             federationMembersFromPks,
             creationTime,
             1,
@@ -275,7 +275,7 @@ class LegacyErpFederationTest {
         List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        assertThrows(VerificationException.class, () -> new LegacyErpFederation(
+        assertThrows(FederationCreationException.class, () -> new LegacyErpFederation(
             federationMembersFromPks,
             creationTime,
             1,

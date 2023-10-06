@@ -287,7 +287,7 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationOnlyBtcKeys
-    public static Federation deserializeStandardMultisigFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
+    public static StandardMultisigFederation deserializeStandardMultisigFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
         return deserializeStandardMultisigFederationWithDeserializer(data, networkParameters,
                 (pubKeyBytes -> FederationMember.getFederationMemberFromKey(BtcECKey.fromPublicOnly(pubKeyBytes))));
     }
