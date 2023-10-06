@@ -27,31 +27,17 @@ public class VmConfig {
     private final boolean vmTrace;
     private final int vmTraceOptions;
     private final int vmTraceInitStorageLimit;
-    private final int dumpBlock;
-    private final String dumpStyle;
     private final byte chainId;
 
     public VmConfig(
             boolean vmTrace,
             int vmTraceOptions,
             int vmTraceInitStorageLimit,
-            int dumpBlock,
-            String dumpStyle,
             byte chainId) {
         this.vmTrace = vmTrace;
         this.vmTraceOptions = vmTraceOptions;
         this.vmTraceInitStorageLimit = vmTraceInitStorageLimit;
-        this.dumpBlock = dumpBlock;
-        this.dumpStyle = dumpStyle;
         this.chainId = chainId;
-    }
-
-    public int dumpBlock() {
-        return dumpBlock;
-    }
-
-    public String dumpStyle() {
-        return dumpStyle;
     }
 
     public boolean vmTrace() {
