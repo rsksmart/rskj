@@ -60,12 +60,12 @@ public abstract class ErpFederation extends Federation {
             throw new VerificationException(message);
         }
 
-        long max_csv_value = ErpFederationRedeemScriptParser.MAX_CSV_VALUE;
-        if (activationDelay <= 0 || activationDelay > max_csv_value) {
+        long maxCsvValue = ErpFederationRedeemScriptParser.MAX_CSV_VALUE;
+        if (activationDelay <= 0 || activationDelay > maxCsvValue) {
             String message = String.format(
                 "Provided csv value %d must be larger than 0 and lower than %d",
                 activationDelay,
-                max_csv_value
+                maxCsvValue
             );
             throw new VerificationException(message);
         }

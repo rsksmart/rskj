@@ -21,7 +21,6 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 
@@ -58,7 +57,8 @@ public abstract class Federation {
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
 
-        //validateFederationValues();
+        // TODO
+        // validateFederationValues();
     }
 
     public List<FederationMember> getMembers() {
@@ -162,7 +162,8 @@ public abstract class Federation {
         return getAddress().hashCode();
     }
 
-/*    private void validateFederationValues() {
+/*  TODO implement this check
+    private void validateFederationValues() {
         if (creationBlockNumber <= 0) {
             String message = String.format(
                 "Provided creation block number %d must be larger than 0",
