@@ -238,7 +238,7 @@ class BridgeTest {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(false).when(activations).isActive(eq(RSKIP199), anyLong());
 
-        Federation activeFederation = new Federation(
+        Federation activeFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,
@@ -284,7 +284,7 @@ class BridgeTest {
         List<BtcECKey> federationKeys = Arrays.asList(fed1Key, new BtcECKey(), new BtcECKey());
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = new Federation(
+        Federation activeFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithKeys(federationKeys),
             Instant.ofEpochMilli(1000),
             0L,

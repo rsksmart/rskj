@@ -134,8 +134,8 @@ class PowpegMigrationTest {
 
         Federation originalPowpeg;
         switch (oldPowPegFederationType) {
-            case erp:
-                originalPowpeg = new ErpFederation(
+            case legacyErp:
+                originalPowpeg = new LegacyErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
                     0,
@@ -145,7 +145,7 @@ class PowpegMigrationTest {
                     activations
                 );
                 break;
-            case p2sh:
+            case p2shErp:
                 originalPowpeg = new P2shErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
@@ -204,10 +204,10 @@ class PowpegMigrationTest {
         Federation newPowPeg = argumentCaptor.getValue();
         assertEquals(newPowPegAddress, newPowPeg.getAddress());
         switch (newPowPegFederationType) {
-            case erp:
-                assertSame(ErpFederation.class, newPowPeg.getClass());
+            case legacyErp:
+                assertSame(LegacyErpFederation.class, newPowPeg.getClass());
                 break;
-            case p2sh:
+            case p2shErp:
                 assertSame(P2shErpFederation.class, newPowPeg.getClass());
                 // TODO: CHECK REDEEMSCRIPT
                 break;
@@ -588,17 +588,17 @@ class PowpegMigrationTest {
         Script lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScriptOptional.get();
 
         if (activations.isActive(ConsensusRule.RSKIP377)){
-            if (oldPowPegFederationType == FederationType.erp || oldPowPegFederationType == FederationType.p2sh){
+            if (oldPowPegFederationType == FederationType.legacyErp || oldPowPegFederationType == FederationType.p2shErp){
                 assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
             }
-            assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+            assertEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
         } else {
-            if (oldPowPegFederationType == FederationType.erp || oldPowPegFederationType == FederationType.p2sh){
+            if (oldPowPegFederationType == FederationType.legacyErp || oldPowPegFederationType == FederationType.p2shErp){
                 assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
-                assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+                assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
             } else {
                 assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
-                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
             }
         }
     }
@@ -620,10 +620,10 @@ class PowpegMigrationTest {
                 Script inputStandardRedeemScript = RedeemScriptParserFactory.get(result.getChunks()).extractStandardRedeemScript();
 
                 Optional<Federation> spendingFederationOptional = Optional.empty();
-                if (inputStandardRedeemScript.equals(activeFederation.getStandardRedeemScript())) {
+                if (inputStandardRedeemScript.equals(activeFederation instanceof ErpFederation ? ((ErpFederation) activeFederation).getStandardRedeemScript() : activeFederation.getRedeemScript())) {
                     spendingFederationOptional = Optional.of(activeFederation);
                 } else if (retiringFederation != null &&
-                    inputStandardRedeemScript.equals(retiringFederation.getStandardRedeemScript())) {
+                    inputStandardRedeemScript.equals(retiringFederation instanceof ErpFederation ? ((ErpFederation) retiringFederation).getStandardRedeemScript() : retiringFederation.getRedeemScript()) ) {
                     spendingFederationOptional = Optional.of(retiringFederation);
                 } else {
                     fail("pegout scriptsig does not match any Federation");
@@ -1321,11 +1321,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.erp,
+            FederationType.legacyErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.erp,
+            FederationType.legacyErp,
             newPowpegKeys,
             newPowpegAddress,
             bridgeConstants,
@@ -1347,11 +1347,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.erp,
+            FederationType.legacyErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2sh,
+            FederationType.p2shErp,
             getMainnetPowpegKeys(), // Using same keys as the original powpeg, should result in a different address since it will create a p2sh erp federation
             newPowpegAddress,
             bridgeConstants,
@@ -1393,11 +1393,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2sh,
+            FederationType.p2shErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2sh,
+            FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
             bridgeConstants,
@@ -1458,11 +1458,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2sh,
+            FederationType.p2shErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2sh,
+            FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
             bridgeConstants,
@@ -1506,11 +1506,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2sh,
+            FederationType.p2shErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2sh,
+            FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
             bridgeConstants,
@@ -1520,8 +1520,8 @@ class PowpegMigrationTest {
     }
 
     private enum FederationType {
-        erp,
-        p2sh,
-        standard
+        legacyErp,
+        p2shErp,
+        standardMultisig
     }
 }

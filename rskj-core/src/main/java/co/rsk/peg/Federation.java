@@ -29,17 +29,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
  * Immutable representation of an RSK Federation in the context of
  * a specific BTC network.
  *
- * @author Ariel Mendelzon
  */
 
-public class Federation {
+public abstract class Federation {
     protected final List<FederationMember> members;
     protected final Instant creationTime;
     protected final long creationBlockNumber;
@@ -49,7 +47,7 @@ public class Federation {
     protected Script p2shScript;
     protected Address address;
 
-    public Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber,  NetworkParameters btcParams) {
+    protected Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber, NetworkParameters btcParams) {
         // Sorting members ensures same order of federation members for same members
         // Immutability provides protection against unwanted modification, thus making the Federation instance
         // effectively immutable
@@ -76,7 +74,7 @@ public class Federation {
     }
 
     public int getNumberOfSignaturesRequired() {
-        return members.size() / 2 + 1;
+        return members.size() / 2 +1 ;
     }
 
     public Instant getCreationTime() {
@@ -91,28 +89,13 @@ public class Federation {
         return creationBlockNumber;
     }
 
-    public Script getRedeemScript() {
-        if (redeemScript == null) {
-            redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
-        }
-
-        return redeemScript;
-    }
-
-    public Script getStandardRedeemScript() {
-        return getRedeemScript();
-    }
-
+    public abstract Script getRedeemScript();
     public Script getP2SHScript() {
         if (p2shScript == null) {
-            p2shScript = ScriptBuilder.createP2SHOutputScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
+            p2shScript = ScriptBuilder.createP2SHOutputScript(getRedeemScript());
         }
 
         return p2shScript;
-    }
-
-    public Script getStandardP2SHScript() {
-        return getP2SHScript();
     }
 
     public Address getAddress() {
@@ -154,7 +137,7 @@ public class Federation {
 
     @Override
     public String toString() {
-        return String.format("%d of %d signatures federation", getNumberOfSignaturesRequired(), members.size());
+        return String.format("Got %d of %d signatures federation with address %s", getNumberOfSignaturesRequired(), members.size(), getAddress());
     }
 
     @Override
@@ -168,25 +151,11 @@ public class Federation {
         }
 
         Federation otherFederation = (Federation) other;
-
-        return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
-            this.getSize() == otherFederation.getSize() &&
-            this.getCreationTime().equals(otherFederation.getCreationTime()) &&
-            this.creationBlockNumber == otherFederation.creationBlockNumber &&
-            this.btcParams.equals(otherFederation.btcParams) &&
-            this.members.equals(otherFederation.members) &&
-            this.getRedeemScript().equals(otherFederation.getRedeemScript());
+        return this.getAddress().equals(otherFederation.getAddress());
     }
 
     @Override
     public int hashCode() {
-        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
-        // well-defined hashCode()s
-        return Objects.hash(
-            getCreationTime(),
-            this.creationBlockNumber,
-            getNumberOfSignaturesRequired(),
-            getBtcPublicKeys()
-        );
+        return getAddress().hashCode();
     }
 }

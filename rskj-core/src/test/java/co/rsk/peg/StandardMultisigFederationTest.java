@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptOpCodes;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
@@ -29,23 +30,21 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mockStatic;
 
-@ExtendWith(MockitoExtension.class)
-class FederationTest {
+class StandardMultisigFederationTest {
+
+    private List<BtcECKey> btcPublicKeys;
     private Federation federation;
     private List<BtcECKey> sortedPublicKeys;
     private List<ECKey> rskPubKeys;
@@ -53,24 +52,25 @@ class FederationTest {
 
     @BeforeEach
     void createFederation() {
-        federation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
+        btcPublicKeys = Arrays.asList(
+            BtcECKey.fromPublicOnly(Hex.decode("023f0283519167f1603ba92b060146baa054712b938a61f35605ba08773142f4da")),
+            BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da")),
+            BtcECKey.fromPublicOnly(Hex.decode("031174d64db12dc2dcdc8064a53a4981fa60f4ee649a954e01bcae221fc60777a2")),
+            BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09")),
+            BtcECKey.fromPublicOnly(Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9")));
+
+        federation = new StandardMultisigFederation(
+            FederationTestUtils.getFederationMembersWithKeys(btcPublicKeys),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        sortedPublicKeys = Arrays.stream(new BtcECKey[]{
-                BtcECKey.fromPrivate(BigInteger.valueOf(100)),
-                BtcECKey.fromPrivate(BigInteger.valueOf(200)),
-                BtcECKey.fromPrivate(BigInteger.valueOf(300)),
-                BtcECKey.fromPrivate(BigInteger.valueOf(400)),
-                BtcECKey.fromPrivate(BigInteger.valueOf(500)),
-                BtcECKey.fromPrivate(BigInteger.valueOf(600)),
-        }).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        sortedPublicKeys = btcPublicKeys.stream()
+            .sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        rskPubKeys = Stream.of(101, 201, 301, 401, 501, 601)
-                .map(i -> ECKey.fromPrivate(BigInteger.valueOf(i)))
+        rskPubKeys = sortedPublicKeys.stream()
+                .map(btcECKey -> ECKey.fromPublicOnly(btcECKey.getPubKey()))
                 .collect(Collectors.toList());
 
         rskAddresses = rskPubKeys
@@ -106,8 +106,8 @@ class FederationTest {
                 calls.add(1);
                 int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
                 List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
-                Assertions.assertEquals(4, numberOfSignaturesRequired);
-                Assertions.assertEquals(6, publicKeys.size());
+                Assertions.assertEquals(3, numberOfSignaturesRequired);
+                Assertions.assertEquals(5, publicKeys.size());
                 for (int i = 0; i < sortedPublicKeys.size(); i++) {
                     Assertions.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
                             publicKeys.get(i).getPubKey());
@@ -121,52 +121,20 @@ class FederationTest {
     }
 
     @Test
-    void P2SHScript() {
-        final List<Integer> calls = new ArrayList<>();
-        try (MockedStatic<ScriptBuilder> scriptBuilderMocked = mockStatic(ScriptBuilder.class)) {
-            scriptBuilderMocked.when(() -> ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
-                calls.add(0);
-                int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
-                List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
-                Assertions.assertEquals(4, numberOfSignaturesRequired);
-                Assertions.assertEquals(6, publicKeys.size());
-                for (int i = 0; i < sortedPublicKeys.size(); i++) {
-                    Assertions.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
-                            publicKeys.get(i).getPubKey());
-                }
-                return new Script(new byte[]{(byte) 0xaa});
-            });
-            Assertions.assertArrayEquals(federation.getP2SHScript().getProgram(), new byte[]{(byte) 0xaa});
-            // Make sure the script creation happens only once
-            Assertions.assertEquals(1, calls.size());
-        }
+    void getP2SHScript() {
+        ScriptBuilder p2shScriptBuilder = new ScriptBuilder();
+        p2shScriptBuilder.op(ScriptOpCodes.OP_HASH160);
+        p2shScriptBuilder.data(Hex.decode("57f76bf3ab818811c740929ac7a5e3ef8c7a34b9"));
+        p2shScriptBuilder.op(ScriptOpCodes.OP_EQUAL);
+
+        Script p2shScript = p2shScriptBuilder.build();
+
+        Assertions.assertEquals(federation.getP2SHScript(), p2shScript);
     }
 
     @Test
-    void Address() {
-        // Since we can't mock both Address and ScriptBuilder at the same time (due to PowerMockito limitations)
-        // we use a well known P2SH and its corresponding address
-        // and just mock the ScriptBuilder
-        // a914896ed9f3446d51b5510f7f0b6ef81b2bde55140e87 => 2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p
-        final List<Integer> calls = new ArrayList<>();
-        try (MockedStatic<ScriptBuilder> scriptBuilderMocked = mockStatic(ScriptBuilder.class)) {
-            scriptBuilderMocked.when(() -> ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
-                calls.add(0);
-                int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
-                List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
-                Assertions.assertEquals(4, numberOfSignaturesRequired);
-                Assertions.assertEquals(6, publicKeys.size());
-                for (int i = 0; i < sortedPublicKeys.size(); i++) {
-                    Assertions.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
-                            publicKeys.get(i).getPubKey());
-                }
-                return new Script(Hex.decode("a914896ed9f3446d51b5510f7f0b6ef81b2bde55140e87"));
-            });
-
-            Assertions.assertEquals("2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p", federation.getAddress().toBase58());
-            // Make sure the address creation happens only once
-            Assertions.assertEquals(1, calls.size());
-        }
+    void getAddress() {
+        Assertions.assertEquals("2N1GMB8gxHYR5HLPSRgf9CJ9Lunjb9CTnKB", federation.getAddress().toBase58());
     }
 
     @Test
@@ -178,7 +146,7 @@ class FederationTest {
 
     @Test
     void testEquals_differentNumberOfMembers() {
-        Federation otherFederation = new Federation(
+        Federation otherFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
@@ -189,7 +157,7 @@ class FederationTest {
 
     @Test
     void testEquals_differentCreationTime() {
-        Federation otherFederation = new Federation(
+        Federation otherFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
                 0L,
@@ -200,7 +168,7 @@ class FederationTest {
 
     @Test
     void testEquals_differentCreationBlockNumber() {
-        Federation otherFederation = new Federation(
+        Federation otherFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
                 1L,
@@ -211,7 +179,7 @@ class FederationTest {
 
     @Test
     void testEquals_differentNetworkParameters() {
-        Federation otherFederation = new Federation(
+        Federation otherFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
@@ -225,7 +193,7 @@ class FederationTest {
         List<FederationMember> members = FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500);
 
         members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(620))));
-        Federation otherFederation = new Federation(
+        Federation otherFederation = new StandardMultisigFederation(
                 members,
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
@@ -234,7 +202,7 @@ class FederationTest {
 
         members.remove(members.size()-1);
         members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(620))));
-        Federation yetOtherFederation = new Federation(
+        Federation yetOtherFederation = new StandardMultisigFederation(
                 members,
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
@@ -248,11 +216,16 @@ class FederationTest {
 
     @Test
     void testEquals_same() {
-        Federation otherFederation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        Federation otherFederation = new StandardMultisigFederation(
+            FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(
+                BtcECKey.fromPublicOnly(Hex.decode("023f0283519167f1603ba92b060146baa054712b938a61f35605ba08773142f4da")),
+                BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da")),
+                BtcECKey.fromPublicOnly(Hex.decode("031174d64db12dc2dcdc8064a53a4981fa60f4ee649a954e01bcae221fc60777a2")),
+                BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09")),
+                BtcECKey.fromPublicOnly(Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9")))),
+            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Assertions.assertEquals(federation, otherFederation);
     }
@@ -285,7 +258,7 @@ class FederationTest {
 
     @Test
     void testToString() {
-        Assertions.assertEquals("4 of 6 signatures federation", federation.toString());
+        Assertions.assertEquals("Got 3 of 5 signatures federation with address 2N1GMB8gxHYR5HLPSRgf9CJ9Lunjb9CTnKB", federation.toString());
     }
 
     @Test

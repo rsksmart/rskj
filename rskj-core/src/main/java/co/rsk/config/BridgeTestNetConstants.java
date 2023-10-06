@@ -22,8 +22,8 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import co.rsk.peg.StandardMultisigFederation;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -61,7 +61,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // Currently set to: Monday, October 8, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1538967600l);
 
-        genesisFederation = new Federation(
+        genesisFederation = new StandardMultisigFederation(
             federationMembers,
             genesisFederationAddressCreatedAt,
             1L,

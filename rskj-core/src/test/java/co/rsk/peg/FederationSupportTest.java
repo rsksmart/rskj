@@ -165,7 +165,7 @@ class FederationSupportTest {
         ECKey rskKey1 = new ECKey();
         ECKey mstKey1 = new ECKey();
 
-        Federation theFederation = new Federation(
+        Federation theFederation = new StandardMultisigFederation(
             Arrays.asList(
                 new FederationMember(btcKey0, rskKey0, mstKey0),
                 new FederationMember(btcKey1, rskKey1, mstKey1)
@@ -235,7 +235,7 @@ class FederationSupportTest {
     }
 
     private Federation getNewFakeFederation(long creationBlockNumber) {
-        return new Federation(
+        return new StandardMultisigFederation(
             Collections.emptyList(), Instant.ofEpochMilli(123),
             creationBlockNumber, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );

@@ -24,8 +24,8 @@ import org.mockito.verification.VerificationMode;
 
 class BridgeStorageProviderFederationTests {
 
-    private static final int FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
-    private static final int ERP_FEDERATION_FORMAT_VERSION = 2000;
+    private static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
+    private static final int LEGACY_ERP_FEDERATION_FORMAT_VERSION = 2000;
     private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
 
     private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
@@ -43,18 +43,18 @@ class BridgeStorageProviderFederationTests {
 
     @Test
     void getNewFederation_should_return_erp_federation() {
-        Federation federation = createFederation(ERP_FEDERATION_FORMAT_VERSION);
+        Federation federation = createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION);
         testGetNewFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
+            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
             federation
         );
     }
 
     @Test
     void getNewFederation_should_return_legacy_federation() {
-        Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
+        Federation federation = createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY);
         testGetNewFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
             federation
         );
     }
@@ -62,12 +62,12 @@ class BridgeStorageProviderFederationTests {
     @Test
     void getNewFederation_should_return_null() {
         testGetNewFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
             null
         );
 
         testGetNewFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
+            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
             null
         );
 
@@ -148,18 +148,18 @@ class BridgeStorageProviderFederationTests {
 
     @Test
     void getOldFederation_should_return_erp_federation() {
-        Federation federation = createFederation(ERP_FEDERATION_FORMAT_VERSION);
+        Federation federation = createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION);
         testGetOldFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
+            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
             federation
         );
     }
 
     @Test
     void getOldFederation_should_return_legacy_fed() {
-        Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
+        Federation federation = createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY);
         testGetOldFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
             federation
         );
     }
@@ -167,12 +167,12 @@ class BridgeStorageProviderFederationTests {
     @Test
     void getOldFederation_should_return_null() {
         testGetOldFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
             null
         );
 
         testGetOldFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
+            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
             null
         );
 
@@ -244,13 +244,13 @@ class BridgeStorageProviderFederationTests {
     @Test
     void saveNewFederation_before_RSKIP123_should_allow_to_save_any_fed_type() throws IOException {
         testSaveNewFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY)
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
+            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY)
         );
 
         testSaveNewFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(ERP_FEDERATION_FORMAT_VERSION)
+            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
         );
 
         testSaveNewFederation(
@@ -263,8 +263,8 @@ class BridgeStorageProviderFederationTests {
     void saveNewFederation_after_RSKIP123_should_save_legacy_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveNewFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY)
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
+            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY)
         );
     }
 
@@ -275,8 +275,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP201
         ).forBlock(0);
         testSaveNewFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY)
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
+            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY)
         );
     }
 
@@ -288,8 +288,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP353
         ).forBlock(0);
         testSaveNewFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY)
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
+            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY)
         );
     }
 
@@ -300,8 +300,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP201
         ).forBlock(0);
         testSaveNewFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(ERP_FEDERATION_FORMAT_VERSION)
+            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
         );
     }
 
@@ -313,8 +313,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP353
         ).forBlock(0);
         testSaveNewFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(ERP_FEDERATION_FORMAT_VERSION)
+            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
         );
     }
 
@@ -417,13 +417,13 @@ class BridgeStorageProviderFederationTests {
     void saveOldFederation_before_RSKIP123_should_allow_to_save_any_fed_type() throws IOException {
         activations = ActivationConfigsForTest.only().forBlock(0);
         testSaveOldFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY)
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
+            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY)
         );
 
         testSaveOldFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(ERP_FEDERATION_FORMAT_VERSION)
+            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
         );
 
         testSaveOldFederation(
@@ -436,8 +436,8 @@ class BridgeStorageProviderFederationTests {
     void saveOldFederation_after_RSKIP123_should_save_legacy_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveOldFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY)
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
+            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY)
         );
     }
 
@@ -448,8 +448,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP201
         ).forBlock(0);
         testSaveOldFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY)
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
+            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY)
         );
     }
 
@@ -461,8 +461,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP353
         ).forBlock(0);
         testSaveOldFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY)
+            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY,
+            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY)
         );
     }
 
@@ -473,8 +473,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP201
         ).forBlock(0);
         testSaveOldFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(ERP_FEDERATION_FORMAT_VERSION)
+            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
         );
     }
 
@@ -486,8 +486,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP353
         ).forBlock(0);
         testSaveOldFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(ERP_FEDERATION_FORMAT_VERSION)
+            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
         );
     }
 
@@ -551,7 +551,7 @@ class BridgeStorageProviderFederationTests {
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             BridgeStorageIndexKey.OLD_FEDERATION_FORMAT_VERSION.getKey(),
-            BridgeSerializationUtils.serializeInteger(FEDERATION_FORMAT_VERSION_MULTIKEY)
+            BridgeSerializationUtils.serializeInteger(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION_MULTIKEY)
         );
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
@@ -613,8 +613,8 @@ class BridgeStorageProviderFederationTests {
                     bridgeConstantsRegtest.getErpFedActivationDelay(),
                     activations
                 );
-            case ERP_FEDERATION_FORMAT_VERSION:
-                return new ErpFederation(
+            case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
+                return new LegacyErpFederation(
                     members,
                     Instant.now(),
                     1L,
@@ -624,7 +624,7 @@ class BridgeStorageProviderFederationTests {
                     activations
                 );
             default:
-                return new Federation(
+                return new StandardMultisigFederation(
                     members,
                     Instant.now(),
                     1L,

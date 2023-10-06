@@ -73,7 +73,7 @@ class P2shErpFederationTest {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
 
         // Create a legacy powpeg and then a p2sh valid one. Both of them should produce the same standard redeem script
-        Federation legacyFed = new Federation(
+        StandardMultisigFederation legacyFed = new StandardMultisigFederation(
                 members,
                 creationTime,
                 creationBlock,
