@@ -446,27 +446,16 @@ public class BridgeSupport {
     }
 
     protected PegTxType getTransactionType(BtcTransaction btcTx) {
-        Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
-
-        /************************************************************************/
-        /** Special case to migrate funds from an old federation               **/
-        /************************************************************************/
-        if (activations.isActive(ConsensusRule.RSKIP199) &&
-            PegUtilsLegacy.txIsFromOldFederation(
-                btcTx,
-                Address.fromBase58(bridgeConstants.getBtcParams(), bridgeConstants.getOldFederationAddress())
-            )
-        ) {
-            logger.debug("[getTransactionType][btc tx {}] is from the old federation, treated as a migration", btcTx.getHash());
-            return PegTxType.PEGOUT_OR_MIGRATION;
-        }
-
         Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
+        Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
+        Address oldFederation = Address.fromBase58(bridgeConstants.getBtcParams(), bridgeConstants.getOldFederationAddress());;
+
         return PegUtilsLegacy.getTransactionType(
             btcTx,
             getActiveFederation(),
             getRetiringFederation(),
             retiredFederationP2SHScript,
+            oldFederation,
             activations,
             minimumPeginTxValue,
             btcContext

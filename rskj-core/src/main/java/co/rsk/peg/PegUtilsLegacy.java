@@ -31,8 +31,8 @@ import java.util.Optional;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 
 /**
- * @deprecated Methods included in this class are to be used only prior to the latest HF activation
- * Use instead methods in {@link co.rsk.peg.PegUtils}
+ * @deprecated Methods included in this class should not be used anymore
+ * Instead use methods in {@link co.rsk.peg.PegUtils}
  */
 @Deprecated
 public class PegUtilsLegacy {
@@ -291,6 +291,7 @@ public class PegUtilsLegacy {
      * @param activeFederation
      * @param retiringFederation
      * @param retiredFederationP2SHScript
+     * @param oldFederation
      * @param activations
      * @param minimumPeginTxValue
      * @param btcContext
@@ -302,10 +303,24 @@ public class PegUtilsLegacy {
         Federation activeFederation,
         Federation retiringFederation,
         Script retiredFederationP2SHScript,
+        Address oldFederation,
         ActivationConfig.ForBlock activations,
         Coin minimumPeginTxValue,
         Context btcContext
     ) {
+        /************************************************************************/
+        /** Special case to migrate funds from an old federation               **/
+        /************************************************************************/
+        if (activations.isActive(ConsensusRule.RSKIP199) &&
+                PegUtilsLegacy.txIsFromOldFederation(
+                    btcTx,
+                    oldFederation
+                )
+        ) {
+            logger.debug("[getTransactionType][btc tx {}] is from the old federation, treated as a migration", btcTx.getHash());
+            return PegTxType.PEGOUT_OR_MIGRATION;
+        }
+
         List<Federation> liveFederations = new ArrayList<>();
         liveFederations.add(activeFederation);
         if (retiringFederation != null) {
