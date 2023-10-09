@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.wallet.Wallet;
@@ -34,5 +35,9 @@ public class PegUtils {
         } else {
             return PegTxType.UNKNOWN;
         }
+    }
+
+    public static boolean isAnyUTXOAmountBelowMinimum(Coin minimumPegInTxValue, BtcTransaction btcTx, Wallet wallet) {
+        return PegUtilsLegacy.isAnyUTXOAmountBelowMinimum(minimumPegInTxValue, btcTx, wallet);
     }
 }

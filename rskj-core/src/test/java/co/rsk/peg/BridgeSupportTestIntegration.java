@@ -1509,9 +1509,9 @@ public class BridgeSupportTestIntegration {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(mockBtcBlockStore);
 
-        try (MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class, CALLS_REAL_METHODS)) {
-            bridgeUtilsMocked.when(() ->
-                    BridgeUtils.isValidPegInTx(
+        try (MockedStatic<PegUtilsLegacy> pegUtilsLegacyMocked = mockStatic(PegUtilsLegacy.class, CALLS_REAL_METHODS)) {
+            pegUtilsLegacyMocked.when(() ->
+                    PegUtilsLegacy.isValidPegInTx(
                             any(BtcTransaction.class),
                             anyList(),
                             nullable(Script.class),
@@ -1519,14 +1519,14 @@ public class BridgeSupportTestIntegration {
                             any(Coin.class),
                             any(ActivationConfig.ForBlock.class)
                     )).thenReturn(false);
-            bridgeUtilsMocked.when(() ->
-                    BridgeUtils.isMigrationTx(
+            pegUtilsLegacyMocked.when(() ->
+                      PegUtilsLegacy.isMigrationTx(
                             any(BtcTransaction.class),
                             any(Federation.class),
                             any(Federation.class),
                             isNull(),
                             any(Context.class),
-                            any(BridgeConstants.class),
+                            any(Coin.class),
                             any(ActivationConfig.ForBlock.class))
             ).thenReturn(true);
 
@@ -1552,7 +1552,7 @@ public class BridgeSupportTestIntegration {
             assertThat(changeUtxo.getValue(), is(changeValue));
             assertThat(changeUtxo.getScript().getToAddress(params), is(retiringFederationAddress));
 
-            bridgeUtilsMocked.verify(() -> BridgeUtils.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants, activations));
+            pegUtilsLegacyMocked.verify(() -> PegUtilsLegacy.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants.getMinimumPeginTxValue(activations), activations));
         }
     }
 

@@ -442,61 +442,24 @@ public class BridgeSupport {
     }
 
     protected PegTxType getTransactionType(BtcTransaction btcTx) {
+        Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
         Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 
-        /************************************************************************/
-        /** Special case to migrate funds from an old federation               **/
-        /************************************************************************/
-        if (activations.isActive(ConsensusRule.RSKIP199) && txIsFromOldFederation(btcTx)) {
-            logger.debug("[getTransactionType][btc tx {}] is from the old federation, treated as a migration", btcTx.getHash());
-            return PegTxType.PEGOUT_OR_MIGRATION;
-        }
+        Address oldFederationAddress = Address.fromBase58(
+            bridgeConstants.getBtcParams(),
+            bridgeConstants.getOldFederationAddress()
+        );
 
-        if (BridgeUtils.isValidPegInTx(
-            btcTx,
-            getLiveFederations(),
-            retiredFederationP2SHScript,
-            btcContext,
-            bridgeConstants.getMinimumPeginTxValue(activations),
-            activations
-        )) {
-            logger.debug("[getTransactionType][btc tx {}] is a peg-in", btcTx.getHash());
-            return PegTxType.PEGIN;
-        }
-
-        if (BridgeUtils.isMigrationTx(
+        return PegUtilsLegacy.getTransactionType(
             btcTx,
             getActiveFederation(),
             getRetiringFederation(),
             retiredFederationP2SHScript,
-            btcContext,
-            bridgeConstants,
-            activations
-        )) {
-            logger.debug("[getTransactionType][btc tx {}] is a migration transaction", btcTx.getHash());
-            return PegTxType.PEGOUT_OR_MIGRATION;
-        }
-
-        if (BridgeUtils.isPegOutTx(btcTx, getLiveFederations(), activations)) {
-            logger.debug("[getTransactionType][btc tx {}] is a peg-out", btcTx.getHash());
-            return PegTxType.PEGOUT_OR_MIGRATION;
-        }
-
-        logger.debug("[getTransactionType][btc tx {}] is neither a peg-in, peg-out, nor migration", btcTx.getHash());
-        return PegTxType.UNKNOWN;
-    }
-
-    private boolean txIsFromOldFederation(BtcTransaction btcTx) {
-        Address oldFederationAddress = Address.fromBase58(bridgeConstants.getBtcParams(), bridgeConstants.getOldFederationAddress());
-        Script p2shScript = ScriptBuilder.createP2SHOutputScript(oldFederationAddress.getHash160());
-
-        for (int i = 0; i < btcTx.getInputs().size(); i++) {
-            if (BridgeUtils.scriptCorrectlySpendsTx(btcTx, i, p2shScript)) {
-                return true;
-            }
-        }
-
-        return false;
+            oldFederationAddress,
+            activations,
+            minimumPeginTxValue,
+            btcContext
+        );
     }
 
     protected void processPegIn(
