@@ -2091,7 +2091,7 @@ class BridgeUtilsTest {
     void testIsPegOutTx_invalidRedeemScript() {
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Script invalidRedeemScript = ScriptBuilder.createRedeemScript(2, Arrays.asList(new BtcECKey(), new BtcECKey()));
+        Script invalidRedeemScript = ScriptBuilder.createStandardMultisigRedeemScript(2, Arrays.asList(new BtcECKey(), new BtcECKey()));
 
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
