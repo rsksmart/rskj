@@ -445,10 +445,10 @@ public class BridgeSupport {
         Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
         Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 
-        Address oldFederationAddress = null;
-        if (activations.isActive(ConsensusRule.RSKIP199)) {
-            oldFederationAddress = Address.fromBase58(bridgeConstants.getBtcParams(), bridgeConstants.getOldFederationAddress());
-        }
+        Address oldFederationAddress = Address.fromBase58(
+            bridgeConstants.getBtcParams(),
+            bridgeConstants.getOldFederationAddress()
+        );
 
         return PegUtilsLegacy.getTransactionType(
             btcTx,
