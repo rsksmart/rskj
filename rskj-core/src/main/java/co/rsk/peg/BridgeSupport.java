@@ -444,14 +444,18 @@ public class BridgeSupport {
     protected PegTxType getTransactionType(BtcTransaction btcTx) {
         Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
         Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
-        Address oldFederation = Address.fromBase58(bridgeConstants.getBtcParams(), bridgeConstants.getOldFederationAddress());;
+
+        Address oldFederationAddress = null;
+        if (activations.isActive(ConsensusRule.RSKIP199)) {
+            oldFederationAddress = Address.fromBase58(bridgeConstants.getBtcParams(), bridgeConstants.getOldFederationAddress());
+        }
 
         return PegUtilsLegacy.getTransactionType(
             btcTx,
             getActiveFederation(),
             getRetiringFederation(),
             retiredFederationP2SHScript,
-            oldFederation,
+            oldFederationAddress,
             activations,
             minimumPeginTxValue,
             btcContext
