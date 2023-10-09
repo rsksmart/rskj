@@ -72,9 +72,8 @@ public class SnapshotProcessor {
         this.stateChunkSize = BigInteger.ZERO;
         // get more than one peer, use the peer queue
         // TODO(snap-poc) deal with multiple peers algorithm here
-        Peer peer = peers.get(0);
         logger.debug("start snapshot sync");
-        requestSnapStatus(peer);
+        requestSnapStatus(peers.get(0));
     }
 
     // TODO(snap-poc) should be called on errors too
@@ -324,10 +323,12 @@ public class SnapshotProcessor {
             logger.debug("no more tasks");
         }
     }
+
     private int chunksProcessed = 0;
     private int currentPeerIndex = 0;
+
     private void continueWork(Peer currentPeer) {
-        if (chunksProcessed >= 100) {
+        if (chunksProcessed >= 10) {
             currentPeer = getNextPeer();
             chunksProcessed = 0;
         }
@@ -340,8 +341,11 @@ public class SnapshotProcessor {
             logger.debug("snapshot: no more peers");
             return null;
         }
-        Peer nextPeer = peers.get(currentPeerIndex);
+        logger.debug("snapshot: getting next peer. Current peer index: {}", currentPeerIndex);
         currentPeerIndex = (currentPeerIndex + 1) % peers.size();
+        Peer nextPeer = peers.get(currentPeerIndex);
+        logger.debug("got next peer. new peer index: {}", currentPeerIndex);
+
         return nextPeer;
     }
 }
