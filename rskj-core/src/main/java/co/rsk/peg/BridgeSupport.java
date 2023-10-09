@@ -17,6 +17,15 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP377;
+
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.AddressFormatException;
 import co.rsk.bitcoinj.core.BtcBlock;
@@ -57,7 +66,12 @@ import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.utils.*;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
+import co.rsk.peg.utils.RejectedPeginReason;
+import co.rsk.peg.utils.RejectedPegoutReason;
+import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -78,7 +92,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -97,18 +110,8 @@ import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.TransferInvoke;
-import org.ethereum.vm.trace.Op;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP377;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
