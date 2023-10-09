@@ -2,7 +2,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -55,9 +54,9 @@ public abstract class ErpFederation extends Federation {
     }
 
     private void validateErpFederationValues() {
-        if (erpPubKeys == null) {
+        if (erpPubKeys == null || erpPubKeys.isEmpty()) {
             String message = "Provided erpPubKeys is empty";
-            throw new VerificationException(message);
+            throw new FederationCreationException(message);
         }
 
         long maxCsvValue = ErpFederationRedeemScriptParser.MAX_CSV_VALUE;
