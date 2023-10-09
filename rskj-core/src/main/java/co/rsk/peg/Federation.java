@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -74,7 +75,7 @@ public abstract class Federation {
     }
 
     public int getNumberOfSignaturesRequired() {
-        return members.size() / 2 +1 ;
+        return members.size() / 2 + 1;
     }
 
     public Instant getCreationTime() {
@@ -90,6 +91,7 @@ public abstract class Federation {
     }
 
     public abstract Script getRedeemScript();
+
     public Script getP2SHScript() {
         if (p2shScript == null) {
             p2shScript = ScriptBuilder.createP2SHOutputScript(getRedeemScript());
@@ -110,20 +112,20 @@ public abstract class Federation {
         return members.size();
     }
 
-    public Integer getBtcPublicKeyIndex(BtcECKey key) {
+    public Optional<Integer> getBtcPublicKeyIndex(BtcECKey key) {
         for (int i = 0; i < members.size(); i++) {
             // note that this comparison doesn't take into account
             // key compression
             if (Arrays.equals(key.getPubKey(), members.get(i).getBtcPublicKey().getPubKey())) {
-                return i;
+                return Optional.of(i);
             }
         }
 
-        return null;
+        return Optional.empty();
     }
 
     public boolean hasBtcPublicKey(BtcECKey key) {
-        return getBtcPublicKeyIndex(key) != null;
+        return getBtcPublicKeyIndex(key).isPresent();
     }
 
     public boolean hasMemberWithRskAddress(byte[] address) {
@@ -137,7 +139,12 @@ public abstract class Federation {
 
     @Override
     public String toString() {
-        return String.format("Got %d of %d signatures federation with address %s", getNumberOfSignaturesRequired(), members.size(), getAddress());
+        return String.format(
+            "Got %d of %d signatures federation with address %s",
+            getNumberOfSignaturesRequired(),
+            members.size(),
+            getAddress()
+        );
     }
 
     @Override
