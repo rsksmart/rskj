@@ -291,7 +291,7 @@ public class PegUtilsLegacy {
      * @param activeFederation
      * @param retiringFederation
      * @param retiredFederationP2SHScript
-     * @param oldFederation
+     * @param oldFederationAddress
      * @param activations
      * @param minimumPeginTxValue
      * @param btcContext
@@ -303,7 +303,7 @@ public class PegUtilsLegacy {
         Federation activeFederation,
         Federation retiringFederation,
         Script retiredFederationP2SHScript,
-        Address oldFederation,
+        Address oldFederationAddress,
         ActivationConfig.ForBlock activations,
         Coin minimumPeginTxValue,
         Context btcContext
@@ -314,7 +314,7 @@ public class PegUtilsLegacy {
         if (activations.isActive(ConsensusRule.RSKIP199) &&
                 PegUtilsLegacy.txIsFromOldFederation(
                     btcTx,
-                    oldFederation
+                    oldFederationAddress
                 )
         ) {
             logger.debug("[getTransactionType][btc tx {}] is from the old federation, treated as a migration", btcTx.getHash());
