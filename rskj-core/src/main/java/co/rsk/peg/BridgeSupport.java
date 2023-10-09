@@ -97,6 +97,7 @@ import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.TransferInvoke;
+import org.ethereum.vm.trace.Op;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1337,27 +1338,30 @@ public class BridgeSupport {
     public void addSignature(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
         Context.propagate(btcContext);
 
-        Federation retiringFederation = getRetiringFederation();
-        Federation activeFederation = getActiveFederation();
-        Federation federation =
-                activeFederation.hasBtcPublicKey(federatorPublicKey) ?
-                        activeFederation :
-                        (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey) ?
-                                retiringFederation:
-                                null);
-
-        if (federation == null) {
-            logger.warn("Supplied federator public key {} does not belong to any of the federators.", federatorPublicKey);
+        Optional<Federation> optionalFederation = getFederationFromPublicKey(federatorPublicKey);
+        if (!optionalFederation.isPresent()) {
+            logger.warn(
+                "Supplied federator public key {} does not belong to any of the federators.",
+                federatorPublicKey
+            );
             return;
         }
 
+        Federation federation = optionalFederation.get();
         BtcTransaction btcTx = provider.getPegoutsWaitingForSignatures().get(new Keccak256(rskTxHash));
         if (btcTx == null) {
-            logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", new Keccak256(rskTxHash));
+            logger.warn(
+                "No tx waiting for signature for hash {}. Probably fully signed already.",
+                new Keccak256(rskTxHash)
+            );
             return;
         }
         if (btcTx.getInputs().size() != signatures.size()) {
-            logger.warn("Expected {} signatures but received {}.", btcTx.getInputs().size(), signatures.size());
+            logger.warn(
+                "Expected {} signatures but received {}.",
+                btcTx.getInputs().size(),
+                signatures.size()
+            );
             return;
         }
 
@@ -1368,7 +1372,26 @@ public class BridgeSupport {
         processSigning(federatorPublicKey, signatures, rskTxHash, btcTx, federation);
     }
 
-    private void processSigning(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash, BtcTransaction btcTx, Federation federation) throws IOException {
+    private Optional<Federation> getFederationFromPublicKey(BtcECKey federatorPublicKey) {
+        Federation retiringFederation = getRetiringFederation();
+        Federation activeFederation = getActiveFederation();
+
+        if (activeFederation.hasBtcPublicKey(federatorPublicKey)) {
+            return Optional.of(activeFederation);
+        }
+        if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey)) {
+            return Optional.of(retiringFederation);
+        }
+
+        return Optional.empty();
+    }
+
+    private void processSigning(
+        BtcECKey federatorPublicKey,
+        List<byte[]> signatures,
+        byte[] rskTxHash,
+        BtcTransaction btcTx,
+        Federation federation) throws IOException {
         // Build input hashes for signatures
         int numInputs = btcTx.getInputs().size();
 
@@ -1389,7 +1412,12 @@ public class BridgeSupport {
             try {
                 sig = BtcECKey.ECDSASignature.decodeFromDER(signatures.get(i));
             } catch (RuntimeException e) {
-                logger.warn("Malformed signature for input {} of tx {}: {}", i, new Keccak256(rskTxHash), ByteUtil.toHexString(signatures.get(i)));
+                logger.warn(
+                    "Malformed signature for input {} of tx {}: {}",
+                    i,
+                    new Keccak256(rskTxHash),
+                    ByteUtil.toHexString(signatures.get(i))
+                );
                 return;
             }
 
