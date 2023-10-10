@@ -1046,7 +1046,10 @@ public class BridgeStorageProvider {
                     networkParameters
                 );
             default:
-                throw new IllegalArgumentException("Unknown Federation version: " + version);
+                return BridgeSerializationUtils.deserializeStandardMultisigFederation(
+                    data,
+                    networkParameters
+                );
         }
     }
 
