@@ -7,6 +7,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
 import java.util.List;
+import co.rsk.rules.Standardness;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +32,8 @@ public class P2shErpFederation extends ErpFederation {
         if (redeemScript == null) {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
             redeemScript = P2shErpFederationRedeemScriptParser.createP2shErpRedeemScript(
-                ScriptBuilder.createStandardMultisigRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
-                ScriptBuilder.createStandardMultisigRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
+                ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
+                ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
                 activationDelay
             );
         }
@@ -49,4 +50,20 @@ public class P2shErpFederation extends ErpFederation {
         }
         return standardRedeemScript;
     }
+
+    @Override
+    public void validateScriptSigSize() {
+        // we have to check if the size of every script inside the scriptSig is not above the maximum
+        // this scriptSig contains the signatures, the redeem script and some other bytes
+        // so it is ok to just check the redeem script size
+
+        int bytesFromRedeemScript = getRedeemScript().getProgram().length;
+
+        if (bytesFromRedeemScript > Standardness.MAX_SCRIPT_ELEMENT_SIZE
+        ) {
+            String message = "Unable to create Federation. The scriptSig size is above the maximum allowed.";
+            throw new FederationCreationException(message);
+        }
+    }
+
 }

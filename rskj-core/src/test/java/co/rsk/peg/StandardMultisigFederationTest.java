@@ -18,15 +18,12 @@
 
 package co.rsk.peg;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
+import static org.ethereum.TestUtils.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mockStatic;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -34,18 +31,17 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import java.math.BigInteger;
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,6 +94,23 @@ class StandardMultisigFederationTest {
     }
 
     @Test
+    void createInvalidFederation_aboveMaxScriptSigSize() {
+        List<BtcECKey> standardKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10",
+                "fed11", "fed12", "fed13", "fed14", "fed15", "fed16"},
+            true
+        );
+        List<FederationMember> standardMembers = FederationTestUtils.getFederationMembersWithBtcKeys(standardKeys);
+
+        assertThrows(FederationCreationException.class, () -> new StandardMultisigFederation(
+            standardMembers,
+            federation.getCreationTime(),
+            federation.creationBlockNumber,
+            federation.btcParams
+        ));
+    }
+
+    @Test
     void membersImmutable() {
         boolean exception = false;
         try {
@@ -128,7 +141,7 @@ class StandardMultisigFederationTest {
         int opM = ScriptOpCodes.getOpCode("" + federation.getNumberOfSignaturesRequired());
         assertEquals(opM, redeemScript.getChunks().get(0).opcode);
 
-        for (int i=0; i<sortedPublicKeys.size(); i++) {
+        for (int i = 0; i < sortedPublicKeys.size(); i++) {
             assertArrayEquals(sortedPublicKeys.get(i).getPubKey(), redeemScript.getChunks().get(i+1).data);
         }
 

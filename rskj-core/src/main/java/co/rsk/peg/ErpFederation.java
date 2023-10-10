@@ -28,11 +28,13 @@ public abstract class ErpFederation extends Federation {
         ActivationConfig.ForBlock activations) {
 
         super(members, creationTime, creationBlockNumber, btcParams);
+        validateErpFederationValues(erpPubKeys, activationDelay);
+
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
         this.activations = activations;
 
-        validateErpFederationValues();
+        validateScriptSigSize();
     }
 
     public List<BtcECKey> getErpPubKeys() {
@@ -53,9 +55,9 @@ public abstract class ErpFederation extends Federation {
         return standardP2SHScript;
     }
 
-    private void validateErpFederationValues() {
+    private void validateErpFederationValues(List<BtcECKey> erpPubKeys, long activationDelay) {
         if (erpPubKeys == null || erpPubKeys.isEmpty()) {
-            String message = "Provided erpPubKeys is empty";
+            String message = "Emergency keys are not provided";
             throw new FederationCreationException(message);
         }
 
@@ -69,4 +71,6 @@ public abstract class ErpFederation extends Federation {
             throw new FederationCreationException(message);
         }
     }
+
+    public abstract void validateScriptSigSize();
 }
