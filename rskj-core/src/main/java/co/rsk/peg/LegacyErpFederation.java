@@ -8,6 +8,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
 import java.util.List;
 
+import co.rsk.rules.Standardness;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -50,13 +51,13 @@ public class LegacyErpFederation extends ErpFederation {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
             redeemScript = activations.isActive(ConsensusRule.RSKIP293) ?
                 ErpFederationRedeemScriptParser.createErpRedeemScript(
-                    ScriptBuilder.createStandardMultisigRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
-                    ScriptBuilder.createStandardMultisigRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
+                    ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
+                    ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
                     activationDelay
                 ) :
                 ErpFederationRedeemScriptParser.createErpRedeemScriptDeprecated(
-                    ScriptBuilder.createStandardMultisigRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
-                    ScriptBuilder.createStandardMultisigRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
+                    ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
+                    ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
                     activationDelay
                 );
         }
@@ -81,6 +82,21 @@ public class LegacyErpFederation extends ErpFederation {
             String message = "Unable to create ERP Federation. The obtained redeem script matches the one hardcoded for testnet. "
                 + "This would cause bitcoinj-thin to identify it as invalid";
             logger.debug("[validateRedeemScript] {}", message);
+            throw new FederationCreationException(message);
+        }
+    }
+
+    @Override
+    public void validateScriptSigSize() {
+        // we have to check if the size of every script inside the scriptSig is not above the maximum
+        // this scriptSig contains the signatures, the redeem script and some other bytes
+        // so it is ok to just check the redeem script size
+
+        int bytesFromRedeemScript = getRedeemScript().getProgram().length;
+
+        if (bytesFromRedeemScript > Standardness.MAX_SCRIPT_ELEMENT_SIZE
+        ) {
+            String message = "Unable to create Federation. The scriptSig size is above the maximum allowed.";
             throw new FederationCreationException(message);
         }
     }
