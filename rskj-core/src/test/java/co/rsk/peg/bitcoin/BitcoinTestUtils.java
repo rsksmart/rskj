@@ -32,7 +32,7 @@ public class BitcoinTestUtils {
     }
 
     public static Address createP2SHMultisigAddress(NetworkParameters networkParameters, List<BtcECKey> keys) {
-        Script redeemScript = ScriptBuilder.createStandardMultisigRedeemScript((keys.size() / 2) + 1, keys);
+        Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
 
         return Address.fromP2SHScript(networkParameters, outputScript);

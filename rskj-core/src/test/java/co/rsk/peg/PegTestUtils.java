@@ -96,7 +96,7 @@ public final class PegTestUtils {
     }
 
     public static Script createBaseRedeemScriptThatSpendsFromTheFederation(Federation federation) {
-        Script redeemScript = ScriptBuilder.createStandardMultisigRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
+        Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
         return redeemScript;
     }
 
