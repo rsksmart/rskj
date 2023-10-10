@@ -1046,6 +1046,7 @@ public class BridgeStorageProvider {
                     networkParameters
                 );
             default:
+                // To keep backwards compatibility
                 return BridgeSerializationUtils.deserializeStandardMultisigFederation(
                     data,
                     networkParameters
