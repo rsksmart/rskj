@@ -33,8 +33,6 @@ public abstract class ErpFederation extends Federation {
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
         this.activations = activations;
-
-        validateRedeemScriptSize();
     }
 
     public List<BtcECKey> getErpPubKeys() {
@@ -72,5 +70,4 @@ public abstract class ErpFederation extends Federation {
         }
     }
 
-    public abstract void validateRedeemScriptSize();
 }

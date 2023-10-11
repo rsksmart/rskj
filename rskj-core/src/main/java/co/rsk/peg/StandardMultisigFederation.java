@@ -61,8 +61,7 @@ public class StandardMultisigFederation extends Federation {
 
         int bytesFromRedeemScript = getRedeemScript().getProgram().length;
 
-        if (bytesFromRedeemScript > Standardness.MAX_SCRIPT_ELEMENT_SIZE
-        ) {
+        if (bytesFromRedeemScript > Standardness.MAX_SCRIPT_ELEMENT_SIZE) {
             String message = "Unable to create StandardMultisigFederation. The redeem script size is above the maximum allowed.";
             throw new FederationCreationException(message);
         }

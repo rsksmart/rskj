@@ -25,6 +25,8 @@ public class P2shErpFederation extends ErpFederation {
         ActivationConfig.ForBlock activations
     ) {
         super(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay, activations);
+
+        validateRedeemScriptSize();
     }
 
     @Override
@@ -51,19 +53,16 @@ public class P2shErpFederation extends ErpFederation {
         return standardRedeemScript;
     }
 
-    @Override
-    public void validateRedeemScriptSize() {
+    private void validateRedeemScriptSize() {
         // we have to check if the size of every script inside the scriptSig is not above the maximum
         // this scriptSig contains the signatures, the redeem script and some other bytes
         // so it is ok to just check the redeem script size
 
         int bytesFromRedeemScript = getRedeemScript().getProgram().length;
 
-        if (bytesFromRedeemScript > Standardness.MAX_SCRIPT_ELEMENT_SIZE
-        ) {
+        if (bytesFromRedeemScript > Standardness.MAX_SCRIPT_ELEMENT_SIZE) {
             String message = "Unable to create P2shErpFederation. The redeem script size is above the maximum allowed.";
             throw new FederationCreationException(message);
         }
     }
-
 }
