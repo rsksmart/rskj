@@ -34,7 +34,7 @@ public abstract class ErpFederation extends Federation {
         this.activationDelay = activationDelay;
         this.activations = activations;
 
-        validateScriptSigSize();
+        validateRedeemScriptSize();
     }
 
     public List<BtcECKey> getErpPubKeys() {
@@ -72,5 +72,5 @@ public abstract class ErpFederation extends Federation {
         }
     }
 
-    public abstract void validateScriptSigSize();
+    public abstract void validateRedeemScriptSize();
 }
