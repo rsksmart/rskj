@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -86,6 +87,7 @@ class FederationSupportTest {
             .thenReturn(newFederation);
         when(provider.getOldFederation())
             .thenReturn(null);
+
 
         assertThat(federationSupport.getActiveFederation(), is(newFederation));
     }
@@ -235,8 +237,14 @@ class FederationSupportTest {
     }
 
     private Federation getNewFakeFederation(long creationBlockNumber) {
+        List<BtcECKey> keys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fed1", "fed2"},
+            true
+        );
+        List<FederationMember> members = FederationTestUtils.getFederationMembersWithBtcKeys(keys);
+
         return new StandardMultisigFederation(
-            Collections.emptyList(), Instant.ofEpochMilli(123),
+            members, Instant.ofEpochMilli(123),
             creationBlockNumber, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
     }
