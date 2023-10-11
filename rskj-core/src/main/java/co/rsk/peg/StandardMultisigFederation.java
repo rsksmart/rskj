@@ -41,8 +41,8 @@ public class StandardMultisigFederation extends Federation {
         NetworkParameters btcParams) {
 
         super(members, creationTime, creationBlockNumber, btcParams);
-        // TODO: uncomment this and fix related tests
-        // validateScriptSigSize();
+
+        validateScriptSigSize();
     }
 
     @Override
