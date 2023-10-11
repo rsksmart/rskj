@@ -42,7 +42,7 @@ public class StandardMultisigFederation extends Federation {
 
         super(members, creationTime, creationBlockNumber, btcParams);
 
-        validateScriptSigSize();
+        validateRedeemScriptSize();
     }
 
     @Override
@@ -54,7 +54,7 @@ public class StandardMultisigFederation extends Federation {
         return redeemScript;
     }
 
-    private void validateScriptSigSize() {
+    private void validateRedeemScriptSize() {
         // we have to check if the size of every script inside the scriptSig is not above the maximum
         // this scriptSig contains the signatures, the redeem script and some other bytes
         // so it is ok to just check the redeem script size
@@ -63,7 +63,7 @@ public class StandardMultisigFederation extends Federation {
 
         if (bytesFromRedeemScript > Standardness.MAX_SCRIPT_ELEMENT_SIZE
         ) {
-            String message = "Unable to create Federation. The scriptSig size is above the maximum allowed.";
+            String message = "Unable to create StandardMultisigFederation. The redeem script size is above the maximum allowed.";
             throw new FederationCreationException(message);
         }
     }

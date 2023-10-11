@@ -87,7 +87,7 @@ public class LegacyErpFederation extends ErpFederation {
     }
 
     @Override
-    public void validateScriptSigSize() {
+    public void validateRedeemScriptSize() {
         // we have to check if the size of every script inside the scriptSig is not above the maximum
         // this scriptSig contains the signatures, the redeem script and some other bytes
         // so it is ok to just check the redeem script size
@@ -96,7 +96,7 @@ public class LegacyErpFederation extends ErpFederation {
 
         if (bytesFromRedeemScript > Standardness.MAX_SCRIPT_ELEMENT_SIZE
         ) {
-            String message = "Unable to create Federation. The scriptSig size is above the maximum allowed.";
+            String message = "Unable to create LegacyErpFederation. The redeem script size is above the maximum allowed.";
             throw new FederationCreationException(message);
         }
     }
