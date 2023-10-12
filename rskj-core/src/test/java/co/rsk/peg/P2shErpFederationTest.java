@@ -1,7 +1,6 @@
 package co.rsk.peg;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import co.rsk.bitcoinj.core.*;
@@ -27,7 +26,6 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -59,10 +57,11 @@ class P2shErpFederationTest {
         BtcECKey federator6PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0340df69f28d69eef60845da7d81ff60a9060d4da35c767f017b0dd4e20448fb44"));
         BtcECKey federator7PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02ac1901b6fba2c1dbd47d894d2bd76c8ba1d296d65f6ab47f1c6b22afb53e73eb"));
         BtcECKey federator8PublicKey = BtcECKey.fromPublicOnly(Hex.decode("031aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d26"));
-        standardKeys = Lists.newArrayList(
+        BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea"));
+        standardKeys = Arrays.asList(
             federator0PublicKey, federator1PublicKey, federator2PublicKey,
             federator3PublicKey, federator4PublicKey, federator5PublicKey,
-            federator6PublicKey, federator7PublicKey, federator8PublicKey
+            federator6PublicKey, federator7PublicKey, federator8PublicKey, federator9PublicKey
         );
 
         networkParameters = bridgeConstants.getBtcParams();
@@ -133,16 +132,14 @@ class P2shErpFederationTest {
 
     @Test
     void createInvalidFederation_aboveMaxScriptSigSize() {
-        BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(
-            Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea")
-        );
+        // add one member to exceed redeem script size limit
+        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("02550cc87fa9061162b1dd395a16662529c9d8094c0feca17905a3244713d65fe8")
         );
+        newStandardKeys.add(federator10PublicKey);
+        standardKeys = newStandardKeys;
 
-        // add two members to exceed redeem script size limit
-        standardKeys.add(federator9PublicKey);
-        standardKeys.add(federator10PublicKey);
         assertThrows(FederationCreationException.class, this::createDefaultP2shErpFederation);
     }
 
@@ -182,12 +179,9 @@ class P2shErpFederationTest {
 
     @Test
     void testEquals_differentNumberOfMembers() {
-        BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(
-            Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea")
-        );
-        // add federator9
+        // remove federator9
         List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
-        newStandardKeys.add(federator9PublicKey);
+        newStandardKeys.remove(9);
         standardKeys = newStandardKeys;
 
         ErpFederation otherFederation = createDefaultP2shErpFederation();
@@ -372,6 +366,7 @@ class P2shErpFederationTest {
 
         RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
+            // Skip test cases where the redeem script exceeds the maximum size
             if (generatedScript.script.getProgram().length <= 520) {
                 Federation erpFederation = new P2shErpFederation(
                     FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),

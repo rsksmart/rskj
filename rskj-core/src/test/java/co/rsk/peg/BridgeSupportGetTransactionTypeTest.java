@@ -50,7 +50,6 @@ class BridgeSupportGetTransactionTypeTest {
     void getTransactionType_sentFromP2SHErpFed() {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
 
-        // should hardcode the pkeys because the redeem script size validation threw error
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344"));
         BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0355a2e9bf100c00fc0a214afd1bf272647c7824eb9cb055480962f0c382596a70"));
