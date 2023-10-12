@@ -1,7 +1,7 @@
 package org.ethereum.validator;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.peg.utils.MerkleTreeUtils;
+import co.rsk.bridge.utils.MerkleTreeUtils;
 import co.rsk.validators.Rskip92MerkleProofValidator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

@@ -33,7 +33,7 @@ import co.rsk.net.SyncProcessor;
 import co.rsk.net.TransactionGateway;
 import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.net.simples.SimpleBlockProcessor;
-import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.bridge.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;

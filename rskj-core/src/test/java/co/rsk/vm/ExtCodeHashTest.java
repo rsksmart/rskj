@@ -19,8 +19,8 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.bridge.BridgeSupportFactory;
+import co.rsk.bridge.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;

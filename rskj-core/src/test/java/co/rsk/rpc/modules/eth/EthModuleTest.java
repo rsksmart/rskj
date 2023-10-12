@@ -25,7 +25,7 @@ import co.rsk.core.Wallet;
 import co.rsk.core.bc.PendingState;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.TransactionGateway;
-import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.bridge.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;

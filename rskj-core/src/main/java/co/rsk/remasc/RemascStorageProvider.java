@@ -26,7 +26,7 @@ import org.ethereum.vm.DataWord;
 
 /**
  * Responsible for persisting the remasc state into the contract state
- * @see co.rsk.peg.BridgeStorageProvider
+ * @see co.rsk.bridge.BridgeStorageProvider
  * @author Oscar Guindzberg
  */
 class RemascStorageProvider {

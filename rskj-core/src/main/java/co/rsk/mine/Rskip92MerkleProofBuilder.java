@@ -20,7 +20,7 @@ package co.rsk.mine;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.Utils;
-import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
+import co.rsk.bridge.utils.PartialMerkleTreeFormatUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 

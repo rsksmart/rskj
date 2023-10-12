@@ -20,7 +20,7 @@ package co.rsk.core;
 
 import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.PegTestUtils;
+import co.rsk.bridge.PegTestUtils;
 import com.google.common.primitives.Bytes;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;

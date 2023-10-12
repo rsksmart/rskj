@@ -19,8 +19,8 @@ package co.rsk.remasc;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.FederationSupport;
+import co.rsk.bridge.BridgeStorageProvider;
+import co.rsk.bridge.FederationSupport;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;

@@ -19,8 +19,8 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.peg.performance.ExecutionStats;
-import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
+import co.rsk.bridge.performance.ExecutionStats;
+import co.rsk.bridge.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;

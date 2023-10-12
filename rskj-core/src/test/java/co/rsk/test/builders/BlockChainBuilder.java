@@ -26,9 +26,9 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.*;
 import co.rsk.net.handler.quota.TxQuotaChecker;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.bridge.BridgeSupportFactory;
+import co.rsk.bridge.BtcBlockStoreWithCache;
+import co.rsk.bridge.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -51,7 +51,6 @@ import org.mockito.Mockito;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * Created by ajlopez on 8/6/2016.
