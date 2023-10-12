@@ -131,14 +131,18 @@ public class SnapshotProcessor {
                 Thread.sleep(DELAY_BTW_RUNS);
             } catch (InterruptedException ignored) {
             }
-            this.chunkSize = this.chunkSize * 2;
-            this.chunkSize = this.chunkSize > CHUNK_MAX ? CHUNK_MIN : this.chunkSize;
+            duplicateTheChunkSize();
             logger.debug("Starting again the infinite loop! With chunk size = {}", this.chunkSize);
             this.elements = Lists.newArrayList();
             this.stateSize = BigInteger.ZERO;
             this.stateChunkSize = BigInteger.ZERO;
             requestState(peer, 0l, 5544285l);
         }
+    }
+
+    private void duplicateTheChunkSize() {
+        this.chunkSize = this.chunkSize * 2;
+        this.chunkSize = this.chunkSize > CHUNK_MAX ? CHUNK_MIN : this.chunkSize;
     }
 
     public void processStateChunkRequest(Peer sender, StateChunkRequestMessage request) {
@@ -196,7 +200,13 @@ public class SnapshotProcessor {
         }
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
-        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, request.getBlockNumber(), request.getFrom(), to, it.isEmpty());
+        boolean isComplete = it.isEmpty();
+
+        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, request.getBlockNumber(), request.getFrom(), to, isComplete);
+
+        if (isComplete) {
+            duplicateTheChunkSize();
+        }
 
         long totalChunkTime = System.currentTimeMillis() - startChunk;
 
