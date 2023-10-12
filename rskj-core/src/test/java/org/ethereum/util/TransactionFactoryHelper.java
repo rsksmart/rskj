@@ -1,6 +1,7 @@
 package org.ethereum.util;
 
 import java.math.BigInteger;
+import java.util.Optional;
 
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
@@ -10,6 +11,10 @@ import co.rsk.core.RskAddress;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
 
 /**
  * Created by ajlopez on 28/02/2018.
@@ -114,6 +119,20 @@ public class TransactionFactoryHelper {
         tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
 
         return tx;
+    }
+
+    public static CallArgumentsParam toCallArgumentsParam(CallArguments args) {
+        return new CallArgumentsParam(
+                Optional.ofNullable(args.getFrom()).filter(p -> !p.isEmpty()).map(HexAddressParam::new).orElse(null),
+                Optional.ofNullable(args.getTo()).filter(p -> !p.isEmpty()).map(HexAddressParam::new).orElse(null),
+                Optional.ofNullable(args.getGas()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                Optional.ofNullable(args.getGasPrice()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                Optional.ofNullable(args.getGasLimit()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                Optional.ofNullable(args.getNonce()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                Optional.ofNullable(args.getChainId()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                Optional.ofNullable(args.getValue()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
+                Optional.ofNullable(args.getData()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null)
+        );
     }
 
 }

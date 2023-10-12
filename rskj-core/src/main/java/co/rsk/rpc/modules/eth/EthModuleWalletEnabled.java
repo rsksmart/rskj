@@ -23,6 +23,7 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
@@ -32,7 +33,6 @@ import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.util.HexUtils;
 
@@ -55,7 +55,9 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
                 throw invalidParamError("Account not found");
             }
 
-            return s = this.sign(data, account.getEcKey());
+            s = this.sign(data, account.getEcKey());
+
+            return s;
         } finally {
             LOGGER.debug("eth_sign({}, {}): {}", addr, data, s);
         }

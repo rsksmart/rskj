@@ -18,24 +18,27 @@
 
 package co.rsk.rpc.modules.personal;
 
-import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDurationParam;
+import org.ethereum.rpc.parameters.HexKeyParam;
 
 public interface PersonalModule {
-    String dumpRawKey(String address) throws Exception;
+    String dumpRawKey(HexAddressParam address) throws Exception;
 
-    String importRawKey(String key, String passphrase);
+    String importRawKey(HexKeyParam key, String passphrase);
 
     void init();
 
     String[] listAccounts();
 
-    boolean lockAccount(String address);
+    boolean lockAccount(HexAddressParam address);
 
     String newAccountWithSeed(String seed);
 
     String newAccount(String passphrase);
 
-    String sendTransaction(CallArguments args, String passphrase) throws Exception;
+    String sendTransaction(CallArgumentsParam args, String passphrase) throws Exception;
 
-    boolean unlockAccount(String address, String passphrase, String duration);
+    boolean unlockAccount(HexAddressParam address, String passphrase, HexDurationParam duration);
 }

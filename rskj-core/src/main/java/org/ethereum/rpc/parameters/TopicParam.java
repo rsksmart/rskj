@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2023 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,14 +15,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package org.ethereum.rpc.parameters;
 
-package co.rsk.rpc.modules.eth;
+public class TopicParam extends HashParam32 {
+    private static final String HASH_TYPE = "topic";
 
-import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexDataParam;
-
-public interface EthModuleTransaction {
-    String sendTransaction(CallArgumentsParam args);
-
-    String sendRawTransaction(HexDataParam rawData);
+    public TopicParam(String hash) {
+        super(HASH_TYPE, hash);
+    }
 }

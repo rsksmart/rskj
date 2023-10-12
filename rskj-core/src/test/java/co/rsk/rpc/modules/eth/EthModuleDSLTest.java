@@ -26,7 +26,10 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.EthModuleTestUtils;
+import org.ethereum.util.TransactionFactoryHelper;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -62,15 +65,17 @@ class EthModuleDSLTest {
         args.setValue("0");
         args.setNonce("1");
         args.setGas("10000000");
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("0x2");
         try {
-            eth.call(args, "0x2");
+            eth.call(callArgumentsParam, blockIdentifierParam);
             fail();
         } catch (RskJsonRpcRequestException e) {
             MatcherAssert.assertThat(e.getMessage(), Matchers.containsString("Negative value."));
         }
 
         args.setData("0xd96a094a0000000000000000000000000000000000000000000000000000000000000001"); // call to contract with param value = 1
-        final String call = eth.call(args, "0x2");
+        final String call = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("0x2"));
         assertEquals("0x", call);
     }
 }

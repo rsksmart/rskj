@@ -15,14 +15,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package org.ethereum.rpc.parameters;
 
-package co.rsk.rpc.modules.eth;
+import co.rsk.util.HexUtils;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexDataParam;
+public abstract class HexStringParam {
+    HexStringParam(String hexString) {
+        if(hexString.isEmpty()) {
+            return;
+        }
 
-public interface EthModuleTransaction {
-    String sendTransaction(CallArgumentsParam args);
-
-    String sendRawTransaction(HexDataParam rawData);
+        if (!HexUtils.hasHexPrefix(hexString) || !HexUtils.isHex(hexString,2)) {
+            throw RskJsonRpcRequestException.invalidParamError(String.format("Invalid argument \"%s\": param should be a hex value string.", hexString));
+        }
+    }
 }
