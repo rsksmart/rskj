@@ -105,13 +105,17 @@ public class SnapshotProcessor implements InternalService {
                 Thread.sleep(DELAY_BTW_RUNS);
             } catch (InterruptedException ignored) {
             }
-            this.chunkSize = this.chunkSize * 2;
-            this.chunkSize = this.chunkSize > CHUNK_MAX ? CHUNK_MIN : this.chunkSize;
+            duplicateTheChunkSize();
             logger.debug("Starting again the infinite loop! With chunk size = {}", this.chunkSize);
             this.stateSize = BigInteger.ZERO;
             this.stateChunkSize = BigInteger.ZERO;
             requestState(peer, 0l, 0l);
         }
+    }
+
+    private void duplicateTheChunkSize() {
+        this.chunkSize = this.chunkSize * 2;
+        this.chunkSize = this.chunkSize > CHUNK_MAX ? CHUNK_MIN : this.chunkSize;
     }
 
     public void processStateChunkRequest(Peer sender, StateChunkRequestMessage request) {
@@ -143,7 +147,13 @@ public class SnapshotProcessor implements InternalService {
         }
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
-        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, blockNumber, request.getFrom(), !it.hasNext());
+        boolean isComplete = it.hasNext();
+        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, blockNumber, request.getFrom(), !isComplete);
+
+        if (isComplete) {
+            duplicateTheChunkSize();
+        }
+
         logger.debug("Sending state chunk of {} bytes to node {}", chunkBytes.length, sender.getPeerNodeID());
         long deltaTime = System.currentTimeMillis() - startProcessingTime;
         logger.debug("Processing StateChunkRequest time: [{}]", deltaTime);
