@@ -35,7 +35,6 @@ public class LegacyErpFederation extends ErpFederation {
 
         super(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay, activations);
 
-        validateRedeemScriptSize();
         validateRedeemScript();
     }
 
@@ -84,9 +83,7 @@ public class LegacyErpFederation extends ErpFederation {
             logger.debug("[validateRedeemScript] {}", message);
             throw new FederationCreationException(message);
         }
-    }
 
-    private void validateRedeemScriptSize() {
         // we have to check if the size of every script inside the scriptSig is not above the maximum
         // this scriptSig contains the signatures, the redeem script and some other bytes
         // so it is ok to just check the redeem script size

@@ -28,12 +28,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import com.google.common.collect.Lists;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -64,10 +64,11 @@ class LegacyErpFederationTest {
         BtcECKey federator6PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0340df69f28d69eef60845da7d81ff60a9060d4da35c767f017b0dd4e20448fb44"));
         BtcECKey federator7PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02ac1901b6fba2c1dbd47d894d2bd76c8ba1d296d65f6ab47f1c6b22afb53e73eb"));
         BtcECKey federator8PublicKey = BtcECKey.fromPublicOnly(Hex.decode("031aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d26"));
-        standardKeys = Lists.newArrayList(
+        BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea"));
+        standardKeys = Arrays.asList(
             federator0PublicKey, federator1PublicKey, federator2PublicKey,
             federator3PublicKey, federator4PublicKey, federator5PublicKey,
-            federator6PublicKey, federator7PublicKey, federator8PublicKey
+            federator6PublicKey, federator7PublicKey, federator8PublicKey, federator9PublicKey
         );
 
         networkParameters = bridgeConstants.getBtcParams();
@@ -138,16 +139,14 @@ class LegacyErpFederationTest {
 
     @Test
     void createInvalidLegacyErpFederation_aboveMaxScriptSigSize() {
-        BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(
-            Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea")
-        );
+        // add one member to exceed redeem script size limit
+        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("02550cc87fa9061162b1dd395a16662529c9d8094c0feca17905a3244713d65fe8")
         );
+        newStandardKeys.add(federator10PublicKey);
+        standardKeys = newStandardKeys;
 
-        // add two members to exceed redeem script size limit
-        standardKeys.add(federator9PublicKey);
-        standardKeys.add(federator10PublicKey);
         assertThrows(FederationCreationException.class, this::createDefaultLegacyErpFederation);
     }
 
@@ -165,9 +164,9 @@ class LegacyErpFederationTest {
     void testEquals_basic() {
         assertEquals(federation, federation);
 
-        Assertions.assertNotEquals(null, federation);
-        Assertions.assertNotEquals(federation, new Object());
-        Assertions.assertNotEquals("something else", federation);
+        assertNotEquals(null, federation);
+        assertNotEquals(federation, new Object());
+        assertNotEquals("something else", federation);
     }
 
     @Test
@@ -186,17 +185,31 @@ class LegacyErpFederationTest {
     }
 
     @Test
-    void testEquals_differentNumberOfMembers() {
-        BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(
-            Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea")
+    void testEquals_differentCreationTime() {
+        ErpFederation otherFederation = new LegacyErpFederation(
+            federation.getMembers(),
+            federation.getCreationTime().plus(1, ChronoUnit.MILLIS),
+            federation.getCreationBlockNumber(),
+            federation.getBtcParams(),
+            federation.getErpPubKeys(),
+            federation.getActivationDelay(),
+            activations
         );
-        // add federator9
-        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
-        newStandardKeys.add(federator9PublicKey);
-        standardKeys = newStandardKeys;
+        assertEquals(federation, otherFederation);
+    }
 
-        ErpFederation otherFederation = createDefaultLegacyErpFederation();
-        Assertions.assertNotEquals(federation, otherFederation);
+    @Test
+    void testEquals_differentCreationBlockNumber() {
+        ErpFederation otherFederation = new LegacyErpFederation(
+            federation.getMembers(),
+            federation.getCreationTime(),
+            federation.getCreationBlockNumber() + 1,
+            federation.getBtcParams(),
+            federation.getErpPubKeys(),
+            federation.getActivationDelay(),
+            activations
+        );
+        assertEquals(federation, otherFederation);
     }
 
     @Test
@@ -208,11 +221,22 @@ class LegacyErpFederationTest {
     }
 
     @Test
+    void testEquals_differentNumberOfMembers() {
+        // remove federator9
+        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
+        newStandardKeys.remove(9);
+        standardKeys = newStandardKeys;
+
+        ErpFederation otherFederation = createDefaultLegacyErpFederation();
+        Assertions.assertNotEquals(federation, otherFederation);
+    }
+
+    @Test
     void testEquals_differentMembers() {
+        // replace federator8 with federator9
         BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea")
         );
-        // replace federator8 with federator9
         List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         newStandardKeys.remove(8);
         newStandardKeys.add(federator9PublicKey);
@@ -294,6 +318,7 @@ class LegacyErpFederationTest {
 
         RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
+            // Skip test cases where the redeem script exceeds the maximum size
             if (generatedScript.script.getProgram().length <= 520) {
                 Federation erpFederation = new LegacyErpFederation(
                     FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
