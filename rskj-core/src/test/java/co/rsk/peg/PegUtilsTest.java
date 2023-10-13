@@ -80,7 +80,7 @@ class PegUtilsTest {
 
         // Act
         IllegalStateException exception = Assertions.assertThrows(IllegalStateException.class, () -> {
-            PegUtils.getTransactionType(fingerrootActivations, provider, liveFederationWallet, btcTransaction);
+            PegUtils.getTransactionTypeUsingPegoutIndex(fingerrootActivations, provider, liveFederationWallet, btcTransaction);
         });
 
         // Assert
@@ -98,7 +98,7 @@ class PegUtilsTest {
         btcTransaction.addOutput(Coin.COIN, userAddress);
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -121,7 +121,7 @@ class PegUtilsTest {
         btcTransaction.addOutput(minimumPeginTxValue.minus(Coin.SATOSHI), activeFederation.getAddress());
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -142,7 +142,7 @@ class PegUtilsTest {
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -166,7 +166,7 @@ class PegUtilsTest {
         btcTransaction.addOutput(Coin.COIN, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown2"));
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -190,7 +190,7 @@ class PegUtilsTest {
         }
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -227,7 +227,7 @@ class PegUtilsTest {
         btcTransaction.addOutput(Coin.COIN, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown2"));
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -248,7 +248,7 @@ class PegUtilsTest {
         btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -272,7 +272,7 @@ class PegUtilsTest {
         }
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -295,7 +295,7 @@ class PegUtilsTest {
         btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -320,7 +320,7 @@ class PegUtilsTest {
         btcTransaction.addOutput(Coin.COIN, userAddress);
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -355,7 +355,7 @@ class PegUtilsTest {
         when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -381,7 +381,7 @@ class PegUtilsTest {
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -417,7 +417,7 @@ class PegUtilsTest {
         when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -444,7 +444,7 @@ class PegUtilsTest {
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -481,7 +481,7 @@ class PegUtilsTest {
         when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -510,7 +510,7 @@ class PegUtilsTest {
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -545,7 +545,7 @@ class PegUtilsTest {
         when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -589,7 +589,7 @@ class PegUtilsTest {
         );
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
@@ -627,7 +627,7 @@ class PegUtilsTest {
         BtcTransaction btcTransaction = new BtcTransaction(btcTestNetParams, Hex.decode(segwitTxHex));
 
         // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
             liveFederationWallet,
