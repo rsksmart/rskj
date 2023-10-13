@@ -454,6 +454,8 @@ public class BridgeSupport {
             bridgeConstants.getOldFederationAddress()
         );
 
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, getLiveFederations());
+
         return PegUtilsLegacy.getTransactionType(
             btcTx,
             getActiveFederation(),
@@ -462,7 +464,7 @@ public class BridgeSupport {
             oldFederationAddress,
             activations,
             minimumPeginTxValue,
-            btcContext
+            federationWallet
         );
     }
 
