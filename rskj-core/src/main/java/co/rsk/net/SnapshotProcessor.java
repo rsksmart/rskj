@@ -147,8 +147,8 @@ public class SnapshotProcessor implements InternalService {
         }
 
         byte[] chunkBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
-        boolean isComplete = it.hasNext();
-        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, blockNumber, request.getFrom(), !isComplete);
+        boolean isComplete = !it.hasNext();
+        StateChunkResponseMessage responseMessage = new StateChunkResponseMessage(request.getId(), chunkBytes, blockNumber, request.getFrom(), isComplete);
 
         if (isComplete) {
             duplicateTheChunkSize();
