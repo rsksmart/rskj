@@ -143,7 +143,7 @@ public class PegUtilsLegacy {
      *
      * @param tx the BTC transaction to check
      * @param federation
-     * @param btcContext the BTC Context
+     * @param federationsWallet live federations
      * @param bridgeConstants
      * @param activations the network HF activations configuration
      * @return true if this is a valid peg-in transaction
@@ -152,7 +152,7 @@ public class PegUtilsLegacy {
     public static boolean isValidPegInTx(
         BtcTransaction tx,
         Federation federation,
-        Context btcContext,
+        Wallet federationsWallet,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations) {
 
@@ -160,7 +160,7 @@ public class PegUtilsLegacy {
             tx,
             Collections.singletonList(federation),
             null,
-            btcContext,
+            federationsWallet,
             bridgeConstants.getMinimumPeginTxValue(activations),
             activations
         );
@@ -172,7 +172,7 @@ public class PegUtilsLegacy {
      * @param tx the BTC transaction to check
      * @param activeFederations the active federations
      * @param retiredFederationP2SHScript the retired federation P2SHScript. Could be {@code null}.
-     * @param btcContext the BTC Context
+     * @param federationsWallet live federations wallet
      * @param minimumPegInTxValue minimum peg-in tx value allowed
      * @param activations the network HF activations configuration
      * @return true if this is a valid peg-in transaction
@@ -182,7 +182,7 @@ public class PegUtilsLegacy {
         BtcTransaction tx,
         List<Federation> activeFederations,
         Script retiredFederationP2SHScript,
-        Context btcContext,
+        Wallet federationsWallet,
         Coin minimumPegInTxValue,
         ActivationConfig.ForBlock activations) {
 
@@ -231,7 +231,6 @@ public class PegUtilsLegacy {
             }
         }
 
-        Wallet federationsWallet = new BridgeBtcWallet(btcContext, activeFederations);
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
 
         boolean isUTXOsOrTxAmountBelowMinimum =
@@ -261,7 +260,7 @@ public class PegUtilsLegacy {
         Federation activeFederation,
         Federation retiringFederation,
         Script retiredFederationP2SHScript,
-        Context btcContext,
+        Wallet liveFederationsWallet,
         Coin minimumPeginTxValue,
         ActivationConfig.ForBlock activations) {
 
@@ -277,10 +276,12 @@ public class PegUtilsLegacy {
             standardP2shScripts.add(retiringFederation.getStandardP2SHScript());
         }
 
-        boolean moveFromRetiringOrRetired =  isPegOutTx(btcTx, activations, standardP2shScripts.stream().toArray(Script[]::new));
-        boolean moveToActive = isValidPegInTx(btcTx, Collections.singletonList(activeFederation), null, btcContext, minimumPeginTxValue, activations);
+        boolean moveFromRetiringOrRetired =  isPegOutTx(btcTx, activations, standardP2shScripts.toArray(new Script[0]));
 
-        return moveFromRetiringOrRetired&& moveToActive;
+        BridgeBtcWallet activeFederationWallet = new BridgeBtcWallet(liveFederationsWallet.getContext(), Collections.singletonList(activeFederation));
+        boolean moveToActive = isValidPegInTx(btcTx, Collections.singletonList(activeFederation), null, activeFederationWallet, minimumPeginTxValue, activations);
+
+        return moveFromRetiringOrRetired && moveToActive;
     }
 
     /**
@@ -294,7 +295,7 @@ public class PegUtilsLegacy {
      * @param oldFederationAddress
      * @param activations
      * @param minimumPeginTxValue
-     * @param btcContext
+     * @param federationsWallet
      * @return true if it is a peg-out. Otherwise, returns false.
      */
     @Deprecated
@@ -306,7 +307,7 @@ public class PegUtilsLegacy {
         Address oldFederationAddress,
         ActivationConfig.ForBlock activations,
         Coin minimumPeginTxValue,
-        Context btcContext
+        Wallet federationsWallet
     ) {
         /************************************************************************/
         /** Special case to migrate funds from an old federation               **/
@@ -331,7 +332,7 @@ public class PegUtilsLegacy {
             btcTx,
             liveFederations,
             retiredFederationP2SHScript,
-            btcContext,
+            federationsWallet,
             minimumPeginTxValue,
             activations
         )) {
@@ -339,12 +340,13 @@ public class PegUtilsLegacy {
             return PegTxType.PEGIN;
         }
 
+
         if (isMigrationTx(
             btcTx,
             activeFederation,
             retiringFederation,
             retiredFederationP2SHScript,
-            btcContext,
+            federationsWallet,
             minimumPeginTxValue,
             activations
         )) {
@@ -359,34 +361,6 @@ public class PegUtilsLegacy {
 
         logger.debug("[getTransactionType][btc tx {}] is neither a peg-in, peg-out, nor migration", btcTx.getHash());
         return PegTxType.UNKNOWN;
-    }
-
-    /**
-     *
-     * Legacy version for checking if there is a utxo below minimum
-     * Use instead {@link co.rsk.peg.PegUtils#isAnyUTXOAmountBelowMinimum}
-     *
-     * @param minimumPegInTxValue
-     * @param btcTx
-     * @param addresses
-     * @return true if any UTXO in the given btcTX is below the minimum pegin tx value
-     */
-    @Deprecated
-    protected static boolean isAnyUTXOAmountBelowMinimum(
-        Coin minimumPegInTxValue,
-        Context context,
-        BtcTransaction btcTx,
-        List<Address> addresses
-    ){
-        WatchedBtcWallet wallet = new WatchedBtcWallet(context);
-        long now = Utils.currentTimeMillis() / 1000L;
-        wallet.addWatchedAddresses(addresses, now);
-
-        return isAnyUTXOAmountBelowMinimum(
-            minimumPegInTxValue,
-            btcTx,
-            wallet
-        );
     }
 
     /**
