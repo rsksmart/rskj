@@ -15,7 +15,7 @@ import java.util.Optional;
 public class PegUtils {
     private PegUtils() { }
 
-    public static PegTxType getTransactionType(
+    public static PegTxType getTransactionTypeUsingPegoutIndex(
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
         Wallet liveFederationsWallet,
