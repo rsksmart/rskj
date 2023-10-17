@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import co.rsk.rules.Standardness;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -367,7 +368,7 @@ class P2shErpFederationTest {
         RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
             // Skip test cases where the redeem script exceeds the maximum size
-            if (generatedScript.script.getProgram().length <= 520) {
+            if (generatedScript.script.getProgram().length <= Standardness.MAX_SCRIPT_ELEMENT_SIZE) {
                 Federation erpFederation = new P2shErpFederation(
                     FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                     ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
