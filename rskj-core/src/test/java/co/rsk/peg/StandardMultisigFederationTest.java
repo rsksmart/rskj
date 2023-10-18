@@ -80,12 +80,16 @@ class StandardMultisigFederationTest {
         newKeys.add(federator15PublicKey);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newKeys);
 
-        assertThrows(FederationCreationException.class, () -> new StandardMultisigFederation(
-            newMembers,
-            federation.getCreationTime(),
-            federation.creationBlockNumber,
-            federation.btcParams
-        ));
+        FederationCreationException exception =
+            assertThrows(FederationCreationException.class, () -> new StandardMultisigFederation(
+                newMembers,
+                federation.getCreationTime(),
+                federation.creationBlockNumber,
+                federation.btcParams
+            ));
+        String expectedMessage = "Unable to create StandardMultisigFederation. The redeem script size is 547, that is above the maximum allowed.";
+        assertTrue(exception.getMessage().contentEquals(expectedMessage));
+
     }
 
     @Test
