@@ -55,7 +55,7 @@ public class P2shErpFederation extends ErpFederation {
 
     private void validateRedeemScriptSize() {
         Script redeemScript = this.getRedeemScript();
-        if (!FederationUtils.isRedeemScriptSizeValid(redeemScript)) {
+        if (!FederationUtils.isScriptSizeValid(redeemScript)) {
             String message = String.format(
                 "Unable to create P2shErpFederation. The redeem script size is %d, that is above the maximum allowed.",
                 redeemScript.getProgram().length
