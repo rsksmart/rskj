@@ -100,13 +100,23 @@ class LegacyErpFederationTest {
     @Test
     void createInvalidLegacyErpFederation_nullErpKeys() {
         emergencyKeys = null;
-        assertThrows(FederationCreationException.class, this::createDefaultLegacyErpFederation);
+        FederationCreationException exception = assertThrows(
+            FederationCreationException.class, this::createDefaultLegacyErpFederation
+        );
+
+        String expectedMessage = "Emergency keys are not provided";
+        assertTrue(exception.getMessage().contentEquals(expectedMessage));
     }
 
     @Test
     void createInvalidLegacyErpFederation_emptyErpKeys() {
         emergencyKeys = new ArrayList<>();
-        assertThrows(FederationCreationException.class, this::createDefaultLegacyErpFederation);
+        FederationCreationException exception = assertThrows(
+            FederationCreationException.class, this::createDefaultLegacyErpFederation
+        );
+
+        String expectedMessage = "Emergency keys are not provided";
+        assertTrue(exception.getMessage().contentEquals(expectedMessage));
     }
 
     @Test
@@ -117,19 +127,46 @@ class LegacyErpFederationTest {
     @Test
     void createInvalidLegacyErpFederation_negativeCsvValue() {
         activationDelayValue = -100L;
-        assertThrows(FederationCreationException.class, this::createDefaultLegacyErpFederation);
+        FederationCreationException exception = assertThrows(
+            FederationCreationException.class, this::createDefaultLegacyErpFederation
+        );
+
+        String expectedMessage = String.format(
+            "Provided csv value %d must be larger than 0 and lower than %d",
+            activationDelayValue,
+            ErpFederationRedeemScriptParser.MAX_CSV_VALUE
+        );
+        assertTrue(exception.getMessage().contentEquals(expectedMessage));
     }
 
     @Test
     void createInvalidLegacyErpFederation_zeroCsvValue() {
         activationDelayValue = 0L;
-        assertThrows(FederationCreationException.class, this::createDefaultLegacyErpFederation);
+        FederationCreationException exception = assertThrows(
+            FederationCreationException.class, this::createDefaultLegacyErpFederation
+        );
+
+        String expectedMessage = String.format(
+            "Provided csv value %d must be larger than 0 and lower than %d",
+            activationDelayValue,
+            ErpFederationRedeemScriptParser.MAX_CSV_VALUE
+        );
+        assertTrue(exception.getMessage().contentEquals(expectedMessage));
     }
 
     @Test
     void createInvalidLegacyErpFederation_aboveMaxCsvValue() {
         activationDelayValue = ErpFederationRedeemScriptParser.MAX_CSV_VALUE + 1;
-        assertThrows(FederationCreationException.class, this::createDefaultLegacyErpFederation);
+        FederationCreationException exception = assertThrows(
+            FederationCreationException.class, this::createDefaultLegacyErpFederation
+        );
+
+        String expectedMessage = String.format(
+            "Provided csv value %d must be larger than 0 and lower than %d",
+            activationDelayValue,
+            ErpFederationRedeemScriptParser.MAX_CSV_VALUE
+        );
+        assertTrue(exception.getMessage().contentEquals(expectedMessage));
     }
 
     @Test
@@ -147,8 +184,12 @@ class LegacyErpFederationTest {
         );
         newStandardKeys.add(federator10PublicKey);
         standardKeys = newStandardKeys;
+        FederationCreationException exception = assertThrows(
+            FederationCreationException.class, this::createDefaultLegacyErpFederation
+        );
 
-        assertThrows(FederationCreationException.class, this::createDefaultLegacyErpFederation);
+        String expectedMessage = "Unable to create LegacyErpFederation. The redeem script size is 523, that is above the maximum allowed.";
+        assertTrue(exception.getMessage().contentEquals(expectedMessage));
     }
 
     @Test

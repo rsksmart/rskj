@@ -7,7 +7,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
 import java.util.List;
-import co.rsk.rules.Standardness;
+import co.rsk.peg.utils.FederationUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -75,8 +75,10 @@ public class LegacyErpFederation extends ErpFederation {
     }
 
     private void validateRedeemScript() {
+        Script redeemScript = this.getRedeemScript();
+
         if (activations.isActive(ConsensusRule.RSKIP293) &&
-            this.getRedeemScript().equals(new Script(LEGACY_ERP_TESTNET_REDEEM_SCRIPT_BYTES))) {
+            redeemScript.equals(new Script(LEGACY_ERP_TESTNET_REDEEM_SCRIPT_BYTES))) {
 
             String message = "Unable to create ERP Federation. The obtained redeem script matches the one hardcoded for testnet. "
                 + "This would cause bitcoinj-thin to identify it as invalid";
@@ -84,14 +86,11 @@ public class LegacyErpFederation extends ErpFederation {
             throw new FederationCreationException(message);
         }
 
-        // we have to check if the size of every script inside the scriptSig is not above the maximum
-        // this scriptSig contains the signatures, the redeem script and some other bytes
-        // so it is ok to just check the redeem script size
-
-        int bytesFromRedeemScript = getRedeemScript().getProgram().length;
-
-        if (bytesFromRedeemScript > Standardness.MAX_SCRIPT_ELEMENT_SIZE) {
-            String message = "Unable to create LegacyErpFederation. The redeem script size is above the maximum allowed.";
+        if (!FederationUtils.isRedeemScriptSizeValid(redeemScript)) {
+            String message = String.format(
+                "Unable to create LegacyErpFederation. The redeem script size is %d, that is above the maximum allowed.",
+                redeemScript.getProgram().length
+            );
             throw new FederationCreationException(message);
         }
     }
