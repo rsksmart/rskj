@@ -22,6 +22,10 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SnapshotProcessor {
 
@@ -30,6 +34,7 @@ public class SnapshotProcessor {
     public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
+    private static final long BLOCKNUM = 5544285l;
 
     private final Blockchain blockchain;
     private final TrieStore trieStore;
@@ -41,9 +46,6 @@ public class SnapshotProcessor {
 
     private long messageId = 0;
     private boolean enabled = false;
-
-    // flag for parallel requests
-    private boolean parallel = false;
 
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
@@ -58,6 +60,19 @@ public class SnapshotProcessor {
     private final Queue<ChunkTask> chunkTasks = new LinkedList<>();
     private List<Peer> peers = new ArrayList<>();
 
+    // multithreading stuff
+
+    // flag for parallel requests
+    private boolean parallel = false;
+
+    // executor service
+    private ExecutorService executorService;
+    private static final int SNAPSHOT_THREADS = 4;
+
+    // keep track of active chunkTasks (cuncurrently)
+    private ConcurrentMap<Long, ChunkTask> activeTasks = new ConcurrentHashMap<>();
+
+
     public SnapshotProcessor(Blockchain blockchain,
             TrieStore trieStore,
             PeersInformation peersInformation,
@@ -70,6 +85,7 @@ public class SnapshotProcessor {
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
+        this.executorService = Executors.newFixedThreadPool(SNAPSHOT_THREADS);
         this.isCompressionEnabled = isCompressionEnabled;
         this.elements = Lists.newArrayList();
         this.blockStore = blckStore;
@@ -95,7 +111,6 @@ public class SnapshotProcessor {
     private void stopSyncing() {
         this.stateSize = BigInteger.ZERO;
         this.stateChunkSize = BigInteger.ZERO;
-
         this.snapSyncState.finished();
     }
 
@@ -320,61 +335,81 @@ public class SnapshotProcessor {
             logger.info("CLIENT - Finished Snap blocks sync.");
         }
     }
-    
-    public class ChunkTask {
+
+    public class ChunkTask implements Runnable {
         private final long blockNumber;
         private final long from;
         private final int chunkSize;
-        
-        public ChunkTask(long blockNumber, long from, int chunkSize) {
+        private final Peer peer;
+
+        public ChunkTask(long blockNumber, long from, int chunkSize, Peer peer) {
             this.blockNumber = blockNumber;
             this.from = from;
             this.chunkSize = chunkSize;
+            this.peer = peer;
         }
-        
+        @Override
+        public void run() {
+            execute(peer);
+        }
         public void execute(Peer peer) {
             requestStateChunk(peer, from, blockNumber, chunkSize);
         }
+
+        public long getFrom() {
+            return from;
+        }
     }
-    
+
     private void generateTasks() {
         long from = 0;
         logger.debug("generating snapshot chunk tasks");
-        
+
         while (from < remoteTrieSize) {
-            ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize);
+            ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize, getNextPeer());
             //logger.debug("task: {} < {}", task.from, remoteTrieSize);
             chunkTasks.add(task);
             from += chunkSize * 1024L;
         }
         logger.debug("generated: {} snapshot chunk tasks", chunkTasks.size());
     }
-    
+
     private void startProcessing() {
-        assignNextTask(getNextPeer());
+        if (parallel) {
+            for (Peer peer : peers) {
+                assignNextTask(peer);
+            }
+        } else {
+            assignNextTask(getNextPeer());
+        }
     }
-    
-    private void assignNextTask(Peer peer) {
-        ChunkTask chunkTask = chunkTasks.poll();
-        if (chunkTask != null) {
-            chunkTask.execute(peer);
+
+    private synchronized void assignNextTask(Peer peer) {
+        if (!chunkTasks.isEmpty()) {
+            ChunkTask task = chunkTasks.poll();
+            activeTasks.put(task.getFrom(), task);
+            executorService.execute(task);
         } else {
             logger.debug("no more tasks");
         }
     }
-    
+
     private int chunksProcessed = 0;
     private int currentPeerIndex = 0;
-    
+
     private void continueWork(Peer currentPeer) {
-        if (chunksProcessed >= 100) {
-            currentPeer = getNextPeer();
-            chunksProcessed = 0;
+        if (parallel) {
+            assignNextTask(currentPeer);
+        } else {
+            if (chunksProcessed >= 100) {
+                currentPeer = getNextPeer();
+                chunksProcessed = 0;
+            }
+            assignNextTask(currentPeer);
+            chunksProcessed++;
         }
-        assignNextTask(currentPeer);
-        chunksProcessed++;
     }
-    
+
     private Peer getNextPeer() {
         if (peers.isEmpty()) {
             logger.debug("snapshot: no more peers");
@@ -384,7 +419,7 @@ public class SnapshotProcessor {
         currentPeerIndex = (currentPeerIndex + 1) % peers.size();
         Peer nextPeer = peers.get(currentPeerIndex);
         logger.debug("got next peer. new peer index: {}", currentPeerIndex);
-        
+
         return nextPeer;
     }
 }
