@@ -39,6 +39,10 @@ public class SnapshotProcessor {
 
     private long messageId = 0;
     private boolean enabled = false;
+
+    // flag for parallel requests
+    private boolean parallel = false;
+
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
     private SnapSyncState snapSyncState;
@@ -53,7 +57,7 @@ public class SnapshotProcessor {
     public SnapshotProcessor(Blockchain blockchain,
             TrieStore trieStore,
             PeersInformation peersInformation,
-            int chunkSize, String chunkSizeType,
+            int chunkSize, String chunkSizeType, boolean isParallelEnabled,
             boolean isCompressionEnabled) {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
@@ -62,6 +66,7 @@ public class SnapshotProcessor {
         this.chunkSizeType = chunkSizeType;
         this.isCompressionEnabled = isCompressionEnabled;
         this.elements = Lists.newArrayList();
+        this.parallel = isParallelEnabled;
     }
 
     public void startSyncing(List<Peer> peers, SnapSyncState snapSyncState) {
@@ -73,6 +78,9 @@ public class SnapshotProcessor {
         // get more than one peer, use the peer queue
         // TODO(snap-poc) deal with multiple peers algorithm here
         logger.debug("start snapshot sync");
+
+        logger.debug("parallel {}", parallel);
+
         requestSnapStatus(peers.get(0));
     }
 
