@@ -54,8 +54,11 @@ public class StandardMultisigFederation extends Federation {
     }
 
     private void validateRedeemScriptSize() {
+        // we need to check if every stack inside the scriptsig has a valid size.
+        // this scriptSig contains the signatures, the redeem script and some other bytes
+        // so it is ok to just check the redeem script size
         Script redeemScript = this.getRedeemScript();
-        if (!FederationUtils.isRedeemScriptSizeValid(redeemScript)) {
+        if (!FederationUtils.isScriptSizeValid(redeemScript)) {
             String message = String.format(
                 "Unable to create StandardMultisigFederation. The redeem script size is %d, that is above the maximum allowed.",
                 redeemScript.getProgram().length

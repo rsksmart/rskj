@@ -86,7 +86,10 @@ public class LegacyErpFederation extends ErpFederation {
             throw new FederationCreationException(message);
         }
 
-        if (!FederationUtils.isRedeemScriptSizeValid(redeemScript)) {
+        // we need to check if every stack inside the scriptsig has a valid size.
+        // this scriptSig contains the signatures, the redeem script and some other bytes
+        // so it is ok to just check the redeem script size
+        if (!FederationUtils.isScriptSizeValid(redeemScript)) {
             String message = String.format(
                 "Unable to create LegacyErpFederation. The redeem script size is %d, that is above the maximum allowed.",
                 redeemScript.getProgram().length

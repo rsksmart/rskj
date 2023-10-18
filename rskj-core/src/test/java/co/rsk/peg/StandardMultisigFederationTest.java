@@ -89,7 +89,6 @@ class StandardMultisigFederationTest {
             ));
         String expectedMessage = "Unable to create StandardMultisigFederation. The redeem script size is 547, that is above the maximum allowed.";
         assertTrue(exception.getMessage().contentEquals(expectedMessage));
-
     }
 
     @Test
