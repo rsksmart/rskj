@@ -7,11 +7,11 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
 import java.util.List;
-import co.rsk.peg.utils.FederationUtils;
+
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static co.rsk.peg.FederationCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.FederationUtils.isScriptSizeValid;
 
 public class P2shErpFederation extends ErpFederation {
     private static final Logger logger = LoggerFactory.getLogger(P2shErpFederation.class);
@@ -27,7 +27,7 @@ public class P2shErpFederation extends ErpFederation {
     ) {
         super(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay, activations);
 
-        validateRedeemScriptSize();
+        isScriptSizeValid(this.getRedeemScript());
     }
 
     @Override
@@ -52,16 +52,5 @@ public class P2shErpFederation extends ErpFederation {
             );
         }
         return standardRedeemScript;
-    }
-
-    private void validateRedeemScriptSize() {
-        Script redeemScript = this.getRedeemScript();
-        if (!FederationUtils.isScriptSizeValid(redeemScript)) {
-            String message = String.format(
-                "Unable to create P2shErpFederation. The redeem script size is %d, that is above the maximum allowed.",
-                redeemScript.getProgram().length
-            );
-            throw new FederationCreationException(message, ABOVE_MAX_SCRIPT_ELEMENT_SIZE);
-        }
     }
 }

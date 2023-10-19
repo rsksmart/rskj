@@ -7,13 +7,14 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
 import java.util.List;
-import co.rsk.peg.utils.FederationUtils;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static co.rsk.peg.FederationCreationException.Reason.*;
+import static co.rsk.peg.FederationUtils.isScriptSizeValid;
 
 /**
  * @deprecated This class represents a Legacy ERP Federation that is non-standard.
@@ -37,6 +38,7 @@ public class LegacyErpFederation extends ErpFederation {
         super(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay, activations);
 
         validateRedeemScript();
+        isScriptSizeValid(this.getRedeemScript());
     }
 
     @Override
@@ -85,17 +87,6 @@ public class LegacyErpFederation extends ErpFederation {
                 + "This would cause bitcoinj-thin to identify it as invalid";
             logger.debug("[validateRedeemScript] {}", message);
             throw new FederationCreationException(message, HARDCODED_LEGACY_ERP_TESTNET_REDEEM_SCRIPT);
-        }
-
-        // we need to check if every stack inside the scriptsig has a valid size.
-        // this scriptSig contains the signatures, the redeem script and some other bytes
-        // so it is ok to just check the redeem script size
-        if (!FederationUtils.isScriptSizeValid(redeemScript)) {
-            String message = String.format(
-                "Unable to create LegacyErpFederation. The redeem script size is %d, that is above the maximum allowed.",
-                redeemScript.getProgram().length
-            );
-            throw new FederationCreationException(message, ABOVE_MAX_SCRIPT_ELEMENT_SIZE);
         }
     }
 }
