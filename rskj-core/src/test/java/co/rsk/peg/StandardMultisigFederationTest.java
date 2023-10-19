@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.FederationCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.Address;
@@ -79,7 +80,6 @@ class StandardMultisigFederationTest {
         // add one member to exceed redeem script size limit
         newKeys.add(federator15PublicKey);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newKeys);
-
         FederationCreationException exception =
             assertThrows(FederationCreationException.class, () -> new StandardMultisigFederation(
                 newMembers,
@@ -87,8 +87,7 @@ class StandardMultisigFederationTest {
                 federation.creationBlockNumber,
                 federation.btcParams
             ));
-        String expectedMessage = "Unable to create StandardMultisigFederation. The redeem script size is 547, that is above the maximum allowed.";
-        assertTrue(exception.getMessage().contentEquals(expectedMessage));
+        assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
 
     @Test

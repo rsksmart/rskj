@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.FederationCreationException.Reason.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
@@ -95,9 +96,7 @@ class P2shErpFederationTest {
         FederationCreationException exception = assertThrows(
             FederationCreationException.class, this::createDefaultP2shErpFederation
         );
-
-        String expectedMessage = "Emergency keys are not provided";
-        assertTrue(exception.getMessage().contentEquals(expectedMessage));
+        assertEquals(NULL_OR_EMPTY_EMERGENCY_KEYS, exception.getReason());
     }
 
     @Test
@@ -106,9 +105,7 @@ class P2shErpFederationTest {
         FederationCreationException exception = assertThrows(
             FederationCreationException.class, this::createDefaultP2shErpFederation
         );
-
-        String expectedMessage = "Emergency keys are not provided";
-        assertTrue(exception.getMessage().contentEquals(expectedMessage));
+        assertEquals(NULL_OR_EMPTY_EMERGENCY_KEYS, exception.getReason());
     }
 
     @Test
@@ -123,13 +120,7 @@ class P2shErpFederationTest {
         FederationCreationException exception = assertThrows(
             FederationCreationException.class, this::createDefaultP2shErpFederation
         );
-
-        String expectedMessage = String.format(
-            "Provided csv value %d must be larger than 0 and lower than %d",
-            activationDelayValue,
-            ErpFederationRedeemScriptParser.MAX_CSV_VALUE
-        );
-        assertTrue(exception.getMessage().contentEquals(expectedMessage));
+        assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
     @Test
@@ -138,13 +129,7 @@ class P2shErpFederationTest {
         FederationCreationException exception = assertThrows(
             FederationCreationException.class, this::createDefaultP2shErpFederation
         );
-
-        String expectedMessage = String.format(
-            "Provided csv value %d must be larger than 0 and lower than %d",
-            activationDelayValue,
-            ErpFederationRedeemScriptParser.MAX_CSV_VALUE
-        );
-        assertTrue(exception.getMessage().contentEquals(expectedMessage));
+        assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
     @Test
@@ -153,13 +138,7 @@ class P2shErpFederationTest {
         FederationCreationException exception = assertThrows(
             FederationCreationException.class, this::createDefaultP2shErpFederation
         );
-
-        String expectedMessage = String.format(
-            "Provided csv value %d must be larger than 0 and lower than %d",
-            activationDelayValue,
-            ErpFederationRedeemScriptParser.MAX_CSV_VALUE
-        );
-        assertTrue(exception.getMessage().contentEquals(expectedMessage));
+        assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
     @Test
@@ -180,9 +159,7 @@ class P2shErpFederationTest {
         FederationCreationException exception = assertThrows(
             FederationCreationException.class, this::createDefaultP2shErpFederation
         );
-
-        String expectedMessage = "Unable to create P2shErpFederation. The redeem script size is 525, that is above the maximum allowed.";
-        assertTrue(exception.getMessage().contentEquals(expectedMessage));
+        assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
 
     @Test

@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.utils.FederationUtils;
 import java.time.Instant;
 import java.util.List;
+import static co.rsk.peg.FederationCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
 
 /**
  * Immutable representation of an RSK Federation in the context of
@@ -63,7 +64,7 @@ public class StandardMultisigFederation extends Federation {
                 "Unable to create StandardMultisigFederation. The redeem script size is %d, that is above the maximum allowed.",
                 redeemScript.getProgram().length
             );
-            throw new FederationCreationException(message);
+            throw new FederationCreationException(message, ABOVE_MAX_SCRIPT_ELEMENT_SIZE);
         }
     }
 }
