@@ -3,6 +3,7 @@ package co.rsk.config;
 import co.rsk.bitcoinj.core.Coin;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -121,5 +122,33 @@ class BridgeConstantsTest {
         } else {
             assertEquals(bridgeConstants.legacyMinimumPeginTxValue, minimumPeginTxValue);
         }
+    }
+
+    private static Stream<Arguments> bridgeConstantsArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance()),
+            Arguments.of(BridgeTestNetConstants.getInstance()),
+            Arguments.of(BridgeRegTestConstants.getInstance())
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("bridgeConstantsArgProvider")
+    void test_getEstimatedPegoutTxIndexBtcActivationHeight(BridgeConstants bridgeConstants){
+        // Act
+        long estimatedPegoutTxIndexBtcActivationHeight = bridgeConstants.getEstimatedPegoutTxIndexBtcActivationHeight();
+
+        // assert
+        Assertions.assertTrue(estimatedPegoutTxIndexBtcActivationHeight > 0);
+    }
+
+    @ParameterizedTest()
+    @MethodSource("bridgeConstantsArgProvider")
+    void test_getPegoutTxIndexGracePeriodInBtcBlocks(BridgeConstants bridgeConstants){
+        // Act
+        long pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+
+        // assert
+        Assertions.assertTrue(pegoutTxIndexGracePeriodInBtcBlocks > 0);
     }
 }
