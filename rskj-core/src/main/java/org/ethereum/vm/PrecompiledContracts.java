@@ -221,12 +221,8 @@ public class PrecompiledContracts {
 
         public abstract long getGasForData(byte[] data);
 
-        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs, Environment.CallStackDepth callStackDepth) {
         }
-
-        // Added this init with a Program object to avoid errors with current
-        // usage of the other init method
-        public void init(Program program) {}
 
         public List<ProgramSubtrace> getSubtraces() {
             return Collections.emptyList();
@@ -259,15 +255,20 @@ public class PrecompiledContracts {
     }
 
     public static class Environment extends PrecompiledContract {
-        Program program;
+        public interface CallStackDepth {
+            int getCurrentCallDepth();
+        }
+
+        private CallStackDepth callStackDepth;
 
         public Environment() {
         }
 
         @Override
-        public void init(Program program) {
-            super.init(program);
-            this.program = program;
+        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore,
+                         List<LogInfo> logs, CallStackDepth callStackDepth) {
+            super.init(tx, executionBlock, repository, blockStore, receiptStore, logs, callStackDepth);
+            this.callStackDepth = callStackDepth;
         }
 
         @Override
@@ -281,7 +282,7 @@ public class PrecompiledContracts {
         }
 
         private int getCallStackDepth() {
-            return program.getCallDeep();
+            return callStackDepth == null ? 0 : callStackDepth.getCurrentCallDepth();
         }
     }
 

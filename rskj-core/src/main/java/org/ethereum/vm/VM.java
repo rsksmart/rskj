@@ -1506,12 +1506,6 @@ public class VM {
 
         PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
 
-        // If the precompiled contract is Environment call the init method passing program
-        if(precompiledContract != null
-                && codeAddress.equals(PrecompiledContracts.ENVIRONMENT_ADDR_DW)){
-            precompiledContract.init(program);
-        }
-
         if (precompiledContract != null) {
 
             program.callToPrecompiledAddress(msg, precompiledContract);

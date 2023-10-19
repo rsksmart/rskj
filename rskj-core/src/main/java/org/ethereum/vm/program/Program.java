@@ -61,7 +61,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-public class Program {
+public class Program implements PrecompiledContracts.Environment.CallStackDepth {
     // These logs should never be in Info mode in production
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
@@ -1407,7 +1407,12 @@ public class Program {
                     Collections.emptyList()
             );
 
-            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList());
+            // If the precompiled contract is Environment call the init method passing program
+            if(codeAddress.equals(PrecompiledContracts.ENVIRONMENT_ADDR)){
+                contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList(), this);
+            } else {
+                contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList(), null);
+            }
         }
 
         long requiredGas = contract.getGasForData(data);
@@ -1485,6 +1490,11 @@ public class Program {
 
     private boolean byTestingSuite() {
         return invoke.byTestingSuite();
+    }
+
+    @Override
+    public int getCurrentCallDepth() {
+        return getCallDeep();
     }
 
     public interface ProgramOutListener {

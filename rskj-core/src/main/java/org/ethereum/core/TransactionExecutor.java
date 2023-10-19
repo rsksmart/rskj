@@ -307,7 +307,7 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
+            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList(), program);
             profiler.stop(metric);
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
 
