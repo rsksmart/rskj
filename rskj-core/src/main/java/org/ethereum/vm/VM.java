@@ -1495,11 +1495,6 @@ public class VM {
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
-        // Uncomment this if block to replace the contract address
-//        if(codeAddress.toString().equals("00000000000000000000000027444fbce96cb2d27b94e116d1506d7739c05862")) {
-//            codeAddress = PrecompiledContracts.ENVIRONMENT_ADDR_DW;
-//        }
-
         ActivationConfig.ForBlock activations = program.getActivations();
 
         MessageCall msg = getMessageCall(gas, codeAddress, activations);

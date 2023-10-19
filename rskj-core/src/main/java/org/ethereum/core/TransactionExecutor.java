@@ -292,6 +292,13 @@ public class TransactionExecutor {
         return txGasLimit >= gasUsed;
     }
 
+    private Program buildProgram(byte[] code) {
+        ProgramInvoke programInvoke =
+            programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
+
+        return new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts, signatureCache);
+    }
+
     private void call() {
         logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
@@ -307,7 +314,21 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList(), program);
+
+            if(precompiledContract instanceof PrecompiledContracts.Environment) {
+                byte[] code = track.getCode(targetAddress);
+
+                Program builtprogram = this.program;
+
+                if (builtprogram == null && !isEmpty(code)) {
+                    builtprogram = buildProgram(code);
+                }
+
+                precompiledContract.init(builtprogram);
+            } else {
+                precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
+            }
+
             profiler.stop(metric);
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
 
@@ -351,11 +372,8 @@ public class TransactionExecutor {
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
             } else {
-                ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
-
                 this.vm = new VM(vmConfig, precompiledContracts);
-                this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts, signatureCache);
+                this.program = buildProgram(code);
             }
         }
 
@@ -375,10 +393,9 @@ public class TransactionExecutor {
             // storage. It doesn't even call setupContract() to setup a storage root
         } else {
             cacheTrack.setupContract(newContractAddress);
-            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
 
             this.vm = new VM(vmConfig, precompiledContracts);
-            this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts, signatureCache);
+            this.program = buildProgram(tx.getData());
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network

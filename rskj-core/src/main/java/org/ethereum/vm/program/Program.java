@@ -1407,12 +1407,11 @@ public class Program implements PrecompiledContracts.Environment.CallStackDepth 
                     Collections.emptyList()
             );
 
-            // If the precompiled contract is Environment call the init method passing program
-            if(codeAddress.equals(PrecompiledContracts.ENVIRONMENT_ADDR)){
-                contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList(), this);
-            } else {
-                contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList(), null);
-            }
+            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList());
+        }
+
+        if (contract instanceof PrecompiledContracts.Environment) {
+            contract.init(this);
         }
 
         long requiredGas = contract.getGasForData(data);

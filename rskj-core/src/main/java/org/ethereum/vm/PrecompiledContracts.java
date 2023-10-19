@@ -221,7 +221,18 @@ public class PrecompiledContracts {
 
         public abstract long getGasForData(byte[] data);
 
+        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+        }
+
         public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs, Environment.CallStackDepth callStackDepth) {
+            if(this instanceof Environment) {
+                this.init(callStackDepth);
+            } else {
+                this.init(tx, executionBlock, repository, blockStore, receiptStore, logs);
+            }
+        }
+
+        public void init(Environment.CallStackDepth callStackDepth) {
         }
 
         public List<ProgramSubtrace> getSubtraces() {
@@ -265,9 +276,8 @@ public class PrecompiledContracts {
         }
 
         @Override
-        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore,
-                         List<LogInfo> logs, CallStackDepth callStackDepth) {
-            super.init(tx, executionBlock, repository, blockStore, receiptStore, logs, callStackDepth);
+        public void init(CallStackDepth callStackDepth) {
+            super.init(callStackDepth);
             this.callStackDepth = callStackDepth;
         }
 
