@@ -23,14 +23,18 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.NetBlockStore;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
+import org.ethereum.config.Constants;
 import org.ethereum.core.*;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 19/08/2016.
@@ -53,11 +57,11 @@ class BlockUtilsTest {
         blockChain.tryToConnect(block1);
         blockChain.tryToConnect(block1b);
 
-        Assertions.assertTrue(BlockUtils.blockInSomeBlockChain(genesis, blockChain));
-        Assertions.assertTrue(BlockUtils.blockInSomeBlockChain(block1, blockChain));
-        Assertions.assertTrue(BlockUtils.blockInSomeBlockChain(block1b, blockChain));
-        Assertions.assertFalse(BlockUtils.blockInSomeBlockChain(block2, blockChain));
-        Assertions.assertTrue(BlockUtils.blockInSomeBlockChain(block3, blockChain));
+        assertTrue(BlockUtils.blockInSomeBlockChain(genesis, blockChain));
+        assertTrue(BlockUtils.blockInSomeBlockChain(block1, blockChain));
+        assertTrue(BlockUtils.blockInSomeBlockChain(block1b, blockChain));
+        assertFalse(BlockUtils.blockInSomeBlockChain(block2, blockChain));
+        assertTrue(BlockUtils.blockInSomeBlockChain(block3, blockChain));
     }
 
     @Test
@@ -74,37 +78,37 @@ class BlockUtilsTest {
 
         store.saveBlock(block3);
 
-        Assertions.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
-        Assertions.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
+        assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
+        assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
 
         Set<Keccak256> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
 
-        Assertions.assertNotNull(hashes);
-        Assertions.assertTrue(hashes.isEmpty());
+        assertNotNull(hashes);
+        assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block1.getHash(), blockChain, store);
 
-        Assertions.assertNotNull(hashes);
-        Assertions.assertTrue(hashes.isEmpty());
+        assertNotNull(hashes);
+        assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block1b.getHash(), blockChain, store);
 
-        Assertions.assertNotNull(hashes);
-        Assertions.assertTrue(hashes.isEmpty());
+        assertNotNull(hashes);
+        assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block2.getHash(), blockChain, store);
 
-        Assertions.assertNotNull(hashes);
-        Assertions.assertFalse(hashes.isEmpty());
-        Assertions.assertEquals(1, hashes.size());
-        Assertions.assertTrue(hashes.contains(block2.getHash()));
+        assertNotNull(hashes);
+        assertFalse(hashes.isEmpty());
+        assertEquals(1, hashes.size());
+        assertTrue(hashes.contains(block2.getHash()));
 
         hashes = BlockUtils.unknownAncestorsHashes(block3.getHash(), blockChain, store);
 
-        Assertions.assertNotNull(hashes);
-        Assertions.assertFalse(hashes.isEmpty());
-        Assertions.assertEquals(1, hashes.size());
-        Assertions.assertTrue(hashes.contains(block2.getHash()));
+        assertNotNull(hashes);
+        assertFalse(hashes.isEmpty());
+        assertEquals(1, hashes.size());
+        assertTrue(hashes.contains(block2.getHash()));
     }
 
     @Test
@@ -136,46 +140,55 @@ class BlockUtilsTest {
 
         Set<Keccak256> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
 
-        Assertions.assertNotNull(hashes);
-        Assertions.assertTrue(hashes.isEmpty());
+        assertNotNull(hashes);
+        assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block1.getHash(), blockChain, store);
 
-        Assertions.assertNotNull(hashes);
-        Assertions.assertTrue(hashes.isEmpty());
+        assertNotNull(hashes);
+        assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block1b.getHash(), blockChain, store);
 
-        Assertions.assertNotNull(hashes);
+        assertNotNull(hashes);
 
-        Assertions.assertTrue(hashes.isEmpty());
+        assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block2.getHash(), blockChain, store);
 
-        Assertions.assertNotNull(hashes);
-        Assertions.assertFalse(hashes.isEmpty());
-        Assertions.assertEquals(1, hashes.size());
-        Assertions.assertTrue(hashes.contains(block2.getHash()));
+        assertNotNull(hashes);
+        assertFalse(hashes.isEmpty());
+        assertEquals(1, hashes.size());
+        assertTrue(hashes.contains(block2.getHash()));
 
         hashes = BlockUtils.unknownAncestorsHashes(block3.getHash(), blockChain, store);
 
-        Assertions.assertNotNull(hashes);
-        Assertions.assertFalse(hashes.isEmpty());
-        Assertions.assertEquals(3, hashes.size());
-        Assertions.assertTrue(hashes.contains(block2.getHash()));
-        Assertions.assertTrue(hashes.contains(uncle1.getHash()));
-        Assertions.assertTrue(hashes.contains(uncle2.getHash()));
+        assertNotNull(hashes);
+        assertFalse(hashes.isEmpty());
+        assertEquals(3, hashes.size());
+        assertTrue(hashes.contains(block2.getHash()));
+        assertTrue(hashes.contains(uncle1.getHash()));
+        assertTrue(hashes.contains(uncle2.getHash()));
     }
 
     @Test
     void tooMuchProcessTime() {
-        Assertions.assertFalse(BlockUtils.tooMuchProcessTime(0));
-        Assertions.assertFalse(BlockUtils.tooMuchProcessTime(1000));
-        Assertions.assertFalse(BlockUtils.tooMuchProcessTime(1_000_000L));
-        Assertions.assertFalse(BlockUtils.tooMuchProcessTime(1_000_000_000L));
-        Assertions.assertFalse(BlockUtils.tooMuchProcessTime(60_000_000_000L));
+        assertFalse(BlockUtils.tooMuchProcessTime(0));
+        assertFalse(BlockUtils.tooMuchProcessTime(1000));
+        assertFalse(BlockUtils.tooMuchProcessTime(1_000_000L));
+        assertFalse(BlockUtils.tooMuchProcessTime(1_000_000_000L));
+        assertFalse(BlockUtils.tooMuchProcessTime(60_000_000_000L));
 
-        Assertions.assertTrue(BlockUtils.tooMuchProcessTime(60_000_000_001L));
-        Assertions.assertTrue(BlockUtils.tooMuchProcessTime(1_000_000_000_000L));
+        assertTrue(BlockUtils.tooMuchProcessTime(60_000_000_001L));
+        assertTrue(BlockUtils.tooMuchProcessTime(1_000_000_000_000L));
+    }
+
+    @Test
+    void sublistGasLimit_ShouldReturnCorrectValue() {
+        Block block = mock(Block.class);
+        when(block.getGasLimit()).thenReturn(BigInteger.valueOf(10_000_000L).toByteArray());
+
+        long expectedLimit = 10_000_000L / (Constants.getTransactionExecutionThreads() + 1);
+        assertEquals(expectedLimit, BlockUtils.getSublistGasLimit(block));
     }
 }

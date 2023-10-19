@@ -20,10 +20,12 @@ package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.NetBlockStore;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockInformation;
+import org.ethereum.vm.GasCost;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -116,4 +118,7 @@ public class BlockUtils {
                 .collect(Collectors.toList());
     }
 
+    public static long getSublistGasLimit(Block block) {
+        return GasCost.toGas(block.getGasLimit()) / (Constants.getTransactionExecutionThreads() + 1);
+    }
 }

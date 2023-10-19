@@ -18,11 +18,13 @@
 package co.rsk.net.handler;
 
 import co.rsk.core.Coin;
+import co.rsk.core.bc.BlockUtils;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
@@ -69,10 +71,13 @@ public class TxPendingValidator {
     }
 
     public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
-        BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
+        long executionBlockNumber = executionBlock.getNumber();
+        ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlockNumber);
+        BigInteger gasLimit = activations.isActive(ConsensusRule.RSKIP144)
+                ? BigInteger.valueOf(BlockUtils.getSublistGasLimit(executionBlock))
+                : BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
-        long bestBlockNumber = executionBlock.getNumber();
-        long basicTxCost = tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber), signatureCache);
+        long basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
         if (state == null && basicTxCost != 0) {
             if (logger.isTraceEnabled()) {
@@ -86,7 +91,7 @@ public class TxPendingValidator {
         }
 
         for (TxValidatorStep step : validatorSteps) {
-            TransactionValidationResult validationResult = step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0);
+            TransactionValidationResult validationResult = step.validate(tx, state, gasLimit, minimumGasPrice, executionBlockNumber, basicTxCost == 0);
             if (!validationResult.transactionIsValid()) {
                 logger.info("[tx={}] validation failed with error: {}", tx.getHash(), validationResult.getErrorMessage());
                 return validationResult;

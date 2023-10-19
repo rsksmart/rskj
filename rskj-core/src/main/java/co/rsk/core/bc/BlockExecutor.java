@@ -462,7 +462,7 @@ public class BlockExecutor {
             }
         } : Runnable::run);
         List<TransactionListExecutor> transactionListExecutors = new ArrayList<>();
-        long sublistGasLimit = getSublistGasLimit(block);
+        long sublistGasLimit = BlockUtils.getSublistGasLimit(block);
 
         short start = 0;
 
@@ -626,7 +626,7 @@ public class BlockExecutor {
         int txindex = 0;
 
         int transactionExecutionThreads = Constants.getTransactionExecutionThreads();
-        long sublistGasLimit = getSublistGasLimit(block);
+        long sublistGasLimit = BlockUtils.getSublistGasLimit(block);
         ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) transactionExecutionThreads, sublistGasLimit);
 
         for (Transaction tx : transactionsList) {
@@ -724,10 +724,6 @@ public class BlockExecutor {
         profiler.stop(metric);
         logger.trace("End executeForMining.");
         return result;
-    }
-
-    private static long getSublistGasLimit(Block block) {
-        return GasCost.toGas(block.getGasLimit()) / (Constants.getTransactionExecutionThreads()+1);
     }
 
     private void registerExecutedTx(ProgramTraceProcessor programTraceProcessor, boolean vmTrace, List<Transaction> executedTransactions, Transaction tx, TransactionExecutor txExecutor) {
