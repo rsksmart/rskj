@@ -24,7 +24,6 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 
 import java.time.Instant;
 import java.util.List;
-import static co.rsk.peg.FederationUtils.isScriptSizeValid;
 
 /**
  * Immutable representation of an RSK Federation in the context of
@@ -42,7 +41,7 @@ public class StandardMultisigFederation extends Federation {
 
         super(members, creationTime, creationBlockNumber, btcParams);
 
-        isScriptSizeValid(this.getRedeemScript());
+        validateRedeemScriptSize();
     }
 
     @Override
@@ -52,5 +51,9 @@ public class StandardMultisigFederation extends Federation {
         }
 
         return redeemScript;
+    }
+
+    public void validateRedeemScriptSize() {
+        FederationUtils.validateScriptSize(this.getRedeemScript());
     }
 }

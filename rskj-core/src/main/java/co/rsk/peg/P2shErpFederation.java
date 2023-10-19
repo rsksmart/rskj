@@ -11,7 +11,6 @@ import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static co.rsk.peg.FederationUtils.isScriptSizeValid;
 
 public class P2shErpFederation extends ErpFederation {
     private static final Logger logger = LoggerFactory.getLogger(P2shErpFederation.class);
@@ -27,7 +26,7 @@ public class P2shErpFederation extends ErpFederation {
     ) {
         super(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay, activations);
 
-        isScriptSizeValid(this.getRedeemScript());
+        validateRedeemScriptSize();
     }
 
     @Override
@@ -52,5 +51,9 @@ public class P2shErpFederation extends ErpFederation {
             );
         }
         return standardRedeemScript;
+    }
+
+    public void validateRedeemScriptSize() {
+        FederationUtils.validateScriptSize(this.getRedeemScript());
     }
 }

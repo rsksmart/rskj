@@ -14,7 +14,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static co.rsk.peg.FederationCreationException.Reason.*;
-import static co.rsk.peg.FederationUtils.isScriptSizeValid;
 
 /**
  * @deprecated This class represents a Legacy ERP Federation that is non-standard.
@@ -38,7 +37,6 @@ public class LegacyErpFederation extends ErpFederation {
         super(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay, activations);
 
         validateRedeemScript();
-        isScriptSizeValid(this.getRedeemScript());
     }
 
     @Override
@@ -88,6 +86,8 @@ public class LegacyErpFederation extends ErpFederation {
             logger.debug("[validateRedeemScript] {}", message);
             throw new FederationCreationException(message, HARDCODED_LEGACY_ERP_TESTNET_REDEEM_SCRIPT);
         }
+
+        FederationUtils.validateScriptSize(redeemScript);
     }
 }
 

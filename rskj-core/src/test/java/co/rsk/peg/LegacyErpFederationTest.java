@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.ErpFederation.MAX_CSV_VALUE;
 import static co.rsk.peg.FederationCreationException.Reason.*;
 import static co.rsk.peg.bitcoin.Standardness.MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -141,7 +142,7 @@ class LegacyErpFederationTest {
 
     @Test
     void createInvalidLegacyErpFederation_aboveMaxCsvValue() {
-        activationDelayValue = ErpFederationRedeemScriptParser.MAX_CSV_VALUE + 1;
+        activationDelayValue = MAX_CSV_VALUE + 1;
         FederationCreationException exception = assertThrows(
             FederationCreationException.class, this::createDefaultLegacyErpFederation
         );
@@ -150,7 +151,7 @@ class LegacyErpFederationTest {
 
     @Test
     void createValidLegacyErpFederation_exactMaxCsvValue() {
-        activationDelayValue = ErpFederationRedeemScriptParser.MAX_CSV_VALUE;
+        activationDelayValue = MAX_CSV_VALUE;
         assertDoesNotThrow(this::createDefaultLegacyErpFederation);
     }
 
