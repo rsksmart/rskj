@@ -21,10 +21,10 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.peg.utils.FederationUtils;
+
 import java.time.Instant;
 import java.util.List;
-import static co.rsk.peg.FederationCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.FederationUtils.isScriptSizeValid;
 
 /**
  * Immutable representation of an RSK Federation in the context of
@@ -42,7 +42,7 @@ public class StandardMultisigFederation extends Federation {
 
         super(members, creationTime, creationBlockNumber, btcParams);
 
-        validateRedeemScriptSize();
+        isScriptSizeValid(this.getRedeemScript());
     }
 
     @Override
@@ -52,19 +52,5 @@ public class StandardMultisigFederation extends Federation {
         }
 
         return redeemScript;
-    }
-
-    private void validateRedeemScriptSize() {
-        // we need to check if every stack inside the scriptsig has a valid size.
-        // this scriptSig contains the signatures, the redeem script and some other bytes
-        // so it is ok to just check the redeem script size
-        Script redeemScript = this.getRedeemScript();
-        if (!FederationUtils.isScriptSizeValid(redeemScript)) {
-            String message = String.format(
-                "Unable to create StandardMultisigFederation. The redeem script size is %d, that is above the maximum allowed.",
-                redeemScript.getProgram().length
-            );
-            throw new FederationCreationException(message, ABOVE_MAX_SCRIPT_ELEMENT_SIZE);
-        }
     }
 }

@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.FederationCreationException.Reason.*;
+import static co.rsk.peg.bitcoin.Standardness.MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -20,7 +21,6 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.resources.TestConstants;
-import co.rsk.peg.utils.FederationUtils;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -337,8 +337,8 @@ class LegacyErpFederationTest {
 
         RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
-            // Skip test cases where the redeem script exceeds the maximum size
-            if (FederationUtils.isScriptSizeValid(generatedScript.script)) {
+            // Skip test cases with invalid redeem script that exceed the maximum size
+            if (generatedScript.script.getProgram().length <= MAX_SCRIPT_ELEMENT_SIZE) {
                 Federation erpFederation = new LegacyErpFederation(
                     FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                     ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
