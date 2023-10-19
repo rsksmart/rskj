@@ -53,7 +53,7 @@ public class P2shErpFederation extends ErpFederation {
         return standardRedeemScript;
     }
 
-    public void validateRedeemScriptSize() {
+    private void validateRedeemScriptSize() {
         Script redeemScript = this.getRedeemScript();
         FederationUtils.validateScriptSize(redeemScript);
     }
