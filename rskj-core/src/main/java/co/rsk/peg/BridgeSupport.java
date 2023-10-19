@@ -425,7 +425,7 @@ public class BridgeSupport {
                     logger.warn("[registerBtcTransaction][rsk tx {}] {}", rskTx.getHash(), message);
                     panicProcessor.panic("btclock", message);
             }
-        } catch (RegisterBtcTransactionException e) {
+        } catch (RegisterBtcTransactionException e) {//something
             logger.warn(
                 "[registerBtcTransaction][rsk tx {}] Could not register transaction {}. Message: {}",
                 rskTx.getHash(),
