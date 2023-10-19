@@ -13,6 +13,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static co.rsk.peg.FederationCreationException.Reason.*;
 
 /**
  * @deprecated This class represents a Legacy ERP Federation that is non-standard.
@@ -83,7 +84,7 @@ public class LegacyErpFederation extends ErpFederation {
             String message = "Unable to create ERP Federation. The obtained redeem script matches the one hardcoded for testnet. "
                 + "This would cause bitcoinj-thin to identify it as invalid";
             logger.debug("[validateRedeemScript] {}", message);
-            throw new FederationCreationException(message);
+            throw new FederationCreationException(message, HARDCODED_LEGACY_ERP_TESTNET_REDEEM_SCRIPT);
         }
 
         // we need to check if every stack inside the scriptsig has a valid size.
@@ -94,7 +95,7 @@ public class LegacyErpFederation extends ErpFederation {
                 "Unable to create LegacyErpFederation. The redeem script size is %d, that is above the maximum allowed.",
                 redeemScript.getProgram().length
             );
-            throw new FederationCreationException(message);
+            throw new FederationCreationException(message, ABOVE_MAX_SCRIPT_ELEMENT_SIZE);
         }
     }
 }

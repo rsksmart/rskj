@@ -11,6 +11,7 @@ import co.rsk.peg.utils.FederationUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static co.rsk.peg.FederationCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
 
 public class P2shErpFederation extends ErpFederation {
     private static final Logger logger = LoggerFactory.getLogger(P2shErpFederation.class);
@@ -60,7 +61,7 @@ public class P2shErpFederation extends ErpFederation {
                 "Unable to create P2shErpFederation. The redeem script size is %d, that is above the maximum allowed.",
                 redeemScript.getProgram().length
             );
-            throw new FederationCreationException(message);
+            throw new FederationCreationException(message, ABOVE_MAX_SCRIPT_ELEMENT_SIZE);
         }
     }
 }
