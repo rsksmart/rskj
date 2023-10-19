@@ -159,6 +159,20 @@ class Web3ImplSnapshotTest {
         Assertions.assertEquals(1, blockchain.getBestBlock().getNumber());
     }
 
+    @Test
+    public void increaseTime() {
+        SimpleEthereum ethereum = new SimpleEthereum();
+        Web3Impl web3 = createWeb3(ethereum);
+
+        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(0, blockchain.getBestBlock().getTimestamp());
+
+        web3.evm_increaseTime("600");
+        web3.evm_mine();
+
+        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(600, blockchain.getBestBlock().getTimestamp());
+    }
 
     private Web3Impl createWeb3(SimpleEthereum ethereum) {
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
