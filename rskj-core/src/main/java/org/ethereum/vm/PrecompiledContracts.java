@@ -48,6 +48,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.Program;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -77,6 +78,7 @@ public class PrecompiledContracts {
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
+    public static final String ENVIRONMENT_ADDR_STR = "0000000000000000000000000000000001000011";
 
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
@@ -91,6 +93,7 @@ public class PrecompiledContracts {
     public static final DataWord REMASC_ADDR_DW = DataWord.valueFromHex(REMASC_ADDR_STR);
     public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
     public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueFromHex(BLOCK_HEADER_ADDR_STR);
+    public static final DataWord ENVIRONMENT_ADDR_DW = DataWord.valueFromHex(ENVIRONMENT_ADDR_STR);
 
     public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
     public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
@@ -105,6 +108,7 @@ public class PrecompiledContracts {
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_DW);
     public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
     public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
+    public static final RskAddress ENVIRONMENT_ADDR = new RskAddress(ENVIRONMENT_ADDR_STR);
 
     public static final List<RskAddress> GENESIS_ADDRESSES = Collections.unmodifiableList(Arrays.asList(
             ECRECOVER_ADDR,
@@ -113,7 +117,8 @@ public class PrecompiledContracts {
             IDENTITY_ADDR,
             BIG_INT_MODEXP_ADDR,
             BRIDGE_ADDR,
-            REMASC_ADDR
+            REMASC_ADDR,
+            ENVIRONMENT_ADDR
     ));
 
     // this maps needs to be updated by hand any time a new pcc is added
@@ -133,6 +138,7 @@ public class PrecompiledContracts {
     private static Ripempd160 ripempd160 = new Ripempd160();
     private static Identity identity = new Identity();
     private static BigIntegerModexp bigIntegerModexp = new BigIntegerModexp();
+    private static Environment environment = new Environment();
     private final RskSystemProperties config;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final SignatureCache signatureCache;
@@ -164,6 +170,9 @@ public class PrecompiledContracts {
         }
         if (address.equals(IDENTITY_ADDR_DW)) {
             return identity;
+        }
+        if (address.equals(ENVIRONMENT_ADDR_DW)) {
+            return environment;
         }
         if (address.equals(BRIDGE_ADDR_DW)) {
             return new Bridge(
@@ -215,6 +224,10 @@ public class PrecompiledContracts {
         public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
         }
 
+        // Added this init with a Program object to avoid errors with current
+        // usage of the other init method
+        public void init(Program program) {}
+
         public List<ProgramSubtrace> getSubtraces() {
             return Collections.emptyList();
         }
@@ -242,6 +255,33 @@ public class PrecompiledContracts {
         @Override
         public byte[] execute(byte[] data) {
             return data;
+        }
+    }
+
+    public static class Environment extends PrecompiledContract {
+        Program program;
+
+        public Environment() {
+        }
+
+        @Override
+        public void init(Program program) {
+            super.init(program);
+            this.program = program;
+        }
+
+        @Override
+        public long getGasForData(byte[] data) {
+            return 0;
+        }
+
+        @Override
+        public byte[] execute(byte[] data) {
+            return ByteUtil.intToBytes(getCallStackDepth());
+        }
+
+        private int getCallStackDepth() {
+            return program.getCallDeep();
         }
     }
 

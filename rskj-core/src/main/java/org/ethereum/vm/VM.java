@@ -43,6 +43,7 @@ import java.util.List;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.OpCode.CALL;
+import static org.ethereum.vm.OpCode.code;
 
 
 /**
@@ -1494,11 +1495,22 @@ public class VM {
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
+        // Uncomment this if block to replace the contract address
+//        if(codeAddress.toString().equals("00000000000000000000000027444fbce96cb2d27b94e116d1506d7739c05862")) {
+//            codeAddress = PrecompiledContracts.ENVIRONMENT_ADDR_DW;
+//        }
+
         ActivationConfig.ForBlock activations = program.getActivations();
 
         MessageCall msg = getMessageCall(gas, codeAddress, activations);
 
         PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
+
+        // If the precompiled contract is Environment call the init method passing program
+        if(precompiledContract != null
+                && codeAddress.equals(PrecompiledContracts.ENVIRONMENT_ADDR_DW)){
+            precompiledContract.init(program);
+        }
 
         if (precompiledContract != null) {
 
