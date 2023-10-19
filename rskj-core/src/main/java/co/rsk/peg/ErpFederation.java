@@ -13,9 +13,9 @@ import static co.rsk.peg.FederationCreationException.Reason.INVALID_CSV_VALUE;
 import static co.rsk.peg.FederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 
 public abstract class ErpFederation extends Federation {
+    protected static final long MAX_CSV_VALUE = 65_535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
     protected final List<BtcECKey> erpPubKeys;
     protected final long activationDelay;
-    protected static final long MAX_CSV_VALUE = 65_535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
     protected final ActivationConfig.ForBlock activations;
     protected Script standardRedeemScript;
     protected Script standardP2SHScript;
