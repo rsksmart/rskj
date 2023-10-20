@@ -30,7 +30,7 @@ public class SnapshotProcessor implements InternalService {
     public static final long DELAY_BTW_RUNS = 20 * 60 * 1000;
     public static final int CHUNK_MAX = 1600;
     public static final int CHUNK_MIN = 100;
-
+    public static final long BLOCK_NUMBER = 5637110l;
     private final NodeManager nodeManager;
     private final PeerClientFactory peerClientFactory;
     private final Blockchain blockchain;
