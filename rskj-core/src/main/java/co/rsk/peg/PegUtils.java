@@ -1,9 +1,11 @@
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -37,7 +39,41 @@ public class PegUtils {
         }
     }
 
-    public static boolean isAnyUTXOAmountBelowMinimum(Coin minimumPegInTxValue, BtcTransaction btcTx, Wallet wallet) {
+    public static boolean isAnyUTXOAmountBelowMinimum(
+        Coin minimumPegInTxValue, BtcTransaction btcTx, Wallet wallet) {
         return PegUtilsLegacy.isAnyUTXOAmountBelowMinimum(minimumPegInTxValue, btcTx, wallet);
+    }
+
+    public static PegTxType getTransactionType(
+        ActivationConfig.ForBlock activations,
+        BridgeStorageProvider provider,
+        Federation activeFederation,
+        Federation retiringFederation,
+        Address oldFederationAddress,
+        Wallet liveFederationsWallet,
+        Coin minimumPeginTxValue,
+        BtcTransaction btcTransaction,
+        boolean shouldUsePegoutTxIndexMechanism
+    ) {
+        if (activations.isActive(ConsensusRule.RSKIP379) && shouldUsePegoutTxIndexMechanism){
+            return getTransactionTypeUsingPegoutIndex(
+                activations,
+                provider,
+                liveFederationsWallet,
+                btcTransaction
+            );
+        } else {
+            Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
+            return PegUtilsLegacy.getTransactionType(
+                btcTransaction,
+                activeFederation,
+                retiringFederation,
+                retiredFederationP2SHScript,
+                oldFederationAddress,
+                activations,
+                minimumPeginTxValue,
+                liveFederationsWallet
+            );
+        }
     }
 }
