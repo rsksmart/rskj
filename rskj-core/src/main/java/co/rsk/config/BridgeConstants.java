@@ -87,9 +87,7 @@ public abstract class BridgeConstants {
 
     protected int numberOfBlocksBetweenPegouts;
 
-    protected long estimatedPegoutTxIndexBtcActivationHeight;
-
-    protected long pegoutTxIndexGracePeriodInBtcBlocks;
+    protected long btcHeightWhenPegoutTxIndexActivates;
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
@@ -191,11 +189,7 @@ public abstract class BridgeConstants {
         return numberOfBlocksBetweenPegouts;
     }
 
-    public long getEstimatedPegoutTxIndexBtcActivationHeight() {
-        return estimatedPegoutTxIndexBtcActivationHeight;
-    }
-
-    public long getPegoutTxIndexGracePeriodInBtcBlocks() {
-        return pegoutTxIndexGracePeriodInBtcBlocks;
+    public long getBtcHeightWhenPegoutTxIndexActivates() {
+        return btcHeightWhenPegoutTxIndexActivates;
     }
 }
