@@ -134,21 +134,11 @@ class BridgeConstantsTest {
 
     @ParameterizedTest()
     @MethodSource("bridgeConstantsArgProvider")
-    void test_getEstimatedPegoutTxIndexBtcActivationHeight(BridgeConstants bridgeConstants){
+    void test_getBtcHeightWhenPegoutTxIndexActivates(BridgeConstants bridgeConstants){
         // Act
-        long estimatedPegoutTxIndexBtcActivationHeight = bridgeConstants.getEstimatedPegoutTxIndexBtcActivationHeight();
+        long btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
 
         // assert
-        Assertions.assertTrue(estimatedPegoutTxIndexBtcActivationHeight > 0);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("bridgeConstantsArgProvider")
-    void test_getPegoutTxIndexGracePeriodInBtcBlocks(BridgeConstants bridgeConstants){
-        // Act
-        long pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-
-        // assert
-        Assertions.assertTrue(pegoutTxIndexGracePeriodInBtcBlocks > 0);
+        Assertions.assertTrue(btcHeightWhenPegoutTxIndexActivates > 0);
     }
 }
