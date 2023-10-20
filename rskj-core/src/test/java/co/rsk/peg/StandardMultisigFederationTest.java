@@ -27,6 +27,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -80,10 +81,11 @@ class StandardMultisigFederationTest {
         // add one member to exceed redeem script size limit
         newKeys.add(federator15PublicKey);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newKeys);
+        Instant creationTime = federation.getCreationTime();
         FederationCreationException exception =
             assertThrows(FederationCreationException.class, () -> new StandardMultisigFederation(
                 newMembers,
-                federation.getCreationTime(),
+                creationTime,
                 federation.creationBlockNumber,
                 federation.btcParams
             ));
