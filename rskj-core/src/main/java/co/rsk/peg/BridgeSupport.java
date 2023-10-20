@@ -413,26 +413,18 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
-            Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
-            Address oldFederationAddress = Address.fromBase58(
-                bridgeConstants.getBtcParams(),
-                bridgeConstants.getOldFederationAddress()
-            );
+
             Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, getLiveFederations());
 
-            long btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
-            long pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() * 5L;
-            boolean shouldUsePegoutTxIndexMechanism = height >= btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
             PegTxType pegTxType = PegUtils.getTransactionType(
                 activations,
                 provider,
+                bridgeConstants,
                 getActiveFederation(),
                 getRetiringFederation(),
-                oldFederationAddress,
                 liveFederationsWallet,
-                minimumPeginTxValue,
                 btcTx,
-                shouldUsePegoutTxIndexMechanism
+                height
             );
             // Specific code for pegin/pegout or migration/none txs
             switch (pegTxType) {

@@ -10,17 +10,14 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,12 +45,7 @@ class PegUtilsGetTransactionTypeTest {
         BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
     );
 
-    private static Context btcContext = Context.getOrCreate(btcMainnetParams);
-
-    private static Address oldFederationAddress = Address.fromBase58(
-        btcMainnetParams,
-        bridgeMainnetConstants.getOldFederationAddress()
-    );
+    private static Context btcContext = mock(Context.class);
 
     @Test
     void getTransactionType_sentFromP2SHErpFed() {
@@ -104,13 +96,12 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
+            bridgeMainnetConstants,
             activeFederation,
             p2shRetiringFederation,
-            oldFederationAddress,
             liveFederationsWallet,
-            minimumPeginTxValue,
             migrationTx,
-            false
+            1
         );
 
         // Assert
@@ -157,18 +148,17 @@ class PegUtilsGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiredFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
 
         Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
+            bridgeMainnetConstants,
             activeFederation,
             null,
-            oldFederationAddress,
             liveFederationsWallet,
-            minimumPeginTxValue,
             migrationTx,
-            false
+            1
         );
 
         // Assert
@@ -180,11 +170,6 @@ class PegUtilsGetTransactionTypeTest {
     void getTransactionType_sentFromP2SH_pegin() {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
-
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
-            .withBridgeConstants(bridgeMainnetConstants)
-            .withActivations(activations)
-            .build();
 
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
 
@@ -208,13 +193,12 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             mock(BridgeStorageProvider.class),
+            bridgeMainnetConstants,
             activeFederation,
             null,
-            oldFederationAddress,
             liveFederationsWallet,
-            minimumPeginTxValue,
             peginTx,
-            false
+            1
         );
 
         // Assert
@@ -262,18 +246,17 @@ class PegUtilsGetTransactionTypeTest {
         peginTx.addOutput(amountToSend, bridgeMainnetConstants.getGenesisFederation().getAddress());
 
         Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(bridgeMainnetConstants.getGenesisFederation()));
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             mock(BridgeStorageProvider.class),
+            bridgeMainnetConstants,
             bridgeMainnetConstants.getGenesisFederation(),
             null,
-            oldFederationAddress,
             liveFederationsWallet,
-            minimumPeginTxValue,
             peginTx,
-            false
+            1
         );
 
         // Assert
@@ -309,18 +292,17 @@ class PegUtilsGetTransactionTypeTest {
         FederationTestUtils.addSignatures(activeFederation, fedKeys, pegoutBtcTx);
 
         Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
+            bridgeMainnetConstants,
             activeFederation,
             null,
-            oldFederationAddress,
             liveFederationsWallet,
-            minimumPeginTxValue,
             pegoutBtcTx,
-            false
+            1
         );
 
         //Assert
@@ -356,18 +338,17 @@ class PegUtilsGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
         Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Arrays.asList(activeFederation, retiringFederation));
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
+            bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
-            oldFederationAddress,
             liveFederationsWallet,
-            minimumPeginTxValue,
             migrationTx,
-            false
+            1
         );
 
         // Assert
@@ -386,18 +367,17 @@ class PegUtilsGetTransactionTypeTest {
         unknownPegTx.addOutput(Coin.COIN, unknownAddress);
 
         Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(bridgeMainnetConstants.getGenesisFederation()));
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             mock(BridgeStorageProvider.class),
+            bridgeMainnetConstants,
             bridgeMainnetConstants.getGenesisFederation(),
             null,
-            oldFederationAddress,
             liveFederationsWallet,
-            minimumPeginTxValue,
             unknownPegTx,
-            false
+            1
         );
 
         // Assert
