@@ -165,8 +165,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         numberOfBlocksBetweenPegouts = 50; // 25 Minutes of RSK blocks (considering 1 block every 30 seconds)
 
-        estimatedPegoutTxIndexBtcActivationHeight = 1; // TODO: TBD. This is an estimation of the btc block number once RSKIP379 is activated.
-        pegoutTxIndexGracePeriodInBtcBlocks = 500; // TODO: TBD. Period of grace in btc blocks to continue using the legacy mechanism to identify btc tx.
+        btcHeightWhenPegoutTxIndexActivates = 1; // TODO: TBD. This is an estimation of the btc block number once RSKIP379 is activated.
     }
 
     public static BridgeRegTestConstants getInstance() {
