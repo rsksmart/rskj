@@ -7,6 +7,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.config.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -47,14 +48,17 @@ public class PegUtils {
     public static PegTxType getTransactionType(
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
+        BridgeConstants bridgeConstants,
         Federation activeFederation,
         Federation retiringFederation,
-        Address oldFederationAddress,
         Wallet liveFederationsWallet,
-        Coin minimumPeginTxValue,
         BtcTransaction btcTransaction,
-        boolean shouldUsePegoutTxIndexMechanism
+        long btcTransactionHeight
     ) {
+        long btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
+        long pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() * 5L;
+        boolean shouldUsePegoutTxIndexMechanism = btcTransactionHeight >= btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+
         if (activations.isActive(ConsensusRule.RSKIP379) && shouldUsePegoutTxIndexMechanism){
             return getTransactionTypeUsingPegoutIndex(
                 activations,
@@ -63,7 +67,13 @@ public class PegUtils {
                 btcTransaction
             );
         } else {
+            Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
+            Address oldFederationAddress = Address.fromBase58(
+                bridgeConstants.getBtcParams(),
+                bridgeConstants.getOldFederationAddress()
+            );
             Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
+
             return PegUtilsLegacy.getTransactionType(
                 btcTransaction,
                 activeFederation,
