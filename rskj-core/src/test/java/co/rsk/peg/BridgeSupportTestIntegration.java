@@ -1572,10 +1572,6 @@ public class BridgeSupportTestIntegration {
             .withBtcBlockStoreFactory(mockFactory)
             .withProvider(bridgeStorageProvider).build();
 
-        // Test that transaction type is identified as a peg-out
-        PegTxType transactionType = bridgeSupport.getTransactionType(releaseWithChangeTx);
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, transactionType);
-
         bridgeSupport.registerBtcTransaction(rskTx, releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
 
         // Assert no utxo is registered to active fed

@@ -417,8 +417,29 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
+            Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
+            Address oldFederationAddress = Address.fromBase58(
+                bridgeConstants.getBtcParams(),
+                bridgeConstants.getOldFederationAddress()
+            );
+            Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, getLiveFederations());
+
+            long btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
+            long pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() * 5L;
+            boolean shouldUsePegoutTxIndexMechanism = height >= btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+            PegTxType pegTxType = PegUtils.getTransactionType(
+                activations,
+                provider,
+                getActiveFederation(),
+                getRetiringFederation(),
+                oldFederationAddress,
+                liveFederationsWallet,
+                minimumPeginTxValue,
+                btcTx,
+                shouldUsePegoutTxIndexMechanism
+            );
             // Specific code for pegin/pegout or migration/none txs
-            switch (getTransactionType(btcTx)) {
+            switch (pegTxType) {
                 case PEGIN:
                     processPegIn(btcTx, rskTx, height, btcTxHash);
                     break;
@@ -443,29 +464,6 @@ public class BridgeSupport {
     @VisibleForTesting
     BtcBlockStoreWithCache getBtcBlockStore() {
         return btcBlockStore;
-    }
-
-    protected PegTxType getTransactionType(BtcTransaction btcTx) {
-        Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
-        Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
-
-        Address oldFederationAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
-            bridgeConstants.getOldFederationAddress()
-        );
-
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, getLiveFederations());
-
-        return PegUtilsLegacy.getTransactionType(
-            btcTx,
-            getActiveFederation(),
-            getRetiringFederation(),
-            retiredFederationP2SHScript,
-            oldFederationAddress,
-            activations,
-            minimumPeginTxValue,
-            federationWallet
-        );
     }
 
     protected void processPegIn(
