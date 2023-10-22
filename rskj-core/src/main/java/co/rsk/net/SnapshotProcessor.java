@@ -7,6 +7,7 @@ import co.rsk.trie.TrieDTO;
 import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.HexUtils;
 import com.google.common.collect.Lists;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
@@ -49,7 +50,7 @@ public class SnapshotProcessor {
     private List<byte[]> elements;
 
     private long remoteTrieSize;
-    private byte[] remoteRootHash;
+    private String remoteRootHash;
 
     private final Queue<ChunkTask> chunkTasks = new LinkedList<>();
     private List<Peer> peers = new ArrayList<>();
@@ -136,14 +137,19 @@ public class SnapshotProcessor {
             logger.debug("Recovering trie...");
             Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray);
             logger.debug("Recovered root: {}", result.get().calculateHash());
-            if (!validateTrie(result.get().calculateHash().getBytes(), result.get().getTotalSize())) {
+
+            if (!validateTrie(result.get().calculateHash())) {
                 logger.debug("trie final validation failed");
+            } else {
+                logger.debug("trie final validation success");
             }
+/*
             logger.debug("Starting again the infinite loop!");
             this.elements = Lists.newArrayList();
             this.stateSize = BigInteger.ZERO;
             this.stateChunkSize = BigInteger.ZERO;
             requestState(peer, 0l, BLOCKNUM);
+*/
         }
     }
 
@@ -255,7 +261,7 @@ public class SnapshotProcessor {
 
     public void processSnapStatusResponse(Peer sender, SnapStatusResponseMessage responseMessage) {
         Block block = responseMessage.getBlock();
-        this.remoteRootHash = block.getStateRoot();
+        this.remoteRootHash = HexUtils.toJsonHex(block.getStateRoot());
         this.remoteTrieSize = responseMessage.getTrieSize();
 
         logger.debug("processing snapshot status response rootHash: {} triesize: {}", remoteRootHash, remoteTrieSize);
@@ -285,9 +291,11 @@ public class SnapshotProcessor {
         sender.sendMessage(responseMessage);
     }
 
-    private boolean validateTrie(byte[] rootHash, long trieSize) {
+    private boolean validateTrie(String rootHash) {
         logger.debug("validating snapshot sync trie");
-        return trieSize == remoteTrieSize && Arrays.equals(rootHash, remoteRootHash);
+        // return trieSize == remoteTrieSize && remoteRootHash.equals(rootHash);
+        // for now just checking the hashes
+        return remoteRootHash.equals(rootHash);
     }
 
     public class ChunkTask {
@@ -312,7 +320,7 @@ public class SnapshotProcessor {
 
         while (from < remoteTrieSize) {
             ChunkTask task = new ChunkTask(BLOCKNUM, from, chunkSize);
-            logger.debug("task: {} < {}", task.from, remoteTrieSize);
+            //logger.debug("task: {} < {}", task.from, remoteTrieSize);
             chunkTasks.add(task);
             from += chunkSize * 1024L;
         }
@@ -336,7 +344,7 @@ public class SnapshotProcessor {
     private int currentPeerIndex = 0;
 
     private void continueWork(Peer currentPeer) {
-        if (chunksProcessed >= 10) {
+        if (chunksProcessed >= 100) {
             currentPeer = getNextPeer();
             chunksProcessed = 0;
         }
