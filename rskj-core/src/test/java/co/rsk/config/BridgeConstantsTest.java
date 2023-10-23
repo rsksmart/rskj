@@ -124,21 +124,21 @@ class BridgeConstantsTest {
         }
     }
 
-    private static Stream<Arguments> bridgeConstantsArgProvider() {
+    private static Stream<Arguments> getBtcHeightWhenPegoutTxIndexActivatesArgProvider() {
         return Stream.of(
-            Arguments.of(BridgeMainNetConstants.getInstance()),
-            Arguments.of(BridgeTestNetConstants.getInstance()),
-            Arguments.of(BridgeRegTestConstants.getInstance())
+            Arguments.of(BridgeMainNetConstants.getInstance(), 100),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 150),
+            Arguments.of(BridgeRegTestConstants.getInstance(), 250)
         );
     }
 
     @ParameterizedTest()
-    @MethodSource("bridgeConstantsArgProvider")
-    void test_getBtcHeightWhenPegoutTxIndexActivates(BridgeConstants bridgeConstants){
+    @MethodSource("getBtcHeightWhenPegoutTxIndexActivatesArgProvider")
+    void test_getBtcHeightWhenPegoutTxIndexActivates(BridgeConstants bridgeConstants, int expectedValue){
         // Act
-        long btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
+        int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
 
         // assert
-        Assertions.assertTrue(btcHeightWhenPegoutTxIndexActivates > 0);
+        Assertions.assertEquals(expectedValue, btcHeightWhenPegoutTxIndexActivates);
     }
 }
