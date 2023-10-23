@@ -265,7 +265,7 @@ public enum MessageType {
             long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
             long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
             long chunkSize = rlpChunkSize == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpChunkSize).longValue();
-            return new StateChunkRequestMessage(id, blockNumber, from, chunkSize);
+            return new SnapStateChunkRequestMessage(id, blockNumber, from, chunkSize);
         }
     },
     STATE_CHUNK_RESPONSE_MESSAGE(21) {
@@ -283,7 +283,7 @@ public enum MessageType {
             long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
             long to = rlpTo == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpTo).longValue();
             boolean complete = rlpComplete == null ? Boolean.FALSE : rlpComplete[0] != 0;
-            return new StateChunkResponseMessage(id, chunkOfTrieKeys, blockNumber, from, to, complete);
+            return new SnapStateChunkResponseMessage(id, chunkOfTrieKeys, blockNumber, from, to, complete);
         }
     },
     SNAP_STATUS_REQUEST_MESSAGE(22) {
@@ -299,13 +299,19 @@ public enum MessageType {
     SNAP_STATUS_RESPONSE_MESSAGE(23) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            byte[] rlpBlock = list.get(0).getRLPData();
-            byte[] rlpTrieSize = list.get(1).getRLPData();
-
-            Block block = blockFactory.decodeBlock(rlpBlock);
-            long trieSize = rlpTrieSize == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpTrieSize).longValue();
-
-            return new SnapStatusResponseMessage(block, trieSize);
+            return SnapStatusResponseMessage.decodeMessage(blockFactory, list);
+        }
+    },
+    SNAP_BLOCKS_REQUEST_MESSAGE(24) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapBlocksRequestMessage.decodeMessage(blockFactory, list);
+        }
+    },
+    SNAP_BLOCKS_RESPONSE_MESSAGE(25) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapBlocksResponseMessage.decodeMessage(blockFactory, list);
         }
     },
     ;

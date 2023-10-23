@@ -102,7 +102,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         }
 
         // we consider Snap as part of the Long Sync
-        if (!shouldLongSync(peerBestBlockNumOpt.get())) {
+        if (!shouldSnapSync(peerBestBlockNumOpt.get())) {
             logger.debug("Snap syncing not required (long sync not required)");
             return false;
         }
@@ -160,6 +160,12 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     private boolean shouldLongSync(long peerBestBlockNumber) {
         long distanceToTip = peerBestBlockNumber - blockStore.getBestBlock().getNumber();
         return distanceToTip > syncConfiguration.getLongSyncLimit() || checkGenesisConnected();
+    }
+
+    private boolean shouldSnapSync(long peerBestBlockNumber) {
+        long distanceToTip = peerBestBlockNumber - blockStore.getBestBlock().getNumber();
+        //TODO: extract to a property.
+        return distanceToTip > 1000000 || checkGenesisConnected();
     }
 
     private Optional<Long> getPeerBestBlockNumber(Peer peer) {

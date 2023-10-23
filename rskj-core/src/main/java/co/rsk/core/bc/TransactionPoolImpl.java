@@ -153,6 +153,11 @@ public class TransactionPoolImpl implements TransactionPool {
         return bestBlock;
     }
 
+    public void setBestBlock(Block bestBlock) {
+        this.bestBlock = bestBlock;
+    }
+
+
     @Override
     public PendingState getPendingState() {
         return getPendingState(getCurrentRepository());
@@ -314,7 +319,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         //we need to update the bestBlock before calling retractBlock
         //or else the transactions would be validated against outdated account state.
-        this.bestBlock = newBlock;
+        this.setBestBlock(newBlock);
 
         if (fork != null) {
             for (Block blk : fork.getOldBlocks()) {

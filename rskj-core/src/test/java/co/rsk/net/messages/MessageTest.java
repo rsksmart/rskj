@@ -330,7 +330,7 @@ class MessageTest {
     void encodeDecodeStateChunkRequestMessage() {
         long someId = 42;
 
-        StateChunkRequestMessage message = new StateChunkRequestMessage(someId, 0L, 0L, 100L);
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(someId, 0L, 0L, 100L);
 
         byte[] encoded = message.getEncoded();
 
@@ -340,7 +340,7 @@ class MessageTest {
         Assertions.assertArrayEquals(encoded, result.getEncoded());
         Assertions.assertEquals(MessageType.STATE_CHUNK_REQUEST_MESSAGE, result.getMessageType());
 
-        StateChunkRequestMessage newMessage = (StateChunkRequestMessage) result;
+        SnapStateChunkRequestMessage newMessage = (SnapStateChunkRequestMessage) result;
 
         Assertions.assertEquals(someId, newMessage.getId());
     }

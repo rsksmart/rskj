@@ -985,7 +985,6 @@ public class Trie {
             value = retrieveLongValue();
             checkValueLengthAfterRetrieve();
         }
-
         return cloneArray(value);
     }
 

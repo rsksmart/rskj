@@ -300,7 +300,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processStateChunkRequest(Peer sender, StateChunkRequestMessage stateChunkRequestMessage) {
+    public void processStateChunkRequest(Peer sender, SnapStateChunkRequestMessage snapStateChunkRequestMessage) {
 
     }
 

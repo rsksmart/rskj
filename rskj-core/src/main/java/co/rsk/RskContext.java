@@ -1941,9 +1941,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockchain(),
                     getTrieStore(),
                     getPeersInformation(),
+                    getBlockStore(),
+                    getTransactionPool(),
                     getRskSystemProperties().getSnapshotChunkSize(),
-                    getRskSystemProperties().isSnapshotSyncCompressionEnabled(),
-                    getBlockStore()
+                    getRskSystemProperties().isSnapshotSyncCompressionEnabled()
             );
         }
         return snapshotProcessor;

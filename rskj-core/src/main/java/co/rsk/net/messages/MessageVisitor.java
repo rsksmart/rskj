@@ -150,7 +150,7 @@ public class MessageVisitor {
         this.blockProcessor.processBlockHeadersRequest(sender, message.getId(), hash, count);
     }
 
-    public void apply(StateChunkRequestMessage message) {
+    public void apply(SnapStateChunkRequestMessage message) {
         this.snapshotProcessor.processStateChunkRequest(sender, message);
     }
 
@@ -191,7 +191,7 @@ public class MessageVisitor {
         blockProcessor.processNewBlockHashesMessage(sender, message);
     }
 
-    public void apply(StateChunkResponseMessage message) {
+    public void apply(SnapStateChunkResponseMessage message) {
         logger.debug("snapshot chunk response : {}", message.getId());
         this.snapshotProcessor.processStateChunkResponse(sender, message);
     }
@@ -203,8 +203,18 @@ public class MessageVisitor {
     }
 
     public void apply(SnapStatusResponseMessage message)  {
-        logger.debug("snapshot status response message apply {} {}", message.getBlock(), message.getTrieSize());
+        logger.debug("snapshot status response message apply blocks[{}] - trieSize[{}]", message.getBlocks().size(), message.getTrieSize());
         this.snapshotProcessor.processSnapStatusResponse(sender, message);
+    }
+
+    public void apply(SnapBlocksRequestMessage snapBlocksRequestMessage) {
+        logger.debug("snapshot blocks request message apply : {}", snapBlocksRequestMessage);
+        this.snapshotProcessor.processSnapBlocksRequest(sender, snapBlocksRequestMessage);
+    }
+
+    public void apply(SnapBlocksResponseMessage snapBlocksResponseMessage) {
+        logger.debug("snapshot blocks response message apply : {}", snapBlocksResponseMessage);
+        this.snapshotProcessor.processSnapBlocksResponse(sender, snapBlocksResponseMessage);
     }
 
     public void apply(TransactionsMessage message) {
@@ -262,4 +272,5 @@ public class MessageVisitor {
         identifiers.add(new BlockIdentifier(blockHash.getBytes(), block.getNumber()));
         channelManager.broadcastBlockHash(identifiers, newNodes);
     }
+
 }

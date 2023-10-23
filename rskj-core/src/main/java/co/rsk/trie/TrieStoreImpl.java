@@ -184,6 +184,18 @@ public class TrieStoreImpl implements TrieStore {
         byte[] messageHash = getValueHash(message);
         this.store.put(messageHash, message);
         if (trieDTO.isHasLongVal()) {
+            saveLongValue(trieDTO);
+        }
+        if (trieDTO.getLeftNode() != null && trieDTO.getLeftNode().isHasLongVal()) {
+            saveLongValue(trieDTO.getLeftNode());
+        }
+        if (trieDTO.getRightNode() != null && trieDTO.getRightNode().isHasLongVal()) {
+            saveLongValue(trieDTO.getRightNode());
+        }
+    }
+
+    private void saveLongValue(TrieDTO trieDTO) {
+        if (trieDTO.isHasLongVal()) {
             byte[] value = trieDTO.getValue();
             byte[] valueHash = getValueHash(value);
             this.store.put(valueHash, value);

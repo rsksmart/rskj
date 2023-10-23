@@ -76,6 +76,9 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         if (!blockValidationRule.isValid(block)) {
             return false;
         }
+        return true;
+        /*
+            TODO (pato)
 
         List<BlockHeader> uncles = block.getUncleList();
         if (!uncles.isEmpty() && !validateUncleList(block.getNumber(), uncles,
@@ -86,6 +89,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         }
 
         return true;
+         */
     }
 
     /**

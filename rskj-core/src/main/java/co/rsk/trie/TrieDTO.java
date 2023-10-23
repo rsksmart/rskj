@@ -25,6 +25,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.util.HexUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,6 +122,9 @@ public class TrieDTO {
 
             //(*optional) 3.right - if present & !embedded => hash
             if (result.rightNodePresent && result.rightNodeEmbedded) {
+                if(hash != null && (Hex.toHexString(hash).equals("9de27d5793b25d07974e7463df19cfff41af31551bbdcb83bccd3e03a346322c"))) {
+                    logger.debug("Pato hash empty.");
+                }
                 result.rightNode = TrieDTO.decodeFromMessage(readChildEmbedded(srcWrap, decodeUint8(), Uint8.BYTES), ds, false, hash);
                 result.right = result.rightNode.getEncoded();
                 result.rightHash = null;
@@ -163,7 +167,7 @@ public class TrieDTO {
             result.encoded = encoder.toByteArray();
             result.source = ArrayUtils.clone(src);
         } catch (IOException e) {
-            logger.trace("Error while decoding: {}", e.getMessage());
+            throw new RuntimeException("Error while decoding.", e);
         }
         return result;
     }
@@ -319,6 +323,20 @@ public class TrieDTO {
         this.right = right;
     }
 
+    public TrieDTO getLeftNode() {
+        return leftNode;
+    }
+
+    public TrieDTO getRightNode() {
+        return rightNode;
+    }
+    public void setLeftHash(byte[] hash) {
+        this.leftHash = hash;
+    }
+
+    public void setRightHash(byte[] hash) {
+        this.rightHash = hash;
+    }
     public boolean isLeftNodePresent() {
         return leftNodePresent;
     }
@@ -365,7 +383,7 @@ public class TrieDTO {
                 "{left=" + HexUtils.toJsonHex(this.left) + "},\n" +
                 "{right=" + HexUtils.toJsonHex(this.right) + "},\n" +
                 "{hash=" + HexUtils.toJsonHex(this.hash) + "},\n" +
-                "{calculateHash()=" + calculateHash() + "},\n" +
+                "{calculateHash()=" + calculateHashString() + "},\n" +
                 "{calculateSourceHash()=" + calculateSourceHash() + "},\n" +
                 "{leftHash=" + HexUtils.toJsonHex(this.leftHash) + "},\n" +
                 "{rightHash=" + HexUtils.toJsonHex(this.rightHash) + "},\n" +
@@ -395,7 +413,7 @@ public class TrieDTO {
                 buffer.put(encodeUint8(this.left.length));
                 buffer.put(this.left);
             } else {
-                buffer.put(this.left);
+                buffer.put(this.leftHash);
             }
         }
         if (rightNodePresent) {
@@ -403,7 +421,7 @@ public class TrieDTO {
                 buffer.put(encodeUint8(this.right.length));
                 buffer.put(this.right);
             } else {
-                buffer.put(this.right);
+                buffer.put(this.rightHash);
             }
         }
         if (leftNodePresent || rightNodePresent) {
@@ -456,8 +474,12 @@ public class TrieDTO {
         return result;
     }
 
-    public String calculateHash() {
-        return HexUtils.toJsonHex(Keccak256Helper.keccak256(this.toMessage()));
+    public String calculateHashString() {
+        return HexUtils.toJsonHex(calculateHash());
+    }
+
+    public byte[] calculateHash() {
+        return Keccak256Helper.keccak256(this.toMessage());
     }
 
     private String calculateSourceHash() {
@@ -492,6 +514,5 @@ public class TrieDTO {
     private static byte[] encodeUint8(int length) {
         return new Uint8(length).encode();
     }
-
 
 }

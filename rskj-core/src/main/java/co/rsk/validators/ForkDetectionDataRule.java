@@ -55,7 +55,7 @@ public class ForkDetectionDataRule implements BlockValidationRule, BlockHeaderVa
         this.activationConfig = activationConfig;
         this.mainchainView = mainchainView;
         this.forkDetectionDataCalculator = forkDetectionDataCalculator;
-        this.requiredBlocksForForkDetectionDataCalculation = requiredBlocksForForkDetectionDataCalculation;
+        this.requiredBlocksForForkDetectionDataCalculation = 1; // TODO (pato): requiredBlocksForForkDetectionDataCalculation;
     }
 
     @Override
@@ -76,11 +76,13 @@ public class ForkDetectionDataRule implements BlockValidationRule, BlockHeaderVa
                         header.getParentHash(),
                         requiredBlocksForForkDetectionDataCalculation
                 );
+                return true;
+                /* TODO (pato):
                 if (!hasEnoughBlocksToCalculateForkDetectionData(header, headersView)) {
                     return false;
                 }
-
                 return isForkDetectionDataEqual(header, headersView);
+                */
             }
         }
 

@@ -303,14 +303,14 @@ class MessageVisitorTest {
 
     @Test
     void stateChunkRequestMessage() {
-        StateChunkRequestMessage message = mock(StateChunkRequestMessage.class);
+        SnapStateChunkRequestMessage message = mock(SnapStateChunkRequestMessage.class);
 
         when(message.getId()).thenReturn(1L);
 
         target.apply(message);
 
         verify(blockProcessor, times(1))
-                .processStateChunkRequest(sender, new StateChunkRequestMessage(1l, 0l, 0L, 0L));
+                .processStateChunkRequest(sender, new SnapStateChunkRequestMessage(1l, 0l, 0L, 0L));
     }
 
     @Test

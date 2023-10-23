@@ -4,7 +4,7 @@ import org.ethereum.util.RLP;
 
 import java.math.BigInteger;
 
-public class StateChunkResponseMessage extends MessageWithId {
+public class SnapStateChunkResponseMessage extends MessageWithId {
     private final long to;
     private long id;
     private byte[] chunkOfTrieKeyValue;
@@ -14,7 +14,7 @@ public class StateChunkResponseMessage extends MessageWithId {
     private boolean complete;
     private long blockNumber;
 
-    public StateChunkResponseMessage(long id, byte[] chunkOfTrieKeyValue, long blockNumber, long from, long to, boolean complete) {
+    public SnapStateChunkResponseMessage(long id, byte[] chunkOfTrieKeyValue, long blockNumber, long from, long to, boolean complete) {
         this.id = id;
         this.chunkOfTrieKeyValue = chunkOfTrieKeyValue;
         this.blockNumber = blockNumber;

@@ -4,14 +4,14 @@ import org.ethereum.util.RLP;
 
 import java.math.BigInteger;
 
-public class StateChunkRequestMessage extends MessageWithId {
+public class SnapStateChunkRequestMessage extends MessageWithId {
 
     private final long id;
     private final long from;
     private final long chunkSize;
     private final long blockNumber;
 
-    public StateChunkRequestMessage(long id, long blockNumber, long from, long chunkSize) {
+    public SnapStateChunkRequestMessage(long id, long blockNumber, long from, long chunkSize) {
         this.id = id;
         this.from = from;
         this.chunkSize = chunkSize;

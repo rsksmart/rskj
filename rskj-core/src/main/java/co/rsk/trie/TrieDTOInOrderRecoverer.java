@@ -67,11 +67,11 @@ public class TrieDTOInOrderRecoverer {
                                        Optional<TrieDTO> right) {
         left.ifPresent((leftNode) -> {
             Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(leftNode.toMessage()));
-            result.setLeft(hash.getBytes());
+            result.setLeftHash(hash.getBytes());
         });
         right.ifPresent((rightNode) -> {
             Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(rightNode.toMessage()));
-            result.setRight(hash.getBytes());
+            result.setRightHash(hash.getBytes());
         });
         /*logger.info("-- ChildrenSize: {} ,Hash: {}, Left: {}, Right:{}",
                 result.getChildrenSize().value,
