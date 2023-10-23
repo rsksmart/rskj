@@ -12,13 +12,14 @@ import co.rsk.peg.bitcoin.BitcoinUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 public class PegUtils {
     private PegUtils() { }
 
-    public static PegTxType getTransactionTypeUsingPegoutIndex(
+    protected static PegTxType getTransactionTypeUsingPegoutIndex(
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
         Wallet liveFederationsWallet,
@@ -29,6 +30,12 @@ public class PegUtils {
         }
 
         List<TransactionOutput> liveFederationOutputs = btcTransaction.getWalletOutputs(liveFederationsWallet);
+        Optional<Script> retiredFed = provider.getLastRetiredFederationP2SHScript();
+        if (retiredFed.isPresent()){
+            WatchedBtcWallet watchedBtcWallet = new WatchedBtcWallet(liveFederationsWallet.getContext());
+            watchedBtcWallet.addWatchedScripts(Collections.singletonList(retiredFed.get()));
+            liveFederationOutputs.addAll(btcTransaction.getWalletOutputs(watchedBtcWallet));
+        }
 
         Optional<Sha256Hash> inputSigHash = BitcoinUtils.getFirstInputSigHash(btcTransaction);
         if (inputSigHash.isPresent() && provider.hasPegoutTxSigHash(inputSigHash.get())){
