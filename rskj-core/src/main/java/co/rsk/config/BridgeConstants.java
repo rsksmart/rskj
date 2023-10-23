@@ -86,6 +86,8 @@ public abstract class BridgeConstants {
 
     protected int numberOfBlocksBetweenPegouts;
 
+    protected int btcHeightWhenPegoutTxIndexActivates;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -184,5 +186,9 @@ public abstract class BridgeConstants {
 
     public int getNumberOfBlocksBetweenPegouts() {
         return numberOfBlocksBetweenPegouts;
+    }
+
+    public int getBtcHeightWhenPegoutTxIndexActivates() {
+        return btcHeightWhenPegoutTxIndexActivates;
     }
 }

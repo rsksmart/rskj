@@ -164,6 +164,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
         maxInputsPerPegoutTransaction = 50;
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
+
+        btcHeightWhenPegoutTxIndexActivates = 150; // TODO: TBD and change current mock value. This is an estimation of the btc block number once RSKIP379 is activated.
     }
 
     public static BridgeTestNetConstants getInstance() {
