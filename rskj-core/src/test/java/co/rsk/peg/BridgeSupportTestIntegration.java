@@ -1571,7 +1571,6 @@ public class BridgeSupportTestIntegration {
             .withExecutionBlock(rskCurrentBlock)
             .withBtcBlockStoreFactory(mockFactory)
             .withProvider(bridgeStorageProvider).build();
-        bridgeSupport = Mockito.spy(bridgeSupport);
 
         // Test that transaction type is identified as a peg-out
         PegTxType transactionType = bridgeSupport.getTransactionType(releaseWithChangeTx);
@@ -1583,7 +1582,7 @@ public class BridgeSupportTestIntegration {
         assertThat(activeFederationUtxos, hasSize(0));
         // Assert utxo is registered to retiring fed
         assertThat(retiringFederationUtxos, hasSize(1));
-        // assert utxo registered is the expceted one
+        // assert utxo registered is the expected one
         UTXO changeUtxo = retiringFederationUtxos.get(0);
         assertThat(changeUtxo.getValue(), is(changeValue));
         assertThat(changeUtxo.getScript().getToAddress(params), is(retiringFederationAddress));
