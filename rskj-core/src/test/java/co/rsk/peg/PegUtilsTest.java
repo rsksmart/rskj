@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static co.rsk.peg.PegTestUtils.createFederation;
 import static co.rsk.peg.PegTestUtils.createP2shErpFederation;
@@ -246,6 +247,28 @@ class PegUtilsTest {
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
+
+        // Act
+        PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
+            activations,
+            provider,
+            liveFederationWallet,
+            btcTransaction
+        );
+
+        // Assert
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+    }
+
+    @Test
+    void test_getTransactionType_pegin_retired_fed() {
+        // Arrange
+        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
+        Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+
+        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        btcTransaction.addOutput(Coin.COIN, retiredFed.getAddress());
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
