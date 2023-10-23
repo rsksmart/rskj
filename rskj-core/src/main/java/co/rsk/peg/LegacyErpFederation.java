@@ -51,13 +51,13 @@ public class LegacyErpFederation extends ErpFederation {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
             redeemScript = activations.isActive(ConsensusRule.RSKIP293) ?
                 ErpFederationRedeemScriptParser.createErpRedeemScript(
-                    ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
-                    ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
+                    ScriptBuilder.createStandardMultisigRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
+                    ScriptBuilder.createStandardMultisigRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
                     activationDelay
                 ) :
                 ErpFederationRedeemScriptParser.createErpRedeemScriptDeprecated(
-                    ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
-                    ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
+                    ScriptBuilder.createStandardMultisigRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
+                    ScriptBuilder.createStandardMultisigRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
                     activationDelay
                 );
         }

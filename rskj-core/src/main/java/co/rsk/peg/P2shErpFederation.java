@@ -34,8 +34,8 @@ public class P2shErpFederation extends ErpFederation {
         if (redeemScript == null) {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
             redeemScript = P2shErpFederationRedeemScriptParser.createP2shErpRedeemScript(
-                ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
-                ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
+                ScriptBuilder.createStandardMultisigRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
+                ScriptBuilder.createStandardMultisigRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
                 activationDelay
             );
         }

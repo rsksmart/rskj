@@ -192,7 +192,7 @@ class BridgeSupportGetTransactionTypeTest {
         );
 
         multiSigKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Script redeemScript = ScriptBuilder.createRedeemScript((multiSigKeys.size() / 2) + 1, multiSigKeys);
+        Script redeemScript = ScriptBuilder.createStandardMultisigRedeemScript((multiSigKeys.size() / 2) + 1, multiSigKeys);
 
         // Create a peginTx from the p2sh erp fed
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
