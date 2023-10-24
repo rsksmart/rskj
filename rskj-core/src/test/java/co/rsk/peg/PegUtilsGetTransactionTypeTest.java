@@ -550,4 +550,81 @@ class PegUtilsGetTransactionTypeTest {
         }
         Assertions.assertEquals(expectedType, transactionType);
     }
+
+    private static Stream<Arguments> getTransactionType_old_fed_to_live_fed_args() {
+        ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+
+        return Stream.of(
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                PegTxType.PEGOUT_OR_MIGRATION
+            ),
+            Arguments.of(
+                tbdActivations,
+                false,
+                PegTxType.PEGOUT_OR_MIGRATION
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                PegTxType.PEGIN
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getTransactionType_old_fed_to_live_fed_args")
+    void getTransactionType_old_fed_to_live_fed(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUseNewMechanism,
+        PegTxType expectedType
+    ) {
+        // Arrange
+        BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+        NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
+        Context.propagate(new Context(btcRegTestsParams));
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        Federation oldFederation = createFederation(bridgeRegTestConstants, REGTEST_OLD_FEDERATION_PRIVATE_KEYS);
+        Federation activeFederation = bridgeRegTestConstants.getGenesisFederation();
+
+        Assertions.assertEquals(oldFederation.getAddress().toString(), bridgeRegTestConstants.getOldFederationAddress());
+
+        BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
+        migrationTx.addInput(BitcoinTestUtils.createHash(1), 0, oldFederation.getRedeemScript());
+        migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
+
+        FederationTestUtils.addSignatures(oldFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
+
+        Assertions.assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.address));
+
+        int blockNumberToStartUsingNewGeTransactionTypeMechanism = 0;
+        if (shouldUseNewMechanism) {
+            int btcHeightWhenPegoutTxIndexActivates = bridgeRegTestConstants.getBtcHeightWhenPegoutTxIndexActivates();
+            int pegoutTxIndexGracePeriodInBtcBlocks = bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
+            blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        }
+
+        // Act
+        PegTxType transactionType = PegUtils.getTransactionType(
+            activations,
+            provider,
+            bridgeRegTestConstants,
+            activeFederation,
+            null,
+            migrationTx,
+            blockNumberToStartUsingNewGeTransactionTypeMechanism
+        );
+
+        // Assert
+        if (shouldUseNewMechanism){
+            verify(provider, never()).getLastRetiredFederationP2SHScript();
+        } else {
+            verify(provider, times(1)).getLastRetiredFederationP2SHScript();
+        }
+        Assertions.assertEquals(expectedType, transactionType);
+    }
 }
