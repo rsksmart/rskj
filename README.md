@@ -18,7 +18,7 @@ We have a [vulnerability reporting guideline](https://github.com/rsksmart/rskj/b
 contact us to report a vulnerability.
 
 # License
-RskJ is licensed under the GNU Lesser General Public License v3.0, also included in our repository in the [COPYING.LESSER] file.
+RskJ is licensed under the GNU Lesser General Public License v3.0, also included in our repository in the [COPYING.LESSER](COPYING.LESSER) file.
 
 # Your Pledge
 RskJ has been developed with the intention to foster the progress of society. By using RskJ, you make a pledge not to use it to incur in:
