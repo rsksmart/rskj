@@ -22,6 +22,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -37,7 +38,10 @@ class PegUtilsGetTransactionTypeTest {
         BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
     );
 
-    private static Context btcContext = mock(Context.class);
+    @BeforeEach
+    void setUp() {
+        Context.propagate(new Context(btcMainnetParams));
+    }
 
     @Test
     void getTransactionType_sentFromP2SHErpFed() {
@@ -119,6 +123,7 @@ class PegUtilsGetTransactionTypeTest {
     void getTransactionType_sentFromOldFed(ActivationConfig.ForBlock activations, PegTxType expectedTxType) {
         BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
+        Context.propagate(new Context(btcRegTestsParams));
 
         // Arrange
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -149,7 +154,7 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
-            bridgeMainnetConstants,
+            bridgeRegTestConstants,
             activeFederation,
             null,
             migrationTx,
