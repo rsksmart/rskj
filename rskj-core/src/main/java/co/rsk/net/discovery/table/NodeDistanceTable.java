@@ -19,7 +19,6 @@
 package co.rsk.net.discovery.table;
 
 import co.rsk.net.NodeID;
-import co.rsk.net.discovery.PeerExplorer;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
