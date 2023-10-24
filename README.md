@@ -11,15 +11,14 @@ If you have questions about the code please find us on [![Gitter](https://badges
 You may also want to check [our blog](https://blog.rsk.co/) for articles and updates on the project.
 
 # Getting Started
-Information about compiling and running a Rootstock node can be found in the [developer portal](https://dev.rootstock.io/).
-The stable versions are the tags published in [releases tab](https://github.com/rsksmart/rskj/releases).
+Information about compiling and running a Rootstock node can be found in the [developer portal](https://dev.rootstock.io/). Stable versions are published in [releases](https://github.com/rsksmart/rskj/releases).
 
 # Report Security Vulnerabilities
 We have a [vulnerability reporting guideline](https://github.com/rsksmart/rskj/blob/master/SECURITY.md) for details on how to
 contact us to report a vulnerability.
 
 # License
-RskJ is licensed under the GNU Lesser General Public License v3.0, also included in our repository in the COPYING.LESSER file.
+RskJ is licensed under the GNU Lesser General Public License v3.0, also included in our repository in the [COPYING.LESSER] file.
 
 # Your Pledge
 RskJ has been developed with the intention to foster the progress of society. By using RskJ, you make a pledge not to use it to incur in:
