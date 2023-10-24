@@ -19,7 +19,11 @@
 package co.rsk.net.discovery.table;
 
 import co.rsk.net.NodeID;
+import co.rsk.net.discovery.PeerExplorer;
 import org.ethereum.net.rlpx.Node;
+import org.ethereum.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +33,7 @@ import java.util.stream.Collectors;
  * Created by mario on 21/02/17.
  */
 public class NodeDistanceTable {
+    private static final Logger logger = LoggerFactory.getLogger(NodeDistanceTable.class);
     private final Map<Integer, Bucket> buckets = new ConcurrentHashMap<>();
     private final Node localNode;
     private final DistanceCalculator distanceCalculator;
@@ -51,6 +56,7 @@ public class NodeDistanceTable {
     }
 
     public synchronized List<Node> getClosestNodes(NodeID nodeId) {
+        logger.trace("Getting closest nodes to id {}", ByteUtil.toHexString(nodeId.getID()));
         return getAllNodes().stream()
                 .sorted(new NodeDistanceComparator(nodeId, this.distanceCalculator))
                 .collect(Collectors.toList());
