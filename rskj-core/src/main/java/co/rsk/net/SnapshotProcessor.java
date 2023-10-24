@@ -51,7 +51,7 @@ public class SnapshotProcessor {
     private List<byte[]> elements;
 
     private long remoteTrieSize;
-    private String remoteRootHash;
+    private byte[] remoteRootHash;
     private List<Block> blocks;
     private Block lastBlock;
 
@@ -140,13 +140,14 @@ public class SnapshotProcessor {
         this.blocks.addAll(blocks);
         logger.debug("CLIENT - Processing snapshot status response - blockNumber: {} rootHash: {} triesize: {}", lastblock.getNumber(), remoteRootHash, remoteTrieSize);
         requestBlocksChunk(sender, blocks.get(0).getNumber());
-        requestStateChunk(sender, 0L, lastblock.getNumber());
+        generateTasks();
+        startProcessing();
     }
 
     /**
      * STATE CHUNK
      */
-    private void requestStateChunk(Peer peer, long from, long blockNumber) {
+    private void requestStateChunk(Peer peer, long from, long blockNumber, int chunkSize) {
         logger.debug("CLIENT - Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
 
         SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(messageId++, blockNumber, from, chunkSize);
@@ -332,7 +333,7 @@ public class SnapshotProcessor {
         }
         
         public void execute(Peer peer) {
-            requestState(peer, from, blockNumber);
+            requestStateChunk(peer, from, blockNumber, chunkSize);
         }
     }
     
@@ -341,7 +342,7 @@ public class SnapshotProcessor {
         logger.debug("generating snapshot chunk tasks");
         
         while (from < remoteTrieSize) {
-            ChunkTask task = new ChunkTask(BLOCKNUM, from, chunkSize);
+            ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize);
             //logger.debug("task: {} < {}", task.from, remoteTrieSize);
             chunkTasks.add(task);
             from += chunkSize * 1024L;
