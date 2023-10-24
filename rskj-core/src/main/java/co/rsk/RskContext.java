@@ -1945,6 +1945,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockStore(),
                     getTransactionPool(),
                     getRskSystemProperties().getSnapshotChunkSize(),
+                    getRskSystemProperties().isSnapshotParallelEnabled(),
                     getRskSystemProperties().isSnapshotSyncCompressionEnabled()
             );
         }
