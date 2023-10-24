@@ -197,7 +197,7 @@ public class MessageVisitor {
     }
 
     public void apply(SnapStatusRequestMessage message) {
-        logger.debug("snapshot status request message apply : {}", message);
+        logger.debug("snapshot status request message apply");
 
         this.snapshotProcessor.processSnapStatusRequest(sender);
     }

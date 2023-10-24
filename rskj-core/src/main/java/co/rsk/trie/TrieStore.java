@@ -34,7 +34,6 @@ public interface TrieStore {
 
     void dispose();
 
-
     Optional<TrieDTO> retrieveDTO(byte[] hash);
     void saveDTO(TrieDTO trieDTO);
 }

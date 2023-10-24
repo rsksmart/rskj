@@ -9,7 +9,6 @@ import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.HexUtils;
-import com.fasterxml.jackson.databind.introspect.POJOPropertyBuilder;
 import com.google.common.collect.Lists;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -31,10 +30,9 @@ public class SnapshotProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
     private static final int UNCOMPRESSED_FLAG = -1;
-    public static final long BLOCK_NUMBER = 5630113l;
-    public static final long DELAY_BTW_RUNS = 20 * 60 * 1000;
-    public static final int CHUNK_MAX = 5000;
-    public static final int CHUNK_MIN = 2000;
+    public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
+    public static final int BLOCK_CHUNK_SIZE = 400;
+    public static final int BLOCKS_REQUIRED = 6000;
 
     private final Blockchain blockchain;
     private final TrieStore trieStore;
@@ -65,7 +63,7 @@ public class SnapshotProcessor {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
-        this.chunkSize = CHUNK_MIN;
+        this.chunkSize = chunkSize;
         this.isCompressionEnabled = isCompressionEnabled;
         this.elements = Lists.newArrayList();
         this.blockStore = blckStore;
@@ -82,8 +80,8 @@ public class SnapshotProcessor {
         // get more than one peer, use the peer queue
         // TODO(snap-poc) deal with multiple peers algorithm here
         Peer peer = peers.get(0);
-        logger.debug("start snapshot sync");
-        requestSnapStatus(peer, BLOCK_NUMBER);
+        logger.info("CLIENT - Starting Snapshot sync.");
+        requestSnapStatus(peer);
     }
 
     // TODO(snap-poc) should be called on errors too
@@ -97,31 +95,32 @@ public class SnapshotProcessor {
     /**
      * STATUS
      */
-    private void requestSnapStatus(Peer peer, long blockNumber) {
-        SnapStatusRequestMessage message = new SnapStatusRequestMessage(blockNumber);
+    private void requestSnapStatus(Peer peer) {
+        SnapStatusRequestMessage message = new SnapStatusRequestMessage();
         peer.sendMessage(message);
     }
 
     public void processSnapStatusRequest(Peer sender) {
-        long trieSize = 0;
-        logger.debug("procesing snapshot status request 1");
-
+        logger.debug("SERVER - Procesing snapshot status request.");
+        long bestBlockNumber = blockchain.getBestBlock().getNumber();
+        long checkpointBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
         List<Block> blocks = Lists.newArrayList();
-        for (long i = BLOCK_NUMBER - 400; i < BLOCK_NUMBER; i++) {
+        for (long i = checkpointBlockNumber - BLOCK_CHUNK_SIZE; i < checkpointBlockNumber; i++) {
             blocks.add(blockchain.getBlockByNumber(i));
         }
 
-        Block block = blockchain.getBlockByNumber(BLOCK_NUMBER);
-        blocks.add(block);
-        byte[] rootHash = block.getStateRoot();
+        Block checkpointBlock = blockchain.getBlockByNumber(checkpointBlockNumber);
+        blocks.add(checkpointBlock);
+        byte[] rootHash = checkpointBlock.getStateRoot();
         Optional<TrieDTO> opt =  trieStore.retrieveDTO(rootHash);
 
+        long trieSize = 0;
         if (opt.isPresent()) {
             trieSize = opt.get().getTotalSize();
         } else {
-            logger.debug("trie is notPresent");
+            logger.debug("SERVER - trie is notPresent");
         }
-        logger.debug("procesing snapshot status request 2: roothash: {} triesize: {}", rootHash, trieSize);
+        logger.debug("SERVER - procesing snapshot status request - roothash: {} triesize: {}", rootHash, trieSize);
         SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(blocks, trieSize);
         sender.sendMessage(responseMessage);
     }
@@ -132,16 +131,16 @@ public class SnapshotProcessor {
         this.remoteRootHash = lastblock.getStateRoot();
         this.remoteTrieSize = responseMessage.getTrieSize();
         this.blocks.addAll(blocks);
-        logger.debug("processing snapshot status response rootHash: {} triesize: {}", remoteRootHash, remoteTrieSize);
+        logger.debug("CLIENT - Processing snapshot status response - blockNumber: {} rootHash: {} triesize: {}", lastblock.getNumber(), remoteRootHash, remoteTrieSize);
         requestBlocksChunk(sender, blocks.get(0).getNumber());
-        requestStateChunk(sender, 0L, BLOCK_NUMBER);
+        requestStateChunk(sender, 0L, lastblock.getNumber());
     }
 
     /**
      * STATE CHUNK
      */
     private void requestStateChunk(Peer peer, long from, long blockNumber) {
-        logger.debug("Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
+        logger.debug("CLIENT - Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
 
         SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(messageId++, blockNumber, from, chunkSize);
 
@@ -151,7 +150,7 @@ public class SnapshotProcessor {
     public void processStateChunkRequest(Peer sender, SnapStateChunkRequestMessage request) {
         long startChunk = System.currentTimeMillis();
 
-        logger.debug("Processing state chunk request from node {}", sender.getPeerNodeID());
+        logger.debug("SERVER - Processing state chunk request from node {}", sender.getPeerNodeID());
 
         List<byte[]> trieEncoded = new ArrayList<>();
         Block block = blockchain.getBlockByNumber(request.getBlockNumber());
@@ -209,7 +208,7 @@ public class SnapshotProcessor {
 
         double compressionFactor = (double) rawSize / (double) compressedSize;
 
-        logger.debug("Sending state chunk of {} bytes to node {}, compressing time {}ms, totalTime {}ms, compressionFactor {}", chunkBytes.length, sender.getPeerNodeID(), totalCompressingTime, totalChunkTime, compressionFactor);
+        logger.debug("SERVER - Sending state chunk of {} bytes to node {}, compressing time {}ms, totalTime {}ms, compressionFactor {}", chunkBytes.length, sender.getPeerNodeID(), totalCompressingTime, totalChunkTime, compressionFactor);
         sender.sendMessage(responseMessage);
     }
 
@@ -220,7 +219,7 @@ public class SnapshotProcessor {
 
         final RLPList trieElements = RLP.decodeList(message.getChunkOfTrieKeyValue());
         logger.debug(
-                "Received state chunk of {} elements ({} bytes).",
+                "CLIENT - Received state chunk of {} elements ({} bytes).",
                 trieElements.size(),
                 message.getChunkOfTrieKeyValue().length
         );
@@ -239,56 +238,47 @@ public class SnapshotProcessor {
 
             if (logger.isTraceEnabled()) {
                 final String valueString = value == null ? "null" : ByteUtil.toHexString(value);
-                logger.trace("State chunk received - Value: {}", valueString);
+                logger.trace("CLIENT - State chunk received - Value: {}", valueString);
             }
         }
 
         this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
         this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
-        logger.debug("State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
+        logger.debug("CLIENT - State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
         if (!message.isComplete()) {
             // request another chunk
             requestStateChunk(peer, message.getTo(), message.getBlockNumber());
         } else {
             rebuildStateAndSave();
+            logger.info("CLIENT - Snapshot sync finished!");
             this.stopSyncing();
-            /*
-            try {
-                Thread.sleep(DELAY_BTW_RUNS);
-            } catch (InterruptedException ignored) {
-            }
-            this.chunkSize = this.chunkSize * 2;
-            this.chunkSize = this.chunkSize > CHUNK_MAX ? CHUNK_MIN : this.chunkSize;
-            logger.debug("Starting again the infinite loop! With chunk size = {}", this.chunkSize);
-            this.elements = Lists.newArrayList();
-            this.stateSize = BigInteger.ZERO;
-            this.stateChunkSize = BigInteger.ZERO;
-            requestState(peer, 0l, BLOCK_NUMBER);*/
 
         }
     }
 
     private void rebuildStateAndSave() {
-        logger.debug("State Completed! {} chunks ({} bytes) - chunk size = {}",
+        logger.debug("CLIENT - State Completed! {} chunks ({} bytes) - chunk size = {}",
                 this.stateSize.toString(), this.stateChunkSize.toString(), this.chunkSize);
-        logger.debug("Mapping elements...");
+        logger.debug("CLIENT - Mapping elements...");
         final TrieDTO[] nodeArray = this.elements.stream().map(TrieDTO::decodeFromSync).toArray(TrieDTO[]::new);
-        logger.debug("Recovering trie...");
+        logger.debug("CLIENT - Recovering trie...");
         Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, this.trieStore::saveDTO);
-        if (!validateTrie(result.get().calculateHash())) {
-            logger.warn("trie final validation failed");
+        if (!result.isPresent() || !validateTrie(result.get().calculateHash())) {
+            logger.error("CLIENT - State final validation FAILED");
         }else {
-            logger.debug("trie final validation ok!");
+            logger.debug("CLIENT - State final validation OK!");
         }
+        logger.debug("CLIENT - Saving previous blocks...");
         this.blocks.forEach((block -> {
             this.blockStore.saveBlock(block, block.getDifficulty(), true);
         }));
+        logger.debug("CLIENT - Setting last block as best block...");
         this.blockchain.setStatus(this.lastBlock, this.lastBlock.getDifficulty());
         this.transactionPool.setBestBlock(this.lastBlock);
     }
 
     private boolean validateTrie(byte[] rootHash) {
-        logger.debug("validating snapshot sync trie: {} , {}", HexUtils.toJsonHex(rootHash), HexUtils.toJsonHex(remoteRootHash));
+        logger.debug("CLIENT - Validating snapshot sync trie: {} , {}", HexUtils.toJsonHex(rootHash), HexUtils.toJsonHex(remoteRootHash));
         return Arrays.equals(rootHash, remoteRootHash);
     }
 
@@ -297,13 +287,14 @@ public class SnapshotProcessor {
      */
 
     private void requestBlocksChunk(Peer sender, long blockNumber) {
-        logger.debug("Requesting block chunk to node {} - block {}", sender.getPeerNodeID(), blockNumber);
+        logger.debug("CLIENT - Requesting block chunk to node {} - block {}", sender.getPeerNodeID(), blockNumber);
         sender.sendMessage(new SnapBlocksRequestMessage(blockNumber));
     }
+
     public void processSnapBlocksRequest(Peer sender, SnapBlocksRequestMessage snapBlocksRequestMessage) {
-        logger.debug("processing snap blocks request");
+        logger.debug("SERVER - Processing snap blocks request");
         List<Block> blocks = Lists.newArrayList();
-        for (long i = snapBlocksRequestMessage.getBlockNumber() - 400; i < snapBlocksRequestMessage.getBlockNumber(); i++) {
+        for (long i = snapBlocksRequestMessage.getBlockNumber() - BLOCK_CHUNK_SIZE; i < snapBlocksRequestMessage.getBlockNumber(); i++) {
             blocks.add(blockchain.getBlockByNumber(i));
         }
         SnapBlocksResponseMessage responseMessage = new SnapBlocksResponseMessage(blocks);
@@ -311,14 +302,14 @@ public class SnapshotProcessor {
     }
 
     public void processSnapBlocksResponse(Peer sender, SnapBlocksResponseMessage snapBlocksResponseMessage) {
-        logger.debug("processing snap blocks response");
+        logger.debug("CLIENT - Processing snap blocks response");
         List<Block> blocks = snapBlocksResponseMessage.getBlocks();
         this.blocks.addAll(blocks);
         long nextChunk = blocks.get(0).getNumber();
-        if (nextChunk > BLOCK_NUMBER - 6000) {
+        if (nextChunk > this.lastBlock.getNumber() - BLOCKS_REQUIRED) {
             requestBlocksChunk(sender, nextChunk);
         } else {
-            logger.debug("finished snap blocks sync.");
+            logger.info("CLIENT - Finished Snap blocks sync.");
         }
     }
 }

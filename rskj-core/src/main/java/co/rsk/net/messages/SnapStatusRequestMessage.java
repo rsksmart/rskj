@@ -5,10 +5,8 @@ import org.ethereum.util.RLP;
 import java.math.BigInteger;
 
 public class SnapStatusRequestMessage extends Message {
-    private long blockNumber;
 
-    public SnapStatusRequestMessage(long blockNumber) {
-        this.blockNumber = blockNumber;
+    public SnapStatusRequestMessage() {
     }
 
     @Override
@@ -18,12 +16,7 @@ public class SnapStatusRequestMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        byte[] encodedBlockNumber = RLP.encodeBigInteger(BigInteger.valueOf(blockNumber));
-        return RLP.encodeList(encodedBlockNumber);
-    }
-
-    public long getBlockNumber() {
-        return this.blockNumber;
+        return RLP.encodedEmptyList();
     }
 
     @Override

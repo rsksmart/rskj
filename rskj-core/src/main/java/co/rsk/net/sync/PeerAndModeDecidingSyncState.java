@@ -164,8 +164,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
 
     private boolean shouldSnapSync(long peerBestBlockNumber) {
         long distanceToTip = peerBestBlockNumber - blockStore.getBestBlock().getNumber();
-        //TODO: extract to a property.
-        return distanceToTip > 1000000 || checkGenesisConnected();
+        return distanceToTip > syncConfiguration.getSnapshotSyncLimit() && syncConfiguration.isSnapSyncEnabled();
     }
 
     private Optional<Long> getPeerBestBlockNumber(Peer peer) {

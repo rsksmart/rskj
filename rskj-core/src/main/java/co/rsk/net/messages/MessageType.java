@@ -289,11 +289,7 @@ public enum MessageType {
     SNAP_STATUS_REQUEST_MESSAGE(22) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            byte[] rlpBlockNumber = list.get(0).getRLPData();
-
-            long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
-
-            return new SnapStatusRequestMessage(blockNumber);
+            return new SnapStatusRequestMessage();
         }
     },
     SNAP_STATUS_RESPONSE_MESSAGE(23) {

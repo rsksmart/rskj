@@ -385,9 +385,8 @@ public class RskSystemProperties extends SystemProperties {
 
     public int getSnapshotChunkSize() { return configFromFiles.getInt("sync.snapshot.chunkSize");}
 
-    public String getSnapshotChunkSizeType() {
-        return configFromFiles.getString("sync.snapshot.chunkSizeType");
-    }
+    public int getSnapshotSyncLimit() { return configFromFiles.getInt("sync.snapshot.limit");}
+
     // its fixed, cannot be set by config file
     public int getChunkSize() {
         return CHUNK_SIZE;
