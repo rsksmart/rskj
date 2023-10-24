@@ -243,6 +243,7 @@ class PowpegMigrationTest {
 
         // peg-in after committing new fed
         testPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
@@ -344,6 +345,7 @@ class PowpegMigrationTest {
 
         // peg-in after new fed activates
         testPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
@@ -438,6 +440,7 @@ class PowpegMigrationTest {
 
         // peg-in during migration
         testPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
@@ -569,6 +572,7 @@ class PowpegMigrationTest {
 
         // peg-in after migration
         testPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
@@ -800,6 +804,7 @@ class PowpegMigrationTest {
     }
 
     private void testPegins(
+        ActivationConfig.ForBlock activations,
         BridgeSupport bridgeSupport,
         BridgeConstants bridgeConstants,
         BridgeStorageProvider bridgeStorageProvider,
@@ -830,7 +835,12 @@ class PowpegMigrationTest {
             .stream()
             .anyMatch(utxo -> utxo.getHash().equals(peginToRetiringPowPegHash));
 
-        assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToRetiringPowPegHash));
+        if (activations.isActive(ConsensusRule.RSKIP379) && !shouldPeginToOldPowpegWork){
+            assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToRetiringPowPegHash));
+        } else {
+            assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToRetiringPowPegHash));
+        }
+
         assertEquals(shouldPeginToOldPowpegWork, isPeginToRetiringPowPegRegistered);
         assertFalse(bridgeStorageProvider.getNewFederationBtcUTXOs().stream().anyMatch(utxo ->
             utxo.getHash().equals(peginToRetiringPowPegHash))
