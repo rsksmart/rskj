@@ -3,6 +3,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.script.Script;
@@ -12,6 +13,8 @@ import co.rsk.peg.bitcoin.BitcoinUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,10 +54,16 @@ public class PegUtils {
         BridgeConstants bridgeConstants,
         Federation activeFederation,
         Federation retiringFederation,
-        Wallet liveFederationsWallet,
         BtcTransaction btcTransaction,
         long btcTransactionHeight
     ) {
+
+        List<Federation> liveFeds = Collections.singletonList(activeFederation);
+        if (retiringFederation != null){
+            liveFeds = Arrays.asList(activeFederation, retiringFederation);
+        }
+        Wallet liveFederationsWallet = new BridgeBtcWallet(Context.getOrCreate(bridgeConstants.getBtcParams()), liveFeds);
+
         int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;
         boolean shouldUsePegoutTxIndexMechanism = btcTransactionHeight >= btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;

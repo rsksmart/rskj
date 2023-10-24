@@ -92,7 +92,6 @@ class PegUtilsGetTransactionTypeTest {
 
         FederationTestUtils.addSignatures(p2shRetiringFederation, fedKeys, migrationTx);
 
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Arrays.asList(activeFederation, p2shRetiringFederation));
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -100,7 +99,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             p2shRetiringFederation,
-            liveFederationsWallet,
             migrationTx,
             1
         );
@@ -147,8 +145,6 @@ class PegUtilsGetTransactionTypeTest {
 
         FederationTestUtils.addSignatures(retiredFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
 
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -156,7 +152,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
-            liveFederationsWallet,
             migrationTx,
             1
         );
@@ -187,8 +182,6 @@ class PegUtilsGetTransactionTypeTest {
         peginTx.addInput(Sha256Hash.ZERO_HASH, 0, redeemScript);
         peginTx.addOutput(minimumPeginTxValue, activeFederation.getAddress());
 
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -196,7 +189,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
-            liveFederationsWallet,
             peginTx,
             1
         );
@@ -218,8 +210,6 @@ class PegUtilsGetTransactionTypeTest {
 
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
 
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -227,7 +217,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
-            liveFederationsWallet,
             anyToAnyTx,
             1
         );
@@ -248,7 +237,6 @@ class PegUtilsGetTransactionTypeTest {
         anyToAnyTx.addOutput(belowMinimum, new Script(new byte[]{}));
 
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
@@ -257,7 +245,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
-            liveFederationsWallet,
             anyToAnyTx,
             1
         );
@@ -279,8 +266,6 @@ class PegUtilsGetTransactionTypeTest {
 
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
 
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
-
         int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
         int blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
@@ -292,7 +277,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
-            liveFederationsWallet,
             anyToAnyTx,
             blockNumberToStartUsingNewGeTransactionTypeMechanism
         );
@@ -313,7 +297,6 @@ class PegUtilsGetTransactionTypeTest {
         anyToAnyTx.addOutput(belowMinimum, new Script(new byte[]{}));
 
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
         int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
@@ -326,7 +309,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
-            liveFederationsWallet,
             anyToAnyTx,
             blockNumberToStartUsingNewGeTransactionTypeMechanism
         );
@@ -375,8 +357,6 @@ class PegUtilsGetTransactionTypeTest {
         peginTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
         peginTx.addOutput(amountToSend, bridgeMainnetConstants.getGenesisFederation().getAddress());
 
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(bridgeMainnetConstants.getGenesisFederation()));
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -384,7 +364,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             bridgeMainnetConstants.getGenesisFederation(),
             null,
-            liveFederationsWallet,
             peginTx,
             1
         );
@@ -421,8 +400,6 @@ class PegUtilsGetTransactionTypeTest {
 
         FederationTestUtils.addSignatures(activeFederation, fedKeys, pegoutBtcTx);
 
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -430,7 +407,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
-            liveFederationsWallet,
             pegoutBtcTx,
             1
         );
@@ -467,8 +443,6 @@ class PegUtilsGetTransactionTypeTest {
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Arrays.asList(activeFederation, retiringFederation));
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -476,7 +450,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
-            liveFederationsWallet,
             migrationTx,
             1
         );
@@ -496,8 +469,6 @@ class PegUtilsGetTransactionTypeTest {
         unknownPegTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
         unknownPegTx.addOutput(Coin.COIN, unknownAddress);
 
-        Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(bridgeMainnetConstants.getGenesisFederation()));
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -505,7 +476,6 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             bridgeMainnetConstants.getGenesisFederation(),
             null,
-            liveFederationsWallet,
             unknownPegTx,
             1
         );
