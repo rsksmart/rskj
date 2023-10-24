@@ -417,7 +417,6 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
-
             Wallet liveFederationsWallet = new BridgeBtcWallet(btcContext, getLiveFederations());
 
             PegTxType pegTxType = PegUtils.getTransactionType(
