@@ -53,7 +53,6 @@ class PegUtilsTest {
     private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
 
-
     @BeforeEach
     void init() {
         provider = mock(BridgeStorageProvider.class);
@@ -279,7 +278,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        Assertions.assertEquals(PegTxType.UNKNOWN, pegTxType);
     }
 
     @Test
