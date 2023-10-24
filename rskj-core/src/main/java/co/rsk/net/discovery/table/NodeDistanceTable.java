@@ -20,7 +20,6 @@ package co.rsk.net.discovery.table;
 
 import co.rsk.net.NodeID;
 import org.ethereum.net.rlpx.Node;
-import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +54,9 @@ public class NodeDistanceTable {
     }
 
     public synchronized List<Node> getClosestNodes(NodeID nodeId) {
-        logger.trace("Getting closest nodes to id {}", ByteUtil.toHexString(nodeId.getID()));
+        logger.debug("co.rsk.net.discovery.table.NodeDistanceTable.getClosestNodes - Getting closest nodes:\n" +
+                "nodeId: {}", nodeId.toString());
+
         return getAllNodes().stream()
                 .sorted(new NodeDistanceComparator(nodeId, this.distanceCalculator))
                 .collect(Collectors.toList());

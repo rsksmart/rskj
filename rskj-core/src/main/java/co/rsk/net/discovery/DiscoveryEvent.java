@@ -19,6 +19,7 @@
 package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.message.PeerDiscoveryMessage;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.net.InetSocketAddress;
 
@@ -37,5 +38,13 @@ public class DiscoveryEvent {
 
     public InetSocketAddress getAddress() {
         return address;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("message", this.message.toString())
+                .append("address", this.address.toString())
+                .toString();
     }
 }

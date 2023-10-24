@@ -21,6 +21,8 @@ package co.rsk.net.discovery;
 import co.rsk.net.discovery.message.PingPeerMessage;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.net.rlpx.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,9 +31,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by mario on 22/02/17.
  */
 public class NodeChallengeManager {
+    private static final Logger logger = LoggerFactory.getLogger(NodeChallengeManager.class);
+
     private Map<String, NodeChallenge> activeChallenges = new ConcurrentHashMap<>();
 
     public NodeChallenge startChallenge(Node challengedNode, Node challenger, PeerExplorer explorer) {
+        logger.debug("co.rsk.net.discovery.NodeChallengeManager.startChallenge - Starting challenge for node:\n" +
+                "challengedNode: {}\n" +
+                "challenger: {}", challengedNode.toString(), challenger.toString());
+
         PingPeerMessage pingMessage = explorer.sendPing(challengedNode.getAddress(), 1, challengedNode);
         String messageId = pingMessage.getMessageId();
         NodeChallenge challenge = new NodeChallenge(challengedNode, challenger, messageId);

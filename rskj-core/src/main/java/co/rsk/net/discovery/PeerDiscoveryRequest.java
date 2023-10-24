@@ -20,9 +20,11 @@ package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.message.DiscoveryMessageType;
 import co.rsk.net.discovery.message.PeerDiscoveryMessage;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.net.rlpx.Node;
 
 import java.net.InetSocketAddress;
+import java.util.Optional;
 
 /**
  * Created by mario on 17/02/17.
@@ -72,5 +74,15 @@ public class PeerDiscoveryRequest {
 
     public boolean hasExpired() {
         return System.currentTimeMillis() > expirationDate;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("messageId", this.messageId)
+                .append("message", this.message.toString())
+                .append("address", this.address.toString())
+                .append("relatedNode", Optional.ofNullable(this.relatedNode).map(Node::toString).orElse(null))
+                .toString();
     }
 }
