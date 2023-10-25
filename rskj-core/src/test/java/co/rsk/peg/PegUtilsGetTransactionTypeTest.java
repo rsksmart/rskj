@@ -13,6 +13,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -600,6 +601,168 @@ class PegUtilsGetTransactionTypeTest {
         FederationTestUtils.addSignatures(oldFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
 
         Assertions.assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.address));
+
+        int blockNumberToStartUsingNewGeTransactionTypeMechanism = 0;
+        if (shouldUseNewMechanism) {
+            int btcHeightWhenPegoutTxIndexActivates = bridgeRegTestConstants.getBtcHeightWhenPegoutTxIndexActivates();
+            int pegoutTxIndexGracePeriodInBtcBlocks = bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
+            blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        }
+
+        // Act
+        PegTxType transactionType = PegUtils.getTransactionType(
+            activations,
+            provider,
+            bridgeRegTestConstants,
+            activeFederation,
+            null,
+            migrationTx,
+            blockNumberToStartUsingNewGeTransactionTypeMechanism
+        );
+
+        // Assert
+        if (shouldUseNewMechanism){
+            verify(provider, never()).getLastRetiredFederationP2SHScript();
+        } else {
+            verify(provider, times(1)).getLastRetiredFederationP2SHScript();
+        }
+        Assertions.assertEquals(expectedType, transactionType);
+    }
+
+    private static Stream<Arguments> getTransactionType_retired_fed_to_live_fed_args() {
+        ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+
+        return Stream.of(
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                PegTxType.PEGOUT_OR_MIGRATION
+            ),
+            Arguments.of(
+                tbdActivations,
+                false,
+                PegTxType.PEGOUT_OR_MIGRATION
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                PegTxType.PEGOUT_OR_MIGRATION
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getTransactionType_retired_fed_to_live_fed_args")
+    void getTransactionType_last_retired_fed_to_live_fed(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUseNewMechanism,
+        PegTxType expectedType
+    ) {
+        // Arrange
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03"}, true
+        );
+        Federation retiredFederation = createFederation(bridgeMainnetConstants, fedKeys);
+        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
+
+        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFederation.getP2SHScript()));
+
+        BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
+        migrationTx.addInput(BitcoinTestUtils.createHash(1), 0, retiredFederation.getRedeemScript());
+        migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
+
+        FederationTestUtils.addSignatures(retiredFederation, fedKeys, migrationTx);
+
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx);
+        Assertions.assertTrue(firstInputSigHash.isPresent());
+
+        when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
+
+        int blockNumberToStartUsingNewGeTransactionTypeMechanism = 0;
+        if (shouldUseNewMechanism) {
+            int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
+            int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
+            blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        }
+
+        // Act
+        PegTxType transactionType = PegUtils.getTransactionType(
+            activations,
+            provider,
+            bridgeMainnetConstants,
+            activeFederation,
+            null,
+            migrationTx,
+            blockNumberToStartUsingNewGeTransactionTypeMechanism
+        );
+
+        // Assert
+        if (shouldUseNewMechanism){
+            verify(provider, never()).getLastRetiredFederationP2SHScript();
+        } else {
+            verify(provider, times(1)).getLastRetiredFederationP2SHScript();
+        }
+        Assertions.assertEquals(expectedType, transactionType);
+    }
+
+    private static Stream<Arguments> getTransactionType_retired_fed_no_existing_in_the_storage_to_live_fed_args() {
+        ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+
+        return Stream.of(
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                tbdActivations,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                PegTxType.PEGOUT_OR_MIGRATION
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getTransactionType_retired_fed_no_existing_in_the_storage_to_live_fed_args")
+    void getTransactionType_retired_fed_no_existing_in_the_storage_to_live_fed(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUseNewMechanism,
+        PegTxType expectedType
+    ) {
+        // Arrange
+        BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+        NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
+        Context.propagate(new Context(btcRegTestsParams));
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03"}, true
+        );
+        Federation retiredFederation = createFederation(bridgeRegTestConstants, fedKeys);
+        Federation activeFederation = bridgeRegTestConstants.getGenesisFederation();
+
+        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.empty());
+
+        BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
+        migrationTx.addInput(BitcoinTestUtils.createHash(1), 0, retiredFederation.getRedeemScript());
+        migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
+
+        FederationTestUtils.addSignatures(retiredFederation, fedKeys, migrationTx);
+
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx);
+        Assertions.assertTrue(firstInputSigHash.isPresent());
+
+        when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
 
         int blockNumberToStartUsingNewGeTransactionTypeMechanism = 0;
         if (shouldUseNewMechanism) {
