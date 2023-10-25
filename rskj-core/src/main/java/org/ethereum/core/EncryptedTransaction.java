@@ -1,26 +1,22 @@
 package org.ethereum.core;
 
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.Arrays;
-import java.util.List;
+public class EncryptedTransaction {
+    private final Transaction transaction;
+    private final long[][] encryptedParams;
 
-public class EncryptedTransaction extends Transaction {
-
-    private long[][] encryptedParams;
-    private List<ByteArrayWrapper> fetchKeys;
     public EncryptedTransaction(byte[] rawData) {
-        super(rawData);
+        RLPList data = RLP.decodeList(rawData);
 
-        RLPList transaction = RLP.decodeList(rawData);
+        // parse tx
+        byte[] rawTx = data.get(0).getRLPRawData();
+        this.transaction = new Transaction(rawTx);
 
-        // this tx type contains two extra fields:
-        // 1. encrypted params
-        // 2. keys to fetch
-        this.encryptedParams = parseEncryptedParams(transaction.get(6).getRLPData());
-        this.fetchKeys = parseKeys(transaction.get(7).getRLPData());
+        // parse encrypted params
+        byte[] encryptedParamsBytes = data.get(1).getRLPRawData();
+        this.encryptedParams = parseEncryptedParams(encryptedParamsBytes);
     }
 
     private long[][] parseEncryptedParams(byte[] params) {
@@ -28,8 +24,7 @@ public class EncryptedTransaction extends Transaction {
         return new long[][]{new long[]{0}};
     }
 
-    private List<ByteArrayWrapper> parseKeys(byte[] keys) {
-        // todo(fedejinich) implement this
-        return Arrays.asList(new ByteArrayWrapper(new byte[]{}));
+    public Transaction getTransaction() {
+        return this.transaction;
     }
 }

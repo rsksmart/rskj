@@ -151,4 +151,8 @@ public interface Web3EthModule {
     boolean eth_submitWork(String nonce, String header, String mince);
 
     boolean eth_submitHashrate(String hashrate, String id);
+
+    default String eth_sendEncryptedTransaction(String rawData) {
+        return getEthModule().sendEncryptedTransaction(rawData);
+    }
 }

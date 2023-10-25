@@ -83,10 +83,13 @@ public class RskModuleImpl implements RskModule {
     public String sendEncryptedTransaction(String rawData) {
         String s = null;
         try {
-            EncryptedTransaction tx = new EncryptedTransaction(HexUtils.stringHexToByteArray(rawData));
+            EncryptedTransaction encryptedTransaction = new EncryptedTransaction(HexUtils.stringHexToByteArray(rawData));
+
+            Transaction tx = encryptedTransaction.getTransaction();
+
 
             // add logic to set params to transcipher, it'll be a for to iterate over the RLPList
-            // add logic to set keys to fetch encrypted data from storage
+            // for the future, add logic to set keys to fetch encrypted data from storage
 
             if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
                 throw invalidParamError("Missing parameter, gasPrice, gas or value");
