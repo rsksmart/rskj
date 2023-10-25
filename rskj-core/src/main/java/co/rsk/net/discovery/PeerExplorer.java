@@ -197,9 +197,10 @@ public class PeerExplorer {
 
     private void handlePingMessage(InetSocketAddress address, PingPeerMessage message) {
         logger.debug("co.rsk.net.discovery.PeerExplorer.handlePingMessage - Handling ping message:\n" +
-                        "address: {},\n" +
+                        "address hostName: {},\n" +
+                        "address port: {},\n" +
                         "nodeId: {}"
-                , address, message.getNodeId());
+                , address.getHostName(), address.getPort(), message.getNodeId());
 
         this.sendPong(address, message);
 
@@ -216,9 +217,10 @@ public class PeerExplorer {
 
     private void handlePong(InetSocketAddress pongAddress, PongPeerMessage message) {
         logger.debug("co.rsk.net.discovery.PeerExplorer.handlePong - Handling pong message:\n" +
-                        "pongAddress: {},\n" +
+                        "pongAddress hostName: {},\n" +
+                        "pongAddress port: {},\n" +
                         "messageId: {}"
-                , pongAddress, message.getMessageId());
+                , pongAddress.getHostName(), pongAddress.getPort(), message.getMessageId());
 
         PeerDiscoveryRequest request = this.pendingPingRequests.get(message.getMessageId());
 
@@ -254,12 +256,13 @@ public class PeerExplorer {
 
     private void handleNeighborsMessage(InetSocketAddress neighborsResponseAddress, NeighborsPeerMessage message) {
         logger.debug("co.rsk.net.discovery.PeerExplorer.handleNeighborsMessage - Handling neighbors message:\n" +
-                        "neighborsResponseAddress: {},\n" +
+                        "neighborsResponseAddress hostName: {},\n" +
+                        "neighborsResponseAddress port: {},\n" +
                         "nodeId: {},\n" +
                         "messageId: {}\n" +
                         "nodesCount: {}\n" +
                         "nodes: {}"
-                , neighborsResponseAddress, message.getNodeId(), message.getMessageId(), message.countNodes(), message.getNodes());
+                , neighborsResponseAddress.getHostName(), neighborsResponseAddress.getPort(), message.getNodeId(), message.getMessageId(), message.countNodes(), message.getNodes());
 
         Node connectedNode = this.establishedConnections.get(message.getNodeId());
 
@@ -289,10 +292,11 @@ public class PeerExplorer {
 
     synchronized PingPeerMessage sendPing(InetSocketAddress nodeAddress, int attempt, Node node) {
         logger.debug("co.rsk.net.discovery.PeerExplorer.sendPing - Sending ping message:\n" +
-                        "nodeAddress: {},\n" +
+                        "nodeAddress hostName: {},\n" +
+                        "nodeAddress port: {},\n" +
                         "attempt: {},\n" +
                         "node: {}"
-                , nodeAddress, attempt, node == null ? null : node.toString());
+                , nodeAddress.getHostName(), nodeAddress.getPort(), attempt, node == null ? null : node.toString());
 
         PingPeerMessage nodeMessage = checkPendingPeerToAddress(nodeAddress);
 
@@ -323,7 +327,7 @@ public class PeerExplorer {
     }
 
     private void updateEntry(Node connectedNode) {
-        logger.trace("co.rsk.net.discovery.PeerExplorer.updateEntry - Updating node: {}", connectedNode);
+        logger.trace("co.rsk.net.discovery.PeerExplorer.updateEntry - Updating node {}", connectedNode.getHexId());
         try {
             updateEntryLock.lock();
             this.distanceTable.updateEntry(connectedNode);
@@ -344,9 +348,10 @@ public class PeerExplorer {
 
     private PongPeerMessage sendPong(InetSocketAddress nodeAddress, PingPeerMessage message) {
         logger.debug("co.rsk.net.discovery.PeerExplorer.sendPong - Sending pong message:\n" +
-                        "nodeAddress: {},\n" +
+                        "nodeAddress hostName: {},\n" +
+                        "nodeAddress port: {},\n" +
                         "messageId: {}"
-                , nodeAddress, message.getMessageId());
+                , nodeAddress.getHostName(), nodeAddress.getPort(), message.getMessageId());
 
         InetSocketAddress localAddress = this.localNode.getAddress();
         PongPeerMessage pongPeerMessage = PongPeerMessage.create(localAddress.getHostName(), localAddress.getPort(), message.getMessageId(), this.key, this.networkId);
@@ -361,8 +366,9 @@ public class PeerExplorer {
     @VisibleForTesting
     FindNodePeerMessage sendFindNode(Node node) {
         logger.debug("co.rsk.net.discovery.PeerExplorer.sendFindNode - Sending find node message:\n" +
-                        "nodeAddress: {}"
-                , node.getAddress());
+                        "nodeAddress hostName: {}\n" +
+                        "nodeAddress hostName: {}"
+                , node.getAddress().getHostName(), node.getAddress().getPort());
 
         InetSocketAddress nodeAddress = node.getAddress();
         String id = UUID.randomUUID().toString();
@@ -384,10 +390,11 @@ public class PeerExplorer {
 
     private NeighborsPeerMessage sendNeighbors(InetSocketAddress nodeAddress, List<Node> nodes, String id) {
         logger.debug("co.rsk.net.discovery.PeerExplorer.sendNeighbors - Sending neighbors message:\n" +
-                        "nodeAddress: {},\n" +
+                        "nodeAddress hostName: {},\n" +
+                        "nodeAddress port: {},\n" +
                         "id: {}\n" +
                         "nodes: {}"
-                , nodeAddress, id, nodes);
+                , nodeAddress.getHostName(), nodeAddress.getPort(), id, nodes);
 
         List<Node> nodesToSend = getRandomizeLimitedList(nodes, MAX_NODES_PER_MSG, 5);
 
@@ -502,7 +509,9 @@ public class PeerExplorer {
     private void removeConnection(Node node) {
         logger.debug("co.rsk.net.discovery.PeerExplorer.removeConnection - Removing node:\n" +
                 "nodeId: {}\n" +
-                "nodeAddress: {}", node.getHexId(), node.getAddressAsString());
+                "nodeAddress hostName: {}\n" +
+                "nodeAddress port: {}", node.getHexId(), node.getAddress().getHostName(), node.getAddress().getPort());
+
         this.establishedConnections.remove(node.getId());
         this.distanceTable.removeNode(node);
         this.knownHosts.remove(node.getAddressAsString());
@@ -510,10 +519,10 @@ public class PeerExplorer {
 
     private void addConnection(PongPeerMessage message, String ip, int port) {
         logger.debug("co.rsk.net.discovery.PeerExplorer.addConnection - Adding node:\n" +
-                "message: {}\n" +
+                "messageId: {}\n" +
                 "ip: {}\n" +
                 "port: {}\n" +
-                "allowMultipleConnectionsPerHostPort: {}", message.toString(), ip, port, this.allowMultipleConnectionsPerHostPort);
+                "allowMultipleConnectionsPerHostPort: {}", message.getMessageId(), ip, port, this.allowMultipleConnectionsPerHostPort);
 
         Node senderNode = new Node(message.getNodeId().getID(), ip, port);
         boolean isLocalNode = StringUtils.equals(senderNode.getHexId(), this.localNode.getHexId());
