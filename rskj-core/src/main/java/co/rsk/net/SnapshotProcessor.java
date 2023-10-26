@@ -121,7 +121,7 @@ public class SnapshotProcessor implements InternalService {
     public void processStateChunkRequest(Peer sender, StateChunkRequestMessage request) {
         logger.debug("Processing state chunk request from node {}", sender.getPeerNodeID());
         long startProcessingTime = System.currentTimeMillis();
-        Long blockNumber = request.getBlockNumber() > 0L ? request.getBlockNumber() : blockchain.getBestBlock().getNumber() - 10;
+        Long blockNumber = request.getBlockNumber() > 0L ? request.getBlockNumber() : BLOCK_NUMBER;
         List<byte[]> trieEncoded = new ArrayList<>();
         Iterator<IterationElement> it = iterators.get(sender.getPeerNodeID().toString());
         if (it == null || request.getFrom() == 0l) {
