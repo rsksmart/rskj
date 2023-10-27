@@ -12,12 +12,12 @@ import co.rsk.Flusher;
 import co.rsk.util.RLPException;
 import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.core.*;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.db.*;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.RLP;
 import org.ethereum.util.TransactionArgumentsUtil;
+import org.rsksmart.BFV;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,9 +84,16 @@ public class RskModuleImpl implements RskModule {
         String s = null;
         try {
             EncryptedTransaction encryptedTransaction = new EncryptedTransaction(HexUtils.stringHexToByteArray(rawData));
-
+            BFV bfv = new BFV();
             Transaction tx = encryptedTransaction.getTransaction();
 
+//            List<ByteArrayWrapper> encryptedParams = encryptedTransaction.getEncryptedParams();
+//            for (int i = 0; i < encryptedParams.size(); i++) {
+//                byte[] res = bfv.transcipher();
+//                byte[] hash = Keccak256Helper.keccak256(res);
+//                FhStore.getInstance().put(hash, res); // store encrypted params, so they can be accessed within tx execution
+//            }
+//            tx = addEncryptedParams(tx); // add encrypted params to tx.data
 
             // add logic to set params to transcipher, it'll be a for to iterate over the RLPList
             // for the future, add logic to set keys to fetch encrypted data from storage
@@ -114,6 +121,10 @@ public class RskModuleImpl implements RskModule {
 //                LOGGER.debug("rsk_sendEncryptedTransaction({}): {}", rawData, s);
 //            }
         }
+    }
+
+    private Transaction addEncryptedParams(Transaction tx) {
+      throw new NotImplementedException("implement this");
     }
 
     @Override
