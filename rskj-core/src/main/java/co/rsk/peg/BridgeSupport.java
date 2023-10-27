@@ -2110,7 +2110,8 @@ public class BridgeSupport {
             // Preserve federation change info
             long nextFederationCreationBlockHeight = rskExecutionBlock.getNumber();
             provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
-            Script oldFederationP2SHScript = activations.isActive(RSKIP377)? ((ErpFederation) oldFederation).getStandardP2SHScript(): oldFederation.getP2SHScript();
+            Script oldFederationP2SHScript = activations.isActive(RSKIP377) && oldFederation instanceof ErpFederation ?
+                ((ErpFederation) oldFederation).getStandardP2SHScript() : oldFederation.getP2SHScript();
             provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
         }
 
