@@ -23,11 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class SnapshotProcessor {
 
@@ -61,7 +58,7 @@ public class SnapshotProcessor {
     private Block lastBlock;
     private BlockDifficulty lastBlockDifficulty;
 
-    private final Queue<ChunkTask> chunkTasks = new LinkedList<>();
+    private final ConcurrentLinkedQueue<ChunkTask> chunkTasks = new ConcurrentLinkedQueue<>();
     private List<Peer> peers = new ArrayList<>();
 
     // multithreading stuff
@@ -71,7 +68,7 @@ public class SnapshotProcessor {
 
     // executor service
     private ExecutorService executorService;
-    private static final int SNAPSHOT_THREADS = 4;
+    private static final int SNAPSHOT_THREADS = 2;
 
     // keep track of active chunkTasks (cuncurrently)
     private ConcurrentMap<Long, ChunkTask> activeTasks = new ConcurrentHashMap<>();
@@ -258,6 +255,13 @@ public class SnapshotProcessor {
         sender.sendMessage(responseMessage);
     }
 
+    // priority queue for ordering chunk responses
+    private final PriorityQueue<SnapStateChunkResponseMessage> responseQueue = new PriorityQueue<>(
+            Comparator.comparingLong(SnapStateChunkResponseMessage::getFrom)
+    );
+
+    private final AtomicLong nextExpectedFrom = new AtomicLong(0L);
+
     public void processStateChunkResponse(Peer peer, SnapStateChunkResponseMessage message) {
         try {
             peersInformation.getOrRegisterPeer(peer);
@@ -370,6 +374,7 @@ public class SnapshotProcessor {
         logger.debug("CLIENT - Mapping elements...");
         final TrieDTO[] nodeArray = this.allNodes.toArray(new TrieDTO[0]);
         logger.debug("CLIENT - Recovering trie...");
+        // se rompe aca en parallel
         Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, this.trieStore::saveDTO);
         if (!result.isPresent() || !validateTrie(this.remoteRootHash, result.get().calculateHash())) {
             logger.error("CLIENT - State final validation FAILED");
@@ -456,12 +461,20 @@ public class SnapshotProcessor {
         long from = 0;
         logger.debug("generating snapshot chunk tasks");
 
-        while (from < remoteTrieSize) {
-            ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize, getNextPeer());
-            //logger.debug("task: {} < {}", task.from, remoteTrieSize);
-            chunkTasks.add(task);
-            from += chunkSize * 1024L;
+        if (parallel) {
+            while (from < remoteTrieSize - (chunkSize * 1024L)) {
+                ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize, getNextPeer());
+                chunkTasks.add(task);
+                from += chunkSize * 1024L;
+            }
         }
+            while (from < remoteTrieSize) {
+                ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize, getNextPeer());
+                //logger.debug("task: {} < {}", task.from, remoteTrieSize);
+                chunkTasks.add(task);
+                from += chunkSize * 1024L;
+            }
+
         logger.debug("generated: {} snapshot chunk tasks", chunkTasks.size());
     }
 
@@ -474,14 +487,14 @@ public class SnapshotProcessor {
             assignNextTask(getNextPeer());
         }
     }
-
     private synchronized void assignNextTask(Peer peer) {
         if (!chunkTasks.isEmpty()) {
             ChunkTask task = chunkTasks.poll();
             activeTasks.put(task.getFrom(), task);
             executorService.execute(task);
         } else {
-            logger.debug("no more tasks");
+            chunkTasks.add(new ChunkTask(this.lastBlock.getNumber(), remoteTrieSize - (chunkSize * 1024L), chunkSize, peer));
+            continueWork(peer);
         }
     }
 
