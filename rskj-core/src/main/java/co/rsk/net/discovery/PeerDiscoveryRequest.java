@@ -79,9 +79,9 @@ public class PeerDiscoveryRequest {
     public String toString() {
         return new ToStringBuilder(this)
                 .append("messageId", this.messageId)
-                .append("message", this.message.toString())
-                .append("address", this.address.toString())
-                .append("relatedNode", this.relatedNode == null ? null : this.relatedNode.toString())
+                .append("message", this.message)
+                .append("address", this.address)
+                .append("relatedNode", this.relatedNode)
                 .toString();
     }
 }

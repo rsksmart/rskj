@@ -54,8 +54,7 @@ public class NodeDistanceTable {
     }
 
     public synchronized List<Node> getClosestNodes(NodeID nodeId) {
-        logger.debug("co.rsk.net.discovery.table.NodeDistanceTable.getClosestNodes - Getting closest nodes:\n" +
-                "nodeId: {}", nodeId.toString());
+        logger.debug("getClosestNodes - Getting nodes closest to node: [{}]", nodeId.toString());
 
         return getAllNodes().stream()
                 .sorted(new NodeDistanceComparator(nodeId, this.distanceCalculator))

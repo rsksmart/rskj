@@ -43,8 +43,8 @@ public class DiscoveryEvent {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("message", this.message.toString())
-                .append("address", this.address.toString())
+                .append("message", this.message)
+                .append("address", this.address)
                 .toString();
     }
 }

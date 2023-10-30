@@ -45,7 +45,7 @@ public class OperationResult {
     public String toString() {
         return new ToStringBuilder(this)
                 .append("success", success)
-                .append("affectedEntry", affectedEntry.toString())
+                .append("affectedEntry", affectedEntry)
                 .toString();
     }
 }

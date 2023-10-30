@@ -36,9 +36,7 @@ public class NodeChallengeManager {
     private Map<String, NodeChallenge> activeChallenges = new ConcurrentHashMap<>();
 
     public NodeChallenge startChallenge(Node challengedNode, Node challenger, PeerExplorer explorer) {
-        logger.debug("co.rsk.net.discovery.NodeChallengeManager.startChallenge - Starting challenge for node:\n" +
-                "challengedNode: {}\n" +
-                "challenger: {}", challengedNode.toString(), challenger.toString());
+        logger.debug("startChallenge - Starting challenge for node: [{}] by challenger: [{}]", challengedNode.toString(), challenger.toString());
 
         PingPeerMessage pingMessage = explorer.sendPing(challengedNode.getAddress(), 1, challengedNode);
         String messageId = pingMessage.getMessageId();
