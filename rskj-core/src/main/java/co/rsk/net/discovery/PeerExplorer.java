@@ -295,9 +295,8 @@ public class PeerExplorer {
                         "nodeAddress hostName: [{}], " +
                         "nodeAddress port: [{}], " +
                         "attempt: [{}], " +
-                        "node: [{}], " +
                         "nodeMessage: [{}]"
-                , nodeAddress.getHostName(), nodeAddress.getPort(), attempt, node, nodeMessage);
+                , nodeAddress.getHostName(), nodeAddress.getPort(), attempt, nodeMessage);
 
         if (nodeMessage != null) {
             return nodeMessage;
