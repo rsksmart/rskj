@@ -17,6 +17,15 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP377;
+
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.AddressFormatException;
 import co.rsk.bitcoinj.core.BtcBlock;
@@ -57,7 +66,12 @@ import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.utils.*;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
+import co.rsk.peg.utils.RejectedPeginReason;
+import co.rsk.peg.utils.RejectedPegoutReason;
+import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -78,7 +92,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -99,15 +112,6 @@ import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP377;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -1337,27 +1341,30 @@ public class BridgeSupport {
     public void addSignature(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
         Context.propagate(btcContext);
 
-        Federation retiringFederation = getRetiringFederation();
-        Federation activeFederation = getActiveFederation();
-        Federation federation =
-                activeFederation.hasBtcPublicKey(federatorPublicKey) ?
-                        activeFederation :
-                        (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey) ?
-                                retiringFederation:
-                                null);
-
-        if (federation == null) {
-            logger.warn("Supplied federator public key {} does not belong to any of the federators.", federatorPublicKey);
+        Optional<Federation> optionalFederation = getFederationFromPublicKey(federatorPublicKey);
+        if (!optionalFederation.isPresent()) {
+            logger.warn(
+                "Supplied federator public key {} does not belong to any of the federators.",
+                federatorPublicKey
+            );
             return;
         }
 
+        Federation federation = optionalFederation.get();
         BtcTransaction btcTx = provider.getPegoutsWaitingForSignatures().get(new Keccak256(rskTxHash));
         if (btcTx == null) {
-            logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", new Keccak256(rskTxHash));
+            logger.warn(
+                "No tx waiting for signature for hash {}. Probably fully signed already.",
+                new Keccak256(rskTxHash)
+            );
             return;
         }
         if (btcTx.getInputs().size() != signatures.size()) {
-            logger.warn("Expected {} signatures but received {}.", btcTx.getInputs().size(), signatures.size());
+            logger.warn(
+                "Expected {} signatures but received {}.",
+                btcTx.getInputs().size(),
+                signatures.size()
+            );
             return;
         }
 
@@ -1368,7 +1375,26 @@ public class BridgeSupport {
         processSigning(federatorPublicKey, signatures, rskTxHash, btcTx, federation);
     }
 
-    private void processSigning(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash, BtcTransaction btcTx, Federation federation) throws IOException {
+    private Optional<Federation> getFederationFromPublicKey(BtcECKey federatorPublicKey) {
+        Federation retiringFederation = getRetiringFederation();
+        Federation activeFederation = getActiveFederation();
+
+        if (activeFederation.hasBtcPublicKey(federatorPublicKey)) {
+            return Optional.of(activeFederation);
+        }
+        if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey)) {
+            return Optional.of(retiringFederation);
+        }
+
+        return Optional.empty();
+    }
+
+    private void processSigning(
+        BtcECKey federatorPublicKey,
+        List<byte[]> signatures,
+        byte[] rskTxHash,
+        BtcTransaction btcTx,
+        Federation federation) throws IOException {
         // Build input hashes for signatures
         int numInputs = btcTx.getInputs().size();
 
@@ -1389,7 +1415,12 @@ public class BridgeSupport {
             try {
                 sig = BtcECKey.ECDSASignature.decodeFromDER(signatures.get(i));
             } catch (RuntimeException e) {
-                logger.warn("Malformed signature for input {} of tx {}: {}", i, new Keccak256(rskTxHash), ByteUtil.toHexString(signatures.get(i)));
+                logger.warn(
+                    "Malformed signature for input {} of tx {}: {}",
+                    i,
+                    new Keccak256(rskTxHash),
+                    ByteUtil.toHexString(signatures.get(i))
+                );
                 return;
             }
 
@@ -2079,7 +2110,8 @@ public class BridgeSupport {
             // Preserve federation change info
             long nextFederationCreationBlockHeight = rskExecutionBlock.getNumber();
             provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
-            Script oldFederationP2SHScript = activations.isActive(RSKIP377)? oldFederation.getStandardP2SHScript(): oldFederation.getP2SHScript();
+            Script oldFederationP2SHScript = activations.isActive(RSKIP377) && oldFederation instanceof ErpFederation ?
+                ((ErpFederation) oldFederation).getStandardP2SHScript() : oldFederation.getP2SHScript();
             provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
         }
 

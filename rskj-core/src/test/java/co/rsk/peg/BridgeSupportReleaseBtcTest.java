@@ -1250,7 +1250,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private static Federation getFederation() {
-        return new Federation(
+        return new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,

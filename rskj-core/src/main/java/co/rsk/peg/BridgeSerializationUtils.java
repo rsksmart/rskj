@@ -246,7 +246,7 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationWithSerializer
-    private static Federation deserializeFederationWithDeserializer(
+    private static StandardMultisigFederation deserializeStandardMultisigFederationWithDeserializer(
         byte[] data,
         NetworkParameters networkParameters,
         FederationMemberDesserializer federationMemberDesserializer) {
@@ -273,7 +273,7 @@ public class BridgeSerializationUtils {
             federationMembers.add(member);
         }
 
-        return new Federation(federationMembers, creationTime, creationBlockNumber, networkParameters);
+        return new StandardMultisigFederation(federationMembers, creationTime, creationBlockNumber, networkParameters);
     }
 
     /**
@@ -287,8 +287,8 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationOnlyBtcKeys
-    public static Federation deserializeFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
-        return deserializeFederationWithDeserializer(data, networkParameters,
+    public static StandardMultisigFederation deserializeStandardMultisigFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
+        return deserializeStandardMultisigFederationWithDeserializer(data, networkParameters,
                 (pubKeyBytes -> FederationMember.getFederationMemberFromKey(BtcECKey.fromPublicOnly(pubKeyBytes))));
     }
 
@@ -304,29 +304,29 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederation
-    public static Federation deserializeFederation(
+    public static StandardMultisigFederation deserializeStandardMultisigFederation(
         byte[] data,
         NetworkParameters networkParameters
     ) {
-        return deserializeFederationWithDeserializer(
+        return deserializeStandardMultisigFederationWithDeserializer(
             data,
             networkParameters,
             BridgeSerializationUtils::deserializeFederationMember
         );
     }
 
-    public static ErpFederation deserializeErpFederation(
+    public static LegacyErpFederation deserializeLegacyErpFederation(
         byte[] data,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations
     ) {
-        Federation federation = deserializeFederationWithDeserializer(
+        Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
             bridgeConstants.getBtcParams(),
             BridgeSerializationUtils::deserializeFederationMember
         );
 
-        return new ErpFederation(
+        return new LegacyErpFederation(
             federation.getMembers(),
             federation.creationTime,
             federation.getCreationBlockNumber(),
@@ -342,7 +342,7 @@ public class BridgeSerializationUtils {
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations
     ) {
-        Federation federation = deserializeFederationWithDeserializer(
+        Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
             bridgeConstants.getBtcParams(),
             BridgeSerializationUtils::deserializeFederationMember
