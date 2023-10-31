@@ -271,9 +271,6 @@ public class SnapshotProcessor {
                 message.getChunkOfTrieKeyValue().length
         );
 
-        //local elements to make it thread safe
-        List<byte[]> localElements = new ArrayList<>();
-
         // TODO(snap-poc) do whatever it's needed, reading just to check load
         for (int i = 0; i < trieElements.size(); i++) {
             final RLPList trieElement = (RLPList) trieElements.get(i);
@@ -284,20 +281,14 @@ public class SnapshotProcessor {
             if (isCompressed) {
                 value = Compressor.decompressLz4(value, rawSize);
             }
-           // this.elements.add(value);
-            localElements.add(value);
+            this.elements.add(value);
             if (logger.isTraceEnabled()) {
                 final String valueString = value == null ? "null" : ByteUtil.toHexString(value);
                 logger.trace("CLIENT - State chunk received - Value: {}", valueString);
             }
         }
-
-        // this synchronized might not be needed
-        synchronized(this) {
-            this.elements.addAll(localElements);
-            this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
-            this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
-        }
+        this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
+        this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
 
         logger.debug("CLIENT - State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
         if (!message.isComplete()) {
