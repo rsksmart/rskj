@@ -164,7 +164,8 @@ public class PeerExplorer {
                 "state: [{}], " +
                 "type: [{}], " +
                 "networkId: [{}]",
-                state, event.getMessage().getMessageType(), event.getMessage().getNetworkId());
+                state, event.getMessage().getMessageType(),
+                event.getMessage().getNetworkId().isPresent() ? event.getMessage().getNetworkId().getAsInt() : null);
 
         if (state != ExecState.RUNNING) {
             logger.warn("Cannot handle message as current state is {}", state);
@@ -177,7 +178,7 @@ public class PeerExplorer {
         if (event.getMessage().getNetworkId().isPresent() &&
                 event.getMessage().getNetworkId().getAsInt() != this.networkId) {
             logger.warn("handleMessage - Message ignored because remote peer's network id: [{}] is different from local network id: [{}]",
-                    event.getMessage().getNetworkId(), this.networkId);
+                    event.getMessage().getNetworkId().getAsInt(), this.networkId);
             return;
         }
         if (type == DiscoveryMessageType.PING) {

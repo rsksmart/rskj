@@ -20,8 +20,6 @@ package co.rsk.net.discovery.table;
 
 import co.rsk.net.NodeID;
 import org.ethereum.net.rlpx.Node;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +29,6 @@ import java.util.stream.Collectors;
  * Created by mario on 21/02/17.
  */
 public class NodeDistanceTable {
-    private static final Logger logger = LoggerFactory.getLogger(NodeDistanceTable.class);
     private final Map<Integer, Bucket> buckets = new ConcurrentHashMap<>();
     private final Node localNode;
     private final DistanceCalculator distanceCalculator;
