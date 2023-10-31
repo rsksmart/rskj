@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 import static co.rsk.peg.PegTestUtils.createFederation;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 class PegUtilsLegacyGetTransactionTypeTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
