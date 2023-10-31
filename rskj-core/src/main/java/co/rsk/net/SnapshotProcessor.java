@@ -391,16 +391,13 @@ public class SnapshotProcessor {
         logger.debug("generating snapshot chunk tasks");
 
         if (parallel) {
-            while (from < remoteTrieSize - (chunkSize * 1024L)) {
-                ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize, getNextPeer());
-                chunkTasks.add(task);
+            while (from < remoteTrieSize) {
+                addChunkTask(from);
                 from += chunkSize * 1024L;
             }
         }
             while (from < remoteTrieSize) {
-                ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize, getNextPeer());
-                //logger.debug("task: {} < {}", task.from, remoteTrieSize);
-                chunkTasks.add(task);
+                addChunkTask(from);
                 from += chunkSize * 1024L;
             }
 
@@ -422,8 +419,7 @@ public class SnapshotProcessor {
             activeTasks.put(task.getFrom(), task);
             executorService.execute(task);
         } else {
-            chunkTasks.add(new ChunkTask(this.lastBlock.getNumber(), remoteTrieSize - (chunkSize * 1024L), chunkSize, peer));
-            continueWork(peer);
+            logger.debug("no more tasks");
         }
     }
 
@@ -454,5 +450,10 @@ public class SnapshotProcessor {
         logger.debug("got next peer. new peer index: {}", currentPeerIndex);
 
         return nextPeer;
+    }
+
+    private void addChunkTask(long from) {
+        ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize, getNextPeer());
+        chunkTasks.add(task);
     }
 }
