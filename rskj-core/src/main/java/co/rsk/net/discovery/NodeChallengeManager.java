@@ -49,7 +49,7 @@ public class NodeChallengeManager {
     public NodeChallenge removeChallenge(String challengeId) {
         NodeChallenge removedChallenge = activeChallenges.remove(challengeId);
 
-        logger.debug("removeChallenge - Removed challenge: [{}]", removedChallenge.getChallengeId());
+        logger.debug("removeChallenge - Removed challenge for node: [{}]", removedChallenge.getChallengedNode().getHexId());
 
         return removedChallenge;
     }
