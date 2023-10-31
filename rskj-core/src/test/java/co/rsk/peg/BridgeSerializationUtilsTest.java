@@ -43,6 +43,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
+import org.ethereum.util.RLPTestUtil;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -651,7 +652,7 @@ class BridgeSerializationUtilsTest {
     void deserializeElection_invalidCallSpec() throws Exception {
         AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
 
-        byte[] rlpFirstSpec = RLP.encodeList(RLP.encode(Hex.decode("010203"))); // invalid spec
+        byte[] rlpFirstSpec = RLP.encodeList(RLPTestUtil.encode(Hex.decode("010203"))); // invalid spec
         byte[] rlpFirstVoters = RLP.encodeList(RLP.encodeElement(Hex.decode("03"))); // doesn't matter
 
         byte[] data = RLP.encodeList(rlpFirstSpec, rlpFirstVoters);

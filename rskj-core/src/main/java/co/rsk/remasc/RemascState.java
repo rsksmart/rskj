@@ -64,7 +64,7 @@ public class RemascState {
         }
 
         // we add an empty list because Remasc state expects to have an empty siblings list after 0.5.0 activation
-        return RLP.encodeList(rlpRewardBalance, rlpBurnedBalance, RLP.encodedEmptyList(), rlpBrokenSelectionRule);
+        return RLP.encodeList(rlpRewardBalance, rlpBurnedBalance, RLP.encodeList(), rlpBrokenSelectionRule);
     }
 
     public static RemascState create(byte[] data) {

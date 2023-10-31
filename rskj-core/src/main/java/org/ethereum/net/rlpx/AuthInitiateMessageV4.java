@@ -88,9 +88,9 @@ public class AuthInitiateMessageV4 {
         byte[] publicKey = new byte[64];
         System.arraycopy(this.publicKey.getEncoded(false), 1, publicKey, 0, publicKey.length);
 
-        byte[] sigBytes = RLP.encode(merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())}));
-        byte[] publicBytes = RLP.encode(publicKey);
-        byte[] nonceBytes = RLP.encode(nonce);
+        byte[] sigBytes = RLP.encodeElement(merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())}));
+        byte[] publicBytes = RLP.encodeElement(publicKey);
+        byte[] nonceBytes = RLP.encodeElement(nonce);
         byte[] versionBytes = RLP.encodeInt(version);
 
         return RLP.encodeList(sigBytes, publicBytes, nonceBytes, versionBytes);

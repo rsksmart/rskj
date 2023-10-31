@@ -93,12 +93,12 @@ public class InternalTransaction extends Transaction {
     public byte[] getEncoded() {
         byte[] nonce = getNonce();
         if (isEmpty(nonce) || getLength(nonce) == 1 && nonce[0] == 0) {
-            nonce = RLP.encodeElement((byte[]) null);
+            nonce = RLP.encodeElement(null);
         } else {
             nonce = RLP.encodeElement(nonce);
         }
-        byte[] senderAddress = RLP.encodeElement(getSender(signatureCache).getBytes());
-        byte[] receiveAddress = RLP.encodeElement(getReceiveAddress().getBytes());
+        byte[] senderAddress = RLP.encodeRskAddress(getSender(signatureCache));
+        byte[] receiveAddress = RLP.encodeRskAddress(getReceiveAddress());
         byte[] value = RLP.encodeCoin(getValue());
         byte[] gasPrice = RLP.encodeCoin(getGasPrice());
         byte[] gasLimit = RLP.encodeElement(getGasLimit());

@@ -3,6 +3,7 @@ package co.rsk.util;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
+import org.ethereum.util.RLPTestUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -86,7 +87,7 @@ class RLPTest {
             byte[] bytes = new byte[1];
             bytes[0] = (byte)k;
 
-            byte[] encoded = RLP.encode(bytes);
+            byte[] encoded = RLPTestUtil.encode(bytes);
 
             Assertions.assertNotNull(encoded);
             Assertions.assertEquals(2, encoded.length);
@@ -130,7 +131,7 @@ class RLPTest {
         for (int k = 2; k < 56; k++) {
             byte[] bytes = new byte[k];
 
-            byte[] encoded = RLP.encode(bytes);
+            byte[] encoded = RLPTestUtil.encode(bytes);
 
             Assertions.assertNotNull(encoded);
             Assertions.assertEquals(1 + k, encoded.length);
@@ -172,7 +173,7 @@ class RLPTest {
     void encodeDecodeLongByteArrayWithOneByteLengthUsingEncode() {
         byte[] bytes = new byte[56];
 
-        byte[] encoded = RLP.encode(bytes);
+        byte[] encoded = RLPTestUtil.encode(bytes);
 
         Assertions.assertNotNull(encoded);
         Assertions.assertEquals(2 + 56, encoded.length);
@@ -215,7 +216,7 @@ class RLPTest {
     void encodeDecodeLongByteArrayWithTwoBytesLengthUsingEncode() {
         byte[] bytes = new byte[256];
 
-        byte[] encoded = RLP.encode(bytes);
+        byte[] encoded = RLPTestUtil.encode(bytes);
 
         Assertions.assertNotNull(encoded);
         Assertions.assertEquals(3 + 256, encoded.length);
@@ -259,7 +260,7 @@ class RLPTest {
     void encodeDecodeLongByteArrayWithTwoBytesLengthBorderCaseUsingEncode() {
         byte[] bytes = new byte[256 * 256 - 1];
 
-        byte[] encoded = RLP.encode(bytes);
+        byte[] encoded = RLPTestUtil.encode(bytes);
 
         Assertions.assertNotNull(encoded);
         Assertions.assertEquals(3 + 256 * 256 - 1, encoded.length);
@@ -304,7 +305,7 @@ class RLPTest {
     void encodeDecodeLongByteArrayWithThreeBytesLengthUsingEncode() {
         byte[] bytes = new byte[256 * 256];
 
-        byte[] encoded = RLP.encode(bytes);
+        byte[] encoded = RLPTestUtil.encode(bytes);
 
         Assertions.assertNotNull(encoded);
         Assertions.assertEquals(4 + 256 * 256, encoded.length);
@@ -350,7 +351,7 @@ class RLPTest {
     void encodeDecodeLongByteArrayWithThreeBytesLengthBorderCaseUsingEncode() {
         byte[] bytes = new byte[256 * 256 * 256 - 1];
 
-        byte[] encoded = RLP.encode(bytes);
+        byte[] encoded = RLPTestUtil.encode(bytes);
 
         Assertions.assertNotNull(encoded);
         Assertions.assertEquals(4 + 256 * 256 * 256 - 1, encoded.length);
@@ -397,7 +398,7 @@ class RLPTest {
     void encodeDecodeLongByteArrayWithFourBytesLengthUsingEncode() {
         byte[] bytes = new byte[256 * 256 * 256];
 
-        byte[] encoded = RLP.encode(bytes);
+        byte[] encoded = RLPTestUtil.encode(bytes);
 
         Assertions.assertNotNull(encoded);
         Assertions.assertEquals(5 + 256 * 256 * 256, encoded.length);

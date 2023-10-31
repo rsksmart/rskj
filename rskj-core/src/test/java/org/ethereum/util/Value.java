@@ -19,9 +19,6 @@
 
 package org.ethereum.util;
 
-import org.ethereum.crypto.HashUtil;
-
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -32,24 +29,6 @@ import java.util.List;
 public class Value {
 
     private Object value;
-    private byte[] rlp;
-    private byte[] keccak256;
-
-    public static Value fromRlpEncoded(byte[] data) {
-        if (data != null && data.length != 0) {
-            Value v = new Value();
-            v.init(data);
-            return v;
-        }
-        return null;
-    }
-
-    public Value() {
-    }
-
-    public void init(byte[] rlp){
-        this.rlp = rlp;
-    }
 
     public Value(Object obj) {
         if (obj == null) {
@@ -76,28 +55,6 @@ public class Value {
         return Arrays.asList(valueArray);
     }
 
-    public int asInt() {
-        if (isInt()) {
-            return (Integer) value;
-        } else if (isBytes()) {
-            return new BigInteger(1, asBytes()).intValue();
-        }
-        return 0;
-    }
-
-    public long asLong() {
-        if (isLong()) {
-            return (Long) value;
-        } else if (isBytes()) {
-            return new BigInteger(1, asBytes()).longValue();
-        }
-        return 0;
-    }
-
-    public BigInteger asBigInt() {
-        return (BigInteger) value;
-    }
-
     public String asString() {
         if (isBytes()) {
             return new String((byte[]) value);
@@ -116,19 +73,6 @@ public class Value {
         return ByteUtil.EMPTY_BYTE_ARRAY;
     }
 
-    public String getHex(){
-        return ByteUtil.toHexString(this.encode());
-    }
-
-    public byte[] getData(){
-        return this.encode();
-    }
-
-
-    public int[] asSlice() {
-        return (int[]) value;
-    }
-
     public Value get(int index) {
         if (isList()) {
             // Guard for OutOfBounds
@@ -142,24 +86,6 @@ public class Value {
         }
         // If this wasn't a slice you probably shouldn't be using this function
         return new Value(null);
-    }
-
-    /* *****************
-     *      Utility
-     * *****************/
-
-    public byte[] encode() {
-        if (rlp == null) {
-            rlp = RLP.encode(value);
-        }
-        return rlp;
-    }
-
-    public byte[] hash(){
-        if (keccak256 == null) {
-            keccak256 = HashUtil.keccak256(encode());
-        }
-        return keccak256;
     }
 
     /* *****************
@@ -180,10 +106,6 @@ public class Value {
 
     public boolean isLong() {
         return value instanceof Long;
-    }
-
-    public boolean isBigInt() {
-        return value instanceof BigInteger;
     }
 
     public boolean isBytes() {
@@ -207,23 +129,6 @@ public class Value {
         }
 
         return (double) readableChars / (double) data.length > 0.55;
-    }
-
-    // it's only if the isBytes() = true
-    public boolean isHexString() {
-
-        int hexChars = 0;
-        byte[] data = (byte[]) value;
-
-        for (byte aData : data) {
-
-            if ((aData >= 48 && aData <= 57)
-                    || (aData >= 97 && aData <= 102)) {
-                ++hexChars;
-            }
-        }
-
-        return (double) hexChars / (double) data.length > 0.9;
     }
 
     public boolean isHashCode() {

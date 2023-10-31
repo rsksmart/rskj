@@ -455,7 +455,7 @@ public class MinerServerImpl implements MinerServer {
                 - rlpClientExtraDataEncodingOverhead;
         byte[] clientExtraDataResized = Arrays.copyOf(clientExtraData, Math.min(clientExtraData.length, clientExtraDataSize));
 
-        this.extraData = RLP.encodeList(version, RLP.encode(identity), RLP.encodeElement(clientExtraDataResized));
+        this.extraData = RLP.encodeList(version, RLP.encodeElement(identity), RLP.encodeElement(clientExtraDataResized));
     }
 
     @VisibleForTesting
