@@ -47,11 +47,7 @@ public class NodeChallengeManager {
     }
 
     public NodeChallenge removeChallenge(String challengeId) {
-        NodeChallenge removedChallenge = activeChallenges.remove(challengeId);
-
-        logger.debug("removeChallenge - Removed challenge: [{}]", removedChallenge);
-
-        return removedChallenge;
+        return activeChallenges.remove(challengeId);
     }
 
     @VisibleForTesting
