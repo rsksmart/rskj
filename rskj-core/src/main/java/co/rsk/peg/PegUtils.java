@@ -13,8 +13,7 @@ import co.rsk.peg.bitcoin.BitcoinUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,17 +57,19 @@ public class PegUtils {
         long btcTransactionHeight
     ) {
 
-        List<Federation> liveFeds = Collections.singletonList(activeFederation);
+        List<Federation> liveFeds = new ArrayList<>();
+        liveFeds.add(activeFederation);
         if (retiringFederation != null){
-            liveFeds = Arrays.asList(activeFederation, retiringFederation);
+            liveFeds.add(retiringFederation);
         }
         Wallet liveFederationsWallet = new BridgeBtcWallet(Context.getOrCreate(bridgeConstants.getBtcParams()), liveFeds);
 
+        // TODO: THIS VALUE IS PENDING TO BE DEFINE. PLEASE UPDATE THIS CONSTANT LATER WITH THE CORRECT VALUE.
         int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;
-        boolean shouldUsePegoutTxIndexMechanism = btcTransactionHeight >= btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        boolean shouldUsePegoutTxIndexMechanism = activations.isActive(ConsensusRule.RSKIP379) && btcTransactionHeight >= btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
 
-        if (activations.isActive(ConsensusRule.RSKIP379) && shouldUsePegoutTxIndexMechanism){
+        if (shouldUsePegoutTxIndexMechanism){
             return getTransactionTypeUsingPegoutIndex(
                 activations,
                 provider,
