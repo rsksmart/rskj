@@ -36,7 +36,7 @@ public class NodeChallengeManager {
     private Map<String, NodeChallenge> activeChallenges = new ConcurrentHashMap<>();
 
     public NodeChallenge startChallenge(Node challengedNode, Node challenger, PeerExplorer explorer) {
-        logger.debug("startChallenge - Starting challenge for node: [{}] by challenger: [{}]", challengedNode.toString(), challenger.toString());
+        logger.debug("startChallenge - Starting challenge for node: [{}] by challenger: [{}]", challengedNode, challenger);
 
         PingPeerMessage pingMessage = explorer.sendPing(challengedNode.getAddress(), 1, challengedNode);
         String messageId = pingMessage.getMessageId();
@@ -46,6 +46,7 @@ public class NodeChallengeManager {
     }
 
     public NodeChallenge removeChallenge(String challengeId) {
+        logger.debug("removeChallenge - Removing challenge: [{}]", challengeId);
         return activeChallenges.remove(challengeId);
     }
 
