@@ -1,16 +1,14 @@
 package org.ethereum.core;
 
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.ByteBuffer;
 
 public class EncryptedTransaction {
     private final Transaction transaction;
-    private final long[] encryptedParams;
+    private final byte[] encryptedParams;
 
     public EncryptedTransaction(byte[] rawData) {
         RLPList data = RLP.decodeList(rawData);
@@ -29,17 +27,20 @@ public class EncryptedTransaction {
         this.encryptedParams = parseEncryptedParams(encryptedParamsRlp);
     }
 
-    private long[] parseEncryptedParams(RLPList encryptedParamsList) {
+    private byte[] parseEncryptedParams(RLPList encryptedParamsList) {
         // todo(fedejinich) refactor this to support multiple params
         return decodeElement(encryptedParamsList);
     }
 
-    private static long[] decodeElement(RLPList params) {
+    private byte[] decodeElement(RLPList params) {
         long[] encryptedData = new long[params.size()];
         if(encryptedData.length == 0) {
             // todo(fedejinich) this is not the right way to throw exceptions
             throw new RuntimeException("this shouldn't happen");
         }
+//        return params.getElements().stream()
+//                .map(e -> ByteUtil.byteArrayToLong(e.getRLPData()))
+//                .collect(Collectors.toList()).toArray();
         // decodes rlp encoded data into encrypted data
         for (int i = 0; i < params.size(); i++) {
             byte[] data = params.get(i).getRLPData();
@@ -47,10 +48,23 @@ public class EncryptedTransaction {
             encryptedData[i] = encryptedElement;
         }
 
-        return encryptedData;
+        return toByteArray(encryptedData);
+//        return encryptedData;
+    }
+
+    private byte[] toByteArray(long[] longArray) {
+        ByteBuffer buffer = ByteBuffer.allocate(8 * longArray.length);
+        for (long l : longArray) {
+            buffer.putLong(l);
+        }
+        return buffer.array();
     }
 
     public Transaction getTransaction() {
         return this.transaction;
+    }
+
+    public byte[] getEncryptedParams() {
+        return encryptedParams;
     }
 }

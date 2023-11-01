@@ -1,5 +1,8 @@
 package co.rsk.rpc.modules.rsk;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -7,16 +10,22 @@ import java.util.Optional;
 
 import co.rsk.core.bc.BlockChainFlusher;
 import co.rsk.net.TransactionGateway;
+import co.rsk.pcc.VotingMocks;
 import co.rsk.util.NodeStopper;
 import co.rsk.Flusher;
 import co.rsk.util.RLPException;
+import com.fasterxml.jackson.core.exc.StreamReadException;
+import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.core.*;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.*;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.TransactionArgumentsUtil;
+import org.ethereum.vm.bfv.TranscipherCase;
 import org.rsksmart.BFV;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,21 +90,26 @@ public class RskModuleImpl implements RskModule {
 
     @Override
     public String sendEncryptedTransaction(String rawData) {
-        String s = null;
         try {
             EncryptedTransaction encryptedTransaction = new EncryptedTransaction(HexUtils.stringHexToByteArray(rawData));
             BFV bfv = new BFV();
             Transaction tx = encryptedTransaction.getTransaction();
 
-//            List<ByteArrayWrapper> encryptedParams = encryptedTransaction.getEncryptedParams();
-//            for (int i = 0; i < encryptedParams.size(); i++) {
-//                byte[] res = bfv.transcipher();
-//                byte[] hash = Keccak256Helper.keccak256(res);
-//                FhStore.getInstance().put(hash, res); // store encrypted params, so they can be accessed within tx execution
-//            }
-//            tx = addEncryptedParams(tx); // add encrypted params to tx.data
+            // transcipher encrypted params
+            VotingMocks vm = new ObjectMapper().readValue(new File(
+                                "/Users/fedejinich/Projects/rskj/rskj-core/src/test/java/org/ethereum/vm/bfv/votes.json"),
+                       VotingMocks.class);
+            byte[] data = encryptedTransaction.getEncryptedParams();
+            byte[] pastaSK = vm.getPastaSK();
+            byte[] rks = vm.getRk();
+            byte[] bfvSK = vm.getBfvSK();
+            byte[] fhData = bfv.transcipher(data, data.length, pastaSK, pastaSK.length, rks, rks.length,
+                    bfvSK, bfvSK.length);
+            byte[] hash = Keccak256Helper.keccak256(fhData);
+            FhStore.getInstance().put(hash, fhData); // store encrypted params, so they can be accessed within tx execution
 
-            // add logic to set params to transcipher, it'll be a for to iterate over the RLPList
+            tx = addEncryptedParams(tx, hash); // add encrypted params to tx.data
+
             // for the future, add logic to set keys to fetch encrypted data from storage
 
             if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
@@ -112,9 +126,15 @@ public class RskModuleImpl implements RskModule {
                 throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
             }
 
-            return s = tx.getHash().toJsonString();
+            return tx.getHash().toJsonString();
         } catch (RLPException e) {
             throw invalidParamError("Invalid input: " + e.getMessage(), e);
+        } catch (StreamReadException e) {
+            throw new RuntimeException(e);
+        } catch (DatabindException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } finally {
             // todo(fedejinich) support this
 //            if (LOGGER.isDebugEnabled()) {
@@ -123,8 +143,16 @@ public class RskModuleImpl implements RskModule {
         }
     }
 
-    private Transaction addEncryptedParams(Transaction tx) {
-      throw new NotImplementedException("implement this");
+    private Transaction addEncryptedParams(Transaction tx, byte[] encryptedParamsHash) {
+        byte[] data = tx.getData();
+
+        ByteBuffer buff = ByteBuffer.allocate(data.length + 32);
+        buff.put(data);
+        buff.put(encryptedParamsHash);
+
+        tx.setData(buff.array());
+
+        return tx;
     }
 
     @Override

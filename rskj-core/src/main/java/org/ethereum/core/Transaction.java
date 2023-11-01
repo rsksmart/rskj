@@ -89,7 +89,8 @@ public class Transaction {
     /* An unlimited size byte array specifying
      * input [data] of the message call or
      * Initialization code for a new contract */
-    private final byte[] data;
+    // todo(fedejinich) this used to be a final field
+    private byte[] data;
     private final byte chainId;
     /* the elliptic curve signature
      * (including public key recovery bits) */
@@ -587,5 +588,10 @@ public class Transaction {
         }
 
         return this.rlpEncoding;
+    }
+
+    // todo(fedejinich) mmm this setter wasn't here
+    public void setData(byte[] data) {
+        this.data = data;
     }
 }
