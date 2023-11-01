@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -172,6 +173,33 @@ class TransactionExecutorTest {
 
         assertNotNull(blockTxSignatureCache.getSender(transaction2));
         assertArrayEquals(blockTxSignatureCache.getSender(transaction2).getBytes(), sender2.getBytes());
+    }
+
+    @Test
+    void PrecompiledContractInitShouldBeCalledWithCacheTrack() {
+        ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
+        MutableRepository cacheTrack = mock(MutableRepository.class);
+        PrecompiledContracts.PrecompiledContract precompiledContract = mock(PrecompiledContracts.PrecompiledContract.class);
+
+        when(repository.startTracking()).thenReturn(cacheTrack);
+
+        RskAddress sender = new RskAddress("0000000000000000000000000000000000000001");
+        RskAddress receiver = new RskAddress("0000000000000000000000000000000000000002");
+        byte[] gasLimit = BigInteger.valueOf(4000000).toByteArray();
+        byte[] txNonce = BigInteger.valueOf(1L).toByteArray();
+        Coin gasPrice = Coin.valueOf(1);
+        Coin value = new Coin(BigInteger.valueOf(2));
+
+
+        when(precompiledContracts.getContractForAddress(any(ActivationConfig.ForBlock.class), eq(DataWord.valueOf(receiver.getBytes())))).thenReturn(precompiledContract);
+        when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
+        when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(68000L)));
+        Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value, 1);
+
+        assertTrue(executeValidTransaction(transaction, blockTxSignatureCache));
+
+        verify(precompiledContract).init(eq(transaction), eq(executionBlock), eq(cacheTrack), eq(blockStore), eq(receiptStore), any(List.class));
     }
 
     @Test
