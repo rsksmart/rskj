@@ -43,7 +43,7 @@ public class PegUtilsLegacy {
 
     /**
      * Legacy version for identifying if a tx is a pegout
-     * Use instead {@link co.rsk.peg.PegUtils#getTransactionTypeUsingPegoutIndex}
+     * Use instead {@link co.rsk.peg.PegUtils#getTransactionType}
      *
      * @param tx
      * @param federations
@@ -57,7 +57,7 @@ public class PegUtilsLegacy {
 
     /**
      * Legacy version for identifying if a tx is a pegout
-     * Use instead {@link co.rsk.peg.PegUtils#getTransactionTypeUsingPegoutIndex}
+     * Use instead {@link co.rsk.peg.PegUtils#getTransactionType}
      *
      * @param btcTx
      * @param activations
@@ -119,7 +119,7 @@ public class PegUtilsLegacy {
 
     /**
      * Legacy version for identifying if a tx is a pegout
-     * Use instead {@link co.rsk.peg.PegUtils#getTransactionTypeUsingPegoutIndex}
+     * Use instead {@link co.rsk.peg.PegUtils#getTransactionType}
      *
      * @param btcTx
      * @param oldFederationAddress
@@ -139,7 +139,7 @@ public class PegUtilsLegacy {
     }
 
     /**
-     * Legacy version to identify if a btc tx is a pegin. Use instead {@link co.rsk.peg.PegUtils#getTransactionTypeUsingPegoutIndex}
+     * Legacy version to identify if a btc tx is a pegin. Use instead {@link co.rsk.peg.PegUtils#getTransactionType}
      *
      * @param tx the BTC transaction to check
      * @param federation
@@ -167,7 +167,7 @@ public class PegUtilsLegacy {
     }
 
     /**
-     * Legacy version to identify if a btc tx is a pegin. Use instead {@link co.rsk.peg.PegUtils#getTransactionTypeUsingPegoutIndex}
+     * Legacy version to identify if a btc tx is a pegin. Use instead {@link co.rsk.peg.PegUtils#getTransactionType}
      *
      * @param tx the BTC transaction to check
      * @param activeFederations the active federations
@@ -286,7 +286,7 @@ public class PegUtilsLegacy {
 
     /**
      * Legacy version for identifying transaction peg type
-     * Use instead {@link co.rsk.peg.PegUtils#getTransactionTypeUsingPegoutIndex}
+     * Use instead {@link co.rsk.peg.PegUtils#getTransactionType}
      *
      * @param btcTx
      * @param activeFederation
