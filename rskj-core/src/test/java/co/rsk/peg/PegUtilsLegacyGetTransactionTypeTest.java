@@ -37,12 +37,6 @@ class PegUtilsLegacyGetTransactionTypeTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
 
-    private static final List<BtcECKey> REGTEST_OLD_FEDERATION_PRIVATE_KEYS = Arrays.asList(
-        BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
-        BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
-        BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
-    );
-
     private static final Address oldFederationAddress = Address.fromBase58(
         bridgeMainnetConstants.getBtcParams(),
         bridgeMainnetConstants.getOldFederationAddress()
@@ -57,7 +51,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
     }
 
     @Test
-    void getTransactionType_sentFromP2SHErpFed() {
+    void test_sentFromP2SHErpFed() {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
 
         // Arrange
@@ -110,7 +104,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, transactionType);
     }
 
-    private static Stream<Arguments> getTransactionType_sentFromRetiredFed_Args() {
+    private static Stream<Arguments> test_sentFromRetiredFed_Args() {
         return Stream.of(
             Arguments.of(ActivationConfigsForTest.papyrus200().forBlock(0), PegTxType.PEGIN),
             Arguments.of(ActivationConfigsForTest.iris300().forBlock(0), PegTxType.PEGOUT_OR_MIGRATION)
@@ -118,11 +112,17 @@ class PegUtilsLegacyGetTransactionTypeTest {
     }
 
     @ParameterizedTest
-    @MethodSource("getTransactionType_sentFromRetiredFed_Args")
-    void getTransactionType_sentFromRetiredFed(ActivationConfig.ForBlock activations, PegTxType expectedTxType) {
+    @MethodSource("test_sentFromRetiredFed_Args")
+    void test_sentFromRetiredFed(ActivationConfig.ForBlock activations, PegTxType expectedTxType) {
         BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
         Context.propagate(new Context(btcRegTestsParams));
+
+        final List<BtcECKey> REGTEST_OLD_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
+            BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
+            BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
+        );
 
         // Arrange
         Federation activeFederation = new Federation(
@@ -149,7 +149,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
             activations.isActive(RSKIP186)? retiredFederation.getP2SHScript(): null,
             oldFederationAddress,
             activations,
-            bridgeMainnetConstants.getMinimumPeginTxValue(activations),
+            bridgeRegTestConstants.getMinimumPeginTxValue(activations),
             new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation))
         );
 
@@ -159,7 +159,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
     }
 
     @Test
-    void getTransactionType_sentFromP2SH_pegin() {
+    void test_sentFromP2SH_pegin() {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
 
@@ -195,28 +195,104 @@ class PegUtilsLegacyGetTransactionTypeTest {
         Assertions.assertEquals(PegTxType.PEGIN, transactionType);
     }
 
-    private static Stream<Arguments> getTransactionType_pegin_Args() {
+    private static Stream<Arguments> pegin_ok_Args() {
         ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0);
         ActivationConfig.ForBlock iris300Activations = ActivationConfigsForTest.iris300().forBlock(0);
+
+        List<BtcECKey> retiringFedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa07", "fa08", "fa09"}, true
+        );
+
+        Script retiredFederationScript = createFederation(bridgeMainnetConstants, retiringFedKeys).getRedeemScript();
+
+        Federation retiringFederation = bridgeMainnetConstants.getGenesisFederation();
 
         return Stream.of(
             Arguments.of(
                 papyrusActivations,
+                null,
+                null,
                 PegTxType.PEGIN,
                 bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations)
             ),
             Arguments.of(
                 papyrusActivations,
+                retiringFederation,
+                null,
+                PegTxType.PEGIN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations)
+            ),
+            Arguments.of(
+                papyrusActivations,
+                retiringFederation,
+                retiredFederationScript,
+                PegTxType.PEGIN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations)
+            ),
+
+            Arguments.of(
+                papyrusActivations,
+                null,
+                null,
                 PegTxType.UNKNOWN,
                 bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations).minus(Coin.SATOSHI)
             ),
             Arguments.of(
+                papyrusActivations,
+                retiringFederation,
+                null,
+                PegTxType.UNKNOWN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations).minus(Coin.SATOSHI)
+            ),
+            Arguments.of(
+                papyrusActivations,
+                retiringFederation,
+                retiredFederationScript,
+                PegTxType.UNKNOWN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations).minus(Coin.SATOSHI)
+            ),
+
+
+            Arguments.of(
                 iris300Activations,
+                null,
+                null,
                 PegTxType.PEGIN,
                 bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations)
             ),
             Arguments.of(
                 iris300Activations,
+                retiringFederation,
+                null,
+                PegTxType.PEGIN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations)
+            ),
+            Arguments.of(
+                iris300Activations,
+                retiringFederation,
+                retiredFederationScript,
+                PegTxType.PEGIN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations)
+            ),
+
+            Arguments.of(
+                iris300Activations,
+                null,
+                null,
+                PegTxType.UNKNOWN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations).minus(Coin.SATOSHI)
+            ),
+            Arguments.of(
+                iris300Activations,
+                retiringFederation,
+                null,
+                PegTxType.UNKNOWN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations).minus(Coin.SATOSHI)
+            ),
+            Arguments.of(
+                iris300Activations,
+                retiringFederation,
+                retiredFederationScript,
                 PegTxType.UNKNOWN,
                 bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations).minus(Coin.SATOSHI)
             )
@@ -224,15 +300,33 @@ class PegUtilsLegacyGetTransactionTypeTest {
     }
 
     @ParameterizedTest
-    @MethodSource("getTransactionType_pegin_Args")
-    void getTransactionType_pegin(
+    @MethodSource("pegin_ok_Args")
+    void test_pegin(
         ActivationConfig.ForBlock activations,
+        Federation retiringFederation,
+        Script retiredFederationP2SHScript,
         PegTxType expectedTxType,
         Coin amountToSend
     ) {
         // Arrange
 
-        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
+        List<BtcECKey> activeFedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03"}, true
+        );
+
+        List<BtcECKey> erpFedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa04", "fa05", "fa06"}, true
+        );
+
+        Federation activeFederation = new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(activeFedKeys),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            btcMainnetParams,
+            erpFedKeys,
+            100L,
+            activations
+        );
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
         peginTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -242,8 +336,8 @@ class PegUtilsLegacyGetTransactionTypeTest {
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             peginTx,
             activeFederation,
-            null,
-            null,
+            retiringFederation,
+            retiredFederationP2SHScript,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
@@ -254,8 +348,113 @@ class PegUtilsLegacyGetTransactionTypeTest {
         Assertions.assertEquals(expectedTxType, transactionType);
     }
 
-    @Test
-    void getTransactionType_pegout_tx() {
+    private static Stream<Arguments> pegout_ok_Args() {
+        ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0);
+        ActivationConfig.ForBlock iris300Activations = ActivationConfigsForTest.iris300().forBlock(0);
+
+        List<BtcECKey> retiringFedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa07", "fa08", "fa09"}, true
+        );
+
+        Script retiredFederationScript = createFederation(bridgeMainnetConstants, retiringFedKeys).getRedeemScript();
+
+        Federation retiringFederation = bridgeMainnetConstants.getGenesisFederation();
+
+        return Stream.of(
+            Arguments.of(
+                papyrusActivations,
+                null,
+                null,
+                PegTxType.PEGIN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations)
+            ),
+            Arguments.of(
+                papyrusActivations,
+                retiringFederation,
+                null,
+                PegTxType.PEGIN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations)
+            ),
+            Arguments.of(
+                papyrusActivations,
+                retiringFederation,
+                retiredFederationScript,
+                PegTxType.PEGIN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations)
+            ),
+
+            Arguments.of(
+                papyrusActivations,
+                null,
+                null,
+                PegTxType.UNKNOWN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations).minus(Coin.SATOSHI)
+            ),
+            Arguments.of(
+                papyrusActivations,
+                retiringFederation,
+                null,
+                PegTxType.UNKNOWN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations).minus(Coin.SATOSHI)
+            ),
+            Arguments.of(
+                papyrusActivations,
+                retiringFederation,
+                retiredFederationScript,
+                PegTxType.UNKNOWN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(papyrusActivations).minus(Coin.SATOSHI)
+            ),
+
+
+            Arguments.of(
+                iris300Activations,
+                null,
+                null,
+                PegTxType.PEGIN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations)
+            ),
+            Arguments.of(
+                iris300Activations,
+                retiringFederation,
+                null,
+                PegTxType.PEGIN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations)
+            ),
+            Arguments.of(
+                iris300Activations,
+                retiringFederation,
+                retiredFederationScript,
+                PegTxType.PEGIN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations)
+            ),
+
+            Arguments.of(
+                iris300Activations,
+                null,
+                null,
+                PegTxType.UNKNOWN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations).minus(Coin.SATOSHI)
+            ),
+            Arguments.of(
+                iris300Activations,
+                retiringFederation,
+                null,
+                PegTxType.UNKNOWN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations).minus(Coin.SATOSHI)
+            ),
+            Arguments.of(
+                iris300Activations,
+                retiringFederation,
+                retiredFederationScript,
+                PegTxType.UNKNOWN,
+                bridgeMainnetConstants.getMinimumPeginTxValue(iris300Activations).minus(Coin.SATOSHI)
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("pegout_ok_Args")
+    void test_pegout_tx() {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
@@ -296,7 +495,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
     }
 
     @Test
-    void getTransactionType_migration_tx() {
+    void test_migration_tx() {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
@@ -336,7 +535,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
     }
 
     @Test
-    void getTransactionType_unknown_tx() {
+    void test_unknown_tx() {
         // Arrange
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
 
