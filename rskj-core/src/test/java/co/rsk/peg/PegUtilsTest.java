@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -60,13 +61,7 @@ class PegUtilsTest {
     private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
 
-    private static final List<BtcECKey> REGTEST_OLD_FEDERATION_PRIVATE_KEYS = Arrays.asList(
-        BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
-        BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
-        BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
-    );
-
-    protected int blockNumberToStartUsingNewGeTransactionTypeMechanism;
+    protected int blockNumberToStartUsingPegoutIndex;
 
     @BeforeEach
     void init() {
@@ -74,12 +69,14 @@ class PegUtilsTest {
         provider = mock(BridgeStorageProvider.class);
         userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
 
-        retiredFed = bridgeMainnetConstants.getGenesisFederation();
+        retiredFed = createP2shErpFederation(bridgeMainnetConstants, BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa09", "fa10", "fa11"}, true
+        ));
 
         retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
+            new String[]{"fa06", "fa07", "fa08"}, true
         );
-        retiringFederation = createFederation(bridgeMainnetConstants, retiringFedSigners);
+        retiringFederation = createP2shErpFederation(bridgeMainnetConstants, retiringFedSigners);
 
         activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true
@@ -88,16 +85,136 @@ class PegUtilsTest {
 
         int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;
-        blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        blockNumberToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
     }
 
-    // Pegin tests
-    @Test
-    void test_getTransactionType_tx_sending_funds_to_unknown_address() {
+    private static Stream<Arguments> getTransactionType_unknown_args() {
+        ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+
+        return Stream.of(
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                false,
+                false,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                true,
+                false,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                true,
+                true,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                false,
+                true,
+                true,
+                PegTxType.PEGIN
+            ),
+
+
+            Arguments.of(
+                tbdActivations,
+                false,
+                false,
+                false,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                tbdActivations,
+                false,
+                true,
+                false,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                tbdActivations,
+                false,
+                true,
+                true,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                tbdActivations,
+                false,
+                false,
+                true,
+                true,
+                PegTxType.PEGIN
+            ),
+
+            Arguments.of(
+                tbdActivations,
+                true,
+                false,
+                false,
+                false,
+                PegTxType.UNKNOWN
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                true,
+                false,
+                false,
+                PegTxType.UNKNOWN
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                true,
+                true,
+                false,
+                PegTxType.UNKNOWN
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                false,
+                true,
+                true,
+                PegTxType.UNKNOWN
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getTransactionType_unknown_args")
+    void test_getTransactionType_tx_sending_funds_to_unknown_address(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUsePegoutTxIndex,
+        Boolean belowTheMinimumPegInValue,
+        Boolean existsRetiringFederation,
+        Boolean existsRetiredFederation,
+        PegTxType expectedPegTxType
+    ) {
         // Arrange
+        if (existsRetiredFederation){
+            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
+        }
+
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addOutput(Coin.COIN, userAddress);
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
+        btcTransaction.addOutput(belowTheMinimumPegInValue? belowMinimumPeginTxValue: minimumPeginTxValue, userAddress);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -105,15 +222,16 @@ class PegUtilsTest {
             provider,
             bridgeMainnetConstants,
             activeFederation,
-            null,
+            existsRetiringFederation? retiringFederation: null,
             btcTransaction,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.UNKNOWN, pegTxType);
+        Assertions.assertEquals(expectedPegTxType, pegTxType);
     }
 
+    // Pegin tests
     @Test
     void test_getTransactionType_pegin_below_minimum_active_fed() {
         // Arrange
@@ -132,7 +250,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            blockNumberToStartUsingPegoutIndex
         );
 
         // Assert
@@ -146,18 +264,15 @@ class PegUtilsTest {
         return Stream.of(
             Arguments.of(
                 fingerrootActivations,
-                false,
-                PegTxType.PEGIN
+                false
             ),
             Arguments.of(
                 tbdActivations,
-                false,
-                PegTxType.PEGIN
+                false
             ),
             Arguments.of(
                 tbdActivations,
-                true,
-                PegTxType.PEGIN
+                true
             )
         );
     }
@@ -166,8 +281,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_pegin_args")
     void test_getTransactionType_multisig_pegin_active_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -192,19 +306,18 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
     @MethodSource("getTransactionType_pegin_args")
-    void test_getTransactionType_bech32_pegin_active_fed(
+    void test_getTransactionType_pegin_active_fed_with_bech32_output(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -230,19 +343,18 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
     @MethodSource("getTransactionType_pegin_args")
     void test_getTransactionType_pegin_active_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -257,19 +369,18 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
     @MethodSource("getTransactionType_pegin_args")
     void test_getTransactionType_pegin_output_to_active_fed_and_other_addresses(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -287,19 +398,18 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
     @MethodSource("getTransactionType_pegin_args")
     void test_getTransactionType_pegin_multiple_outputs_to_active_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -317,39 +427,80 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+    }
+
+    private static Stream<Arguments> pegin_multiple_outputs_to_active_fed_sum_amount_equal_to_minimum_pegin_args() {
+        ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+
+        return Stream.of(
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                PegTxType.UNKNOWN
+            ),
+            Arguments.of(
+                tbdActivations,
+                false,
+                PegTxType.UNKNOWN
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                PegTxType.PEGIN
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("pegin_multiple_outputs_to_active_fed_sum_amount_equal_to_minimum_pegin_args")
+    void test_getTransactionType_pegin_multiple_outputs_to_active_fed_sum_amount_equal_to_minimum_pegin(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUsePegoutTxIndex,
+        PegTxType expectedTxType
+    ) {
+        // Arrange
+        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        Coin amountPerOutput = minimumPeginTxValue.div(10);
+
+        for (int i = 0; i < 10; i++) {
+            btcTransaction.addInput(BitcoinTestUtils.createHash(i), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+            btcTransaction.addOutput(amountPerOutput, activeFederation.getAddress());
+        }
+
+        // Act
+        PegTxType pegTxType = PegUtils.getTransactionType(
+            activations,
+            provider,
+            bridgeMainnetConstants,
+            activeFederation,
+            null,
+            btcTransaction,
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+        );
+
+        // Assert
+        Assertions.assertEquals(expectedTxType, pegTxType);
     }
 
     @ParameterizedTest
     @MethodSource("getTransactionType_pegin_args")
     void test_getTransactionType_pegin_output_to_retiring_fed_and_other_addresses(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
-        Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
-
-        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        P2shErpFederation activeFed = new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(signers),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            btcMainnetParams,
-            bridgeMainnetConstants.getErpFedPubKeysList(),
-            bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
-        );
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
-        btcTransaction.addOutput(Coin.COIN, retiringFed.getAddress());
+        btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
         btcTransaction.addOutput(Coin.COIN, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown2"));
 
         // Act
@@ -357,22 +508,21 @@ class PegUtilsTest {
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFed,
-            retiringFed,
+            activeFederation,
+            retiringFederation,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
     @MethodSource("getTransactionType_pegin_args")
     void test_getTransactionType_pegin_retiring_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -387,11 +537,11 @@ class PegUtilsTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     private static Stream<Arguments> getTransactionType_pegin_retired_args() {
@@ -421,7 +571,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_pegin_retired_args")
     void test_getTransactionType_pegin_retired_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -439,7 +589,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -450,8 +600,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_pegin_args")
     void test_getTransactionType_pegin_multiple_outputs_to_retiring_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -469,19 +618,18 @@ class PegUtilsTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
     @MethodSource("getTransactionType_pegin_args")
     void test_getTransactionType_pegin_outputs_to_active_and_retiring_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -498,19 +646,18 @@ class PegUtilsTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
     @MethodSource("getTransactionType_pegin_args")
     void test_getTransactionType_pegin_outputs_to_active_and_retiring_fed_and_other_address(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -529,11 +676,11 @@ class PegUtilsTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     // Pegins sending equal to, below and above the minimum amount
@@ -684,7 +831,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_sending_funds_below_minimum_args")
     void getTransactionType_sending_funds_below_minimum_active_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -708,7 +855,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             peginTx,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -719,7 +866,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_sending_funds_below_minimum_args")
     void getTransactionType_sending_funds_below_and_above_minimum_active_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -745,7 +892,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             peginTx,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -779,7 +926,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_sending_funds_equal_or_above_to_minimum_args")
     void getTransactionType_sending_funds_equal_to_minimum_active_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -800,7 +947,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             peginTx,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -811,7 +958,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_sending_funds_equal_or_above_to_minimum_args")
     void getTransactionType_sending_funds_above_minimum_active_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -832,7 +979,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             peginTx,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -868,7 +1015,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_pegout_args")
     void test_getTransactionType_pegout_no_change_output(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -897,7 +1044,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -924,7 +1071,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            blockNumberToStartUsingPegoutIndex
         );
 
         // Assert
@@ -935,7 +1082,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_pegout_args")
     void test_getTransactionType_many_outputs_and_inputs_pegout(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -982,7 +1129,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -993,7 +1140,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_pegout_args")
     void test_getTransactionType_many_outputs_and_one_input_pegout(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -1038,7 +1185,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1049,7 +1196,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_pegout_args")
     void test_getTransactionType_one_outputs_and_many_input_pegout(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -1081,7 +1228,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1109,7 +1256,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            blockNumberToStartUsingPegoutIndex
         );
 
         // Assert
@@ -1148,7 +1295,7 @@ class PegUtilsTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            blockNumberToStartUsingPegoutIndex
         );
 
         // Assert
@@ -1178,7 +1325,7 @@ class PegUtilsTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            blockNumberToStartUsingPegoutIndex
         );
 
         // Assert
@@ -1214,7 +1361,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            blockNumberToStartUsingPegoutIndex
         );
 
         // Assert
@@ -1248,7 +1395,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_migration_args")
     void test_getTransactionType_many_outputs_and_inputs_migration(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -1295,7 +1442,7 @@ class PegUtilsTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1306,7 +1453,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_migration_args")
     void test_getTransactionType_many_outputs_and_one_input_migration(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -1351,7 +1498,7 @@ class PegUtilsTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1362,7 +1509,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_migration_args")
     void test_getTransactionType_one_outputs_and_many_input_migration(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -1394,7 +1541,7 @@ class PegUtilsTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUseNewMechanism? blockNumberToStartUsingNewGeTransactionTypeMechanism: 0
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1444,7 +1591,7 @@ class PegUtilsTest {
             activeFederation,
             null,
             btcTransaction,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            blockNumberToStartUsingPegoutIndex
         );
 
         // Assert
@@ -1523,13 +1670,19 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_old_fed_to_live_fed_args")
     void getTransactionType_old_fed_to_live_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
         BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
         Context.propagate(new Context(btcRegTestsParams));
+
+        final List<BtcECKey> REGTEST_OLD_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
+            BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
+            BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
+        );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
@@ -1547,7 +1700,7 @@ class PegUtilsTest {
         Assertions.assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.address));
 
         int blockNumberToStartUsingNewGeTransactionTypeMechanism = 0;
-        if (shouldUseNewMechanism) {
+        if (shouldUsePegoutTxIndex) {
             int btcHeightWhenPegoutTxIndexActivates = bridgeRegTestConstants.getBtcHeightWhenPegoutTxIndexActivates();
             int pegoutTxIndexGracePeriodInBtcBlocks = bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
             blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
@@ -1565,7 +1718,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        if (shouldUseNewMechanism){
+        if (shouldUsePegoutTxIndex){
             verify(provider, never()).getLastRetiredFederationP2SHScript();
         } else {
             verify(provider, times(1)).getLastRetiredFederationP2SHScript();
@@ -1600,7 +1753,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_retired_fed_to_live_fed_args")
     void getTransactionType_last_retired_fed_to_live_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -1626,7 +1779,7 @@ class PegUtilsTest {
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
 
         int blockNumberToStartUsingNewGeTransactionTypeMechanism = 0;
-        if (shouldUseNewMechanism) {
+        if (shouldUsePegoutTxIndex) {
             int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
             int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
             blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
@@ -1644,7 +1797,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        if (shouldUseNewMechanism){
+        if (shouldUsePegoutTxIndex){
             verify(provider, never()).getLastRetiredFederationP2SHScript();
         } else {
             verify(provider, times(1)).getLastRetiredFederationP2SHScript();
@@ -1679,7 +1832,7 @@ class PegUtilsTest {
     @MethodSource("getTransactionType_retired_fed_no_existing_in_the_storage_to_live_fed_args")
     void getTransactionType_retired_fed_no_existing_in_the_storage_to_live_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUseNewMechanism,
+        boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
     ) {
         // Arrange
@@ -1709,7 +1862,7 @@ class PegUtilsTest {
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
 
         int blockNumberToStartUsingNewGeTransactionTypeMechanism = 0;
-        if (shouldUseNewMechanism) {
+        if (shouldUsePegoutTxIndex) {
             int btcHeightWhenPegoutTxIndexActivates = bridgeRegTestConstants.getBtcHeightWhenPegoutTxIndexActivates();
             int pegoutTxIndexGracePeriodInBtcBlocks = bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
             blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
@@ -1727,7 +1880,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        if (shouldUseNewMechanism){
+        if (shouldUsePegoutTxIndex){
             verify(provider, never()).getLastRetiredFederationP2SHScript();
         } else {
             verify(provider, times(1)).getLastRetiredFederationP2SHScript();
