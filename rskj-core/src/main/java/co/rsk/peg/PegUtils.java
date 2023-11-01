@@ -67,9 +67,9 @@ public class PegUtils {
         // TODO: THIS VALUE IS PENDING TO BE DEFINE. PLEASE UPDATE THIS CONSTANT LATER WITH THE CORRECT VALUE.
         int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;
-        boolean shouldUsePegoutTxIndexMechanism = activations.isActive(ConsensusRule.RSKIP379) && btcTransactionHeight >= btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        boolean shouldUsePegoutTxIndex = activations.isActive(ConsensusRule.RSKIP379) && btcTransactionHeight >= btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
 
-        if (shouldUsePegoutTxIndexMechanism){
+        if (shouldUsePegoutTxIndex){
             return getTransactionTypeUsingPegoutIndex(
                 activations,
                 provider,
