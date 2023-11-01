@@ -165,7 +165,7 @@ public class PeerExplorer {
                 "type: [{}], " +
                 "networkId: [{}]",
                 state, event.getMessage().getMessageType(),
-                event.getMessage().getNetworkId().isPresent() ? event.getMessage().getNetworkId().getAsInt() : null);
+                event.getMessage().getNetworkId().isPresent());
 
         if (state != ExecState.RUNNING) {
             logger.warn("Cannot handle message as current state is {}", state);
@@ -178,7 +178,7 @@ public class PeerExplorer {
         if (event.getMessage().getNetworkId().isPresent() &&
                 event.getMessage().getNetworkId().getAsInt() != this.networkId) {
             logger.warn("handleMessage - Message ignored because remote peer's network id: [{}] is different from local network id: [{}]",
-                    event.getMessage().getNetworkId().getAsInt(), this.networkId);
+                    event.getMessage().getNetworkId(), this.networkId);
             return;
         }
         if (type == DiscoveryMessageType.PING) {
@@ -246,7 +246,7 @@ public class PeerExplorer {
             this.sendNeighbors(connectedNode.getAddress(), nodesToSend, message.getMessageId());
             updateEntry(connectedNode);
         } else {
-            logger.warn("handleFindNode - Node with id [{}] is null", nodeId);
+            logger.warn("handleFindNode - Node with id: [{}] is not connected. Ignored", nodeId);
         }
     }
 
@@ -274,7 +274,7 @@ public class PeerExplorer {
             }
             updateEntry(connectedNode);
         } else {
-            logger.warn("handleFindNode - Node with id [{}] is null", nodeId);
+            logger.warn("handleFindNode - Node with id: [{}] is not connected. Ignored", nodeId);
         }
     }
 
@@ -290,7 +290,7 @@ public class PeerExplorer {
         PingPeerMessage nodeMessage = checkPendingPeerToAddress(nodeAddress);
 
         if (nodeMessage != null) {
-            logger.warn("sendPing - Node message to address [{}/{}] is null", nodeAddress.getHostName(), nodeAddress.getPort());
+            logger.warn("sendPing - No ping message has been sent to address: [{}/{}], as there's pending one", nodeAddress.getHostName(), nodeAddress.getPort());
 
             return nodeMessage;
         }
