@@ -128,8 +128,7 @@ public class PrecompiledContracts {
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
-                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
-                    new AbstractMap.SimpleEntry<>(ENVIRONMENT_ADDR, ConsensusRule.RSKIP203)
+                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153)
             ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
