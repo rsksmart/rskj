@@ -1,7 +1,6 @@
 package co.rsk.jmh.sync;
 
 import co.rsk.RskContext;
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieDTO;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Blockchain;
@@ -10,6 +9,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+import org.spongycastle.util.encoders.Hex;
 
 import java.util.Optional;
 
@@ -18,7 +18,7 @@ public class RskContextState {
 
     private RskContext context;
     private Blockchain blockchain;
-    private byte[] root;
+    private byte[] rootHash;
 
     @Setup
     public void setup() {
@@ -32,7 +32,8 @@ public class RskContextState {
             System.out.println("RskContextState -------- Context...");
             this.blockchain = getContext().getBlockchain();
             System.out.println(" -------- Blockchain...");
-            this.root = this.getBlockchain().getBestBlock().getStateRoot();
+            this.rootHash = this.getBlockchain().getBlockByNumber(5720000).getStateRoot();
+            System.out.println(" -------- Root:" + Hex.toHexString(this.rootHash));
         } catch (Throwable e) {
             System.out.println("RskContextState -------- Error:" + e.getMessage());
         }
@@ -41,7 +42,7 @@ public class RskContextState {
 
     private static void setProperties() {
         System.setProperty("miner.client.autoMine", "false");
-        //System.setProperty("database.dir", "/Users/patricio/workspace/rsk/rskj/test/local-mainnet-1_rockdb/database/");
+        //System.setProperty("database.dir", "/Users/patricio/workspace/rsk/rskj/test/local-mainnet-1/database/");
         System.setProperty("rpc.providers.web.ws.port", "4451");
         System.setProperty("sync.peer.count", "20");
         System.setProperty("rpc.providers.web.cors", "*");
@@ -57,8 +58,12 @@ public class RskContextState {
         System.setProperty("peer.privateKey", "AFF6A83FEFFF6FF0C9F6FFFE41F6FF10D9FFFF3F41FFCFBF41F6FF90DFFFFF91");
     }
 
+    public byte[] getRootHash() {
+        return rootHash;
+    }
+
     public TrieDTO getRoot() {
-        final byte[] hash = this.root;
+        final byte[] hash = this.rootHash;
         return getNodeDTO(hash);
     }
 

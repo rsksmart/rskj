@@ -67,4 +67,9 @@ public class HashMapBlocksIndex implements BlocksIndex {
     public void close() {
 
     }
+
+    @Override
+    public void remove(long number) {
+        index.remove(number);
+    }
 }

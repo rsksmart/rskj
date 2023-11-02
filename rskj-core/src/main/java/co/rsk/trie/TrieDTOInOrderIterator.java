@@ -29,6 +29,10 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     private final long to;
     private final boolean preloadChildren;
 
+    // preRoots are all the root nodes on the left of the current node. They are used to validate the chunk.
+    // When initializing the iterator, everytime we turn right, we add the node to the list.
+    private final List<TrieDTO> preRootNodes = new ArrayList<>();
+
     public TrieDTOInOrderIterator(TrieStore ds, byte[] root, long from, long to) {
         this(ds, root, from, to, false);
     }
@@ -46,6 +50,7 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     }
 
     private TrieDTO findByChildrenSize(long offset, TrieDTO nodeDTO, Deque<TrieDTO> visiting) {
+        // TODO poner los nodos padres intermedios en el stack, tenemos que serializarlos para poder validar el chunk completo.
         if (!nodeDTO.isTerminal()) {
 
             if (nodeDTO.isLeftNodePresent() && !nodeDTO.isLeftNodeEmbedded()) {
@@ -70,7 +75,7 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
                 long maxParentSize = nodeDTO.getTotalSize() - right.getTotalSize();
                 long maxRightSize = nodeDTO.getTotalSize();
                 if (maxParentSize < offset && offset <= maxRightSize) {
-                    //System.out.println("remove:" + maxParentSize);
+                    preRootNodes.add(nodeDTO);
                     return findByChildrenSize(offset - maxParentSize, right, visiting);
                 }
             } else if (nodeDTO.isRightNodeEmbedded()) {
@@ -99,37 +104,22 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     @Override
     @SuppressWarnings("squid:S2272") // NoSuchElementException is thrown by {@link Deque#pop()} when it's empty
     public TrieDTO next() {
-        TrieDTO result = this.visiting.pop();
+        TrieDTO result = this.visiting.peek();
         // if the node has a right child, its leftmost node is next
-        if (result.getRightHash() != null) {
-            TrieDTO rightNode = pushNode(result.getRightHash(), this.visiting);
-
-            // find the leftmost node of the right child
-            pushLeftmostNode(rightNode);
-            // note "node" has been replaced on the stack by its right child
+        long offset = getOffset(result);
+        if (this.from + offset < this.to) {
+            this.visiting.pop(); // remove the node from the stack
+            if (result.getRightHash() != null) {
+                TrieDTO rightNode = pushNode(result.getRightHash(), this.visiting);
+                // find the leftmost node of the right child
+                pushLeftmostNode(rightNode);
+                // note "node" has been replaced on the stack by its right child
+            }
         } // else: no right subtree, go back up the stack
         // next node on stack will be next returned
-        this.from += getOffset(result);
+        this.from += offset;
         return result;
     }
-
-    public static long getOffset(TrieDTO visiting) {
-        return visiting.isTerminal() ? visiting.getTotalSize() : visiting.getSize();
-    }
-
-    @Override
-    public boolean hasNext() {
-        return this.from < this.to && !visiting.isEmpty();
-    }
-
-    public boolean isEmpty() {
-        return visiting.isEmpty();
-    }
-
-    public long getFrom() {
-        return from;
-    }
-
     /**
      * Find the leftmost node from this root, pushing all the intermediate nodes onto the visiting stack
      *
@@ -158,5 +148,34 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
         } else {
             return null;
         }
+    }
+
+    public TrieDTO peek() {
+        return this.visiting.peek();
+    }
+
+    public static long getOffset(TrieDTO visiting) {
+        return visiting.isTerminal() ? visiting.getTotalSize() : visiting.getSize();
+    }
+
+    public List<TrieDTO> getNodesLeftVisiting() {
+        return new ArrayList<>(visiting);
+    }
+
+    @Override
+    public boolean hasNext() {
+        return this.from < this.to && !visiting.isEmpty();
+    }
+
+    public boolean isEmpty() {
+        return visiting.isEmpty();
+    }
+
+    public long getFrom() {
+        return from;
+    }
+
+    public List<TrieDTO> getPreRootNodes() {
+        return preRootNodes;
     }
 }

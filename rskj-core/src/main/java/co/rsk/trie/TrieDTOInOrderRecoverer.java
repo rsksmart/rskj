@@ -66,8 +66,12 @@ public class TrieDTOInOrderRecoverer {
                                        Optional<TrieDTO> left,
                                        Optional<TrieDTO> right) {
         left.ifPresent((leftNode) -> {
-            Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(leftNode.toMessage()));
-            result.setLeftHash(hash.getBytes());
+            try {
+                Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(leftNode.toMessage()));
+                result.setLeftHash(hash.getBytes());
+            } catch (Throwable e) {
+                logger.error("Error recovering left node", e);
+            }
         });
         right.ifPresent((rightNode) -> {
             Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(rightNode.toMessage()));

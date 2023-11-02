@@ -122,9 +122,6 @@ public class TrieDTO {
 
             //(*optional) 3.right - if present & !embedded => hash
             if (result.rightNodePresent && result.rightNodeEmbedded) {
-                if(hash != null && (Hex.toHexString(hash).equals("9de27d5793b25d07974e7463df19cfff41af31551bbdcb83bccd3e03a346322c"))) {
-                    logger.debug("Pato hash empty.");
-                }
                 result.rightNode = TrieDTO.decodeFromMessage(readChildEmbedded(srcWrap, decodeUint8(), Uint8.BYTES), ds, false, hash);
                 result.right = result.rightNode.getEncoded();
                 result.rightHash = null;

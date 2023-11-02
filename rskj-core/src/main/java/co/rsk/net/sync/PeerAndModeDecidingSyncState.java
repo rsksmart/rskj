@@ -116,7 +116,6 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
 
         // we consider Snap as part of the Long Sync
         syncEventsHandler.onLongSyncUpdate(true, peerBestBlockNumOpt.get());
-        List<Peer> peers = Collections.singletonList(bestPeerOpt.get());
 
         // send the LIST
         syncEventsHandler.startSnapSync(bestPeers);
@@ -132,7 +131,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         }
 
         if (!shouldLongSync(peerBestBlockNumOpt.get())) {
-            logger.debug("Forward syncing not required");
+            logger.trace("Forward syncing not required");
             return false;
         }
 
@@ -155,8 +154,8 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         }
 
         // start "short" / "backward" sync
-        //syncEventsHandler.onLongSyncUpdate(false, null);
-        //syncEventsHandler.backwardSyncing(peerForBackwardSync.get());
+        syncEventsHandler.onLongSyncUpdate(false, null);
+        syncEventsHandler.backwardSyncing(peerForBackwardSync.get());
         return true;
     }
 

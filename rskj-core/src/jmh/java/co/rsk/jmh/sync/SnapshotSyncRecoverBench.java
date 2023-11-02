@@ -33,7 +33,7 @@ public class SnapshotSyncRecoverBench {
             System.out.println(" -------- Blockchain...");
             this.trieStore = contextState.getContext().getTrieStore();
             System.out.println(" -------- TrieStore...");//333493 - 228
-            this.root = contextState.getBlockchain().getBlockByNumber(5544285l).getStateRoot();//getBestBlock().getStateRoot();
+            this.root = contextState.getRootHash();//contextState.getBlockchain().getBlockByNumber(5544285l).getStateRoot();
             this.totalSize = contextState.getNode(this.root).get().getTotalSize();
             System.out.println(" -------- Size..." + this.totalSize);
         } catch (Throwable e) {

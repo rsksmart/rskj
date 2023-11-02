@@ -1,8 +1,8 @@
 package co.rsk.net.messages;
 
 
+import co.rsk.core.BlockDifficulty;
 import com.google.common.collect.Lists;
-import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.util.RLP;
@@ -14,14 +14,12 @@ import java.util.stream.Collectors;
 
 public class SnapBlocksResponseMessage extends Message {
     private final List<Block> blocks;
-
-    public List<Block> getBlocks() {
-        return this.blocks;
-    }
+    private final List<BlockDifficulty> difficulties;
 
 
-    public SnapBlocksResponseMessage(List<Block> blocks) {
+    public SnapBlocksResponseMessage(List<Block> blocks, List<BlockDifficulty> difficulties) {
         this.blocks = blocks;
+        this.difficulties = difficulties;
     }
 
     @Override
@@ -29,18 +27,34 @@ public class SnapBlocksResponseMessage extends Message {
         return MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE;
     }
 
+    public List<BlockDifficulty> getDifficulties() {
+        return difficulties;
+    }
+
+    public List<Block> getBlocks() {
+        return this.blocks;
+    }
+
     @Override
     public byte[] getEncodedMessage() {
         List<byte[]> rlpBlocks = this.blocks.stream().map(Block::getEncoded).map(RLP::encode).collect(Collectors.toList());
-        return RLP.encodeList(rlpBlocks.toArray(new byte[][]{}));
+        List<byte[]> rlpDifficulties = this.difficulties.stream().map(BlockDifficulty::getBytes).map(RLP::encode).collect(Collectors.toList());
+        return RLP.encodeList(RLP.encodeList(rlpBlocks.toArray(new byte[][]{})),
+                RLP.encodeList(rlpDifficulties.toArray(new byte[][]{})));
     }
 
     public static Message decodeMessage(BlockFactory blockFactory, RLPList list) {
         List<Block> blocks = Lists.newArrayList();
-        for (int i = 0; i < list.size(); i++) {
-            blocks.add(blockFactory.decodeBlock(list.get(i).getRLPData()));
+        List<BlockDifficulty> blockDifficulties = Lists.newArrayList();
+        RLPList blocksRLP = RLP.decodeList(list.get(0).getRLPData());
+        for (int i = 0; i < blocksRLP.size(); i++) {
+            blocks.add(blockFactory.decodeBlock(blocksRLP.get(i).getRLPData()));
         }
-        return new SnapBlocksResponseMessage(blocks);
+        RLPList difficultiesRLP = RLP.decodeList(list.get(1).getRLPData());
+        for (int i = 0; i < difficultiesRLP.size(); i++) {
+            blockDifficulties.add(new BlockDifficulty(new BigInteger(difficultiesRLP.get(i).getRLPData())));
+        }
+        return new SnapBlocksResponseMessage(blocks, blockDifficulties);
     }
 
     @Override

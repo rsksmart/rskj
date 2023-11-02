@@ -86,4 +86,6 @@ public interface BlocksIndex {
     void flush();
 
     void close();
+
+    void remove(long number);
 }
