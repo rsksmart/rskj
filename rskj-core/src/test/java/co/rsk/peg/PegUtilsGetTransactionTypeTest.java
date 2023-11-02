@@ -7,6 +7,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
@@ -17,6 +18,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -29,12 +31,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
+import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createFederation;
 import static co.rsk.peg.PegTestUtils.createP2shErpFederation;
 import static org.mockito.Mockito.mock;
@@ -199,9 +202,9 @@ class PegUtilsGetTransactionTypeTest {
     void test_tx_sending_funds_to_unknown_address(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
-        Boolean belowTheMinimumPegInValue,
-        Boolean existsRetiringFederation,
-        Boolean existsRetiredFederation,
+        boolean shouldSendAmountBelowMinimum,
+        boolean existsRetiringFederation,
+        boolean existsRetiredFederation,
         PegTxType expectedPegTxType
     ) {
         // Arrange
@@ -211,9 +214,10 @@ class PegUtilsGetTransactionTypeTest {
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
-        btcTransaction.addOutput(belowTheMinimumPegInValue? belowMinimumPeginTxValue: minimumPeginTxValue, userAddress);
+        btcTransaction.addOutput(shouldSendAmountBelowMinimum? belowMinimumPeginTxValue: minimumPeginTxValue, userAddress);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -1548,8 +1552,265 @@ class PegUtilsGetTransactionTypeTest {
     }
 
     // Flyover tests
-    @Test
-    void test_flyover() {
+    private static Stream<Arguments> flyover_args() {
+        ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+
+        return Stream.of(
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                false,
+                false,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                true,
+                false,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                true,
+                true,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                fingerrootActivations,
+                false,
+                false,
+                true,
+                true,
+                PegTxType.PEGIN
+            ),
+
+
+            Arguments.of(
+                tbdActivations,
+                false,
+                false,
+                false,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                tbdActivations,
+                false,
+                true,
+                false,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                tbdActivations,
+                false,
+                true,
+                true,
+                false,
+                PegTxType.PEGIN
+            ),
+            Arguments.of(
+                tbdActivations,
+                false,
+                false,
+                true,
+                true,
+                PegTxType.PEGIN
+            ),
+
+            Arguments.of(
+                tbdActivations,
+                true,
+                false,
+                false,
+                false,
+                PegTxType.UNKNOWN
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                true,
+                false,
+                false,
+                PegTxType.UNKNOWN
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                true,
+                true,
+                false,
+                PegTxType.UNKNOWN
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                false,
+                true,
+                true,
+                PegTxType.UNKNOWN
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("flyover_args")
+    void test_flyover_pegin(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUsePegoutTxIndex,
+        boolean shouldSendAmountBelowMinimum,
+        boolean existsRetiringFederation,
+        boolean existsRetiredFederation,
+        PegTxType expectedPegTxType
+    ) {
+        // Arrange
+        if (existsRetiredFederation){
+            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
+        }
+
+        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+
+        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+            .withBridgeConstants(bridgeMainnetConstants)
+            .withActivations(activations)
+            .build();
+
+        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lpBtcAddress,
+            lbcAddress
+        );
+
+        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+            bridgeMainnetConstants,
+            activeFederation.getRedeemScript(),
+            Sha256Hash.wrap(flyoverDerivationHash.getBytes())
+        );
+
+        BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
+        btcTransaction.addOutput(shouldSendAmountBelowMinimum? belowMinimumPeginTxValue: minimumPeginTxValue, flyoverFederationAddress);
+
+        btcTransaction.addInput(
+            Sha256Hash.ZERO_HASH,
+            0, new Script(new byte[]{})
+        );
+
+        // Act
+        PegTxType pegTxType = PegUtils.getTransactionType(
+            activations,
+            provider,
+            bridgeMainnetConstants,
+            activeFederation,
+            existsRetiringFederation? retiringFederation: null,
+            btcTransaction,
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
+        );
+
+        // Assert
+        Assertions.assertEquals(expectedPegTxType, pegTxType);
+    }
+
+    @ParameterizedTest
+    @MethodSource("flyover_args")
+    void test_flyover_segwit_pegin(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUsePegoutTxIndex,
+        boolean shouldSendAmountBelowMinimum,
+        boolean existsRetiringFederation,
+        boolean existsRetiredFederation,
+        PegTxType expectedPegTxType
+    ) {
+        // Arrange
+        if (existsRetiredFederation){
+            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
+        }
+
+        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+
+        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+            .withBridgeConstants(bridgeMainnetConstants)
+            .withActivations(activations)
+            .build();
+
+        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lpBtcAddress,
+            lbcAddress
+        );
+
+        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+            bridgeMainnetConstants,
+            activeFederation.getRedeemScript(),
+            Sha256Hash.wrap(flyoverDerivationHash.getBytes())
+        );
+
+        BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
+        btcTransaction.addOutput(shouldSendAmountBelowMinimum? belowMinimumPeginTxValue: minimumPeginTxValue, flyoverFederationAddress);
+        btcTransaction.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
+
+        // Act
+        PegTxType pegTxType = PegUtils.getTransactionType(
+            activations,
+            provider,
+            bridgeMainnetConstants,
+            activeFederation,
+            existsRetiringFederation? retiringFederation: null,
+            btcTransaction,
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
+        );
+
+        // Assert
+        Assertions.assertEquals(expectedPegTxType, pegTxType);
+    }
+
+    private static Stream<Arguments> flyover_migration_args() {
+        ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+
+        return Stream.of(
+            Arguments.of(
+                fingerrootActivations,
+                false
+            ),
+            Arguments.of(
+                tbdActivations,
+                false
+            ),
+            Arguments.of(
+                tbdActivations,
+                true
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("flyover_migration_args")
+    void test_flyover_segwit_migration(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUsePegoutTxIndex
+    ) {
         // Arrange
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
@@ -1568,19 +1829,35 @@ class PegUtilsGetTransactionTypeTest {
             lbcAddress
         );
 
-        Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
             bridgeMainnetConstants,
-            activeFederation.getRedeemScript(),
+            retiringFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverDerivationHash.getBytes())
         );
 
-        BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-        btcTransaction.addOutput(Coin.COIN, activeFederationAddress);
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
 
-        btcTransaction.addInput(
-            Sha256Hash.ZERO_HASH,
-            0, new Script(new byte[]{})
+        BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+        fundingTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        fundingTx.addOutput(Coin.COIN, flyoverFederationAddress);
+        fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
+
+        BtcTransaction migrationTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
+
+        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
+
+        Sha256Hash firstInputSigHash = migrationTx.hashForSignature(
+            FIRST_INPUT_INDEX,
+            retiringFederation.getRedeemScript(),
+            BtcTransaction.SigHash.ALL,
+            false
         );
+
+        if (activations.isActive(ConsensusRule.RSKIP379)) {
+            when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
+        }
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -1588,59 +1865,169 @@ class PegUtilsGetTransactionTypeTest {
             provider,
             bridgeMainnetConstants,
             activeFederation,
-            null,
-            btcTransaction,
-            blockNumberToStartUsingPegoutIndex
+            retiringFederation,
+            migrationTx,
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.UNKNOWN, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
-    @Test
-    void test_flyover_segwit() {
+    @ParameterizedTest
+    @MethodSource("flyover_migration_args")
+    void test_flyover_segwit_with_other_inputs_migration(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUsePegoutTxIndex
+    ) {
         // Arrange
-        BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
-        NetworkParameters btcTestNetParams = bridgeTestNetConstants.getBtcParams();
-        Context context = new Context(bridgeTestNetConstants.getBtcParams());
-        Context.propagate(context);
+        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        int btcHeightWhenPegoutTxIndexActivates = bridgeTestNetConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeTestNetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;
-        int blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+            .withBridgeConstants(bridgeMainnetConstants)
+            .withActivations(activations)
+            .build();
 
-        Federation retiringFederation = bridgeTestNetConstants.getGenesisFederation();
-
-        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        P2shErpFederation activeFederation = new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(signers),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            btcTestNetParams,
-            bridgeTestNetConstants.getErpFedPubKeysList(),
-            bridgeTestNetConstants.getErpFedActivationDelay(),
-            activations
+        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lpBtcAddress,
+            lbcAddress
         );
 
-        String segwitTxHex = "020000000001011f668117f2ca3314806ade1d99ae400f5413d7e9d4bfcbd11d52645e060e22fb0100000000fdffffff0300000000000000001b6a1952534b5401a27c6f697954357247e78f9900023cfe01a9d49c0412030000000000160014b413f59a7ee6e34321140e83ea661e0484a79bc2988708000000000017a9145e6cf80958803e9b3c81cd90422152520d2a505c870247304402203fce49b39f79581d93720f462b5f33f9174e66dc6efb635d4f41aacb33b08d0302201221aec5db31e269454fcc7a4df2936ccedd566ccf48828d4f97050954f196540121021831c5ba44b739521d635e521560525672087e4d5db053801f4aeb60e782f6d6d0f02400";
-        BtcTransaction btcTransaction = new BtcTransaction(btcTestNetParams, Hex.decode(segwitTxHex));
+        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+            bridgeMainnetConstants,
+            retiringFederation.getRedeemScript(),
+            Sha256Hash.wrap(flyoverDerivationHash.getBytes())
+        );
+
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
+        BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+        fundingTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        fundingTx.addOutput(Coin.COIN, flyoverFederationAddress);
+        fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
+
+        BtcTransaction migrationTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        migrationTx.addOutput(Coin.COIN.multiply(10), activeFederation.getAddress());
+
+        for (int i = 0; i < 9; i++) {
+            BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+            btcTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+            btcTx.addOutput(Coin.COIN, retiringFederation.getAddress());
+            migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        }
+
+        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
+
+        Sha256Hash firstInputSigHash = migrationTx.hashForSignature(
+            FIRST_INPUT_INDEX,
+            retiringFederation.getRedeemScript(),
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        if (activations.isActive(ConsensusRule.RSKIP379)) {
+            when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
+        }
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
-            bridgeTestNetConstants,
+            bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
-            btcTransaction,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            migrationTx,
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.UNKNOWN, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
+
+    @ParameterizedTest
+    @MethodSource("flyover_migration_args")
+    void test_flyover_segwit_with_many_inputs_and_outputs_migration(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUsePegoutTxIndex
+    ) {
+        // Arrange
+        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+
+        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+            .withBridgeConstants(bridgeMainnetConstants)
+            .withActivations(activations)
+            .build();
+
+        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lpBtcAddress,
+            lbcAddress
+        );
+
+        Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+            bridgeMainnetConstants,
+            retiringFederation.getRedeemScript(),
+            Sha256Hash.wrap(flyoverDerivationHash.getBytes())
+        );
+
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
+        BtcTransaction fundingTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+        fundingTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        fundingTx.addOutput(Coin.COIN, flyoverFederationAddress);
+        fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
+
+        BtcTransaction migrationTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
+
+        for (int i = 0; i < 9; i++) {
+            BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+            btcTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+            btcTx.addOutput(Coin.COIN, retiringFederation.getAddress());
+            migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+            migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
+        }
+
+        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
+
+        Sha256Hash firstInputSigHash = migrationTx.hashForSignature(
+            FIRST_INPUT_INDEX,
+            retiringFederation.getRedeemScript(),
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        if (activations.isActive(ConsensusRule.RSKIP379)) {
+            when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
+        }
+
+        // Act
+        PegTxType pegTxType = PegUtils.getTransactionType(
+            activations,
+            provider,
+            bridgeMainnetConstants,
+            activeFederation,
+            retiringFederation,
+            migrationTx,
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
+        );
+
+        // Assert
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+    }
+
+    // old fed
 
     private static Stream<Arguments> old_fed_to_live_fed_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
@@ -1724,6 +2111,8 @@ class PegUtilsGetTransactionTypeTest {
         }
         Assertions.assertEquals(expectedType, transactionType);
     }
+
+    // retired fed
 
     private static Stream<Arguments> retired_fed_to_live_fed_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
