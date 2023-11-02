@@ -165,7 +165,7 @@ public class PeerExplorer {
                 "type: [{}], " +
                 "networkId: [{}]",
                 state, event.getMessage().getMessageType(),
-                event.getMessage().getNetworkId().isPresent());
+                event.getMessage().getNetworkId());
 
         if (state != ExecState.RUNNING) {
             logger.warn("Cannot handle message as current state is {}", state);
