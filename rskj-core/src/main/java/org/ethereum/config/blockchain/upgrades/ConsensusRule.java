@@ -67,6 +67,7 @@ public enum ConsensusRule {
     RSKIP199("rskip199"),
     RSKIP200("rskip200"),
     RSKIP201("rskip201"),
+    RSKIP203("rskip203"),
     RSKIP218("rskip218"), // New rewards fee adddress
     RSKIP219("rskip219"),
     RSKIP220("rskip220"),
