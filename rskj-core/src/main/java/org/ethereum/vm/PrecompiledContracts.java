@@ -48,7 +48,6 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.exception.VMException;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
