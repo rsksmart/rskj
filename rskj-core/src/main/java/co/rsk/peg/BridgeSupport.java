@@ -56,6 +56,8 @@ import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.pegin.PeginEvaluationResult;
+import co.rsk.peg.pegin.PeginProcessAction;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.*;
@@ -103,6 +105,10 @@ import org.slf4j.LoggerFactory;
 
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.utils.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
+import static co.rsk.peg.utils.RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
+import static co.rsk.peg.utils.RejectedPeginReason.NO_UTXO_OR_UTXO_BELOW_MINIMUM;
+import static co.rsk.peg.utils.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
@@ -462,6 +468,50 @@ public class BridgeSupport {
             minimumPeginTxValue,
             federationWallet
         );
+    }
+
+    private PeginEvaluationResult evaluatePegin(BtcTransaction btcTx) {
+        if(!activations.isActive(ConsensusRule.RSKIP379)){
+            throw new IllegalStateException("Method cannot be called before RSKIP379.");
+        }
+
+        PeginInformation peginInformation = new PeginInformation(
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            activations
+        );
+
+        Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
+
+        if(!PegUtils.isAnyUTXOAmountBelowMinimum(minimumPeginTxValue, btcTx, getNoSpendWalletForLiveFederations(false))){
+            return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, NO_UTXO_OR_UTXO_BELOW_MINIMUM);
+        }
+
+        try {
+            peginInformation.parse(btcTx);
+        } catch (PeginInstructionsException e) {
+            if (peginInformation.getBtcRefundAddress() != null){
+                return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REFUNDED, PEGIN_V1_INVALID_PAYLOAD);
+            } else {
+                return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, PEGIN_V1_INVALID_PAYLOAD);
+            }
+        }
+
+        if (peginInformation.getProtocolVersion() == 0) {
+            switch (peginInformation.getSenderBtcAddressType()) {
+                case P2PKH:
+                case P2SHP2WPKH:
+                    return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REGISTERED);
+                case P2SHMULTISIG:
+                case P2SHP2WSH:
+                    return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REFUNDED, LEGACY_PEGIN_MULTISIG_SENDER);
+                default:
+                    return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, LEGACY_PEGIN_UNDETERMINED_SENDER);
+            }
+        } else if (peginInformation.getProtocolVersion() == 1) {
+            return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REGISTERED);
+        }
+        throw new IllegalStateException("Pegin could not be evaluated.");
     }
 
     protected void processPegIn(
