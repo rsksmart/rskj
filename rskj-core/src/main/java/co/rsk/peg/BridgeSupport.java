@@ -422,7 +422,7 @@ public class BridgeSupport {
             // Specific code for pegin/pegout or migration/none txs
             switch (getTransactionType(btcTx)) {
                 case PEGIN:
-                    processPegIn(btcTx, rskTx, height, btcTxHash);
+                    processPegin(btcTx, rskTx, height, btcTxHash);
                     break;
                 case PEGOUT_OR_MIGRATION:
                     processPegoutOrMigration(btcTx);
@@ -490,6 +490,12 @@ public class BridgeSupport {
         try {
             peginInformation.parse(btcTx);
         } catch (PeginInstructionsException e) {
+            String message = String.format(
+                "Error while trying to parse peg-in information for tx %s. %s",
+                btcTx.getHash(),
+                e.getMessage()
+            );
+            logger.warn("[evaluatePegin] {}", message);
             if (peginInformation.getBtcRefundAddress() != null){
                 return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REFUNDED, PEGIN_V1_INVALID_PAYLOAD);
             } else {
@@ -514,7 +520,51 @@ public class BridgeSupport {
         throw new IllegalStateException("Pegin could not be evaluated.");
     }
 
-    protected void processPegIn(
+    protected void processPegin(BtcTransaction btcTx, Transaction rskTx, int height, Sha256Hash btcTxHash) throws IOException, RegisterBtcTransactionException {
+        if (activations.isActive(ConsensusRule.RSKIP379)){
+            tryToProcessPegin(btcTx, rskTx);
+        } else {
+            legacyProcessPegin(btcTx, rskTx, height, btcTxHash);
+        }
+    }
+
+    private void tryToProcessPegin(BtcTransaction btcTx, Transaction rskTx) throws IOException, RegisterBtcTransactionException {
+        Coin totalAmount = computeTotalAmountSent(btcTx);
+
+        PeginInformation peginInformation = new PeginInformation(
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            activations
+        );
+
+        PeginEvaluationResult peginEvaluationResult = evaluatePegin(btcTx);
+
+        switch (peginEvaluationResult.getPeginProcessAction()) {
+            case CAN_BE_REGISTERED:
+                executePegIn(btcTx, peginInformation, totalAmount);
+                markTxAsProcessed(btcTx);
+                break;
+            case CAN_BE_REFUNDED:
+                eventLogger.logRejectedPegin(btcTx, peginEvaluationResult.getRejectedPeginReason().get());
+                if (peginInformation.getProtocolVersion() == 1) {
+                    eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET);
+                } else {
+                    eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+                }
+                generateRejectionRelease(btcTx, peginInformation.getBtcRefundAddress(), rskTx, totalAmount);
+                markTxAsProcessed(btcTx);
+                throw new RegisterBtcTransactionException(String.format("Error while trying to parse peg-in information for tx %s", btcTx.getHash()));
+            case CANNOT_BE_PROCESSED:
+                logger.debug("[tryToProcessPegin] No btc refund address provided, couldn't get sender address either. Can't refund");
+                eventLogger.logRejectedPegin(btcTx, peginEvaluationResult.getRejectedPeginReason().get());
+                break;
+            default:
+                String message = String.format("Error while trying to process pegin. Error Reason: %s", peginEvaluationResult.getRejectedPeginReason().get());
+                throw new RegisterBtcTransactionException(message);
+        }
+    }
+
+    protected void legacyProcessPegin(
         BtcTransaction btcTx,
         Transaction rskTx,
         int height,

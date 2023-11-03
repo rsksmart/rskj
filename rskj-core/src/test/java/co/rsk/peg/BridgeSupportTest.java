@@ -5923,7 +5923,7 @@ class BridgeSupportTest {
         BtcTransaction btcTx = mock(BtcTransaction.class);
         when(btcTx.getValueSentToMe(any())).thenReturn(Coin.valueOf(1));
 
-        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.processPegIn(
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.legacyProcessPegin(
             btcTx,
             mock(Transaction.class),
             0,
@@ -5966,7 +5966,7 @@ class BridgeSupportTest {
 
         // Act
         try {
-            bridgeSupport.processPegIn(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
+            bridgeSupport.legacyProcessPegin(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
             Assertions.fail(); // Should have thrown a RegisterBtcTransactionException
         } catch (Exception e) {
             // Assert
@@ -6022,7 +6022,7 @@ class BridgeSupportTest {
 
         // Act
         try {
-            bridgeSupport.processPegIn(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
+            bridgeSupport.legacyProcessPegin(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
             Assertions.fail(); // Should have thrown a RegisterBtcTransactionException
         } catch (Exception ex) {
             // Assert
@@ -6356,7 +6356,7 @@ class BridgeSupportTest {
         );
 
         // Act
-        bridgeSupport.processPegIn(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
+        bridgeSupport.legacyProcessPegin(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
 
         // Assert
         Assertions.assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
@@ -6867,7 +6867,7 @@ class BridgeSupportTest {
         );
 
         // Act
-        bridgeSupport.processPegIn(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
+        bridgeSupport.legacyProcessPegin(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
 
         // Assert
         if (lockSenderAddressType == TxSenderAddressType.UNKNOWN && !btcRefundAddress.isPresent()) {
