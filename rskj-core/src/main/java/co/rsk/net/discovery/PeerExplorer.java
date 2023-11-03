@@ -161,10 +161,9 @@ public class PeerExplorer {
 
     synchronized void handleMessage(DiscoveryEvent event) {
         logger.debug("handleMessage - Handling message with " +
-                "state: [{}], " +
-                "type: [{}], " +
-                "networkId: [{}]",
-                state, event.getMessage().getMessageType(),
+                        "type: [{}], " +
+                        "networkId: [{}]",
+                event.getMessage().getMessageType(),
                 event.getMessage().getNetworkId());
 
         if (state != ExecState.RUNNING) {
@@ -241,7 +240,7 @@ public class PeerExplorer {
 
         if (connectedNode != null) {
             List<Node> nodesToSend = this.distanceTable.getClosestNodes(nodeId);
-            logger.debug("handleFindNode - About to send [{}] neighbors to address[{}/{}], nodeId[{}] with messageId[{}]",
+            logger.debug("handleFindNode - About to send [{}] neighbors to address: [{}/{}], nodeId: [{}] with messageId: [{}]",
                     nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexId(), message.getMessageId());
             this.sendNeighbors(connectedNode.getAddress(), nodesToSend, message.getMessageId());
             updateEntry(connectedNode);
@@ -255,7 +254,7 @@ public class PeerExplorer {
         Node connectedNode = this.establishedConnections.get(nodeId);
 
         if (connectedNode != null) {
-            logger.debug("handleNeighborsMessage - Neighbors received from id[{}], ip[{}], port[{}] with " +
+            logger.debug("handleNeighborsMessage - Neighbors received from id: [{}], address: [{}/{}] with " +
                             "nodeId: [{}]," +
                             "messageId: [{}], " +
                             "nodesCount: [{}], " +
