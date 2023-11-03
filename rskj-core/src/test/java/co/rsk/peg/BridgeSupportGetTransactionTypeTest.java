@@ -32,6 +32,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static co.rsk.peg.PegTestUtils.createFederation;
+import static co.rsk.peg.bitcoin.BitcoinUtils.createEmptyErpInputScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.createEmptyInputScript;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -94,7 +96,7 @@ class BridgeSupportGetTransactionTypeTest {
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
 
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
-        migrationTx.addInput(Sha256Hash.ZERO_HASH, 0, p2shRetiringFederation.getRedeemScript());
+        migrationTx.addInput(Sha256Hash.ZERO_HASH, 0, createEmptyErpInputScript(p2shRetiringFederation.getRedeemScript()));
         migrationTx.addOutput(minimumPeginTxValue, activeFederation.getAddress());
 
         FederationTestUtils.addSignatures(p2shRetiringFederation, fedKeys, migrationTx);
@@ -183,7 +185,7 @@ class BridgeSupportGetTransactionTypeTest {
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
-        peginTx.addInput(Sha256Hash.ZERO_HASH, 0, redeemScript);
+        peginTx.addInput(Sha256Hash.ZERO_HASH, 0, createEmptyInputScript(redeemScript));
         peginTx.addOutput(minimumPeginTxValue, activeFederation.getAddress());
 
         // Act
@@ -235,7 +237,7 @@ class BridgeSupportGetTransactionTypeTest {
             .build();
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
-        peginTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        peginTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{0}));
         peginTx.addOutput(amountToSend, bridgeMainnetConstants.getGenesisFederation().getAddress());
 
         // Act

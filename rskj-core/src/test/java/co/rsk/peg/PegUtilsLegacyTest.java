@@ -47,6 +47,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import static co.rsk.peg.PegUtilsLegacy.*;
+import static co.rsk.peg.bitcoin.BitcoinUtils.createEmptyInputScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.createEmptyErpInputScript;
 
 class PegUtilsLegacyTest {
 
@@ -536,7 +538,7 @@ class PegUtilsLegacyTest {
         // Create a tx from the fast bridge fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, createEmptyInputScript(flyoverRedeemScript));
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
         Assertions.assertFalse(isValidPegInTx(tx, activeFederation, federationWallet,
@@ -618,7 +620,7 @@ class PegUtilsLegacyTest {
         // Create a tx from the fast bridge erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverErpRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, createEmptyErpInputScript(flyoverErpRedeemScript));
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -693,7 +695,7 @@ class PegUtilsLegacyTest {
         // Create a tx from the erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, erpRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, createEmptyErpInputScript(erpRedeemScript));
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -1272,7 +1274,7 @@ class PegUtilsLegacyTest {
         tx.addInput(
             Sha256Hash.ZERO_HASH,
             0,
-            flyoverFederation ? flyoverP2shErpRedeemScript : p2shErpFederation.getRedeemScript()
+            createEmptyErpInputScript(flyoverFederation ? flyoverP2shErpRedeemScript : p2shErpFederation.getRedeemScript())
         );
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));

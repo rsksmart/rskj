@@ -1148,7 +1148,7 @@ class PowpegMigrationTest {
         peginBtcTx.addInput(
             PegTestUtils.createHash(blockStore.getChainHead().getHeight() + 1),
             0,
-            new Script(new byte[]{})
+            new Script(new byte[]{0})
         );
         outputs.forEach(peginBtcTx::addOutput);
         // Adding OP_RETURN output to identify this peg-in as v1 and avoid sender identification
