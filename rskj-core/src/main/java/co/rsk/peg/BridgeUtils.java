@@ -209,7 +209,7 @@ public class BridgeUtils {
                 context,
                 addresses
             );
-            if (PegUtils.isAnyUTXOAmountBelowMinimum(minimumPegInTxValue, btcTx, federationWallet)){
+            if (PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(minimumPegInTxValue, btcTx, federationWallet, activations)){
                 logger.debug("[validateFlyoverPeginValue] UTXOs amount sent to federation can't be below the minimum {}.",
                     minimumPegInTxValue.value);
                 return FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
