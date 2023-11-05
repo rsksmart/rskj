@@ -42,9 +42,31 @@ public class PegUtils {
         }
     }
 
-    public static boolean isAnyUTXOAmountBelowMinimum(
-        Coin minimumPegInTxValue, BtcTransaction btcTx, Wallet wallet) {
-        return PegUtilsLegacy.isAnyUTXOAmountBelowMinimum(minimumPegInTxValue, btcTx, wallet);
+    /**
+     * Checks if all utxos sent to the <b>fedWallet</b> are equal or above the minimum pegin value.
+     * If no utxo is sent to the <b>fedWallet </b>or there is at least 1 utxo sent to the <b>fedWallet</b> that is below minimum,
+     * this method will return false. It will return true when all utxos sent to the <b>fedWallet</b> are above the minimum pegin value.
+     * @param minimumPegInTxValue
+     * @param btcTx
+     * @param fedWallet
+     * @param activations
+     * @return
+     */
+    public static boolean allUTXOsToFedAreAboveMinimumPeginValue(Coin minimumPegInTxValue, BtcTransaction btcTx, Wallet fedWallet, ActivationConfig.ForBlock activations) {
+
+        if(!activations.isActive(ConsensusRule.RSKIP379)) {
+            return PegUtilsLegacy.isAnyUTXOAmountBelowMinimum(minimumPegInTxValue, btcTx, fedWallet);
+        }
+
+        List<TransactionOutput> fedUtxos = btcTx.getWalletOutputs(fedWallet);
+
+        if(fedUtxos.isEmpty()) {
+            return false;
+        }
+
+        return fedUtxos.stream()
+                .allMatch(transactionOutput -> transactionOutput.getValue().compareTo(minimumPegInTxValue) >= 0);
+
     }
 
     public static PegTxType getTransactionType(
