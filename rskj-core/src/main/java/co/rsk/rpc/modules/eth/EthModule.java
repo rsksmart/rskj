@@ -318,37 +318,6 @@ public class EthModule
     }
 
     public String sendEncryptedTransaction(String rawData) {
-//        String s = null;
-//        // todo(fedejinich) this code is inspired in sendRawTransaction. check for refactor
-//        try {
-//            EncryptedTransaction tx = new EncryptedTransaction(HexUtils.stringHexToByteArray(rawData));
-//
-//            // add logic to set params to transcipher, it'll be a for to iterate over the RLPList
-//            // add logic to set keys to fetch encrypted data from storage
-//
-//            if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
-//                throw invalidParamError("Missing parameter, gasPrice, gas or value");
-//            }
-//
-//            // todo(fedejinich) i think i don't need this
-////            if (!tx.acceptTransactionSignature(constants.getChainId())) {
-////                throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
-////            }
-//
-//            TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);
-//            if (!result.transactionsWereAdded()) {
-//                throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
-//            }
-//
-//            return s = tx.getHash().toJsonString();
-//        } catch (RLPException e) {
-//            throw invalidParamError("Invalid input: " + e.getMessage(), e);
-//        } finally {
-//            // todo(fedejinich) support this
-//            if (LOGGER.isDebugEnabled()) {
-//                LOGGER.debug("eth_sendEncryptedTransaction({}): {}", rawData, s);
-//            }
-//        }
-        return null;
+        return ethModuleTransaction.sendEncryptedTransaction(rawData);
     }
 }

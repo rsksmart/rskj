@@ -2,6 +2,7 @@ package co.rsk.rpc.modules.rsk;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,6 +89,8 @@ public class RskModuleImpl implements RskModule {
         flusher.forceFlush();
     }
 
+
+    // todo(fedejinich) duplicated method,remove it
     @Override
     public String sendEncryptedTransaction(String rawData) {
         try {
@@ -108,6 +111,7 @@ public class RskModuleImpl implements RskModule {
             byte[] hash = Keccak256Helper.keccak256(fhData);
             FhStore.getInstance().put(hash, fhData); // store encrypted params, so they can be accessed within tx execution
 
+            tx.getSender(); // todo(fedejinich) signature cache is bringing problems, i had to do this ugly thing :(, research about it!
             tx = addEncryptedParams(tx, hash); // add encrypted params to tx.data
 
             // for the future, add logic to set keys to fetch encrypted data from storage
@@ -129,11 +133,7 @@ public class RskModuleImpl implements RskModule {
             return tx.getHash().toJsonString();
         } catch (RLPException e) {
             throw invalidParamError("Invalid input: " + e.getMessage(), e);
-        } catch (StreamReadException e) {
-            throw new RuntimeException(e);
-        } catch (DatabindException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
             // todo(fedejinich) support this
@@ -146,7 +146,7 @@ public class RskModuleImpl implements RskModule {
     private Transaction addEncryptedParams(Transaction tx, byte[] encryptedParamsHash) {
         byte[] data = tx.getData();
 
-        ByteBuffer buff = ByteBuffer.allocate(data.length + 32);
+        ByteBuffer buff = ByteBuffer.allocate(data.length + 32 + 32);
         buff.put(data);
         buff.put(encryptedParamsHash);
 

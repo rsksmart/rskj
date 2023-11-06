@@ -95,6 +95,23 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
         }
     }
 
+    // todo(fedejinich) this is a copy of sendRawTransaction, refactor this
+    @Override
+    public String sendEncryptedTransaction(String rawData) {
+        try {
+            this.blockExecutor.setRegisterProgramResults(true);
+
+            String txHash = super.sendEncryptedTransaction(rawData);
+
+            mineTransaction();
+
+            return getReturnMessage(txHash);
+        }
+        finally {
+            this.blockExecutor.setRegisterProgramResults(false);
+        }
+    }
+
     private void mineTransaction() {
         minerServer.buildBlockToMine(false);
         minerClient.mineBlock();

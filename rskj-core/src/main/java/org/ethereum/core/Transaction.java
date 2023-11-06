@@ -300,7 +300,9 @@ public class Transaction {
             return false;
         }
 
-        return this.getChainId() == 0 || this.getChainId() == currentChainId;
+//        return this.getChainId() == 0 || this.getChainId() == currentChainId;
+        // todo(fedejinich) chainId == 1 sjouldnt be there
+        return this.getChainId() == 1 || this.getChainId() == 0 || this.getChainId() == currentChainId;
     }
 
     public void sign(byte[] privKeyBytes) throws MissingPrivateKeyException {
