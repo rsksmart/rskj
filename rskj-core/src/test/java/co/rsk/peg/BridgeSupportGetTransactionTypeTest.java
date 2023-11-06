@@ -150,7 +150,9 @@ class BridgeSupportGetTransactionTypeTest {
 
         // Create a migrationTx from the old fed address to the active fed
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
-        migrationTx.addInput(PegTestUtils.createHash(1), 0, retiredFederation.getRedeemScript());
+        Script redeemScript = retiredFederation.getRedeemScript();
+        Script scriptPubKey = createP2SHOutputScript(redeemScript);
+        migrationTx.addInput(PegTestUtils.createHash(1), 0, scriptPubKey.createEmptyInputScript(null, redeemScript));
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         FederationTestUtils.addSignatures(retiredFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
@@ -274,7 +276,9 @@ class BridgeSupportGetTransactionTypeTest {
         Address userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user");
 
         BtcTransaction pegoutBtcTx = new BtcTransaction(btcMainnetParams);
-        pegoutBtcTx.addInput(PegTestUtils.createHash(1), 0, activeFederation.getRedeemScript());
+        Script redeemScript = activeFederation.getRedeemScript();
+        Script scriptPubKey = createP2SHOutputScript(redeemScript);
+        pegoutBtcTx.addInput(PegTestUtils.createHash(1), 0, scriptPubKey.createEmptyInputScript(null, redeemScript));
         pegoutBtcTx.addOutput(Coin.COIN, userAddress);
 
         FederationTestUtils.addSignatures(activeFederation, fedKeys, pegoutBtcTx);
@@ -317,7 +321,9 @@ class BridgeSupportGetTransactionTypeTest {
         when(provider.getOldFederation()).thenReturn(retiringFederation);
 
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
-        migrationTx.addInput(PegTestUtils.createHash(1), 0, retiringFederation.getRedeemScript());
+        Script redeemScript = retiringFederation.getRedeemScript();
+        Script scriptPubKey = createP2SHOutputScript(redeemScript);
+        migrationTx.addInput(PegTestUtils.createHash(1), 0, scriptPubKey.createEmptyInputScript(null, redeemScript));
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
@@ -339,7 +345,7 @@ class BridgeSupportGetTransactionTypeTest {
         Address unknownAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown");
 
         BtcTransaction unknownPegTx = new BtcTransaction(btcMainnetParams);
-        unknownPegTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        unknownPegTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{0}));
         unknownPegTx.addOutput(Coin.COIN, unknownAddress);
 
         // Act
