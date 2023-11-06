@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,8 +48,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import static co.rsk.peg.PegUtilsLegacy.*;
-import static co.rsk.peg.bitcoin.BitcoinUtils.createEmptyInputScript;
-import static co.rsk.peg.bitcoin.BitcoinUtils.createEmptyErpInputScript;
 
 class PegUtilsLegacyTest {
 
@@ -538,7 +537,8 @@ class PegUtilsLegacyTest {
         // Create a tx from the fast bridge fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, createEmptyInputScript(flyoverRedeemScript));
+        Script scriptPubKey = createP2SHOutputScript(flyoverRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, scriptPubKey.createEmptyInputScript(null, flyoverRedeemScript));
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
         Assertions.assertFalse(isValidPegInTx(tx, activeFederation, federationWallet,
@@ -620,7 +620,8 @@ class PegUtilsLegacyTest {
         // Create a tx from the fast bridge erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, createEmptyErpInputScript(flyoverErpRedeemScript));
+        Script scriptPubKey = createP2SHOutputScript(flyoverErpRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, scriptPubKey.createEmptyInputScript(null, flyoverErpRedeemScript));
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -695,7 +696,8 @@ class PegUtilsLegacyTest {
         // Create a tx from the erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, createEmptyErpInputScript(erpRedeemScript));
+        Script scriptPubKey = createP2SHOutputScript(erpRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, scriptPubKey.createEmptyInputScript(null, erpRedeemScript));
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -1271,10 +1273,12 @@ class PegUtilsLegacyTest {
         // Create a tx from the p2sh erp fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, destinationAddress);
+        Script redeemScript = flyoverFederation ? flyoverP2shErpRedeemScript : p2shErpFederation.getRedeemScript();
+        Script scriptPubKey = createP2SHOutputScript(redeemScript);
         tx.addInput(
             Sha256Hash.ZERO_HASH,
             0,
-            createEmptyErpInputScript(flyoverFederation ? flyoverP2shErpRedeemScript : p2shErpFederation.getRedeemScript())
+            scriptPubKey.createEmptyInputScript(null, redeemScript)
         );
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));

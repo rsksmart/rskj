@@ -5,9 +5,7 @@ import co.rsk.bitcoinj.core.ScriptException;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,23 +60,5 @@ public class BitcoinUtils {
             );
             return Optional.empty();
         }
-    }
-
-    public static Script createEmptyInputScript(Script redeemScript) {
-        return ScriptBuilder.createP2SHMultiSigInputScript(null, redeemScript);
-    }
-
-    public static Script createEmptyErpInputScript(Script redeemScript) {
-        Script emptyInputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, redeemScript);
-        ScriptBuilder builder = new ScriptBuilder();
-        List<ScriptChunk> inputScriptChunks = emptyInputScript.getChunks();
-        List<ScriptChunk> chunksWithoutRedeem = inputScriptChunks.subList(0, inputScriptChunks.size() - 1);
-        ScriptChunk redeemScriptChunk = inputScriptChunks.get(inputScriptChunks.size() - 1);
-        emptyInputScript = builder
-            .addChunks(chunksWithoutRedeem)
-            .number(ScriptOpCodes.OP_0)
-            .addChunk(redeemScriptChunk)
-            .build();
-        return emptyInputScript;
     }
 }
