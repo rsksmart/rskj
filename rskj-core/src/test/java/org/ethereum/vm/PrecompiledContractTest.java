@@ -29,6 +29,8 @@ import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
+import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -351,6 +353,24 @@ class PrecompiledContractTest {
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000009");
         PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
         assertNull(contract);
+    }
+
+    @Test
+    void environmentTestGetCallStackDepth() throws VMException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        ProgramInvokeImpl invoke = mock(ProgramInvokeImpl.class);
+        when(activations.isActive(ConsensusRule.RSKIP203)).thenReturn(true);
+        when(invoke.getCallDeep()).thenReturn(1);
+
+        DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000001000011");
+        PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
+        contract.init(invoke);
+
+        byte[] expected = ByteUtil.intToBytes(1);
+
+        byte[] result = contract.execute(null);
+
+        assertArrayEquals(expected, result);
     }
 
 }
