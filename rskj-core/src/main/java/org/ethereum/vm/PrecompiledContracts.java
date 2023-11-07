@@ -48,6 +48,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -127,7 +128,8 @@ public class PrecompiledContracts {
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
-                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153)
+                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
+                    new AbstractMap.SimpleEntry<>(ENVIRONMENT_ADDR, ConsensusRule.RSKIP203)
             ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
@@ -207,6 +209,10 @@ public class PrecompiledContracts {
             return new Blake2F();
         }
 
+        if (activations.isActive(ConsensusRule.RSKIP203) && address.equals(ENVIRONMENT_ADDR_DW)) {
+            return new Environment();
+        }
+
         return null;
     }
 
@@ -216,6 +222,17 @@ public class PrecompiledContracts {
         public abstract long getGasForData(byte[] data);
 
         public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+        }
+
+        public void init(ProgramInvoke programInvoke) {
+        }
+
+        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs, ProgramInvoke programInvoke) {
+            if(this instanceof Environment) {
+                this.init(programInvoke);
+            } else {
+                this.init(tx, executionBlock, repository, blockStore, receiptStore, logs);
+            }
         }
 
         public List<ProgramSubtrace> getSubtraces() {
@@ -537,6 +554,33 @@ public class PrecompiledContracts {
                 output.putLong(h[i]);
             }
             return output.array();
+        }
+    }
+
+    public static class Environment extends PrecompiledContract {
+        private ProgramInvoke programInvoke;
+
+        public Environment() {
+        }
+
+        @Override
+        public void init(ProgramInvoke programInvoke) {
+            super.init(programInvoke);
+            this.programInvoke = programInvoke;
+        }
+
+        @Override
+        public long getGasForData(byte[] data) {
+            return 0;
+        }
+
+        @Override
+        public byte[] execute(byte[] data) {
+            return ByteUtil.intToBytes(getCallStackDepth());
+        }
+
+        private int getCallStackDepth() {
+            return programInvoke == null ? 0 : programInvoke.getCallDeep();
         }
     }
 
