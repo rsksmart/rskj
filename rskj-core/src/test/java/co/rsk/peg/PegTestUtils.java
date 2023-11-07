@@ -48,6 +48,8 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.mockito.Mockito;
 
+import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
+
 /**
  * Created by oscar on 05/08/2016.
  */
@@ -90,6 +92,12 @@ public final class PegTestUtils {
         bytes[3] = (byte) (0xFF & nHash >> 24);
 
         return Sha256Hash.wrap(bytes);
+    }
+
+    public static Script createBaseInputScriptThatSpendsFromTheRedeemScript(Script redeemScript) {
+        Script scriptPubKey = createP2SHOutputScript(redeemScript);
+        Script inputScript = scriptPubKey.createEmptyInputScript(null, redeemScript);
+        return inputScript;
     }
 
     public static Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation) {
@@ -247,7 +255,7 @@ public final class PegTestUtils {
             redeemScript,
             derivationArgumentHash
         );
-        Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        Script flyoverP2SH = createP2SHOutputScript(flyoverRedeemScript);
         return Address.fromP2SHScript(bridgeConstants.getBtcParams(), flyoverP2SH);
     }
 

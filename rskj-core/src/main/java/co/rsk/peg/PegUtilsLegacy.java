@@ -3,10 +3,8 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.ScriptException;
 import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
@@ -14,7 +12,6 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
-import co.rsk.peg.bitcoin.BitcoinUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -28,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.extractRedeemScriptFromInput;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 
 /**
@@ -68,17 +66,16 @@ public class PegUtilsLegacy {
     protected static boolean isPegOutTx(BtcTransaction btcTx, ActivationConfig.ForBlock activations, Script ... fedStandardP2shScripts) {
         int inputsSize = btcTx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
-            TransactionInput txInput = btcTx.getInput(i);
-            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(btcTx.getInput(i));
+            Optional<Script> redeemScriptOptional = extractRedeemScriptFromInput(btcTx.getInput(i));
             if (!redeemScriptOptional.isPresent()) {
                 continue;
             }
 
             Script redeemScript = redeemScriptOptional.get();
             if (activations.isActive(ConsensusRule.RSKIP201)) {
-                // Extract standard redeem script since the registered utxo could be from a fast bridge or erp federation
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(txInput.getScriptSig().getChunks());
                 try {
+                    // Extract standard redeem script since the registered utxo could be from a fast bridge or erp federation
+                    RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(redeemScript.getChunks());
                     redeemScript = redeemScriptParser.extractStandardRedeemScript();
                 } catch (ScriptException e) {
                     // There is no redeem script
@@ -198,16 +195,24 @@ public class PegUtilsLegacy {
                 return false;
             }
 
+            TransactionInput txInput = tx.getInput(index);
+            Optional<Script> redeemScriptOptional = extractRedeemScriptFromInput(txInput);
+            if (!redeemScriptOptional.isPresent()) {
+                continue;
+            }
+
+            Script redeemScript = redeemScriptOptional.get();
+
             // Check if the registered utxo is not change from an utxo spent from either a fast bridge federation,
             // erp federation, or even a retired fast bridge or erp federation
             if (activations.isActive(ConsensusRule.RSKIP201)) {
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(tx.getInput(index).getScriptSig().getChunks());
                 try {
                     // Consider transactions that have an input with a redeem script of type P2SH ERP FED
                     // to be "future transactions" that should not be pegins. These are gonna be considered pegouts.
                     // This is only for backwards compatibility reasons. As soon as RSKIP353 activates,
                     // pegins to the new federation should be valid again.
                     // There's no reason for someone to send an actual pegin of this type before the new fed is active.
+                    RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(redeemScript.getChunks());
                     // TODO: Remove this if block after RSKIP353 activation
                     if (!activations.isActive(ConsensusRule.RSKIP353) &&
                             (redeemScriptParser.getMultiSigType() == RedeemScriptParser.MultiSigType.P2SH_ERP_FED ||
