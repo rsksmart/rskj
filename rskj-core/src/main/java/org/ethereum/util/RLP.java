@@ -66,14 +66,6 @@ import static org.ethereum.util.ByteUtil.*;
  * @since 01.04.2014
  */
 public class RLP {
-    private static final int EMPTY_MARK = 128;
-    private static final int TINY_SIZE = 55;
-
-    /**
-     * Allow for content up to size of 2^64 bytes *
-     */
-    private static final double MAX_ITEM_LENGTH = Math.pow(256, 8);
-
     /**
      * Reason for threshold according to Vitalik Buterin:
      * - 56 bytes maximizes the benefit of both options
@@ -137,24 +129,22 @@ public class RLP {
      * ******************************************************/
 
     public static int decodeInt(byte[] data, int index) {
-        int value = 0;
-        // NOTE: there are two ways zero can be encoded - 0x00 and OFFSET_SHORT_ITEM
+        int b0 = data[index] & 0xFF;
 
-        if ((data[index] & 0xFF) < OFFSET_SHORT_ITEM) {
-            return data[index];
-        } else if ((data[index] & 0xFF) >= OFFSET_SHORT_ITEM
-                && (data[index] & 0xFF) < OFFSET_LONG_ITEM) {
+        if (b0 < OFFSET_SHORT_ITEM) return data[index];
 
+        if (b0 < OFFSET_LONG_ITEM) {
+            int value = 0;
             byte length = (byte) (data[index] - OFFSET_SHORT_ITEM);
             byte pow = (byte) (length - 1);
             for (int i = 1; i <= length; ++i) {
                 value += (data[index + i] & 0xFF) << (8 * pow);
                 pow--;
             }
-        } else {
-            throw new RuntimeException("wrong decode attempt");
+            return value;
         }
-        return value;
+
+        throw new RuntimeException("wrong decode attempt");
     }
 
     public static BigInteger decodeBigInteger(byte[] data, int index) {
@@ -269,16 +259,16 @@ public class RLP {
     private static Pair<RLPElement, Integer> decodeElement(byte[] msgData, int position) {
         int b0 = msgData[position] & 0xff;
 
-        if (b0 >= 192) {
+        if (b0 >= OFFSET_SHORT_LIST) {
             int length;
             int offset;
 
-            if (b0 <= 192 + TINY_SIZE) {
-                length = b0 - 192 + 1;
+            if (b0 <= OFFSET_LONG_LIST) {
+                length = b0 - OFFSET_SHORT_LIST + 1;
                 offset = 1;
             }
             else {
-                int nbytes = b0 - 247;
+                int nbytes = b0 - OFFSET_LONG_LIST;
                 length = 1 + nbytes + bytesToLength(msgData, position + 1, nbytes);
                 offset = 1 + nbytes;
             }
@@ -297,11 +287,11 @@ public class RLP {
             return Pair.of(list, position + length);
         }
 
-        if (b0 == EMPTY_MARK) {
+        if (b0 == OFFSET_SHORT_ITEM) {
             return Pair.of(new RLPItem(ByteUtil.EMPTY_BYTE_ARRAY), position + 1);
         }
 
-        if (b0 < EMPTY_MARK) {
+        if (b0 < OFFSET_SHORT_ITEM) {
             byte[] data = new byte[1];
             data[0] = msgData[position];
             return Pair.of(new RLPItem(data), position + 1);
@@ -310,8 +300,8 @@ public class RLP {
         int length;
         int offset;
 
-        if (b0 > (EMPTY_MARK + TINY_SIZE)) {
-            offset = b0 - (EMPTY_MARK + TINY_SIZE) + 1;
+        if (b0 > (OFFSET_LONG_ITEM)) {
+            offset = b0 - (OFFSET_LONG_ITEM) + 1;
             length = bytesToLength(msgData, position + 1, offset - 1);
         }
         else {
