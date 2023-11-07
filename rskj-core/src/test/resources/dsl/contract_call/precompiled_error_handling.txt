@@ -53,6 +53,16 @@ transaction_build tx05
     gas 2000000
     build
 
+# Call method precompiledTest.callPrec(0x0000000000000000000000000000000001000011), ENVIRONMENT CALL
+transaction_build tx15
+    sender acc1
+    nonce 14
+    contract tx01   # created in tx01
+    value 0
+    data e674f5e80000000000000000000000000000000000000000000000000000000001000011
+    gas 2000000
+    build
+
 # ETH Precompiles
 
 # Call method precompiledTest.callPrec(0x0000000000000000000000000000000000000001), ECRECOVER CALL
@@ -149,7 +159,7 @@ transaction_build tx14
 
 block_build b01
     parent g00
-    transactions tx01 tx02 tx03 tx04 tx05 tx06 tx07 tx08 tx09 tx10 tx11 tx12 tx13 tx14
+    transactions tx01 tx02 tx03 tx04 tx05 tx06 tx07 tx08 tx09 tx10 tx11 tx12 tx13 tx14 tx15
     gasLimit 3000000000
     build
 
