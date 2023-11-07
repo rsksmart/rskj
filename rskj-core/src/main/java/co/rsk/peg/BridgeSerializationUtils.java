@@ -85,7 +85,7 @@ public class BridgeSerializationUtils {
             return map;
         }
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         int ntxs = rlpList.size() / 2;
 
@@ -128,7 +128,7 @@ public class BridgeSerializationUtils {
             return list;
         }
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         int nutxos = rlpList.size();
 
@@ -162,7 +162,7 @@ public class BridgeSerializationUtils {
             return set;
         }
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         int nhashes = rlpList.size();
 
@@ -196,7 +196,7 @@ public class BridgeSerializationUtils {
             return map;
         }
 
-        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         // List size must be even - key, value pairs expected in sequence
         if (rlpList.size() % 2 != 0) {
@@ -251,7 +251,7 @@ public class BridgeSerializationUtils {
         NetworkParameters networkParameters,
         FederationMemberDesserializer federationMemberDesserializer) {
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
             throw new RuntimeException(String.format("Invalid serialized Federation. Expected %d elements but got %d", FEDERATION_RLP_LIST_SIZE, rlpList.size()));
@@ -378,7 +378,7 @@ public class BridgeSerializationUtils {
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationMember
     private static FederationMember deserializeFederationMember(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
             throw new RuntimeException(String.format("Invalid serialized FederationMember. Expected %d elements but got %d", FEDERATION_MEMBER_LIST_SIZE, rlpList.size()));
@@ -428,7 +428,7 @@ public class BridgeSerializationUtils {
 
     // For the serialization format, see BridgeSerializationUtils::serializePendingFederation
     public static PendingFederation deserializePendingFederation(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         List<FederationMember> members = new ArrayList<>();
 
@@ -466,7 +466,7 @@ public class BridgeSerializationUtils {
             return new ABICallElection(authorizer);
         }
 
-        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         // List size must be even - key, value pairs expected in sequence
         if (rlpList.size() % 2 != 0) {
@@ -523,7 +523,7 @@ public class BridgeSerializationUtils {
         if (data == null || data.length == 0) {
             return null;
         }
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
         int serializedAddressesSize = rlpList.size() - 1;
 
         // serialized addresses size must be even - key, value pairs expected in sequence
@@ -547,7 +547,7 @@ public class BridgeSerializationUtils {
             return new HashMap<>();
         }
 
-        RLPList unlimitedWhitelistEntriesRlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList unlimitedWhitelistEntriesRlpList = RLP.decodeList(data);
         int unlimitedWhitelistEntriesSerializedAddressesSize = unlimitedWhitelistEntriesRlpList.size();
 
         Map<Address, UnlimitedWhiteListEntry> entries = new HashMap<>(unlimitedWhitelistEntriesSerializedAddressesSize);
@@ -623,7 +623,7 @@ public class BridgeSerializationUtils {
         }
 
         int elementsMultipleCount = hasTxHash ? 3 : 2;
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         // Must have an even number of items
         if (rlpList.size() % elementsMultipleCount != 0) {
@@ -715,7 +715,7 @@ public class BridgeSerializationUtils {
         }
 
         int elementsMultipleCount = hasTxHash ? 3 : 2;
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         // Must have an even number of items
         if (rlpList.size() % elementsMultipleCount != 0) {
@@ -780,7 +780,7 @@ public class BridgeSerializationUtils {
         if (data == null) {
             return null;
         }
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         if (rlpList.size() != 1) {
             throw new RuntimeException(String.format("Invalid serialized coinbase information, expected 1 value but got %d", rlpList.size()));
@@ -822,7 +822,7 @@ public class BridgeSerializationUtils {
             return null;
         }
 
-        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
         if (rlpList.size() != 1) {
             throw new RuntimeException(String.format("Invalid serialized script. Expected 1 element, but got %d", rlpList.size()));
         }
@@ -835,7 +835,7 @@ public class BridgeSerializationUtils {
             return null;
         }
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         if (rlpList.size() != 2) {
             throw new RuntimeException(String.format("Invalid serialized Fast Bridge Federation: expected 2 value but got %d", rlpList.size()));
@@ -872,7 +872,7 @@ public class BridgeSerializationUtils {
 
     // For the serialization format, see BridgeSerializationUtils::serializeABICallSpec
     private static ABICallSpec deserializeABICallSpec(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         if (rlpList.size() != 2) {
             throw new RuntimeException(String.format("Invalid serialized ABICallSpec. Expected 2 elements, but got %d", rlpList.size()));
@@ -903,7 +903,7 @@ public class BridgeSerializationUtils {
 
     // For the serialization format, see BridgeSerializationUtils::serializePublicKeys
     private static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         List<BtcECKey> keys = new ArrayList<>();
 
@@ -929,7 +929,7 @@ public class BridgeSerializationUtils {
 
     // For the serialization format, see BridgeSerializationUtils::serializeVoters
     private static List<RskAddress> deserializeVoters(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         List<RskAddress> addresses = new ArrayList<>();
 

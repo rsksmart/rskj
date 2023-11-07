@@ -35,8 +35,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.ethereum.util.RLP.decode2OneItem;
-
 /**
  * Created by devrandom on 2015-04-11.
  */
@@ -191,7 +189,7 @@ public class FrameCodec {
                 return null;
             }
 
-            decode2OneItem(headBuffer, 3);
+            RLP.decodeFirstElement(headBuffer, 3);
 
             contextId = -1;
             totalFrameSize = -1;

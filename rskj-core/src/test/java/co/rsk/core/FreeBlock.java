@@ -81,7 +81,7 @@ public class FreeBlock {
 
 
     private void parseRLP() {
-        ArrayList<RLPElement> params = RLP.decode2(rlpEncoded);
+        ArrayList<RLPElement> params = RLP.decodeListElements(rlpEncoded);
         RLPList block = (RLPList) params.get(0);
 
         // Parse Header

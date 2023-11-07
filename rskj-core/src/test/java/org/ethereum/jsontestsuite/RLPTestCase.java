@@ -70,7 +70,7 @@ public class RLPTestCase {
 
     public void doDecode() {
         String out = this.out.toLowerCase();
-        ArrayList<RLPElement> list = RLP.decode2(Hex.decode(out));
+        ArrayList<RLPElement> list = RLP.decodeListElements(Hex.decode(out));
         checkRLPAgainstJson(list.get(0), in);
     }
 

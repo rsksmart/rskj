@@ -77,7 +77,7 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
 
     @Override
     protected final void parse(byte[] data) {
-        RLPList dataList = (RLPList) RLP.decode2OneItem(data, 0);
+        RLPList dataList = RLP.decodeList(data);
         if (dataList.size() < 2) {
             throw new PeerDiscoveryException(MORE_DATA);
         }

@@ -309,7 +309,7 @@ class BridgeSerializationUtilsTest {
 
         byte[] serializedFederation = BridgeSerializationUtils.serializeFederation(testFederation);
 
-        RLPList serializedList = (RLPList) RLP.decode2(serializedFederation).get(0);
+        RLPList serializedList = (RLPList) RLP.decodeListElements(serializedFederation).get(0);
 
         Assertions.assertEquals(3, serializedList.size());
 
@@ -318,7 +318,7 @@ class BridgeSerializationUtilsTest {
         Assertions.assertEquals(NUM_MEMBERS, memberList.size());
 
         for (int i = 0; i < NUM_MEMBERS; i++) {
-            RLPList memberKeys = (RLPList) RLP.decode2(memberList.get(i).getRLPData()).get(0);
+            RLPList memberKeys = (RLPList) RLP.decodeListElements(memberList.get(i).getRLPData()).get(0);
             Assertions.assertEquals(EXPECTED_NUM_KEYS, memberKeys.size());
             for (int j = 0; j < EXPECTED_NUM_KEYS; j++) {
                 Assertions.assertEquals(EXPECTED_PUBLICKEY_SIZE, memberKeys.get(j).getRLPData().length);
@@ -385,12 +385,12 @@ class BridgeSerializationUtilsTest {
 
         byte[] serializedPendingFederation = BridgeSerializationUtils.serializePendingFederation(testPendingFederation);
 
-        RLPList memberList = (RLPList) RLP.decode2(serializedPendingFederation).get(0);
+        RLPList memberList = (RLPList) RLP.decodeListElements(serializedPendingFederation).get(0);
 
         Assertions.assertEquals(NUM_MEMBERS, memberList.size());
 
         for (int i = 0; i < NUM_MEMBERS; i++) {
-            RLPList memberKeys = (RLPList) RLP.decode2(memberList.get(i).getRLPData()).get(0);
+            RLPList memberKeys = (RLPList) RLP.decodeListElements(memberList.get(i).getRLPData()).get(0);
             Assertions.assertEquals(EXPECTED_NUM_KEYS, memberKeys.size());
             for (int j = 0; j < EXPECTED_NUM_KEYS; j++) {
                 Assertions.assertEquals(EXPECTED_PUBLICKEY_SIZE, memberKeys.get(j).getRLPData().length);
@@ -1090,7 +1090,7 @@ class BridgeSerializationUtilsTest {
 
         byte[] actualData = BridgeSerializationUtils.serializeScript(expectedScript);
 
-        Assertions.assertEquals(expectedScript, new Script(((RLPList) RLP.decode2(actualData).get(0)).get(0).getRLPData()));
+        Assertions.assertEquals(expectedScript, new Script(((RLPList) RLP.decodeListElements(actualData).get(0)).get(0).getRLPData()));
     }
 
     @Test

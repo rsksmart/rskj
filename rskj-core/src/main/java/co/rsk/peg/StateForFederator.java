@@ -37,7 +37,7 @@ public class StateForFederator {
     }
 
     public StateForFederator(byte[] rlpData, NetworkParameters parameters) {
-        RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
+        RLPList rlpList = RLP.decodeList(rlpData);
         byte[] encodedWaitingForSign = rlpList.get(0).getRLPData();
 
         this.rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(encodedWaitingForSign, parameters, false);

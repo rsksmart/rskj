@@ -77,7 +77,7 @@ public class HelloMessage extends P2pMessage {
     }
 
     private void parse() {
-        RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+        RLPList paramsList = RLP.decodeList(encoded);
 
         byte[] p2pVersionBytes = paramsList.get(0).getRLPData();
         this.p2pVersion = p2pVersionBytes != null ? p2pVersionBytes[0] : 0;

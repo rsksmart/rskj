@@ -103,8 +103,7 @@ public class Sibling {
     }
 
     public static Sibling create(byte[] data) {
-        ArrayList<RLPElement> params = RLP.decode2(data);
-        RLPList sibling = (RLPList) params.get(0);
+        RLPList sibling = RLP.decodeList(data);
 
         byte[] hash = sibling.get(0).getRLPData();
         RskAddress coinbase = RLP.parseRskAddress(sibling.get(1).getRLPData());

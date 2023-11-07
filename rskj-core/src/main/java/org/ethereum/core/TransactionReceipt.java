@@ -60,8 +60,7 @@ public class TransactionReceipt {
 
     public TransactionReceipt(byte[] rlp) {
 
-        ArrayList<RLPElement> params = RLP.decode2(rlp);
-        RLPList receipt = (RLPList) params.get(0);
+        RLPList receipt = RLP.decodeList(rlp);
 
         RLPItem postTxStateRLP = (RLPItem) receipt.get(0);
         RLPItem cumulativeGasRLP = (RLPItem) receipt.get(1);

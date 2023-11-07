@@ -68,7 +68,7 @@ public class RemascState {
     }
 
     public static RemascState create(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         Coin rlpRewardBalance = RLP.parseCoin(rlpList.get(0).getRLPData());
         Coin rlpBurnedBalance = RLP.parseCoin(rlpList.get(1).getRLPData());

@@ -48,7 +48,7 @@ public class AuthInitiateMessageV4 {
     static AuthInitiateMessageV4 decode(byte[] wire) {
         AuthInitiateMessageV4 message = new AuthInitiateMessageV4();
 
-        RLPList params = (RLPList) RLP.decode2OneItem(wire, 0);
+        RLPList params = RLP.decodeList(wire);
 
         byte[] signatureBytes = params.get(0).getRLPData();
         int offset = 0;

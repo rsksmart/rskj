@@ -47,7 +47,7 @@ class RLPTest {
             Assertions.assertNotNull(encoded);
             Assertions.assertEquals(1, encoded.length);
 
-            RLPElement element = RLP.decode2OneItem(encoded, 0);
+            RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
             Assertions.assertNotNull(element);
 
@@ -70,7 +70,7 @@ class RLPTest {
             Assertions.assertEquals(2, encoded.length);
             Assertions.assertEquals((byte)129, encoded[0]);
 
-            RLPElement element = RLP.decode2OneItem(encoded, 0);
+            RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
             Assertions.assertNotNull(element);
 
@@ -93,7 +93,7 @@ class RLPTest {
             Assertions.assertEquals(2, encoded.length);
             Assertions.assertEquals((byte)129, encoded[0]);
 
-            RLPElement element = RLP.decode2OneItem(encoded, 0);
+            RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
             Assertions.assertNotNull(element);
 
@@ -115,7 +115,7 @@ class RLPTest {
             Assertions.assertEquals(1 + k, encoded.length);
             Assertions.assertEquals((byte)(128 + k), encoded[0]);
 
-            RLPElement element = RLP.decode2OneItem(encoded, 0);
+            RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
             Assertions.assertNotNull(element);
 
@@ -137,7 +137,7 @@ class RLPTest {
             Assertions.assertEquals(1 + k, encoded.length);
             Assertions.assertEquals((byte)(128 + k), encoded[0]);
 
-            RLPElement element = RLP.decode2OneItem(encoded, 0);
+            RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
             Assertions.assertNotNull(element);
 
@@ -159,7 +159,7 @@ class RLPTest {
         Assertions.assertEquals((byte)(183 + 1), encoded[0]);
         Assertions.assertEquals((byte)56, encoded[1]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -180,7 +180,7 @@ class RLPTest {
         Assertions.assertEquals((byte)(183 + 1), encoded[0]);
         Assertions.assertEquals((byte)56, encoded[1]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -202,7 +202,7 @@ class RLPTest {
         Assertions.assertEquals((byte)1, encoded[1]);
         Assertions.assertEquals((byte)0, encoded[2]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -224,7 +224,7 @@ class RLPTest {
         Assertions.assertEquals((byte)1, encoded[1]);
         Assertions.assertEquals((byte)0, encoded[2]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -246,7 +246,7 @@ class RLPTest {
         Assertions.assertEquals((byte)0xff, encoded[1]);
         Assertions.assertEquals((byte)0xff, encoded[2]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -268,7 +268,7 @@ class RLPTest {
         Assertions.assertEquals((byte)0xff, encoded[1]);
         Assertions.assertEquals((byte)0xff, encoded[2]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -291,7 +291,7 @@ class RLPTest {
         Assertions.assertEquals((byte)0x00, encoded[2]);
         Assertions.assertEquals((byte)0x00, encoded[3]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -314,7 +314,7 @@ class RLPTest {
         Assertions.assertEquals((byte)0x00, encoded[2]);
         Assertions.assertEquals((byte)0x00, encoded[3]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -337,7 +337,7 @@ class RLPTest {
         Assertions.assertEquals((byte)0xff, encoded[2]);
         Assertions.assertEquals((byte)0xff, encoded[3]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -360,7 +360,7 @@ class RLPTest {
         Assertions.assertEquals((byte)0xff, encoded[2]);
         Assertions.assertEquals((byte)0xff, encoded[3]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -384,7 +384,7 @@ class RLPTest {
         Assertions.assertEquals((byte)0x00, encoded[3]);
         Assertions.assertEquals((byte)0x00, encoded[4]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -408,7 +408,7 @@ class RLPTest {
         Assertions.assertEquals((byte)0x00, encoded[3]);
         Assertions.assertEquals((byte)0x00, encoded[4]);
 
-        RLPElement element = RLP.decode2OneItem(encoded, 0);
+        RLPElement element = RLP.decodeFirstElement(encoded, 0);
 
         Assertions.assertNotNull(element);
 
@@ -437,7 +437,7 @@ class RLPTest {
         Assertions.assertEquals(1, encoded.length);
         Assertions.assertEquals((byte)192, encoded[0]);
 
-        ArrayList<RLPElement> list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decodeListElements(encoded);
 
         Assertions.assertNotNull(list);
         Assertions.assertEquals(1, list.size());
@@ -460,7 +460,7 @@ class RLPTest {
         Assertions.assertEquals(3, encoded.length);
         Assertions.assertEquals((byte)(192 + 2), encoded[0]);
 
-        ArrayList<RLPElement> list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decodeListElements(encoded);
 
         Assertions.assertNotNull(list);
         Assertions.assertEquals(1, list.size());
@@ -485,7 +485,7 @@ class RLPTest {
         Assertions.assertEquals(1 + 3 + 3, encoded.length);
         Assertions.assertEquals((byte)(192 + 3 + 3), encoded[0]);
 
-        ArrayList<RLPElement> list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decodeListElements(encoded);
 
         Assertions.assertNotNull(list);
         Assertions.assertEquals(1, list.size());
@@ -510,7 +510,7 @@ class RLPTest {
         Assertions.assertEquals(1 + 1 + 25 + 1 + 28, encoded.length);
         Assertions.assertEquals((byte)(192 + 55), encoded[0]);
 
-        ArrayList<RLPElement> list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decodeListElements(encoded);
 
         Assertions.assertNotNull(list);
         Assertions.assertEquals(1, list.size());
@@ -536,7 +536,7 @@ class RLPTest {
         Assertions.assertEquals((byte)(247 + 1), encoded[0]);
         Assertions.assertEquals((byte)(56), encoded[1]);
 
-        ArrayList<RLPElement> list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decodeListElements(encoded);
 
         Assertions.assertNotNull(list);
         Assertions.assertEquals(1, list.size());
@@ -562,7 +562,7 @@ class RLPTest {
         Assertions.assertEquals((byte)(247 + 1), encoded[0]);
         Assertions.assertEquals((byte)(255), encoded[1]);
 
-        ArrayList<RLPElement> list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decodeListElements(encoded);
 
         Assertions.assertNotNull(list);
         Assertions.assertEquals(1, list.size());
@@ -589,7 +589,7 @@ class RLPTest {
         Assertions.assertEquals((byte)(1), encoded[1]);
         Assertions.assertEquals((byte)(0), encoded[2]);
 
-        ArrayList<RLPElement> list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decodeListElements(encoded);
 
         Assertions.assertNotNull(list);
         Assertions.assertEquals(1, list.size());
@@ -616,7 +616,7 @@ class RLPTest {
         Assertions.assertEquals((byte)(255), encoded[1]);
         Assertions.assertEquals((byte)(255), encoded[2]);
 
-        ArrayList<RLPElement> list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decodeListElements(encoded);
 
         Assertions.assertNotNull(list);
         Assertions.assertEquals(1, list.size());
@@ -644,7 +644,7 @@ class RLPTest {
         Assertions.assertEquals((byte)(0), encoded[2]);
         Assertions.assertEquals((byte)(0), encoded[3]);
 
-        ArrayList<RLPElement> list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decodeListElements(encoded);
 
         Assertions.assertNotNull(list);
         Assertions.assertEquals(1, list.size());
@@ -662,7 +662,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)0x81 };
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -675,7 +675,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)0x81 };
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -688,7 +688,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 1), 0x01 };
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -701,7 +701,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 1), 0x01 };
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -716,7 +716,7 @@ class RLPTest {
         encoded[1] = (byte)0xff;
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -731,7 +731,7 @@ class RLPTest {
         encoded[1] = (byte)0xff;
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -744,7 +744,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01, 0x00 };
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -757,7 +757,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01, 0x00 };
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -773,7 +773,7 @@ class RLPTest {
         encoded[2] = (byte)0xff;
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -789,7 +789,7 @@ class RLPTest {
         encoded[2] = (byte)0xff;
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -806,7 +806,7 @@ class RLPTest {
         encoded[3] = (byte)255;
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -823,7 +823,7 @@ class RLPTest {
         encoded[3] = (byte)255;
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -836,7 +836,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x00, 0x00, 0x00 };
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -849,7 +849,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x00, 0x00, 0x00 };
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -862,7 +862,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 1) };
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -875,7 +875,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 1) };
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -888,7 +888,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01 };
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -901,7 +901,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01 };
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -914,7 +914,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 3), 0x01, 0x02 };
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -927,7 +927,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 3), 0x01, 0x02 };
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -940,7 +940,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x02, 0x03 };
 
         try {
-            RLP.decode2OneItem(encoded, 0);
+            RLP.decodeFirstElement(encoded, 0);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -953,7 +953,7 @@ class RLPTest {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x02, 0x03 };
 
         try {
-            RLP.decode2(encoded);
+            RLP.decodeListElements(encoded);
             Assertions.fail();
         }
         catch (RLPException ex) {
@@ -1017,7 +1017,7 @@ class RLPTest {
     void encodeDecodeIntegerInList() {
         for (int k = 1; k < 2048; k++) {
             byte[] bytes = RLP.encodeList(RLP.encodeInt(k), new byte[0]);
-            byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+            byte[] bytes2 = ((RLPList)(RLP.decodeListElements(bytes).get(0))).get(0).getRLPData();
             Assertions.assertEquals(k, RLP.decodeInt(bytes2, 0));
         }
     }
@@ -1026,7 +1026,7 @@ class RLPTest {
     void encodeDecodeIntegerInListUsingBigInteger() {
         for (int k = 1; k < 2048; k++) {
             byte[] bytes = RLP.encodeList(RLP.encodeInt(k), new byte[0]);
-            byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+            byte[] bytes2 = ((RLPList)(RLP.decodeListElements(bytes).get(0))).get(0).getRLPData();
             Assertions.assertEquals(k, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
         }
     }
@@ -1034,7 +1034,7 @@ class RLPTest {
     @Test
     void encodeDecodeInteger0InList() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(0));
-        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        byte[] bytes2 = ((RLPList)(RLP.decodeListElements(bytes).get(0))).get(0).getRLPData();
         // known issue, the byte array is null
         Assertions.assertNull(bytes2);
     }
@@ -1043,14 +1043,14 @@ class RLPTest {
     @Disabled("Known issue, RLP.decodeInt should not be used in this case, to be reviewed")
     void encodeDecodeInteger128InList() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(128));
-        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        byte[] bytes2 = ((RLPList)(RLP.decodeListElements(bytes).get(0))).get(0).getRLPData();
         Assertions.assertEquals(128, RLP.decodeInt(bytes2, 0));
     }
 
     @Test
     void encodeDecodeInteger128InListUsingBigInteger() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(128));
-        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        byte[] bytes2 = ((RLPList)(RLP.decodeListElements(bytes).get(0))).get(0).getRLPData();
         Assertions.assertEquals(128, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
     }
 
@@ -1058,14 +1058,14 @@ class RLPTest {
     @Disabled("Known issue, RLP.decodeInt should not be used in this case, to be reviewed")
     void encodeDecodeInteger238InList() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
-        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        byte[] bytes2 = ((RLPList)(RLP.decodeListElements(bytes).get(0))).get(0).getRLPData();
         Assertions.assertEquals(238, RLP.decodeInt(bytes2, 0));
     }
 
     @Test
     void encodeDecodeInteger238InListUsingBigInteger() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
-        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        byte[] bytes2 = ((RLPList)(RLP.decodeListElements(bytes).get(0))).get(0).getRLPData();
         Assertions.assertEquals(238, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
     }
 }

@@ -41,7 +41,7 @@ public class AuthResponseMessageV4 {
 
         AuthResponseMessageV4 message = new AuthResponseMessageV4();
 
-        RLPList params = (RLPList) RLP.decode2OneItem(wire, 0);
+        RLPList params = RLP.decodeList(wire);
 
         byte[] pubKeyBytes = params.get(0).getRLPData();
 

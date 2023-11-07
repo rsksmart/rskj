@@ -42,7 +42,7 @@ public abstract class Message {
 
     @VisibleForTesting
     static Message create(BlockFactory blockFactory, byte[] encoded) {
-        return create(blockFactory, (RLPList) RLP.decode2(encoded).get(0));
+        return create(blockFactory, RLP.decodeList(encoded));
     }
 
     public static Message create(BlockFactory blockFactory, RLPList paramsList) {
@@ -51,7 +51,7 @@ public abstract class Message {
         if (body != null) {
             int type = paramsList.get(0).getRLPData()[0];
             MessageType messageType = MessageType.valueOfType(type);
-            RLPList list = (RLPList) RLP.decode2(body).get(0);
+            RLPList list = RLP.decodeList(body);
             return messageType.createMessage(blockFactory, list);
         }
 

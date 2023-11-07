@@ -57,7 +57,7 @@ public class AccountState {
     public AccountState(byte[] rlpData) {
         this.rlpEncoded = rlpData;
 
-        RLPList items = (RLPList) RLP.decode2(rlpEncoded).get(0);
+        RLPList items = RLP.decodeList(rlpEncoded);
         this.nonce = items.get(0).getRLPData() == null ? BigInteger.ZERO
                 : new BigInteger(1, items.get(0).getRLPData());
         this.balance = RLP.parseSignedCoinNonNullZero(items.get(1).getRLPData());

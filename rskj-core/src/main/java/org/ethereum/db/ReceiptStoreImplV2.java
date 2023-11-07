@@ -47,7 +47,7 @@ public class ReceiptStoreImplV2 extends ReceiptStoreImpl {
         RLPList txList = null;
         int txListSize = 0;
         if (txInfoBytes != null && txInfoBytes.length > 0) {
-            txList = (RLPList) RLP.decode2(txInfoBytes).get(0);
+            txList = RLP.decodeList(txInfoBytes);
             txListSize = txList.size();
         }
 
@@ -129,7 +129,7 @@ public class ReceiptStoreImplV2 extends ReceiptStoreImpl {
             return Collections.emptyList();
         }
 
-        RLPList txHashList = (RLPList) RLP.decode2(txsBytes).get(0);
+        RLPList txHashList = RLP.decodeList(txsBytes);
         if (txHashList.size() == 0 || txHashList.get(0) instanceof RLPList) {
             return Collections.emptyList();
         }

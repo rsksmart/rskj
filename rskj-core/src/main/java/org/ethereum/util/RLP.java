@@ -158,11 +158,11 @@ public class RLP {
     }
 
     public static BigInteger decodeBigInteger(byte[] data, int index) {
-        RLPElement element = RLP.decodeFirstElement(data, index);
-
-        if (element == null) {
+        if (data == null) {
             return null;
         }
+
+        RLPElement element = RLP.decodeElement(data, index).getLeft();
 
         byte[] bytes = element.getRLPData();
 
@@ -249,15 +249,24 @@ public class RLP {
         return elements;
     }
 
-    public static RLPElement decodeFirstElement(@CheckForNull byte[] msgData, int position) {
-        if (msgData == null) {
-            return null;
-        }
+    @Nonnull
+    public static ArrayList<RLPElement> decodeListElements(@CheckForNull byte[] msgData) {
+        ArrayList<RLPElement> elements = new ArrayList<>();
 
-        return decodeElement(msgData, position).getKey();
+        if (msgData == null) {
+            return elements;
+        }
+        int tlength = msgData.length;
+        int position = 0;
+        while (position < tlength) {
+            Pair<RLPElement, Integer> next = decodeElement(msgData, position);
+            elements.add(next.getKey());
+            position = next.getValue();
+        }
+        return elements;
     }
 
-    private static Pair<RLPElement, Integer> decodeElement(byte[] msgData, int position) { // NOSONAR
+    private static Pair<RLPElement, Integer> decodeElement(byte[] msgData, int position) {
         int b0 = msgData[position] & 0xff;
 
         if (b0 >= 192) {
@@ -348,26 +357,18 @@ public class RLP {
      * Parse and verify that the passed data has just one list encoded as RLP
      */
     public static RLPList decodeList(byte[] msgData) {
-        List<RLPElement> decoded = RLP.decode2(msgData);
-        if (decoded.size() != 1) {
-            throw new IllegalArgumentException(String.format("Expected one RLP item but got %d", decoded.size()));
-        }
-
-        RLPElement element = decoded.get(0);
-        if (!(element instanceof RLPList)) {
-            throw new IllegalArgumentException("The decoded element wasn't a list");
-        }
-
+        if (msgData == null) throw new IllegalArgumentException("The decoded element wasn't a list");
+        RLPElement element = decodeElement(msgData, 0).getLeft();
+        if (!(element instanceof RLPList)) throw new IllegalArgumentException("The decoded element wasn't a list");
         return (RLPList) element;
     }
 
-    @Nullable
-    public static RLPElement decode2OneItem(@CheckForNull byte[] msgData, int startPos) {
+    public static RLPElement decodeFirstElement(@CheckForNull byte[] msgData, int position) {
         if (msgData == null) {
             return null;
         }
 
-        return RLP.decodeFirstElement(msgData, startPos);
+        return decodeElement(msgData, position).getKey();
     }
 
     @Nonnull

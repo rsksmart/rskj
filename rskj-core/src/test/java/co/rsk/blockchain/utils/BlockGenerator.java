@@ -489,7 +489,7 @@ public class BlockGenerator {
     }
 
     private static byte[] removeLastElement(byte[] rlpEncoded) {
-        ArrayList<RLPElement> params = RLP.decode2(rlpEncoded);
+        ArrayList<RLPElement> params = RLP.decodeListElements(rlpEncoded);
         RLPList block = (RLPList) params.get(0);
         RLPList header = (RLPList) block.get(0);
         if (header.size() < 20) {
