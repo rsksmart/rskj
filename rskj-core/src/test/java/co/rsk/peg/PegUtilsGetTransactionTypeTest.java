@@ -1020,7 +1020,8 @@ class PegUtilsGetTransactionTypeTest {
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, createBaseInputScriptThatSpendsFromTheFederation(activeFederation));
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(activeFederation);
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, inputScript);
         btcTransaction.addOutput(Coin.COIN, userAddress);
 
         FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
