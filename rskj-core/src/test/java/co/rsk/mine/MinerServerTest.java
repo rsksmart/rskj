@@ -50,6 +50,7 @@ import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.ethereum.util.RskTestFactory;
+import org.ethereum.util.RLPTestUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -608,7 +609,7 @@ public abstract class MinerServerTest {
 
         byte[] firstItem = decodedExtraData.get(0).getRLPData();
         assertNotNull(firstItem);
-        assertEquals(1, (RLP.decodeInt(firstItem,0)));
+        assertEquals(1, (RLPTestUtil.decodeInt(firstItem,0)));
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
@@ -638,7 +639,7 @@ public abstract class MinerServerTest {
 
         byte[] firstItem = decodedExtraData.get(0).getRLPData();
         assertNotNull(firstItem);
-        assertEquals(1, (RLP.decodeInt(firstItem,0)));
+        assertEquals(1, (RLPTestUtil.decodeInt(firstItem,0)));
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
@@ -673,7 +674,7 @@ public abstract class MinerServerTest {
 
         byte[] firstItem = decodedExtraData.get(0).getRLPData();
         assertNotNull(firstItem);
-        assertEquals(1, (RLP.decodeInt(firstItem,0)));
+        assertEquals(1, (RLPTestUtil.decodeInt(firstItem,0)));
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);

@@ -45,4 +45,26 @@ public class RLPTestUtil {
         }
         throw new RuntimeException("Unsupported type: Only accepting String, Integer and BigInteger for now");
     }
+
+    private static final int OFFSET_SHORT_ITEM = 0x80;
+    private static final int OFFSET_LONG_ITEM = 0xb7;
+
+    public static int decodeInt(byte[] data, int index) {
+        int b0 = data[index] & 0xFF;
+
+        if (b0 < OFFSET_SHORT_ITEM) return data[index];
+
+        if (b0 < OFFSET_LONG_ITEM) {
+            int value = 0;
+            byte length = (byte) (data[index] - OFFSET_SHORT_ITEM);
+            byte pow = (byte) (length - 1);
+            for (int i = 1; i <= length; ++i) {
+                value += (data[index + i] & 0xFF) << (8 * pow);
+                pow--;
+            }
+            return value;
+        }
+
+        throw new RuntimeException("wrong decode attempt");
+    }
 }

@@ -1003,13 +1003,13 @@ class RLPTest {
     @Test
     void encodeDecodeInteger() {
         for (int k = 0; k < 2048; k++) {
-            Assertions.assertEquals(k, RLP.decodeInt(RLP.encodeInt(k), 0));
+            Assertions.assertEquals(k, RLPTestUtil.decodeInt(RLP.encodeInt(k), 0));
         }
     }
 
     @Test
     void encodeDecodeInteger128() {
-        Assertions.assertEquals(128, RLP.decodeInt(RLP.encodeInt(128), 0));
+        Assertions.assertEquals(128, RLPTestUtil.decodeInt(RLP.encodeInt(128), 0));
     }
 
     @Test
@@ -1018,7 +1018,7 @@ class RLPTest {
         for (int k = 1; k < 2048; k++) {
             byte[] bytes = RLP.encodeList(RLP.encodeInt(k), new byte[0]);
             byte[] bytes2 = ((RLPList)(RLP.decodeListElements(bytes).get(0))).get(0).getRLPData();
-            Assertions.assertEquals(k, RLP.decodeInt(bytes2, 0));
+            Assertions.assertEquals(k, RLPTestUtil.decodeInt(bytes2, 0));
         }
     }
 
@@ -1044,7 +1044,7 @@ class RLPTest {
     void encodeDecodeInteger128InList() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(128));
         byte[] bytes2 = ((RLPList)(RLP.decodeListElements(bytes).get(0))).get(0).getRLPData();
-        Assertions.assertEquals(128, RLP.decodeInt(bytes2, 0));
+        Assertions.assertEquals(128, RLPTestUtil.decodeInt(bytes2, 0));
     }
 
     @Test
@@ -1059,7 +1059,7 @@ class RLPTest {
     void encodeDecodeInteger238InList() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
         byte[] bytes2 = ((RLPList)(RLP.decodeListElements(bytes).get(0))).get(0).getRLPData();
-        Assertions.assertEquals(238, RLP.decodeInt(bytes2, 0));
+        Assertions.assertEquals(238, RLPTestUtil.decodeInt(bytes2, 0));
     }
 
     @Test

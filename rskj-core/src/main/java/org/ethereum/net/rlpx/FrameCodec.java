@@ -22,13 +22,16 @@ package org.ethereum.net.rlpx;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -210,9 +213,12 @@ public class FrameCodec {
         int frameSize = buffer.length - macSize;
         ingressMac.update(buffer, 0, frameSize);
         dec.processBytes(buffer, 0, frameSize, buffer, 0);
+
         int pos = 0;
-        long type = RLP.decodeInt(buffer, pos); // FIXME long
-        pos = RLP.getNextElementIndex(buffer, pos);
+        Pair<RLPElement, Integer> typeRead = RLP.decodeFirstElementReading(buffer, pos);
+        int type = ByteUtil.byteArrayToInt(typeRead.getLeft().getRLPData());
+        pos = typeRead.getRight();
+
         InputStream payload = new ByteArrayInputStream(buffer, pos, totalBodySize - pos);
         int size = totalBodySize - pos;
         byte[] macBuffer = new byte[ingressMac.getDigestSize()];

@@ -128,25 +128,6 @@ public class RLP {
      *                      DECODING                        *
      * ******************************************************/
 
-    public static int decodeInt(byte[] data, int index) {
-        int b0 = data[index] & 0xFF;
-
-        if (b0 < OFFSET_SHORT_ITEM) return data[index];
-
-        if (b0 < OFFSET_LONG_ITEM) {
-            int value = 0;
-            byte length = (byte) (data[index] - OFFSET_SHORT_ITEM);
-            byte pow = (byte) (length - 1);
-            for (int i = 1; i <= length; ++i) {
-                value += (data[index + i] & 0xFF) << (8 * pow);
-                pow--;
-            }
-            return value;
-        }
-
-        throw new RuntimeException("wrong decode attempt");
-    }
-
     public static BigInteger decodeBigInteger(byte[] data, int index) {
         if (data == null) {
             return null;
@@ -163,55 +144,6 @@ public class RLP {
         return BigIntegers.fromUnsignedByteArray(bytes);
     }
 
-    public static int getNextElementIndex(byte[] payload, int pos) {
-
-        if (pos >= payload.length) {
-            return -1;
-        }
-
-        if ((payload[pos] & 0xFF) >= OFFSET_LONG_LIST) {
-            byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_LIST);
-            int length = calcLength(lengthOfLength, payload, pos);
-            return pos + lengthOfLength + length + 1;
-        }
-        if ((payload[pos] & 0xFF) >= OFFSET_SHORT_LIST
-                && (payload[pos] & 0xFF) < OFFSET_LONG_LIST) {
-
-            byte length = (byte) ((payload[pos] & 0xFF) - OFFSET_SHORT_LIST);
-            return pos + 1 + length;
-        }
-        if ((payload[pos] & 0xFF) >= OFFSET_LONG_ITEM
-                && (payload[pos] & 0xFF) < OFFSET_SHORT_LIST) {
-
-            byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_ITEM);
-            int length = calcLength(lengthOfLength, payload, pos);
-            return pos + lengthOfLength + length + 1;
-        }
-        if ((payload[pos] & 0xFF) > OFFSET_SHORT_ITEM
-                && (payload[pos] & 0xFF) < OFFSET_LONG_ITEM) {
-
-            byte length = (byte) ((payload[pos] & 0xFF) - OFFSET_SHORT_ITEM);
-            return pos + 1 + length;
-        }
-        if ((payload[pos] & 0xFF) == OFFSET_SHORT_ITEM) {
-            return pos + 1;
-        }
-        if ((payload[pos] & 0xFF) < OFFSET_SHORT_ITEM) {
-            return pos + 1;
-        }
-        return -1;
-    }
-
-    private static int calcLength(int lengthOfLength, byte[] msgData, int pos) {
-        byte pow = (byte) (lengthOfLength - 1);
-        int length = 0;
-        for (int i = 1; i <= lengthOfLength; ++i) {
-            length += (msgData[pos + i] & 0xFF) << (8 * pow);
-            pow--;
-        }
-        return length;
-    }
-
     /**
      * Parse wire byte[] message into RLP elements
      *
@@ -220,93 +152,49 @@ public class RLP {
      * - outcome of recursive RLP structure
      */
     @Nonnull
-    public static ArrayList<RLPElement> decode2(@CheckForNull byte[] msgData) {
-        ArrayList<RLPElement> elements = new ArrayList<>();
-
-        if (msgData == null) {
-            return elements;
-        }
-
-        int tlength = msgData.length;
-        int position = 0;
-
-        while (position < tlength) {
-            Pair<RLPElement, Integer> next = decodeElement(msgData, position);
-            elements.add(next.getKey());
-            position = next.getValue();
-        }
-
-        return elements;
-    }
-
-    @Nonnull
     public static ArrayList<RLPElement> decodeListElements(@CheckForNull byte[] msgData) {
         ArrayList<RLPElement> elements = new ArrayList<>();
 
         if (msgData == null) {
             return elements;
         }
+
         int tlength = msgData.length;
         int position = 0;
+
         while (position < tlength) {
             Pair<RLPElement, Integer> next = decodeElement(msgData, position);
             elements.add(next.getKey());
             position = next.getValue();
         }
+
         return elements;
     }
 
     private static Pair<RLPElement, Integer> decodeElement(byte[] msgData, int position) {
         int b0 = msgData[position] & 0xff;
 
-        if (b0 >= OFFSET_SHORT_LIST) {
-            int length;
-            int offset;
-
-            if (b0 <= OFFSET_LONG_LIST) {
-                length = b0 - OFFSET_SHORT_LIST + 1;
-                offset = 1;
-            }
-            else {
-                int nbytes = b0 - OFFSET_LONG_LIST;
-                length = 1 + nbytes + bytesToLength(msgData, position + 1, nbytes);
-                offset = 1 + nbytes;
-            }
-
-            if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
-                throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
-            }
-
-            if (position + length > msgData.length) {
-                throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
-            }
-
-            byte[] bytes = Arrays.copyOfRange(msgData, position, position + length);
-            RLPList list = new RLPList(bytes, offset);
-
-            return Pair.of(list, position + length);
+        if (b0 < OFFSET_SHORT_ITEM) {
+            return Pair.of(new RLPItem(new byte[]{ msgData[position] }), position + 1);
         }
 
         if (b0 == OFFSET_SHORT_ITEM) {
             return Pair.of(new RLPItem(ByteUtil.EMPTY_BYTE_ARRAY), position + 1);
         }
 
-        if (b0 < OFFSET_SHORT_ITEM) {
-            byte[] data = new byte[1];
-            data[0] = msgData[position];
-            return Pair.of(new RLPItem(data), position + 1);
+        if (b0 >= OFFSET_SHORT_LIST) {
+            return decodeListElement(msgData, position, b0);
         }
 
         int length;
         int offset;
 
-        if (b0 > (OFFSET_LONG_ITEM)) {
-            offset = b0 - (OFFSET_LONG_ITEM) + 1;
-            length = bytesToLength(msgData, position + 1, offset - 1);
-        }
-        else {
-            length = b0 & 0x7f;
+        if (b0 <= OFFSET_LONG_ITEM) {
             offset = 1;
+            length = b0 & 0x7f;
+        } else {
+            offset = b0 - OFFSET_LONG_ITEM + 1;
+            length = bytesToLength(msgData, position + 1, offset - 1);
         }
 
         if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
@@ -322,6 +210,28 @@ public class RLP {
         System.arraycopy(msgData, position + offset, decoded, 0, length);
 
         return Pair.of(new RLPItem(decoded), position + offset + length);
+    }
+
+    private static Pair<RLPElement, Integer> decodeListElement(byte[] msgData, int position, int b0) {
+        int length;
+        int offset;
+
+        if (b0 <= OFFSET_LONG_LIST) {
+            offset = 1;
+            length = b0 - OFFSET_SHORT_LIST + 1;
+        } else {
+            offset = b0 - OFFSET_LONG_LIST + 1;
+            length = offset + bytesToLength(msgData, position + 1, offset - 1);
+        }
+
+        if (position + length > msgData.length) {
+            throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
+        }
+
+        byte[] bytes = Arrays.copyOfRange(msgData, position, position + length);
+        RLPList list = new RLPList(bytes, offset);
+
+        return Pair.of(list, position + length);
     }
 
     private static int bytesToLength(byte[] bytes, int position, int size) {
@@ -348,9 +258,18 @@ public class RLP {
      */
     public static RLPList decodeList(byte[] msgData) {
         if (msgData == null) throw new IllegalArgumentException("The decoded element wasn't a list");
-        RLPElement element = decodeElement(msgData, 0).getLeft();
-        if (!(element instanceof RLPList)) throw new IllegalArgumentException("The decoded element wasn't a list");
-        return (RLPList) element;
+        int b0 = msgData[0] & 0xff;
+        if (b0 < OFFSET_SHORT_LIST) throw new RLPException("The decoded element wasn't a list");
+
+        return (RLPList) decodeListElement(msgData, 0, b0).getLeft();
+    }
+
+    public static Pair<RLPElement, Integer> decodeFirstElementReading(@CheckForNull byte[] msgData, int position) {
+        if (msgData == null) {
+            return null;
+        }
+
+        return decodeElement(msgData, position);
     }
 
     public static RLPElement decodeFirstElement(@CheckForNull byte[] msgData, int position) {
