@@ -1058,7 +1058,8 @@ class PegUtilsGetTransactionTypeTest {
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
-        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(activeFederation));
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(activeFederation);
+        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -1085,7 +1086,8 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         for (int i = 0; i < 50; i++) {
-            btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, createBaseInputScriptThatSpendsFromTheFederation(activeFederation));
+            Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(activeFederation);
+            btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, inputScript);
         }
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
@@ -1239,7 +1241,8 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, userAddress);
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
-        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(activeFederation));
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(activeFederation);
+        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -1268,7 +1271,8 @@ class PegUtilsGetTransactionTypeTest {
 
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(retiringFederation);
+        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -1304,7 +1308,8 @@ class PegUtilsGetTransactionTypeTest {
 
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(retiringFederation);
+        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -1325,10 +1330,11 @@ class PegUtilsGetTransactionTypeTest {
     void test_migration_from_retired_fed() {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, createBaseInputScriptThatSpendsFromTheFederation(retiredFed));
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(retiredFed);
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, inputScript);
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiredFed));
+        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -1444,7 +1450,8 @@ class PegUtilsGetTransactionTypeTest {
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(retiringFederation);
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, inputScript);
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
@@ -1826,7 +1833,8 @@ class PegUtilsGetTransactionTypeTest {
         fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
 
         BtcTransaction migrationTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(retiringFederation);
+        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(inputScript);
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
@@ -1895,14 +1903,16 @@ class PegUtilsGetTransactionTypeTest {
         fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
 
         BtcTransaction migrationTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(retiringFederation);
+        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(inputScript);
         migrationTx.addOutput(Coin.COIN.multiply(10), activeFederation.getAddress());
 
         for (int i = 0; i < 9; i++) {
             BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
             btcTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
             btcTx.addOutput(Coin.COIN, retiringFederation.getAddress());
-            migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+            inputScript = createBaseInputScriptThatSpendsFromTheFederation(retiringFederation);
+            migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(inputScript);
         }
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
@@ -1971,14 +1981,16 @@ class PegUtilsGetTransactionTypeTest {
         fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
 
         BtcTransaction migrationTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(retiringFederation);
+        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(inputScript);
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         for (int i = 0; i < 9; i++) {
             BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
             btcTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
             btcTx.addOutput(Coin.COIN, retiringFederation.getAddress());
-            migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+            inputScript = createBaseInputScriptThatSpendsFromTheFederation(retiringFederation);
+            migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(inputScript);
             migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
         }
 

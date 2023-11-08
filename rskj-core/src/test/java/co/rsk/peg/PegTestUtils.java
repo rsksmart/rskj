@@ -105,10 +105,6 @@ public final class PegTestUtils {
         return scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
     }
 
-    public static Script createBaseRedeemScriptThatSpendsFromTheFederation(Federation federation) {
-        return federation.getRedeemScript();
-    }
-
     public static Script createOpReturnScriptForRsk(
         int protocolVersion,
         RskAddress rskDestinationAddress,
