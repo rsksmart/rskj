@@ -7,23 +7,21 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
-import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,7 +61,7 @@ class PegUtilsGetTransactionTypeTest {
     private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
 
-    protected int blockNumberToStartUsingPegoutIndex;
+    private int blockNumberToStartUsingPegoutIndex;
 
     @BeforeEach
     void init() {
@@ -100,7 +98,6 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 false,
                 false,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
@@ -108,7 +105,6 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 true,
                 false,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
@@ -116,14 +112,12 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 true,
                 true,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
                 fingerrootActivations,
                 false,
                 false,
-                true,
                 true,
                 PegTxType.PEGIN
             ),
@@ -134,7 +128,6 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 false,
                 false,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
@@ -142,7 +135,6 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 true,
                 false,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
@@ -150,14 +142,12 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 true,
                 true,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
                 tbdActivations,
                 false,
                 false,
-                true,
                 true,
                 PegTxType.PEGIN
             ),
@@ -167,20 +157,10 @@ class PegUtilsGetTransactionTypeTest {
                 true,
                 false,
                 false,
-                false,
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
                 tbdActivations,
-                true,
-                true,
-                false,
-                false,
-                PegTxType.UNKNOWN
-            ),
-            Arguments.of(
-                tbdActivations,
-                true,
                 true,
                 true,
                 false,
@@ -189,8 +169,14 @@ class PegUtilsGetTransactionTypeTest {
             Arguments.of(
                 tbdActivations,
                 true,
-                false,
                 true,
+                true,
+                PegTxType.UNKNOWN
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                false,
                 true,
                 PegTxType.UNKNOWN
             )
@@ -204,11 +190,12 @@ class PegUtilsGetTransactionTypeTest {
         boolean shouldUsePegoutTxIndex,
         boolean shouldSendAmountBelowMinimum,
         boolean existsRetiringFederation,
-        boolean existsRetiredFederation,
         PegTxType expectedPegTxType
     ) {
-        // Arrange
-        if (existsRetiredFederation){
+
+        if (existsRetiringFederation){
+            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiringFederation.getP2SHScript()));
+        } else {
             when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
         }
 
@@ -235,31 +222,6 @@ class PegUtilsGetTransactionTypeTest {
     }
 
     // Pegin tests
-    @Test
-    void test_pegin_below_minimum_active_fed() {
-        // Arrange
-        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
-        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addOutput(minimumPeginTxValue.minus(Coin.SATOSHI), activeFederation.getAddress());
-
-        // Act
-        PegTxType pegTxType = PegUtils.getTransactionType(
-            activations,
-            provider,
-            bridgeMainnetConstants,
-            activeFederation,
-            null,
-            btcTransaction,
-            blockNumberToStartUsingPegoutIndex
-        );
-
-        // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
-    }
-
     private static Stream<Arguments> pegin_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
         ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
@@ -282,24 +244,22 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void test_multisig_pegin_active_fed(
+    void pegin_v1_active_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
-        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        Address multisigAddress = BitcoinTestUtils.createP2SHMultisigAddress(
-            btcMainnetParams,
-            BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"key1", "key2", "key3"}, true
-        ));
+        int protocolVersion = 1;
+        BtcECKey key = new BtcECKey();
+        RskAddress rskDestinationAddress = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
+        Address btcRefundAddress = key.toAddress(btcMainnetParams);
 
-        btcTransaction.addInput(
-            BitcoinTestUtils.createHash(1),
-            FIRST_OUTPUT_INDEX,
-            ScriptBuilder.createOutputScript(multisigAddress)
-        );
+        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(protocolVersion, rskDestinationAddress, Optional.of(btcRefundAddress));
+
+        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
+        btcTransaction.addOutput(Coin.ZERO, opReturnScript);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -318,7 +278,43 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void test_pegin_active_fed_with_bech32_output(
+    void multisig_pegin_active_fed(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUsePegoutTxIndex
+    ) {
+        // Arrange
+        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
+
+        Federation unknownFed = createFederation(bridgeMainnetConstants, signers);
+
+        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+        btcTransaction.addInput(
+            BitcoinTestUtils.createHash(1),
+            FIRST_OUTPUT_INDEX,
+            ScriptBuilder.createOutputScript(unknownFed.getAddress())
+        );
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
+
+        FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+
+        // Act
+        PegTxType pegTxType = PegUtils.getTransactionType(
+            activations,
+            provider,
+            bridgeMainnetConstants,
+            activeFederation,
+            null,
+            btcTransaction,
+            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+        );
+
+        // Assert
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+    }
+
+    @ParameterizedTest
+    @MethodSource("pegin_args")
+    void pegin_active_fed_with_bech32_output(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -355,7 +351,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void test_pegin_active_fed(
+    void pegin_active_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -381,7 +377,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void test_pegin_output_to_active_fed_and_other_addresses(
+    void pegin_output_to_active_fed_and_other_addresses(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -410,7 +406,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void test_pegin_multiple_outputs_to_active_fed(
+    void pegin_multiple_outputs_to_active_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -462,7 +458,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_multiple_outputs_to_active_fed_sum_amount_equal_to_minimum_pegin_args")
-    void test_pegin_multiple_outputs_to_active_fed_sum_amount_equal_to_minimum_pegin(
+    void pegin_multiple_outputs_to_active_fed_sum_amount_equal_to_minimum_pegin(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         PegTxType expectedTxType
@@ -495,7 +491,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void test_pegin_output_to_retiring_fed_and_other_addresses(
+    void pegin_output_to_retiring_fed_and_other_addresses(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -523,7 +519,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void test_pegin_retiring_fed(
+    void pegin_retiring_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -572,7 +568,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_retired_args")
-    void test_pegin_retired_fed(
+    void pegin_retired_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
@@ -601,7 +597,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void test_pegin_multiple_outputs_to_retiring_fed(
+    void pegin_multiple_outputs_to_retiring_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -630,7 +626,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void test_pegin_outputs_to_active_and_retiring_fed(
+    void pegin_outputs_to_active_and_retiring_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -658,7 +654,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void test_pegin_outputs_to_active_and_retiring_fed_and_other_address(
+    void pegin_outputs_to_active_and_retiring_fed_and_other_address(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -687,6 +683,30 @@ class PegUtilsGetTransactionTypeTest {
     }
 
     // Pegins sending equal to, below and above the minimum amount
+
+    @Test
+    void pegin_below_minimum_active_fed() {
+        // Arrange
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
+        btcTransaction.addOutput(minimumPeginTxValue.minus(Coin.SATOSHI), activeFederation.getAddress());
+
+        // Act
+        PegTxType pegTxType = PegUtils.getTransactionType(
+            activations,
+            provider,
+            bridgeMainnetConstants,
+            activeFederation,
+            null,
+            btcTransaction,
+            blockNumberToStartUsingPegoutIndex
+        );
+
+        // Assert
+        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+    }
+
     @Test
     void anyAddressToAnyAddress_pegin_before_RSIP379() {
         // Arrange
@@ -1016,7 +1036,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegout_args")
-    void test_pegout_no_change_output(
+    void pegout_no_change_output(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
@@ -1055,7 +1075,7 @@ class PegUtilsGetTransactionTypeTest {
     }
 
     @Test
-    void test_pegout_no_change_output_sighash_no_exists_in_provider() {
+    void pegout_no_change_output_sighash_no_exists_in_provider() {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -1083,7 +1103,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegout_args")
-    void test_many_outputs_and_inputs_pegout(
+    void many_outputs_and_inputs_pegout(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
@@ -1141,7 +1161,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegout_args")
-    void test_many_outputs_and_one_input_pegout(
+    void many_outputs_and_one_input_pegout(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
@@ -1197,7 +1217,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegout_args")
-    void test_one_outputs_and_many_input_pegout(
+    void one_outputs_and_many_input_pegout(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
@@ -1239,7 +1259,7 @@ class PegUtilsGetTransactionTypeTest {
     }
 
     @Test
-    void test_standard_pegout_sighash_no_exists_in_provider() {
+    void standard_pegout_sighash_no_exists_in_provider() {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -1268,7 +1288,7 @@ class PegUtilsGetTransactionTypeTest {
 
     // Migration tests
     @Test
-    void test_migration() {
+    void migration() {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash fundTxHash = BitcoinTestUtils.createHash(1);
@@ -1306,7 +1326,7 @@ class PegUtilsGetTransactionTypeTest {
     }
 
     @Test
-    void test_migration_sighash_no_exists_in_provider() {
+    void migration_sighash_no_exists_in_provider() {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash fundTxHash = BitcoinTestUtils.createHash(1);
@@ -1336,7 +1356,7 @@ class PegUtilsGetTransactionTypeTest {
     }
 
     @Test
-    void test_migration_from_retired_fed() {
+    void migration_from_retired_fed() {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, retiredFed.getP2SHScript());
@@ -1396,7 +1416,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("migration_args")
-    void test_many_outputs_and_inputs_migration(
+    void many_outputs_and_inputs_migration(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
@@ -1454,7 +1474,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("migration_args")
-    void test_many_outputs_and_one_input_migration(
+    void many_outputs_and_one_input_migration(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
@@ -1510,7 +1530,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("migration_args")
-    void test_one_outputs_and_many_input_migration(
+    void one_outputs_and_many_input_migration(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         PegTxType expectedType
@@ -1562,7 +1582,6 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 false,
                 false,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
@@ -1570,7 +1589,6 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 true,
                 false,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
@@ -1578,14 +1596,12 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 true,
                 true,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
                 fingerrootActivations,
                 false,
                 false,
-                true,
                 true,
                 PegTxType.PEGIN
             ),
@@ -1596,7 +1612,6 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 false,
                 false,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
@@ -1604,7 +1619,6 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 true,
                 false,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
@@ -1612,14 +1626,12 @@ class PegUtilsGetTransactionTypeTest {
                 false,
                 true,
                 true,
-                false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
                 tbdActivations,
                 false,
                 false,
-                true,
                 true,
                 PegTxType.PEGIN
             ),
@@ -1629,20 +1641,10 @@ class PegUtilsGetTransactionTypeTest {
                 true,
                 false,
                 false,
-                false,
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
                 tbdActivations,
-                true,
-                true,
-                false,
-                false,
-                PegTxType.UNKNOWN
-            ),
-            Arguments.of(
-                tbdActivations,
-                true,
                 true,
                 true,
                 false,
@@ -1651,8 +1653,14 @@ class PegUtilsGetTransactionTypeTest {
             Arguments.of(
                 tbdActivations,
                 true,
-                false,
                 true,
+                true,
+                PegTxType.UNKNOWN
+            ),
+            Arguments.of(
+                tbdActivations,
+                true,
+                false,
                 true,
                 PegTxType.UNKNOWN
             )
@@ -1661,16 +1669,17 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("flyover_args")
-    void test_flyover_pegin(
+    void flyover_pegin(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         boolean shouldSendAmountBelowMinimum,
         boolean existsRetiringFederation,
-        boolean existsRetiredFederation,
         PegTxType expectedPegTxType
     ) {
         // Arrange
-        if (existsRetiredFederation){
+        if (existsRetiringFederation){
+            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiringFederation.getP2SHScript()));
+        } else {
             when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
         }
 
@@ -1726,16 +1735,17 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("flyover_args")
-    void test_flyover_segwit_pegin(
+    void flyover_segwit_pegin(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         boolean shouldSendAmountBelowMinimum,
         boolean existsRetiringFederation,
-        boolean existsRetiredFederation,
         PegTxType expectedPegTxType
     ) {
         // Arrange
-        if (existsRetiredFederation){
+        if (existsRetiringFederation){
+            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiringFederation.getP2SHScript()));
+        } else {
             when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
         }
 
@@ -1807,7 +1817,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("flyover_migration_args")
-    void test_flyover_segwit_migration(
+    void flyover_segwit_migration(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -1876,7 +1886,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("flyover_migration_args")
-    void test_flyover_segwit_with_other_inputs_migration(
+    void flyover_segwit_with_other_inputs_migration(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -1952,7 +1962,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("flyover_migration_args")
-    void test_flyover_segwit_with_many_inputs_and_outputs_migration(
+    void flyover_segwit_with_many_inputs_and_outputs_migration(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
