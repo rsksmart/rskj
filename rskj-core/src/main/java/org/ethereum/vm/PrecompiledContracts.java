@@ -223,13 +223,15 @@ public class PrecompiledContracts {
 
         @Deprecated
         public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
-            PrecompiledContractArgs args = new PrecompiledContractArgs();
-            args.setTransaction(tx);
-            args.setExecutionBlock(executionBlock);
-            args.setRepository(repository);
-            args.setBlockStore(blockStore);
-            args.setReceiptStore(receiptStore);
-            args.setLogs(logs);
+            PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
+                    .transaction(tx)
+                    .executionBlock(executionBlock)
+                    .repository(repository)
+                    .blockStore(blockStore)
+                    .receiptStore(receiptStore)
+                    .logs(logs)
+                    .build();
+
 
             init(args);
         }
