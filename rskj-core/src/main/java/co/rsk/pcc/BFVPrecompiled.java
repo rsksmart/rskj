@@ -3,7 +3,7 @@ package co.rsk.pcc;
 import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.db.FhStore;
+import org.ethereum.db.FhContext;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
@@ -43,7 +43,7 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
         return result;
     }
 
-//    public void addFhStore(FhStore fhStore) {
+//    public void addFhStore(FhContext fhStore) {
 //        this.fhStore = fhStore;
 //    }
 
@@ -63,14 +63,24 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 System.arraycopy(data, 0, op1Hash, 0, 32);
                 System.arraycopy(data, 32, op2Hash, 0, 32);
 
-                byte[] op1 = FhStore.getInstance().getEncryptedData(op1Hash).getData();
-                byte[] op2 = FhStore.getInstance().getEncryptedData(op2Hash).getData();
+                byte[] op1 = FhContext.getInstance().getEncryptedData(op1Hash).getData();
+                byte[] op2 = FhContext.getInstance().getEncryptedData(op2Hash).getData();
 
-                byte[] result = bfv.add(op1, op1.length, op2, op2.length);
+                byte[] result;
+                int noiseBudget;
+                if(FhContext.getInstance().enableBenchmark()) {
+                    result = bfv.add(op1, op1.length, op2, op2.length);
+
+                    VotingMocks vm = Op.getMocks();
+                    noiseBudget = bfv.noiseBudget(result, result.length, vm.getBfvSK(), vm.getBfvSK().length);
+                    FhContext.getInstance().addNoiseBudgetBenchmark(noiseBudget);
+                } else {
+                    result = bfv.add(op1, op1.length, op2, op2.length);
+                }
 
                 byte[] hash = Keccak256Helper.keccak256(result);
 
-                FhStore.getInstance().put(hash, result);
+                FhContext.getInstance().putEncryptedData(hash, result);
 
                 return hash;
             }
@@ -152,7 +162,7 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
 
                 byte[] hash = Keccak256Helper.keccak256(result);
 
-                FhStore.getInstance().put(hash, result);
+                FhContext.getInstance().putEncryptedData(hash, result);
 
                 return hash;
             }
@@ -201,7 +211,7 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 VotingMocks votingMocks = getMocks();
                 byte[] bfvSK = votingMocks.getBfvSK();
 
-                byte[] encrypted = FhStore.getInstance().getEncryptedData(data).getData();
+                byte[] encrypted = FhContext.getInstance().getEncryptedData(data).getData();
 
                 byte[] result = bfv.decrypt(encrypted, encrypted.length, bfvSK, bfvSK.length);
 
@@ -223,12 +233,13 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
             public byte[] executeOperation(byte[] data, BFV bfv) {
                 // todo(fedejinich) find a better way to do this
                 String param = new String(HexUtils.stringHexToByteArray(HexUtils.toJsonHex(data))).trim();
-                byte[] hash = FhStore.getInstance().getEncryptedParam(param).getData();
+                byte[] hash = FhContext.getInstance().getEncryptedParam(param).getData();
 
                 return hash;
             }
 
         };
+        private final boolean enableBenchmark = true;
         public static void reverse(byte[] array) {
             if (array == null) {
                 return;
@@ -301,4 +312,11 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
         public abstract byte[] executeOperation(byte[] data, BFV bfv);
     }
 }
+
+
+// todo(fedejinich) benchmark EVM execution time
+//   instrument evm for this
+// todo(fedejinich) benchmark transciphering time
+//   instrument rskj for this
+// todo(fedejinich) print charts with server side benchmark
 

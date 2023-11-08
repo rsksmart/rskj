@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.core.*;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.FhStore;
+import org.ethereum.db.FhContext;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -102,7 +102,7 @@ public class RskModuleImpl implements RskModule {
             byte[] fhData = bfv.transcipher(data, data.length, pastaSK, pastaSK.length, rks, rks.length,
                     bfvSK, bfvSK.length);
             byte[] hash = Keccak256Helper.keccak256(fhData);
-            FhStore.getInstance().put(hash, fhData); // store encrypted params, so they can be accessed within tx execution
+            FhContext.getInstance().putEncryptedData(hash, fhData); // store encrypted params, so they can be accessed within tx execution
 
             tx.getSender(); // todo(fedejinich) signature cache is bringing problems, i had to do this ugly thing :(, research about it!
             tx = addEncryptedParams(tx, hash); // add encrypted params to tx.data

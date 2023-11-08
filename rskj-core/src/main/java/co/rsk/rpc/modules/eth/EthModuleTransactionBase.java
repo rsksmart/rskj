@@ -21,14 +21,13 @@ package co.rsk.rpc.modules.eth;
 import static org.ethereum.core.EncryptedTransaction.toLongArray;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
-import co.rsk.pcc.BFVPrecompiled;
 import co.rsk.pcc.VotingMocks;
 import co.rsk.util.RLPException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.db.FhStore;
+import org.ethereum.db.FhContext;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.TransactionArgumentsUtil;
@@ -154,8 +153,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             byte[] hash = Keccak256Helper.keccak256(fhData);
 
             // store encrypted params, so they can be accessed within tx execution
-            FhStore.getInstance().put(hash, fhData);
-            FhStore.getInstance().putEncryptedParam("encryptedVote", hash); // todo(fedejinich) this is hardcoded :(
+            FhContext.getInstance().putEncryptedData(hash, fhData);
+            FhContext.getInstance().putEncryptedParam("encryptedVote", hash); // todo(fedejinich) this is hardcoded :(
 
             // todo(fedejinich) signature cache is bringing problems, i had to do this ugly thing :(, research about it!
             tx.getSender();
@@ -187,7 +186,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
         } finally {
             // todo(fedejinich) support this
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("rsk_sendEncryptedTransaction({}): {}", rawData, s);
+                LOGGER.debug("eth_sendEncryptedTransaction({}): {}", rawData, s);
             }
         }
     }
