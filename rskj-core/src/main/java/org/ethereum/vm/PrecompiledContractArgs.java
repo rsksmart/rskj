@@ -10,67 +10,49 @@ import org.ethereum.vm.program.invoke.ProgramInvoke;
 import java.util.List;
 
 public class PrecompiledContractArgs {
-    private Transaction transaction;
-    private Block executionBlock;
-    private Repository repository;
-    private BlockStore blockStore;
-    private ReceiptStore receiptStore;
-    private List<LogInfo> logs;
-    private ProgramInvoke programInvoke;
+    private final Transaction transaction;
+    private final Block executionBlock;
+    private final Repository repository;
+    private final BlockStore blockStore;
+    private final ReceiptStore receiptStore;
+    private final List<LogInfo> logs;
+    private final ProgramInvoke programInvoke;
+
+    public PrecompiledContractArgs(Transaction transaction, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs, ProgramInvoke programInvoke) {
+        this.transaction = transaction;
+        this.executionBlock = executionBlock;
+        this.repository = repository;
+        this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
+        this.logs = logs;
+        this.programInvoke = programInvoke;
+    }
 
     public Transaction getTransaction() {
         return transaction;
-    }
-
-    public void setTransaction(Transaction transaction) {
-        this.transaction = transaction;
     }
 
     public Block getExecutionBlock() {
         return executionBlock;
     }
 
-    public void setExecutionBlock(Block executionBlock) {
-        this.executionBlock = executionBlock;
-    }
-
     public Repository getRepository() {
         return repository;
-    }
-
-    public void setRepository(Repository repository) {
-        this.repository = repository;
     }
 
     public BlockStore getBlockStore() {
         return blockStore;
     }
 
-    public void setBlockStore(BlockStore blockStore) {
-        this.blockStore = blockStore;
-    }
-
     public ReceiptStore getReceiptStore() {
         return receiptStore;
-    }
-
-    public void setReceiptStore(ReceiptStore receiptStore) {
-        this.receiptStore = receiptStore;
     }
 
     public List<LogInfo> getLogs() {
         return logs;
     }
 
-    public void setLogs(List<LogInfo> logs) {
-        this.logs = logs;
-    }
-
     public ProgramInvoke getProgramInvoke() {
         return programInvoke;
-    }
-
-    public void setProgramInvoke(ProgramInvoke programInvoke) {
-        this.programInvoke = programInvoke;
     }
 }
