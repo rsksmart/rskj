@@ -55,9 +55,12 @@ class PegUtilsGetTransactionTypeTest {
     private BridgeStorageProvider provider;
     private Address userAddress;
 
+    private List<BtcECKey> retiredFedSigners;
     private Federation retiredFed;
+
     private List<BtcECKey> retiringFedSigners;
     private Federation retiringFederation;
+
     private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
 
@@ -69,9 +72,10 @@ class PegUtilsGetTransactionTypeTest {
         provider = mock(BridgeStorageProvider.class);
         userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
 
-        retiredFed = createP2shErpFederation(bridgeMainnetConstants, BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa09", "fa10", "fa11"}, true
-        ));
+        retiredFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa09", "fa10", "fa00"}, true
+        );
+        retiredFed = createP2shErpFederation(bridgeMainnetConstants, retiredFedSigners);
 
         retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa06", "fa07", "fa08"}, true
@@ -278,7 +282,7 @@ class PegUtilsGetTransactionTypeTest {
 
     @ParameterizedTest
     @MethodSource("pegin_args")
-    void multisig_pegin_active_fed(
+    void multisig_signed_pegin_active_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) {
@@ -291,7 +295,7 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addInput(
             BitcoinTestUtils.createHash(1),
             FIRST_OUTPUT_INDEX,
-            ScriptBuilder.createOutputScript(unknownFed.getAddress())
+            ScriptBuilder.createP2SHMultiSigInputScript(null, unknownFed.getRedeemScript())
         );
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
@@ -320,19 +324,20 @@ class PegUtilsGetTransactionTypeTest {
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        Address multisigAddress = BitcoinTestUtils.createP2SHMultisigAddress(
-            btcMainnetParams,
-            BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"key1", "key2", "key3"}, true
-            ));
+
+        List<BtcECKey> unknownFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"key1", "key2", "key3"}, true
+        );
+        Federation unknownFed = createFederation(bridgeMainnetConstants, unknownFedSigners);
 
         btcTransaction.addInput(
             BitcoinTestUtils.createHash(1),
             FIRST_OUTPUT_INDEX,
-            ScriptBuilder.createOutputScript(multisigAddress)
+            ScriptBuilder.createP2SHMultiSigInputScript(null, unknownFed.getRedeemScript())
         );
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
         btcTransaction.addOutput(PegTestUtils.createBech32Output(btcMainnetParams, Coin.COIN));
+        FederationTestUtils.addSignatures(unknownFed, unknownFedSigners, btcTransaction);
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -929,18 +934,15 @@ class PegUtilsGetTransactionTypeTest {
         return Stream.of(
             Arguments.of(
                 fingerrootActivations,
-                false,
-                PegTxType.PEGIN
+                false
             ),
             Arguments.of(
                 tbdActivations,
-                false,
-                PegTxType.PEGIN
+                false
             ),
             Arguments.of(
                 tbdActivations,
-                true,
-                PegTxType.PEGIN
+                true
             )
         );
     }
@@ -949,8 +951,7 @@ class PegUtilsGetTransactionTypeTest {
     @MethodSource("sending_funds_equal_or_above_to_minimum_args")
     void sending_funds_equal_to_minimum_active_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUsePegoutTxIndex,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -974,15 +975,14 @@ class PegUtilsGetTransactionTypeTest {
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, transactionType);
+        Assertions.assertEquals(PegTxType.PEGIN, transactionType);
     }
 
     @ParameterizedTest
     @MethodSource("sending_funds_equal_or_above_to_minimum_args")
     void sending_funds_above_minimum_active_fed(
         ActivationConfig.ForBlock activations,
-        boolean shouldUsePegoutTxIndex,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -1006,7 +1006,7 @@ class PegUtilsGetTransactionTypeTest {
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, transactionType);
+        Assertions.assertEquals(PegTxType.PEGIN, transactionType);
     }
 
     // Pegout tests
@@ -1018,18 +1018,15 @@ class PegUtilsGetTransactionTypeTest {
         return Stream.of(
             Arguments.of(
                 fingerrootActivations,
-                false,
-                PegTxType.PEGOUT_OR_MIGRATION
+                false
             ),
             Arguments.of(
                 tbdActivations,
-                false,
-                PegTxType.PEGOUT_OR_MIGRATION
+                false
             ),
             Arguments.of(
                 tbdActivations,
-                true,
-                PegTxType.PEGOUT_OR_MIGRATION
+                true
             )
         );
     }
@@ -1038,12 +1035,15 @@ class PegUtilsGetTransactionTypeTest {
     @MethodSource("pegout_args")
     void pegout_no_change_output(
         ActivationConfig.ForBlock activations,
-        boolean shouldUsePegoutTxIndex,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, activeFederation.getRedeemScript());
+        btcTransaction.addInput(
+            BitcoinTestUtils.createHash(1),
+            FIRST_OUTPUT_INDEX,
+            ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+        );
         btcTransaction.addOutput(Coin.COIN, userAddress);
 
         FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
@@ -1071,7 +1071,7 @@ class PegUtilsGetTransactionTypeTest {
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -1105,13 +1105,16 @@ class PegUtilsGetTransactionTypeTest {
     @MethodSource("pegout_args")
     void many_outputs_and_inputs_pegout(
         ActivationConfig.ForBlock activations,
-        boolean shouldUsePegoutTxIndex,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         for (int i = 0; i < 50; i++) {
-            btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, activeFederation.getRedeemScript());
+            btcTransaction.addInput(
+                BitcoinTestUtils.createHash(1),
+                FIRST_OUTPUT_INDEX,
+                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+            );
         }
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
@@ -1156,19 +1159,22 @@ class PegUtilsGetTransactionTypeTest {
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @ParameterizedTest
     @MethodSource("pegout_args")
     void many_outputs_and_one_input_pegout(
         ActivationConfig.ForBlock activations,
-        boolean shouldUsePegoutTxIndex,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, activeFederation.getRedeemScript());
+        btcTransaction.addInput(
+            BitcoinTestUtils.createHash(1),
+            FIRST_OUTPUT_INDEX,
+            ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+        );
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
@@ -1212,20 +1218,23 @@ class PegUtilsGetTransactionTypeTest {
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @ParameterizedTest
     @MethodSource("pegout_args")
     void one_outputs_and_many_input_pegout(
         ActivationConfig.ForBlock activations,
-        boolean shouldUsePegoutTxIndex,
-        PegTxType expectedType
+        boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         for (int i = 0; i < 50; i++) {
-            btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, activeFederation.getRedeemScript());
+            btcTransaction.addInput(
+                BitcoinTestUtils.createHash(1),
+                FIRST_OUTPUT_INDEX,
+                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+            );
         }
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
@@ -1255,7 +1264,7 @@ class PegUtilsGetTransactionTypeTest {
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -1359,7 +1368,7 @@ class PegUtilsGetTransactionTypeTest {
     void migration_from_retired_fed() {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, retiredFed.getP2SHScript());
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
@@ -1424,7 +1433,11 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         for (int i = 0; i < 50; i++) {
-            btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, retiringFederation.getRedeemScript());
+            btcTransaction.addInput(
+                BitcoinTestUtils.createHash(1),
+                FIRST_OUTPUT_INDEX,
+                ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
+            );
         }
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
@@ -1481,7 +1494,12 @@ class PegUtilsGetTransactionTypeTest {
     ) {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, retiringFederation.getRedeemScript());
+
+        btcTransaction.addInput(
+            BitcoinTestUtils.createHash(1),
+            FIRST_OUTPUT_INDEX,
+            ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
+        );
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
@@ -1538,7 +1556,11 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         for (int i = 0; i < 50; i++) {
-            btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, retiringFederation.getRedeemScript());
+            btcTransaction.addInput(
+                BitcoinTestUtils.createHash(1),
+                FIRST_OUTPUT_INDEX,
+                ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
+            );
         }
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
@@ -1713,11 +1735,6 @@ class PegUtilsGetTransactionTypeTest {
         Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
         btcTransaction.addOutput(shouldSendAmountBelowMinimum? belowMinimumPeginTxValue: minimumPeginTxValue, flyoverFederationAddress);
 
-        btcTransaction.addInput(
-            Sha256Hash.ZERO_HASH,
-            0, new Script(new byte[]{})
-        );
-
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
@@ -1853,7 +1870,7 @@ class PegUtilsGetTransactionTypeTest {
         fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
 
         BtcTransaction migrationTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        migrationTx.addInput(fundingTx.getOutput(FIRST_OUTPUT_INDEX)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
@@ -2088,7 +2105,12 @@ class PegUtilsGetTransactionTypeTest {
         Assertions.assertEquals(oldFederation.getAddress().toString(), bridgeRegTestConstants.getOldFederationAddress());
 
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
-        migrationTx.addInput(BitcoinTestUtils.createHash(1), 0, oldFederation.getRedeemScript());
+
+        migrationTx.addInput(
+            BitcoinTestUtils.createHash(1),
+            FIRST_OUTPUT_INDEX,
+            ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript())
+        );
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         FederationTestUtils.addSignatures(oldFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
@@ -2157,19 +2179,18 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        Federation retiredFederation = createFederation(bridgeMainnetConstants, fedKeys);
-        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
-
-        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFederation.getP2SHScript()));
+        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFed.getStandardP2SHScript()));
 
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
-        migrationTx.addInput(BitcoinTestUtils.createHash(1), 0, retiredFederation.getRedeemScript());
+
+        migrationTx.addInput(
+            BitcoinTestUtils.createHash(1),
+            FIRST_OUTPUT_INDEX,
+            ScriptBuilder.createP2SHMultiSigInputScript(null, retiredFed.getRedeemScript())
+        );
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(retiredFederation, fedKeys, migrationTx);
+        FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, migrationTx);
 
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx);
         Assertions.assertTrue(firstInputSigHash.isPresent());
@@ -2249,7 +2270,12 @@ class PegUtilsGetTransactionTypeTest {
         when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.empty());
 
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
-        migrationTx.addInput(BitcoinTestUtils.createHash(1), 0, retiredFederation.getRedeemScript());
+
+        migrationTx.addInput(
+            BitcoinTestUtils.createHash(1),
+            FIRST_OUTPUT_INDEX,
+            ScriptBuilder.createP2SHMultiSigInputScript(null, retiredFederation.getRedeemScript())
+        );
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         FederationTestUtils.addSignatures(retiredFederation, fedKeys, migrationTx);
