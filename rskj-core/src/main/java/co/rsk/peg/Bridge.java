@@ -40,6 +40,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
@@ -314,15 +315,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     @Override
-    public void init(Transaction rskTx, Block rskExecutionBlock, Repository repository, BlockStore rskBlockStore, ReceiptStore rskReceiptStore, List<LogInfo> logs) {
+    public void init(PrecompiledContractArgs args) {
+        Block rskExecutionBlock = args.getExecutionBlock();
         this.activations = activationConfig.forBlock(rskExecutionBlock.getNumber());
-        this.rskTx = rskTx;
+        this.rskTx = args.getTransaction();
 
         this.bridgeSupport = bridgeSupportFactory.newInstance(
-                repository,
+                args.getRepository(),
                 rskExecutionBlock,
                 contractAddress,
-                logs);
+                args.getLogs());
     }
 
     @Override

@@ -221,18 +221,20 @@ public class PrecompiledContracts {
 
         public abstract long getGasForData(byte[] data);
 
+        @Deprecated
         public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+            PrecompiledContractArgs args = new PrecompiledContractArgs();
+            args.setTransaction(tx);
+            args.setExecutionBlock(executionBlock);
+            args.setRepository(repository);
+            args.setBlockStore(blockStore);
+            args.setReceiptStore(receiptStore);
+            args.setLogs(logs);
+
+            init(args);
         }
 
-        public void init(ProgramInvoke programInvoke) {
-        }
-
-        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs, ProgramInvoke programInvoke) {
-            if(this instanceof Environment) {
-                this.init(programInvoke);
-            } else {
-                this.init(tx, executionBlock, repository, blockStore, receiptStore, logs);
-            }
+        public void init(PrecompiledContractArgs args) {
         }
 
         public List<ProgramSubtrace> getSubtraces() {
@@ -564,9 +566,8 @@ public class PrecompiledContracts {
         }
 
         @Override
-        public void init(ProgramInvoke programInvoke) {
-            super.init(programInvoke);
-            this.programInvoke = programInvoke;
+        public void init(PrecompiledContractArgs args) {
+            this.programInvoke = args.getProgramInvoke();
         }
 
         @Override

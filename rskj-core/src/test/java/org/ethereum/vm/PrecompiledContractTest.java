@@ -363,7 +363,9 @@ class PrecompiledContractTest {
 
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000001000011");
         PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
-        contract.init(invoke);
+        PrecompiledContractArgs args = new PrecompiledContractArgs();
+        args.setProgramInvoke(invoke);
+        contract.init(args);
 
         byte[] expected = ByteUtil.intToBytes(1);
 

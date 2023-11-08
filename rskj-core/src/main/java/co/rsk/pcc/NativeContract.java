@@ -29,6 +29,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.slf4j.Logger;
@@ -73,17 +74,17 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
     }
 
     @Override
-    public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
-        super.init(tx, executionBlock, repository, blockStore, receiptStore, logs);
+    public void init(PrecompiledContractArgs args) {
+        super.init(args);
 
         executionEnvironment = new ExecutionEnvironment(
                 activationConfig,
-                tx,
-                executionBlock,
-                repository,
-                blockStore,
-                receiptStore,
-                logs
+                args.getTransaction(),
+                args.getExecutionBlock(),
+                args.getRepository(),
+                args.getBlockStore(),
+                args.getReceiptStore(),
+                args.getLogs()
         );
     }
 
