@@ -12,6 +12,13 @@ test_transcipher.json
 test_simple_hhe.json
 test_encrypt_decrypt.json
 rskj-core-5.1.0-SNAPSHOT-all.jar
+rskj-core/src/test/java/org/ethereum/vm/bfv/test_add.json
+rskj-core/src/test/java/org/ethereum/vm/bfv/test_sub.json
+rskj-core/src/test/java/org/ethereum/vm/bfv/test_encrypt_decrypt.json
+rskj-core/src/test/java/org/ethereum/vm/bfv/test_transcipher.json
+rskj-core/src/test/java/org/ethereum/vm/bfv/votes.json
+rskj-core/src/test/java/org/ethereum/vm/bfv/test_mul.json
+rskj-core/src/test/java/org/ethereum/vm/bfv/test_simple_hhe.json
 
 # Vim
 *.sw[op]
@@ -101,11 +108,4 @@ infer-out/
 
 doc/rpc/openrpc.json
 
-rskj-core/src/test/java/org/ethereum/vm/bfv/test_add.json
-rskj-core/src/test/java/org/ethereum/vm/bfv/test_sub.json
-rskj-core/src/test/java/org/ethereum/vm/bfv/test_encrypt_decrypt.json
-rskj-core/src/test/java/org/ethereum/vm/bfv/test_transcipher.json
-rskj-core/src/test/java/org/ethereum/vm/bfv/votes.json
-rskj-core/src/test/java/org/ethereum/vm/bfv/test_mul.json
-rskj-core/src/test/java/org/ethereum/vm/bfv/test_simple_hhe.json
 
