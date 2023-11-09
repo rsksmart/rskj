@@ -713,7 +713,7 @@ class PegUtilsGetTransactionTypeTest {
     }
 
     @Test
-    void anyAddressToAnyAddress_pegin_before_RSIP379() {
+    void anyAddressToAnyAddress_pegin_before_RSKIP379() {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.fingerroot500().forBlock(0);
 
