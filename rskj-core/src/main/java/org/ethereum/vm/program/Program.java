@@ -1086,6 +1086,10 @@ public class Program {
         return result;
     }
 
+    public ProgramInvoke getInvoke() {
+        return this.invoke;
+    }
+
     public void setRuntimeFailure(RuntimeException e) {
         getResult().setException(e);
     }
@@ -1408,6 +1412,14 @@ public class Program {
             );
 
             contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList());
+        }
+
+        if (contract instanceof PrecompiledContracts.Environment) {
+            PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
+                    .programInvoke(this.invoke)
+                    .build();
+
+            contract.init(args);
         }
 
         long requiredGas = contract.getGasForData(data);
