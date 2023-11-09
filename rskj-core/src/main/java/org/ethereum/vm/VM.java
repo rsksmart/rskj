@@ -953,7 +953,7 @@ public class VM {
     protected void doGASPRICE(){
         spendOpCodeGas();
         // EXECUTION PHASE
-        DataWord gasPrice = program.getGasPrice();
+        DataWord gasPrice = program.getTxGasPrice();
 
         if (isLogEnabled) {
             hint = "price: " + gasPrice.toString();

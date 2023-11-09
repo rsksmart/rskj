@@ -43,7 +43,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private final DataWord origin;
     private final DataWord caller;
     private final DataWord balance;
-    private final DataWord gasPrice;
+    private final DataWord txGasPrice;
     private final DataWord callValue;
     private long gas;
 
@@ -70,7 +70,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private boolean isStaticCall = false;
 
     public ProgramInvokeImpl(DataWord address, DataWord origin, DataWord caller, DataWord balance,
-                             DataWord gasPrice,
+                             DataWord txGasPrice,
                              long gas,
                              DataWord callValue, byte[] msgData,
                              DataWord lastHash, DataWord coinbase, DataWord timestamp, DataWord number, DataWord transactionIndex, DataWord
@@ -84,7 +84,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.origin = origin;
         this.caller = caller;
         this.balance = balance;
-        this.gasPrice = gasPrice;
+        this.txGasPrice = txGasPrice;
         this.gas = gas;
         this.callValue = callValue;
         this.msgData = msgData;
@@ -107,12 +107,12 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
-                             byte[] gasPrice, byte[] gas, byte[] callValue, byte[] msgData,
+                             byte[] txGasPrice, byte[] gas, byte[] callValue, byte[] msgData,
                              byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
                              byte[] gaslimit,
                              Repository repository, BlockStore blockStore,
                              boolean byTestingSuite) {
-        this(address, origin, caller, balance, gasPrice, gas, callValue, msgData, lastHash, coinbase,
+        this(address, origin, caller, balance, txGasPrice, gas, callValue, msgData, lastHash, coinbase,
                 timestamp, number, transactionIndex, difficulty, gaslimit, repository, blockStore);
 
         this.byTestingSuite = byTestingSuite;
@@ -120,7 +120,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
 
     public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
-                             byte[] gasPrice, byte[] gas, byte[] callValue, byte[] msgData,
+                             byte[] txGasPrice, byte[] gas, byte[] callValue, byte[] msgData,
                              byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
                              byte[] gaslimit,
                              Repository repository, BlockStore blockStore) {
@@ -130,7 +130,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.origin = DataWord.valueOf(origin);
         this.caller = DataWord.valueOf(caller);
         this.balance = DataWord.valueOf(balance);
-        this.gasPrice = DataWord.valueOf(gasPrice);
+        this.txGasPrice = DataWord.valueOf(txGasPrice);
         this.gas = Program.limitToMaxLong(DataWord.valueOf(gas));
         this.callValue = DataWord.valueOf(callValue);
         this.msgData = msgData;
@@ -149,36 +149,43 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*           ADDRESS op         */
+    @Override
     public DataWord getOwnerAddress() {
         return address;
     }
 
     /*           BALANCE op         */
+    @Override
     public DataWord getBalance() {
         return balance;
     }
 
     /*           ORIGIN op         */
+    @Override
     public DataWord getOriginAddress() {
         return origin;
     }
 
     /*           CALLER op         */
+    @Override
     public DataWord getCallerAddress() {
         return caller;
     }
 
     /*           GASPRICE op       */
-    public DataWord getMinGasPrice() {
-        return gasPrice;
+    @Override
+    public DataWord getTxGasPrice() {
+        return txGasPrice;
     }
 
     /*           GAS op       */
+    @Override
     public long  getGas() {
         return gas;
     }
 
     /*          CALLVALUE op    */
+    @Override
     public DataWord getCallValue() {
         return callValue;
     }
@@ -192,6 +199,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private static BigInteger maxMsgData = BigInteger.valueOf(Integer.MAX_VALUE);
 
     /*     CALLDATALOAD  op   */
+    @Override
     public DataWord getDataValue(DataWord indexData) {
 
         BigInteger tempIndex = indexData.value();
@@ -212,6 +220,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*  CALLDATASIZE */
+    @Override
     public DataWord getDataSize() {
 
         if (msgData == null || msgData.length == 0) {
@@ -222,6 +231,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*  CALLDATACOPY */
+    @Override
     public byte[] getDataCopy(DataWord offsetData, DataWord lengthData) {
 
         int offset = offsetData.intValueSafe();
@@ -246,36 +256,43 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
 
     /*     PREVHASH op    */
+    @Override
     public DataWord getPrevHash() {
         return prevHash;
     }
 
     /*     COINBASE op    */
+    @Override
     public DataWord getCoinbase() {
         return coinbase;
     }
 
     /*     TIMESTAMP op    */
+    @Override
     public DataWord getTimestamp() {
         return timestamp;
     }
 
     /*     NUMBER op    */
+    @Override
     public DataWord getNumber() {
         return number;
     }
 
     /*     TXINDEX op    */
+    @Override
     public DataWord getTransactionIndex() {
         return transactionIndex;
     }
 
     /*     DIFFICULTY op    */
+    @Override
     public DataWord getDifficulty() {
         return difficulty;
     }
 
     /*     GASLIMIT op    */
+    @Override
     public DataWord getGaslimit() {
         return gaslimit;
     }
@@ -285,6 +302,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         return storage;
     }
 
+    @Override
     public Repository getRepository() {
         return repository;
     }
@@ -352,7 +370,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         if (gas!=that.gas) {
             return false;
         }
-        if (gasPrice != null ? !gasPrice.equals(that.gasPrice) : that.gasPrice != null) {
+        if (txGasPrice != null ? !txGasPrice.equals(that.txGasPrice) : that.txGasPrice != null) {
             return false;
         }
         if (gaslimit != null ? !gaslimit.equals(that.gaslimit) : that.gaslimit != null) {
@@ -385,7 +403,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(address, origin, caller, balance, gasPrice, callValue, gas, prevHash, coinbase, timestamp, number, difficulty, gaslimit, storage, repository, byTransaction, byTestingSuite);
+        int result = Objects.hash(address, origin, caller, balance, txGasPrice, callValue, gas, prevHash, coinbase, timestamp, number, difficulty, gaslimit, storage, repository, byTransaction, byTestingSuite);
         result = 31 * result + Arrays.hashCode(msgData);
         return result;
     }
@@ -398,7 +416,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                 ", caller=" + caller +
                 ", balance=" + balance +
                 ", gas=" + gas +
-                ", gasPrice=" + gasPrice +
+                ", txGasPrice=" + txGasPrice +
                 ", callValue=" + callValue +
                 ", msgData=" + Arrays.toString(msgData) +
                 ", prevHash=" + prevHash +

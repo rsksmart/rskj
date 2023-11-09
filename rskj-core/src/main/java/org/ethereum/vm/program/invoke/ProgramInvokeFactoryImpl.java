@@ -64,7 +64,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         Coin balance = repository.getBalance(addr);
 
         /***         GASPRICE op       ***/
-        Coin gasPrice = tx.getGasPrice();
+        Coin txGasPrice = tx.getGasPrice();
 
         /*** GAS op ***/
         byte[] gas = tx.getGasLimit();
@@ -101,7 +101,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "origin={}\n" +
                             "caller={}\n" +
                             "balance={}\n" +
-                            "gasPrice={}\n" +
+                            "txGasPrice={}\n" +
                             "gas={}\n" +
                             "callValue={}\n" +
                             "data={}\n" +
@@ -117,7 +117,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     ByteUtil.toHexString(origin),
                     ByteUtil.toHexString(caller),
                     balance,
-                    gasPrice,
+                    txGasPrice,
                     new BigInteger(1, gas).longValue(),
                     callValue,
                     ByteUtil.toHexString(data),
@@ -130,7 +130,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     gaslimit);
         }
 
-        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), gasPrice.getBytes(), gas, callValue.getBytes(), data,
+        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), txGasPrice.getBytes(), gas, callValue.getBytes(), data,
                 lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
                 repository, blockStore);
     }
@@ -151,7 +151,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         DataWord caller = callerAddress;
 
         DataWord balance = DataWord.valueOf(balanceInt.getBytes());
-        DataWord gasPrice = program.getGasPrice();
+        DataWord txGasPrice = program.getTxGasPrice();
         long agas = inGas;
         DataWord callValue = inValue;
 
@@ -170,7 +170,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "origin={}\n" +
                             "caller={}\n" +
                             "balance={}\n" +
-                            "gasPrice={}\n" +
+                            "txGasPrice={}\n" +
                             "gas={}\n" +
                             "callValue={}\n" +
                             "data={}\n" +
@@ -185,7 +185,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     ByteUtil.toHexString(origin.getLast20Bytes()),
                     ByteUtil.toHexString(caller.getLast20Bytes()),
                     balance.toString(),
-                    gasPrice.longValue(),
+                    txGasPrice.longValue(),
                     agas,
                     ByteUtil.toHexString(callValue.getNoLeadZeroesData()),
                     data == null ? "" : ByteUtil.toHexString(data),
@@ -198,7 +198,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     gasLimit.bigIntValue());
         }
 
-        return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, agas, callValue,
+        return new ProgramInvokeImpl(address, origin, caller, balance, txGasPrice, agas, callValue,
                 data, lastHash, coinbase, timestamp, number, transactionIndex, difficulty, gasLimit,
                 repository, program.getCallDeep() + 1, blockStore,
                 isStaticCall, byTestingSuite);

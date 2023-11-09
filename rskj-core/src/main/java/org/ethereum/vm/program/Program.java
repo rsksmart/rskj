@@ -195,7 +195,7 @@ public class Program {
                 transaction,
                 getCallDeep(),
                 senderNonce,
-                getGasPrice(),
+                getTxGasPrice(),
                 gasLimit,
                 senderAddress.getBytes(),
                 receiveAddress.getBytes(),
@@ -1022,8 +1022,8 @@ public class Program {
         return invoke.getCallerAddress();
     }
 
-    public DataWord getGasPrice() {
-        return invoke.getMinGasPrice();
+    public DataWord getTxGasPrice() {
+        return invoke.getTxGasPrice();
     }
 
     public long getRemainingGas() {
