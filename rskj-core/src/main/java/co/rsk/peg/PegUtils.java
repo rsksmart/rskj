@@ -41,8 +41,6 @@ public class PegUtils {
      * Checks if all utxos sent to the <b>fedWallet</b> are equal or above the minimum pegin value.
      * If no utxo is sent to the <b>fedWallet </b>or there is at least 1 utxo sent to the <b>fedWallet</b> that is below minimum,
      * this method will return false. It will return true when all utxos sent to the <b>fedWallet</b> are above the minimum pegin value.
-     * Before RSKIP379, this method calls PegUtilsLegacy::isAnyUTXOAmountBelowMinimum, which has a bug and might return some unexpected values.
-     * Pre RSKIP379, if the utxo list to the fed is empty, it will return true. Post RSKIP379 if the utxo list to the fed is empty, it will return false.
      *
      * @param minimumPegInTxValue
      * @param btcTx
