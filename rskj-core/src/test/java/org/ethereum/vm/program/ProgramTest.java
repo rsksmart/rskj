@@ -28,7 +28,6 @@ import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.PrecompiledContractArgs;
-import org.ethereum.vm.PrecompiledContractArgsBuilder;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -63,9 +62,10 @@ class ProgramTest {
     protected long gasCost;
     protected Program program;
 
+    private final ActivationConfig.ForBlock activations = getBlockchainConfig();
+
     @BeforeEach
     void setup() {
-        final ActivationConfig.ForBlock activations = getBlockchainConfig();
         precompiledContract = spy(precompiledContracts.getContractForAddress(activations, PrecompiledContracts.ECRECOVER_ADDR_DW));
         gasCost = precompiledContract.getGasForData(DataWord.ONE.getData());
 
@@ -165,11 +165,7 @@ class ProgramTest {
 
     @Test
     void testCallToPrecompiledAddress_callEnvironmentInit() {
-        ActivationConfig.ForBlock environmentActivations = getBlockchainConfig();
-        PrecompiledContracts.PrecompiledContract environmentContract = spy(precompiledContracts.getContractForAddress(environmentActivations, PrecompiledContracts.ENVIRONMENT_ADDR_DW));
-        PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
-                        .programInvoke(programInvoke)
-                        .build();
+        PrecompiledContracts.PrecompiledContract environmentContract = spy(precompiledContracts.getContractForAddress(activations, PrecompiledContracts.ENVIRONMENT_ADDR_DW));
 
         program.callToPrecompiledAddress(msg, environmentContract);
 
