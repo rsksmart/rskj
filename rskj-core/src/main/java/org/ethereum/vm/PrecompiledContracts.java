@@ -221,8 +221,11 @@ public class PrecompiledContracts {
 
         public abstract long getGasForData(byte[] data);
 
+        /**
+         * @deprecated( in favor of {@link #init(org.ethereum.vm.PrecompiledContractArgs)})
+         */
         @Deprecated
-        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+        public final void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
                     .transaction(tx)
                     .executionBlock(executionBlock)
@@ -231,7 +234,6 @@ public class PrecompiledContracts {
                     .receiptStore(receiptStore)
                     .logs(logs)
                     .build();
-
 
             init(args);
         }
