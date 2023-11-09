@@ -27,6 +27,8 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
+import org.ethereum.vm.PrecompiledContractArgs;
+import org.ethereum.vm.PrecompiledContractArgsBuilder;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -34,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
@@ -158,6 +161,22 @@ class ProgramTest {
             isNull(),
             anyList()
         );
+    }
+
+    @Test
+    void testCallToPrecompiledAddress_callEnvironmentInit() {
+        ActivationConfig.ForBlock environmentActivations = getBlockchainConfig();
+        PrecompiledContracts.PrecompiledContract environmentContract = spy(precompiledContracts.getContractForAddress(environmentActivations, PrecompiledContracts.ENVIRONMENT_ADDR_DW));
+        PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
+                        .programInvoke(programInvoke)
+                        .build();
+
+        program.callToPrecompiledAddress(msg, environmentContract);
+
+        ArgumentCaptor<PrecompiledContractArgs> argsCaptor = ArgumentCaptor.forClass(PrecompiledContractArgs.class);
+
+        verify(environmentContract, times(1)).init(argsCaptor.capture());
+        assertNotNull(argsCaptor.getValue().getProgramInvoke());
     }
 
     /*********************************
