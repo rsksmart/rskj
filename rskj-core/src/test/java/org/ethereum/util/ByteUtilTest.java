@@ -127,6 +127,28 @@ class ByteUtilTest {
     }
 
     @Test
+    void byteArrayToIntTooLong() {
+        byte[] b = new byte[]{ 0x12, 0x12, 0x12, 0x12, 0x12 };
+
+        Assertions.assertThrows(RuntimeException.class, () -> ByteUtil.byteArrayToInt(b));
+
+        int prev = new BigInteger(1, b).intValue();
+
+        Assertions.assertNotEquals(BigInteger.valueOf(prev), new BigInteger(1, b));
+    }
+
+    @Test
+    void byteArrayToIntNegative() {
+        byte[] b = new byte[]{ (byte) 0xff, 0x12, 0x12, 0x12 };
+
+        Assertions.assertThrows(RuntimeException.class, () -> ByteUtil.byteArrayToInt(b));
+
+        int prev = new BigInteger(1, b).intValue();
+
+        Assertions.assertTrue(prev < 0);
+    }
+
+    @Test
     void testNumBytes() {
         String test1 = "0";
         String test2 = "1";
