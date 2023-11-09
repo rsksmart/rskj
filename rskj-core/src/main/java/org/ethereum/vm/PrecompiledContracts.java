@@ -48,6 +48,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -127,7 +128,8 @@ public class PrecompiledContracts {
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
-                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153)
+                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
+                    new AbstractMap.SimpleEntry<>(ENVIRONMENT_ADDR, ConsensusRule.RSKIP203)
             ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
@@ -207,6 +209,10 @@ public class PrecompiledContracts {
             return new Blake2F();
         }
 
+        if (activations.isActive(ConsensusRule.RSKIP203) && address.equals(ENVIRONMENT_ADDR_DW)) {
+            return new Environment();
+        }
+
         return null;
     }
 
@@ -215,7 +221,24 @@ public class PrecompiledContracts {
 
         public abstract long getGasForData(byte[] data);
 
-        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+        /**
+         * @deprecated( in favor of {@link #init(org.ethereum.vm.PrecompiledContractArgs)})
+         */
+        @Deprecated
+        public final void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+            PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
+                    .transaction(tx)
+                    .executionBlock(executionBlock)
+                    .repository(repository)
+                    .blockStore(blockStore)
+                    .receiptStore(receiptStore)
+                    .logs(logs)
+                    .build();
+
+            init(args);
+        }
+
+        public void init(PrecompiledContractArgs args) {
         }
 
         public List<ProgramSubtrace> getSubtraces() {
@@ -537,6 +560,32 @@ public class PrecompiledContracts {
                 output.putLong(h[i]);
             }
             return output.array();
+        }
+    }
+
+    public static class Environment extends PrecompiledContract {
+        private ProgramInvoke programInvoke;
+
+        public Environment() {
+        }
+
+        @Override
+        public void init(PrecompiledContractArgs args) {
+            this.programInvoke = args.getProgramInvoke();
+        }
+
+        @Override
+        public long getGasForData(byte[] data) {
+            return 0;
+        }
+
+        @Override
+        public byte[] execute(byte[] data) {
+            return ByteUtil.intToBytes(getCallStackDepth());
+        }
+
+        private int getCallStackDepth() {
+            return programInvoke == null ? 0 : programInvoke.getCallDeep();
         }
     }
 

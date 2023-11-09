@@ -34,6 +34,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.slf4j.Logger;
@@ -87,8 +88,8 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
     }
 
     @Override
-    public void init(Transaction executionTx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
-        this.remasc = new Remasc(constants, activationConfig, repository, blockStore, remascConfig, executionTx, contractAddress, executionBlock, logs);
+    public void init(PrecompiledContractArgs args) {
+        this.remasc = new Remasc(constants, activationConfig, args.getRepository(), args.getBlockStore(), remascConfig, args.getTransaction(), contractAddress, args.getExecutionBlock(), args.getLogs());
     }
 
     @Override
