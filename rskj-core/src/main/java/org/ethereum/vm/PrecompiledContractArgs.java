@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.ethereum.vm;
 
 import org.ethereum.core.Block;
@@ -10,21 +28,42 @@ import org.ethereum.vm.program.invoke.ProgramInvoke;
 import java.util.List;
 
 public class PrecompiledContractArgs {
-    private final Transaction transaction;
-    private final Block executionBlock;
-    private final Repository repository;
-    private final BlockStore blockStore;
-    private final ReceiptStore receiptStore;
-    private final List<LogInfo> logs;
-    private final ProgramInvoke programInvoke;
+    private Transaction transaction;
+    private Block executionBlock;
+    private Repository repository;
+    private BlockStore blockStore;
+    private ReceiptStore receiptStore;
+    private List<LogInfo> logs;
+    private ProgramInvoke programInvoke;
 
-    public PrecompiledContractArgs(Transaction transaction, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs, ProgramInvoke programInvoke) {
+    public PrecompiledContractArgs() {
+    }
+
+    void setTransaction(Transaction transaction) {
         this.transaction = transaction;
+    }
+
+    void setExecutionBlock(Block executionBlock) {
         this.executionBlock = executionBlock;
+    }
+
+    void setRepository(Repository repository) {
         this.repository = repository;
+    }
+
+    void setBlockStore(BlockStore blockStore) {
         this.blockStore = blockStore;
+    }
+
+    void setReceiptStore(ReceiptStore receiptStore) {
         this.receiptStore = receiptStore;
+    }
+
+    void setLogs(List<LogInfo> logs) {
         this.logs = logs;
+    }
+
+    void setProgramInvoke(ProgramInvoke programInvoke) {
         this.programInvoke = programInvoke;
     }
 
