@@ -1026,6 +1026,10 @@ public class Program {
         return invoke.getTxGasPrice();
     }
 
+    public DataWord getMinimumGasPrice() {
+        return invoke.getMinimumGasPrice();
+    }
+
     public long getRemainingGas() {
         return invoke.getGas()- getResult().getGasUsed();
     }

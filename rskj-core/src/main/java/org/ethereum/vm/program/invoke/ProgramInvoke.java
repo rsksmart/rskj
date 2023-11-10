@@ -49,6 +49,8 @@ public interface ProgramInvoke extends InvokeData {
 
     DataWord getGaslimit();
 
+    DataWord getMinimumGasPrice();
+
     boolean byTransaction();
 
     boolean byTestingSuite();

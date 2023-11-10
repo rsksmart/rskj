@@ -66,6 +66,9 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         /***         GASPRICE op       ***/
         Coin txGasPrice = tx.getGasPrice();
 
+        /*** BASEFEE op ***/
+        Coin minimumGasPrice = block.getMinimumGasPrice();
+
         /*** GAS op ***/
         byte[] gas = tx.getGasLimit();
 
@@ -111,7 +114,8 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "blockNumber={}\n" +
                             "transactionIndex={}\n" +
                             "difficulty={}\n" +
-                            "gaslimit={}\n",
+                            "gaslimit={}\n" +
+                            "minimumGasPrice={}\n",
 
                     addr,
                     ByteUtil.toHexString(origin),
@@ -127,11 +131,12 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     number,
                     txindex,
                     ByteUtil.toHexString(difficulty),
-                    gaslimit);
+                    gaslimit,
+                    minimumGasPrice);
         }
 
         return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), txGasPrice.getBytes(), gas, callValue.getBytes(), data,
-                lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
+                lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit, minimumGasPrice.getBytes(),
                 repository, blockStore);
     }
 
@@ -163,6 +168,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         DataWord transactionIndex = program.getTransactionIndex();
         DataWord difficulty = program.getDifficulty();
         DataWord gasLimit = program.getGasLimit();
+        DataWord minimumGasPrice = program.getMinimumGasPrice();
 
         if (logger.isInfoEnabled()) {
             logger.info("Internal call: \n" +
@@ -180,7 +186,8 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "blockNumber={}\n" +
                             "transactionIndex={}\n" +
                             "difficulty={}\n" +
-                            "gaslimit={}\n",
+                            "gaslimit={}\n" +
+                            "minimumGasPrice={}\n",
                     ByteUtil.toHexString(address.getLast20Bytes()),
                     ByteUtil.toHexString(origin.getLast20Bytes()),
                     ByteUtil.toHexString(caller.getLast20Bytes()),
@@ -195,12 +202,13 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     number.longValue(),
                     transactionIndex.intValue(),
                     ByteUtil.toHexString(difficulty.getNoLeadZeroesData()),
-                    gasLimit.bigIntValue());
+                    gasLimit.bigIntValue(),
+                    minimumGasPrice.longValue());
         }
 
         return new ProgramInvokeImpl(address, origin, caller, balance, txGasPrice, agas, callValue,
                 data, lastHash, coinbase, timestamp, number, transactionIndex, difficulty, gasLimit,
-                repository, program.getCallDeep() + 1, blockStore,
+                minimumGasPrice, repository, program.getCallDeep() + 1, blockStore,
                 isStaticCall, byTestingSuite);
     }
 }

@@ -88,6 +88,7 @@ public enum ConsensusRule {
     RSKIP385("rskip385"),
     RSKIP398("rskip398"),
     RSKIP400("rskip400"), // From EIP-2028 calldata gas cost reduction
+    RSKIP412("rskip412"), // From EIP-3198 BASEFEE opcode
     ;
 
     private String configKey;
