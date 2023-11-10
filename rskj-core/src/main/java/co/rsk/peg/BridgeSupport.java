@@ -546,21 +546,23 @@ public class BridgeSupport {
                 break;
             case CAN_BE_REFUNDED:
                 eventLogger.logRejectedPegin(btcTx, peginEvaluationResult.getRejectedPeginReason().get());
-                if (peginInformation.getProtocolVersion() == 1) {
-                    eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET);
-                } else {
-                    eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
-                }
                 generateRejectionRelease(btcTx, peginInformation.getBtcRefundAddress(), rskTx, totalAmount);
                 markTxAsProcessed(btcTx);
                 throw new RegisterBtcTransactionException(String.format("Error while trying to parse peg-in information for tx %s", btcTx.getHash()));
             case CANNOT_BE_PROCESSED:
-                logger.debug("[tryToProcessPegin] No btc refund address provided, couldn't get sender address either. Can't refund");
+                if (peginEvaluationResult.getRejectedPeginReason().get() == PEGIN_V1_INVALID_PAYLOAD){
+                    if (peginInformation.getProtocolVersion() == 1) {
+                        eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET);
+                    } else {
+                        eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+                    }
+                }
+                String message = String.format("[tryToProcessPegin] No btc refund address provided, couldn't get sender address either  for tx %s. Can't refund", btcTx.getHash());
+                logger.debug(message);
                 eventLogger.logRejectedPegin(btcTx, peginEvaluationResult.getRejectedPeginReason().get());
-                break;
-            default:
-                String message = String.format("Error while trying to process pegin. Error Reason: %s", peginEvaluationResult.getRejectedPeginReason().get());
                 throw new RegisterBtcTransactionException(message);
+            default:
+                throw new RegisterBtcTransactionException(String.format("Error while trying to process pegin. Error Reason: %s", peginEvaluationResult.getRejectedPeginReason().get()));
         }
     }
 
