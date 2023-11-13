@@ -56,6 +56,8 @@ import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.pegin.PeginEvaluationResult;
+import co.rsk.peg.pegin.PeginProcessAction;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -71,6 +73,20 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -92,26 +108,16 @@ import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.utils.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
+import static co.rsk.peg.utils.RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
+import static co.rsk.peg.utils.RejectedPeginReason.NO_UTXO_OR_UTXO_BELOW_MINIMUM;
+import static co.rsk.peg.utils.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP377;
 
@@ -455,7 +461,101 @@ public class BridgeSupport {
         return btcBlockStore;
     }
 
-    protected void processPegIn(
+    private PeginEvaluationResult evaluatePegin(BtcTransaction btcTx, PeginInformation peginInformation) {
+        if(!activations.isActive(ConsensusRule.RSKIP379)){
+            throw new IllegalStateException("Method cannot be called before RSKIP379.");
+        }
+
+        Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
+
+        if(PegUtils.isAnyUTXOAmountBelowMinimum(activations, minimumPeginTxValue, btcTx, getNoSpendWalletForLiveFederations(false))){
+            return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, NO_UTXO_OR_UTXO_BELOW_MINIMUM);
+        }
+
+        try {
+            peginInformation.parse(btcTx);
+        } catch (PeginInstructionsException e) {
+            String message = String.format(
+                "Error while trying to parse peg-in information for tx %s. %s",
+                btcTx.getHash(),
+                e.getMessage()
+            );
+            logger.warn("[evaluatePegin] {}", message);
+            if (peginInformation.getBtcRefundAddress() != null){
+                return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REFUNDED, PEGIN_V1_INVALID_PAYLOAD);
+            } else {
+                return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, PEGIN_V1_INVALID_PAYLOAD);
+            }
+        }
+
+        if (peginInformation.getProtocolVersion() == 0) {
+            switch (peginInformation.getSenderBtcAddressType()) {
+                case P2PKH:
+                case P2SHP2WPKH:
+                    return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REGISTERED);
+                case P2SHMULTISIG:
+                case P2SHP2WSH:
+                    return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REFUNDED, LEGACY_PEGIN_MULTISIG_SENDER);
+                default:
+                    return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, LEGACY_PEGIN_UNDETERMINED_SENDER);
+            }
+        } else if (peginInformation.getProtocolVersion() == 1) {
+            return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REGISTERED);
+        }
+        throw new IllegalStateException("Pegin could not be evaluated.");
+    }
+
+    protected void processPegIn(BtcTransaction btcTx, Transaction rskTx, int height, Sha256Hash btcTxHash) throws IOException, RegisterBtcTransactionException {
+        if (activations.isActive(ConsensusRule.RSKIP379)){
+            tryToProcessPegin(btcTx, rskTx);
+        } else {
+            legacyProcessPegin(btcTx, rskTx, height, btcTxHash);
+        }
+    }
+
+    private void tryToProcessPegin(BtcTransaction btcTx, Transaction rskTx) throws IOException, RegisterBtcTransactionException {
+        Coin totalAmount = computeTotalAmountSent(btcTx);
+
+        PeginInformation peginInformation = new PeginInformation(
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            activations
+        );
+
+        PeginEvaluationResult peginEvaluationResult = evaluatePegin(btcTx, peginInformation);
+
+        switch (peginEvaluationResult.getPeginProcessAction()) {
+            case CAN_BE_REGISTERED:
+                executePegIn(btcTx, peginInformation, totalAmount);
+                markTxAsProcessed(btcTx);
+                break;
+            case CAN_BE_REFUNDED:
+                eventLogger.logRejectedPegin(btcTx, peginEvaluationResult.getRejectedPeginReason().get());
+                generateRejectionRelease(btcTx, peginInformation.getBtcRefundAddress(), rskTx, totalAmount);
+                markTxAsProcessed(btcTx);
+                throw new RegisterBtcTransactionException(String.format("Error while trying to parse peg-in information for tx %s", btcTx.getHash()));
+            case CANNOT_BE_PROCESSED:
+                RejectedPeginReason rejectedPeginReason = peginEvaluationResult.getRejectedPeginReason().get();
+                String message;
+                if (rejectedPeginReason == PEGIN_V1_INVALID_PAYLOAD){
+                    message = String.format("[tryToProcessPegin] Can't refund. No btc refund address provided and couldn't get sender address either for tx %s.", btcTx.getHash());
+                    logger.debug(message);
+                    if (peginInformation.getProtocolVersion() == 1) {
+                        eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET);
+                    } else {
+                        eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+                    }
+                } else {
+                    message = String.format("[tryToProcessPegin] Btc tx %s cannot be processed. Rejected reason: %s", btcTx.getHash(), rejectedPeginReason);
+                }
+                eventLogger.logRejectedPegin(btcTx, rejectedPeginReason);
+                throw new RegisterBtcTransactionException(message);
+            default:
+                throw new RegisterBtcTransactionException(String.format("Error while trying to process pegin. Error Reason: %s", peginEvaluationResult.getRejectedPeginReason().get()));
+        }
+    }
+
+    protected void legacyProcessPegin(
         BtcTransaction btcTx,
         Transaction rskTx,
         int height,
