@@ -2,34 +2,34 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/Application.java to edit this template
  */
-package co.rsk.ui;
+package co.rsk.jmh.ui;
 
 import co.rsk.NodeRunner;
 import co.rsk.RskContext;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.jmh.sync.RskContextState;
 import co.rsk.trie.*;
-import co.rsk.util.HexUtils;
 import co.rsk.util.PreflightChecksUtils;
 import com.google.common.collect.Lists;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.TrieKeyMapper;
-import org.ethereum.vm.trace.Op;
 
-import java.util.List;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import java.util.List;
+import java.util.Optional;
 
 /**
- * @author patricio
+ * TODO: REMOVE THIS FUNCTIONALITY, this is experimental only.
  */
 public class Unitrie extends javax.swing.JFrame {
 
+    public static final int BLOCK_NUMBER = 5755876;
     private RskContextState context;
     private DefaultMutableTreeNode root;
     private NodeRunner runner;
@@ -44,7 +44,7 @@ public class Unitrie extends javax.swing.JFrame {
         context.setup(getArgs());
         initComponents();
         this.blocknumberMinText.setText("" + this.context.getContext().getBlockStore().getMinNumber());
-        this.blocknumberText.setText("" + this.context.getBlockchain().getBestBlock().getNumber());
+        this.blocknumberText.setText("" + BLOCK_NUMBER);//this.context.getBlockchain().getBestBlock().getNumber());
         readTrie();
     }
 
@@ -231,77 +231,77 @@ public class Unitrie extends javax.swing.JFrame {
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(12, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(findButton)
-                                .addGap(112, 112, 112))
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 526, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(blocknumberMinText, javax.swing.GroupLayout.PREFERRED_SIZE, 57, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 11, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(blocknumberText, javax.swing.GroupLayout.PREFERRED_SIZE, 76, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(blocknumberButton)
-                                .addGap(66, 66, 66)
-                                .addComponent(startButton)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(stopButton))
-                            .addComponent(jScrollPane3)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(recoverHashField, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
-                            .addComponent(recoverHashLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(recoverButton)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(nodesReloadButton)
-                                .addGap(43, 43, 43)
-                                .addComponent(recoverLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                .addContainerGap())
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addContainerGap(12, Short.MAX_VALUE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                                .addComponent(findButton)
+                                                                .addGap(112, 112, 112))
+                                                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 526, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(blocknumberMinText, javax.swing.GroupLayout.PREFERRED_SIZE, 57, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 11, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(blocknumberText, javax.swing.GroupLayout.PREFERRED_SIZE, 76, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(blocknumberButton)
+                                                                .addGap(66, 66, 66)
+                                                                .addComponent(startButton)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                                .addComponent(stopButton))
+                                                        .addComponent(jScrollPane3)))
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                        .addComponent(recoverHashField, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+                                                        .addComponent(recoverHashLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                                .addGap(18, 18, 18)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(recoverButton)
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(nodesReloadButton)
+                                                                .addGap(43, 43, 43)
+                                                                .addComponent(recoverLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addContainerGap())
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(findButton)
-                        .addComponent(blocknumberText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(blocknumberButton)
-                        .addComponent(startButton)
-                        .addComponent(stopButton)
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(blocknumberMinText)
-                        .addComponent(jLabel2)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 405, Short.MAX_VALUE)
-                    .addComponent(jScrollPane3))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 30, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(nodesReloadButton)
-                    .addComponent(recoverLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(recoverHashField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(recoverButton)
-                    .addComponent(recoverHashLabel))
-                .addGap(21, 21, 21))
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                .addComponent(findButton)
+                                                .addComponent(blocknumberText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(blocknumberButton)
+                                                .addComponent(startButton)
+                                                .addComponent(stopButton)
+                                                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(blocknumberMinText)
+                                                .addComponent(jLabel2)))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 405, Short.MAX_VALUE)
+                                        .addComponent(jScrollPane3))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 30, Short.MAX_VALUE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(nodesReloadButton)
+                                        .addComponent(recoverLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(recoverHashField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(recoverButton)
+                                        .addComponent(recoverHashLabel))
+                                .addGap(21, 21, 21))
         );
 
         pack();
@@ -344,20 +344,17 @@ public class Unitrie extends javax.swing.JFrame {
     private void findButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_findButtonActionPerformed
         byte[] key = new TrieKeyMapper().getAccountKey(new RskAddress(this.findKey.getText()));
         final long blockNumber = getBlockNumber();
-        final Optional<TrieDTO> rootByBlockNumber = this.context.getRootByBlockNumber(blockNumber);
-        final DefaultMutableTreeNode newRoot = new DefaultMutableTreeNode(rootByBlockNumber.get());
+        final TrieDTO rootByBlockNumber = this.context.getRootByBlockNumber(blockNumber);
+        final DefaultMutableTreeNode newRoot = new DefaultMutableTreeNode(rootByBlockNumber);
         unitrie.setModel(new DefaultTreeModel(newRoot));
         TrieDTO result = find(newRoot, TrieKeySlice.fromKey(key));
-        if (result != null) {
-            this.root.removeAllChildren();
-            this.root = newRoot;
-            unitrie.updateUI();
-        } else {
-            unitrie.setModel(new DefaultTreeModel(this.root));
-            unitrie.updateUI();
-            JOptionPane.showMessageDialog(this, "Not found.", "Result", JOptionPane.WARNING_MESSAGE);
-            this.unitrieDescription.setText("Not found.");
-        }
+        this.root.removeAllChildren();
+        this.root = newRoot;
+        unitrie.updateUI();
+        byte[] value = this.context.getContext().getTrieStore().retrieveValue(Hex.decode(this.findKey.getText()));
+        String hexString = value != null ? Hex.toHexString(value) : "Null";
+        JOptionPane.showMessageDialog(this, "Value:" + hexString, "Result", JOptionPane.WARNING_MESSAGE);
+
     }//GEN-LAST:event_findButtonActionPerformed
 
     private long getBlockNumber() {
@@ -379,7 +376,8 @@ public class Unitrie extends javax.swing.JFrame {
         // TODO add your handling code here:
         new Thread(() -> {
             TrieDTO[] nodeArray = nodes.toArray(new TrieDTO[]{});
-            Optional<TrieDTO> recovered = TrieDTOInOrderRecoverer.recoverTrie(nodeArray);
+            Optional<TrieDTO> recovered = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, (node) -> {
+            });
             byte[] recoveredBytes = recovered.get().toMessage();
             Keccak256 hash = getHash(recoveredBytes);
             recoverHashLabel.setText(hash.toHexString());
@@ -390,6 +388,7 @@ public class Unitrie extends javax.swing.JFrame {
     private static Keccak256 getHash(byte[] recoveredBytes) {
         return new Keccak256(Keccak256Helper.keccak256(recoveredBytes));
     }
+
     private static String getHashString(byte[] recoveredBytes) {
         return getHash(recoveredBytes).toHexString();
     }
@@ -401,17 +400,17 @@ public class Unitrie extends javax.swing.JFrame {
     }//GEN-LAST:event_nodesReloadButtonActionPerformed
 
     private void readTrie() {
-        new Thread(()->{
+        new Thread(() -> {
 
             TrieDTOInOrderIterator iterator = new TrieDTOInOrderIterator(Unitrie.this.context.getContext().getTrieStore(),
-                    Hex.decode(recoverHashField.getText()),
-                    0);
+                    this.context.getStateRoot(Integer.parseInt(this.blocknumberText.getText())),//Hex.decode(recoverHashField.getText()),
+                    0, Integer.MAX_VALUE);
             List<TrieDTO> nodes = Lists.newArrayList();
             int i = 0;
             while (iterator.hasNext()) {
                 nodes.add(TrieDTO.decodeFromSync(iterator.next().getEncoded()));
                 i++;
-                if (i%10000 == 0) {
+                if (i % 10000 == 0) {
                     recoverLabel.setText("" + i);
                     recoverLabel.updateUI();
                 }
@@ -424,12 +423,12 @@ public class Unitrie extends javax.swing.JFrame {
 
     private TrieDTO find(DefaultMutableTreeNode uiNode, TrieKeySlice key) {
         TrieDTO node = (TrieDTO) uiNode.getUserObject();
-        final TrieKeySlice sharedPath = node.getPath();
-        if (sharedPath.length() > key.length()) {
+        final byte[] sharedPath = node.getPath();
+        if (sharedPath.length > key.length()) {
             return null;
         }
-        int commonPathLength = key.commonPath(sharedPath).length();
-        if (commonPathLength < sharedPath.length()) {
+        int commonPathLength = key.commonPath(TrieKeySlice.fromKey(sharedPath)).length();
+        if (commonPathLength < sharedPath.length) {
             return null;
         }
 
@@ -554,12 +553,12 @@ public class Unitrie extends javax.swing.JFrame {
 
 
     private DefaultMutableTreeNode createNodes() {
-        final Optional<TrieDTO> root = context.getRoot();
-        if (root.isPresent()) {
+        final TrieDTO root = context.getNodeDTO(this.context.getStateRoot(BLOCK_NUMBER));
+        if (root != null) {
             System.out.println("Has root!");
-            this.root = new DefaultMutableTreeNode(root.get());
-            this.root.add(new DefaultMutableTreeNode(context.getNode(root.get().getLeftHash()).get()));
-            this.root.add(new DefaultMutableTreeNode(context.getNode(root.get().getRightHash()).get()));
+            this.root = new DefaultMutableTreeNode(root);
+            this.root.add(new DefaultMutableTreeNode(context.getNode(root.getLeftHash()).get()));
+            this.root.add(new DefaultMutableTreeNode(context.getNode(root.getRightHash()).get()));
         } else {
 
             System.out.println("Not has root!");
