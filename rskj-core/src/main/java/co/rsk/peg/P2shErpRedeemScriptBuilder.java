@@ -14,6 +14,22 @@ import java.util.List;
 public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
     private static final Logger logger = LoggerFactory.getLogger(P2shErpRedeemScriptBuilder.class);
 
+    public Script createRedeemScript(List<BtcECKey> defaultPublicKeys,
+                                     List<BtcECKey> emergencyPublicKeys,
+                                     long csvValue) {
+        Script defaultRedeemScript = ScriptBuilder.createRedeemScript(
+            defaultPublicKeys.size() / 2 + 1,
+            defaultPublicKeys);
+        Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(
+            emergencyPublicKeys.size() / 2 + 1,
+            emergencyPublicKeys);
+
+        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
+        Script redeemScript = createRedeemScript(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
+        validateRedeemScriptValues(defaultRedeemScript, emergencyRedeemScript, csvValue, redeemScript);
+
+        return redeemScript;
+    }
     public static Script createRedeemScript(Script defaultRedeemScript,
                                      Script emergencyRedeemScript,
                                      byte[] serializedCsvValue) {
@@ -31,25 +47,13 @@ public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
             .op(ScriptOpCodes.OP_ENDIF)
             .build();
     }
-    public Script createRedeemScript(List<BtcECKey> defaultPublicKeys,
-                                     List<BtcECKey> emergencyPublicKeys,
-                                     long csvValue) {
-        Script defaultRedeemScript = ScriptBuilder.createRedeemScript(
-            defaultPublicKeys.size() / 2 + 1,
-            defaultPublicKeys);
-        Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(
-            emergencyPublicKeys.size() / 2 + 1,
-            emergencyPublicKeys);
-        validateRedeemScriptValues(defaultRedeemScript, emergencyRedeemScript, csvValue);
 
-        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
-        return createRedeemScript(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
-    }
 
     private static void validateRedeemScriptValues(
         Script defaultFederationRedeemScript,
         Script erpFederationRedeemScript,
-        Long csvValue
+        Long csvValue,
+        Script redeemScript
     ) {
         if (!defaultFederationRedeemScript.isSentToMultiSig() || !erpFederationRedeemScript.isSentToMultiSig()) {
 
@@ -72,5 +76,7 @@ public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
             logger.warn("[validateP2shErpRedeemScriptValues] {}", message);
             throw new VerificationException(message);
         }
+
+        FederationUtils.validateScriptSize(redeemScript);
     }
 }
