@@ -9,6 +9,6 @@ public interface ErpRedeemScriptBuilder {
     long MAX_CSV_VALUE = 65535L;
 
     Script createRedeemScript(List<BtcECKey> defaultPublicKeys,
-                                            List<BtcECKey> emergencyPublicKeys,
-                                            long csvValue);
+                              List<BtcECKey> emergencyPublicKeys,
+                              long csvValue);
 }
