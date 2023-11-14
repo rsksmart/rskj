@@ -601,16 +601,6 @@ public class ByteUtil {
         return (array.length == 1 && array[0] == 0);
     }
 
-    public static boolean isAllZeroes(byte[] array) {
-        for (byte b : array) {
-            if (b != 0) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     public static <T> Set<T> difference(Set<T> setA, Set<T> setB){
 
         Set<T> temp = new HashSet<>(setA);

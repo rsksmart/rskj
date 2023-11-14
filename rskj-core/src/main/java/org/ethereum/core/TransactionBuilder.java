@@ -73,7 +73,7 @@ public final class TransactionBuilder {
 	}
 
 	public TransactionBuilder value(byte[] value) {
-		this.value(RLP.parseCoinNullZero(ByteUtil.cloneBytes(value)));
+		this.value(RLP.parseCoin(ByteUtil.cloneBytes(value)));
 		return this;
 	}
 

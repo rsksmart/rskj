@@ -291,7 +291,7 @@ public class RLP {
 
     @Nonnull
     public static Coin parseCoin(@Nullable byte[] bytes) {
-        if (bytes == null || isAllZeroes(bytes)) {
+        if (bytes == null) {
             return Coin.ZERO;
         } else {
             return new Coin(bytes);
@@ -314,14 +314,6 @@ public class RLP {
         }
 
         return new Coin(new BigInteger(bytes));
-    }
-
-    public static Coin parseCoinNullZero(@Nullable byte[] bytes) {
-        if (bytes == null) {
-            return Coin.ZERO;
-        }
-
-        return new Coin(bytes);
     }
 
     /**
