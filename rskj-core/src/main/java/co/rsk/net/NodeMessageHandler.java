@@ -237,9 +237,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         messageCounter.increment(sender);
         MessageTask messageTask = new MessageTask(sender, message, score, nodeMsgTraceInfo);
 
-        if (messageTask.getMessage().getMessageType() == MessageType.BLOCK_MESSAGE) {
-            BlockMessage blockMessage = (BlockMessage) messageTask.getMessage();
-            loggerSnapExperiment.debug("BlockMessage block arrived: [{}] from: [{}]", blockMessage.getBlock().getNumber(), messageTask.sender.getPeerNodeID());
+        if (messageTask.getMessage().getMessageType() == MessageType.NEW_BLOCK_HASHES) {
+            NewBlockHashesMessage blockMessage = (NewBlockHashesMessage) messageTask.getMessage();
+            loggerSnapExperiment.debug("NewBlockMessage block arrived: [{}] from: [{}]", blockMessage.getBlockIdentifiers().get(0).getHash(), messageTask.sender.getPeerNodeID());
         }
 
         boolean messageAdded = this.queue.offer(messageTask);

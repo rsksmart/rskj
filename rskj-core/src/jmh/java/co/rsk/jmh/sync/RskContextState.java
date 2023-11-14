@@ -1,8 +1,8 @@
 package co.rsk.jmh.sync;
 
 import co.rsk.RskContext;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieDTO;
-import co.rsk.trie.TrieStore;
 import org.ethereum.core.Blockchain;
 import org.jetbrains.annotations.NotNull;
 import org.openjdk.jmh.annotations.Scope;
@@ -32,7 +32,7 @@ public class RskContextState {
             System.out.println("RskContextState -------- Context...");
             this.blockchain = getContext().getBlockchain();
             System.out.println(" -------- Blockchain...");
-            this.rootHash = this.getBlockchain().getBlockByNumber(5720000).getStateRoot();
+            this.rootHash = this.getBlockchain().getBestBlock().getStateRoot();
             System.out.println(" -------- Root:" + Hex.toHexString(this.rootHash));
         } catch (Throwable e) {
             System.out.println("RskContextState -------- Error:" + e.getMessage());
@@ -62,27 +62,22 @@ public class RskContextState {
         return rootHash;
     }
 
-    public TrieDTO getRoot() {
-        final byte[] hash = this.rootHash;
-        return getNodeDTO(hash);
-    }
-
     @NotNull
-    public TrieDTO getNodeDTO(byte[] hash) {
-        final TrieStore ds = this.getContext().getTrieStore();
-        return TrieDTO.decodeFromMessage(ds.retrieveValue(hash), ds, true, hash);
+
+    public Optional<Trie> getNode(byte[] hash) {
+        return this.getContext().getTrieStore().retrieve(hash);
     }
 
     public TrieDTO getRootByBlockNumber(long blockNumber) {
         byte[] root = getStateRoot(blockNumber);
-        return getNodeDTO(root);
+        return getNodeDTO(root).get();
     }
 
     public byte[] getStateRoot(long blockNumber) {
         return this.getBlockchain().getBlockByNumber(blockNumber).getStateRoot();
     }
 
-    public Optional<TrieDTO> getNode(byte[] hash) {
+    public Optional<TrieDTO> getNodeDTO(byte[] hash) {
         return this.getContext().getTrieStore().retrieveDTO(hash);
     }
     @TearDown

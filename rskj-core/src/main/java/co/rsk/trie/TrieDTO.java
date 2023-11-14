@@ -43,6 +43,7 @@ public class TrieDTO {
 
     // ----- FLAGS:
     private boolean hasLongVal;
+
     private boolean sharedPrefixPresent;
     private boolean leftNodePresent;
     private boolean rightNodePresent;
@@ -350,8 +351,15 @@ public class TrieDTO {
         return rightNodeEmbedded;
     }
 
+    public boolean isSharedPrefixPresent() {
+        return sharedPrefixPresent;
+    }
     public byte[] getPath() {
         return this.path;
+    }
+
+    public Integer getPathLength() {
+        return pathLength;
     }
 
     public boolean isHasLongVal() {

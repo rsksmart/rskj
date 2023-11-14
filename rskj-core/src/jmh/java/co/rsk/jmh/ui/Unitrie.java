@@ -12,7 +12,6 @@ import co.rsk.jmh.sync.RskContextState;
 import co.rsk.trie.*;
 import co.rsk.util.PreflightChecksUtils;
 import com.google.common.collect.Lists;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.TrieKeyMapper;
 
@@ -45,7 +44,7 @@ public class Unitrie extends javax.swing.JFrame {
         initComponents();
         this.blocknumberMinText.setText("" + this.context.getContext().getBlockStore().getMinNumber());
         this.blocknumberText.setText("" + BLOCK_NUMBER);//this.context.getBlockchain().getBestBlock().getNumber());
-        readTrie();
+        //readTrie();
     }
 
     /**
@@ -327,12 +326,12 @@ public class Unitrie extends javax.swing.JFrame {
         TrieDTO trie = (TrieDTO) nodeInfo;
         if (!(trie.isTerminal() || node.children().hasMoreElements())) {
             if (trie.getLeftHash() != null) {
-                node.add(new DefaultMutableTreeNode(context.getNode(trie.getLeftHash()).get()));
+                node.add(new DefaultMutableTreeNode(context.getNodeDTO(trie.getLeftHash()).get()));
             } else if (trie.getLeft() != null) {
                 node.add(new DefaultMutableTreeNode(TrieDTO.decodeFromMessage(trie.getLeft(), context.getContext().getTrieStore())));
             }
             if (trie.getRightHash() != null) {
-                node.add(new DefaultMutableTreeNode(context.getNode(trie.getRightHash()).get()));
+                node.add(new DefaultMutableTreeNode(context.getNodeDTO(trie.getRightHash()).get()));
             } else if (trie.getRight() != null) {
                 node.add(new DefaultMutableTreeNode(TrieDTO.decodeFromMessage(trie.getRight(), context.getContext().getTrieStore())));
             }
@@ -343,18 +342,18 @@ public class Unitrie extends javax.swing.JFrame {
 
     private void findButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_findButtonActionPerformed
         byte[] key = new TrieKeyMapper().getAccountKey(new RskAddress(this.findKey.getText()));
-        final long blockNumber = getBlockNumber();
-        final TrieDTO rootByBlockNumber = this.context.getRootByBlockNumber(blockNumber);
+        final TrieDTO rootByBlockNumber = this.context.getRootByBlockNumber(this.getBlockNumber());
         final DefaultMutableTreeNode newRoot = new DefaultMutableTreeNode(rootByBlockNumber);
         unitrie.setModel(new DefaultTreeModel(newRoot));
         TrieDTO result = find(newRoot, TrieKeySlice.fromKey(key));
-        this.root.removeAllChildren();
+        if (result != null) {
+            JOptionPane.showMessageDialog(this, "Value:" + result.toDescription(), "Result", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Value not found.", "Result", JOptionPane.WARNING_MESSAGE);
+        }
+        //this.root.removeAllChildren();
         this.root = newRoot;
         unitrie.updateUI();
-        byte[] value = this.context.getContext().getTrieStore().retrieveValue(Hex.decode(this.findKey.getText()));
-        String hexString = value != null ? Hex.toHexString(value) : "Null";
-        JOptionPane.showMessageDialog(this, "Value:" + hexString, "Result", JOptionPane.WARNING_MESSAGE);
-
     }//GEN-LAST:event_findButtonActionPerformed
 
     private long getBlockNumber() {
@@ -424,11 +423,12 @@ public class Unitrie extends javax.swing.JFrame {
     private TrieDTO find(DefaultMutableTreeNode uiNode, TrieKeySlice key) {
         TrieDTO node = (TrieDTO) uiNode.getUserObject();
         final byte[] sharedPath = node.getPath();
-        if (sharedPath.length > key.length()) {
+        TrieKeySlice sharedPathKey = node.isSharedPrefixPresent() ? TrieKeySlice.fromEncoded(sharedPath, 0, node.getPathLength(), sharedPath.length) : TrieKeySlice.empty();
+        if (sharedPathKey.length() > key.length()) {
             return null;
         }
-        int commonPathLength = key.commonPath(TrieKeySlice.fromKey(sharedPath)).length();
-        if (commonPathLength < sharedPath.length) {
+        int commonPathLength = key.commonPath(sharedPathKey).length();
+        if (commonPathLength < sharedPathKey.length()) {
             return null;
         }
 
@@ -439,7 +439,7 @@ public class Unitrie extends javax.swing.JFrame {
         final boolean isLeft = key.get(commonPathLength) == (byte) 0;
 
         TrieDTO result = null;
-        final Optional<TrieDTO> leftNode = getNode(node.getLeftHash(), node.getLeft());
+        final Optional<TrieDTO> leftNode = getNode(node.getLeftHash(), node.getLeft(), node.isLeftNodeEmbedded());
         if (leftNode.isPresent()) {
             final DefaultMutableTreeNode left = new DefaultMutableTreeNode(leftNode.get());
             uiNode.add(left);
@@ -450,7 +450,7 @@ public class Unitrie extends javax.swing.JFrame {
             }
         }
 
-        final Optional<TrieDTO> rightNode = getNode(node.getRightHash(), node.getRight());
+        final Optional<TrieDTO> rightNode = getNode(node.getRightHash(), node.getRight(), node.isRightNodeEmbedded());
         if (rightNode.isPresent()) {
             final DefaultMutableTreeNode right = new DefaultMutableTreeNode(rightNode.get());
             uiNode.add(right);
@@ -465,11 +465,11 @@ public class Unitrie extends javax.swing.JFrame {
 
     }
 
-    private Optional<TrieDTO> getNode(byte[] hash, byte[] value) {
-        if (value != null) {
+    private Optional<TrieDTO> getNode(byte[] hash, byte[] value, boolean embedded) {
+        if (embedded && value != null) {
             return Optional.of(TrieDTO.decodeFromMessage(value, this.context.getContext().getTrieStore()));
         } else if (hash != null) {
-            return this.context.getNode(hash);
+            return this.context.getNodeDTO(hash);
         }
         return Optional.empty();
     }
@@ -553,12 +553,12 @@ public class Unitrie extends javax.swing.JFrame {
 
 
     private DefaultMutableTreeNode createNodes() {
-        final TrieDTO root = context.getNodeDTO(this.context.getStateRoot(BLOCK_NUMBER));
-        if (root != null) {
+        final Optional<TrieDTO> root = context.getNodeDTO(this.context.getStateRoot(BLOCK_NUMBER));
+        if (root.isPresent()) {
             System.out.println("Has root!");
-            this.root = new DefaultMutableTreeNode(root);
-            this.root.add(new DefaultMutableTreeNode(context.getNode(root.getLeftHash()).get()));
-            this.root.add(new DefaultMutableTreeNode(context.getNode(root.getRightHash()).get()));
+            this.root = new DefaultMutableTreeNode(root.get());
+            this.root.add(new DefaultMutableTreeNode(context.getNodeDTO(root.get().getLeftHash()).get()));
+            this.root.add(new DefaultMutableTreeNode(context.getNodeDTO(root.get().getRightHash()).get()));
         } else {
 
             System.out.println("Not has root!");

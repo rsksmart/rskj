@@ -29,7 +29,7 @@ public class SnapshotSyncReadBench {
             this.trieStore = contextState.getContext().getTrieStore();
             System.out.println(" -------- TrieStore...");
             this.root = contextState.getBlockchain().getBlockByNumber(BLOCK_NUMBER).getStateRoot();//getBestBlock().getStateRoot();
-            this.totalSize = contextState.getNodeDTO(this.root).getTotalSize();
+            this.totalSize = contextState.getNodeDTO(this.root).get().getTotalSize();
             System.out.println(" -------- Size ("+BLOCK_NUMBER+")..." + this.totalSize);
             this.iterator = new TrieDTOInOrderIterator(this.trieStore, this.root, 0L, Long.MAX_VALUE);
        } catch (Throwable e) {
