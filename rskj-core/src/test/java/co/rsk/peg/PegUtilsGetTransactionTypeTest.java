@@ -2022,24 +2022,24 @@ class PegUtilsGetTransactionTypeTest {
         fundingTx.addOutput(Coin.COIN, flyoverFederationAddress);
         fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
 
-        BtcTransaction migrationTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
-        migrationTx.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-        migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
+        BtcTransaction btcTransaction = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
+        btcTransaction.addInput(fundingTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         for (int i = 0; i < 9; i++) {
             BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
             btcTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
             btcTx.addOutput(Coin.COIN, retiringFederation.getAddress());
-            migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
-            migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
+            btcTransaction.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
+            btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
         }
 
         TransactionWitness txWitness = new TransactionWitness(1);
         txWitness.setPush(0, new byte[]{ 0x1 });
-        migrationTx.setWitness(0, txWitness);
-        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
+        btcTransaction.setWitness(0, txWitness);
+        FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
 
-        Sha256Hash firstInputSigHash = migrationTx.hashForSignature(
+        Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
             retiringFederation.getRedeemScript(),
             BtcTransaction.SigHash.ALL,
@@ -2057,7 +2057,7 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
-            migrationTx,
+            btcTransaction,
             shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
         );
 
