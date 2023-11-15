@@ -74,7 +74,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class BridgeSupportRegisterBtcTransactionTest {
+class BridgeSupportRegisterBtcTransactionTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
@@ -175,28 +175,22 @@ public class BridgeSupportRegisterBtcTransactionTest {
 
     // unknown test
     private static Stream<Arguments> btc_transaction_sending_funds_to_unknown_address_args() {
-        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
-
         return Stream.of(
             Arguments.of(
                 fingerrootActivations,
                 false,
                 false,
-                false,
-                true
+                false
             ),
             Arguments.of(
                 fingerrootActivations,
                 false,
                 true,
-                false,
-                true
+                false
             ),
             Arguments.of(
                 fingerrootActivations,
                 false,
-                true,
                 true,
                 true
             ),
@@ -204,67 +198,58 @@ public class BridgeSupportRegisterBtcTransactionTest {
                 fingerrootActivations,
                 false,
                 false,
-                true,
                 true
             ),
 
 
             Arguments.of(
-                tbdActivations,
+                tbd600Activations,
                 false,
                 false,
+                false
+            ),
+            Arguments.of(
+                tbd600Activations,
                 false,
+                true,
+                false
+            ),
+            Arguments.of(
+                tbd600Activations,
+                false,
+                true,
                 true
             ),
             Arguments.of(
-                tbdActivations,
-                false,
-                true,
-                false,
-                true
-            ),
-            Arguments.of(
-                tbdActivations,
-                false,
-                true,
-                true,
-                true
-            ),
-            Arguments.of(
-                tbdActivations,
+                tbd600Activations,
                 false,
                 false,
-                true,
                 true
             ),
 
             Arguments.of(
-                tbdActivations,
-                true,
-                false,
-                false,
-                false
-            ),
-            Arguments.of(
-                tbdActivations,
-                true,
+                tbd600Activations,
                 true,
                 false,
                 false
             ),
             Arguments.of(
-                tbdActivations,
-                true,
+                tbd600Activations,
                 true,
                 true,
                 false
             ),
             Arguments.of(
-                tbdActivations,
+                tbd600Activations,
+                true,
+                true,
+                true
+            ),
+            Arguments.of(
+                tbd600Activations,
                 true,
                 false,
-                true,
-                false
+                true
             )
         );
     }
@@ -428,8 +413,7 @@ public class BridgeSupportRegisterBtcTransactionTest {
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         boolean shouldSendAmountBelowMinimum,
-        boolean existsRetiringFederation,
-        boolean shouldProcessed
+        boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
@@ -464,16 +448,26 @@ public class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-
-        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-
-        if (shouldProcessed) {
-            verify(bridgeEventLogger, never()).logPeginBtc(rskAddress, btcTransaction, amountToSend, 0);
+        // fingerroot - unknown tx should be processed and try to register
+        if (activations == fingerrootActivations) {
             verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        } else {
+            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            verify(bridgeEventLogger, times(1)).logPeginBtc(rskAddress, btcTransaction, Coin.ZERO, 0);
+        }
+
+        // tbd600Activations but before grace period - unknown tx should be rejected
+        else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
             verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+            verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, NO_UTXO_OR_UTXO_BELOW_MINIMUM);
+        }
+
+        // tbd600Activations and after grace period - unknown tx are just ignored
+        else {
+            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
+            Assertions.assertTrue(activeFederationUtxos.isEmpty());
         }
     }
 
@@ -483,8 +477,7 @@ public class BridgeSupportRegisterBtcTransactionTest {
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         boolean shouldSendAmountBelowMinimum,
-        boolean existsRetiringFederation,
-        boolean shouldProcessed
+        boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
@@ -522,16 +515,26 @@ public class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-
-        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-
-        if (shouldProcessed) {
-            verify(bridgeEventLogger, never()).logPeginBtc(rskAddress, btcTransaction, amountToSend, 0);
+        // fingerroot - unknown tx should be processed and try to register
+        if (activations == fingerrootActivations) {
             verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        } else {
+            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            verify(bridgeEventLogger, times(1)).logPeginBtc(rskAddress, btcTransaction, Coin.ZERO, 0);
+        }
+
+        // tbd600Activations but before grace period - unknown tx should be rejected
+        else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
             verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+            verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, NO_UTXO_OR_UTXO_BELOW_MINIMUM);
+        }
+
+        // tbd600Activations and after grace period - unknown tx are just ignored
+        else {
+            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
+            Assertions.assertTrue(activeFederationUtxos.isEmpty());
         }
     }
 
@@ -1953,8 +1956,7 @@ public class BridgeSupportRegisterBtcTransactionTest {
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         boolean shouldSendAmountBelowMinimum,
-        boolean existsRetiringFederation,
-        boolean shouldProcessed
+        boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
@@ -2005,15 +2007,26 @@ public class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-
-        if (shouldProcessed) {
-            verify(bridgeEventLogger, never()).logPeginBtc(rskAddress, btcTransaction, amountToSend, 0);
+        // fingerroot - unknown tx should be processed and try to register
+        if (activations == fingerrootActivations) {
             verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        } else {
+            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            verify(bridgeEventLogger, times(1)).logPeginBtc(rskAddress, btcTransaction, Coin.ZERO, 0);
+        }
+
+        // tbd600Activations but before grace period - unknown tx should be rejected
+        else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
             verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+            verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, NO_UTXO_OR_UTXO_BELOW_MINIMUM);
+        }
+
+        // tbd600Activations and after grace period - unknown tx are just ignored
+        else {
+            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
+            Assertions.assertTrue(activeFederationUtxos.isEmpty());
         }
     }
 
@@ -2023,8 +2036,7 @@ public class BridgeSupportRegisterBtcTransactionTest {
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex,
         boolean shouldSendAmountBelowMinimum,
-        boolean existsRetiringFederation,
-        boolean shouldProcessed
+        boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
@@ -2080,15 +2092,26 @@ public class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-
-        if (shouldProcessed) {
-            verify(bridgeEventLogger, never()).logPeginBtc(rskAddress, btcTransaction, amountToSend, 0);
+        // fingerroot - unknown tx should be processed and try to register
+        if (activations == fingerrootActivations) {
             verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        } else {
+            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            verify(bridgeEventLogger, times(1)).logPeginBtc(rskAddress, btcTransaction, Coin.ZERO, 0);
+        }
+
+        // tbd600Activations but before grace period - unknown tx should be rejected
+        else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
             verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+            verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, NO_UTXO_OR_UTXO_BELOW_MINIMUM);
+        }
+
+        // tbd600Activations and after grace period - unknown tx are just ignored
+        else {
+            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
+            Assertions.assertTrue(activeFederationUtxos.isEmpty());
         }
     }
 
