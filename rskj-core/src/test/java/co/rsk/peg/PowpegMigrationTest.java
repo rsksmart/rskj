@@ -868,7 +868,12 @@ class PowpegMigrationTest {
                 .anyMatch(utxo -> utxo.getHash().equals(peginToFuturePowPegHash));
 
             // This assertion should change when we change peg-in verification
-            assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFuturePowPegHash));
+            if (activations.isActive(ConsensusRule.RSKIP379) && !shouldPeginToNewPowpegWork){
+                assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFuturePowPegHash));
+            } else {
+                assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFuturePowPegHash));
+            }
+
             assertFalse(bridgeStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo ->
                 utxo.getHash().equals(peginToFuturePowPegHash))
             );
