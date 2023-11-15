@@ -402,7 +402,10 @@ public class BridgeUtils {
                         throw new ScriptException(message);
                     }
                     Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
-                    if (activeFederations.stream().anyMatch(federation -> federation.getStandardRedeemScript().equals(inputStandardRedeemScript))) {
+                    if (activeFederations.stream().anyMatch(federation ->
+                        (federation instanceof ErpFederation ? ((ErpFederation) federation).getStandardRedeemScript()
+                            : federation.getRedeemScript()
+                        ).equals(inputStandardRedeemScript))) {
                         return false;
                     }
 
@@ -490,7 +493,10 @@ public class BridgeUtils {
     }
 
     public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
-        return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(Federation::getStandardP2SHScript).toArray(Script[]::new));
+        return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(fed ->
+            fed instanceof ErpFederation ? ((ErpFederation) fed).getStandardP2SHScript()
+                : fed.getP2SHScript()
+            ).toArray(Script[]::new));
     }
 
     public static boolean isPegOutTx(BtcTransaction tx, ActivationConfig.ForBlock activations, Script... p2shScript) {
@@ -515,7 +521,8 @@ public class BridgeUtils {
             }
 
             Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-            if (Stream.of(p2shScript).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
+            if (Stream.of(p2shScript).anyMatch(federationPayScript ->
+                federationPayScript.equals(outputScript))) {
                 return true;
             }
         }

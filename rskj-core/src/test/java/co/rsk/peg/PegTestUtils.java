@@ -263,7 +263,7 @@ public final class PegTestUtils {
 
     public static Federation createFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        return new Federation(
+        return new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
             Instant.ofEpochMilli(1000L),
             0L,

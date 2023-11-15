@@ -7,6 +7,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
 import java.util.List;
+
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,8 @@ public class P2shErpFederation extends ErpFederation {
         ActivationConfig.ForBlock activations
     ) {
         super(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay, activations);
+
+        validateRedeemScriptSize();
     }
 
     @Override
@@ -48,5 +51,10 @@ public class P2shErpFederation extends ErpFederation {
             );
         }
         return standardRedeemScript;
+    }
+
+    private void validateRedeemScriptSize() {
+        Script redeemScript = this.getRedeemScript();
+        FederationUtils.validateScriptSize(redeemScript);
     }
 }

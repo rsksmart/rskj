@@ -31,8 +31,10 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.genesis.BlockTag;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.EthModuleTestUtils;
+import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
@@ -289,7 +291,7 @@ class EthModuleGasEstimationDSLTest {
         callArguments.setGas(HexUtils.toQuantityJsonHex(gasEstimationCap + 1_000_000_000)); // exceeding the gas cap
         callArguments.setData("0x31fe52e8"); // call outOfGas()
 
-        String estimatedGas = eth.estimateGas(callArguments, BlockTag.LATEST.getTag());
+        String estimatedGas = eth.estimateGas(TransactionFactoryHelper.toCallArgumentsParam(callArguments), new BlockIdentifierParam(BlockTag.LATEST.getTag()));
         assertEquals("0x67c280", estimatedGas);
 
         assertEquals(gasEstimationCap, Long.decode(estimatedGas).longValue());
@@ -786,7 +788,7 @@ class EthModuleGasEstimationDSLTest {
     }
 
     private long estimateGas(EthModuleTestUtils.EthModuleGasEstimation eth, CallArguments args, String bnOrId) {
-        return Long.parseLong(eth.estimateGas(args, bnOrId).substring("0x".length()), 16);
+        return Long.parseLong(eth.estimateGas(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam(bnOrId)).substring("0x".length()), 16);
     }
 
     // todo this is duplicated code, should be extracted into a test util

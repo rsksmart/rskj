@@ -30,6 +30,10 @@ import co.rsk.rpc.Web3TraceModule;
 import co.rsk.rpc.Web3TxPoolModule;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringReputationSummary;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDurationParam;
+import org.ethereum.rpc.parameters.HexKeyParam;
 
 @java.lang.SuppressWarnings("squid:S100")
 public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule, Web3TraceModule, Web3RskModule {
@@ -54,11 +58,11 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
     String personal_newAccountWithSeed(String seed);
     String personal_newAccount(String passphrase);
     String[] personal_listAccounts();
-    String personal_importRawKey(String key, String passphrase);
-    String personal_sendTransaction(CallArguments transactionArgs, String passphrase) throws Exception;
-    boolean personal_unlockAccount(String key, String passphrase, String duration);
-    boolean personal_lockAccount(String key);
-    String personal_dumpRawKey(String address) throws Exception;
+    String personal_importRawKey(HexKeyParam key, String passphrase);
+    String personal_sendTransaction(CallArgumentsParam transactionArgs, String passphrase) throws Exception;
+    boolean personal_unlockAccount(HexAddressParam key, String passphrase, HexDurationParam duration);
+    boolean personal_lockAccount(HexAddressParam key);
+    String personal_dumpRawKey(HexAddressParam address) throws Exception;
 
     void sco_banAddress(String address);
     void sco_unbanAddress(String address);

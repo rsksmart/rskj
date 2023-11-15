@@ -18,8 +18,11 @@
 
 package co.rsk.rpc.modules.personal;
 
-import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.DisabledWalletException;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDurationParam;
+import org.ethereum.rpc.parameters.HexKeyParam;
 
 public class PersonalModuleWalletDisabled implements PersonalModule {
     @Override
@@ -45,27 +48,27 @@ public class PersonalModuleWalletDisabled implements PersonalModule {
     }
 
     @Override
-    public String importRawKey(String key, String passphrase) {
+    public String importRawKey(HexKeyParam key, String passphrase) {
         throw new DisabledWalletException();
     }
 
     @Override
-    public String sendTransaction(CallArguments args, String passphrase) {
+    public String sendTransaction(CallArgumentsParam args, String passphrase) {
         throw new DisabledWalletException();
     }
 
     @Override
-    public boolean unlockAccount(String address, String passphrase, String duration) {
+    public boolean unlockAccount(HexAddressParam address, String passphrase, HexDurationParam duration) {
         throw new DisabledWalletException();
     }
 
     @Override
-    public boolean lockAccount(String address) {
+    public boolean lockAccount(HexAddressParam address) {
         throw new DisabledWalletException();
     }
 
     @Override
-    public String dumpRawKey(String address) {
+    public String dumpRawKey(HexAddressParam address) {
         throw new DisabledWalletException();
     }
 }

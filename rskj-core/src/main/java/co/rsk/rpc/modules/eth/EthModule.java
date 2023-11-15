@@ -39,6 +39,10 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -122,10 +126,11 @@ public class EthModule
         return state.stateToMap();
     }
 
-    public String call(CallArguments args, String bnOrId) {
+    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId) {
         String hReturn = null;
+        CallArguments args = argsParam.toCallArguments();
         try {
-            ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId);
+            ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
             Block block = result.getBlock();
             Trie finalState = result.getFinalState();
             ProgramResult res;
@@ -152,8 +157,8 @@ public class EthModule
         }
     }
 
-    public String estimateGas(CallArguments args, @Nonnull String bnOrId) {
-        ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId);
+    public String estimateGas(CallArgumentsParam args, @Nonnull BlockIdentifierParam bnOrId) {
+        ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
         Trie finalState = result.getFinalState();
         RepositorySnapshot snapshot = finalState == null
@@ -162,7 +167,7 @@ public class EthModule
 
         String estimation = null;
         try {
-            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args.toCallArguments());
 
             TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
                     block,
@@ -203,12 +208,12 @@ public class EthModule
     }
 
     @Override
-    public String sendTransaction(CallArguments args) {
+    public String sendTransaction(CallArgumentsParam args) {
         return ethModuleTransaction.sendTransaction(args);
     }
 
     @Override
-    public String sendRawTransaction(String rawData) {
+    public String sendRawTransaction(HexDataParam rawData) {
         return ethModuleTransaction.sendRawTransaction(rawData);
     }
 
@@ -221,14 +226,14 @@ public class EthModule
         return HexUtils.toJsonHex(new byte[]{chainId});
     }
 
-    public String getCode(String address, String blockId) {
+    public String getCode(HexAddressParam address, String blockId) {
         if (blockId == null) {
             throw new NullPointerException();
         }
 
         String s = null;
+        RskAddress addr = address.getAddress();
         try {
-            RskAddress addr = new RskAddress(address);
 
             AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
 
@@ -246,7 +251,7 @@ public class EthModule
             return s;
         } finally {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("eth_getCode({}, {}): {}", address, blockId, s);
+                LOGGER.debug("eth_getCode({}, {}): {}", addr.toHexString(), blockId, s);
             }
         }
     }

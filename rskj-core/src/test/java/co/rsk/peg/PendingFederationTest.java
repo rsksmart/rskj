@@ -298,7 +298,7 @@ class PendingFederationTest {
                 activations
             );
         } else if (isRskip201Active) {
-            expectedFederation = new ErpFederation(
+            expectedFederation = new LegacyErpFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
                 0L,
@@ -308,7 +308,7 @@ class PendingFederationTest {
                 activations
             );
         } else {
-            expectedFederation = new Federation(
+            expectedFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
                 0L,

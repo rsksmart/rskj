@@ -35,7 +35,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.trace.ProgramTraceProcessor;

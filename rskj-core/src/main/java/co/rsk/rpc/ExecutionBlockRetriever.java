@@ -62,8 +62,7 @@ public class ExecutionBlockRetriever implements InternalService {
     }
 
     public Result retrieveExecutionBlock(String bnOrId) {
-
-        if(BlockTag.EARLIEST.tagEquals(bnOrId)) {
+        if (BlockTag.EARLIEST.tagEquals(bnOrId)) {
             return Result.ofBlock(blockchain.getBlockByNumber(0));
         }
 

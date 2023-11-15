@@ -22,11 +22,11 @@ import co.rsk.core.Coin;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
+
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 /**
  * Hex utils
@@ -354,6 +354,16 @@ public class HexUtils {
      */
     public static int jsonHexToInt(final String param) {
         if (!hasHexPrefix(param)) {
+            throw invalidParamError(INCORRECT_HEX_SYNTAX);
+        }
+
+        String preResult = removeHexPrefix(param);
+
+        return Integer.parseInt(preResult, 16);
+    }
+
+    public static int jsonHexToIntOptionalPrefix(final String param) {
+        if (!hasHexPrefix(param) && !HexUtils.isHex(param)) {
             throw invalidParamError(INCORRECT_HEX_SYNTAX);
         }
 

@@ -25,7 +25,13 @@ import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.BlockRefParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
 import org.ethereum.util.BuildInfo;
+import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,12 +107,12 @@ class Web3ImplUnitTest {
         when(retriever.getInformationProvider(id))
                 .thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
-                () -> target.eth_getBalance(addr, id));
+                () -> target.eth_getBalance(new HexAddressParam(addr), new BlockRefParam(id)));
     }
 
     @Test
     void eth_getBalance() {
-        String id = "id";
+        String id = "0x00";
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
 
@@ -115,7 +121,7 @@ class Web3ImplUnitTest {
         when(aip.getBalance(expectedAddress))
                 .thenReturn(new Coin(BigInteger.ONE));
 
-        String result = target.eth_getBalance(addr, id);
+        String result = target.eth_getBalance(new HexAddressParam(addr),new BlockRefParam(id));
         assertEquals("0x1", result);
     }
 
@@ -125,43 +131,51 @@ class Web3ImplUnitTest {
         String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8");
             }
         };
         final Web3Impl spyTarget = spy(target);
         doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_getBalance(addr, blockRef);
+        String result = spyTarget.eth_getBalance(new HexAddressParam(addr), new BlockRefParam(blockRef));
         assertEquals("0x1", result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
 
     @Test
     void eth_getStorageAt_stateCannotBeRetrieved() {
-        String id = "id";
+        String id = "0x00";
         String addr = "0x0011223344556677880011223344556677889900";
         String storageIdx = "0x01";
+
+        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
+        BlockRefParam blockRefParam = new BlockRefParam(id);
 
         when(retriever.getInformationProvider(id))
                 .thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
-                () -> target.eth_getStorageAt(addr, storageIdx, id));
+                () -> target.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam));
     }
 
     @Test
     void eth_getStorageAt() {
-        String id = "id";
+        String id = "0x00";
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
         String storageIdx = "0x01";
         DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
+
+        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
+        BlockRefParam blockRefParam = new BlockRefParam(id);
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
         when(retriever.getInformationProvider(id)).thenReturn(aip);
         when(aip.getStorageValue(expectedAddress, expectedIdx))
                 .thenReturn(DataWord.ONE);
 
-        String result = target.eth_getStorageAt(addr, storageIdx, id);
+        String result = target.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam);
         assertEquals("0x0000000000000000000000000000000000000000000000000000000000000001",
                 result);
     }
@@ -173,13 +187,18 @@ class Web3ImplUnitTest {
         final String storageIdx = "0x01";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8");
             }
         };
         final Web3Impl spyTarget = spy(target);
         final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000001";
+
+        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
+        BlockRefParam blockRefParam = new BlockRefParam(blockRef);
+
         doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_getStorageAt(addr, storageIdx, blockRef);
+        String result = spyTarget.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam);
         assertEquals(expectedData, result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
@@ -187,42 +206,46 @@ class Web3ImplUnitTest {
 
     @Test
     void eth_getStorageAtEmptyCell() {
-        String id = "id";
+        String id = "0x00";
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
         String storageIdx = "0x01";
         DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
+
+        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
+        BlockRefParam blockRefParam = new BlockRefParam(id);
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
         when(retriever.getInformationProvider(id)).thenReturn(aip);
         when(aip.getStorageValue(expectedAddress, expectedIdx))
                 .thenReturn(null);
 
-        String result = target.eth_getStorageAt(addr, storageIdx, id);
+        String result = target.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam);
         assertEquals("0x0",
                 result);
     }
 
     @Test
     void eth_getBlockTransactionCountByNumber_blockNotFound() {
-        String id = "id";
+        String id = "0x00";
 
         when(retriever.getTransactions(id)).thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
-                () -> target.eth_getBlockTransactionCountByNumber(id));
+                () -> target.eth_getBlockTransactionCountByNumber(new BlockIdentifierParam(id)));
     }
 
     @Test
     void eth_getBlockTransactionCountByNumber() {
-        String id = "id";
+        String id = "0x00";
         List<Transaction> txs = new LinkedList<>();
         txs.add(mock(Transaction.class));
         txs.add(mock(Transaction.class));
 
         when(retriever.getTransactions(id)).thenReturn(txs);
 
-        String result = target.eth_getBlockTransactionCountByNumber(id);
+        String result = target.eth_getBlockTransactionCountByNumber(new BlockIdentifierParam(id));
 
         assertEquals("0x2", result);
     }
@@ -233,13 +256,13 @@ class Web3ImplUnitTest {
         final String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8");
             }
         };
         final Web3Impl spyTarget = spy(target);
         final String expectedData =  "0x010203";
         doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_getCode(addr,blockRef);
+        String result = spyTarget.eth_getCode(new HexAddressParam(addr), new BlockRefParam(blockRef));
         assertEquals(expectedData, result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
@@ -253,14 +276,14 @@ class Web3ImplUnitTest {
         argsForCall.setData("ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8");
             }
         };
         final Web3Impl spyTarget = spy(target);
         final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
 
         doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_call(argsForCall,blockRef);
+        String result = spyTarget.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall),blockRef);
         assertEquals(expectedData, result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
@@ -271,12 +294,12 @@ class Web3ImplUnitTest {
         String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x0011223344556677880011223344556677889900");
+                put("blockHash", "0xc2b835124172db5bd051bb94fa123721eacac43b5cba2499b22c7583a35689b8");
             }
         };
         final Web3Impl spyTarget = spy(target);
         doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_getTransactionCount(addr, blockRef);
+        String result = spyTarget.eth_getTransactionCount(new HexAddressParam(addr), new BlockRefParam(blockRef));
         assertEquals("0x1", result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
@@ -289,7 +312,7 @@ class Web3ImplUnitTest {
         when(blockchain.getBlockByHash(bytesHash)).thenReturn(null);
 
         RskJsonRpcRequestException exception = TestUtils
-                .assertThrows(RskJsonRpcRequestException.class, () -> target.eth_getUncleCountByBlockHash(hash));
+                .assertThrows(RskJsonRpcRequestException.class, () -> target.eth_getUncleCountByBlockHash(new BlockHashParam(hash)));
 
         assertEquals(-32602, (int) exception.getCode());
     }
@@ -308,22 +331,22 @@ class Web3ImplUnitTest {
         when(block.getUncleList()).thenReturn(uncles);
         when(blockchain.getBlockByHash(bytesHash)).thenReturn(block);
 
-        String result = target.eth_getUncleCountByBlockHash(hash);
+        String result = target.eth_getUncleCountByBlockHash(new BlockHashParam(hash));
         assertEquals("0x2", result);
     }
 
     @Test
     void eth_getUncleCountByBlockNumber_notFound() {
-        String identifier = "notFoundable";
+        String identifier = "0x00";
         when(retriever.getBlock(identifier)).thenReturn(Optional.empty());
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
-                () -> target.eth_getUncleCountByBlockNumber(identifier));
+                () -> target.eth_getUncleCountByBlockNumber(new BlockIdentifierParam(identifier)));
     }
 
     @Test
     void eth_getUncleCountByBlockNumber() {
-        String identifier = "notFoundable";
+        String identifier = "0x00";
         Block block = mock(Block.class);
         List<BlockHeader> uncles = new LinkedList<>();
         uncles.add(mock(BlockHeader.class));
@@ -332,7 +355,7 @@ class Web3ImplUnitTest {
         when(block.getUncleList()).thenReturn(uncles);
         when(retriever.getBlock(identifier)).thenReturn(Optional.of(block));
 
-        String result = target.eth_getUncleCountByBlockNumber(identifier);
+        String result = target.eth_getUncleCountByBlockNumber(new BlockIdentifierParam(identifier));
 
         assertEquals("0x2", result);
     }

@@ -249,7 +249,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation1 = new Federation(
+        Federation federation1 = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -262,7 +262,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fb03"))
         );
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation2 = new Federation(
+        Federation federation2 = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
             Instant.ofEpochMilli(2000L),
             0L,
@@ -574,7 +574,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation erpFederation = new Federation(
+        Federation erpFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -616,7 +616,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation erpFederation = new Federation(
+        Federation erpFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -658,7 +658,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation erpFederation = new Federation(
+        Federation erpFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -691,7 +691,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation erpFederation = new Federation(
+        Federation erpFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -724,7 +724,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = new Federation(
+        Federation retiredFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -769,7 +769,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = new Federation(
+        Federation retiredFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -814,7 +814,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = new Federation(
+        Federation retiredFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -827,7 +827,7 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -875,7 +875,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = new Federation(
+        Federation retiredFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -888,7 +888,7 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -935,7 +935,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = new Federation(
+        Federation retiredFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -948,7 +948,7 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -991,7 +991,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = new Federation(
+        Federation retiredFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -1004,7 +1004,7 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -1308,7 +1308,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiredFederation = new P2shErpFederation(
+        ErpFederation retiredFederation = new P2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
@@ -1438,7 +1438,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiredFederation = new Federation(
+        Federation retiredFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
@@ -1487,7 +1487,7 @@ class BridgeUtilsTest {
             migrationTx,
             activeFederation,
             null,
-            retiredFederation.getStandardP2SHScript(),
+            retiredFederation.getP2SHScript(),
             btcContext,
             bridgeConstantsMainnet,
             activations
@@ -1505,7 +1505,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiringFederation = new Federation(
+        Federation retiringFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
@@ -1562,7 +1562,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiredFederation = new Federation(
+        Federation retiredFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
@@ -1574,7 +1574,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation activeFederation = new Federation(
+        Federation activeFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
@@ -1598,7 +1598,7 @@ class BridgeUtilsTest {
             migrationTx,
             activeFederation,
             null,
-            retiredFederation.getStandardP2SHScript(),
+            retiredFederation.getP2SHScript(),
             btcContext,
             bridgeConstantsMainnet,
             activations
@@ -1626,7 +1626,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiringFederation = new Federation(
+        Federation retiringFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
@@ -1638,7 +1638,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation activeFederation = new Federation(
+        Federation activeFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
@@ -1677,7 +1677,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation activeFederation = new Federation(
+        Federation activeFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(2000L),
             2L,
@@ -1689,7 +1689,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fb02")),
             BtcECKey.fromPrivate(Hex.decode("fb03"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation retiringFederation = new Federation(
+        Federation retiringFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
@@ -1700,7 +1700,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fc01")),
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation retiredFederation = new Federation(
+        Federation retiredFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
@@ -1831,7 +1831,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa02")),
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation federation2 = new Federation(
+        Federation federation2 = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(2000L),
             2L,
@@ -1868,7 +1868,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         );
         flyoverFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation flyoverFederation = new Federation(
+        Federation flyoverFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(flyoverFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -1926,7 +1926,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         );
         defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation defaultFederation = new Federation(
+        Federation defaultFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -1940,7 +1940,7 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = new ErpFederation(
+        ErpFederation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -2002,7 +2002,7 @@ class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         );
         defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation defaultFederation = new Federation(
+        Federation defaultFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -2016,7 +2016,7 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -2116,7 +2116,7 @@ class BridgeUtilsTest {
             .map(BtcECKey::fromPrivate)
             .sorted(BtcECKey.PUBKEY_COMPARATOR)
             .collect(Collectors.toList());
-        Federation federation1 = new Federation(
+        Federation federation1 = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
             Instant.ofEpochMilli(1000L), 0L, networkParameters
         );
@@ -2126,7 +2126,7 @@ class BridgeUtilsTest {
             .map(BtcECKey::fromPrivate)
             .sorted(BtcECKey.PUBKEY_COMPARATOR)
             .collect(Collectors.toList());
-        Federation federation2 = new Federation(
+        Federation federation2 = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
             Instant.ofEpochMilli(2000L), 0L, networkParameters
         );
@@ -2536,7 +2536,7 @@ class BridgeUtilsTest {
         // Arrange
         BtcECKey federator1Key = new BtcECKey();
         BtcECKey federator2Key = new BtcECKey();
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
             Instant.now(),
             0,
@@ -2584,7 +2584,7 @@ class BridgeUtilsTest {
         // Arrange
         BtcECKey federator1Key = new BtcECKey();
         BtcECKey federator2Key = new BtcECKey();
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
             Instant.now(),
             0,
@@ -2632,7 +2632,7 @@ class BridgeUtilsTest {
         // Arrange
         BtcECKey federator1Key = new BtcECKey();
         BtcECKey federator2Key = new BtcECKey();
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
             Instant.now(),
             0,
@@ -2978,7 +2978,7 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
@@ -2994,7 +2994,7 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
@@ -3019,7 +3019,7 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
@@ -3044,7 +3044,7 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
@@ -3072,7 +3072,7 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
@@ -3113,7 +3113,7 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -3157,7 +3157,7 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -3191,7 +3191,7 @@ class BridgeUtilsTest {
         BtcECKey key2 = new BtcECKey();
         BtcECKey key3 = new BtcECKey();
         List<BtcECKey> keys = Arrays.asList(key1, key2, key3);
-        Federation fed = new Federation(
+        Federation fed = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
@@ -3274,7 +3274,7 @@ class BridgeUtilsTest {
     }
 
     private void test_getSpendWallet(boolean isFlyoverCompatible) throws UTXOProviderException {
-        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
+        Federation federation = new StandardMultisigFederation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
             BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
             Instant.ofEpochMilli(5005L),
@@ -3305,7 +3305,7 @@ class BridgeUtilsTest {
     }
 
     private void test_getNoSpendWallet(boolean isFlyoverCompatible) {
-        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
+        Federation federation = new StandardMultisigFederation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
             BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
             Instant.ofEpochMilli(5005L),
@@ -3534,7 +3534,7 @@ class BridgeUtilsTest {
 
     private ErpFederation createErpFederation() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
-        return new ErpFederation(
+        return new LegacyErpFederation(
             genesisFederation.getMembers(),
             genesisFederation.getCreationTime(),
             genesisFederation.getCreationBlockNumber(),
