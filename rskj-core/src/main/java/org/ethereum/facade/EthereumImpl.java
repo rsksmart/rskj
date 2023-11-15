@@ -28,6 +28,7 @@ import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.server.ChannelManager;
 
 import javax.annotation.Nonnull;
+import java.math.BigDecimal;
 
 public class EthereumImpl implements Ethereum {
 
@@ -36,13 +37,15 @@ public class EthereumImpl implements Ethereum {
     private final CompositeEthereumListener compositeEthereumListener;
     private final Blockchain blockchain;
     private final GasPriceTracker gasPriceTracker;
+    private final Double minGasPriceMultiplier;
 
     public EthereumImpl(
             ChannelManager channelManager,
             TransactionGateway transactionGateway,
             CompositeEthereumListener compositeEthereumListener,
             Blockchain blockchain,
-            GasPriceTracker gasPriceTracker) {
+            GasPriceTracker gasPriceTracker,
+            Double minGasPriceMultiplier) {
         this.channelManager = channelManager;
         this.transactionGateway = transactionGateway;
 
@@ -51,6 +54,7 @@ public class EthereumImpl implements Ethereum {
 
         this.gasPriceTracker = gasPriceTracker;
         compositeEthereumListener.addListener(gasPriceTracker);
+        this.minGasPriceMultiplier = minGasPriceMultiplier;
     }
 
     @Override
@@ -80,6 +84,10 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public Coin getGasPrice() {
-        return gasPriceTracker.getGasPrice();
+        if (gasPriceTracker.isFeeMarketWorking()) {
+            return gasPriceTracker.getGasPrice();
+        }
+        double estimatedGasPrice = blockchain.getBestBlock().getMinimumGasPrice().asBigInteger().doubleValue() * minGasPriceMultiplier;
+        return new Coin(BigDecimal.valueOf(estimatedGasPrice).toBigInteger());
     }
 }
