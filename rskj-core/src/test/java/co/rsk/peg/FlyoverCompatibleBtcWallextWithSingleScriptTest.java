@@ -48,14 +48,15 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        erpFederation = new LegacyErpFederation(
+        erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             erpFedKeys,
             5063,
-            activations
+            activations,
+            new NonStandardErpRedeemScriptBuilder()
         );
 
         federationList = Collections.singletonList(federation);
