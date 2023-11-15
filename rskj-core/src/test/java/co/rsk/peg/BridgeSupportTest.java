@@ -6562,14 +6562,15 @@ class BridgeSupportTest {
         when(preRSKIP271_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
         when(preRSKIP271_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(false);
 
-        Federation p2shFed = new P2shErpFederation(
+        Federation p2shFed = new ErpFederation(
             members,
             Instant.now(),
             1L,
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            preRSKIP271_activations
+            preRSKIP271_activations,
+            new P2shErpRedeemScriptBuilder()
         );
 
         Stream<Arguments> preRskip271 = Stream.of(
@@ -6630,14 +6631,15 @@ class BridgeSupportTest {
         when(preRSKIP385_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
         when(preRSKIP385_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(false);
 
-        Federation p2shFed = new P2shErpFederation(
+        Federation p2shFed = new ErpFederation(
             members,
             Instant.now(),
             1L,
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            preRSKIP385_activations
+            preRSKIP385_activations,
+            new P2shErpRedeemScriptBuilder()
         );
 
         Stream<Arguments> preRskip385 = Stream.of(
@@ -6697,14 +6699,15 @@ class BridgeSupportTest {
             PegTestUtils.createRandomBtcECKeys(7)
         );
 
-        P2shErpFederation p2shFed = new P2shErpFederation(
+        ErpFederation p2shFed = new ErpFederation(
             members,
             Instant.now(),
             1L,
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            postRSKIP385_activations
+            postRSKIP385_activations,
+            new P2shErpRedeemScriptBuilder()
         );
 
         Stream<Arguments> postRskip385 = Stream.of(

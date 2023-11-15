@@ -314,8 +314,8 @@ public class BridgeSerializationUtils {
             BridgeSerializationUtils::deserializeFederationMember
         );
     }
-
-    public static LegacyErpFederation deserializeLegacyErpFederation(
+// TODO change Legacy to NonStandard in the name
+    public static ErpFederation deserializeLegacyErpFederation(
         byte[] data,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations
@@ -326,18 +326,22 @@ public class BridgeSerializationUtils {
             BridgeSerializationUtils::deserializeFederationMember
         );
 
-        return new LegacyErpFederation(
+        ErpRedeemScriptBuilder erpRedeemScriptBuilder =
+            ErpRedeemScriptBuilderUtils.defineErpRedeemScriptBuilder(activations, bridgeConstants);
+
+        return new ErpFederation(
             federation.getMembers(),
             federation.creationTime,
             federation.getCreationBlockNumber(),
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations
+            activations,
+            erpRedeemScriptBuilder
         );
     }
 
-    public static P2shErpFederation deserializeP2shErpFederation(
+    public static ErpFederation deserializeP2shErpFederation(
         byte[] data,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations
@@ -347,15 +351,15 @@ public class BridgeSerializationUtils {
             bridgeConstants.getBtcParams(),
             BridgeSerializationUtils::deserializeFederationMember
         );
-
-        return new P2shErpFederation(
+        return new ErpFederation(
             federation.getMembers(),
             federation.creationTime,
             federation.getCreationBlockNumber(),
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations
+            activations,
+            new P2shErpRedeemScriptBuilder()
         );
     }
 
