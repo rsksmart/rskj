@@ -257,9 +257,15 @@ public class RLP {
      * Parse and verify that the passed data has just one list encoded as RLP
      */
     public static RLPList decodeList(byte[] msgData) {
-        if (msgData == null) throw new IllegalArgumentException("The decoded element wasn't a list");
+        if (msgData == null) {
+            throw new IllegalArgumentException("The decoded element wasn't a list");
+        }
+
         int b0 = msgData[0] & 0xff;
-        if (b0 < OFFSET_SHORT_LIST) throw new RLPException("The decoded element wasn't a list");
+
+        if (b0 < OFFSET_SHORT_LIST) {
+            throw new RLPException("The decoded element wasn't a list");
+        }
 
         return (RLPList) decodeListElement(msgData, 0, b0).getLeft();
     }

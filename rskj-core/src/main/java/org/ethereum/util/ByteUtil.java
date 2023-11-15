@@ -327,7 +327,9 @@ public class ByteUtil {
 
         BigInteger bigInteger = new BigInteger(1, b);
 
-        if (bigInteger.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) throw new RuntimeException("Cannot represent Integer " + bigInteger.toString(16));
+        if (bigInteger.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) {
+            throw new RuntimeException("Cannot represent Integer " + bigInteger.toString(16));
+        }
 
         return bigInteger.intValue();
     }

@@ -38,14 +38,12 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Checks proof value against its boundary for the block header.

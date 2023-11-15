@@ -33,6 +33,9 @@ import java.util.List;
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
 
 class DecodeMessageUtil {
+    private DecodeMessageUtil () {
+    }
+
     public static RLPList getMessageFromList(RLPList list) {
         return RLP.decodeList(list.get(1).getRLPData());
     }
