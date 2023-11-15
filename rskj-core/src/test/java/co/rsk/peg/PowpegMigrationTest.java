@@ -135,25 +135,29 @@ class PowpegMigrationTest {
         Federation originalPowpeg;
         switch (oldPowPegFederationType) {
             case legacyErp:
-                originalPowpeg = new LegacyErpFederation(
+                ErpRedeemScriptBuilder erpRedeemScriptBuilder =
+                    ErpRedeemScriptBuilderUtils.defineErpRedeemScriptBuilder(activations, bridgeConstants);
+                originalPowpeg = new ErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
                     0,
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay(),
-                    activations
+                    activations,
+                    erpRedeemScriptBuilder
                 );
                 break;
             case p2shErp:
-                originalPowpeg = new P2shErpFederation(
+                originalPowpeg = new ErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
                     0,
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay(),
-                    activations
+                    activations,
+                    new P2shErpRedeemScriptBuilder()
                 );
                 // TODO: CHECK REDEEMSCRIPT
                 break;
@@ -200,15 +204,16 @@ class PowpegMigrationTest {
             argumentCaptor.capture()
         );
 
+        // TODO check this. maybe adding the FedType to the constructor solves it
         // Verify new powpeg information
         Federation newPowPeg = argumentCaptor.getValue();
         assertEquals(newPowPegAddress, newPowPeg.getAddress());
         switch (newPowPegFederationType) {
             case legacyErp:
-                assertSame(LegacyErpFederation.class, newPowPeg.getClass());
+                assertSame(ErpFederation.class, newPowPeg.getClass());
                 break;
             case p2shErp:
-                assertSame(P2shErpFederation.class, newPowPeg.getClass());
+                assertSame(ErpFederation.class, newPowPeg.getClass());
                 // TODO: CHECK REDEEMSCRIPT
                 break;
             default:
