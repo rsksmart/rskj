@@ -60,7 +60,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 class BridgeUtilsTest {
@@ -1045,14 +1046,15 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = new LegacyErpFederation(
+        Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations
+            activations,
+            new NonStandardErpRedeemScriptBuilder()
         );
 
         // Create a pegout tx with 50 inputs and 200 outputs
@@ -1089,14 +1091,15 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = new LegacyErpFederation(
+        Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations
+            activations,
+            new NonStandardErpRedeemScriptBuilder()
         );
 
         // Create a pegout tx with 100 inputs and 50 outputs
@@ -1420,14 +1423,15 @@ class BridgeUtilsTest {
 
     private ErpFederation createErpFederation() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
-        return new LegacyErpFederation(
+        return new ErpFederation(
             genesisFederation.getMembers(),
             genesisFederation.getCreationTime(),
             genesisFederation.getCreationBlockNumber(),
             genesisFederation.getBtcParams(),
             bridgeConstantsRegtest.getErpFedPubKeysList(),
             bridgeConstantsRegtest.getErpFedActivationDelay(),
-            activations
+            activations,
+            new NonStandardErpRedeemScriptBuilder()
         );
     }
 

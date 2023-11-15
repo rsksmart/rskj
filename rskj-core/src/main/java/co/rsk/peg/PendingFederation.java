@@ -106,27 +106,33 @@ public final class PendingFederation {
 
         if (activations.isActive(ConsensusRule.RSKIP353)) {
             logger.info("[buildFederation] Going to create a P2SH ERP Federation");
-            return new P2shErpFederation(
+            return new ErpFederation(
                 members,
                 creationTime,
                 blockNumber,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations
+                activations,
+                new P2shErpRedeemScriptBuilder()
             );
         }
 
         if (activations.isActive(ConsensusRule.RSKIP201)) {
             logger.info("[buildFederation] Going to create an ERP Federation");
-            return new LegacyErpFederation(
+
+            ErpRedeemScriptBuilder erpRedeemScriptBuilder
+                = ErpRedeemScriptBuilderUtils.defineErpRedeemScriptBuilder(activations, bridgeConstants);
+
+            return new ErpFederation(
                 members,
                 creationTime,
                 blockNumber,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations
+                activations,
+                erpRedeemScriptBuilder
             );
         }
 

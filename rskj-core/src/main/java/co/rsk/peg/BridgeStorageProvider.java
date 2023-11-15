@@ -349,6 +349,7 @@ public class BridgeStorageProvider {
         newFederation = federation;
     }
 
+    // TODO: refactor this builder logic
     /**
      * Save the new federation
      * Only saved if a federation was set with BridgeStorageProvider::setNewFederation
@@ -361,16 +362,23 @@ public class BridgeStorageProvider {
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
         if (activations.isActive(RSKIP123)) {
-            if (activations.isActive(RSKIP353) && newFederation instanceof P2shErpFederation) {
-                saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                    P2SH_ERP_FEDERATION_FORMAT_VERSION
-                );
-            } else if (activations.isActive(RSKIP201) && newFederation instanceof LegacyErpFederation) {
-                saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                    LEGACY_ERP_FEDERATION_FORMAT_VERSION
-                );
+            if (newFederation instanceof ErpFederation) {
+                ErpRedeemScriptBuilder builder = ((ErpFederation) newFederation).erpRedeemScriptBuilder;
+                if (activations.isActive(RSKIP353)
+                    && builder instanceof P2shErpRedeemScriptBuilder) {
+                    saveStorageVersion(
+                        NEW_FEDERATION_FORMAT_VERSION.getKey(),
+                        P2SH_ERP_FEDERATION_FORMAT_VERSION
+                    );
+                } else if (activations.isActive(RSKIP201)
+                    && (builder instanceof NonStandardErpRedeemScriptBuilder
+                    || builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE
+                    || builder instanceof NonStandardErpRedeemScriptBuilderHardcoaded)) {
+                    saveStorageVersion(
+                        NEW_FEDERATION_FORMAT_VERSION.getKey(),
+                        LEGACY_ERP_FEDERATION_FORMAT_VERSION
+                    );
+                }
             } else {
                 saveStorageVersion(
                     NEW_FEDERATION_FORMAT_VERSION.getKey(),
@@ -412,6 +420,7 @@ public class BridgeStorageProvider {
         oldFederation = federation;
     }
 
+    // TODO refactor this builder logic
     /**
      * Save the old federation
      */
@@ -422,16 +431,24 @@ public class BridgeStorageProvider {
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
         if (activations.isActive(RSKIP123)) {
-            if (activations.isActive(RSKIP353) && oldFederation instanceof P2shErpFederation) {
-                saveStorageVersion(
-                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    P2SH_ERP_FEDERATION_FORMAT_VERSION
-                );
-            } else if (activations.isActive(RSKIP201) && oldFederation instanceof ErpFederation) {
-                saveStorageVersion(
-                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    LEGACY_ERP_FEDERATION_FORMAT_VERSION
-                );
+            if (oldFederation instanceof ErpFederation) {
+                ErpRedeemScriptBuilder builder = ((ErpFederation) oldFederation).erpRedeemScriptBuilder;
+                if (activations.isActive(RSKIP353)
+                    && builder instanceof P2shErpRedeemScriptBuilder) {
+                    saveStorageVersion(
+                        OLD_FEDERATION_FORMAT_VERSION.getKey(),
+                        P2SH_ERP_FEDERATION_FORMAT_VERSION
+                    );
+                } else if (activations.isActive(RSKIP201)
+                    && (builder instanceof NonStandardErpRedeemScriptBuilder
+                    || builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE
+                    || builder instanceof NonStandardErpRedeemScriptBuilderHardcoaded
+                )) {
+                    saveStorageVersion(
+                        OLD_FEDERATION_FORMAT_VERSION.getKey(),
+                        LEGACY_ERP_FEDERATION_FORMAT_VERSION
+                    );
+                }
             } else {
                 saveStorageVersion(
                     OLD_FEDERATION_FORMAT_VERSION.getKey(),
@@ -1037,7 +1054,8 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForNewFederationBtcUtxos() {
         DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
-        if (networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
+        if (networkParameters.getId().equals(NetworkParameters.ID_TESTNET)
+        || networkParameters.getId().equals(NetworkParameters.ID_REGTEST)) {
             if (activations.isActive(RSKIP284)) {
                 key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey();
             }
