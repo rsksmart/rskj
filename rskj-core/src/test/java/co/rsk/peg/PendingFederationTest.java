@@ -288,24 +288,28 @@ class PendingFederationTest {
 
         Federation expectedFederation;
         if (isRskip353Active) {
-            expectedFederation = new P2shErpFederation(
+            expectedFederation = new ErpFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
                 0L,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations
+                activations,
+                new P2shErpRedeemScriptBuilder()
             );
         } else if (isRskip201Active) {
-            expectedFederation = new LegacyErpFederation(
+            ErpRedeemScriptBuilder erpRedeemScriptBuilder =
+                ErpRedeemScriptBuilderUtils.defineErpRedeemScriptBuilder(activations, bridgeConstants);
+            expectedFederation = new ErpFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
                 0L,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations
+                activations,
+                erpRedeemScriptBuilder
             );
         } else {
             expectedFederation = new StandardMultisigFederation(

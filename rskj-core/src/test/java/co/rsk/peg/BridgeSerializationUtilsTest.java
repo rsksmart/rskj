@@ -1220,6 +1220,7 @@ class BridgeSerializationUtilsTest {
         Assertions.assertEquals(witnessRoot, BridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
     }
 
+    // TODO split this test?
     private void testSerializeAndDeserializeFederation(
         boolean isRskip284Active,
         boolean isRskip353Active,
@@ -1237,6 +1238,9 @@ class BridgeSerializationUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
         when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
+
+        ErpRedeemScriptBuilder erpRedeemScriptBuilder =
+            ErpRedeemScriptBuilderUtils.defineErpRedeemScriptBuilder(activations, bridgeConstants);
 
         for (int i = 0; i < NUM_CASES; i++) {
             int numMembers = randomInRange(2, 14);
@@ -1259,14 +1263,15 @@ class BridgeSerializationUtilsTest {
                 bridgeConstants.getBtcParams()
             );
 
-            Federation testErpFederation = new LegacyErpFederation(
+            Federation testErpFederation = new ErpFederation(
                 members,
                 Instant.now(),
                 123,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations
+                activations,
+                erpRedeemScriptBuilder
             );
             byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
 
@@ -1286,14 +1291,15 @@ class BridgeSerializationUtilsTest {
             }
 
             if (isRskip353Active) {
-                Federation testP2shErpFederation = new P2shErpFederation(
+                Federation testP2shErpFederation = new ErpFederation(
                     members,
                     Instant.now(),
                     123,
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay(),
-                    activations
+                    activations,
+                    new P2shErpRedeemScriptBuilder()
                 );
                 byte[] serializedTestP2shErpFederation = BridgeSerializationUtils.serializeFederation(testP2shErpFederation);
 
