@@ -224,6 +224,10 @@ public class RLP {
             length = offset + bytesToLength(msgData, position + 1, offset - 1);
         }
 
+        if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
+            throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
+        }
+
         if (position + length > msgData.length) {
             throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
         }
