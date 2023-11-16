@@ -361,14 +361,8 @@ public class BridgeStorageProvider {
 
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
-        // TODO refactor when we have federation types
         if (activations.isActive(RSKIP123)) {
-            if (newFederation instanceof StandardMultisigFederation) {
-                saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
-                );
-            } else if (newFederation instanceof ErpFederation) {
+            if (newFederation instanceof ErpFederation) {
                 ErpRedeemScriptBuilder builder = ((ErpFederation) newFederation).erpRedeemScriptBuilder;
                 if (builder instanceof P2shErpRedeemScriptBuilder) {
                     saveStorageVersion(
@@ -381,6 +375,11 @@ public class BridgeStorageProvider {
                         LEGACY_ERP_FEDERATION_FORMAT_VERSION
                     );
                 }
+            } else {
+                saveStorageVersion(
+                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
+                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
+                );
             }
             serializer = BridgeSerializationUtils::serializeFederation;
         }
@@ -427,7 +426,6 @@ public class BridgeStorageProvider {
         }
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
-        // TODO: refactor when we have federation types
         if (activations.isActive(RSKIP123)) {
             if (oldFederation instanceof ErpFederation) {
                 ErpRedeemScriptBuilder builder = ((ErpFederation) oldFederation).erpRedeemScriptBuilder;
@@ -443,6 +441,7 @@ public class BridgeStorageProvider {
                     );
                 }
             } else {
+                // assume it is a standard federation to keep backwards compatibility
                 saveStorageVersion(
                     OLD_FEDERATION_FORMAT_VERSION.getKey(),
                     STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
