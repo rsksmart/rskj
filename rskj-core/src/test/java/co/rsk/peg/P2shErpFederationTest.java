@@ -149,7 +149,7 @@ class P2shErpFederationTest {
         assertDoesNotThrow(this::createDefaultP2shErpFederation);
     }
 
-/*    @Test
+    @Test
     void createInvalidFederation_aboveMaxScriptSigSize() {
         // add one member to exceed redeem script size limit
         List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
@@ -158,9 +158,11 @@ class P2shErpFederationTest {
         );
         newStandardKeys.add(federator10PublicKey);
         standardKeys = newStandardKeys;
-        assertThrows(FederationCreationException.class, this::createDefaultP2shErpFederation);
-        //assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
-    }*/
+        FederationCreationException exception = assertThrows(
+            FederationCreationException.class, this::createDefaultP2shErpFederation
+        );
+        assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
+    }
 
     @Test
     void getErpPubKeys() {
