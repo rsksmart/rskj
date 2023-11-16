@@ -162,7 +162,7 @@ class LegacyErpFederationTest {
     }
 
     @Test
-    void createInvalidLegacyErpFederation_aboveMaxScriptSigSize() {
+    void createInvalidNonStandardBuilder_aboveMaxScriptSigSize() {
         // add one member to exceed redeem script size limit
         List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(
@@ -170,8 +170,11 @@ class LegacyErpFederationTest {
         );
         newStandardKeys.add(federator10PublicKey);
         standardKeys = newStandardKeys;
+
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         FederationCreationException exception = assertThrows(
-            FederationCreationException.class, this::createDefaultLegacyErpFederation
+            FederationCreationException.class,
+            () -> builder.createRedeemScript(standardKeys, emergencyKeys, activationDelayValue)
         );
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
