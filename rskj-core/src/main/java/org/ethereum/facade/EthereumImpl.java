@@ -37,7 +37,7 @@ public class EthereumImpl implements Ethereum {
     private final CompositeEthereumListener compositeEthereumListener;
     private final Blockchain blockchain;
     private final GasPriceTracker gasPriceTracker;
-    private final Double minGasPriceMultiplier;
+    private final double minGasPriceMultiplier;
 
     public EthereumImpl(
             ChannelManager channelManager,
@@ -45,7 +45,7 @@ public class EthereumImpl implements Ethereum {
             CompositeEthereumListener compositeEthereumListener,
             Blockchain blockchain,
             GasPriceTracker gasPriceTracker,
-            Double minGasPriceMultiplier) {
+            double minGasPriceMultiplier) {
         this.channelManager = channelManager;
         this.transactionGateway = transactionGateway;
 
