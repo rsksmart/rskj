@@ -530,7 +530,7 @@ public class BridgeSupport {
                 markTxAsProcessed(btcTx);
                 break;
             case CAN_BE_REFUNDED:
-                rejectedPeginReason.ifPresent(peginReason -> eventLogger.logRejectedPegin(btcTx, peginReason));
+                rejectedPeginReason.ifPresent(rejectedReason -> eventLogger.logRejectedPegin(btcTx, rejectedReason));
                 generateRejectionRelease(btcTx, peginInformation.getBtcRefundAddress(), rskTx, totalAmount);
                 markTxAsProcessed(btcTx);
                 throw new RegisterBtcTransactionException(String.format("Error while trying to parse peg-in information for tx %s", btcTx.getHash()));
@@ -538,7 +538,11 @@ public class BridgeSupport {
                 handleUnprocessableBtcTx(btcTx, peginInformation, rejectedPeginReason);
                 break;
             default:
-                throw new RegisterBtcTransactionException(String.format("Error while trying to process pegin. Error Reason: %s", rejectedPeginReason.get()));
+                if (rejectedPeginReason.isPresent()){
+                    throw new RegisterBtcTransactionException(String.format("Error while trying to process pegin. Error Reason: %s", rejectedPeginReason));
+                } else {
+                    throw new RegisterBtcTransactionException(String.format("Error while trying to process pegin."));
+                }
         }
     }
 
