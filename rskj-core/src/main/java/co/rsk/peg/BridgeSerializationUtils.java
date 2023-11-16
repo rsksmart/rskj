@@ -327,7 +327,7 @@ public class BridgeSerializationUtils {
         );
 
         ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-            ErpRedeemScriptBuilderUtils.defineErpRedeemScriptBuilder(activations, bridgeConstants);
+            ErpRedeemScriptBuilderUtils.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
 
         return new ErpFederation(
             federation.getMembers(),
