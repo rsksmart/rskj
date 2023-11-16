@@ -361,7 +361,6 @@ public class BridgeStorageProvider {
 
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
-        // TODO refactor when we have federation types
         if (activations.isActive(RSKIP123)) {
             if (newFederation instanceof ErpFederation) {
                 ErpRedeemScriptBuilder builder = ((ErpFederation) newFederation).erpRedeemScriptBuilder;
@@ -376,7 +375,7 @@ public class BridgeStorageProvider {
                         LEGACY_ERP_FEDERATION_FORMAT_VERSION
                     );
                 }
-            } if (newFederation instanceof StandardMultisigFederation) {
+            } else {
                 saveStorageVersion(
                     NEW_FEDERATION_FORMAT_VERSION.getKey(),
                     STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
@@ -427,7 +426,6 @@ public class BridgeStorageProvider {
         }
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
-        // TODO: refactor when we have federation types
         if (activations.isActive(RSKIP123)) {
             if (oldFederation instanceof ErpFederation) {
                 ErpRedeemScriptBuilder builder = ((ErpFederation) oldFederation).erpRedeemScriptBuilder;
