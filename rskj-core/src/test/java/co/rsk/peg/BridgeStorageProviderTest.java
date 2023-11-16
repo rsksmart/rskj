@@ -401,11 +401,6 @@ class BridgeStorageProviderTest {
 
     @Test
     void getNewFederation_erp_fed() {
-/*        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);*/
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         Federation newFederation = buildMockFederation(100, 200, 300);
         ErpFederation erpFederation = new ErpFederation(
@@ -683,13 +678,18 @@ class BridgeStorageProviderTest {
     @Test
     void getOldFederation_multiKeyVersion() {
         Federation oldFederation = buildMockFederation(100, 200, 300);
-        testGetOldFederation(oldFederation);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        testGetOldFederation(oldFederation, activations);
     }
 
     @Test
-    void getOldFederation_erp_fed() {
+    void getOldFederation_nonStandardHardcoaded_fed() {
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         Federation oldFederation = buildMockFederation(100, 200, 300);
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
         ErpFederation erpFederation = new ErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
@@ -697,17 +697,63 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            mock(ActivationConfig.ForBlock.class),
+            activations,
             new NonStandardErpRedeemScriptBuilderHardcoaded()
         );
 
-        testGetOldFederation(erpFederation);
+        testGetOldFederation(erpFederation, activations);
+    }
+
+    @Test
+    void getOldFederation_nonStandardWithUnsignedBE_fed() {
+        BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
+        Federation oldFederation = buildMockFederation(100, 200, 300);
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+        ErpFederation erpFederation = new ErpFederation(
+            oldFederation.getMembers(),
+            oldFederation.getCreationTime(),
+            oldFederation.getCreationBlockNumber(),
+            oldFederation.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(),
+            activations,
+            new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE()
+        );
+
+        testGetOldFederation(erpFederation, activations);
+    }
+
+    @Test
+    void getOldFederation_nonStandard_fed() {
+        BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
+        Federation oldFederation = buildMockFederation(100, 200, 300);
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        ErpFederation erpFederation = new ErpFederation(
+            oldFederation.getMembers(),
+            oldFederation.getCreationTime(),
+            oldFederation.getCreationBlockNumber(),
+            oldFederation.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(),
+            activations,
+            new NonStandardErpRedeemScriptBuilder()
+        );
+
+        testGetOldFederation(erpFederation, activations);
     }
 
     @Test
     void getOldFederation_RSKIP_353_active_p2sh_erp_fed() {
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         Federation oldFederation = buildMockFederation(100, 200, 300);
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         ErpFederation p2shErpFederation = new ErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
@@ -715,11 +761,11 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            mock(ActivationConfig.ForBlock.class),
+            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
-        testGetOldFederation(p2shErpFederation);
+        testGetOldFederation(p2shErpFederation, activations);
     }
 
     @Test
@@ -3575,8 +3621,7 @@ class BridgeStorageProviderTest {
         Assertions.assertEquals(2, storageProvider.getReleaseRequestQueueSize());
     }
 
-    // siempre devuelve la hardcoaded?
-    private void testGetOldFederation(Federation oldFederation) {
+    private void testGetOldFederation(Federation oldFederation, ActivationConfig.ForBlock activations) {
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         List<Integer> storageCalls = new ArrayList<>();
         Repository repositoryMock = mock(Repository.class);
@@ -3584,7 +3629,7 @@ class BridgeStorageProviderTest {
             repositoryMock,
             mockAddress("aabbccdd"),
             bridgeConstants,
-            mock(ActivationConfig.ForBlock.class)
+            activations
         );
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
