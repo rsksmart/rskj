@@ -41,6 +41,9 @@ public class ErpFederation extends Federation {
         this.activationDelay = activationDelay;
         this.activations = activations;
         this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
+
+        // TODO discuss if this validation should be here.
+        FederationUtils.validateScriptSize(getRedeemScript());
     }
 
     public List<BtcECKey> getDefaultPublicKeys() {
@@ -73,8 +76,6 @@ public class ErpFederation extends Federation {
         if (redeemScript == null) {
                 redeemScript = erpRedeemScriptBuilder.createRedeemScript(getDefaultPublicKeys(), erpPubKeys, activationDelay);
         }
-        // TODO: definir donde va esta validacion.
-        FederationUtils.validateScriptSize(redeemScript);
         return redeemScript;
     }
 

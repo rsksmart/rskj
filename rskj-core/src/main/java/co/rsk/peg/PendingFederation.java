@@ -122,7 +122,7 @@ public final class PendingFederation {
             logger.info("[buildFederation] Going to create an ERP Federation");
 
             ErpRedeemScriptBuilder erpRedeemScriptBuilder
-                = ErpRedeemScriptBuilderUtils.defineErpRedeemScriptBuilder(activations, bridgeConstants);
+                = ErpRedeemScriptBuilderUtils.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
 
             return new ErpFederation(
                 members,
