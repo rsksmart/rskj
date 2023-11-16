@@ -314,7 +314,6 @@ public class BridgeSerializationUtils {
             BridgeSerializationUtils::deserializeFederationMember
         );
     }
-// TODO change Legacy to NonStandard in the name
     public static ErpFederation deserializeLegacyErpFederation(
         byte[] data,
         BridgeConstants bridgeConstants,

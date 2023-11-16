@@ -21,7 +21,9 @@ public class ErpRedeemScriptBuilderUtils {
             erpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilderHardcoaded();
         } else if (!activations.isActive(ConsensusRule.RSKIP293)) {
             erpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE();
-        } else erpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilder();
+        } else {
+            erpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilder();
+        }
 
         return erpRedeemScriptBuilder;
     }
