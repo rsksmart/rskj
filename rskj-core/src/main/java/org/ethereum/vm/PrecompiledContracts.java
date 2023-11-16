@@ -28,6 +28,7 @@ import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
+import co.rsk.pcc.environment.Environment;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.remasc.RemascContract;
@@ -48,7 +49,6 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.exception.VMException;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -128,8 +128,7 @@ public class PrecompiledContracts {
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
-                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
-                    new AbstractMap.SimpleEntry<>(ENVIRONMENT_ADDR, ConsensusRule.RSKIP203)
+                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153)
             ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
@@ -210,7 +209,7 @@ public class PrecompiledContracts {
         }
 
         if (activations.isActive(ConsensusRule.RSKIP203) && address.equals(ENVIRONMENT_ADDR_DW)) {
-            return new Environment();
+            return new Environment(config.getActivationConfig(), ENVIRONMENT_ADDR);
         }
 
         return null;
@@ -562,31 +561,4 @@ public class PrecompiledContracts {
             return output.array();
         }
     }
-
-    public static class Environment extends PrecompiledContract {
-        private ProgramInvoke programInvoke;
-
-        public Environment() {
-        }
-
-        @Override
-        public void init(PrecompiledContractArgs args) {
-            this.programInvoke = args.getProgramInvoke();
-        }
-
-        @Override
-        public long getGasForData(byte[] data) {
-            return 0;
-        }
-
-        @Override
-        public byte[] execute(byte[] data) {
-            return ByteUtil.intToBytes(getCallStackDepth());
-        }
-
-        private int getCallStackDepth() {
-            return programInvoke == null ? 0 : programInvoke.getCallDeep();
-        }
-    }
-
 }
