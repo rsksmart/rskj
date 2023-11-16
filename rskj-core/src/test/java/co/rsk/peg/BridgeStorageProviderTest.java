@@ -688,8 +688,9 @@ class BridgeStorageProviderTest {
         Federation oldFederation = buildMockFederation(100, 200, 300);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
         ErpFederation erpFederation = new ErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
@@ -710,8 +711,10 @@ class BridgeStorageProviderTest {
         Federation oldFederation = buildMockFederation(100, 200, 300);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
         ErpFederation erpFederation = new ErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
@@ -732,8 +735,11 @@ class BridgeStorageProviderTest {
         Federation oldFederation = buildMockFederation(100, 200, 300);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
         ErpFederation erpFederation = new ErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
@@ -874,7 +880,6 @@ class BridgeStorageProviderTest {
     void saveOldFederation_postMultikey_RSKIP_201_active_erp_fed() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         Federation oldFederation = buildMockFederation(100, 200, 300);
@@ -896,7 +901,6 @@ class BridgeStorageProviderTest {
     void saveOldFederation_postMultikey_RSKIP_353_active_p2sh_erp_fed() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(true);
 
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         Federation oldFederation = buildMockFederation(100, 200, 300);
@@ -951,7 +955,12 @@ class BridgeStorageProviderTest {
         try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class, CALLS_REAL_METHODS)) {
             List<Integer> storageBytesCalls = new ArrayList<>();
             Repository repositoryMock = mock(Repository.class);
-            BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsAllForks);
+            BridgeStorageProvider storageProvider = new BridgeStorageProvider(
+                repositoryMock,
+                mockAddress("aabbccdd"),
+                config.getNetworkConstants().getBridgeConstants(),
+                activationsAllForks
+            );
 
             Mockito.doAnswer((InvocationOnMock invocation) -> {
                 storageBytesCalls.add(0);
@@ -3709,7 +3718,6 @@ class BridgeStorageProviderTest {
         }
     }
 
-    // este deberia devolver siempre la nonstandard harcoaded? dado que es justo la que vino post multikey?
     private void testGetNewFederationPostMultiKey(Federation federation) {
         List<Integer> storageCalls = new ArrayList<>();
         Repository repositoryMock = mock(Repository.class);
@@ -3848,7 +3856,7 @@ class BridgeStorageProviderTest {
 
         List<UTXO> obtainedUtxos = provider.getNewFederationBtcUTXOs();
 
-        if ((networkId.equals(NetworkParameters.ID_TESTNET)/* || networkId.equals(NetworkParameters.ID_REGTEST)*/)&& (isRskip284Active || isRskip293Active)) {
+        if (networkId.equals(NetworkParameters.ID_TESTNET) && (isRskip284Active || isRskip293Active)) {
             if (isRskip293Active) {
                 Assertions.assertEquals(federationUtxosAfterRskip293Activation, obtainedUtxos);
             } else {
@@ -3897,7 +3905,7 @@ class BridgeStorageProviderTest {
         provider.getNewFederationBtcUTXOs(); // Ensure there are elements in the UTXOs list
         provider.saveNewFederationBtcUTXOs();
 
-        if (isRskip284Active && (networkId.equals(NetworkParameters.ID_TESTNET) /*|| networkId.equals(NetworkParameters.ID_REGTEST)*/)) {
+        if (isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
             verify(repository, never()).addStorageBytes(
                 eq(PrecompiledContracts.BRIDGE_ADDR),
                 eq(NEW_FEDERATION_BTC_UTXOS_KEY.getKey()),
@@ -3962,19 +3970,16 @@ class BridgeStorageProviderTest {
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie(trieStore))));
     }
 
-    // TODO refactor
     private int getFederationVersion(Federation federation) {
         if (federation instanceof StandardMultisigFederation) {
             return BridgeStorageProvider.STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION;
-        }
-        ErpRedeemScriptBuilder builder = ((ErpFederation) federation).erpRedeemScriptBuilder;
-        if (builder instanceof NonStandardErpRedeemScriptBuilder
-            || builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE
-            || builder instanceof NonStandardErpRedeemScriptBuilderHardcoaded) {
-            return BridgeStorageProvider.LEGACY_ERP_FEDERATION_FORMAT_VERSION;
-        }
-        if (builder instanceof P2shErpRedeemScriptBuilder) {
-            return BridgeStorageProvider.P2SH_ERP_FEDERATION_FORMAT_VERSION;
+        } else if (federation instanceof ErpFederation) {
+            ErpRedeemScriptBuilder builder = ((ErpFederation) federation).erpRedeemScriptBuilder;
+            if (builder instanceof P2shErpRedeemScriptBuilder) {
+                return BridgeStorageProvider.P2SH_ERP_FEDERATION_FORMAT_VERSION;
+            } else {
+                return BridgeStorageProvider.LEGACY_ERP_FEDERATION_FORMAT_VERSION;
+            }
         }
         throw new IllegalArgumentException("Unknown Federation type: " + federation.getClass());
     }

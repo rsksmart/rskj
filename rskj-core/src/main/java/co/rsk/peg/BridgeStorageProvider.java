@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 
+import static co.rsk.peg.ErpRedeemScriptBuilderUtils.checkIfNetworkParametersAreTestnetOrRegtest;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
@@ -349,7 +350,6 @@ public class BridgeStorageProvider {
         newFederation = federation;
     }
 
-    // TODO: refactor this builder logic
     /**
      * Save the new federation
      * Only saved if a federation was set with BridgeStorageProvider::setNewFederation
@@ -361,29 +361,26 @@ public class BridgeStorageProvider {
 
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
+        // TODO refactor when we have federation types
         if (activations.isActive(RSKIP123)) {
-            if (newFederation instanceof ErpFederation) {
+            if (newFederation instanceof StandardMultisigFederation) {
+                saveStorageVersion(
+                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
+                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
+                );
+            } else if (newFederation instanceof ErpFederation) {
                 ErpRedeemScriptBuilder builder = ((ErpFederation) newFederation).erpRedeemScriptBuilder;
-                if (activations.isActive(RSKIP353)
-                    && builder instanceof P2shErpRedeemScriptBuilder) {
+                if (builder instanceof P2shErpRedeemScriptBuilder) {
                     saveStorageVersion(
                         NEW_FEDERATION_FORMAT_VERSION.getKey(),
                         P2SH_ERP_FEDERATION_FORMAT_VERSION
                     );
-                } else if (activations.isActive(RSKIP201)
-                    && (builder instanceof NonStandardErpRedeemScriptBuilder
-                    || builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE
-                    || builder instanceof NonStandardErpRedeemScriptBuilderHardcoaded)) {
+                } else {
                     saveStorageVersion(
                         NEW_FEDERATION_FORMAT_VERSION.getKey(),
                         LEGACY_ERP_FEDERATION_FORMAT_VERSION
                     );
                 }
-            } else {
-                saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
-                );
             }
             serializer = BridgeSerializationUtils::serializeFederation;
         }
@@ -420,7 +417,7 @@ public class BridgeStorageProvider {
         oldFederation = federation;
     }
 
-    // TODO refactor this builder logic
+
     /**
      * Save the old federation
      */
@@ -430,20 +427,16 @@ public class BridgeStorageProvider {
         }
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
+        // TODO: refactor when we have federation types
         if (activations.isActive(RSKIP123)) {
             if (oldFederation instanceof ErpFederation) {
                 ErpRedeemScriptBuilder builder = ((ErpFederation) oldFederation).erpRedeemScriptBuilder;
-                if (activations.isActive(RSKIP353)
-                    && builder instanceof P2shErpRedeemScriptBuilder) {
+                if (builder instanceof P2shErpRedeemScriptBuilder) {
                     saveStorageVersion(
                         OLD_FEDERATION_FORMAT_VERSION.getKey(),
                         P2SH_ERP_FEDERATION_FORMAT_VERSION
                     );
-                } else if (activations.isActive(RSKIP201)
-                    && (builder instanceof NonStandardErpRedeemScriptBuilder
-                    || builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE
-                    || builder instanceof NonStandardErpRedeemScriptBuilderHardcoaded
-                )) {
+                } else {
                     saveStorageVersion(
                         OLD_FEDERATION_FORMAT_VERSION.getKey(),
                         LEGACY_ERP_FEDERATION_FORMAT_VERSION
@@ -1054,8 +1047,7 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForNewFederationBtcUtxos() {
         DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
-        if (networkParameters.getId().equals(NetworkParameters.ID_TESTNET)
-        || networkParameters.getId().equals(NetworkParameters.ID_REGTEST)) {
+        if (checkIfNetworkParametersAreTestnetOrRegtest(networkParameters)) {
             if (activations.isActive(RSKIP284)) {
                 key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey();
             }

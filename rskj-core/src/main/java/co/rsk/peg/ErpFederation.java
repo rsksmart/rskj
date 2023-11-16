@@ -73,8 +73,6 @@ public class ErpFederation extends Federation {
         if (redeemScript == null) {
                 redeemScript = erpRedeemScriptBuilder.createRedeemScript(getDefaultPublicKeys(), erpPubKeys, activationDelay);
         }
-        // TODO: definir donde va esta validacion.
-        FederationUtils.validateScriptSize(redeemScript);
         return redeemScript;
     }
 

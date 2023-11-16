@@ -90,7 +90,8 @@ class LegacyErpFederationTest {
         List<FederationMember> standardMembers = FederationTestUtils.getFederationMembersWithBtcKeys(standardKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
-        erpRedeemScriptBuilder = ErpRedeemScriptBuilderUtils.defineErpRedeemScriptBuilder(activations, networkParameters);
+        erpRedeemScriptBuilder =
+            ErpRedeemScriptBuilderUtils.defineNonStandardErpRedeemScriptBuilder(activations, networkParameters);
 
         return new ErpFederation(
             standardMembers,
@@ -160,8 +161,8 @@ class LegacyErpFederationTest {
         assertDoesNotThrow(this::createDefaultLegacyErpFederation);
     }
 
-/*    @Test
-    void createInvalidLegacyErpFederation_aboveMaxScriptSigSize() {
+    @Test
+    void createInvalidNonStandardBuilder_aboveMaxScriptSigSize() {
         // add one member to exceed redeem script size limit
         List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(
@@ -169,11 +170,14 @@ class LegacyErpFederationTest {
         );
         newStandardKeys.add(federator10PublicKey);
         standardKeys = newStandardKeys;
+
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         FederationCreationException exception = assertThrows(
-            FederationCreationException.class, this::createDefaultLegacyErpFederation
+            FederationCreationException.class,
+            () -> builder.createRedeemScript(standardKeys, emergencyKeys, activationDelayValue)
         );
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
-    }*/
+    }
 
     @Test
     void getErpPubKeys() {
