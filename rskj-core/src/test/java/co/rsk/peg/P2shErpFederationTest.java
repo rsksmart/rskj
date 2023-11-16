@@ -158,8 +158,11 @@ class P2shErpFederationTest {
         );
         newStandardKeys.add(federator10PublicKey);
         standardKeys = newStandardKeys;
+
+        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         FederationCreationException exception = assertThrows(
-            FederationCreationException.class, this::createDefaultP2shErpFederation
+            FederationCreationException.class,
+            () -> builder.createRedeemScript(standardKeys, emergencyKeys, activationDelayValue)
         );
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
