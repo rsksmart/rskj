@@ -18,7 +18,7 @@ import java.util.List;
 import static co.rsk.peg.PegTestUtils.createFederation;
 import static co.rsk.peg.PegTestUtils.createP2shErpFederation;
 
-public class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
+class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
