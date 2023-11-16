@@ -950,9 +950,7 @@ class BridgeStorageProviderTest {
         }
     }
 
-    // what is this test for?
-    // i think is not right to try to save NULL in the fed storage
-/*    @Test
+    @Test
     void saveOldFederation_postMultikey_setToNull() {
         try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class, CALLS_REAL_METHODS)) {
             List<Integer> storageBytesCalls = new ArrayList<>();
@@ -995,7 +993,7 @@ class BridgeStorageProviderTest {
             bridgeSerializationUtilsMocked.verify(() -> BridgeSerializationUtils.serializeFederation(any(Federation.class)), never());
             bridgeSerializationUtilsMocked.verify(() -> BridgeSerializationUtils.serializeFederationOnlyBtcKeys(any(Federation.class)), never());
         }
-    }*/
+    }
 
     @Test
     void getPendingFederation_initialVersion() {

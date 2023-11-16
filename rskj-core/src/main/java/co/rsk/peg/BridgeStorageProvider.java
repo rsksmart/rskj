@@ -350,7 +350,6 @@ public class BridgeStorageProvider {
         newFederation = federation;
     }
 
-    // TODO: refactor this builder logic
     /**
      * Save the new federation
      * Only saved if a federation was set with BridgeStorageProvider::setNewFederation
@@ -430,12 +429,7 @@ public class BridgeStorageProvider {
 
         // TODO: refactor when we have federation types
         if (activations.isActive(RSKIP123)) {
-            if (oldFederation instanceof StandardMultisigFederation) {
-                saveStorageVersion(
-                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
-                );
-            } else if (oldFederation instanceof ErpFederation) {
+            if (oldFederation instanceof ErpFederation) {
                 ErpRedeemScriptBuilder builder = ((ErpFederation) oldFederation).erpRedeemScriptBuilder;
                 if (builder instanceof P2shErpRedeemScriptBuilder) {
                     saveStorageVersion(
@@ -448,6 +442,11 @@ public class BridgeStorageProvider {
                         LEGACY_ERP_FEDERATION_FORMAT_VERSION
                     );
                 }
+            } else {
+                saveStorageVersion(
+                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
+                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
+                );
             }
 
             serializer = BridgeSerializationUtils::serializeFederation;
