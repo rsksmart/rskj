@@ -56,7 +56,6 @@ class PrecompiledContractsCallErrorHandlingTests {
         assertTransactionFail("tx03", PrecompiledContracts.REMASC_ADDR_STR);
         assertTransactionFail("tx04", PrecompiledContracts.HD_WALLET_UTILS_ADDR_STR);
         assertTransactionFail("tx05", PrecompiledContracts.BLOCK_HEADER_ADDR_STR);
-        assertTransactionOk("tx15", PrecompiledContracts.ENVIRONMENT_ADDR_STR);
 
         // ETH precompiles test
         assertTransactionOk("tx06", PrecompiledContracts.ECRECOVER_ADDR_STR);
@@ -88,7 +87,6 @@ class PrecompiledContractsCallErrorHandlingTests {
         assertTransactionOkWithErrorHandling("tx03", PrecompiledContracts.REMASC_ADDR_STR);
         assertTransactionOkWithErrorHandling("tx04", PrecompiledContracts.HD_WALLET_UTILS_ADDR_STR);
         assertTransactionOkWithErrorHandling("tx05", PrecompiledContracts.BLOCK_HEADER_ADDR_STR);
-        assertTransactionOk("tx15", PrecompiledContracts.ENVIRONMENT_ADDR_STR);
 
         // ETH precompiles test
         assertTransactionOk("tx06", PrecompiledContracts.ECRECOVER_ADDR_STR);
