@@ -45,7 +45,7 @@ public class GetCallStackDepth extends NativeMethod {
 
     @Override
     public Object execute(Object[] arguments) throws NativeContractIllegalArgumentException {
-        return ByteUtil.intToBytes(programInvoke.getCallDeep());
+        return ByteUtil.intToBytes(programInvoke == null ? 1 : programInvoke.getCallDeep());
     }
 
     @Override
