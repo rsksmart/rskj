@@ -33,10 +33,10 @@ import static org.mockito.Mockito.when;
 
 class GetCallStackDepthTest {
     private GetCallStackDepth method;
+    ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
 
     @BeforeEach
     void createMethod() {
-        ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         ProgramInvoke programInvoke = mock(ProgramInvoke.class);
         when(programInvoke.getCallDeep()).thenReturn(1);
         method = new GetCallStackDepth(executionEnvironment, programInvoke);
@@ -68,5 +68,14 @@ class GetCallStackDepthTest {
         Assertions.assertArrayEquals(
                 ByteUtil.intToBytes(1),
                 (byte[]) method.execute(new Object[]{}));
+    }
+
+    @Test
+    void executesWithNullProgramInvoke() throws NativeContractIllegalArgumentException {
+        GetCallStackDepth methodWithNullProgramInvoke = new GetCallStackDepth(executionEnvironment, null);
+
+        Assertions.assertArrayEquals(
+                ByteUtil.intToBytes(1),
+                (byte[]) methodWithNullProgramInvoke.execute(new Object[]{}));
     }
 }
