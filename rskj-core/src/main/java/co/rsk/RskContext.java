@@ -545,7 +545,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getCompositeEthereumListener(),
                     getBlockchain(),
                     getGasPriceTracker(),
-                    rskSystemProperties.getMinGasPriceMultiplier()
+                    getRskSystemProperties().getMinGasPriceMultiplier()
             );
         }
 
