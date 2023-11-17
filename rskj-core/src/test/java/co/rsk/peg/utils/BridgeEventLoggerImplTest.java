@@ -250,9 +250,9 @@ class BridgeEventLoggerImplTest {
 
         assertTopics(1, eventLogs);
         // Assert log data
-        byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
+        byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getMembersPublicKeys());
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
-        byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
+        byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getMembersPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
         long newFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activations);
 

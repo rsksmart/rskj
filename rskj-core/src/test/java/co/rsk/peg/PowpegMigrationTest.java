@@ -136,7 +136,7 @@ class PowpegMigrationTest {
         switch (oldPowPegFederationType) {
             case legacyErp:
                 ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-                    ErpRedeemScriptBuilderUtils.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
+                    NonStandardErpRedeemScriptBuilderFactory.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
                 originalPowpeg = new ErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
@@ -596,14 +596,14 @@ class PowpegMigrationTest {
             if (oldPowPegFederationType == FederationType.legacyErp || oldPowPegFederationType == FederationType.p2shErp){
                 assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
             }
-            assertEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
+            assertEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getDefaultP2SHScript() : originalPowpeg.getP2SHScript());
         } else {
             if (oldPowPegFederationType == FederationType.legacyErp || oldPowPegFederationType == FederationType.p2shErp){
                 assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
-                assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
+                assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getDefaultP2SHScript() : originalPowpeg.getP2SHScript());
             } else {
                 assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
-                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
+                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getDefaultP2SHScript() : originalPowpeg.getP2SHScript());
             }
         }
     }
@@ -625,10 +625,10 @@ class PowpegMigrationTest {
                 Script inputStandardRedeemScript = RedeemScriptParserFactory.get(result.getChunks()).extractStandardRedeemScript();
 
                 Optional<Federation> spendingFederationOptional = Optional.empty();
-                if (inputStandardRedeemScript.equals(activeFederation instanceof ErpFederation ? ((ErpFederation) activeFederation).getStandardRedeemScript() : activeFederation.getRedeemScript())) {
+                if (inputStandardRedeemScript.equals(activeFederation instanceof ErpFederation ? ((ErpFederation) activeFederation).getDefaultRedeemScript() : activeFederation.getRedeemScript())) {
                     spendingFederationOptional = Optional.of(activeFederation);
                 } else if (retiringFederation != null &&
-                    inputStandardRedeemScript.equals(retiringFederation instanceof ErpFederation ? ((ErpFederation) retiringFederation).getStandardRedeemScript() : retiringFederation.getRedeemScript()) ) {
+                    inputStandardRedeemScript.equals(retiringFederation instanceof ErpFederation ? ((ErpFederation) retiringFederation).getDefaultRedeemScript() : retiringFederation.getRedeemScript()) ) {
                     spendingFederationOptional = Optional.of(retiringFederation);
                 } else {
                     fail("pegout scriptsig does not match any Federation");

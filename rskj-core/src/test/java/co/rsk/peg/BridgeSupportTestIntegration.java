@@ -1259,17 +1259,17 @@ public class BridgeSupportTestIntegration {
         // Create tx input base script sig
         Script scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
         // Create sighash
-        Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
+        Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getMembersPublicKeys());
         Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
         // Sign by federator 0
         BtcECKey.ECDSASignature sig0 = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).sign(sighash);
         TransactionSignature txSig0 = new TransactionSignature(sig0, BtcTransaction.SigHash.ALL, false);
-        int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, federation.getBtcPublicKeys().get(0));
+        int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, federation.getMembersPublicKeys().get(0));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig0.encodeToBitcoin(), sigIndex0, 1, 1);
         // Sign by federator 1
         BtcECKey.ECDSASignature sig1 = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(1).sign(sighash);
         TransactionSignature txSig1 = new TransactionSignature(sig1, BtcTransaction.SigHash.ALL, false);
-        int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, federation.getBtcPublicKeys().get(1));
+        int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, federation.getMembersPublicKeys().get(1));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig1.encodeToBitcoin(), sigIndex1, 1, 1);
         // Set scipt sign to tx input
         tx.getInput(0).setScriptSig(scriptSig);
@@ -1375,17 +1375,17 @@ public class BridgeSupportTestIntegration {
         // Create tx input base script sig
         Script scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(retiringFederation);
         // Create sighash
-        Script redeemScript = ScriptBuilder.createRedeemScript(retiringFederation.getNumberOfSignaturesRequired(), retiringFederation.getBtcPublicKeys());
+        Script redeemScript = ScriptBuilder.createRedeemScript(retiringFederation.getNumberOfSignaturesRequired(), retiringFederation.getMembersPublicKeys());
         Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
         // Sign by federator 0
         BtcECKey.ECDSASignature sig0 = retiringFederationKeys.get(0).sign(sighash);
         TransactionSignature txSig0 = new TransactionSignature(sig0, BtcTransaction.SigHash.ALL, false);
-        int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, retiringFederation.getBtcPublicKeys().get(0));
+        int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, retiringFederation.getMembersPublicKeys().get(0));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig0.encodeToBitcoin(), sigIndex0, 1, 1);
         // Sign by federator 1
         BtcECKey.ECDSASignature sig1 = retiringFederationKeys.get(1).sign(sighash);
         TransactionSignature txSig1 = new TransactionSignature(sig1, BtcTransaction.SigHash.ALL, false);
-        int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, retiringFederation.getBtcPublicKeys().get(1));
+        int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, retiringFederation.getMembersPublicKeys().get(1));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig1.encodeToBitcoin(), sigIndex1, 1, 1);
         // Set scipt sign to tx input
         tx.getInput(0).setScriptSig(scriptSig);

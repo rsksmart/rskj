@@ -326,7 +326,7 @@ public class BridgeSerializationUtils {
         );
 
         ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-            ErpRedeemScriptBuilderUtils.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
+            NonStandardErpRedeemScriptBuilderFactory.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
 
         return new ErpFederation(
             federation.getMembers(),
@@ -402,7 +402,7 @@ public class BridgeSerializationUtils {
      * See BridgeSerializationUtils::serializeBtcPublicKeys
      */
     public static byte[] serializePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) {
-        return serializeBtcPublicKeys(pendingFederation.getBtcPublicKeys());
+        return serializeBtcPublicKeys(pendingFederation.getMembersPublicKeys());
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys

@@ -1367,7 +1367,7 @@ class BridgeUtilsTest {
             migrationTx,
             activeFederation,
             null,
-            retiredFederation.getStandardP2SHScript(),
+            retiredFederation.getDefaultP2SHScript(),
             btcContext,
             bridgeConstantsMainnet,
             activations
@@ -1989,7 +1989,7 @@ class BridgeUtilsTest {
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getStandardP2SHScript()));
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getDefaultP2SHScript()));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -2003,7 +2003,7 @@ class BridgeUtilsTest {
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getStandardP2SHScript()));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getDefaultP2SHScript()));
     }
 
     @Test
@@ -3743,7 +3743,7 @@ class BridgeUtilsTest {
         int numberOfSignatures) {
 
         Script scriptPubKey = federation.getP2SHScript();
-        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), federationRedeemScript);
+        RedeemData redeemData = RedeemData.of(federation.getMembersPublicKeys(), federationRedeemScript);
         Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
 
         txIn.setScriptSig(inputScript);
@@ -3769,7 +3769,7 @@ class BridgeUtilsTest {
         int federatorIndex) {
 
         BtcECKey federatorPrivKey = privateKeys.get(federatorIndex);
-        BtcECKey federatorPublicKey = federation.getBtcPublicKeys().get(federatorIndex);
+        BtcECKey federatorPublicKey = federation.getMembersPublicKeys().get(federatorIndex);
 
         BtcECKey.ECDSASignature sig = federatorPrivKey.sign(sighash);
         TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);

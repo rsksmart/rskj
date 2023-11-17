@@ -1811,7 +1811,7 @@ public class BridgeSupport {
      * @return the federation size
      */
     public Integer getFederationSize() {
-        return getActiveFederation().getBtcPublicKeys().size();
+        return getActiveFederation().getMembersPublicKeys().size();
     }
 
     /**
@@ -1880,7 +1880,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        return retiringFederation.getBtcPublicKeys().size();
+        return retiringFederation.getMembersPublicKeys().size();
     }
 
     /**
@@ -1907,7 +1907,7 @@ public class BridgeSupport {
             return null;
         }
 
-        List<BtcECKey> publicKeys = retiringFederation.getBtcPublicKeys();
+        List<BtcECKey> publicKeys = retiringFederation.getMembersPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
             throw new IndexOutOfBoundsException(String.format("Retiring federator index must be between 0 and %d", publicKeys.size() - 1));
@@ -2030,7 +2030,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
+        if (currentPendingFederation.getMembersPublicKeys().contains(btcKey) ||
             currentPendingFederation.getMembers().stream().map(FederationMember::getRskPublicKey).anyMatch(k -> k.equals(rskKey)) ||
             currentPendingFederation.getMembers().stream().map(FederationMember::getMstPublicKey).anyMatch(k -> k.equals(mstKey))) {
             return -2;
@@ -2111,7 +2111,7 @@ public class BridgeSupport {
             long nextFederationCreationBlockHeight = rskExecutionBlock.getNumber();
             provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
             Script oldFederationP2SHScript = activations.isActive(RSKIP377) && oldFederation instanceof ErpFederation ?
-                ((ErpFederation) oldFederation).getStandardP2SHScript() : oldFederation.getP2SHScript();
+                ((ErpFederation) oldFederation).getDefaultP2SHScript() : oldFederation.getP2SHScript();
             provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
         }
 
@@ -2285,7 +2285,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        return currentPendingFederation.getBtcPublicKeys().size();
+        return currentPendingFederation.getMembersPublicKeys().size();
     }
 
     /**
@@ -2300,7 +2300,7 @@ public class BridgeSupport {
             return null;
         }
 
-        List<BtcECKey> publicKeys = currentPendingFederation.getBtcPublicKeys();
+        List<BtcECKey> publicKeys = currentPendingFederation.getMembersPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
             throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", publicKeys.size() - 1));

@@ -6,9 +6,10 @@ import co.rsk.bitcoinj.script.Script;
 import java.util.List;
 
 public interface ErpRedeemScriptBuilder {
-    long MAX_CSV_VALUE = 65535L;
 
-    Script createRedeemScript(List<BtcECKey> defaultPublicKeys,
+    Script createRedeemScriptFromKeys(List<BtcECKey> defaultPublicKeys,
+                              int defaultThreshold,
                               List<BtcECKey> emergencyPublicKeys,
+                              int emergencyThreshold,
                               long csvValue);
 }
