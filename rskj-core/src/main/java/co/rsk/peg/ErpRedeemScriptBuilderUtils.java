@@ -10,11 +10,11 @@ import static co.rsk.peg.ErpRedeemScriptBuilderCreationException.Reason.INVALID_
 public class ErpRedeemScriptBuilderUtils {
     private ErpRedeemScriptBuilderUtils() {
     }
-    private static final Logger logger = LoggerFactory.getLogger(ErpRedeemScriptBuilderUtils.class);
     private static final long MAX_CSV_VALUE = 65535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
+    private static final Logger logger = LoggerFactory.getLogger(ErpRedeemScriptBuilderUtils.class);
 
 
-    static void validateRedeemScriptValues(
+    public static void validateRedeemScriptValues(
         Script defaultFederationRedeemScript,
         Script erpFederationRedeemScript,
         Long csvValue
