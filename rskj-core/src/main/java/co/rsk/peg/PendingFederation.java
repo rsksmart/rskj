@@ -64,7 +64,7 @@ public final class PendingFederation {
         return members;
     }
 
-    public List<BtcECKey> getBtcPublicKeys() {
+    public List<BtcECKey> getMembersPublicKeys() {
         // Copy keys since we don't control immutability of BtcECKey(s)
         return members.stream()
             .map(FederationMember::getBtcPublicKey)
@@ -122,7 +122,7 @@ public final class PendingFederation {
             logger.info("[buildFederation] Going to create an ERP Federation");
 
             ErpRedeemScriptBuilder erpRedeemScriptBuilder
-                = ErpRedeemScriptBuilderUtils.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
+                = NonStandardErpRedeemScriptBuilderFactory.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
 
             return new ErpFederation(
                 members,
@@ -171,6 +171,6 @@ public final class PendingFederation {
     public int hashCode() {
         // Can use java.util.Objects.hash since List<BtcECKey> has a
         // well-defined hashCode()
-        return Objects.hash(getBtcPublicKeys());
+        return Objects.hash(getMembersPublicKeys());
     }
 }

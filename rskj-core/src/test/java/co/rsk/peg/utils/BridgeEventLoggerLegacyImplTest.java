@@ -255,7 +255,7 @@ class BridgeEventLoggerLegacyImplTest {
         RLPList oldFedPubKeys = (RLPList) oldFedData.get(1);
         Assertions.assertEquals(4, oldFedPubKeys.size());
         for (int i = 0; i < 4; i++) {
-            Assertions.assertEquals(oldFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(oldFedPubKeys.get(i).getRLPData()));
+            Assertions.assertEquals(oldFederation.getMembersPublicKeys().get(i), BtcECKey.fromPublicOnly(oldFedPubKeys.get(i).getRLPData()));
         }
 
         // Assert new federation data
@@ -266,7 +266,7 @@ class BridgeEventLoggerLegacyImplTest {
         RLPList newFedPubKeys = (RLPList) newFedData.get(1);
         Assertions.assertEquals(3, newFedPubKeys.size());
         for (int i = 0; i < 3; i++) {
-            Assertions.assertEquals(newFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(newFedPubKeys.get(i).getRLPData()));
+            Assertions.assertEquals(newFederation.getMembersPublicKeys().get(i), BtcECKey.fromPublicOnly(newFedPubKeys.get(i).getRLPData()));
         }
 
         // Assert new federation activation block number
