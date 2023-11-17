@@ -145,7 +145,6 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             byte[] pastaSK = vm.getPastaSK();
             byte[] rks = vm.getRk();
             byte[] bfvSK = vm.getBfvSK();
-            long[] dataLong = toLongArray(data, data.length, ByteOrder.BIG_ENDIAN);
             byte[] fhData = bfv.transcipher(data, data.length, pastaSK, pastaSK.length, rks, rks.length,
                     bfvSK, bfvSK.length);
 
