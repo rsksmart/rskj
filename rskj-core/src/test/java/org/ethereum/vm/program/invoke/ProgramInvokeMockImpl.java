@@ -143,6 +143,13 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         return gasLimit;
     }
 
+    /*           BASEFEE op       */
+    @Override
+    public DataWord getMinimumGasPrice() {
+        byte[] minimumGasPrice = Hex.decode("03104e60a000");
+        return DataWord.valueOf(minimumGasPrice);
+    }
+
     public void setGas(long gasLimit) {
         this.gasLimit = gasLimit;
     }
