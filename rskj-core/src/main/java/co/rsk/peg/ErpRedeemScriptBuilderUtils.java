@@ -11,8 +11,8 @@ public class ErpRedeemScriptBuilderUtils {
     private ErpRedeemScriptBuilderUtils() {
     }
     private static final Logger logger = LoggerFactory.getLogger(ErpRedeemScriptBuilderUtils.class);
+    private static final long MAX_CSV_VALUE = 65535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
 
-    static long MAX_CSV_VALUE = 65535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
 
     static void validateRedeemScriptValues(
         Script defaultFederationRedeemScript,
