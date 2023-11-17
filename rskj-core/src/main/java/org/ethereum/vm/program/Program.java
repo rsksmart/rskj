@@ -1415,11 +1415,12 @@ public class Program {
                     Collections.emptyList()
             );
 
-            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList());
-        }
-
-        if (contract instanceof PrecompiledContracts.Environment) {
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
+                    .transaction(internalTx)
+                    .executionBlock(executionBlock)
+                    .repository(track)
+                    .blockStore(this.invoke.getBlockStore())
+                    .logs(result.getLogInfoList())
                     .programInvoke(this.invoke)
                     .build();
 

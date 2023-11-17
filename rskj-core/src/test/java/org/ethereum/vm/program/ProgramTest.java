@@ -153,25 +153,16 @@ class ProgramTest {
 
         program.callToPrecompiledAddress(msg, bridge);
 
-        verify(bridge, atLeastOnce()).init(
-            any(Transaction.class),
-            any(Block.class),
-            any(Repository.class),
-            isNull(),
-            isNull(),
-            anyList()
-        );
-    }
-
-    @Test
-    void testCallToPrecompiledAddress_callEnvironmentInit() {
-        PrecompiledContracts.PrecompiledContract environmentContract = spy(precompiledContracts.getContractForAddress(activations, PrecompiledContracts.ENVIRONMENT_ADDR_DW));
-
-        program.callToPrecompiledAddress(msg, environmentContract);
-
         ArgumentCaptor<PrecompiledContractArgs> argsCaptor = ArgumentCaptor.forClass(PrecompiledContractArgs.class);
 
-        verify(environmentContract, times(1)).init(argsCaptor.capture());
+        verify(bridge, atLeastOnce()).init(argsCaptor.capture());
+
+        assertNotNull(argsCaptor.getValue().getTransaction());
+        assertNotNull(argsCaptor.getValue().getExecutionBlock());
+        assertNotNull(argsCaptor.getValue().getRepository());
+        assertNull(argsCaptor.getValue().getBlockStore());
+        assertNull(argsCaptor.getValue().getReceiptStore());
+        assertNotNull(argsCaptor.getValue().getLogs());
         assertNotNull(argsCaptor.getValue().getProgramInvoke());
     }
 
