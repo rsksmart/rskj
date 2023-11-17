@@ -1,7 +1,6 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.ErpRedeemScriptBuilderCreationException.Reason.*;
-import static co.rsk.peg.ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
 import static co.rsk.peg.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
 import static co.rsk.peg.bitcoin.Standardness.MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,6 +46,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class LegacyErpFederationTest {
+    public static long MAX_CSV_VALUE = 65535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
     private ErpFederation federation;
     private NetworkParameters networkParameters;
     private List<BtcECKey> standardKeys;
