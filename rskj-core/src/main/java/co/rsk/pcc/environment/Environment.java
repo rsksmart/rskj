@@ -24,7 +24,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,12 +37,15 @@ public class Environment extends NativeContract {
 
     @Override
     public void init(PrecompiledContractArgs args) {
+        super.init(args);
         this.programInvoke = args.getProgramInvoke();
     }
 
     @Override
     public List<NativeMethod> getMethods() {
-        return Collections.emptyList();
+        return Arrays.asList(
+                new GetCallStackDepth(getExecutionEnvironment(), programInvoke)
+        );
     }
 
     @Override
