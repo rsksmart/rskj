@@ -2,7 +2,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Utils;
-import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
@@ -14,23 +13,28 @@ import java.util.List;
 public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
     private static final Logger logger = LoggerFactory.getLogger(P2shErpRedeemScriptBuilder.class);
 
-    public Script createRedeemScript(List<BtcECKey> defaultPublicKeys,
-                                     List<BtcECKey> emergencyPublicKeys,
-                                     long csvValue) {
-        Script defaultRedeemScript = ScriptBuilder.createRedeemScript(
-            defaultPublicKeys.size() / 2 + 1,
-            defaultPublicKeys);
-        Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(
-            emergencyPublicKeys.size() / 2 + 1,
-            emergencyPublicKeys);
+    @Override
+    public Script createRedeemScriptFromKeys(List<BtcECKey> defaultPublicKeys,
+                                             int defaultThreshold,
+                                             List<BtcECKey> emergencyPublicKeys,
+                                             int emergencyThreshold,
+                                             long csvValue) {
+
+        Script defaultRedeemScript = ScriptBuilder.createRedeemScript(defaultThreshold, defaultPublicKeys);
+        Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(emergencyThreshold, emergencyPublicKeys);
+
+        ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(defaultRedeemScript, emergencyRedeemScript, csvValue);
 
         byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
-        Script redeemScript = createRedeemScript(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
-        validateRedeemScriptValues(defaultRedeemScript, emergencyRedeemScript, csvValue, redeemScript);
+        logger.debug("[createRedeemScriptFromKeys] Creating the redeem script from the scripts");
+        Script redeemScript = createRedeemScriptFromScripts(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
+
+        logger.debug("[createRedeemScriptFromKeys] Validating redeem script size");
+        ScriptValidations.validateScriptSize(redeemScript);
 
         return redeemScript;
     }
-    public static Script createRedeemScript(Script defaultRedeemScript,
+    private static Script createRedeemScriptFromScripts(Script defaultRedeemScript,
                                      Script emergencyRedeemScript,
                                      byte[] serializedCsvValue) {
 
@@ -46,37 +50,5 @@ public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
             .addChunks(emergencyRedeemScript.getChunks())
             .op(ScriptOpCodes.OP_ENDIF)
             .build();
-    }
-
-
-    private static void validateRedeemScriptValues(
-        Script defaultFederationRedeemScript,
-        Script erpFederationRedeemScript,
-        Long csvValue,
-        Script redeemScript
-    ) {
-        if (!defaultFederationRedeemScript.isSentToMultiSig() || !erpFederationRedeemScript.isSentToMultiSig()) {
-
-            String message = "Provided redeem scripts have an invalid structure, not standard";
-            logger.debug(
-                "[validateP2shErpRedeemScriptValues] {}. Default script {}. Emergency script {}",
-                message,
-                defaultFederationRedeemScript,
-                erpFederationRedeemScript
-            );
-            throw new VerificationException(message);
-        }
-
-        if (csvValue <= 0 || csvValue > MAX_CSV_VALUE) {
-            String message = String.format(
-                "Provided csv value %d must be between 0 and %d",
-                csvValue,
-                MAX_CSV_VALUE
-            );
-            logger.warn("[validateP2shErpRedeemScriptValues] {}", message);
-            throw new VerificationException(message);
-        }
-
-        FederationUtils.validateScriptSize(redeemScript);
     }
 }

@@ -64,7 +64,7 @@ public abstract class Federation {
         return members;
     }
 
-    public List<BtcECKey> getBtcPublicKeys() {
+    public List<BtcECKey> getMembersPublicKeys() {
         // Copy instances since we don't control
         // immutability of BtcECKey instances
         return members.stream()

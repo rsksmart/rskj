@@ -64,7 +64,7 @@ public abstract class FlyoverCompatibleBtcWallet extends BridgeBtcWallet {
                 );
             }
 
-            return RedeemData.of(destinationFederationInstance.getBtcPublicKeys(), flyoverRedeemScript);
+            return RedeemData.of(destinationFederationInstance.getMembersPublicKeys(), flyoverRedeemScript);
         }
 
         return super.findRedeemDataFromScriptHash(payToScriptHash);
