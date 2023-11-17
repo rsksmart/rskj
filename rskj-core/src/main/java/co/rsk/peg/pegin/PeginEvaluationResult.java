@@ -1,7 +1,5 @@
 package co.rsk.peg.pegin;
 
-import co.rsk.peg.utils.RejectedPeginReason;
-
 import java.util.Optional;
 
 public class PeginEvaluationResult {

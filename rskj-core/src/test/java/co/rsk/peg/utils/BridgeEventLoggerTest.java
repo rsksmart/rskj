@@ -5,6 +5,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import static org.junit.jupiter.api.Assertions.*;
+
+import co.rsk.peg.pegin.RejectedPeginReason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
