@@ -39,7 +39,7 @@ import java.io.IOException;
 import java.util.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 
-import static co.rsk.peg.ErpRedeemScriptBuilderUtils.checkIfNetworkParametersAreTestnetOrRegtest;
+import static co.rsk.peg.NonStandardErpRedeemScriptBuilderFactory.*;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
@@ -1046,7 +1046,7 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForNewFederationBtcUtxos() {
         DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
-        if (checkIfNetworkParametersAreTestnetOrRegtest(networkParameters)) {
+        if (checkIfNetworkIsTestnet(networkParameters)) {
             if (activations.isActive(RSKIP284)) {
                 key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey();
             }

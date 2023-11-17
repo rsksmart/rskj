@@ -2,7 +2,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Utils;
-import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -15,61 +14,32 @@ import java.util.List;
 public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE.class);
 
-    public Script createRedeemScript(List<BtcECKey> defaultPublicKeys,
-                                     List<BtcECKey> emergencyPublicKeys,
-                                     long csvValue) {
+    @Override
+    public Script createRedeemScriptFromKeys(List<BtcECKey> defaultPublicKeys,
+                                             int defaultThreshold,
+                                             List<BtcECKey> emergencyPublicKeys,
+                                             int emergencyThreshold,
+                                             long csvValue) {
 
-        Script defaultRedeemScript = ScriptBuilder.createRedeemScript(
-            defaultPublicKeys.size() / 2 + 1,
-            defaultPublicKeys);
-        Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(
-            emergencyPublicKeys.size() / 2 + 1,
-            emergencyPublicKeys);
+        Script defaultRedeemScript = ScriptBuilder.createRedeemScript(defaultThreshold, defaultPublicKeys);
+        Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(emergencyThreshold, emergencyPublicKeys);
 
+        ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(defaultRedeemScript, emergencyRedeemScript, csvValue);
+        
         byte[] serializedCsvValue = Utils.unsignedLongToByteArrayBE(csvValue, 2);
-
-        logger.debug("[getRedeemScript] Creating the redeem script from the keys");
-        Script redeemScript = createRedeemScript(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
-
-        logger.debug("[getRedeemScript] Validating redeem script values");
-        validateRedeemScriptValues(defaultRedeemScript, emergencyRedeemScript, csvValue, redeemScript);
+        logger.debug("[createRedeemScriptFromKeys] Creating the redeem script from the scripts");
+        Script redeemScript = createRedeemScriptFromScripts(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
+        
+        logger.debug("[createRedeemScriptFromKeys] Validating redeem script size");
+        ScriptValidations.validateScriptSize(redeemScript);
+        
         return redeemScript;
 
     }
 
-    private static void validateRedeemScriptValues(
-        Script defaultRedeemScript,
-        Script emergencyRedeemScript,
-        Long csvValue,
-        Script redeemScript
-    ) {
-        if (!defaultRedeemScript.isSentToMultiSig() || !emergencyRedeemScript.isSentToMultiSig()) {
-            String message = "Provided redeem scripts inside the erp one have an invalid structure, not standards";
-            logger.debug(
-                "[validateLegacyErpRedeemScriptValues] {}. Default script {}. Emergency script {}",
-                message,
-                defaultRedeemScript,
-                emergencyRedeemScript
-            );
-            throw new VerificationException(message);
-        }
-
-        if (csvValue <= 0 || csvValue > MAX_CSV_VALUE) {
-            String message = String.format(
-                "Provided csv value %d must be between 0 and %d",
-                csvValue,
-                MAX_CSV_VALUE
-            );
-            logger.warn("[validateLegacyErpRedeemScriptValues] {}", message);
-            throw new VerificationException(message);
-        }
-
-        FederationUtils.validateScriptSize(redeemScript);
-    }
-
-    public static Script createRedeemScript(Script defaultRedeemScript,
-                                            Script emergencyRedeemScript,
-                                            byte[] serializedCsvValue) {
+    private static Script createRedeemScriptFromScripts(Script defaultRedeemScript,
+                                                        Script emergencyRedeemScript,
+                                                        byte[] serializedCsvValue) {
 
         ScriptBuilder scriptBuilder = new ScriptBuilder();
         return scriptBuilder

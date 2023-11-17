@@ -113,10 +113,10 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
         }
         List<DataWord> topics = Collections.singletonList(Bridge.COMMIT_FEDERATION_TOPIC);
 
-        byte[] oldFedFlatPubKeys = flatKeysAsRlpCollection(oldFederation.getBtcPublicKeys());
+        byte[] oldFedFlatPubKeys = flatKeysAsRlpCollection(oldFederation.getMembersPublicKeys());
         byte[] oldFedData = RLP.encodeList(RLP.encodeElement(oldFederation.getAddress().getHash160()), RLP.encodeList(oldFedFlatPubKeys));
 
-        byte[] newFedFlatPubKeys = flatKeysAsRlpCollection(newFederation.getBtcPublicKeys());
+        byte[] newFedFlatPubKeys = flatKeysAsRlpCollection(newFederation.getMembersPublicKeys());
         byte[] newFedData = RLP.encodeList(RLP.encodeElement(newFederation.getAddress().getHash160()), RLP.encodeList(newFedFlatPubKeys));
 
         long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge(activations);
