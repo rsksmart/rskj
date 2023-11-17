@@ -9,7 +9,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import java.io.IOException;
 import java.time.Instant;
@@ -617,7 +616,7 @@ class BridgeStorageProviderFederationTests {
                 );
             case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
                 ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-                    ErpRedeemScriptBuilderUtils.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstantsRegtest.getBtcParams());
+                    NonStandardErpRedeemScriptBuilderFactory.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstantsRegtest.getBtcParams());
                 return new ErpFederation(
                     members,
                     Instant.now(),

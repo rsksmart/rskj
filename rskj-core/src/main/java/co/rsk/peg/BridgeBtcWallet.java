@@ -55,6 +55,6 @@ public class BridgeBtcWallet extends Wallet {
         Optional<Federation> destinationFederation = getDestinationFederation(payToScriptHash);
 
         return destinationFederation.map(federation -> RedeemData
-            .of(federation.getBtcPublicKeys(), federation.getRedeemScript())).orElse(null);
+            .of(federation.getMembersPublicKeys(), federation.getRedeemScript())).orElse(null);
     }
 }
