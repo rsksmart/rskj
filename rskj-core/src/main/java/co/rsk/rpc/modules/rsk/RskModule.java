@@ -31,6 +31,4 @@ public interface RskModule {
     void shutdown();
 
     void flush();
-
-    String sendEncryptedTransaction(String rawData);
 }
