@@ -148,7 +148,6 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             byte[] fhData = bfv.transcipher(data, data.length, pastaSK, pastaSK.length, rks, rks.length,
                     bfvSK, bfvSK.length);
 
-//            byte[] res = bfv.decrypt(fhData, fhData.length, vm.getBfvSK(), vm.getBfvSK().length);
             byte[] hash = Keccak256Helper.keccak256(fhData);
 
             // store encrypted params, so they can be accessed within tx execution
@@ -157,11 +156,6 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
             // todo(fedejinich) signature cache is bringing problems, i had to do this ugly thing :(, research about it!
             tx.getSender();
-
-            // todo(fedejinich) this was another path
-//            tx = addEncryptedParams(tx, hash); // add encrypted params to tx.data
-
-            // for the future, add logic to set keys to fetch encrypted data from storage
 
             if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
                 throw invalidParamError("Missing parameter, gasPrice, gas or value");
@@ -183,7 +177,6 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            // todo(fedejinich) support this
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("eth_sendEncryptedTransaction({}): {}", rawData, s);
             }

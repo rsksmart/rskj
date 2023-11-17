@@ -22,6 +22,7 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionR
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.ethereum.config.Constants;
 import org.ethereum.core.Blockchain;
@@ -81,10 +82,14 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
 
     @Override
     public String sendRawTransaction(String rawData) {
+        return internalSendRawTransaction(rawData, r -> super.sendRawTransaction(r));
+    }
+
+    private String internalSendRawTransaction(String rawData, Function<String, String> fun) {
         try {
             this.blockExecutor.setRegisterProgramResults(true);
 
-            String txHash = super.sendRawTransaction(rawData);
+            String txHash = fun.apply(rawData);
 
             mineTransaction();
 
@@ -95,21 +100,9 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
         }
     }
 
-    // todo(fedejinich) this is a copy of sendRawTransaction, refactor this
     @Override
     public String sendEncryptedTransaction(String rawData) {
-        try {
-            this.blockExecutor.setRegisterProgramResults(true);
-
-            String txHash = super.sendEncryptedTransaction(rawData);
-
-            mineTransaction();
-
-            return getReturnMessage(txHash);
-        }
-        finally {
-            this.blockExecutor.setRegisterProgramResults(false);
-        }
+        return internalSendRawTransaction(rawData, r -> super.sendEncryptedTransaction(r));
     }
 
     private void mineTransaction() {
