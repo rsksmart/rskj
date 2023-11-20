@@ -1847,7 +1847,11 @@ public class VM {
             break;
             case OpCodes.OP_GASLIMIT: doGASLIMIT();
             break;
-            case OpCodes.OP_BASEFEE: doBASEFEE();
+            case OpCodes.OP_BASEFEE:
+                if (!activations.isActive(RSKIP412)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doBASEFEE();
             break;
             case OpCodes.OP_CHAINID:
                 if (!activations.isActive(RSKIP152)) {

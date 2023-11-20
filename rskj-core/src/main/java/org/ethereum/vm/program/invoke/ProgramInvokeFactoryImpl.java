@@ -66,9 +66,6 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         /***         GASPRICE op       ***/
         Coin txGasPrice = tx.getGasPrice();
 
-        /*** BASEFEE op ***/
-        Coin minimumGasPrice = block.getMinimumGasPrice();
-
         /*** GAS op ***/
         byte[] gas = tx.getGasLimit();
 
@@ -97,6 +94,9 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         /*** GASLIMIT op ***/
         byte[] gaslimit = block.getGasLimit();
+
+        /*** BASEFEE op ***/
+        Coin minimumGasPrice = block.getMinimumGasPrice();
 
         if (logger.isInfoEnabled()) {
             logger.info("Top level call: \n" +
@@ -135,8 +135,10 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     minimumGasPrice);
         }
 
+        byte[] minGasPrice = minimumGasPrice != null ? minimumGasPrice.getBytes() : ByteUtil.EMPTY_BYTE_ARRAY;
+
         return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), txGasPrice.getBytes(), gas, callValue.getBytes(), data,
-                lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit, minimumGasPrice.getBytes(),
+                lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit, minGasPrice,
                 repository, blockStore);
     }
 
