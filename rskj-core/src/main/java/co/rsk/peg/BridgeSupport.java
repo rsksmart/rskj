@@ -20,9 +20,6 @@ package co.rsk.peg;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
-import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
-import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
-import static co.rsk.peg.pegin.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
@@ -463,67 +460,6 @@ public class BridgeSupport {
         return btcBlockStore;
     }
 
-    private PeginEvaluationResult evaluatePegin(BtcTransaction btcTx, PeginInformation peginInformation) {
-        if(!activations.isActive(ConsensusRule.RSKIP379)){
-            throw new IllegalStateException("Method cannot be called before RSKIP379.");
-        }
-
-        Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
-
-        if(!PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(minimumPeginTxValue, btcTx, getNoSpendWalletForLiveFederations(false), activations)){
-            return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, INVALID_AMOUNT);
-        }
-
-        try {
-            peginInformation.parse(btcTx);
-        } catch (PeginInstructionsException e) {
-            logger.warn("[evaluatePegin] {}", String.format(
-                "Error while trying to parse peg-in information for tx %s. %s",
-                btcTx.getHash(),
-                e.getMessage()
-            ));
-            return getPeginEvaluationResultForInvalidPegin(peginInformation);
-        }
-
-        if (peginInformation.getProtocolVersion() == 1) {
-            return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REGISTERED);
-        }
-
-        if (peginInformation.getProtocolVersion() == 0) {
-            return evaluateLegacyPeginSender(peginInformation);
-        }
-
-        // This flow should never be reached.
-        throw new IllegalStateException("Invalid state. Unexpected pegin protocol.");
-    }
-
-    private PeginEvaluationResult getPeginEvaluationResultForInvalidPegin(PeginInformation peginInformation) {
-        if (peginInformation.getBtcRefundAddress() != null){
-            return new PeginEvaluationResult(
-                PeginProcessAction.CAN_BE_REFUNDED,
-                peginInformation.getProtocolVersion() == 1 ? PEGIN_V1_INVALID_PAYLOAD : LEGACY_PEGIN_MULTISIG_SENDER
-            );
-        } else {
-            return new PeginEvaluationResult(
-                PeginProcessAction.CANNOT_BE_PROCESSED,
-                peginInformation.getProtocolVersion() == 1 ? PEGIN_V1_INVALID_PAYLOAD : LEGACY_PEGIN_MULTISIG_SENDER
-            );
-        }
-    }
-
-    private PeginEvaluationResult evaluateLegacyPeginSender(PeginInformation peginInformation)  {
-        switch (peginInformation.getSenderBtcAddressType()) {
-            case P2PKH:
-            case P2SHP2WPKH:
-                return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REGISTERED);
-            case P2SHMULTISIG:
-            case P2SHP2WSH:
-                return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REFUNDED, LEGACY_PEGIN_MULTISIG_SENDER);
-            default:
-                return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, LEGACY_PEGIN_UNDETERMINED_SENDER);
-        }
-    }
-
     protected void processPegIn(
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
@@ -547,10 +483,18 @@ public class BridgeSupport {
             peginInstructionsProvider,
             activations
         );
-        PeginEvaluationResult peginEvaluationResult = evaluatePegin(btcTx, peginInformation);
+        Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
+        Wallet fedWallet = getNoSpendWalletForLiveFederations(false);
+        PeginEvaluationResult peginEvaluationResult = PegUtils.evaluatePegin(
+            btcTx,
+            peginInformation,
+            minimumPeginTxValue,
+            fedWallet,
+            activations
+        );
         PeginProcessAction peginProcessAction = peginEvaluationResult.getPeginProcessAction();
 
-        if (peginProcessAction.equals(PeginProcessAction.CAN_BE_REGISTERED)) {
+        if (peginProcessAction == PeginProcessAction.CAN_BE_REGISTERED) {
             logger.debug("[processPegIn] Peg-in is valid, going to register");
             executePegIn(btcTx, peginInformation, totalAmount);
             markTxAsProcessed(btcTx);
@@ -566,7 +510,7 @@ public class BridgeSupport {
             RejectedPeginReason rejectedPeginReason = rejectedPeginReasonOptional.get();
             logger.debug("[processPegIn] Rejected peg-in, reason {}", rejectedPeginReason);
             eventLogger.logRejectedPegin(btcTx, rejectedPeginReason);
-            if (peginProcessAction.equals(PeginProcessAction.CAN_BE_REFUNDED)) {
+            if (peginProcessAction == PeginProcessAction.CAN_BE_REFUNDED) {
                 logger.debug("[processPegIn] Refunding to address {} ", peginInformation.getBtcRefundAddress());
                 generateRejectionRelease(btcTx, peginInformation.getBtcRefundAddress(), rskTxHash, totalAmount);
                 markTxAsProcessed(btcTx);

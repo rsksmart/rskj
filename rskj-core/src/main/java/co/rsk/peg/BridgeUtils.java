@@ -17,6 +17,9 @@
  */
 package co.rsk.peg;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
+
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -42,6 +45,12 @@ import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -52,22 +61,12 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
-
 /**
  * @author Oscar Guindzberg
  */
 public class BridgeUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
+    private static final Logger logger = LoggerFactory.getLogger(BridgeUtils.class);
 
     private BridgeUtils() {}
 
@@ -209,9 +208,11 @@ public class BridgeUtils {
                 context,
                 addresses
             );
-            if (!PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(minimumPegInTxValue, btcTx, federationWallet, activations)){
-                logger.debug("[validateFlyoverPeginValue] UTXOs amount sent to federation can't be below the minimum {}.",
-                    minimumPegInTxValue.value);
+            if (!PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, federationWallet, minimumPegInTxValue, activations)) {
+                logger.debug(
+                    "[validateFlyoverPeginValue] UTXOs amount sent to federation can't be below the minimum {}.",
+                    minimumPegInTxValue
+                );
                 return FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
             }
         }
