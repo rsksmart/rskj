@@ -4,7 +4,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "115792089237316195423570985008687907853269984665640564039457584007913129639935",
             "currentGasLimit" : "1000000",
-            "currentMinimumGasPrice" : "500",
             "currentNumber" : "300",
             "currentTimestamp" : "2",
             "previousHash" : "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6"

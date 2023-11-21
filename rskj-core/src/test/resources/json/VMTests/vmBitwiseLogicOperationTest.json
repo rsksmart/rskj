@@ -6,7 +6,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -51,7 +50,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -95,7 +93,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -140,7 +137,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -185,7 +181,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -230,7 +225,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -275,7 +269,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -320,7 +313,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -365,7 +357,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -409,7 +400,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -453,7 +443,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -498,7 +487,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -543,7 +531,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -588,7 +575,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -633,7 +619,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -678,7 +663,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -723,7 +707,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -767,7 +750,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -811,7 +793,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -855,7 +836,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -900,7 +880,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -945,7 +924,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -990,7 +968,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1034,7 +1011,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1079,7 +1055,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1123,7 +1098,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1167,7 +1141,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1211,7 +1184,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1256,7 +1228,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1300,7 +1271,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1345,7 +1315,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1389,7 +1358,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1434,7 +1402,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1479,7 +1446,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1524,7 +1490,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1568,7 +1533,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1613,7 +1577,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1658,7 +1621,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1703,7 +1665,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1748,7 +1709,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1793,7 +1753,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1838,7 +1797,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1883,7 +1841,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1928,7 +1885,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -1973,7 +1929,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2017,7 +1972,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2062,7 +2016,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2106,7 +2059,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2151,7 +2103,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2195,7 +2146,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2240,7 +2190,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2284,7 +2233,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2329,7 +2277,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2373,7 +2320,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2418,7 +2364,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2462,7 +2407,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2507,7 +2451,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2552,7 +2495,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2597,7 +2539,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
@@ -2642,7 +2583,6 @@
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
             "currentDifficulty" : "0x0100",
             "currentGasLimit" : "0x0f4240",
-            "currentMinimumGasPrice" : "0x0050",
             "currentNumber" : "0x00",
             "currentTimestamp" : "0x01"
         },
