@@ -134,7 +134,7 @@ class PegUtilsEvaluatePeginTest {
 
         RejectedPeginReason rejectedPeginReason = protocolVersion == 1 ?
             RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD :
-            RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
+            RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
 
         assertEquals(PeginProcessAction.CANNOT_BE_PROCESSED, peginEvaluationResult.getPeginProcessAction());
         assertTrue(peginEvaluationResult.getRejectedPeginReason().isPresent());
