@@ -60,14 +60,13 @@ public class PegUtils {
         }
 
         List<TransactionOutput> fedUtxos = btcTx.getWalletOutputs(fedWallet);
-
         if(fedUtxos.isEmpty()) {
             return false;
         }
 
-        return fedUtxos.stream()
-                .allMatch(transactionOutput -> transactionOutput.getValue().compareTo(minimumPegInTxValue) >= 0);
-
+        return fedUtxos.stream().allMatch(transactionOutput ->
+            transactionOutput.getValue().compareTo(minimumPegInTxValue) >= 0
+        );
     }
 
     public static PegTxType getTransactionType(
