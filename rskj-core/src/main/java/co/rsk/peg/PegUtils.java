@@ -102,10 +102,10 @@ public class PegUtils {
         }
         Wallet liveFederationsWallet = new BridgeBtcWallet(Context.getOrCreate(bridgeConstants.getBtcParams()), liveFeds);
 
-        // TODO: THIS VALUE IS PENDING TO BE DEFINE. PLEASE UPDATE THIS CONSTANT LATER WITH THE CORRECT VALUE.
         int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;
-        boolean shouldUsePegoutTxIndex = activations.isActive(ConsensusRule.RSKIP379) && btcTransactionHeight >= btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int heightToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        boolean shouldUsePegoutTxIndex = activations.isActive(ConsensusRule.RSKIP379) && btcTransactionHeight >= heightToStartUsingPegoutIndex;
 
         if (shouldUsePegoutTxIndex){
             return getTransactionTypeUsingPegoutIndex(
