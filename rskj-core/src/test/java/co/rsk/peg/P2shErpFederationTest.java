@@ -1,8 +1,9 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.ErpRedeemScriptBuilderCreationException.Reason.*;
+import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_CSV_VALUE;
+import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
-import static co.rsk.peg.bitcoin.Standardness.MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
@@ -100,8 +101,8 @@ class P2shErpFederationTest {
     @Test
     void createInvalidP2shErpFederation_nullErpKeys() {
         emergencyKeys = null;
-        ErpRedeemScriptBuilderCreationException exception = assertThrows(
-            ErpRedeemScriptBuilderCreationException.class, this::createDefaultP2shErpFederation
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class, this::createDefaultP2shErpFederation
         );
         assertEquals(NULL_OR_EMPTY_EMERGENCY_KEYS, exception.getReason());
     }
@@ -109,8 +110,8 @@ class P2shErpFederationTest {
     @Test
     void createInvalidP2shErpFederation_emptyErpKeys() {
         emergencyKeys = new ArrayList<>();
-        ErpRedeemScriptBuilderCreationException exception = assertThrows(
-            ErpRedeemScriptBuilderCreationException.class, this::createDefaultP2shErpFederation
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class, this::createDefaultP2shErpFederation
         );
         assertEquals(NULL_OR_EMPTY_EMERGENCY_KEYS, exception.getReason());
     }
@@ -126,8 +127,8 @@ class P2shErpFederationTest {
         activationDelayValue = -100L;
 
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpRedeemScriptBuilderCreationException exception = assertThrows(
-            ErpRedeemScriptBuilderCreationException.class,
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class,
             () -> builder.createRedeemScriptFromKeys(standardKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
         );
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
@@ -137,8 +138,8 @@ class P2shErpFederationTest {
     void createInvalidP2shErpFederation_zeroCsvValue()  {
         activationDelayValue = 0L;
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpRedeemScriptBuilderCreationException exception = assertThrows(
-            ErpRedeemScriptBuilderCreationException.class,
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class,
             () -> builder.createRedeemScriptFromKeys(standardKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
         );
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
@@ -148,8 +149,8 @@ class P2shErpFederationTest {
     void createInvalidP2shErpFederation_aboveMaxCsvValue()  {
         activationDelayValue = MAX_CSV_VALUE + 1;
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpRedeemScriptBuilderCreationException exception = assertThrows(
-            ErpRedeemScriptBuilderCreationException.class,
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class,
             () -> builder.createRedeemScriptFromKeys(standardKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
         );
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
