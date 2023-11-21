@@ -15,10 +15,10 @@ public class NonStandardErpRedeemScriptBuilderFactory {
 
         ErpRedeemScriptBuilder erpRedeemScriptBuilder;
 
-        boolean networkParametersIsTestnetOrRegtest = checkIfNetworkIsTestnet(networkParameters);
+        boolean networkIsTestnet = checkIfNetworkIsTestnet(networkParameters);
 
-        if(!activations.isActive(ConsensusRule.RSKIP284) && networkParametersIsTestnetOrRegtest) {
-            erpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilderHardcoaded();
+        if(!activations.isActive(ConsensusRule.RSKIP284) && networkIsTestnet) {
+            erpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilderHardcoded();
         } else if (!activations.isActive(ConsensusRule.RSKIP293)) {
             erpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE();
         } else {
@@ -28,7 +28,7 @@ public class NonStandardErpRedeemScriptBuilderFactory {
         return erpRedeemScriptBuilder;
     }
 
-    public static boolean checkIfNetworkIsTestnet(NetworkParameters networkParameters) {
+    private static boolean checkIfNetworkIsTestnet(NetworkParameters networkParameters) {
         return networkParameters.getId().equals(NetworkParameters.ID_TESTNET);
     }
 }
