@@ -4,12 +4,13 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+
+import static co.rsk.peg.ErpRedeemScriptBuilderUtils.removeOpCheckMultisig;
 
 public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE.class);
@@ -37,7 +38,7 @@ public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRe
 
     }
 
-    private static Script createRedeemScriptFromScripts(Script defaultRedeemScript,
+    private Script createRedeemScriptFromScripts(Script defaultRedeemScript,
                                                         Script emergencyRedeemScript,
                                                         byte[] serializedCsvValue) {
 
@@ -53,9 +54,5 @@ public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRe
             .op(ScriptOpCodes.OP_ENDIF)
             .op(ScriptOpCodes.OP_CHECKMULTISIG)
             .build();
-    }
-
-    protected static List<ScriptChunk> removeOpCheckMultisig(Script redeemScript) {
-        return redeemScript.getChunks().subList(0, redeemScript.getChunks().size() - 1);
     }
 }

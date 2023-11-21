@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.util.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 
-import static co.rsk.peg.NonStandardErpRedeemScriptBuilderFactory.*;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
@@ -363,7 +362,7 @@ public class BridgeStorageProvider {
 
         if (activations.isActive(RSKIP123)) {
             if (newFederation instanceof ErpFederation) {
-                ErpRedeemScriptBuilder builder = ((ErpFederation) newFederation).erpRedeemScriptBuilder;
+                ErpRedeemScriptBuilder builder = ((ErpFederation) newFederation).getErpRedeemScriptBuilder();
                 if (builder instanceof P2shErpRedeemScriptBuilder) {
                     saveStorageVersion(
                         NEW_FEDERATION_FORMAT_VERSION.getKey(),
@@ -428,7 +427,7 @@ public class BridgeStorageProvider {
 
         if (activations.isActive(RSKIP123)) {
             if (oldFederation instanceof ErpFederation) {
-                ErpRedeemScriptBuilder builder = ((ErpFederation) oldFederation).erpRedeemScriptBuilder;
+                ErpRedeemScriptBuilder builder = ((ErpFederation) oldFederation).getErpRedeemScriptBuilder();
                 if (builder instanceof P2shErpRedeemScriptBuilder) {
                     saveStorageVersion(
                         OLD_FEDERATION_FORMAT_VERSION.getKey(),
@@ -1046,7 +1045,7 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForNewFederationBtcUtxos() {
         DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
-        if (checkIfNetworkIsTestnet(networkParameters)) {
+        if (networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
             if (activations.isActive(RSKIP284)) {
                 key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey();
             }
