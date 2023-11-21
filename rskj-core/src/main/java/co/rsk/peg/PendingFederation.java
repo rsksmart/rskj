@@ -64,7 +64,7 @@ public final class PendingFederation {
         return members;
     }
 
-    public List<BtcECKey> getMembersPublicKeys() {
+    public List<BtcECKey> getBtcPublicKeys() {
         // Copy keys since we don't control immutability of BtcECKey(s)
         return members.stream()
             .map(FederationMember::getBtcPublicKey)
@@ -171,6 +171,6 @@ public final class PendingFederation {
     public int hashCode() {
         // Can use java.util.Objects.hash since List<BtcECKey> has a
         // well-defined hashCode()
-        return Objects.hash(getMembersPublicKeys());
+        return Objects.hash(getBtcPublicKeys());
     }
 }

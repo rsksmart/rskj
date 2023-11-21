@@ -1,8 +1,9 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.ErpRedeemScriptBuilderCreationException.Reason.*;
+import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_CSV_VALUE;
+import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
-import static co.rsk.peg.bitcoin.Standardness.MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -111,8 +112,8 @@ class LegacyErpFederationTest {
     @Test
     void createInvalidLegacyErpFederation_nullErpKeys() {
         emergencyKeys = null;
-        ErpRedeemScriptBuilderCreationException exception = assertThrows(
-            ErpRedeemScriptBuilderCreationException.class, this::createDefaultLegacyErpFederation
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class, this::createDefaultLegacyErpFederation
         );
         assertEquals(NULL_OR_EMPTY_EMERGENCY_KEYS, exception.getReason());
     }
@@ -120,8 +121,8 @@ class LegacyErpFederationTest {
     @Test
     void createInvalidLegacyErpFederation_emptyErpKeys() {
         emergencyKeys = new ArrayList<>();
-        ErpRedeemScriptBuilderCreationException exception = assertThrows(
-            ErpRedeemScriptBuilderCreationException.class, this::createDefaultLegacyErpFederation
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class, this::createDefaultLegacyErpFederation
         );
         assertEquals(NULL_OR_EMPTY_EMERGENCY_KEYS, exception.getReason());
     }
@@ -135,8 +136,8 @@ class LegacyErpFederationTest {
     void createInvalidLegacyErpFederation_negativeCsvValue() {
         activationDelayValue = -100L;
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpRedeemScriptBuilderCreationException exception = assertThrows(
-            ErpRedeemScriptBuilderCreationException.class,
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class,
             () -> builder.createRedeemScriptFromKeys(standardKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
         );
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
@@ -146,8 +147,8 @@ class LegacyErpFederationTest {
     void createInvalidLegacyErpFederation_zeroCsvValue() {
         activationDelayValue = 0L;
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpRedeemScriptBuilderCreationException exception = assertThrows(
-            ErpRedeemScriptBuilderCreationException.class,
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class,
             () -> builder.createRedeemScriptFromKeys(standardKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
         );
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
@@ -157,8 +158,8 @@ class LegacyErpFederationTest {
     void createInvalidLegacyErpFederation_aboveMaxCsvValue() {
         activationDelayValue = MAX_CSV_VALUE + 1;
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpRedeemScriptBuilderCreationException exception = assertThrows(
-            ErpRedeemScriptBuilderCreationException.class,
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class,
             () -> builder.createRedeemScriptFromKeys(standardKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
         );
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
@@ -173,7 +174,7 @@ class LegacyErpFederationTest {
     @Test
     void createInvalidNonStandardBuilder_aboveMaxScriptSigSize() {
         // add one member to exceed redeem script size limit
-        List<BtcECKey> newStandardKeys = federation.getMembersPublicKeys();
+        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("02550cc87fa9061162b1dd395a16662529c9d8094c0feca17905a3244713d65fe8")
         );
@@ -263,7 +264,7 @@ class LegacyErpFederationTest {
     @Test
     void testEquals_differentNumberOfMembers() {
         // remove federator9
-        List<BtcECKey> newStandardKeys = federation.getMembersPublicKeys();
+        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         newStandardKeys.remove(newStandardKeys.size() - 1);
         standardKeys = newStandardKeys;
 
@@ -277,7 +278,7 @@ class LegacyErpFederationTest {
         BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea")
         );
-        List<BtcECKey> newStandardKeys = federation.getMembersPublicKeys();
+        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         newStandardKeys.remove(8);
         newStandardKeys.add(federator9PublicKey);
         standardKeys = newStandardKeys;
@@ -454,7 +455,7 @@ class LegacyErpFederationTest {
             emergencyKeys,
             activationDelayValue,
             activations,
-            new NonStandardErpRedeemScriptBuilderHardcoaded()
+            new NonStandardErpRedeemScriptBuilderHardcoded()
         );
 
         assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, erpFederation.getRedeemScript());
@@ -571,7 +572,7 @@ class LegacyErpFederationTest {
         List<FederationMember> federationMembersWithBtcKeys = FederationTestUtils.getFederationMembersWithBtcKeys(standardMultisigKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
-        assertThrows(ErpRedeemScriptBuilderCreationException.class, () -> new ErpFederation(
+        assertThrows(ErpFederationCreationException.class, () -> new ErpFederation(
             federationMembersWithBtcKeys,
             creationTime,
             1,

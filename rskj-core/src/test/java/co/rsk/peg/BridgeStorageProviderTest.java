@@ -411,7 +411,7 @@ class BridgeStorageProviderTest {
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
             mock(ActivationConfig.ForBlock.class),
-            new NonStandardErpRedeemScriptBuilderHardcoaded()
+            new NonStandardErpRedeemScriptBuilderHardcoded()
         );
 
         testGetNewFederationPostMultiKey(erpFederation);
@@ -699,7 +699,7 @@ class BridgeStorageProviderTest {
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
             activations,
-            new NonStandardErpRedeemScriptBuilderHardcoaded()
+            new NonStandardErpRedeemScriptBuilderHardcoded()
         );
 
         testGetOldFederation(erpFederation, activations);
@@ -3974,7 +3974,7 @@ class BridgeStorageProviderTest {
         if (federation instanceof StandardMultisigFederation) {
             return BridgeStorageProvider.STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION;
         } else if (federation instanceof ErpFederation) {
-            ErpRedeemScriptBuilder builder = ((ErpFederation) federation).erpRedeemScriptBuilder;
+            ErpRedeemScriptBuilder builder = ((ErpFederation) federation).getErpRedeemScriptBuilder();
             if (builder instanceof P2shErpRedeemScriptBuilder) {
                 return BridgeStorageProvider.P2SH_ERP_FEDERATION_FORMAT_VERSION;
             } else {

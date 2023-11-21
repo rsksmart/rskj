@@ -1,17 +1,24 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static co.rsk.peg.ErpRedeemScriptBuilderCreationException.Reason.INVALID_CSV_VALUE;
+import java.util.List;
+
+import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_INTERNAL_REDEEM_SCRIPTS;
+import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_CSV_VALUE;
 
 public class ErpRedeemScriptBuilderUtils {
     private static final long MAX_CSV_VALUE = 65535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
     private static final Logger logger = LoggerFactory.getLogger(ErpRedeemScriptBuilderUtils.class);
 
     private ErpRedeemScriptBuilderUtils() {
+    }
+
+    public static List<ScriptChunk> removeOpCheckMultisig(Script redeemScript) {
+        return redeemScript.getChunks().subList(0, redeemScript.getChunks().size() - 1);
     }
 
     public static void validateRedeemScriptValues(
@@ -28,7 +35,7 @@ public class ErpRedeemScriptBuilderUtils {
                 defaultFederationRedeemScript,
                 erpFederationRedeemScript
             );
-            throw new VerificationException(message);
+            throw new ErpFederationCreationException(message, INVALID_INTERNAL_REDEEM_SCRIPTS);
         }
 
         if (csvValue <= 0 || csvValue > MAX_CSV_VALUE) {
@@ -38,7 +45,7 @@ public class ErpRedeemScriptBuilderUtils {
                 MAX_CSV_VALUE
             );
             logger.warn("[validateRedeemScriptValues] {}", message);
-            throw new ErpRedeemScriptBuilderCreationException(message, INVALID_CSV_VALUE);
+            throw new ErpFederationCreationException(message, INVALID_CSV_VALUE);
         }
     }
 }

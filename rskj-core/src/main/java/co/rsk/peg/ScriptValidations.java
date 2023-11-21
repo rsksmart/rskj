@@ -7,7 +7,7 @@ import static co.rsk.peg.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT
 public class ScriptValidations {
     private ScriptValidations() {
     }
-    public static void validateScriptSize(Script script) throws ErpRedeemScriptBuilderCreationException {
+    public static void validateScriptSize(Script script) throws ErpFederationCreationException {
         // Check if the size of the script does not exceed the maximum size allowed
         int bytesFromScript = script.getProgram().length;
         if (bytesFromScript > Script.MAX_SCRIPT_ELEMENT_SIZE) {

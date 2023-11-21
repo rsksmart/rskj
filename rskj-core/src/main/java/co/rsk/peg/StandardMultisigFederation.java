@@ -47,7 +47,7 @@ public class StandardMultisigFederation extends Federation {
     @Override
     public Script getRedeemScript() {
         if (redeemScript == null) {
-            redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getMembersPublicKeys());
+            redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
         }
 
         return redeemScript;

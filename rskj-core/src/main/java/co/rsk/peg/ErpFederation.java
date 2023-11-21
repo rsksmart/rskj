@@ -11,15 +11,15 @@ import java.util.Collections;
 import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
-import static co.rsk.peg.ErpRedeemScriptBuilderCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
+import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 
 public class ErpFederation extends Federation {
-    protected final List<BtcECKey> erpPubKeys;
-    protected final long activationDelay;
-    protected final ActivationConfig.ForBlock activations;
-    protected Script standardRedeemScript;
-    protected Script standardP2SHScript;
-    protected ErpRedeemScriptBuilder erpRedeemScriptBuilder;
+    private final List<BtcECKey> erpPubKeys;
+    private final long activationDelay;
+    private final ActivationConfig.ForBlock activations;
+    private Script defaultRedeemScript;
+    private Script defaultP2SHScript;
+    private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
 
     protected ErpFederation(
         List<FederationMember> members,
@@ -32,7 +32,7 @@ public class ErpFederation extends Federation {
         ErpRedeemScriptBuilder erpRedeemScriptBuilder) {
 
         super(members, creationTime, creationBlockNumber, btcParams);
-        validateEmergencyKeysAreNotNullNorEmpty(erpPubKeys);
+        validateEmergencyKeys(erpPubKeys);
 
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
@@ -40,12 +40,14 @@ public class ErpFederation extends Federation {
         this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
     }
 
-    private void validateEmergencyKeysAreNotNullNorEmpty(List<BtcECKey> erpPubKeys) {
+    private void validateEmergencyKeys(List<BtcECKey> erpPubKeys) {
         if (erpPubKeys == null || erpPubKeys.isEmpty()) {
             String message = "Emergency keys are not provided";
-            throw new ErpRedeemScriptBuilderCreationException(message, NULL_OR_EMPTY_EMERGENCY_KEYS);
+            throw new ErpFederationCreationException(message, NULL_OR_EMPTY_EMERGENCY_KEYS);
         }
     }
+
+    public ErpRedeemScriptBuilder getErpRedeemScriptBuilder() { return erpRedeemScriptBuilder; }
 
     public List<BtcECKey> getErpPubKeys() {
         return Collections.unmodifiableList(erpPubKeys);
@@ -61,18 +63,18 @@ public class ErpFederation extends Federation {
     }
 
     public Script getDefaultRedeemScript() {
-        if (standardRedeemScript == null) {
-            standardRedeemScript = RedeemScriptParserFactory.get(getRedeemScript().getChunks())
+        if (defaultRedeemScript == null) {
+            defaultRedeemScript = RedeemScriptParserFactory.get(getRedeemScript().getChunks())
                 .extractStandardRedeemScript();
         }
-        return standardRedeemScript;
+        return defaultRedeemScript;
     }
 
     @Override
     public Script getRedeemScript() {
         if (redeemScript == null) {
                 redeemScript = erpRedeemScriptBuilder.createRedeemScriptFromKeys(
-                    getMembersPublicKeys(),
+                    getBtcPublicKeys(),
                     getNumberOfSignaturesRequired(),
                     erpPubKeys,
                     getNumberOfEmergencySignaturesRequired(),
@@ -83,11 +85,11 @@ public class ErpFederation extends Federation {
     }
 
     public Script getDefaultP2SHScript() {
-        if (standardP2SHScript == null) {
-            standardP2SHScript = ScriptBuilder.createP2SHOutputScript(getDefaultRedeemScript());
+        if (defaultP2SHScript == null) {
+            defaultP2SHScript = ScriptBuilder.createP2SHOutputScript(getDefaultRedeemScript());
         }
 
-        return standardP2SHScript;
+        return defaultP2SHScript;
     }
 
 }

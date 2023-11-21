@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static co.rsk.peg.ErpRedeemScriptBuilderUtils.removeOpCheckMultisig;
+
 public class NonStandardErpRedeemScriptBuilder implements ErpRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(NonStandardErpRedeemScriptBuilder.class);
 
@@ -34,7 +36,7 @@ public class NonStandardErpRedeemScriptBuilder implements ErpRedeemScriptBuilder
 
     }
 
-    private static Script createRedeemScriptFromScripts(Script defaultRedeemScript,
+    private Script createRedeemScriptFromScripts(Script defaultRedeemScript,
                                                         Script emergencyRedeemScript,
                                                         byte[] serializedCsvValue) {
 
@@ -50,9 +52,5 @@ public class NonStandardErpRedeemScriptBuilder implements ErpRedeemScriptBuilder
             .op(ScriptOpCodes.OP_ENDIF)
             .op(ScriptOpCodes.OP_CHECKMULTISIG)
             .build();
-    }
-
-    protected static List<ScriptChunk> removeOpCheckMultisig(Script redeemScript) {
-        return redeemScript.getChunks().subList(0, redeemScript.getChunks().size() - 1);
     }
 }

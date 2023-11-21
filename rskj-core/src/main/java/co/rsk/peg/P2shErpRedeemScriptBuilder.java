@@ -34,7 +34,7 @@ public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
 
         return redeemScript;
     }
-    private static Script createRedeemScriptFromScripts(Script defaultRedeemScript,
+    private Script createRedeemScriptFromScripts(Script defaultRedeemScript,
                                      Script emergencyRedeemScript,
                                      byte[] serializedCsvValue) {
 

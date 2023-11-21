@@ -103,9 +103,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     @Override
     public void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation) {
         // Convert old federation public keys in bytes array
-        byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getMembersPublicKeys());
+        byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
-        byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getMembersPublicKeys());
+        byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
         long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge(activations);
 
