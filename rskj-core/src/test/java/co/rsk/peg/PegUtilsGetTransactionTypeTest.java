@@ -89,7 +89,7 @@ class PegUtilsGetTransactionTypeTest {
         activeFederation = createP2shErpFederation(bridgeMainnetConstants, activeFedSigners);
 
         int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;
+        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         blockNumberToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
     }
 
@@ -126,7 +126,6 @@ class PegUtilsGetTransactionTypeTest {
                 true,
                 PegTxType.PEGIN
             ),
-
 
             Arguments.of(
                 tbdActivations,
