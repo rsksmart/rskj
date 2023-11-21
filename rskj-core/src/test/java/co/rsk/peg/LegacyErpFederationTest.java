@@ -175,7 +175,13 @@ class LegacyErpFederationTest {
     }
 
     @Test
-    void createErpRedeemScriptDeprecated_csvValueOneByteLong() {
+    void createErpRedeemScriptWithCsvUnsignedBE_csvValueOneByteLong() {
+        // should create the redeem script with NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE
+        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
         // For a value that only uses 1 byte it should add leading zeroes to complete 2 bytes
         activationDelayValue = 20L;
         federation = createDefaultLegacyErpFederation();
@@ -183,13 +189,16 @@ class LegacyErpFederationTest {
         validateErpRedeemScript(
             federation.getRedeemScript(),
             activationDelayValue,
-            true
+            false
         );
+
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
     }
 
 
     @Test
-    void createValidP2shErpFederation_csvValueTwoBytesLong() {
+    void createValidNonStandardErpFederation_csvValueTwoBytesLong() {
         activationDelayValue = 500L;
         federation = createDefaultLegacyErpFederation();
 
@@ -201,7 +210,7 @@ class LegacyErpFederationTest {
     }
 
     @Test
-    void createValidP2shErpFederation_csvValueTwoBytesLongIncludingSign() {
+    void createValidNonStandardErpFederation_csvValueTwoBytesLongIncludingSign() {
         activationDelayValue = 130; // Any value above 127 needs an extra byte to indicate the sign
         federation = createDefaultLegacyErpFederation();
 
@@ -214,10 +223,10 @@ class LegacyErpFederationTest {
 
 
     @Test
-    void createInvalidP2shErpFederation_csvValueThreeBytesLong() {
+    void createInvalidNonStandardErpFederation_csvValueThreeBytesLong() {
         activationDelayValue = 100_000L; // Should fail since this value is above the max value
 
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
             () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
@@ -226,7 +235,7 @@ class LegacyErpFederationTest {
     }
 
     @Test
-    void createValidP2shErpFederation_csvValueThreeBytesLongIncludingSign() {
+    void createValidNonStandardErpFederation_csvValueThreeBytesLongIncludingSign() {
         activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
         federation = createDefaultLegacyErpFederation();
 
@@ -237,16 +246,17 @@ class LegacyErpFederationTest {
         );
     }
 
-    @Test
-    void createInvalidP2shErpFederation_csvValueFourBytesLongIncludingSign() {
-        activationDelayValue = 8_400_000L; // Any value above 8_388_607 needs an extra byte to indicate the sign
 
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
+    @Test
+    void createInValidNonStandardErpFederationWithCsvUnsignedBE_csvValueThreeBytesLongIncludingSign() {
+        activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
+        federation = createDefaultLegacyErpFederation();
+
+        validateErpRedeemScript(
+            federation.getRedeemScript(),
+            activationDelayValue,
+            true
         );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
     @Test
