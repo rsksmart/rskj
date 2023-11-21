@@ -30,6 +30,7 @@ import co.rsk.util.ExecState;
 import co.rsk.util.TraceUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockIdentifier;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -237,9 +238,17 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         messageCounter.increment(sender);
         MessageTask messageTask = new MessageTask(sender, message, score, nodeMsgTraceInfo);
 
+        if (messageTask.getMessage().getMessageType() == MessageType.BLOCK_MESSAGE) {
+            BlockMessage blockMessage = (BlockMessage) messageTask.getMessage();
+            loggerSnapExperiment.debug("BlockMessage block arrived number: [{}] hash: [{}] from: [{}]", blockMessage.getBlock().getNumber(), blockMessage.getBlock().getPrintableHash(), messageTask.sender.getPeerNodeID());
+        }
+
         if (messageTask.getMessage().getMessageType() == MessageType.NEW_BLOCK_HASHES) {
             NewBlockHashesMessage blockMessage = (NewBlockHashesMessage) messageTask.getMessage();
-            loggerSnapExperiment.debug("NewBlockMessage block arrived: [{}] from: [{}]", blockMessage.getBlockIdentifiers().get(0).getHash(), messageTask.sender.getPeerNodeID());
+
+            for (BlockIdentifier bi : blockMessage.getBlockIdentifiers()){
+                loggerSnapExperiment.debug("NewBlockHashes Message block arrived number: [{}] hash: [{}] from: [{}]", bi.getNumber(), HashUtil.toPrintableHash(bi.getHash()), messageTask.sender.getPeerNodeID());
+            }
         }
 
         boolean messageAdded = this.queue.offer(messageTask);
