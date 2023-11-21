@@ -2987,16 +2987,4 @@ class Web3ImplTest {
         assertEquals("0x0", txReceipt.getType());
         assertEquals("0x0", txResult.getType());
     }
-
-    @Test
-    public void rsk_sendEncryptedTransaction() {
-        fail("this should be implemented");
-        Web3Impl web3 = createWeb3(
-                Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
-                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache, Web3Mocks.getMockFlusher(), Web3Mocks.getMockNodeStopper()
-        );
-
-        web3.rsk_sendEncryptedTransaction("some data");
-//        verify(flusher, times(1)).forceFlush();
-    }
 }

@@ -1,5 +1,7 @@
 package org.ethereum.db;
 
+import co.rsk.db.MutableTrieCache;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +16,7 @@ public class FhContext {
     private final Map<String, ByteArrayWrapper> encryptedParams = new HashMap<>();
     private final List<NoiseBudgetBenchmark> noiseBudgetBenchmark = new ArrayList<>();
     private final boolean enableBenchmark = true;
+    private final Map<String, Long> transcipherBenchmarks = new HashMap<>();
 
     private FhContext() {}
 
@@ -55,5 +58,9 @@ public class FhContext {
 
     public void addNoiseBudgetBenchmark(int noiseBudget) {
         this.noiseBudgetBenchmark.add(new NoiseBudgetBenchmark(noiseBudget));
+    }
+
+    public void addTranscipherBenchmark(long start, long end, String id) {
+        this.transcipherBenchmarks.put(id, start - end);
     }
 }

@@ -145,10 +145,15 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             byte[] pastaSK = vm.getPastaSK();
             byte[] rks = vm.getRk();
             byte[] bfvSK = vm.getBfvSK();
+
+            long start = System.nanoTime();
             byte[] fhData = bfv.transcipher(data, data.length, pastaSK, pastaSK.length, rks, rks.length,
                     bfvSK, bfvSK.length);
+            long end = System.nanoTime();
 
             byte[] hash = Keccak256Helper.keccak256(fhData);
+
+            FhContext.getInstance().addTranscipherBenchmark(start, end, tx.getHash().toString());
 
             // store encrypted params, so they can be accessed within tx execution
             FhContext.getInstance().putEncryptedData(hash, fhData);
