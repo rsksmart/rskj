@@ -461,7 +461,7 @@ public class BridgeSupport {
         return btcBlockStore;
     }
 
-    private PeginEvaluationResult evaluatePegin(BtcTransaction btcTx, PeginInformation peginInformation) throws RegisterBtcTransactionException {
+    private PeginEvaluationResult evaluatePegin(BtcTransaction btcTx, PeginInformation peginInformation) {
         if(!activations.isActive(ConsensusRule.RSKIP379)){
             throw new IllegalStateException("Method cannot be called before RSKIP379.");
         }
@@ -550,13 +550,13 @@ public class BridgeSupport {
 
             eventLogger.logRejectedPegin(btcTx, rejectedPeginReason.get());
             if (peginEvaluationResult.getPeginProcessAction() == PeginProcessAction.CAN_BE_REFUNDED){
-                logger.debug("[processPegIn] Invalid transaction can be refund. Btc refund address {0} will be refund for tx {1}.", peginInformation.getBtcRefundAddress(), btcTx.getHash());
+                logger.debug("[processPegIn] Invalid transaction can be refund. Btc refund address {} will be refund for tx {}.", peginInformation.getBtcRefundAddress(), btcTx.getHash());
                 generateRejectionRelease(btcTx, peginInformation.getBtcRefundAddress(), rskTx, totalAmount);
                 markTxAsProcessed(btcTx);
             }
 
 
-            logger.debug("[processPegIn] Invalid transaction can't be refund. Invalid amount or no btc refund address provided and couldn't get sender address either for tx {0}.", btcTx.getHash());
+            logger.debug("[processPegIn] Invalid transaction can't be refund. Invalid amount or no btc refund address provided and couldn't get sender address either for tx {}.", btcTx.getHash());
             if (rejectedPeginReason.get() != INVALID_AMOUNT){
                 handleUnprocessableBtcTx(btcTx, peginInformation);
             }
