@@ -46,7 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-class LegacyErpFederationTest {
+class NonStandardFederationsTest {
     private ErpFederation federation;
     private NetworkParameters networkParameters;
     private int defaultThreshold;
@@ -83,8 +83,7 @@ class LegacyErpFederationTest {
         activationDelayValue = bridgeConstants.getErpFedActivationDelay();
         networkParameters = bridgeConstants.getBtcParams();
         activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
         federation = createDefaultLegacyErpFederation();
     }
@@ -129,8 +128,14 @@ class LegacyErpFederationTest {
     @Test
     void createValidLegacyErpFederation_oneErpKey() {
         emergencyKeys = Collections.singletonList(emergencyKeys.get(0));
+        emergencyThreshold = emergencyKeys.size() / 2 + 1;
 
-        assertDoesNotThrow(this::createDefaultLegacyErpFederation);
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        assertDoesNotThrow(() -> builder
+            .createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue));
     }
     @Test
     void createInvalidLegacyErpFederation_negativeCsvValue() {
@@ -139,7 +144,10 @@ class LegacyErpFederationTest {
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue)
         );
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
@@ -151,7 +159,10 @@ class LegacyErpFederationTest {
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue)
         );
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
@@ -163,7 +174,10 @@ class LegacyErpFederationTest {
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue)
         );
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
@@ -171,14 +185,19 @@ class LegacyErpFederationTest {
     @Test
     void createValidLegacyErpFederation_exactMaxCsvValue() {
         activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
-        assertDoesNotThrow(this::createDefaultLegacyErpFederation);
+
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        assertDoesNotThrow(() -> builder
+            .createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue));
     }
 
     @Test
-    void createErpRedeemScriptWithCsvUnsignedBE_csvValueOneByteLong() {
+    void createErpRedeemScriptWithCsvUnsignedBE_csvValueOneByteLong_post_RSKIP284_pre_RSKIP293() {
         // should create the redeem script with NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
@@ -188,8 +207,7 @@ class LegacyErpFederationTest {
 
         validateErpRedeemScript(
             federation.getRedeemScript(),
-            activationDelayValue,
-            false
+            activationDelayValue
         );
 
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
@@ -198,26 +216,30 @@ class LegacyErpFederationTest {
 
 
     @Test
-    void createValidNonStandardErpFederation_csvValueTwoBytesLong() {
+    void createValidNonStandardErpFederation_csvValueTwoBytesLong_post_RSKIP293() {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
         activationDelayValue = 500L;
         federation = createDefaultLegacyErpFederation();
 
         validateErpRedeemScript(
             federation.getRedeemScript(),
-            activationDelayValue,
-            true
+            activationDelayValue
         );
     }
 
     @Test
-    void createValidNonStandardErpFederation_csvValueTwoBytesLongIncludingSign() {
+    void createValidNonStandardErpFederation_csvValueTwoBytesLongIncludingSign_post_RSKIP293() {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
         activationDelayValue = 130; // Any value above 127 needs an extra byte to indicate the sign
         federation = createDefaultLegacyErpFederation();
 
         validateErpRedeemScript(
             federation.getRedeemScript(),
-            activationDelayValue,
-            true
+            activationDelayValue
         );
     }
 
@@ -235,27 +257,31 @@ class LegacyErpFederationTest {
     }
 
     @Test
-    void createValidNonStandardErpFederation_csvValueThreeBytesLongIncludingSign() {
+    void createValidNonStandardErpFederation_csvValueThreeBytesLongIncludingSign_post_RSKIP293() {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
         activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
         federation = createDefaultLegacyErpFederation();
 
         validateErpRedeemScript(
             federation.getRedeemScript(),
-            activationDelayValue,
-            true
+            activationDelayValue
         );
     }
 
 
     @Test
-    void createInValidNonStandardErpFederationWithCsvUnsignedBE_csvValueThreeBytesLongIncludingSign() {
+    void createInValidNonStandardErpFederationWithCsvUnsignedBE_csvValueThreeBytesLongIncludingSign_post_RSKIP293() {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
         activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
         federation = createDefaultLegacyErpFederation();
 
         validateErpRedeemScript(
             federation.getRedeemScript(),
-            activationDelayValue,
-            true
+            activationDelayValue
         );
     }
 
@@ -458,6 +484,8 @@ class LegacyErpFederationTest {
     @Test
     void getP2SHScriptAndAddress() {
         // standard and emergency keys from last real non-standard erp fed in testnet
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
         networkParameters = bridgeTestNetConstants.getBtcParams();
         emergencyKeys = bridgeTestNetConstants.getErpFedPubKeysList();
@@ -515,6 +543,7 @@ class LegacyErpFederationTest {
 
     @Test
     void getLegacyErpRedeemScript_compareOtherImplementation() throws IOException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         byte[] rawRedeemScripts;
@@ -529,18 +558,13 @@ class LegacyErpFederationTest {
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
             // Skip test cases with invalid redeem script that exceed the maximum size
             if (generatedScript.script.getProgram().length <= MAX_SCRIPT_ELEMENT_SIZE) {
-                Federation erpFederation = new ErpFederation(
-                    FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
-                    ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                    1,
-                    NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
-                    generatedScript.emergencyFed,
-                    generatedScript.timelock,
-                    activations,
-                    erpRedeemScriptBuilder
-                );
+                networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+                defaultKeys = generatedScript.mainFed;
+                emergencyKeys = generatedScript.emergencyFed;
+                activationDelayValue = generatedScript.timelock;
 
-                Script rskjScript = erpFederation.getRedeemScript();
+                federation = createDefaultLegacyErpFederation();
+                Script rskjScript = federation.getRedeemScript();
                 Script alternativeScript = generatedScript.script;
 
                 assertEquals(alternativeScript, rskjScript);
@@ -555,8 +579,7 @@ class LegacyErpFederationTest {
         Script redeemScript = federation.getRedeemScript();
         validateErpRedeemScript(
             redeemScript,
-            activationDelayValue,
-            false
+            activationDelayValue
         );
     }
 
@@ -568,14 +591,17 @@ class LegacyErpFederationTest {
 
         validateErpRedeemScript(
             redeemScript,
-            activationDelayValue,
-            true
+            activationDelayValue
         );
     }
 
     @Test
-    void getRedeemScript_changes_after_RSKIP293() {
+    void getRedeemScript_changes_related_to_RSKIP293_testnet() {
+        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
         federation = createDefaultLegacyErpFederation();
         Script preRskip293RedeemScript = federation.getRedeemScript();
 
@@ -589,122 +615,108 @@ class LegacyErpFederationTest {
     @Test
     void createErpFederation_testnet_constants_before_RSKIP293() {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
-        createErpFederation(false);
+        createErpFederation();
     }
 
     @Test
     void createErpFederation_testnet_constants_after_RSKIP293() {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
-        createErpFederation(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        createErpFederation();
     }
 
     @Test
     void createErpFederation_mainnet_constants_before_RSKIP293() {
-        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-        createErpFederation(false);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+        createErpFederation();
     }
 
     @Test
     void createErpFederation_mainnet_constants_after_RSKIP293() {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-        createErpFederation(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        createErpFederation();
     }
 
     @Test
     void getRedeemScript_before_RSKIP_284_testnet() {
+        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-        Federation erpFederation = new ErpFederation(
-            FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
-            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            1,
-            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
-            emergencyKeys,
-            activationDelayValue,
-            activations,
-            new NonStandardErpRedeemScriptBuilderHardcoded()
-        );
+        federation = createDefaultLegacyErpFederation();
 
-        assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, erpFederation.getRedeemScript());
+        assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, federation.getRedeemScript());
     }
 
     @Test
     void getRedeemScript_before_RSKIP_284_mainnet() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
-        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+        //when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
         federation = createDefaultLegacyErpFederation();
 
         Assertions.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, federation.getRedeemScript());
         validateErpRedeemScript(
             federation.getRedeemScript(),
-            activationDelayValue,
-            false
+            activationDelayValue
         );
     }
 
     @Test
     void getRedeemScript_after_RSKIP_284_testnet() {
-        Federation erpFederation = new ErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
-            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            1,
-            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
-            emergencyKeys,
-            activationDelayValue,
-            activations,
-            new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE()
-        );
+        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+        federation = createDefaultLegacyErpFederation();
 
-        Assertions.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, erpFederation.getRedeemScript());
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
+        Assertions.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, federation.getRedeemScript());
+
         validateErpRedeemScript(
-            erpFederation.getRedeemScript(),
-            activationDelayValue,
-            false
+            federation.getRedeemScript(),
+            activationDelayValue
         );
     }
 
     @Test
-    void getRedeemScript_after_RSKIP_284_mainnet() {
-        Federation erpFederation = new ErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys),
-            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            1,
-            NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
-            emergencyKeys,
-            activationDelayValue,
-            activations,
-            new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE()
-        );
+    void getRedeemScript_after_RSKIP_201_before_RSKIP_293_mainnet() {
+        ErpRedeemScriptBuilder builder;
 
-        Assertions.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, erpFederation.getRedeemScript());
+        // check the hardcoded fed didnt exist on mainnet after rskip201
+        federation = createDefaultLegacyErpFederation();
+        builder = federation.getErpRedeemScriptBuilder();
+        Assertions.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, federation.getRedeemScript());
+        assertFalse(builder instanceof NonStandardErpRedeemScriptBuilderHardcoded);
+
+        // check the hardcoded fed didnt exist on mainnet after rskip284
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        federation = createDefaultLegacyErpFederation();
+        builder = federation.getErpRedeemScriptBuilder();
+        assertFalse(builder instanceof NonStandardErpRedeemScriptBuilderHardcoded);
+
         validateErpRedeemScript(
-            erpFederation.getRedeemScript(),
-            activationDelayValue,
-            false
+            federation.getRedeemScript(),
+            activationDelayValue
         );
     }
 
     @Test
     void testEquals_differentRedeemScript() {
-        ActivationConfig.ForBlock activationsPre = mock(ActivationConfig.ForBlock.class);
-        when(activationsPre.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-
-        ActivationConfig.ForBlock activationsPost = mock(ActivationConfig.ForBlock.class);
-        when(activationsPost.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         // Both federations created before RSKIP284 with the same data, should have the same redeem script
-        activations = activationsPre;
-
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
         Federation erpFederation = createDefaultLegacyErpFederation();
         Federation otherErpFederation = createDefaultLegacyErpFederation();
         assertEquals(erpFederation, otherErpFederation);
 
-        activations = activationsPost;
         // One federation created after RSKIP284 with the same data, should have different redeem script
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         otherErpFederation = createDefaultLegacyErpFederation();
         assertNotEquals(erpFederation, otherErpFederation);
 
@@ -814,14 +826,13 @@ class LegacyErpFederationTest {
 
     @Test
     void spendFromErpFed_before_RSKIP293_mainnet_using_erp_multisig_cant_spend() {
-        BridgeConstants constants = BridgeMainNetConstants.getInstance();
-
         // Should fail due to the wrong encoding of the CSV value
         // In this case, the value 300 when encoded as BE and decoded as LE results in a larger number
         // This causes the validation to fail
-        NetworkParameters btcParams = constants.getBtcParams();
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
         assertThrows(ScriptException.class, () -> spendFromErpFed(
-            btcParams,
+            networkParameters,
             300,
             false,
             true
@@ -891,16 +902,15 @@ class LegacyErpFederationTest {
         ));
     }
 
-    private void createErpFederation(boolean isRskip293Active) {
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
+    private void createErpFederation() {
+
         federation = createDefaultLegacyErpFederation();
 
         validateErpRedeemScript(
             federation.getRedeemScript(),
             defaultKeys,
             emergencyKeys,
-            activationDelayValue,
-            isRskip293Active
+            activationDelayValue
         );
     }
 
@@ -953,15 +963,13 @@ class LegacyErpFederationTest {
 
     private void validateErpRedeemScript(
         Script erpRedeemScript,
-        Long csvValue,
-        boolean isRskip293Active) {
+        Long csvValue) {
 
         validateErpRedeemScript(
             erpRedeemScript,
             defaultKeys,
             emergencyKeys,
-            csvValue,
-            isRskip293Active
+            csvValue
         );
     }
 
@@ -969,15 +977,17 @@ class LegacyErpFederationTest {
         Script erpRedeemScript,
         List<BtcECKey> defaultMultisigKeys,
         List<BtcECKey> emergencyMultisigKeys,
-        Long csvValue,
-        boolean isRskip293Active) {
+        Long csvValue) {
 
         // Keys are sorted when added to the redeem script, so we need them sorted in order to validate
         defaultMultisigKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         emergencyMultisigKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        int expectedCsvValueLength = isRskip293Active ? BigInteger.valueOf(csvValue).toByteArray().length : 2;
-        byte[] serializedCsvValue = isRskip293Active ?
+        int expectedCsvValueLength = activations.isActive(ConsensusRule.RSKIP293) ?
+            BigInteger.valueOf(csvValue).toByteArray().length
+            : 2;
+
+        byte[] serializedCsvValue = activations.isActive(ConsensusRule.RSKIP293) ?
             Utils.signedLongToByteArrayLE(csvValue) :
             Utils.unsignedLongToByteArrayBE(csvValue, expectedCsvValueLength);
 

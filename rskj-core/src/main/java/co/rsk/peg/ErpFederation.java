@@ -55,7 +55,6 @@ public class ErpFederation extends Federation {
         return Collections.unmodifiableList(erpPubKeys);
     }
 
-
     public int getNumberOfEmergencySignaturesRequired() {
         return erpPubKeys.size() / 2 + 1;
     }
@@ -100,5 +99,4 @@ public class ErpFederation extends Federation {
 
         return defaultP2SHScript;
     }
-
 }
