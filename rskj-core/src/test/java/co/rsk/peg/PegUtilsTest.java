@@ -84,7 +84,7 @@ class PegUtilsTest {
         });
 
         // Assert
-        String expectedMessage = "Can't call this method before RSKIP379 activation.";
+        String expectedMessage = "Can't call this method before RSKIP379 activation";
         Assertions.assertEquals(expectedMessage, exception.getMessage());
     }
 
