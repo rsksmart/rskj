@@ -90,7 +90,7 @@ public class SnapshotProcessor {
         // get more than one peer, use the peer queue
         // TODO(snap-poc) deal with multiple peers algorithm here
         Peer peer = peers.get(0);
-        logger.info("CLIENT - Starting Snapshot sync.");
+        logger.debug("CLIENT - Starting Snapshot sync.");
         requestSnapStatus(peer);
     }
 
@@ -111,18 +111,19 @@ public class SnapshotProcessor {
     }
 
     public void processSnapStatusRequest(Peer sender) {
-        logger.debug("SERVER - Procesing snapshot status request.");
-        long bestBlockNumber = blockchain.getBestBlock().getNumber();
-        long checkpointBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
+        logger.debug("SERVER - Processing snapshot status request.");
+        long bestBlockNumber = 5637110L; // blockchain.getBestBlock().getNumber();
         List<Block> blocks = Lists.newArrayList();
-        List<BlockDifficulty> difficulties = Lists.newArrayList();
-        for (long i = checkpointBlockNumber - BLOCK_CHUNK_SIZE; i < checkpointBlockNumber; i++) {
-            Block block = blockchain.getBlockByNumber(i);
-            blocks.add(block);
-            difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
-        }
 
-        Block checkpointBlock = blockchain.getBlockByNumber(checkpointBlockNumber);
+//        long checkpointBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
+//        List<BlockDifficulty> difficulties = Lists.newArrayList();
+//        for (long i = checkpointBlockNumber - BLOCK_CHUNK_SIZE; i < checkpointBlockNumber; i++) {
+//            Block block = blockchain.getBlockByNumber(i);
+//            blocks.add(block);
+//            difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
+//        }
+
+        Block checkpointBlock = blockchain.getBlockByNumber(bestBlockNumber);
         blocks.add(checkpointBlock);
         difficulties.add(blockStore.getTotalDifficultyForHash(checkpointBlock.getHash().getBytes()));
         byte[] rootHash = checkpointBlock.getStateRoot();
