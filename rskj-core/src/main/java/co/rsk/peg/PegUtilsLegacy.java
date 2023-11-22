@@ -52,7 +52,12 @@ public class PegUtilsLegacy {
      */
     @Deprecated
     public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
-        return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(Federation::getStandardP2SHScript).toArray(Script[]::new));
+        Script[] federationsP2shScripts = federations.stream()
+            .filter(Objects::nonNull)
+            .map(PegUtilsLegacy::getFederationStandardP2SHScript)
+            .toArray(Script[]::new);
+
+        return isPegOutTx(tx, activations, federationsP2shScripts);
     }
 
     /**
@@ -217,7 +222,7 @@ public class PegUtilsLegacy {
                         throw new ScriptException(message);
                     }
                     Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
-                    if (activeFederations.stream().anyMatch(federation -> federation.getStandardRedeemScript().equals(inputStandardRedeemScript))) {
+                    if (activeFederations.stream().anyMatch(federation -> getFederationStandardRedeemScript(federation).equals(inputStandardRedeemScript))) {
                         return false;
                     }
 
@@ -273,7 +278,7 @@ public class PegUtilsLegacy {
             standardP2shScripts.add(retiredFederationP2SHScript);
         }
         if (retiringFederation != null){
-            standardP2shScripts.add(retiringFederation.getStandardP2SHScript());
+            standardP2shScripts.add(getFederationStandardP2SHScript(retiringFederation));
         }
 
         boolean moveFromRetiringOrRetired =  isPegOutTx(btcTx, activations, standardP2shScripts.toArray(new Script[0]));
@@ -378,5 +383,17 @@ public class PegUtilsLegacy {
         return btcTx.getWalletOutputs(wallet).stream()
             .anyMatch(transactionOutput -> transactionOutput.getValue().isLessThan(minimumPegInTxValue)
         );
+    }
+
+    private static Script getFederationStandardRedeemScript(Federation federation) {
+        return federation instanceof ErpFederation ?
+            ((ErpFederation) federation).getStandardRedeemScript() :
+            federation.getRedeemScript();
+    }
+
+    private static Script getFederationStandardP2SHScript(Federation federation) {
+        return federation instanceof ErpFederation ?
+            ((ErpFederation) federation).getStandardP2SHScript() :
+            federation.getP2SHScript();
     }
 }
