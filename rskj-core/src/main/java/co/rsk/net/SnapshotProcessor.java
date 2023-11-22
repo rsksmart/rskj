@@ -32,6 +32,9 @@ public class SnapshotProcessor {
     public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
+    private static final long DELAY_BTW_RUNS = 20 * 60 * 1000; // 20 minutes
+    private static final int CHUNK_MAX = 400;
+    private static final int CHUNK_MIN = 100;
 
     private final Blockchain blockchain;
     private final TrieStore trieStore;
@@ -42,10 +45,6 @@ public class SnapshotProcessor {
     private final boolean isCompressionEnabled;
 
     private long messageId = 0;
-    private boolean enabled = false;
-
-    // flag for parallel requests
-    private boolean parallel = false;
 
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
@@ -59,7 +58,7 @@ public class SnapshotProcessor {
     private Block lastBlock;
     private BlockDifficulty lastBlockDifficulty;
 
-    private final Queue<ChunkTask> chunkTasks = new LinkedList<>();
+    private Queue<ChunkTask> chunkTasks = new LinkedList<>();
     private List<Peer> peers = new ArrayList<>();
 
     public SnapshotProcessor(Blockchain blockchain,
@@ -73,14 +72,13 @@ public class SnapshotProcessor {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
-        this.chunkSize = chunkSize;
+        this.chunkSize = 100;//chunkSize;
         this.isCompressionEnabled = isCompressionEnabled;
         this.allNodes = Lists.newArrayList();
         this.blockStore = blckStore;
         this.blocks = Lists.newArrayList();
         this.difficulties = Lists.newArrayList();
         this.transactionPool = transactionPool;
-        this.parallel = isParallelEnabled;
     }
 
     public void startSyncing(List<Peer> peers, SnapSyncState snapSyncState) {
@@ -317,9 +315,7 @@ public class SnapshotProcessor {
                     // request another chunk
                     continueWork(peer);
                 } else {
-                    rebuildStateAndSave();
-                    logger.info("CLIENT - Snapshot sync finished!");
-                    this.stopSyncing();
+                    stateSyncCompleted();
                 }
             } else {
                 logger.error("Error while verifying chunk response: {}", message);
@@ -329,6 +325,28 @@ public class SnapshotProcessor {
         } catch (Exception e) {
             logger.error("Error while processing chunk response.", e);
         }
+    }
+
+    private void stateSyncCompleted() {
+        rebuildStateAndSave();
+        //logger.info("CLIENT - Snapshot sync finished!");
+        //this.stopSyncing();
+        logger.debug("State Completed! {} chunks ({} bytes) - chunk size = {}",
+                this.stateSize.toString(), this.stateChunkSize.toString(), this.chunkSize);
+        try {
+            Thread.sleep(DELAY_BTW_RUNS);
+        } catch (InterruptedException ignored) {
+        }
+        duplicateTheChunkSize();
+        logger.debug("Starting again the infinite loop! With chunk size = {}", this.chunkSize);
+        this.allNodes = Lists.newArrayList();
+        this.difficulties = Lists.newArrayList();
+        this.blocks = Lists.newArrayList();
+        this.stateSize = BigInteger.ZERO;
+        this.stateChunkSize = BigInteger.ZERO;
+        this.chunkTasks = Lists.newLinkedList();
+        generateTasks();
+        startProcessing();
     }
 
     public static boolean verifyChunk(byte[] remoteRootHash, List<TrieDTO> preRootNodes, List<TrieDTO> nodes, List<TrieDTO> postRootNodes) {
@@ -349,6 +367,11 @@ public class SnapshotProcessor {
         return true;
     }
 
+    private void duplicateTheChunkSize() {
+        this.chunkSize = this.chunkSize * 2;
+        this.chunkSize = this.chunkSize > CHUNK_MAX ? CHUNK_MIN : this.chunkSize;
+    }
+
     private void rebuildStateAndSave() {
         logger.debug("CLIENT - State Completed! {} chunks ({} bytes) - chunk size = {}",
                 this.stateSize.toString(), this.stateChunkSize.toString(), this.chunkSize);
@@ -361,6 +384,10 @@ public class SnapshotProcessor {
         }else {
             logger.debug("CLIENT - State final validation OK!");
         }
+        //saveBocks();
+    }
+
+    private void saveBocks() {
         logger.debug("CLIENT - Saving previous blocks...");
         this.blockchain.removeBlocksByNumber(0l);
         for (int i = 0; i < this.blocks.size(); i++) {
