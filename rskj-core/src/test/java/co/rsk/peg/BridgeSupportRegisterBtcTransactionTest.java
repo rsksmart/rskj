@@ -2474,7 +2474,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
         }
 
-        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFed.getStandardP2SHScript()));
+        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFed.getP2SHScript()));
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);

@@ -57,7 +57,7 @@ class PegUtilsGetTransactionTypeTest {
     private Address userAddress;
 
     private List<BtcECKey> retiredFedSigners;
-    private Federation retiredFed;
+    private P2shErpFederation retiredFed;
 
     private List<BtcECKey> retiringFedSigners;
     private Federation retiringFederation;
