@@ -104,8 +104,9 @@ public class PegUtils {
 
         int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-        int heightToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
-        boolean shouldUsePegoutTxIndex = activations.isActive(ConsensusRule.RSKIP379) && btcTransactionHeight >= heightToStartUsingPegoutIndex;
+        int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        boolean shouldUsePegoutTxIndex = activations.isActive(ConsensusRule.RSKIP379) &&
+            btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
 
         if (shouldUsePegoutTxIndex){
             return getTransactionTypeUsingPegoutIndex(
