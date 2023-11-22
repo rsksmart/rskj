@@ -4,16 +4,16 @@ import java.util.Optional;
 
 public class PeginEvaluationResult {
     private final PeginProcessAction peginProcessAction;
-    private final Optional<RejectedPeginReason> rejectedPeginReason;
+    private final RejectedPeginReason rejectedPeginReason;
 
     public PeginEvaluationResult(PeginProcessAction peginProcessAction) {
         this.peginProcessAction = peginProcessAction;
-        this.rejectedPeginReason = Optional.empty();
+        this.rejectedPeginReason = null;
     }
 
     public PeginEvaluationResult(PeginProcessAction peginProcessAction, RejectedPeginReason rejectedPeginReason) {
         this.peginProcessAction = peginProcessAction;
-        this.rejectedPeginReason = Optional.of(rejectedPeginReason);
+        this.rejectedPeginReason = rejectedPeginReason;
     }
 
     public PeginProcessAction getPeginProcessAction() {
@@ -21,6 +21,10 @@ public class PeginEvaluationResult {
     }
 
     public Optional<RejectedPeginReason> getRejectedPeginReason() {
-        return rejectedPeginReason;
+        if (rejectedPeginReason != null) {
+            return Optional.of(rejectedPeginReason);
+        }
+
+        return Optional.empty();
     }
 }

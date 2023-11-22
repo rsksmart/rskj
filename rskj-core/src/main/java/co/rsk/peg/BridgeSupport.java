@@ -492,8 +492,8 @@ public class BridgeSupport {
             fedWallet,
             activations
         );
-        PeginProcessAction peginProcessAction = peginEvaluationResult.getPeginProcessAction();
 
+        PeginProcessAction peginProcessAction = peginEvaluationResult.getPeginProcessAction();
         if (peginProcessAction == PeginProcessAction.CAN_BE_REGISTERED) {
             logger.debug("[processPegIn] Peg-in is valid, going to register");
             executePegIn(btcTx, peginInformation, totalAmount);
@@ -516,19 +516,27 @@ public class BridgeSupport {
                 markTxAsProcessed(btcTx);
             } else {
                 logger.debug("[processPegIn] Unprocessable transaction {}.", btcTx.getHash());
-                if (rejectedPeginReason != INVALID_AMOUNT){
-                    handleUnprocessableBtcTx(btcTx, peginInformation);
-                }
+                handleUnprocessableBtcTx(btcTx, peginInformation.getProtocolVersion(), rejectedPeginReason);
             }
         }
     }
 
-    private void handleUnprocessableBtcTx(BtcTransaction btcTx, PeginInformation peginInformation) {
-        if (peginInformation.getProtocolVersion() == 1) {
-            eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET);
+    private void handleUnprocessableBtcTx(
+        BtcTransaction btcTx,
+        int protocolVersion,
+        RejectedPeginReason rejectedPeginReason
+    ) {
+        UnrefundablePeginReason unrefundablePeginReason;
+        if (rejectedPeginReason == INVALID_AMOUNT) {
+            unrefundablePeginReason = UnrefundablePeginReason.INVALID_AMOUNT;
         } else {
-            eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+            unrefundablePeginReason = protocolVersion == 1 ?
+                UnrefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET :
+                UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
         }
+
+        logger.debug("[handleUnprocessableBtcTx] Unprocessable tx {}. Reason {}", btcTx.getHash(), unrefundablePeginReason);
+        eventLogger.logUnrefundablePegin(btcTx, unrefundablePeginReason);
     }
 
     /**
