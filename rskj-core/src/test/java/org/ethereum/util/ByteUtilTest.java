@@ -97,11 +97,27 @@ class ByteUtilTest {
 
     @Test
     void testByteArrayToLongThrowsWhenOverflow() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ByteUtil.byteArrayToLong(new byte[]{
+        Assertions.assertThrows(RuntimeException.class, () -> ByteUtil.byteArrayToLong(new byte[]{
                 (byte)255, (byte)255, (byte)255, (byte)255,
                 (byte)255, (byte)255, (byte)255, (byte)255,
                 (byte)123, }
         ));
+    }
+
+    @Test
+    void testByteArrayToLongNegative() {
+        Assertions.assertThrows(RuntimeException.class, () -> ByteUtil.byteArrayToLong(new byte[]{
+                (byte)-1, (byte)255, (byte)255, (byte)255,
+                (byte)255, (byte)255, (byte)255, (byte)255
+        }));
+    }
+
+    @Test
+    void testByteArrayToLongNegative2() {
+        Assertions.assertThrows(RuntimeException.class, () -> ByteUtil.byteArrayToLong(new byte[]{
+                (byte) 0xa4, (byte) 0xbe, (byte) 0xfa, (byte) 0xd1,
+                (byte) 0x41, (byte) 0xd5, (byte) 0x1c, (byte) 0x4f
+        }));
     }
 
     @Test

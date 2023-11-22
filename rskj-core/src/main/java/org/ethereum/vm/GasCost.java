@@ -135,14 +135,11 @@ public class GasCost {
      *                             is negative.
      */
     public static long toGas(byte[] bytes) throws InvalidGasException {
-        if (bytes.length > 8) {
+        if (bytes.length > 8 || (bytes.length == 8 && (bytes[0] & 0xff) >= 0x80)) {
             return Long.MAX_VALUE;
         }
-        long result = ByteUtil.byteArrayToLong(bytes);
-        if (result < 0) {
-            throw new InvalidGasException(bytes);
-        }
-        return result;
+
+        return ByteUtil.byteArrayToLong(bytes);
     }
 
     /**
