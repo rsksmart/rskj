@@ -30,7 +30,6 @@ import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -94,13 +93,7 @@ public final class PegTestUtils {
 
     public static Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation) {
         Script scriptPubKey = federation.getP2SHScript();
-        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), federation.getRedeemScript());
-        Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
-        return inputScript;
-    }
-
-    public static Script createBaseRedeemScriptThatSpendsFromTheFederation(Federation federation) {
-        return federation.getRedeemScript();
+        return scriptPubKey.createEmptyInputScript(null, federation.getRedeemScript());
     }
 
     public static Script createOpReturnScriptForRsk(
@@ -255,10 +248,6 @@ public final class PegTestUtils {
         return createFederation(bridgeConstants, "fa01", "fa02");
     }
 
-    public static Federation createSimpleRetiringFederation(BridgeConstants bridgeConstants) {
-        return createFederation(bridgeConstants, "fa03", "fa04");
-    }
-
     public static Federation createFederation(BridgeConstants bridgeConstants, String... fedKeys) {
         List<BtcECKey> federationKeys = Arrays.stream(fedKeys).map(s -> BtcECKey.fromPrivate(Hex.decode(s))).collect(Collectors.toList());
         return createFederation(bridgeConstants, federationKeys);
@@ -274,7 +263,7 @@ public final class PegTestUtils {
         );
     }
 
-    public static Federation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
+    public static P2shErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         return new P2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),

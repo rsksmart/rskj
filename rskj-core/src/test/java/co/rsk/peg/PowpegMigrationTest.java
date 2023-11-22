@@ -1589,11 +1589,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2sh,
+            FederationType.p2shErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2sh,
+            FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
             bridgeConstants,
