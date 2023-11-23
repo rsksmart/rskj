@@ -12,13 +12,13 @@ import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -104,17 +104,18 @@ public class PegUtilsLegacy {
 
             // Check the input does not contain script op codes
             List<ScriptChunk> chunks = txInput.getScriptSig().getChunks();
-            Iterator it = chunks.iterator();
-            while(it.hasNext()) {
-                ScriptChunk chunk = (ScriptChunk) it.next();
-                if (chunk.isOpCode() && chunk.opcode > 96) {
+            for (ScriptChunk chunk : chunks) {
+                if (chunk.isOpCode() && chunk.opcode > ScriptOpCodes.OP_16) {
+                    logger.debug("[scriptCorrectlySpendsTx] Input script sig contains an unexpected op code {}", chunk.opcode);
                     return false;
                 }
             }
 
             txInput.getScriptSig().correctlySpends(tx, index, script, Script.ALL_VERIFY_FLAGS);
+            logger.debug("[scriptCorrectlySpendsTx] Script correctly spends");
             return true;
-        } catch (ScriptException se) {
+        } catch (ScriptException ex) {
+            logger.debug("[scriptCorrectlySpendsTx] Script does not spend the given input", ex);
             return false;
         }
     }
