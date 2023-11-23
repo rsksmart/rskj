@@ -203,13 +203,8 @@ class NonStandardFederationsTest {
 
         // For a value that only uses 1 byte it should add leading zeroes to complete 2 bytes
         activationDelayValue = 20L;
-        federation = createDefaultLegacyErpFederation();
 
-        validateErpRedeemScript(
-            federation.getRedeemScript(),
-            activationDelayValue
-        );
-
+        createErpFederation();
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
     }
@@ -221,12 +216,10 @@ class NonStandardFederationsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         activationDelayValue = 500L;
-        federation = createDefaultLegacyErpFederation();
 
-        validateErpRedeemScript(
-            federation.getRedeemScript(),
-            activationDelayValue
-        );
+        createErpFederation();
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
 
     @Test
@@ -235,12 +228,10 @@ class NonStandardFederationsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         activationDelayValue = 130; // Any value above 127 needs an extra byte to indicate the sign
-        federation = createDefaultLegacyErpFederation();
 
-        validateErpRedeemScript(
-            federation.getRedeemScript(),
-            activationDelayValue
-        );
+        createErpFederation();
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
 
 
@@ -262,12 +253,10 @@ class NonStandardFederationsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
-        federation = createDefaultLegacyErpFederation();
 
-        validateErpRedeemScript(
-            federation.getRedeemScript(),
-            activationDelayValue
-        );
+        createErpFederation();
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
 
 
@@ -277,12 +266,10 @@ class NonStandardFederationsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
-        federation = createDefaultLegacyErpFederation();
 
-        validateErpRedeemScript(
-            federation.getRedeemScript(),
-            activationDelayValue
-        );
+        createErpFederation();
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
 
     @Test
