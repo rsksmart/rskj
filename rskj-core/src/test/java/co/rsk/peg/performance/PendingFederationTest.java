@@ -47,7 +47,7 @@ class PendingFederationTest extends BridgePerformanceTestCase {
     void getPendingFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("getPendingFederatorPublicKey");
         ABIEncoder abiEncoder;
-        abiEncoder = (int executionIndex) -> Bridge.GET_PENDING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, pendingFederation.getMembersPublicKeys().size()-1)});
+        abiEncoder = (int executionIndex) -> Bridge.GET_PENDING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, pendingFederation.getBtcPublicKeys().size()-1)});
         executeTestCaseSection(abiEncoder, "getPendingFederatorPublicKey", true,200, stats);
         abiEncoder = (int executionIndex) -> Bridge.GET_PENDING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, 10)});
         executeTestCaseSection(abiEncoder, "getPendingFederatorPublicKey", false,200, stats);
