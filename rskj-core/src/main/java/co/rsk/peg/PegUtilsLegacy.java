@@ -230,6 +230,7 @@ public class PegUtilsLegacy {
                     }
                 } catch (ScriptException e) {
                     // There is no redeem script, could be a peg-in from a P2PKH address
+                    logger.debug("[isValidPegInTx] There is no redeem script, could be a peg-in from a P2PKH address", e);
                 }
             }
         }
@@ -247,10 +248,11 @@ public class PegUtilsLegacy {
             return true;
         }
 
+        String logMessage = activations.isActive(RSKIP293) ?
+            "[btctx:{}] Someone sent to the federation UTXOs amount less than {} satoshis" :
+            "[btctx:{}] Someone sent to the federation less than {} satoshis";
         logger.warn(
-            activations.isActive(RSKIP293)?
-                "[btctx:{}] Someone sent to the federation UTXOs amount less than {} satoshis":
-                "[btctx:{}] Someone sent to the federation less than {} satoshis",
+            logMessage,
             tx.getHash(),
             minimumPegInTxValue
         );
