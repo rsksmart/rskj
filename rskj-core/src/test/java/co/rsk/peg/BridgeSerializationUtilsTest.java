@@ -1240,7 +1240,7 @@ class BridgeSerializationUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
 
         ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-            NonStandardErpRedeemScriptBuilderFactory.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
+            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
 
         for (int i = 0; i < NUM_CASES; i++) {
             int numMembers = randomInRange(2, 14);
