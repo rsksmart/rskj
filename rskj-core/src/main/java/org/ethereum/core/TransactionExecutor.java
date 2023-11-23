@@ -307,7 +307,20 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            precompiledContract.init(tx, executionBlock, cacheTrack, blockStore, receiptStore, result.getLogInfoList());
+            ProgramInvoke contractProgramInvoke = this.program == null ? null : this.program.getInvoke();
+
+            PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
+                    .transaction(tx)
+                    .executionBlock(executionBlock)
+                    .repository(track)
+                    .blockStore(blockStore)
+                    .receiptStore(receiptStore)
+                    .logs(result.getLogInfoList())
+                    .programInvoke(contractProgramInvoke)
+                    .build();
+
+            precompiledContract.init(args);
+
             profiler.stop(metric);
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
 
