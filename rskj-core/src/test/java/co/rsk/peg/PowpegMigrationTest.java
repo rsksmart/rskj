@@ -204,7 +204,6 @@ class PowpegMigrationTest {
             argumentCaptor.capture()
         );
 
-        // TODO check this. maybe adding the FedType to the constructor solves it
         // Verify new powpeg information
         Federation newPowPeg = argumentCaptor.getValue();
         assertEquals(newPowPegAddress, newPowPeg.getAddress());
