@@ -14,6 +14,7 @@ import static co.rsk.peg.ErpRedeemScriptBuilderUtils.removeOpCheckMultisig;
 
 public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE.class);
+    private static final int CSV_BYTES_NEEDED_LENGTH = 2;
 
     @Override
     public Script createRedeemScriptFromKeys(List<BtcECKey> defaultPublicKeys,
@@ -26,8 +27,8 @@ public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRe
         Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(emergencyThreshold, emergencyPublicKeys);
 
         ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(defaultRedeemScript, emergencyRedeemScript, csvValue);
-        
-        byte[] serializedCsvValue = Utils.unsignedLongToByteArrayBE(csvValue, 2);
+
+        byte[] serializedCsvValue = Utils.unsignedLongToByteArrayBE(csvValue, CSV_BYTES_NEEDED_LENGTH);
         logger.debug("[createRedeemScriptFromKeys] Creating the redeem script from the scripts");
         Script redeemScript = createRedeemScriptFromScripts(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
         
