@@ -11,8 +11,8 @@ import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_INTERNAL_
 import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_CSV_VALUE;
 
 public class ErpRedeemScriptBuilderUtils {
-    private static final long MAX_CSV_VALUE = 65535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
     private static final Logger logger = LoggerFactory.getLogger(ErpRedeemScriptBuilderUtils.class);
+    public static final long MAX_CSV_VALUE = 65535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
 
     private ErpRedeemScriptBuilderUtils() {
     }
