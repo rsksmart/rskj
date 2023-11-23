@@ -47,7 +47,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class LegacyErpFederationTest {
-    public static long MAX_CSV_VALUE = 65535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
     private ErpFederation federation;
     private NetworkParameters networkParameters;
     private List<BtcECKey> standardKeys;
@@ -156,7 +155,7 @@ class LegacyErpFederationTest {
 
     @Test
     void createInvalidLegacyErpFederation_aboveMaxCsvValue() {
-        activationDelayValue = MAX_CSV_VALUE + 1;
+        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1;
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
@@ -167,7 +166,7 @@ class LegacyErpFederationTest {
 
     @Test
     void createValidLegacyErpFederation_exactMaxCsvValue() {
-        activationDelayValue = MAX_CSV_VALUE;
+        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
         assertDoesNotThrow(this::createDefaultLegacyErpFederation);
     }
 
