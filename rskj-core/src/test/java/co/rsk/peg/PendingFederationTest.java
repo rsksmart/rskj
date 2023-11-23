@@ -300,7 +300,7 @@ class PendingFederationTest {
             );
         } else if (isRskip201Active) {
             ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-                NonStandardErpRedeemScriptBuilderFactory.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
+                NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
             expectedFederation = new ErpFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,

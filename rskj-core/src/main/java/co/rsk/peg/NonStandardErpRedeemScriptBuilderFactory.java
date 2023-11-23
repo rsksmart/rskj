@@ -9,7 +9,7 @@ public class NonStandardErpRedeemScriptBuilderFactory {
     private NonStandardErpRedeemScriptBuilderFactory() {
     }
 
-    public static ErpRedeemScriptBuilder defineNonStandardErpRedeemScriptBuilder(
+    public static ErpRedeemScriptBuilder getNonStandardErpRedeemScriptBuilder(
         ActivationConfig.ForBlock activations,
         NetworkParameters networkParameters) {
 

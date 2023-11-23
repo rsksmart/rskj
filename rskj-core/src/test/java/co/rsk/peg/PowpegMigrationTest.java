@@ -137,7 +137,7 @@ class PowpegMigrationTest {
         switch (oldPowPegFederationType) {
             case legacyErp:
                 ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-                    NonStandardErpRedeemScriptBuilderFactory.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
+                    NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
                 originalPowpeg = new ErpFederation(
                     originalPowpegMembers,
                     Instant.now(),

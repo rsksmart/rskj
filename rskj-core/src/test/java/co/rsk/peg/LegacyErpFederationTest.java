@@ -94,7 +94,7 @@ class LegacyErpFederationTest {
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
         erpRedeemScriptBuilder =
-            NonStandardErpRedeemScriptBuilderFactory.defineNonStandardErpRedeemScriptBuilder(activations, networkParameters);
+            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
 
         return new ErpFederation(
             standardMembers,
