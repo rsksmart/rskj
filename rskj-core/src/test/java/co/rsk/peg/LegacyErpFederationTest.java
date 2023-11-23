@@ -174,7 +174,7 @@ class LegacyErpFederationTest {
     @Test
     void createInvalidNonStandardBuilder_aboveMaxScriptSigSize() {
         // add one member to exceed redeem script size limit
-        List<BtcECKey> newStandardKeys = federation.getMembersPublicKeys();
+        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("02550cc87fa9061162b1dd395a16662529c9d8094c0feca17905a3244713d65fe8")
         );
@@ -264,7 +264,7 @@ class LegacyErpFederationTest {
     @Test
     void testEquals_differentNumberOfMembers() {
         // remove federator9
-        List<BtcECKey> newStandardKeys = federation.getMembersPublicKeys();
+        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         newStandardKeys.remove(newStandardKeys.size() - 1);
         standardKeys = newStandardKeys;
 
@@ -278,7 +278,7 @@ class LegacyErpFederationTest {
         BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea")
         );
-        List<BtcECKey> newStandardKeys = federation.getMembersPublicKeys();
+        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
         newStandardKeys.remove(8);
         newStandardKeys.add(federator9PublicKey);
         standardKeys = newStandardKeys;

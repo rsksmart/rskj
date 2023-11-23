@@ -1811,7 +1811,7 @@ public class BridgeSupport {
      * @return the federation size
      */
     public Integer getFederationSize() {
-        return getActiveFederation().getMembersPublicKeys().size();
+        return getActiveFederation().getBtcPublicKeys().size();
     }
 
     /**
@@ -1880,7 +1880,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        return retiringFederation.getMembersPublicKeys().size();
+        return retiringFederation.getBtcPublicKeys().size();
     }
 
     /**
@@ -1907,7 +1907,7 @@ public class BridgeSupport {
             return null;
         }
 
-        List<BtcECKey> publicKeys = retiringFederation.getMembersPublicKeys();
+        List<BtcECKey> publicKeys = retiringFederation.getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
             throw new IndexOutOfBoundsException(String.format("Retiring federator index must be between 0 and %d", publicKeys.size() - 1));
@@ -2030,7 +2030,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        if (currentPendingFederation.getMembersPublicKeys().contains(btcKey) ||
+        if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
             currentPendingFederation.getMembers().stream().map(FederationMember::getRskPublicKey).anyMatch(k -> k.equals(rskKey)) ||
             currentPendingFederation.getMembers().stream().map(FederationMember::getMstPublicKey).anyMatch(k -> k.equals(mstKey))) {
             return -2;
@@ -2285,7 +2285,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        return currentPendingFederation.getMembersPublicKeys().size();
+        return currentPendingFederation.getBtcPublicKeys().size();
     }
 
     /**
@@ -2300,7 +2300,7 @@ public class BridgeSupport {
             return null;
         }
 
-        List<BtcECKey> publicKeys = currentPendingFederation.getMembersPublicKeys();
+        List<BtcECKey> publicKeys = currentPendingFederation.getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
             throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", publicKeys.size() - 1));

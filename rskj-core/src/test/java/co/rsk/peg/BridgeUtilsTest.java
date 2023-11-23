@@ -3743,7 +3743,7 @@ class BridgeUtilsTest {
         int numberOfSignatures) {
 
         Script scriptPubKey = federation.getP2SHScript();
-        RedeemData redeemData = RedeemData.of(federation.getMembersPublicKeys(), federationRedeemScript);
+        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), federationRedeemScript);
         Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
 
         txIn.setScriptSig(inputScript);
@@ -3769,7 +3769,7 @@ class BridgeUtilsTest {
         int federatorIndex) {
 
         BtcECKey federatorPrivKey = privateKeys.get(federatorIndex);
-        BtcECKey federatorPublicKey = federation.getMembersPublicKeys().get(federatorIndex);
+        BtcECKey federatorPublicKey = federation.getBtcPublicKeys().get(federatorIndex);
 
         BtcECKey.ECDSASignature sig = federatorPrivKey.sign(sighash);
         TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);

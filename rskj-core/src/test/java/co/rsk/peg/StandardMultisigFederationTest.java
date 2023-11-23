@@ -58,7 +58,7 @@ class StandardMultisigFederationTest {
         networkParameters = bridgeConstants.getBtcParams();
         federation = bridgeConstants.getGenesisFederation();
 
-        keys = federation.getMembersPublicKeys();
+        keys = federation.getBtcPublicKeys();
         sortedPublicKeys = keys.stream()
             .sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
@@ -73,7 +73,7 @@ class StandardMultisigFederationTest {
 
     @Test
     void createInvalidFederation_aboveMaxScriptSigSize() {
-        List<BtcECKey> newKeys = federation.getMembersPublicKeys();
+        List<BtcECKey> newKeys = federation.getBtcPublicKeys();
         BtcECKey federator15PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("03b65684ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6")
         );
@@ -169,7 +169,7 @@ class StandardMultisigFederationTest {
     @Test
     void testEquals_differentNumberOfMembers() {
         // remove federator14
-        List<BtcECKey> newKeys = federation.getMembersPublicKeys();
+        List<BtcECKey> newKeys = federation.getBtcPublicKeys();
         newKeys.remove(14);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithKeys(newKeys);
 
@@ -189,7 +189,7 @@ class StandardMultisigFederationTest {
         BtcECKey anotherPublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed7")
         );
-        List<BtcECKey> newKeys = federation.getMembersPublicKeys();
+        List<BtcECKey> newKeys = federation.getBtcPublicKeys();
         newKeys.remove(14);
         newKeys.add(anotherPublicKey);
         List<FederationMember> differentMembers = FederationTestUtils.getFederationMembersWithKeys(newKeys);
@@ -247,7 +247,7 @@ class StandardMultisigFederationTest {
 
     @Test
     void getBtcPublicKeyIndex() {
-        for (int i = 0; i < federation.getMembersPublicKeys().size(); i++) {
+        for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
             Optional<Integer> index = federation.getBtcPublicKeyIndex(sortedPublicKeys.get(i));
             assertTrue(index.isPresent());
             assertEquals(i, index.get().intValue());
@@ -257,7 +257,7 @@ class StandardMultisigFederationTest {
 
     @Test
     void hasBtcPublicKey() {
-        for (int i = 0; i < federation.getMembersPublicKeys().size(); i++) {
+        for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
             assertTrue(federation.hasBtcPublicKey(sortedPublicKeys.get(i)));
         }
         assertFalse(federation.hasBtcPublicKey(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
@@ -265,7 +265,7 @@ class StandardMultisigFederationTest {
 
     @Test
     void hasMemberWithRskAddress() {
-        for (int i = 0; i < federation.getMembersPublicKeys().size(); i++) {
+        for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
             assertTrue(federation.hasMemberWithRskAddress(rskAddresses.get(i)));
         }
 
