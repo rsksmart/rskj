@@ -616,7 +616,7 @@ class BridgeStorageProviderFederationTests {
                 );
             case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
                 ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-                    NonStandardErpRedeemScriptBuilderFactory.defineNonStandardErpRedeemScriptBuilder(activations, bridgeConstantsRegtest.getBtcParams());
+                    NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstantsRegtest.getBtcParams());
                 return new ErpFederation(
                     members,
                     Instant.now(),
