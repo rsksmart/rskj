@@ -31,6 +31,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.*;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
@@ -307,7 +308,20 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
+            ProgramInvoke contractProgramInvoke = this.program == null ? null : this.program.getInvoke();
+
+            PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
+                    .transaction(tx)
+                    .executionBlock(executionBlock)
+                    .repository(track)
+                    .blockStore(blockStore)
+                    .receiptStore(receiptStore)
+                    .logs(result.getLogInfoList())
+                    .programInvoke(contractProgramInvoke)
+                    .build();
+
+            precompiledContract.init(args);
+
             profiler.stop(metric);
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
 
