@@ -66,7 +66,7 @@ public class ErpFederation extends Federation {
 
     public Script getDefaultRedeemScript() {
         if (defaultRedeemScript == null) {
-            defaultRedeemScript = getRedeemScriptParser(redeemScript)
+            defaultRedeemScript = getRedeemScriptParser(getRedeemScript())
                 .extractStandardRedeemScript();
         }
         return defaultRedeemScript;
