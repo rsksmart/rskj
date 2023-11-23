@@ -204,7 +204,7 @@ class NonStandardFederationsTest {
         // For a value that only uses 1 byte it should add leading zeroes to complete 2 bytes
         activationDelayValue = 20L;
 
-        createErpFederation();
+        createAndValidateFederation();
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
     }
@@ -217,7 +217,7 @@ class NonStandardFederationsTest {
 
         activationDelayValue = 500L;
 
-        createErpFederation();
+        createAndValidateFederation();
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
@@ -229,7 +229,7 @@ class NonStandardFederationsTest {
 
         activationDelayValue = 130; // Any value above 127 needs an extra byte to indicate the sign
 
-        createErpFederation();
+        createAndValidateFederation();
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
@@ -242,7 +242,10 @@ class NonStandardFederationsTest {
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue)
         );
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
@@ -254,22 +257,27 @@ class NonStandardFederationsTest {
 
         activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
 
-        createErpFederation();
+        createAndValidateFederation();
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
 
-
     @Test
-    void createInValidNonStandardErpFederationWithCsvUnsignedBE_csvValueThreeBytesLongIncludingSign_post_RSKIP293() {
+    void createInvalidNonStandardErpFederation_csvValueFourBytesLongIncludingSign() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        
+        activationDelayValue = 8_400_000L; // Any value above 8_388_607 needs an extra byte to indicate the sign
 
-        activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
-
-        createErpFederation();
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
+        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
+        ErpFederationCreationException exception = assertThrows(
+            ErpFederationCreationException.class,
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue)
+        );
+        assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
     @Test
@@ -604,7 +612,7 @@ class NonStandardFederationsTest {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
-        createErpFederation();
+        createAndValidateFederation();
     }
 
     @Test
@@ -612,14 +620,14 @@ class NonStandardFederationsTest {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        createErpFederation();
+        createAndValidateFederation();
     }
 
     @Test
     void createErpFederation_mainnet_constants_before_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
-        createErpFederation();
+        createAndValidateFederation();
     }
 
     @Test
@@ -627,7 +635,7 @@ class NonStandardFederationsTest {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        createErpFederation();
+        createAndValidateFederation();
     }
 
     @Test
@@ -889,7 +897,7 @@ class NonStandardFederationsTest {
         ));
     }
 
-    private void createErpFederation() {
+    private void createAndValidateFederation() {
 
         federation = createDefaultLegacyErpFederation();
 

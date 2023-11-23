@@ -97,6 +97,17 @@ class P2shErpFederationTest {
         );
     }
 
+    private void createAndValidateFederation() {
+        federation = createDefaultP2shErpFederation();
+
+        validateP2shErpRedeemScript(
+            federation.getRedeemScript(),
+            defaultKeys,
+            emergencyKeys,
+            activationDelayValue
+        );
+    }
+
     @Test
     void createInvalidP2shErpFederation_nullErpKeys() {
         emergencyKeys = null;
@@ -120,14 +131,7 @@ class P2shErpFederationTest {
     @Test
     void createValidP2shErpFederation_oneErpKey() {
         emergencyKeys = Collections.singletonList(emergencyKeys.get(0));
-        federation = createDefaultP2shErpFederation();
-
-        validateP2shErpRedeemScript(
-            federation.getRedeemScript(),
-            defaultKeys,
-            emergencyKeys,
-            activationDelayValue
-        );
+        createAndValidateFederation();
     }
 
     @Test
@@ -137,8 +141,11 @@ class P2shErpFederationTest {
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
-        );
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            ));
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
@@ -149,8 +156,11 @@ class P2shErpFederationTest {
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
-        );
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            ));
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
@@ -161,61 +171,40 @@ class P2shErpFederationTest {
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
-        );
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            ));
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
     @Test
     void createValidP2shErpFederation_exactMaxCsvValue()  {
         activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
-        federation = createDefaultP2shErpFederation();
 
-        validateP2shErpRedeemScript(
-            federation.getRedeemScript(),
-            defaultKeys,
-            emergencyKeys,
-            activationDelayValue
-        );
+        createAndValidateFederation();
     }
 
     @Test
     void createValidP2shErpFederation_csvValueOneByteLong() {
         activationDelayValue = 20L;
-        federation = createDefaultP2shErpFederation();
 
-        validateP2shErpRedeemScript(
-            federation.getRedeemScript(),
-            defaultKeys,
-            emergencyKeys,
-            activationDelayValue
-        );
+        createAndValidateFederation();
     }
 
     @Test
     void createValidP2shErpFederation_csvValueTwoBytesLong() {
         activationDelayValue = 500L;
-        federation = createDefaultP2shErpFederation();
 
-        validateP2shErpRedeemScript(
-            federation.getRedeemScript(),
-            defaultKeys,
-            emergencyKeys,
-            activationDelayValue
-        );
+        createAndValidateFederation();
     }
 
     @Test
     void createValidP2shErpFederation_csvValueTwoBytesLongIncludingSign() {
         activationDelayValue = 130; // Any value above 127 needs an extra byte to indicate the sign
-        federation = createDefaultP2shErpFederation();
 
-        validateP2shErpRedeemScript(
-            federation.getRedeemScript(),
-            defaultKeys,
-            emergencyKeys,
-            activationDelayValue
-        );
+        createAndValidateFederation();
     }
 
 
@@ -226,22 +215,19 @@ class P2shErpFederationTest {
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
-        );
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            ));
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
     @Test
     void createValidP2shErpFederation_csvValueThreeBytesLongIncludingSign() {
         activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
-        federation = createDefaultP2shErpFederation();
 
-        validateP2shErpRedeemScript(
-            federation.getRedeemScript(),
-            defaultKeys,
-            emergencyKeys,
-            activationDelayValue
-        );
+        createAndValidateFederation();
     }
 
     @Test
@@ -251,8 +237,11 @@ class P2shErpFederationTest {
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
-        );
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            ));
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
@@ -269,8 +258,11 @@ class P2shErpFederationTest {
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ScriptCreationException exception = assertThrows(
             ScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
-        );
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            ));
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
 
@@ -374,11 +366,12 @@ class P2shErpFederationTest {
 
         activationDelayValue = 52_560L;
 
-        federation = createDefaultP2shErpFederation();
+        createAndValidateFederation();
 
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        Script obtainedRedeemScript = builder
-            .createRedeemScriptFromKeys(defaultKeys, defaultThreshold,
+        Script obtainedRedeemScript =
+            builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue
             );
