@@ -13,11 +13,8 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
-import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.util.TransactionFactoryHelper;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,18 +22,12 @@ import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 public class NestedCallsStackDepthTest {
 
     private static final CallTransaction.Function CALL_CONTRACTB_FUNCTION = CallTransaction.Function.fromSignature("callContractB");
-    private static final String TX_CONTRACTCSD = "tx01";
-    private static final String TX_CONTRACTB = "tx02";
-    private static final String TX_CONTRACTA = "tx03";
-    private static final String BLOCK_CONTRACT_CREATE = "b01";
-    private static final String BLOCK_TRANSACTION_CALL = "b02";
 
     private World world;
     private WorldDslProcessor processor;

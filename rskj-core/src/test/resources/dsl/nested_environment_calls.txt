@@ -112,6 +112,7 @@ transaction_build tx04
 block_build b02
     parent b01
     transactions tx04
+    gasLimit 6500000
     build
 
 block_connect b02
