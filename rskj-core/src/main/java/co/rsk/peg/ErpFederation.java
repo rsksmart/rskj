@@ -2,9 +2,11 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.peg.utils.EcKeyUtils;
 import java.time.Instant;
 import java.util.Collections;
@@ -64,7 +66,7 @@ public class ErpFederation extends Federation {
 
     public Script getDefaultRedeemScript() {
         if (defaultRedeemScript == null) {
-            defaultRedeemScript = RedeemScriptParserFactory.get(getRedeemScript().getChunks())
+            defaultRedeemScript = getRedeemScriptParser(redeemScript)
                 .extractStandardRedeemScript();
         }
         return defaultRedeemScript;
@@ -82,6 +84,11 @@ public class ErpFederation extends Federation {
                 );
         }
         return redeemScript;
+    }
+
+    private RedeemScriptParser getRedeemScriptParser(Script redeemScript) {
+        List<ScriptChunk> chunks = redeemScript.getChunks();
+        return RedeemScriptParserFactory.get(chunks);
     }
 
     public Script getDefaultP2SHScript() {
