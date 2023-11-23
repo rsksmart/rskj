@@ -66,7 +66,7 @@ class RetiringFederationTest extends BridgePerformanceTestCase {
     void getRetiringFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("getRetiringFederatorPublicKey");
         ABIEncoder abiEncoder;
-        abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, retiringFederation.getMembersPublicKeys().size()-1)});
+        abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, retiringFederation.getBtcPublicKeys().size()-1)});
         executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", true,50, stats);
         abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, 10)});
         executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", false,500, stats);

@@ -402,7 +402,7 @@ public class BridgeSerializationUtils {
      * See BridgeSerializationUtils::serializeBtcPublicKeys
      */
     public static byte[] serializePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) {
-        return serializeBtcPublicKeys(pendingFederation.getMembersPublicKeys());
+        return serializeBtcPublicKeys(pendingFederation.getBtcPublicKeys());
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys
