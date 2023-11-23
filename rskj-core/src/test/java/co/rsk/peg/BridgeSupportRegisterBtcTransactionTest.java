@@ -24,6 +24,7 @@ import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
@@ -108,9 +109,59 @@ class BridgeSupportRegisterBtcTransactionTest {
     private Block rskExecutionBlock;
     private Transaction rskTx;
 
-    private int blockNumberToStartUsingPegoutIndex;
+    private int heightAtWhichToStartUsingPegoutIndex;
 
     private co.rsk.bitcoinj.core.BtcBlock registerHeader;
+
+    // Before peg-out tx index gets in use
+    private void assertInvalidPeginIsIgnored() throws IOException {
+        verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
+        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        Assertions.assertTrue(activeFederationUtxos.isEmpty());
+        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+    }
+
+    // After peg-out tx index gets in use
+    private void assertInvalidPeginIsRejectedWithInvalidAmountReason(BtcTransaction btcTransaction) throws IOException {
+        verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
+        verify(bridgeEventLogger, times(1)).logUnrefundablePegin(btcTransaction, UnrefundablePeginReason.INVALID_AMOUNT);
+        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        Assertions.assertTrue(activeFederationUtxos.isEmpty());
+        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+    }
+
+    // Before tbd600Activations
+    private void assertUnknownTxIsProcessedAsPegin(RskAddress rskAddress, BtcTransaction btcTransaction) throws IOException {
+        verify(bridgeEventLogger, times(1)).logPeginBtc(rskAddress, btcTransaction, Coin.ZERO, 0);
+        verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
+        verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
+        Assertions.assertTrue(activeFederationUtxos.isEmpty());
+        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+    }
+
+    // After tbd600Activations but before grece period
+    private void assertUnknownTxIsRejectedWithInvalidAmountReason(BtcTransaction btcTransaction) throws IOException {
+        verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
+        verify(bridgeEventLogger, times(1)).logUnrefundablePegin(btcTransaction, UnrefundablePeginReason.INVALID_AMOUNT);
+        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        Assertions.assertTrue(activeFederationUtxos.isEmpty());
+        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+    }
+
+    // After tbd600Activations and grace period
+    private void assertUnknownTxIsIgnored() throws IOException {
+        verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
+        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        Assertions.assertTrue(activeFederationUtxos.isEmpty());
+        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+    }
 
     private static Stream<Arguments> common_args() {
         // before RSKIP379 activation
@@ -332,8 +383,9 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(rskTx.getHash()).thenReturn(PegTestUtils.createHash3(1));
 
         int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;
-        blockNumberToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+
+        heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
     }
 
     private PartialMerkleTree createPmtWithWitness(BtcTransaction btcTx) {
@@ -415,7 +467,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -449,26 +501,16 @@ class BridgeSupportRegisterBtcTransactionTest {
         // assert
         // fingerroot - unknown tx should be processed and try to register
         if (activations == fingerrootActivations) {
-            verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, times(1)).logPeginBtc(rskAddress, btcTransaction, Coin.ZERO, 0);
+            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction);
         }
-
         // tbd600Activations but before grace period - unknown tx should be rejected
         else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
+            assertUnknownTxIsRejectedWithInvalidAmountReason(btcTransaction);
         }
-
         // tbd600Activations and after grace period - unknown tx are just ignored
         else {
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
+            assertUnknownTxIsIgnored();
         }
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
@@ -480,7 +522,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -515,26 +557,18 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
+
         // fingerroot - unknown tx should be processed and try to register
         if (activations == fingerrootActivations) {
-            verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, times(1)).logPeginBtc(rskAddress, btcTransaction, Coin.ZERO, 0);
+            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction);
         }
-
         // tbd600Activations but before grace period - unknown tx should be rejected
         else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
+            assertUnknownTxIsRejectedWithInvalidAmountReason(btcTransaction);
         }
-
         // tbd600Activations and after grace period - unknown tx are just ignored
         else {
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-            Assertions.assertTrue(activeFederationUtxos.isEmpty());
+            assertUnknownTxIsIgnored();
         }
     }
 
@@ -548,7 +582,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -577,6 +611,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
         Assertions.assertEquals(1, activeFederationUtxos.size());
+        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
@@ -587,7 +622,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -632,7 +667,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
@@ -674,7 +709,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -714,7 +749,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
@@ -757,7 +792,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin belowMinimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations).minus(Coin.SATOSHI);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -781,16 +816,10 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         if (shouldUsePegoutTxIndex) {
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
+            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction);
         } else {
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            assertInvalidPeginIsIgnored();
         }
-
-        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-
-        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
@@ -801,7 +830,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
@@ -827,16 +856,10 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         if (shouldUsePegoutTxIndex) {
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
+            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction);
         } else {
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            assertInvalidPeginIsIgnored();
         }
-
-        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-
-        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
@@ -847,7 +870,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
@@ -876,16 +899,10 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         if (shouldUsePegoutTxIndex) {
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
+            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction);
         } else {
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            assertInvalidPeginIsIgnored();
         }
-
-        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-
-        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
@@ -895,7 +912,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -933,7 +950,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
@@ -958,16 +975,10 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         if (shouldUsePegoutTxIndex) {
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
+            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction);
         } else {
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
+            assertInvalidPeginIsIgnored();
         }
-
-        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-
-        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
@@ -977,7 +988,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1016,7 +1027,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1060,7 +1071,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         Coin amountToSend = Coin.COIN;
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
@@ -1110,7 +1121,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
 
@@ -1169,7 +1180,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         btcLockSenderProvider = mock(BtcLockSenderProvider.class);
         when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.empty());
 
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
 
@@ -1235,7 +1246,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         btcLockSenderProvider = mock(BtcLockSenderProvider.class);
         when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.empty());
 
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         List<BtcECKey> unkownFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
 
@@ -1308,7 +1319,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         btcLockSenderProvider = mock(BtcLockSenderProvider.class);
         when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.empty());
 
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
 
@@ -1375,7 +1386,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(
@@ -1422,7 +1433,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     @Test
     void pegout_sighash_no_exists_in_provider() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = blockNumberToStartUsingPegoutIndex;
+        int height = heightAtWhichToStartUsingPegoutIndex;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -1469,7 +1480,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         for (int i = 0; i < 50; i++) {
@@ -1552,7 +1563,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(
@@ -1633,7 +1644,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         for (int i = 0; i < 50; i++) {
@@ -1700,7 +1711,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash fundTxHash = BitcoinTestUtils.createHash(1);
@@ -1746,7 +1757,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     @Test
     void migration_sighash_no_exists_in_provider() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = blockNumberToStartUsingPegoutIndex;
+        int height = heightAtWhichToStartUsingPegoutIndex;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -1791,7 +1802,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         for (int i = 0; i < 50; i++) {
@@ -1859,7 +1870,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -1928,7 +1939,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         for (int i = 0; i < 50; i++) {
@@ -1984,7 +1995,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
         if (existsRetiringFederation) {
             when(provider.getOldFederation()).thenReturn(retiringFederation);
         }
@@ -2034,24 +2045,15 @@ class BridgeSupportRegisterBtcTransactionTest {
         // assert
         // fingerroot - unknown tx should be processed and try to register
         if (activations == fingerrootActivations) {
-            verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, times(1)).logPeginBtc(rskAddress, btcTransaction, Coin.ZERO, 0);
+            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction);
         }
-
         // tbd600Activations but before grace period - unknown tx should be rejected
         else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
+            assertUnknownTxIsRejectedWithInvalidAmountReason(btcTransaction);
         }
-
         // tbd600Activations and after grace period - unknown tx are just ignored
         else {
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-            Assertions.assertTrue(activeFederationUtxos.isEmpty());
+            assertUnknownTxIsIgnored();
         }
     }
 
@@ -2064,7 +2066,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean existsRetiringFederation
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
         if (existsRetiringFederation) {
             when(provider.getOldFederation()).thenReturn(retiringFederation);
         }
@@ -2119,24 +2121,15 @@ class BridgeSupportRegisterBtcTransactionTest {
         // assert
         // fingerroot - unknown tx should be processed and try to register
         if (activations == fingerrootActivations) {
-            verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, times(1)).logPeginBtc(rskAddress, btcTransaction, Coin.ZERO, 0);
+            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction);
         }
-
         // tbd600Activations but before grace period - unknown tx should be rejected
         else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
+            assertUnknownTxIsRejectedWithInvalidAmountReason(btcTransaction);
         }
-
         // tbd600Activations and after grace period - unknown tx are just ignored
         else {
-            verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-            verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-            verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-            Assertions.assertTrue(activeFederationUtxos.isEmpty());
+            assertUnknownTxIsIgnored();
         }
     }
 
@@ -2147,7 +2140,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
         when(provider.getOldFederation()).thenReturn(retiringFederation);
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
@@ -2224,7 +2217,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
         when(provider.getOldFederation()).thenReturn(retiringFederation);
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
@@ -2310,7 +2303,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
@@ -2449,7 +2442,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -2498,7 +2491,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        int height = shouldUsePegoutTxIndex ? blockNumberToStartUsingPegoutIndex : 1;
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
