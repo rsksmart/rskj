@@ -65,7 +65,7 @@ class PegUtilsGetTransactionTypeTest {
     private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
 
-    private int blockNumberToStartUsingPegoutIndex;
+    private int heightAtWhichToStartUsingPegoutIndex;
 
     @BeforeEach
     void init() {
@@ -90,7 +90,7 @@ class PegUtilsGetTransactionTypeTest {
 
         int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-        blockNumberToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
     }
 
     private static Stream<Arguments> unknown_args() {
@@ -218,7 +218,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             existsRetiringFederation? retiringFederation: null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -273,7 +273,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -309,7 +309,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -347,7 +347,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -373,7 +373,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -402,7 +402,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -431,7 +431,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -487,7 +487,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -515,7 +515,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -541,7 +541,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -593,7 +593,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -622,7 +622,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -650,7 +650,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -680,7 +680,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -705,7 +705,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            blockNumberToStartUsingPegoutIndex
+            heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
@@ -781,10 +781,6 @@ class PegUtilsGetTransactionTypeTest {
 
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
 
-        int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
-        int blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -793,7 +789,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             anyToAnyTx,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
@@ -813,10 +809,6 @@ class PegUtilsGetTransactionTypeTest {
 
         Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
 
-        int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
-        int blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -825,7 +817,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             anyToAnyTx,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
@@ -883,7 +875,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             peginTx,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -920,7 +912,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             peginTx,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -971,7 +963,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             peginTx,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1002,7 +994,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             peginTx,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1067,7 +1059,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1094,7 +1086,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            blockNumberToStartUsingPegoutIndex
+            heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
@@ -1155,7 +1147,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1214,7 +1206,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1260,7 +1252,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1288,7 +1280,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            blockNumberToStartUsingPegoutIndex
+            heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
@@ -1327,7 +1319,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            blockNumberToStartUsingPegoutIndex
+            heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
@@ -1357,7 +1349,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            blockNumberToStartUsingPegoutIndex
+            heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
@@ -1393,7 +1385,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             btcTransaction,
-            blockNumberToStartUsingPegoutIndex
+            heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
@@ -1478,7 +1470,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1539,7 +1531,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1586,7 +1578,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1743,7 +1735,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             existsRetiringFederation? retiringFederation: null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1805,7 +1797,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             existsRetiringFederation? retiringFederation: null,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1898,7 +1890,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             migrationTx,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -1977,7 +1969,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             migrationTx,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -2057,7 +2049,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             retiringFederation,
             btcTransaction,
-            shouldUsePegoutTxIndex? blockNumberToStartUsingPegoutIndex: 0
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -2127,13 +2119,6 @@ class PegUtilsGetTransactionTypeTest {
 
         Assertions.assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.address));
 
-        int blockNumberToStartUsingNewGeTransactionTypeMechanism = 0;
-        if (shouldUsePegoutTxIndex) {
-            int btcHeightWhenPegoutTxIndexActivates = bridgeRegTestConstants.getBtcHeightWhenPegoutTxIndexActivates();
-            int pegoutTxIndexGracePeriodInBtcBlocks = bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
-            blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
-        }
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -2142,7 +2127,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             migrationTx,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex: 0
         );
 
         // Assert
@@ -2207,13 +2192,6 @@ class PegUtilsGetTransactionTypeTest {
 
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
 
-        int blockNumberToStartUsingNewGeTransactionTypeMechanism = 0;
-        if (shouldUsePegoutTxIndex) {
-            int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
-            int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
-            blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
-        }
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -2222,7 +2200,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             migrationTx,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex: 0
         );
 
         // Assert
@@ -2295,13 +2273,6 @@ class PegUtilsGetTransactionTypeTest {
 
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
 
-        int blockNumberToStartUsingNewGeTransactionTypeMechanism = 0;
-        if (shouldUsePegoutTxIndex) {
-            int btcHeightWhenPegoutTxIndexActivates = bridgeRegTestConstants.getBtcHeightWhenPegoutTxIndexActivates();
-            int pegoutTxIndexGracePeriodInBtcBlocks = bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations() * 5;;
-            blockNumberToStartUsingNewGeTransactionTypeMechanism = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
-        }
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
@@ -2310,7 +2281,7 @@ class PegUtilsGetTransactionTypeTest {
             activeFederation,
             null,
             migrationTx,
-            blockNumberToStartUsingNewGeTransactionTypeMechanism
+            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex: 0
         );
 
         // Assert
