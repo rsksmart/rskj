@@ -14,11 +14,11 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 
 public class ErpFederation extends Federation {
-    protected final List<BtcECKey> erpPubKeys;
-    protected final long activationDelay;
-    protected final ActivationConfig.ForBlock activations;
-    protected Script standardRedeemScript;
-    protected Script standardP2SHScript;
+    private final List<BtcECKey> erpPubKeys;
+    private final long activationDelay;
+    private final ActivationConfig.ForBlock activations;
+    private Script defaultRedeemScript;
+    private Script defaultP2SHScript;
     private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
 
     protected ErpFederation(
@@ -63,11 +63,11 @@ public class ErpFederation extends Federation {
     }
 
     public Script getDefaultRedeemScript() {
-        if (standardRedeemScript == null) {
-            standardRedeemScript = RedeemScriptParserFactory.get(getRedeemScript().getChunks())
+        if (defaultRedeemScript == null) {
+            defaultRedeemScript = RedeemScriptParserFactory.get(getRedeemScript().getChunks())
                 .extractStandardRedeemScript();
         }
-        return standardRedeemScript;
+        return defaultRedeemScript;
     }
 
     @Override
@@ -85,11 +85,11 @@ public class ErpFederation extends Federation {
     }
 
     public Script getDefaultP2SHScript() {
-        if (standardP2SHScript == null) {
-            standardP2SHScript = ScriptBuilder.createP2SHOutputScript(getDefaultRedeemScript());
+        if (defaultP2SHScript == null) {
+            defaultP2SHScript = ScriptBuilder.createP2SHOutputScript(getDefaultRedeemScript());
         }
 
-        return standardP2SHScript;
+        return defaultP2SHScript;
     }
 
 }
