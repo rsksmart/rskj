@@ -41,7 +41,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class P2shErpFederationTest {
-    public static long MAX_CSV_VALUE = 65535L; // 2^16 - 1, since bitcoin will interpret up to 16 bits as the CSV value
     private ErpFederation federation;
     private NetworkParameters networkParameters;
     private List<BtcECKey> standardKeys;
@@ -147,7 +146,7 @@ class P2shErpFederationTest {
 
     @Test
     void createInvalidP2shErpFederation_aboveMaxCsvValue()  {
-        activationDelayValue = MAX_CSV_VALUE + 1;
+        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1;
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
@@ -158,7 +157,7 @@ class P2shErpFederationTest {
 
     @Test
     void createValidP2shErpFederation_exactMaxCsvValue()  {
-        activationDelayValue = MAX_CSV_VALUE;
+        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
         assertDoesNotThrow(this::createDefaultP2shErpFederation);
     }
 
