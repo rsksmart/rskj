@@ -21,14 +21,13 @@ import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeMethod;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 
 public class GetCallStackDepth extends NativeMethod {
     private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
             "getCallStackDepth",
             new String[]{},
-            new String[]{"bytes"}
+            new String[]{"uint"}
     );
 
     private final ProgramInvoke programInvoke;
@@ -45,7 +44,7 @@ public class GetCallStackDepth extends NativeMethod {
 
     @Override
     public Object execute(Object[] arguments) throws NativeContractIllegalArgumentException {
-        return ByteUtil.intToBytes(programInvoke == null ? 1 : programInvoke.getCallDeep() + 1);
+        return programInvoke == null ? 1 : programInvoke.getCallDeep() + 1;
     }
 
     @Override
