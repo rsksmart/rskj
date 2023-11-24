@@ -1220,7 +1220,6 @@ class BridgeSerializationUtilsTest {
         Assertions.assertEquals(witnessRoot, BridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
     }
 
-    // TODO split this test?
     private void testSerializeAndDeserializeFederation(
         boolean isRskip284Active,
         boolean isRskip353Active,

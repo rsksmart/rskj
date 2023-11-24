@@ -50,9 +50,9 @@ class LegacyErpFederationTest {
     private ErpFederation federation;
     private NetworkParameters networkParameters;
     private List<BtcECKey> standardKeys;
-    int defaultThreshold;
+    private int defaultThreshold;
     private List<BtcECKey> emergencyKeys;
-    int emergencyThreshold;
+    private int emergencyThreshold;
     private long activationDelayValue;
     private ActivationConfig.ForBlock activations;
     private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
