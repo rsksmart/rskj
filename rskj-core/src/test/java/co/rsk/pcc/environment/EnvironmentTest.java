@@ -20,7 +20,6 @@ package co.rsk.pcc.environment;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.pcc.NativeContract;
 import co.rsk.pcc.NativeMethod;
-import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -92,7 +91,7 @@ class EnvironmentTest {
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         ProgramInvoke programInvoke = mock(ProgramInvoke.class);
-        when(programInvoke.getCallDeep()).thenReturn(1);
+        when(programInvoke.getCallDeep()).thenReturn(0);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
 
@@ -122,7 +121,6 @@ class EnvironmentTest {
     void getCallStackDepth() throws VMException {
         contract.init(args);
 
-        String h = HexUtils.toJsonHex(getCallStackDepthFunction.encode());
         byte[] encodedResult = contract.execute(getCallStackDepthFunction.encode());
         Object[] decodedResult = getCallStackDepthFunction.decodeResult(encodedResult);
 

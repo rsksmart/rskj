@@ -38,7 +38,7 @@ class GetCallStackDepthTest {
     @BeforeEach
     void createMethod() {
         ProgramInvoke programInvoke = mock(ProgramInvoke.class);
-        when(programInvoke.getCallDeep()).thenReturn(1);
+        when(programInvoke.getCallDeep()).thenReturn(0);
         method = new GetCallStackDepth(executionEnvironment, programInvoke);
     }
 
