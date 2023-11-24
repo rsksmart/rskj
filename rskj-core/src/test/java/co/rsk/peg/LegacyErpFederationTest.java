@@ -50,9 +50,9 @@ class LegacyErpFederationTest {
     private ErpFederation federation;
     private NetworkParameters networkParameters;
     private List<BtcECKey> standardKeys;
-    int defaultThreshold;
+    private int defaultThreshold;
     private List<BtcECKey> emergencyKeys;
-    int emergencyThreshold;
+    private int emergencyThreshold;
     private long activationDelayValue;
     private ActivationConfig.ForBlock activations;
     private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
@@ -103,7 +103,6 @@ class LegacyErpFederationTest {
             networkParameters,
             emergencyKeys,
             activationDelayValue,
-            activations,
             erpRedeemScriptBuilder
         );
     }
@@ -216,7 +215,7 @@ class LegacyErpFederationTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            activations,
+
             erpRedeemScriptBuilder
         );
         assertEquals(federation, otherFederation);
@@ -231,7 +230,7 @@ class LegacyErpFederationTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            activations,
+
             erpRedeemScriptBuilder
         );
         assertEquals(federation, otherFederation);
@@ -246,7 +245,7 @@ class LegacyErpFederationTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            activations,
+
             erpRedeemScriptBuilder
         );
         assertEquals(federation, otherFederation);
@@ -367,7 +366,7 @@ class LegacyErpFederationTest {
                     NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
                     generatedScript.emergencyFed,
                     generatedScript.timelock,
-                    activations,
+
                     erpRedeemScriptBuilder
                 );
 
@@ -453,7 +452,6 @@ class LegacyErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             emergencyKeys,
             activationDelayValue,
-            activations,
             new NonStandardErpRedeemScriptBuilderHardcoded()
         );
 
@@ -484,7 +482,6 @@ class LegacyErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             emergencyKeys,
             activationDelayValue,
-            activations,
             new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE()
         );
 
@@ -505,7 +502,6 @@ class LegacyErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
             emergencyKeys,
             activationDelayValue,
-            activations,
             new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE()
         );
 
@@ -578,7 +574,6 @@ class LegacyErpFederationTest {
             btcParams,
             emergencyMultisigKeys,
             activationDelay,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         ));
     }

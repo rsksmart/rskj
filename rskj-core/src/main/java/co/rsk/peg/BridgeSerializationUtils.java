@@ -335,15 +335,13 @@ public class BridgeSerializationUtils {
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             erpRedeemScriptBuilder
         );
     }
 
     public static ErpFederation deserializeP2shErpFederation(
         byte[] data,
-        BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations
+        BridgeConstants bridgeConstants
     ) {
         Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
@@ -357,7 +355,6 @@ public class BridgeSerializationUtils {
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
     }

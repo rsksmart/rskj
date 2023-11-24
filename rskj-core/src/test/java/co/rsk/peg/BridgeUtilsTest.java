@@ -1053,7 +1053,6 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -1098,7 +1097,6 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -1430,7 +1428,6 @@ class BridgeUtilsTest {
             genesisFederation.getBtcParams(),
             bridgeConstantsRegtest.getErpFedPubKeysList(),
             bridgeConstantsRegtest.getErpFedActivationDelay(),
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
     }

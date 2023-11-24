@@ -11,14 +11,12 @@ import co.rsk.peg.utils.EcKeyUtils;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 
 public class ErpFederation extends Federation {
     private final List<BtcECKey> erpPubKeys;
     private final long activationDelay;
-    private final ActivationConfig.ForBlock activations;
     private Script defaultRedeemScript;
     private Script defaultP2SHScript;
     private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
@@ -30,7 +28,6 @@ public class ErpFederation extends Federation {
         NetworkParameters btcParams,
         List<BtcECKey> erpPubKeys,
         long activationDelay,
-        ActivationConfig.ForBlock activations,
         ErpRedeemScriptBuilder erpRedeemScriptBuilder) {
 
         super(members, creationTime, creationBlockNumber, btcParams);
@@ -38,7 +35,6 @@ public class ErpFederation extends Federation {
 
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
-        this.activations = activations;
         this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
     }
 
@@ -66,8 +62,8 @@ public class ErpFederation extends Federation {
 
     public Script getDefaultRedeemScript() {
         if (defaultRedeemScript == null) {
-            defaultRedeemScript = getRedeemScriptParser(getRedeemScript())
-                .extractStandardRedeemScript();
+            RedeemScriptParser redeemScriptParser = getRedeemScriptParser();
+            defaultRedeemScript = redeemScriptParser.extractStandardRedeemScript();
         }
         return defaultRedeemScript;
     }
@@ -86,14 +82,16 @@ public class ErpFederation extends Federation {
         return redeemScript;
     }
 
-    private RedeemScriptParser getRedeemScriptParser(Script redeemScript) {
+    private RedeemScriptParser getRedeemScriptParser() {
+        Script redeemScript = getRedeemScript();
         List<ScriptChunk> chunks = redeemScript.getChunks();
         return RedeemScriptParserFactory.get(chunks);
     }
 
     public Script getDefaultP2SHScript() {
         if (defaultP2SHScript == null) {
-            defaultP2SHScript = ScriptBuilder.createP2SHOutputScript(getDefaultRedeemScript());
+            defaultP2SHScript = ScriptBuilder
+                .createP2SHOutputScript(getDefaultRedeemScript());
         }
 
         return defaultP2SHScript;
