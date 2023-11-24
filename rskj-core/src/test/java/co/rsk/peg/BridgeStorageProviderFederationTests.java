@@ -10,10 +10,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeRegTestConstants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import co.rsk.config.BridgeRegTestConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -604,24 +604,28 @@ class BridgeStorageProviderFederationTests {
 
         switch (version) {
             case P2SH_ERP_FEDERATION_FORMAT_VERSION:
-                return new P2shErpFederation(
+                return new ErpFederation(
                     members,
                     Instant.now(),
                     1L,
                     bridgeConstantsRegtest.getBtcParams(),
                     bridgeConstantsRegtest.getErpFedPubKeysList(),
                     bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    activations
+                    activations,
+                    new P2shErpRedeemScriptBuilder()
                 );
             case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
-                return new LegacyErpFederation(
+                ErpRedeemScriptBuilder erpRedeemScriptBuilder =
+                    NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstantsRegtest.getBtcParams());
+                return new ErpFederation(
                     members,
                     Instant.now(),
                     1L,
                     bridgeConstantsRegtest.getBtcParams(),
                     bridgeConstantsRegtest.getErpFedPubKeysList(),
                     bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    activations
+                    activations,
+                    erpRedeemScriptBuilder
                 );
             default:
                 return new StandardMultisigFederation(

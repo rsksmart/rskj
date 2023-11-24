@@ -164,7 +164,7 @@ class ReleaseTransactionBuilderTest {
         // Use mainnet constants to test a real situation
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
-        Federation erpFederation = new LegacyErpFederation(
+        Federation erpFederation = new ErpFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
@@ -175,7 +175,8 @@ class ReleaseTransactionBuilderTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations
+            activations,
+            new NonStandardErpRedeemScriptBuilder()
         );
 
         List<UTXO> utxos = Arrays.asList(

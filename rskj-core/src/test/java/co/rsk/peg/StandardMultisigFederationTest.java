@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import static co.rsk.peg.FederationCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.Address;
@@ -82,8 +82,8 @@ class StandardMultisigFederationTest {
         newKeys.add(federator15PublicKey);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newKeys);
         Instant creationTime = federation.getCreationTime();
-        FederationCreationException exception =
-            assertThrows(FederationCreationException.class, () -> new StandardMultisigFederation(
+        ScriptCreationException exception =
+            assertThrows(ScriptCreationException.class, () -> new StandardMultisigFederation(
                 newMembers,
                 creationTime,
                 federation.creationBlockNumber,

@@ -1238,6 +1238,9 @@ class BridgeSerializationUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
         when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
 
+        ErpRedeemScriptBuilder erpRedeemScriptBuilder =
+            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
+
         for (int i = 0; i < NUM_CASES; i++) {
             int numMembers = randomInRange(2, 14);
             List<FederationMember> members = new ArrayList<>();
@@ -1259,14 +1262,15 @@ class BridgeSerializationUtilsTest {
                 bridgeConstants.getBtcParams()
             );
 
-            Federation testErpFederation = new LegacyErpFederation(
+            Federation testErpFederation = new ErpFederation(
                 members,
                 Instant.now(),
                 123,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations
+                activations,
+                erpRedeemScriptBuilder
             );
             byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
 
@@ -1286,14 +1290,15 @@ class BridgeSerializationUtilsTest {
             }
 
             if (isRskip353Active) {
-                Federation testP2shErpFederation = new P2shErpFederation(
+                Federation testP2shErpFederation = new ErpFederation(
                     members,
                     Instant.now(),
                     123,
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay(),
-                    activations
+                    activations,
+                    new P2shErpRedeemScriptBuilder()
                 );
                 byte[] serializedTestP2shErpFederation = BridgeSerializationUtils.serializeFederation(testP2shErpFederation);
 

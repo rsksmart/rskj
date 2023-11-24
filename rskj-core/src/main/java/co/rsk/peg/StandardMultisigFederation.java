@@ -55,6 +55,6 @@ public class StandardMultisigFederation extends Federation {
 
     private void validateRedeemScriptSize() {
         Script redeemScript = this.getRedeemScript();
-        FederationUtils.validateScriptSize(redeemScript);
+        ScriptValidations.validateScriptSize(redeemScript);
     }
 }

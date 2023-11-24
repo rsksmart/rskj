@@ -359,16 +359,19 @@ public class BridgeStorageProvider {
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
         if (activations.isActive(RSKIP123)) {
-            if (activations.isActive(RSKIP353) && newFederation instanceof P2shErpFederation) {
-                saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                    P2SH_ERP_FEDERATION_FORMAT_VERSION
-                );
-            } else if (activations.isActive(RSKIP201) && newFederation instanceof LegacyErpFederation) {
-                saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                    LEGACY_ERP_FEDERATION_FORMAT_VERSION
-                );
+            if (newFederation instanceof ErpFederation) {
+                ErpRedeemScriptBuilder builder = ((ErpFederation) newFederation).getErpRedeemScriptBuilder();
+                if (builder instanceof P2shErpRedeemScriptBuilder) {
+                    saveStorageVersion(
+                        NEW_FEDERATION_FORMAT_VERSION.getKey(),
+                        P2SH_ERP_FEDERATION_FORMAT_VERSION
+                    );
+                } else {
+                    saveStorageVersion(
+                        NEW_FEDERATION_FORMAT_VERSION.getKey(),
+                        LEGACY_ERP_FEDERATION_FORMAT_VERSION
+                    );
+                }
             } else {
                 saveStorageVersion(
                     NEW_FEDERATION_FORMAT_VERSION.getKey(),
@@ -410,6 +413,7 @@ public class BridgeStorageProvider {
         oldFederation = federation;
     }
 
+
     /**
      * Save the old federation
      */
@@ -420,17 +424,21 @@ public class BridgeStorageProvider {
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
         if (activations.isActive(RSKIP123)) {
-            if (activations.isActive(RSKIP353) && oldFederation instanceof P2shErpFederation) {
-                saveStorageVersion(
-                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    P2SH_ERP_FEDERATION_FORMAT_VERSION
-                );
-            } else if (activations.isActive(RSKIP201) && oldFederation instanceof ErpFederation) {
-                saveStorageVersion(
-                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    LEGACY_ERP_FEDERATION_FORMAT_VERSION
-                );
+            if (oldFederation instanceof ErpFederation) {
+                ErpRedeemScriptBuilder builder = ((ErpFederation) oldFederation).getErpRedeemScriptBuilder();
+                if (builder instanceof P2shErpRedeemScriptBuilder) {
+                    saveStorageVersion(
+                        OLD_FEDERATION_FORMAT_VERSION.getKey(),
+                        P2SH_ERP_FEDERATION_FORMAT_VERSION
+                    );
+                } else {
+                    saveStorageVersion(
+                        OLD_FEDERATION_FORMAT_VERSION.getKey(),
+                        LEGACY_ERP_FEDERATION_FORMAT_VERSION
+                    );
+                }
             } else {
+                // assume it is a standard federation to keep backwards compatibility
                 saveStorageVersion(
                     OLD_FEDERATION_FORMAT_VERSION.getKey(),
                     STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION

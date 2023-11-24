@@ -65,14 +65,15 @@ class BridgeSupportGetTransactionTypeTest {
         );
 
         // Arrange
-        Federation activeFederation = new P2shErpFederation(
+        Federation activeFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(standardKeys),
             bridgeMainnetConstants.getGenesisFederation().getCreationTime(),
             5L,
             bridgeMainnetConstants.getGenesisFederation().getBtcParams(),
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
+            activations,
+            new P2shErpRedeemScriptBuilder()
         );
 
         Block rskCurrentBlock = new BlockGenerator().createBlock(
@@ -94,14 +95,15 @@ class BridgeSupportGetTransactionTypeTest {
             new String[]{"fa01", "fa02", "fa03"}, true
         );
 
-        P2shErpFederation p2shRetiringFederation = new P2shErpFederation(
+        ErpFederation p2shRetiringFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(fedKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             btcMainnetParams,
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
+            activations,
+            new P2shErpRedeemScriptBuilder()
         );
         when(provider.getOldFederation()).thenReturn(p2shRetiringFederation);
 
