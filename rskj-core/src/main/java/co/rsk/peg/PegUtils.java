@@ -184,9 +184,16 @@ public class PegUtils {
             PeginProcessAction.CAN_BE_REFUNDED :
             PeginProcessAction.CANNOT_BE_PROCESSED;
 
-        RejectedPeginReason rejectedPeginReason = protocolVersion == 1 ?
-            PEGIN_V1_INVALID_PAYLOAD :
-            LEGACY_PEGIN_MULTISIG_SENDER;
+        RejectedPeginReason rejectedPeginReason;
+        if ((protocolVersion == 1)) {
+            rejectedPeginReason = PEGIN_V1_INVALID_PAYLOAD;
+        } else {
+            if (hasRefundAddress) {
+                rejectedPeginReason = LEGACY_PEGIN_MULTISIG_SENDER;
+            } else {
+                rejectedPeginReason = LEGACY_PEGIN_UNDETERMINED_SENDER;
+            }
+        }
 
         return new PeginEvaluationResult(peginProcessAction, rejectedPeginReason);
     }
