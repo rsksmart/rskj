@@ -22,7 +22,6 @@ import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +49,7 @@ class GetCallStackDepthTest {
         Assertions.assertEquals(0, fn.inputs.length);
 
         Assertions.assertEquals(1, fn.outputs.length);
-        Assertions.assertEquals(SolidityType.getType("bytes").getName(), fn.outputs[0].type.getName());
+        Assertions.assertEquals(SolidityType.getType("uint").getName(), fn.outputs[0].type.getName());
     }
 
     @Test
@@ -65,17 +64,17 @@ class GetCallStackDepthTest {
 
     @Test
     void executes() throws NativeContractIllegalArgumentException {
-        Assertions.assertArrayEquals(
-                ByteUtil.intToBytes(1),
-                (byte[]) method.execute(new Object[]{}));
+        Assertions.assertEquals(
+                1,
+                (int) method.execute(new Object[]{}));
     }
 
     @Test
     void executesWithNullProgramInvoke() throws NativeContractIllegalArgumentException {
         GetCallStackDepth methodWithNullProgramInvoke = new GetCallStackDepth(executionEnvironment, null);
 
-        Assertions.assertArrayEquals(
-                ByteUtil.intToBytes(1),
-                (byte[]) methodWithNullProgramInvoke.execute(new Object[]{}));
+        Assertions.assertEquals(
+                1,
+                (int) methodWithNullProgramInvoke.execute(new Object[]{}));
     }
 }

@@ -31,7 +31,6 @@ import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContractArgsBuilder;
@@ -46,7 +45,7 @@ import org.mockito.Mockito;
 import java.math.BigInteger;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -109,7 +108,7 @@ class EnvironmentTest {
 
     @Test
     void hasOneMethod() {
-        Assertions.assertEquals(1, contract.getMethods().size());
+        assertEquals(1, contract.getMethods().size());
     }
 
     @Test
@@ -124,10 +123,10 @@ class EnvironmentTest {
         byte[] encodedResult = contract.execute(getCallStackDepthFunction.encode());
         Object[] decodedResult = getCallStackDepthFunction.decodeResult(encodedResult);
 
-        byte[] callStackDepth = (byte[]) decodedResult[0];
-        byte[] expected = ByteUtil.intToBytes(1);
+        int callStackDepth = ((BigInteger) decodedResult[0]).intValue();
+        int expected = 1;
 
-        assertArrayEquals(expected, callStackDepth);
+        assertEquals(expected, callStackDepth);
     }
 
     private void assertHasMethod(Class clazz) {
