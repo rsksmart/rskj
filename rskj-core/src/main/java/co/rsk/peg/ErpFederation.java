@@ -66,8 +66,8 @@ public class ErpFederation extends Federation {
 
     public Script getDefaultRedeemScript() {
         if (defaultRedeemScript == null) {
-            defaultRedeemScript = getRedeemScriptParser(getRedeemScript())
-                .extractStandardRedeemScript();
+            RedeemScriptParser redeemScriptParser = getRedeemScriptParser();
+            defaultRedeemScript = redeemScriptParser.extractStandardRedeemScript();
         }
         return defaultRedeemScript;
     }
@@ -86,14 +86,16 @@ public class ErpFederation extends Federation {
         return redeemScript;
     }
 
-    private RedeemScriptParser getRedeemScriptParser(Script redeemScript) {
+    private RedeemScriptParser getRedeemScriptParser() {
+        Script redeemScript = getRedeemScript();
         List<ScriptChunk> chunks = redeemScript.getChunks();
         return RedeemScriptParserFactory.get(chunks);
     }
 
     public Script getDefaultP2SHScript() {
         if (defaultP2SHScript == null) {
-            defaultP2SHScript = ScriptBuilder.createP2SHOutputScript(getDefaultRedeemScript());
+            defaultP2SHScript = ScriptBuilder
+                .createP2SHOutputScript(getDefaultRedeemScript());
         }
 
         return defaultP2SHScript;
