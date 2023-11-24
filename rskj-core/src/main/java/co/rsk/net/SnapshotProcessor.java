@@ -25,6 +25,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 public class SnapshotProcessor {
 
@@ -86,7 +87,7 @@ public class SnapshotProcessor {
         this.executorService = Executors.newFixedThreadPool(SNAPSHOT_THREADS);
         this.isCompressionEnabled = isCompressionEnabled;
         this.allNodes = Lists.newArrayList();
-        this.blockStore = blckStore;
+        this.blockStore = blockStore;
         this.blocks = Lists.newArrayList();
         this.difficulties = Lists.newArrayList();
         this.transactionPool = transactionPool;
@@ -146,7 +147,7 @@ public class SnapshotProcessor {
             logger.debug("SERVER - trie is notPresent");
         }
         logger.debug("SERVER - processing snapshot status request - rootHash: {} trieSize: {}", rootHash, trieSize);
-        SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(blocks, trieSize);
+        SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(blocks, difficulties, trieSize);
         sender.sendMessage(responseMessage);
     }
     public void processSnapStatusResponse(Peer sender, SnapStatusResponseMessage responseMessage) {
@@ -331,7 +332,7 @@ public class SnapshotProcessor {
                 logger.debug("CLIENT - State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
                 if (!message.isComplete()) {
                     // request another chunk
-                    continueWork(peer);
+                    continueWork();
                 } else {
                     rebuildStateAndSave();
                     logger.info("CLIENT - Snapshot sync finished!");
