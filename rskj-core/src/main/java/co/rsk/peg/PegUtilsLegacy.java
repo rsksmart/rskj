@@ -83,6 +83,7 @@ public class PegUtilsLegacy {
                 try {
                     redeemScript = redeemScriptParser.extractStandardRedeemScript();
                 } catch (ScriptException e) {
+                    logger.debug("[isPegOutTx] There is no redeem script", e);
                     // There is no redeem script
                     continue;
                 }
@@ -301,7 +302,7 @@ public class PegUtilsLegacy {
      * @param activations
      * @param minimumPeginTxValue
      * @param federationsWallet
-     * @return true if it is a peg-out. Otherwise, returns false.
+     * @return PegTxType indicating if the transaction is a peg-in, peg-out/migration, or unknown
      */
     @Deprecated
     protected static PegTxType getTransactionType(
