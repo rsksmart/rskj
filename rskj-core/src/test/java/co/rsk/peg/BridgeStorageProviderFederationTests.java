@@ -611,7 +611,6 @@ class BridgeStorageProviderFederationTests {
                     bridgeConstantsRegtest.getBtcParams(),
                     bridgeConstantsRegtest.getErpFedPubKeysList(),
                     bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    activations,
                     new P2shErpRedeemScriptBuilder()
                 );
             case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
@@ -624,7 +623,6 @@ class BridgeStorageProviderFederationTests {
                     bridgeConstantsRegtest.getBtcParams(),
                     bridgeConstantsRegtest.getErpFedPubKeysList(),
                     bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    activations,
                     erpRedeemScriptBuilder
                 );
             default:

@@ -1269,7 +1269,6 @@ class BridgeSerializationUtilsTest {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations,
                 erpRedeemScriptBuilder
             );
             byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
@@ -1297,15 +1296,13 @@ class BridgeSerializationUtilsTest {
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay(),
-                    activations,
                     new P2shErpRedeemScriptBuilder()
                 );
                 byte[] serializedTestP2shErpFederation = BridgeSerializationUtils.serializeFederation(testP2shErpFederation);
 
                 Federation deserializedTestP2shErpFederation = BridgeSerializationUtils.deserializeP2shErpFederation(
                     serializedTestP2shErpFederation,
-                    bridgeConstants,
-                    activations
+                    bridgeConstants
                 );
 
                 assertEquals(testP2shErpFederation, deserializedTestP2shErpFederation);

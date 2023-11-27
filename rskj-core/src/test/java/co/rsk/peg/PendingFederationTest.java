@@ -295,7 +295,6 @@ class PendingFederationTest {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations,
                 new P2shErpRedeemScriptBuilder()
             );
         } else if (isRskip201Active) {
@@ -308,7 +307,6 @@ class PendingFederationTest {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations,
                 erpRedeemScriptBuilder
             );
         } else {
