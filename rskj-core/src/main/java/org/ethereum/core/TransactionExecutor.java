@@ -296,6 +296,8 @@ public class TransactionExecutor {
         logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         RskAddress targetAddress = tx.getReceiveAddress();
+        ProgramInvoke programInvoke =
+                programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
 
         // DataWord(targetAddress)) can fail with exception:
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
@@ -307,7 +309,6 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            ProgramInvoke contractProgramInvoke = this.program == null ? null : this.program.getInvoke();
 
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
                     .transaction(tx)
@@ -316,7 +317,7 @@ public class TransactionExecutor {
                     .blockStore(blockStore)
                     .receiptStore(receiptStore)
                     .logs(result.getLogInfoList())
-                    .programInvoke(contractProgramInvoke)
+                    .programInvoke(programInvoke)
                     .build();
 
             precompiledContract.init(args);
@@ -364,9 +365,6 @@ public class TransactionExecutor {
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
             } else {
-                ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
-
                 this.vm = new VM(vmConfig, precompiledContracts);
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts, signatureCache);
             }
