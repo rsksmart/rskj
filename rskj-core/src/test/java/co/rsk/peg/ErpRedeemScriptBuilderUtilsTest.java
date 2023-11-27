@@ -18,7 +18,9 @@ import java.util.List;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKMULTISIG;
 import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_CSV_VALUE;
 import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_INTERNAL_REDEEM_SCRIPTS;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ErpRedeemScriptBuilderUtilsTest {
     private List<BtcECKey> defaultKeys;
