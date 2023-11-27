@@ -8,12 +8,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
@@ -239,4 +235,62 @@ class PegUtilsEvaluatePeginTest {
 
         assertEquals(expectedErrorMessage, thrownException.getMessage());
     }
+
+    @Test
+    void evaluatePegin_pegout_peginProcessActionCanBeRegistered() {
+        PeginInformation peginInformation = mock(PeginInformation.class);
+        when(peginInformation.getProtocolVersion()).thenReturn(1);
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "add1");
+
+        btcTx.addInput(
+                BitcoinTestUtils.createHash(1),
+                0,
+                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+        ); // Fed spending utxo
+
+        btcTx.addOutput(minimumPegInTxValue, randomAddress); // Output to random address
+        btcTx.addOutput(minimumPegInTxValue, activeFederation.getAddress()); // "change" output to fed
+
+        PeginEvaluationResult peginEvaluationResult = PegUtils.evaluatePegin(
+                btcTx,
+                peginInformation,
+                minimumPegInTxValue,
+                activeFedWallet,
+                activations
+        );
+
+        assertEquals(PeginProcessAction.CAN_BE_REGISTERED, peginEvaluationResult.getPeginProcessAction());
+    }
+
+    @Test
+    void evaluatePegin_migration_peginProcessActionCanBeRegistered() {
+        PeginInformation peginInformation = mock(PeginInformation.class);
+        when(peginInformation.getProtocolVersion()).thenReturn(1);
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "add1");
+
+        btcTx.addInput(
+                BitcoinTestUtils.createHash(1),
+                0,
+                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+        ); // Fed spending utxo
+
+        btcTx.addOutput(minimumPegInTxValue, activeFederation.getAddress());
+
+        PeginEvaluationResult peginEvaluationResult = PegUtils.evaluatePegin(
+                btcTx,
+                peginInformation,
+                minimumPegInTxValue,
+                activeFedWallet,
+                activations
+        );
+
+        assertEquals(PeginProcessAction.CAN_BE_REGISTERED, peginEvaluationResult.getPeginProcessAction());
+    }
+
 }
