@@ -228,8 +228,8 @@ class ErpRedeemScriptBuilderUtilsTest {
         for (BtcECKey key : keys) {
             scriptBuilder.data(key.getPubKey());
         }
-        scriptBuilder.op(OP_CHECKMULTISIG);
         scriptBuilder.smallNum(keys.size());
+        scriptBuilder.op(OP_CHECKMULTISIG);
 
         return scriptBuilder.build();
     }
