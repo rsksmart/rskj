@@ -6575,7 +6575,6 @@ class BridgeSupportTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            preRSKIP271_activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -6644,7 +6643,6 @@ class BridgeSupportTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            preRSKIP385_activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -6712,7 +6710,6 @@ class BridgeSupportTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            postRSKIP385_activations,
             new P2shErpRedeemScriptBuilder()
         );
 

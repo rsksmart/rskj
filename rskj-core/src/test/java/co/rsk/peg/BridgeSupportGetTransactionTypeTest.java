@@ -72,7 +72,6 @@ class BridgeSupportGetTransactionTypeTest {
             bridgeMainnetConstants.getGenesisFederation().getBtcParams(),
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -102,7 +101,6 @@ class BridgeSupportGetTransactionTypeTest {
             btcMainnetParams,
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
         when(provider.getOldFederation()).thenReturn(p2shRetiringFederation);

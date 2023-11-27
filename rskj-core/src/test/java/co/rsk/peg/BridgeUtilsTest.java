@@ -834,7 +834,6 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -896,7 +895,6 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -957,7 +955,6 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -1014,7 +1011,6 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -1254,7 +1250,6 @@ class BridgeUtilsTest {
             networkParameters,
             emergencyKeys,
             activationDelay,
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -1320,7 +1315,6 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -1336,7 +1330,6 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -1392,7 +1385,6 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -1408,7 +1400,6 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -1466,7 +1457,6 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -1534,7 +1524,6 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -1958,7 +1947,6 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -2035,7 +2023,6 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -3133,7 +3120,6 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -3178,7 +3164,6 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -3556,7 +3541,6 @@ class BridgeUtilsTest {
             genesisFederation.getBtcParams(),
             bridgeConstantsRegtest.getErpFedPubKeysList(),
             bridgeConstantsRegtest.getErpFedActivationDelay(),
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
     }
