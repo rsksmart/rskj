@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class P2shErpFederationTest {
     private ErpFederation federation;
@@ -134,9 +135,10 @@ class P2shErpFederationTest {
         createAndValidateFederation();
     }
 
-    @Test
-    void createInvalidP2shErpFederation_negativeCsvValue() {
-        activationDelayValue = -100L;
+    @ParameterizedTest
+    @ValueSource(longs = {-100L, 0L, 100_000L})
+    void createInvalidP2shErpFederation_invalidCsvValues(long csvValue) {
+        activationDelayValue = csvValue;
 
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
@@ -150,8 +152,8 @@ class P2shErpFederationTest {
     }
 
     @Test
-    void createInvalidP2shErpFederation_zeroCsvValue()  {
-        activationDelayValue = 0L;
+    void createInvalidP2shErpFederation_csvValueFourBytesLongIncludingSign() {
+        activationDelayValue = 8_400_000L; // Any value above 8_388_607 needs an extra byte to indicate the sign
 
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
@@ -186,16 +188,10 @@ class P2shErpFederationTest {
         createAndValidateFederation();
     }
 
-    @Test
-    void createValidP2shErpFederation_csvValueOneByteLong() {
-        activationDelayValue = 20L;
-
-        createAndValidateFederation();
-    }
-
-    @Test
-    void createValidP2shErpFederation_csvValueTwoBytesLong() {
-        activationDelayValue = 500L;
+    @ParameterizedTest
+    @ValueSource(longs = {20L, 500L, 33_000L})
+    void createValidP2shErpFederation_csvValues(long csvValue) {
+        activationDelayValue = csvValue;
 
         createAndValidateFederation();
     }
@@ -207,46 +203,8 @@ class P2shErpFederationTest {
         createAndValidateFederation();
     }
 
-
     @Test
-    void createInvalidP2shErpFederation_csvValueThreeBytesLong() {
-        activationDelayValue = 100_000L; // Should fail since this value is above the max value
-
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            ));
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createValidP2shErpFederation_csvValueThreeBytesLongIncludingSign() {
-        activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
-
-        createAndValidateFederation();
-    }
-
-    @Test
-    void createInvalidP2shErpFederation_csvValueFourBytesLongIncludingSign() {
-        activationDelayValue = 8_400_000L; // Any value above 8_388_607 needs an extra byte to indicate the sign
-
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            ));
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createInvalidFederation_aboveMaxScriptSigSize() {
+    void createInvalidFederation_aboveMaxRedeemScriptSize() {
         // add one member to exceed redeem script size limit
         List<BtcECKey> newDefaultKeys = federation.getBtcPublicKeys();
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(

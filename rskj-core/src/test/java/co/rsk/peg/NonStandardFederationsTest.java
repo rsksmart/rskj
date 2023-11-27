@@ -281,7 +281,7 @@ class NonStandardFederationsTest {
     }
 
     @Test
-    void createInvalidNonStandardBuilder_aboveMaxScriptSigSize() {
+    void createInvalidNonStandardBuilder_aboveMaxRedeemScriptSize() {
         // add one member to exceed redeem script size limit
         List<BtcECKey> newDefaultKeys = federation.getBtcPublicKeys();
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(
