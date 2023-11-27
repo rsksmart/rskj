@@ -49,7 +49,7 @@ class GetCallStackDepthTest {
         Assertions.assertEquals(0, fn.inputs.length);
 
         Assertions.assertEquals(1, fn.outputs.length);
-        Assertions.assertEquals(SolidityType.getType("uint").getName(), fn.outputs[0].type.getName());
+        Assertions.assertEquals(SolidityType.getType("uint32").getName(), fn.outputs[0].type.getName());
     }
 
     @Test

@@ -1398,23 +1398,18 @@ public class Program {
             // Propagate the "local call" nature of the originating transaction down to the callee
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
 
-            // There may be cases when a NativeContract does not need a block factory
-            // As it  is with the Environment contract.
-            Block executionBlock = null;
-            if(blockFactory != null) {
-                executionBlock = blockFactory.newBlock(
-                        blockFactory.getBlockHeaderBuilder()
-                                .setParentHash(getPrevHash().getData())
-                                .setCoinbase(new RskAddress(getCoinbase().getLast20Bytes()))
-                                .setDifficultyFromBytes(getDifficulty().getData())
-                                .setNumber(getNumber().longValue())
-                                .setGasLimit(getGasLimit().getData())
-                                .setTimestamp(getTimestamp().longValue())
-                                .build(),
-                        Collections.emptyList(),
-                        Collections.emptyList()
-                );
-            }
+            Block executionBlock = blockFactory.newBlock(
+                    blockFactory.getBlockHeaderBuilder()
+                            .setParentHash(getPrevHash().getData())
+                            .setCoinbase(new RskAddress(getCoinbase().getLast20Bytes()))
+                            .setDifficultyFromBytes(getDifficulty().getData())
+                            .setNumber(getNumber().longValue())
+                            .setGasLimit(getGasLimit().getData())
+                            .setTimestamp(getTimestamp().longValue())
+                            .build(),
+                    Collections.emptyList(),
+                    Collections.emptyList()
+            );
 
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
                     .transaction(internalTx)

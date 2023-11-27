@@ -51,9 +51,7 @@ public class ExecutionEnvironment {
             BlockStore blockStore,
             ReceiptStore receiptStore,
             List<LogInfo> logs) {
-        // activations may be set to null here because some NativeContracts may not need
-        // a block number. An example of this is the Environment contract.
-        this.activations = block == null ? null : activationConfig.forBlock(block.getNumber());
+        this.activations = activationConfig.forBlock(block.getNumber());
         this.transaction = transaction;
         this.block = block;
         this.repository = repository;
