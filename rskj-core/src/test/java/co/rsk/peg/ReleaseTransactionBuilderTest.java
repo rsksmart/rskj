@@ -175,7 +175,6 @@ class ReleaseTransactionBuilderTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 

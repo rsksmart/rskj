@@ -11,14 +11,12 @@ import co.rsk.peg.utils.EcKeyUtils;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 
 public class ErpFederation extends Federation {
     private final List<BtcECKey> erpPubKeys;
     private final long activationDelay;
-    private final ActivationConfig.ForBlock activations;
     private Script defaultRedeemScript;
     private Script defaultP2SHScript;
     private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
@@ -30,7 +28,6 @@ public class ErpFederation extends Federation {
         NetworkParameters btcParams,
         List<BtcECKey> erpPubKeys,
         long activationDelay,
-        ActivationConfig.ForBlock activations,
         ErpRedeemScriptBuilder erpRedeemScriptBuilder) {
 
         super(members, creationTime, creationBlockNumber, btcParams);
@@ -38,7 +35,6 @@ public class ErpFederation extends Federation {
 
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
-        this.activations = activations;
         this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
     }
 

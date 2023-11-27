@@ -1098,8 +1098,7 @@ public class BridgeStorageProvider {
             case P2SH_ERP_FEDERATION_FORMAT_VERSION:
                 return BridgeSerializationUtils.deserializeP2shErpFederation(
                     data,
-                    bridgeConstants,
-                    activations
+                    bridgeConstants
                 );
             case STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION:
                 return BridgeSerializationUtils.deserializeStandardMultisigFederation(
