@@ -27,7 +27,7 @@ public class GetCallStackDepth extends NativeMethod {
     private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
             "getCallStackDepth",
             new String[]{},
-            new String[]{"uint"}
+            new String[]{"uint32"}
     );
 
     private final ProgramInvoke programInvoke;
