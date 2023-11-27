@@ -411,7 +411,6 @@ class BridgeStorageProviderTest {
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            mock(ActivationConfig.ForBlock.class),
             new NonStandardErpRedeemScriptBuilderHardcoded()
         );
 
@@ -428,7 +427,6 @@ class BridgeStorageProviderTest {
             newFederation.getBtcParams(),
             bridgeTestnetInstance.getErpFedPubKeysList(),
             bridgeTestnetInstance.getErpFedActivationDelay(),
-            mock(ActivationConfig.ForBlock.class),
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -557,7 +555,6 @@ class BridgeStorageProviderTest {
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -580,7 +577,6 @@ class BridgeStorageProviderTest {
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -700,7 +696,6 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             new NonStandardErpRedeemScriptBuilderHardcoded()
         );
 
@@ -724,7 +719,6 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE()
         );
 
@@ -749,7 +743,6 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -769,7 +762,6 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -892,7 +884,6 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
@@ -913,7 +904,6 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 

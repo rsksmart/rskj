@@ -144,7 +144,6 @@ class PowpegMigrationTest {
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay(),
-                    activations,
                     erpRedeemScriptBuilder
                 );
                 break;
@@ -156,7 +155,6 @@ class PowpegMigrationTest {
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay(),
-                    activations,
                     new P2shErpRedeemScriptBuilder()
                 );
                 // TODO: CHECK REDEEMSCRIPT

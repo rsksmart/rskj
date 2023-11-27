@@ -92,7 +92,6 @@ class P2shErpFederationTest {
             networkParameters,
             emergencyKeys,
             activationDelayValue,
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
     }
@@ -208,7 +207,6 @@ class P2shErpFederationTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            activations,
             p2shErpRedeemScriptBuilder
         );
 
@@ -296,7 +294,6 @@ class P2shErpFederationTest {
             btcParams,
             Arrays.asList(new BtcECKey(), new BtcECKey()),
             10_000,
-            activations,
             new P2shErpRedeemScriptBuilder()
         );
 
@@ -413,7 +410,6 @@ class P2shErpFederationTest {
                     NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
                     generatedScript.emergencyFed,
                     generatedScript.timelock,
-                    activations,
                     new P2shErpRedeemScriptBuilder()
                 );
 
@@ -448,7 +444,6 @@ class P2shErpFederationTest {
             networkParameters,
             emergencyKeys,
             activationDelay,
-            mock(ActivationConfig.ForBlock.class),
             new P2shErpRedeemScriptBuilder()
         );
 

@@ -55,7 +55,6 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             erpFedKeys,
             5063,
-            activations,
             new NonStandardErpRedeemScriptBuilder()
         );
 
