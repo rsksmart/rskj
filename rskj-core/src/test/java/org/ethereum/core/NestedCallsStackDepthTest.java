@@ -18,29 +18,30 @@
 package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.Constants;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 public class NestedCallsStackDepthTest {
@@ -56,9 +57,8 @@ public class NestedCallsStackDepthTest {
      ** ------------------------ **/
     @BeforeEach
     void setup() {
-        world = new World();
-        processor = new WorldDslProcessor(world);
-        ethModule = buildEthModule(world);
+        TestSystemProperties config = new TestSystemProperties();
+        buildEthModule(config);
     }
 
     /** ------------------------ **
@@ -87,6 +87,26 @@ public class NestedCallsStackDepthTest {
         assertEquals("0x" + DataWord.valueOf(1).toString(), call);
     }
 
+    @Test
+    void testContractConsensusInactive() throws FileNotFoundException, DslProcessorException {
+        TestSystemProperties rskip203Disabled = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.tbd600", ConfigValueFactory.fromAnyRef(-1))
+        );
+        buildEthModule(rskip203Disabled);
+
+        processor.processCommands(DslParser.fromResource("dsl/nested_environment_calls.txt"));
+        world.getRepository().commit();
+
+        final String contractA = getContractAddressString("tx01");
+        CallArguments args = buildArgs(contractA, Hex.toHexString(CALL_GCSD_FUNCTION.encode()));
+        try {
+            ethModule.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
+            fail("Should throw a RskJsonRpcRequestException");
+        } catch (RskJsonRpcRequestException rskje) {
+            MatcherAssert.assertThat(rskje.getMessage(), Matchers.containsString("transaction reverted"));
+        }
+    }
+
     /** ------------------------ **
      *  UTILITIES
      ** ------------------------ **/
@@ -109,30 +129,15 @@ public class NestedCallsStackDepthTest {
         return args;
     }
 
-    private EthModule buildEthModule(World world) {
-        final TestSystemProperties config = new TestSystemProperties();
-        TransactionExecutorFactory executor = new TransactionExecutorFactory(
+    private void buildEthModule(TestSystemProperties config) {
+        world = new World(config);
+        processor = new WorldDslProcessor(world);
+        TransactionExecutorFactory executor = EthModuleTestUtils.buildCustomExecutorFactory(
+                world,
                 config,
-                world.getBlockStore(),
                 null,
                 new BlockFactory(config.getActivationConfig()),
-                new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, world.getBridgeSupportFactory(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
-                null
-        );
-
-        return new EthModule(
-                null,
-                Constants.REGTEST_CHAIN_ID,
-                world.getBlockChain(),
-                world.getTransactionPool(),
-                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
-                new ExecutionBlockRetriever(world.getBlockChain(), null, null),
-                world.getRepositoryLocator(),
-                null,
-                null,
-                world.getBridgeSupportFactory(),
-                config.getGasEstimationCap(),
-                config.getCallGasCap());
+                null);
+        ethModule = EthModuleTestUtils.buildCustomEthModule(world, executor, config);
     }
 }
