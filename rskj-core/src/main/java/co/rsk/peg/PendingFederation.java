@@ -113,7 +113,6 @@ public final class PendingFederation {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations,
                 new P2shErpRedeemScriptBuilder()
             );
         }
@@ -131,7 +130,6 @@ public final class PendingFederation {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations,
                 erpRedeemScriptBuilder
             );
         }
