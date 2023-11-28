@@ -134,7 +134,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         Assertions.assertTrue(retiringFederationUtxos.isEmpty());
     }
 
-    // Before tbd600Activations
+    // fingerroot
     private void assertUnknownTxIsProcessedAsPegin(RskAddress expectedRskAddressToBeLogged, BtcTransaction btcTransaction) throws IOException {
         verify(bridgeEventLogger, times(1)).logPeginBtc(expectedRskAddressToBeLogged, btcTransaction, Coin.ZERO, 0);
         verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
@@ -178,8 +178,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         Assertions.assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
     }
 
-    // Before tbd600Activations is aactivated
-    private void assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP79(BtcTransaction btcTransaction) throws IOException {
+    // Before tbd600Activations is activated
+    private void assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(BtcTransaction btcTransaction) throws IOException {
         verify(bridgeEventLogger, times(1)).logRejectedPegin(
             btcTransaction, PEGIN_V1_INVALID_PAYLOAD
         );
@@ -207,6 +207,24 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, times(1)).logUnrefundablePegin(
             btcTransaction,
             LEGACY_PEGIN_UNDETERMINED_SENDER
+        );
+
+        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+        verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
+        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+
+        Assertions.assertTrue(activeFederationUtxos.isEmpty());
+        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+    }
+
+    private void assertInvalidPeginV1IsRejected(BtcTransaction btcTransaction) throws IOException {
+        verify(bridgeEventLogger, times(1)).logRejectedPegin(
+            btcTransaction, PEGIN_V1_INVALID_PAYLOAD
+        );
+        verify(bridgeEventLogger, never()).logUnrefundablePegin(
+            any(),
+            any()
         );
 
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
@@ -1124,7 +1142,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         if (activations == fingerrootActivations) {
             verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
         } else {
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
+            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
         }
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
         Assertions.assertTrue(retiringFederationUtxos.isEmpty());
@@ -1132,7 +1150,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("pre_and_post_rskip379_args")
-    void pegin_v1_invalid_protocol_to_active_fed_can_be_registered(
+    void pegin_v1_invalid_protocol_legacy_sender_to_active_fed_(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -1167,11 +1185,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
 
-        if (activations == fingerrootActivations) {
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
-        } else {
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
-        }
+        verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
+
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
         Assertions.assertTrue(activeFederationUtxos.isEmpty());
     }
@@ -1354,7 +1369,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         if (activations == tbd600Activations){
             assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
         } else {
-            assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP79(btcTransaction);
+            assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
         }
     }
 
@@ -1408,7 +1423,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         if (activations == tbd600Activations){
             assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
         } else {
-            assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP79(btcTransaction);
+            assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
         }
     }
 
@@ -1454,13 +1469,10 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-
-        // SINCE RSKIP379 ONLY TRANSACTIONS THAT REALLY ARE PROCESSED, REFUNDS OR REGISTER WILL BE MARK AS PROCESSED.
         if (activations == tbd600Activations){
-            // TODO: DISCUSS CHANGING LEGACY REJECTED REASON TO PEGIN V1
-            assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
+
         } else {
-            assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP79(btcTransaction);
+            assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
         }
     }
 
