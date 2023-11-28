@@ -159,7 +159,14 @@ public class PegUtils {
                 btcTx.getHash(),
                 e.getMessage()
             );
-            return getPeginEvaluationResultForInvalidPegin(peginInformation);
+
+            boolean hasRefundAddress = peginInformation.getBtcRefundAddress() != null;
+
+            PeginProcessAction peginProcessAction = hasRefundAddress ?
+                                                        PeginProcessAction.CAN_BE_REFUNDED :
+                                                        PeginProcessAction.CANNOT_BE_PROCESSED;
+
+            return new PeginEvaluationResult(peginProcessAction, PEGIN_V1_INVALID_PAYLOAD);
         }
 
         int protocolVersion = peginInformation.getProtocolVersion();
@@ -174,28 +181,6 @@ public class PegUtils {
                 logger.error("[evaluatePegin] {}", message);
                 throw new IllegalStateException(message);
         }
-    }
-
-    private static PeginEvaluationResult getPeginEvaluationResultForInvalidPegin(PeginInformation peginInformation) {
-        boolean hasRefundAddress = peginInformation.getBtcRefundAddress() != null;
-        int protocolVersion = peginInformation.getProtocolVersion();
-
-        PeginProcessAction peginProcessAction = hasRefundAddress ?
-            PeginProcessAction.CAN_BE_REFUNDED :
-            PeginProcessAction.CANNOT_BE_PROCESSED;
-
-        RejectedPeginReason rejectedPeginReason;
-        if ((protocolVersion == 1)) {
-            rejectedPeginReason = PEGIN_V1_INVALID_PAYLOAD;
-        } else {
-            if (hasRefundAddress) {
-                rejectedPeginReason = LEGACY_PEGIN_MULTISIG_SENDER;
-            } else {
-                rejectedPeginReason = LEGACY_PEGIN_UNDETERMINED_SENDER;
-            }
-        }
-
-        return new PeginEvaluationResult(peginProcessAction, rejectedPeginReason);
     }
 
     private static PeginEvaluationResult evaluateLegacyPeginSender(TxSenderAddressType senderAddressType)  {
