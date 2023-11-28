@@ -26,7 +26,7 @@ public class ErpRedeemScriptBuilderUtils {
         Script erpFederationRedeemScript,
         Long csvValue
     ) {
-        if (!defaultFederationRedeemScript.isSentToStandardMultiSig() || !erpFederationRedeemScript.isSentToStandardMultiSig()) {
+        if (!defaultFederationRedeemScript.isSentToMultiSig() || !erpFederationRedeemScript.isSentToMultiSig()) {
 
             String message = "Provided redeem scripts have an invalid structure, not standard";
             logger.debug(

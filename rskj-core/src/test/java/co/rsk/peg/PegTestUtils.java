@@ -26,6 +26,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -308,16 +309,16 @@ public final class PegTestUtils {
         );
     }
 
-    public static P2shErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
+    public static ErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        return new P2shErpFederation(
+        return new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            Mockito.mock(ActivationConfig.ForBlock.class)
+            new P2shErpRedeemScriptBuilder()
         );
     }
 
