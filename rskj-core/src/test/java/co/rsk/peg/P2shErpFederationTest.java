@@ -2,6 +2,7 @@ package co.rsk.peg;
 
 import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
 import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
+import static co.rsk.peg.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
 import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,12 +40,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class P2shErpFederationTest {
     private ErpFederation federation;
     private NetworkParameters networkParameters;
-    private List<BtcECKey> standardKeys;
     private int defaultThreshold;
+    private List<BtcECKey> defaultKeys;
     private List<BtcECKey> emergencyKeys;
     private int emergencyThreshold;
     private long activationDelayValue;
@@ -64,12 +66,12 @@ class P2shErpFederationTest {
         BtcECKey federator7PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02ac1901b6fba2c1dbd47d894d2bd76c8ba1d296d65f6ab47f1c6b22afb53e73eb"));
         BtcECKey federator8PublicKey = BtcECKey.fromPublicOnly(Hex.decode("031aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d26"));
         BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea"));
-        standardKeys = Arrays.asList(
+        defaultKeys = Arrays.asList(
             federator0PublicKey, federator1PublicKey, federator2PublicKey,
             federator3PublicKey, federator4PublicKey, federator5PublicKey,
             federator6PublicKey, federator7PublicKey, federator8PublicKey, federator9PublicKey
         );
-        defaultThreshold = standardKeys.size() / 2 + 1;
+        defaultThreshold = defaultKeys.size() / 2 + 1;
         emergencyKeys = bridgeConstants.getErpFedPubKeysList();
         emergencyThreshold = emergencyKeys.size() / 2 + 1;
         activationDelayValue = bridgeConstants.getErpFedActivationDelay();
@@ -81,7 +83,7 @@ class P2shErpFederationTest {
     }
 
     private ErpFederation createDefaultP2shErpFederation() {
-        List<FederationMember> standardMembers = FederationTestUtils.getFederationMembersWithBtcKeys(standardKeys);
+        List<FederationMember> standardMembers = FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
 
@@ -96,9 +98,21 @@ class P2shErpFederationTest {
         );
     }
 
+    private void createAndValidateFederation() {
+        federation = createDefaultP2shErpFederation();
+
+        validateP2shErpRedeemScript(
+            federation.getRedeemScript(),
+            defaultKeys,
+            emergencyKeys,
+            activationDelayValue
+        );
+    }
+
     @Test
     void createInvalidP2shErpFederation_nullErpKeys() {
         emergencyKeys = null;
+
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class, this::createDefaultP2shErpFederation
         );
@@ -108,6 +122,7 @@ class P2shErpFederationTest {
     @Test
     void createInvalidP2shErpFederation_emptyErpKeys() {
         emergencyKeys = new ArrayList<>();
+
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class, this::createDefaultP2shErpFederation
         );
@@ -117,64 +132,57 @@ class P2shErpFederationTest {
     @Test
     void createValidP2shErpFederation_oneErpKey() {
         emergencyKeys = Collections.singletonList(emergencyKeys.get(0));
-        assertDoesNotThrow(this::createDefaultP2shErpFederation);
+        createAndValidateFederation();
     }
 
-    @Test
-    void createInvalidP2shErpFederation_negativeCsvValue() {
-        activationDelayValue = -100L;
+    @ParameterizedTest
+    @ValueSource(longs = {20L, 130L, 500L, 33_000L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE})
+    void createValidP2shErpFederation_csvValues(long csvValue) {
+        activationDelayValue = csvValue;
+
+        createAndValidateFederation();
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1, 100_000L, 8_400_000L})
+    void createInvalidP2shErpFederation_invalidCsvValues(long csvValue) {
+        activationDelayValue = csvValue;
+
+        federation = createDefaultP2shErpFederation();
+        ErpFederationCreationException fedException = assertThrows(
+            ErpFederationCreationException.class,
+            () -> federation.getRedeemScript());
+        assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
 
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        RedeemScriptCreationException exception = assertThrows(
+        RedeemScriptCreationException builderException = assertThrows(
             RedeemScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(standardKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            ));
+        assertEquals(INVALID_CSV_VALUE, builderException.getReason());
     }
 
     @Test
-    void createInvalidP2shErpFederation_zeroCsvValue()  {
-        activationDelayValue = 0L;
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        RedeemScriptCreationException exception = assertThrows(
-            RedeemScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(standardKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createInvalidP2shErpFederation_aboveMaxCsvValue()  {
-        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1;
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        RedeemScriptCreationException exception = assertThrows(
-            RedeemScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(standardKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createValidP2shErpFederation_exactMaxCsvValue()  {
-        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
-        assertDoesNotThrow(this::createDefaultP2shErpFederation);
-    }
-
-    @Test
-    void createInvalidFederation_aboveMaxScriptSigSize() {
+    void createInvalidFederation_aboveMaxRedeemScriptSize() {
         // add one member to exceed redeem script size limit
-        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
+        List<BtcECKey> newDefaultKeys = federation.getBtcPublicKeys();
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("02550cc87fa9061162b1dd395a16662529c9d8094c0feca17905a3244713d65fe8")
         );
-        newStandardKeys.add(federator10PublicKey);
-        standardKeys = newStandardKeys;
+        newDefaultKeys.add(federator10PublicKey);
+        defaultKeys = newDefaultKeys;
 
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ScriptCreationException exception = assertThrows(
             ScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(standardKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
-        );
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            ));
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
 
@@ -216,9 +224,9 @@ class P2shErpFederationTest {
     @Test
     void testEquals_differentNumberOfMembers() {
         // remove federator9
-        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
-        newStandardKeys.remove(9);
-        standardKeys = newStandardKeys;
+        List<BtcECKey> newDefaultKeys = federation.getBtcPublicKeys();
+        newDefaultKeys.remove(9);
+        defaultKeys = newDefaultKeys;
 
         ErpFederation otherFederation = createDefaultP2shErpFederation();
         Assertions.assertNotEquals(federation, otherFederation);
@@ -238,13 +246,55 @@ class P2shErpFederationTest {
             Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea")
         );
         // replace federator8 with federator9
-        List<BtcECKey> newStandardKeys = federation.getBtcPublicKeys();
-        newStandardKeys.remove(8);
-        newStandardKeys.add(federator9PublicKey);
-        standardKeys = newStandardKeys;
+        List<BtcECKey> newDefaultKeys = federation.getBtcPublicKeys();
+        newDefaultKeys.remove(8);
+        newDefaultKeys.add(federator9PublicKey);
+        defaultKeys = newDefaultKeys;
 
         ErpFederation otherFederation = createDefaultP2shErpFederation();
         Assertions.assertNotEquals(federation, otherFederation);
+    }
+
+    @Test
+    void createP2shRedeemScript_fromP2shErpBuilder() {
+
+        // this is a known redeem script program
+        byte[] redeemScriptProgram = Hex.decode("64542102099fd69cf6a350679a05593c3ff814bfaa281eb6dde505c953cf2875979b120921022a159227df514c7b7808ee182ae07d71770b67eda1e5ee668272761eefb2c24c210233bc8c1a994a921d7818f93e57a559373133ba531928843bf84c59c15e47eab02102937df9948c6f18359e473beeee0a19c27dd4f6d4114e5809aa862671bb765b5b2102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da2103db2ebad883823cefe8b2336c03b8d9c6afee4cbac77c7e935bc8c51ec20b26632103fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce858157ae670350cd00b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f53ae68");
+
+        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02099fd69cf6a350679a05593c3ff814bfaa281eb6dde505c953cf2875979b1209"));
+        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("022a159227df514c7b7808ee182ae07d71770b67eda1e5ee668272761eefb2c24c"));
+        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0233bc8c1a994a921d7818f93e57a559373133ba531928843bf84c59c15e47eab0"));
+        BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02937df9948c6f18359e473beeee0a19c27dd4f6d4114e5809aa862671bb765b5b"));
+        BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
+        BtcECKey federator5PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03db2ebad883823cefe8b2336c03b8d9c6afee4cbac77c7e935bc8c51ec20b2663"));
+        BtcECKey federator6PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce8581"));
+        defaultKeys = Arrays.asList(
+            federator0PublicKey, federator1PublicKey, federator2PublicKey,
+            federator3PublicKey, federator4PublicKey, federator5PublicKey,
+            federator6PublicKey
+        );
+        defaultThreshold = defaultKeys.size() / 2 + 1;
+
+        BtcECKey emergency0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3"));
+        BtcECKey emergency1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"));
+        BtcECKey emergency2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f"));
+        emergencyKeys = Arrays.asList(
+            emergency0PublicKey, emergency1PublicKey, emergency2PublicKey
+        );
+        emergencyThreshold = emergencyKeys.size() / 2 + 1;
+
+        activationDelayValue = 52_560L;
+
+        createAndValidateFederation();
+
+        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
+        Script obtainedRedeemScript =
+            builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            );
+        assertArrayEquals(redeemScriptProgram, obtainedRedeemScript.getProgram());
     }
 
     @ParameterizedTest
@@ -254,7 +304,7 @@ class P2shErpFederationTest {
             // should add this case because adding erp to mainnet genesis federation
             // throws a validation error, so in that case we use the one set up before each test.
             // if using testnet constants, we can add them with no errors
-            standardKeys = bridgeConstants.getGenesisFederation().getBtcPublicKeys();
+            defaultKeys = bridgeConstants.getGenesisFederation().getBtcPublicKeys();
         }
 
         emergencyKeys = bridgeConstants.getErpFedPubKeysList();
@@ -263,7 +313,7 @@ class P2shErpFederationTest {
         ErpFederation p2shErpFederation = createDefaultP2shErpFederation();
         validateP2shErpRedeemScript(
             p2shErpFederation.getRedeemScript(),
-            standardKeys,
+            defaultKeys,
             emergencyKeys,
             activationDelayValue
         );
@@ -282,10 +332,10 @@ class P2shErpFederationTest {
 
         // Create a legacy powpeg and then a p2sh valid one. Both of them should produce the same standard redeem script
         StandardMultisigFederation legacyFed = new StandardMultisigFederation(
-                members,
-                creationTime,
-                creationBlock,
-                btcParams
+            members,
+            creationTime,
+            creationBlock,
+            btcParams
         );
         ErpFederation p2shFed = new ErpFederation(
             members,
@@ -308,7 +358,7 @@ class P2shErpFederationTest {
         emergencyKeys = bridgeTestNetConstants.getErpFedPubKeysList();
         activationDelayValue = bridgeTestNetConstants.getErpFedActivationDelay();
 
-        standardKeys = Arrays.stream(new String[]{
+        defaultKeys = Arrays.stream(new String[]{
             "02099fd69cf6a350679a05593c3ff814bfaa281eb6dde505c953cf2875979b1209",
             "022a159227df514c7b7808ee182ae07d71770b67eda1e5ee668272761eefb2c24c",
             "0233bc8c1a994a921d7818f93e57a559373133ba531928843bf84c59c15e47eab0",
@@ -344,7 +394,7 @@ class P2shErpFederationTest {
         emergencyKeys = bridgeMainNetConstants.getErpFedPubKeysList();
         activationDelayValue = bridgeMainNetConstants.getErpFedActivationDelay();
 
-        standardKeys = Arrays.stream(new String[]{
+        defaultKeys = Arrays.stream(new String[]{
             "020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c",
             "0275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c949",
             "025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db",
@@ -427,7 +477,7 @@ class P2shErpFederationTest {
         long activationDelay,
         boolean signWithEmergencyMultisig) {
 
-        List<BtcECKey> standardKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10"},
             true
         );
@@ -438,7 +488,7 @@ class P2shErpFederationTest {
         );
 
         ErpFederation p2shErpFed = new ErpFederation(
-            FederationMember.getFederationMembersFromKeys(standardKeys),
+            FederationMember.getFederationMembersFromKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
             networkParameters,
@@ -460,7 +510,7 @@ class P2shErpFederationTest {
         assertDoesNotThrow(() -> FederationTestUtils.spendFromErpFed(
             networkParameters,
             p2shErpFed,
-            signWithEmergencyMultisig ? emergencyKeys : standardKeys,
+            signWithEmergencyMultisig ? emergencyKeys : defaultKeys,
             fundTx.getHash(),
             0,
             destinationAddress,
@@ -470,18 +520,37 @@ class P2shErpFederationTest {
     }
 
     private void validateP2shErpRedeemScript(
-        Script erpRedeemScript,
-        List<BtcECKey> defaultMultisigKeys,
-        List<BtcECKey> emergencyMultisigKeys,
+        Script redeemScript,
+        List<BtcECKey> defaultKeys,
+        List<BtcECKey> emergencyKeys,
         Long csvValue) {
 
+        /***
+         * Expected structure:
+         * OP_NOTIF
+         *  OP_M
+         *  PUBKEYS...N
+         *  OP_N
+         *  OP_CHECKMULTISIG
+         * OP_ELSE
+         *  OP_PUSHBYTES
+         *  CSV_VALUE
+         *  OP_CHECKSEQUENCEVERIFY
+         *  OP_DROP
+         *  OP_M
+         *  PUBKEYS...N
+         *  OP_N
+         *  OP_CHECKMULTISIG
+         * OP_ENDIF
+         */
+
         // Keys are sorted when added to the redeem script, so we need them sorted in order to validate
-        defaultMultisigKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        emergencyMultisigKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        defaultKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        emergencyKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
         byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
 
-        byte[] script = erpRedeemScript.getProgram();
+        byte[] script = redeemScript.getProgram();
         Assertions.assertTrue(script.length > 0);
 
         int index = 0;
@@ -490,11 +559,11 @@ class P2shErpFederationTest {
         assertEquals(ScriptOpCodes.OP_NOTIF, script[index++]);
 
         // Next byte should equal M, from an M/N multisig
-        int m = defaultMultisigKeys.size() / 2 + 1;
+        int m = defaultKeys.size() / 2 + 1;
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(m)), script[index++]);
 
         // Assert public keys
-        for (BtcECKey key: defaultMultisigKeys) {
+        for (BtcECKey key: defaultKeys) {
             byte[] pubkey = key.getPubKey();
             assertEquals(pubkey.length, script[index++]);
             for (byte b : pubkey) {
@@ -503,7 +572,7 @@ class P2shErpFederationTest {
         }
 
         // Next byte should equal N, from an M/N multisig
-        int n = defaultMultisigKeys.size();
+        int n = defaultKeys.size();
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
 
         // Next byte should equal OP_CHECKMULTISIG
@@ -524,10 +593,10 @@ class P2shErpFederationTest {
         assertEquals(ScriptOpCodes.OP_DROP, script[index++]);
 
         // Next byte should equal M, from an M/N multisig
-        m = emergencyMultisigKeys.size() / 2 + 1;
+        m = emergencyKeys.size() / 2 + 1;
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(m)), script[index++]);
 
-        for (BtcECKey key: emergencyMultisigKeys) {
+        for (BtcECKey key: emergencyKeys) {
             byte[] pubkey = key.getPubKey();
             assertEquals(Integer.valueOf(pubkey.length).byteValue(), script[index++]);
             for (byte b : pubkey) {
@@ -536,7 +605,7 @@ class P2shErpFederationTest {
         }
 
         // Next byte should equal N, from an M/N multisig
-        n = emergencyMultisigKeys.size();
+        n = emergencyKeys.size();
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
 
         // Next byte should equal OP_CHECKMULTISIG
