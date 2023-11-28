@@ -147,6 +147,57 @@ public final class PegTestUtils {
         return ScriptBuilder.createOpReturnScript(payloadBytes);
     }
 
+    public static Script createOpReturnScriptWithInvalidPrefix(
+        int protocolVersion,
+        RskAddress rskDestinationAddress,
+        Optional<Address> btcRefundAddressOptional
+    ) {
+        int index = 0;
+        int payloadLength;
+        if (btcRefundAddressOptional.isPresent()) {
+            payloadLength = 46;
+        } else {
+            payloadLength = 25;
+        }
+        byte[] payloadBytes = new byte[payloadLength];
+
+        byte[] prefix = Hex.decode("544B5352"); // 'TKSR' in hexa
+        System.arraycopy(prefix, 0, payloadBytes, index, prefix.length);
+        index += prefix.length;
+
+        payloadBytes[index] = (byte) protocolVersion;
+        index++;
+
+        System.arraycopy(
+            rskDestinationAddress.getBytes(),
+            0,
+            payloadBytes,
+            index,
+            rskDestinationAddress.getBytes().length
+        );
+        index += rskDestinationAddress.getBytes().length;
+
+        if (btcRefundAddressOptional.isPresent()) {
+            Address btcRefundAddress = btcRefundAddressOptional.get();
+            if (btcRefundAddress.isP2SHAddress()) {
+                payloadBytes[index] = 2; // P2SH address type
+            } else {
+                payloadBytes[index] = 1; // P2PKH address type
+            }
+            index++;
+
+            System.arraycopy(
+                btcRefundAddress.getHash160(),
+                0,
+                payloadBytes,
+                index,
+                btcRefundAddress.getHash160().length
+            );
+        }
+
+        return ScriptBuilder.createOpReturnScript(payloadBytes);
+    }
+
     public static Script createOpReturnScriptForRskWithCustomPayload(int protocolVersion, byte[] customPayload) {
         int index = 0;
         int payloadLength = customPayload.length;
