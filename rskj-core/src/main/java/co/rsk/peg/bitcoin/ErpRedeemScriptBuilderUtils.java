@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_INTERNAL_REDEEM_SCRIPTS;
-import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_CSV_VALUE;
+import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_INTERNAL_REDEEM_SCRIPTS;
+import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
 
 public class ErpRedeemScriptBuilderUtils {
     private static final Logger logger = LoggerFactory.getLogger(ErpRedeemScriptBuilderUtils.class);
@@ -35,7 +35,7 @@ public class ErpRedeemScriptBuilderUtils {
                 defaultFederationRedeemScript,
                 erpFederationRedeemScript
             );
-            throw new ErpFederationCreationException(message, INVALID_INTERNAL_REDEEM_SCRIPTS);
+            throw new RedeemScriptCreationException(message, INVALID_INTERNAL_REDEEM_SCRIPTS);
         }
 
         if (csvValue <= 0 || csvValue > MAX_CSV_VALUE) {
@@ -45,7 +45,7 @@ public class ErpRedeemScriptBuilderUtils {
                 MAX_CSV_VALUE
             );
             logger.warn("[validateRedeemScriptValues] {}", message);
-            throw new ErpFederationCreationException(message, INVALID_CSV_VALUE);
+            throw new RedeemScriptCreationException(message, INVALID_CSV_VALUE);
         }
     }
 }

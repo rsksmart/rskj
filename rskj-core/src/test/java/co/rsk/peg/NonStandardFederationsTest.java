@@ -1,9 +1,10 @@
 package co.rsk.peg;
 
 import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
-import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_CSV_VALUE;
 import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
-import static co.rsk.peg.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
+import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -20,7 +21,7 @@ import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.resources.TestConstants;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,6 +46,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class NonStandardFederationsTest {
     private ErpFederation federation;
@@ -137,61 +140,18 @@ class NonStandardFederationsTest {
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue));
     }
-    @Test
-    void createInvalidLegacyErpFederation_negativeCsvValue() {
-        activationDelayValue = -100L;
 
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
+    @ParameterizedTest
+    @ValueSource(longs = { 130L, 500L, 33_000L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE})
+    void createValidNonStandardErpFederation_csvValues_post_RSKIP293(long csvValue) {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-    @Test
-    void createInvalidLegacyErpFederation_zeroCsvValue() {
-        activationDelayValue = 0L;
+        activationDelayValue = csvValue;
 
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createInvalidLegacyErpFederation_aboveMaxCsvValue() {
-        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1;
-
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createValidLegacyErpFederation_exactMaxCsvValue() {
-        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
-
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        assertDoesNotThrow(() -> builder
-            .createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue));
+        createAndValidateFederation();
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
 
     @Test
@@ -209,69 +169,24 @@ class NonStandardFederationsTest {
         assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
     }
 
-
-    @Test
-    void createValidNonStandardErpFederation_csvValueTwoBytesLong_post_RSKIP293() {
+    @ParameterizedTest
+    @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1, 100_000L, 8_400_000L })
+    void createInvalidNonStandardErpFederation_csvValues_post_RSKIP293(long csvValue) {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        activationDelayValue = 500L;
+        activationDelayValue = csvValue;
 
-        createAndValidateFederation();
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
-    }
-
-    @Test
-    void createValidNonStandardErpFederation_csvValueTwoBytesLongIncludingSign_post_RSKIP293() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-
-        activationDelayValue = 130; // Any value above 127 needs an extra byte to indicate the sign
-
-        createAndValidateFederation();
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
-    }
-
-
-    @Test
-    void createInvalidNonStandardErpFederation_csvValueThreeBytesLong() {
-        activationDelayValue = 100_000L; // Should fail since this value is above the max value
+        federation = createDefaultLegacyErpFederation();
+        ErpFederationCreationException fedException = assertThrows(
+            ErpFederationCreationException.class,
+            () -> federation.getRedeemScript()
+        );
+        assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
 
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createValidNonStandardErpFederation_csvValueThreeBytesLongIncludingSign_post_RSKIP293() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-
-        activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
-
-        createAndValidateFederation();
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
-    }
-
-    @Test
-    void createInvalidNonStandardErpFederation_csvValueFourBytesLongIncludingSign() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        
-        activationDelayValue = 8_400_000L; // Any value above 8_388_607 needs an extra byte to indicate the sign
-
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> builder.createRedeemScriptFromKeys(
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
@@ -1053,9 +968,9 @@ class NonStandardFederationsTest {
 
         @JsonCreator
         public RawGeneratedRedeemScript(@JsonProperty("mainFed") List<String> mainFed,
-            @JsonProperty("emergencyFed") List<String> emergencyFed,
-            @JsonProperty("timelock") Long timelock,
-            @JsonProperty("script") String script) {
+                                        @JsonProperty("emergencyFed") List<String> emergencyFed,
+                                        @JsonProperty("timelock") Long timelock,
+                                        @JsonProperty("script") String script) {
             this.mainFed = parseFed(mainFed);
             this.emergencyFed = parseFed(emergencyFed);
             this.timelock = timelock;

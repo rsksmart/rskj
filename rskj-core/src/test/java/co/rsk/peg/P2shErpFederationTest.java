@@ -1,9 +1,10 @@
 package co.rsk.peg;
 
 import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
-import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_CSV_VALUE;
 import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
-import static co.rsk.peg.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
+import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
@@ -13,7 +14,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -136,13 +137,20 @@ class P2shErpFederationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(longs = {-100L, 0L, 100_000L})
+    @ValueSource(longs = {-100L, 0L, 100_000L, 8_400_000L})
     void createInvalidP2shErpFederation_invalidCsvValues(long csvValue) {
         activationDelayValue = csvValue;
 
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
+        federation = createDefaultP2shErpFederation();
+        ErpFederationCreationException fedException = assertThrows(
             ErpFederationCreationException.class,
+            () -> federation.getRedeemScript()
+        );
+        assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
+
+        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> builder.createRedeemScriptFromKeys(
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
@@ -156,8 +164,8 @@ class P2shErpFederationTest {
         activationDelayValue = 8_400_000L; // Any value above 8_388_607 needs an extra byte to indicate the sign
 
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> builder.createRedeemScriptFromKeys(
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
@@ -171,8 +179,8 @@ class P2shErpFederationTest {
         activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1;
 
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> builder.createRedeemScriptFromKeys(
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,

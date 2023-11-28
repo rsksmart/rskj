@@ -7,6 +7,8 @@ import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
+import co.rsk.peg.bitcoin.RedeemScriptCreationException;
 import co.rsk.peg.utils.EcKeyUtils;
 import java.time.Instant;
 import java.util.Collections;
@@ -14,6 +16,7 @@ import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
+import static co.rsk.peg.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 
 public class ErpFederation extends Federation {
     private final List<BtcECKey> erpPubKeys;
@@ -74,6 +77,7 @@ public class ErpFederation extends Federation {
     @Override
     public Script getRedeemScript() {
         if (redeemScript == null) {
+            try {
                 redeemScript = erpRedeemScriptBuilder.createRedeemScriptFromKeys(
                     getBtcPublicKeys(),
                     getNumberOfSignaturesRequired(),
@@ -81,6 +85,9 @@ public class ErpFederation extends Federation {
                     getNumberOfEmergencySignaturesRequired(),
                     activationDelay
                 );
+            } catch (RedeemScriptCreationException e) {
+                throw new ErpFederationCreationException(e.getMessage(), e, REDEEM_SCRIPT_CREATION_FAILED);
+            }
         }
         return redeemScript;
     }
