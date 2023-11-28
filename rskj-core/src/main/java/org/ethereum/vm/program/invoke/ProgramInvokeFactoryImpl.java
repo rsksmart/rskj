@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.Optional;
 
 import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
 
@@ -61,7 +62,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         byte[] caller = tx.getSender(signatureCache).getBytes();
 
         /***         BALANCE op       ***/
-        Coin balance = repository.getBalance(addr);
+        Coin balance = Optional.ofNullable(repository.getBalance(addr)).orElse(Coin.ZERO);
 
         /***         GASPRICE op       ***/
         Coin txGasPrice = tx.getGasPrice();
