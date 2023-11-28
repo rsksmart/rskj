@@ -13,22 +13,16 @@ public class NonStandardErpRedeemScriptBuilderFactory {
         ActivationConfig.ForBlock activations,
         NetworkParameters networkParameters) {
 
-        ErpRedeemScriptBuilder erpRedeemScriptBuilder;
-
-        boolean networkIsTestnet = checkIfNetworkIsTestnet(networkParameters);
-
-        if(!activations.isActive(ConsensusRule.RSKIP284) && networkIsTestnet) {
-            erpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilderHardcoded();
-        } else if (!activations.isActive(ConsensusRule.RSKIP293)) {
-            erpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE();
-        } else {
-            erpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilder();
+        if (networkIsTestnet(networkParameters) && !activations.isActive(ConsensusRule.RSKIP284)) {
+            return new NonStandardErpRedeemScriptBuilderHardcoded();
         }
-
-        return erpRedeemScriptBuilder;
+        if (!activations.isActive(ConsensusRule.RSKIP293)) {
+            return new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE();
+        }
+        return new NonStandardErpRedeemScriptBuilder();
     }
 
-    private static boolean checkIfNetworkIsTestnet(NetworkParameters networkParameters) {
+    private static boolean networkIsTestnet(NetworkParameters networkParameters) {
         return networkParameters.getId().equals(NetworkParameters.ID_TESTNET);
     }
 }
