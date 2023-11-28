@@ -45,6 +45,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class NonStandardFederationsTest {
     private ErpFederation federation;
@@ -137,61 +139,18 @@ class NonStandardFederationsTest {
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue));
     }
-    @Test
-    void createInvalidLegacyErpFederation_negativeCsvValue() {
-        activationDelayValue = -100L;
 
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
+    @ParameterizedTest
+    @ValueSource(longs = { 130L, 500L, 33_000L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE})
+    void createValidNonStandardErpFederation_csvValues_post_RSKIP293(long csvValue) {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-    @Test
-    void createInvalidLegacyErpFederation_zeroCsvValue() {
-        activationDelayValue = 0L;
+        activationDelayValue = csvValue;
 
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createInvalidLegacyErpFederation_aboveMaxCsvValue() {
-        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1;
-
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createValidLegacyErpFederation_exactMaxCsvValue() {
-        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
-
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        assertDoesNotThrow(() -> builder
-            .createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue));
+        createAndValidateFederation();
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
 
     @Test
@@ -209,67 +168,15 @@ class NonStandardFederationsTest {
         assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
     }
 
-
-    @Test
-    void createValidNonStandardErpFederation_csvValueTwoBytesLong_post_RSKIP293() {
+    @ParameterizedTest
+    @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1, 100_000L, 8_400_000L })
+    void createInvalidNonStandardErpFederation_csvValues_post_RSKIP293(long csvValue) {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        activationDelayValue = 500L;
-
-        createAndValidateFederation();
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
-    }
-
-    @Test
-    void createValidNonStandardErpFederation_csvValueTwoBytesLongIncludingSign_post_RSKIP293() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-
-        activationDelayValue = 130; // Any value above 127 needs an extra byte to indicate the sign
-
-        createAndValidateFederation();
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
-    }
-
-
-    @Test
-    void createInvalidNonStandardErpFederation_csvValueThreeBytesLong() {
-        activationDelayValue = 100_000L; // Should fail since this value is above the max value
+        activationDelayValue = csvValue;
 
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createValidNonStandardErpFederation_csvValueThreeBytesLongIncludingSign_post_RSKIP293() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-
-        activationDelayValue = 33_000L; // Any value above 32_767 needs an extra byte to indicate the sign
-
-        createAndValidateFederation();
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
-    }
-
-    @Test
-    void createInvalidNonStandardErpFederation_csvValueFourBytesLongIncludingSign() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        
-        activationDelayValue = 8_400_000L; // Any value above 8_388_607 needs an extra byte to indicate the sign
-
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class,
             () -> builder.createRedeemScriptFromKeys(

@@ -136,7 +136,15 @@ class P2shErpFederationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(longs = {-100L, 0L, 100_000L})
+    @ValueSource(longs = {20L, 130L, 500L, 33_000L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE})
+    void createValidP2shErpFederation_csvValues(long csvValue) {
+        activationDelayValue = csvValue;
+
+        createAndValidateFederation();
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1, 100_000L, 8_400_000L})
     void createInvalidP2shErpFederation_invalidCsvValues(long csvValue) {
         activationDelayValue = csvValue;
 
@@ -149,58 +157,6 @@ class P2shErpFederationTest {
                 activationDelayValue
             ));
         assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createInvalidP2shErpFederation_csvValueFourBytesLongIncludingSign() {
-        activationDelayValue = 8_400_000L; // Any value above 8_388_607 needs an extra byte to indicate the sign
-
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            ));
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createInvalidP2shErpFederation_aboveMaxCsvValue()  {
-        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1;
-
-        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            ));
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
-    }
-
-    @Test
-    void createValidP2shErpFederation_exactMaxCsvValue()  {
-        activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
-
-        createAndValidateFederation();
-    }
-
-    @ParameterizedTest
-    @ValueSource(longs = {20L, 500L, 33_000L})
-    void createValidP2shErpFederation_csvValues(long csvValue) {
-        activationDelayValue = csvValue;
-
-        createAndValidateFederation();
-    }
-
-    @Test
-    void createValidP2shErpFederation_csvValueTwoBytesLongIncludingSign() {
-        activationDelayValue = 130; // Any value above 127 needs an extra byte to indicate the sign
-
-        createAndValidateFederation();
     }
 
     @Test
