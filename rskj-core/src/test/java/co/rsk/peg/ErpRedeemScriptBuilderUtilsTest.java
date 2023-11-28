@@ -6,6 +6,8 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilderUtils;
+import co.rsk.peg.bitcoin.RedeemScriptCreationException;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,8 +18,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKMULTISIG;
-import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_CSV_VALUE;
-import static co.rsk.peg.ErpFederationCreationException.Reason.INVALID_INTERNAL_REDEEM_SCRIPTS;
+import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
+import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_INTERNAL_REDEEM_SCRIPTS;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -66,8 +68,8 @@ class ErpRedeemScriptBuilderUtilsTest {
         Script defaultScript = createMultiSigScript(defaultKeys, defaultThreshold);
         Script emergencyScript = createMultiSigScript(emergencyKeys, emergencyThreshold);
 
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(
                 defaultScript,
                 emergencyScript,
@@ -84,9 +86,9 @@ class ErpRedeemScriptBuilderUtilsTest {
         activationDelayValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
         assertDoesNotThrow(
             () -> ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(
-            defaultScript,
-            emergencyScript,
-            activationDelayValue)
+                defaultScript,
+                emergencyScript,
+                activationDelayValue)
         );
     }
 
@@ -95,12 +97,12 @@ class ErpRedeemScriptBuilderUtilsTest {
         Script defaultScript = createMultiSigScriptWithoutThreshold(defaultKeys);
         Script emergencyScript = createMultiSigScript(emergencyKeys, emergencyThreshold);
 
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(
-                    defaultScript,
-                    emergencyScript,
-                    activationDelayValue)
+                defaultScript,
+                emergencyScript,
+                activationDelayValue)
         );
         assertEquals(INVALID_INTERNAL_REDEEM_SCRIPTS, exception.getReason());
     }
@@ -110,12 +112,12 @@ class ErpRedeemScriptBuilderUtilsTest {
         Script defaultScript = createMultiSigScript(defaultKeys, defaultThreshold);
         Script emergencyScript = createMultiSigScriptWithoutThreshold(emergencyKeys);
 
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(
-                    defaultScript,
-                    emergencyScript,
-                    activationDelayValue)
+                defaultScript,
+                emergencyScript,
+                activationDelayValue)
         );
         assertEquals(INVALID_INTERNAL_REDEEM_SCRIPTS, exception.getReason());
     }
@@ -125,8 +127,8 @@ class ErpRedeemScriptBuilderUtilsTest {
         Script defaultScript = createMultiSigScript(defaultKeys, 0);
         Script emergencyScript = createMultiSigScript(emergencyKeys, emergencyThreshold);
 
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(
                 defaultScript,
                 emergencyScript,
@@ -140,8 +142,8 @@ class ErpRedeemScriptBuilderUtilsTest {
         Script defaultScript = createMultiSigScript(defaultKeys, defaultThreshold);
         Script emergencyScript = createMultiSigScript(emergencyKeys, 0);
 
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(
                 defaultScript,
                 emergencyScript,
@@ -155,8 +157,8 @@ class ErpRedeemScriptBuilderUtilsTest {
         Script defaultScript = createMultiSigScriptWithoutKeysSize(defaultKeys, defaultThreshold);
         Script emergencyScript = createMultiSigScript(emergencyKeys, emergencyThreshold);
 
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(
                 defaultScript,
                 emergencyScript,
@@ -170,8 +172,8 @@ class ErpRedeemScriptBuilderUtilsTest {
         Script defaultScript = createMultiSigScript(defaultKeys, defaultThreshold);
         Script emergencyScript = createMultiSigScriptWithoutKeysSize(emergencyKeys, emergencyThreshold);
 
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(
                 defaultScript,
                 emergencyScript,
@@ -185,12 +187,12 @@ class ErpRedeemScriptBuilderUtilsTest {
         Script defaultScript = createMultiSigScriptWithoutOpCheckMultisig(defaultKeys, defaultThreshold);
         Script emergencyScript = createMultiSigScript(emergencyKeys, emergencyThreshold);
 
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(
-                    defaultScript,
-                    emergencyScript,
-                    activationDelayValue)
+                defaultScript,
+                emergencyScript,
+                activationDelayValue)
         );
         assertEquals(INVALID_INTERNAL_REDEEM_SCRIPTS, exception.getReason());
     }
@@ -200,27 +202,27 @@ class ErpRedeemScriptBuilderUtilsTest {
         Script defaultScript = createMultiSigScript(defaultKeys, defaultThreshold);
         Script emergencyScript = createMultiSigScriptWithoutOpCheckMultisig(emergencyKeys, emergencyThreshold);
 
-        ErpFederationCreationException exception = assertThrows(
-            ErpFederationCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
             () -> ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(
-                    defaultScript,
-                    emergencyScript,
-                    activationDelayValue)
+                defaultScript,
+                emergencyScript,
+                activationDelayValue)
         );
         assertEquals(INVALID_INTERNAL_REDEEM_SCRIPTS, exception.getReason());
     }
 
     private Script createMultiSigScript(List<BtcECKey> keys,
-                                   int threshold) {
-       ScriptBuilder scriptBuilder = new ScriptBuilder();
-       scriptBuilder.smallNum(threshold);
-       for (BtcECKey key : keys) {
-           scriptBuilder.data(key.getPubKey());
-       }
-       scriptBuilder.smallNum(keys.size());
-       scriptBuilder.op(OP_CHECKMULTISIG);
+                                        int threshold) {
+        ScriptBuilder scriptBuilder = new ScriptBuilder();
+        scriptBuilder.smallNum(threshold);
+        for (BtcECKey key : keys) {
+            scriptBuilder.data(key.getPubKey());
+        }
+        scriptBuilder.smallNum(keys.size());
+        scriptBuilder.op(OP_CHECKMULTISIG);
 
-       return scriptBuilder.build();
+        return scriptBuilder.build();
     }
 
     private Script createMultiSigScriptWithoutThreshold(List<BtcECKey> keys) {
@@ -235,7 +237,7 @@ class ErpRedeemScriptBuilderUtilsTest {
     }
 
     private Script createMultiSigScriptWithoutKeysSize(List<BtcECKey> keys,
-                                        int threshold) {
+                                                       int threshold) {
         ScriptBuilder scriptBuilder = new ScriptBuilder();
         scriptBuilder.smallNum(threshold);
         for (BtcECKey key : keys) {
