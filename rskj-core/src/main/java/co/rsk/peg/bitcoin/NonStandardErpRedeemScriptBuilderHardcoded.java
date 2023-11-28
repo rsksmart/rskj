@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.script.Script;

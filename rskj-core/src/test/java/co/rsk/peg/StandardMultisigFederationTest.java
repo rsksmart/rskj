@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import static co.rsk.peg.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.Address;
@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.peg.bitcoin.ScriptCreationException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;

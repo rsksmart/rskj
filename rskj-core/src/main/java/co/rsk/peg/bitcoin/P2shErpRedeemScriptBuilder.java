@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Utils;
@@ -10,11 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static co.rsk.peg.ErpRedeemScriptBuilderUtils.removeOpCheckMultisig;
-
-public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRedeemScriptBuilder {
-    private static final Logger logger = LoggerFactory.getLogger(NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE.class);
-    private static final int CSV_BYTES_NEEDED_LENGTH = 2;
+public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
+    private static final Logger logger = LoggerFactory.getLogger(P2shErpRedeemScriptBuilder.class);
 
     @Override
     public Script createRedeemScriptFromKeys(List<BtcECKey> defaultPublicKeys,
@@ -28,32 +25,30 @@ public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRe
 
         ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(defaultRedeemScript, emergencyRedeemScript, csvValue);
 
-        byte[] serializedCsvValue = Utils.unsignedLongToByteArrayBE(csvValue, CSV_BYTES_NEEDED_LENGTH);
+        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
         logger.debug("[createRedeemScriptFromKeys] Creating the redeem script from the scripts");
         Script redeemScript = createRedeemScriptFromScripts(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
-        
+
         logger.debug("[createRedeemScriptFromKeys] Validating redeem script size");
         ScriptValidations.validateScriptSize(redeemScript);
-        
+
         return redeemScript;
-
     }
-
     private Script createRedeemScriptFromScripts(Script defaultRedeemScript,
-                                                        Script emergencyRedeemScript,
-                                                        byte[] serializedCsvValue) {
+                                     Script emergencyRedeemScript,
+                                     byte[] serializedCsvValue) {
 
         ScriptBuilder scriptBuilder = new ScriptBuilder();
+
         return scriptBuilder
             .op(ScriptOpCodes.OP_NOTIF)
-            .addChunks(removeOpCheckMultisig(defaultRedeemScript))
+            .addChunks(defaultRedeemScript.getChunks())
             .op(ScriptOpCodes.OP_ELSE)
             .data(serializedCsvValue)
             .op(ScriptOpCodes.OP_CHECKSEQUENCEVERIFY)
             .op(ScriptOpCodes.OP_DROP)
-            .addChunks(removeOpCheckMultisig(emergencyRedeemScript))
+            .addChunks(emergencyRedeemScript.getChunks())
             .op(ScriptOpCodes.OP_ENDIF)
-            .op(ScriptOpCodes.OP_CHECKMULTISIG)
             .build();
     }
 }

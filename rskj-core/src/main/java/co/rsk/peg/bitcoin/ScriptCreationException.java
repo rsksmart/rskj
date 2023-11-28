@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.bitcoin;
 
 public class ScriptCreationException extends RuntimeException {
     private final Reason reason;
