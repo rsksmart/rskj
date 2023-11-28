@@ -22,7 +22,7 @@ class NonStandardErpRedeemScriptBuilderFactoryTest {
     }
 
     @Test
-    void preRSKIP284_returns_hardcodedBuilder_testnet() {
+    void preRSKIP284_returns_builderHardcoded_testnet() {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         ErpRedeemScriptBuilder builder =
@@ -32,7 +32,7 @@ class NonStandardErpRedeemScriptBuilderFactoryTest {
     }
 
     @Test
-    void preRSKIP284_doesnt_return_hardcodedBuilder_mainnet() {
+    void preRSKIP284_doesnt_return_builderHardcoded_mainnet() {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
         ErpRedeemScriptBuilder builder =
