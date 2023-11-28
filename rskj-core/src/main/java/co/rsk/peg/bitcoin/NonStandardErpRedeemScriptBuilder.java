@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Utils;
@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static co.rsk.peg.ErpRedeemScriptBuilderUtils.removeOpCheckMultisig;
+import static co.rsk.peg.bitcoin.ErpRedeemScriptBuilderUtils.removeOpCheckMultisig;
 
 public class NonStandardErpRedeemScriptBuilder implements ErpRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(NonStandardErpRedeemScriptBuilder.class);

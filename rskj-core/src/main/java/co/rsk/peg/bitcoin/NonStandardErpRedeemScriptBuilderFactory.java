@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;

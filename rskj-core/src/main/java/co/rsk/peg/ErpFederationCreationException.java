@@ -9,9 +9,7 @@ public class ErpFederationCreationException extends RuntimeException {
 
     public enum Reason {
         NULL_OR_EMPTY_EMERGENCY_KEYS,
-        INVALID_INTERNAL_REDEEM_SCRIPTS,
-        INVALID_CSV_VALUE,
-        HARDCODED_LEGACY_ERP_TESTNET_REDEEM_SCRIPT
+        REDEEM_SCRIPT_CREATION_FAILED
     }
 
     public ErpFederationCreationException(String s, Reason reason) {
