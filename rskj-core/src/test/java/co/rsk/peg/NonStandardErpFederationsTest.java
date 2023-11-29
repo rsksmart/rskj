@@ -657,6 +657,8 @@ class NonStandardErpFederationsTest {
         List<FederationMember> federationMembersWithBtcKeys = FederationTestUtils.getFederationMembersWithBtcKeys(standardMultisigKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         assertThrows(ErpFederationCreationException.class, () -> new ErpFederation(
             federationMembersWithBtcKeys,
             creationTime,
@@ -664,7 +666,7 @@ class NonStandardErpFederationsTest {
             btcParams,
             emergencyMultisigKeys,
             activationDelay,
-            new NonStandardErpRedeemScriptBuilder()
+            builder
         ));
     }
 
