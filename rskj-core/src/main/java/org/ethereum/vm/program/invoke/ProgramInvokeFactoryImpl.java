@@ -61,8 +61,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         byte[] caller = tx.getSender(signatureCache).getBytes();
 
         /***         BALANCE op       ***/
-        Coin getBalanceResult = repository.getBalance(addr);
-        Coin balance = getBalanceResult == null ? Coin.ZERO : getBalanceResult;
+        Coin balance = repository.getBalance(addr);
 
         /***         GASPRICE op       ***/
         Coin txGasPrice = tx.getGasPrice();
