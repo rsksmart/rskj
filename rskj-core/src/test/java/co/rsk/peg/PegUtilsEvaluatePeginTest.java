@@ -132,13 +132,9 @@ class PegUtilsEvaluatePeginTest {
             activations
         );
 
-        RejectedPeginReason rejectedPeginReason = protocolVersion == 1 ?
-            RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD :
-            RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
-
         assertEquals(PeginProcessAction.CANNOT_BE_PROCESSED, peginEvaluationResult.getPeginProcessAction());
         assertTrue(peginEvaluationResult.getRejectedPeginReason().isPresent());
-        assertEquals(rejectedPeginReason, peginEvaluationResult.getRejectedPeginReason().get());
+        assertEquals(RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD, peginEvaluationResult.getRejectedPeginReason().get());
     }
 
     @ParameterizedTest()
@@ -163,13 +159,9 @@ class PegUtilsEvaluatePeginTest {
             activations
         );
 
-        RejectedPeginReason rejectedPeginReason = protocolVersion == 1 ?
-            RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD :
-            RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
-
         assertEquals(PeginProcessAction.CAN_BE_REFUNDED, peginEvaluationResult.getPeginProcessAction());
         assertTrue(peginEvaluationResult.getRejectedPeginReason().isPresent());
-        assertEquals(rejectedPeginReason, peginEvaluationResult.getRejectedPeginReason().get());
+        assertEquals(RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD, peginEvaluationResult.getRejectedPeginReason().get());
     }
 
     @ParameterizedTest()
