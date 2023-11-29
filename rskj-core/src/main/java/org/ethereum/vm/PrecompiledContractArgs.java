@@ -25,6 +25,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class PrecompiledContractArgs {
@@ -32,8 +33,16 @@ public class PrecompiledContractArgs {
     private Block executionBlock;
     private Repository repository;
     private BlockStore blockStore;
+    @Nullable
     private ReceiptStore receiptStore;
     private List<LogInfo> logs;
+    /**
+     * programInvoke may be set to null in some cases, like in the first loop
+     * of recursive contract calls. In those cases the contract using this variable should take
+     * that use case into account, for example the Environment contract's GetCallStackDepth method
+     * returns a value of 1 if the programInvoke is null.
+     */
+    @Nullable
     private ProgramInvoke programInvoke;
 
     public PrecompiledContractArgs() {
