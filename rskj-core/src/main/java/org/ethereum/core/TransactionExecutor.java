@@ -361,7 +361,9 @@ public class TransactionExecutor {
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
             } else {
-                ProgramInvoke programInvoke =  programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
+                ProgramInvoke programInvoke =  programInvokeFactory
+                        .createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
+
                 this.vm = new VM(vmConfig, precompiledContracts);
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts, signatureCache);
             }

@@ -1404,13 +1404,13 @@ public class Program {
 
             Block executionBlock = blockFactory.newBlock(
                     blockFactory.getBlockHeaderBuilder()
-                            .setParentHash(getPrevHash().getData())
-                            .setCoinbase(new RskAddress(getCoinbase().getLast20Bytes()))
-                            .setDifficultyFromBytes(getDifficulty().getData())
-                            .setNumber(getNumber().longValue())
-                            .setGasLimit(getGasLimit().getData())
-                            .setTimestamp(getTimestamp().longValue())
-                            .build(),
+                        .setParentHash(getPrevHash().getData())
+                        .setCoinbase(new RskAddress(getCoinbase().getLast20Bytes()))
+                        .setDifficultyFromBytes(getDifficulty().getData())
+                        .setNumber(getNumber().longValue())
+                        .setGasLimit(getGasLimit().getData())
+                        .setTimestamp(getTimestamp().longValue())
+                        .build(),
                     Collections.emptyList(),
                     Collections.emptyList()
             );
