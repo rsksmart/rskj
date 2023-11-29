@@ -83,6 +83,9 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
     private static final ActivationConfig.ForBlock tbd600Activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
+    private static final Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(ActivationConfigsForTest.all().forBlock(0));
+    private static final Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
+
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
 
@@ -135,8 +138,8 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     // fingerroot
-    private void assertUnknownTxIsProcessedAsPegin(RskAddress expectedRskAddressToBeLogged, BtcTransaction btcTransaction) throws IOException {
-        verify(bridgeEventLogger, times(1)).logPeginBtc(expectedRskAddressToBeLogged, btcTransaction, Coin.ZERO, 0);
+    private void assertUnknownTxIsProcessedAsPegin(RskAddress expectedRskAddressToBeLogged, BtcTransaction btcTransaction, int protocolVersion) throws IOException {
+        verify(bridgeEventLogger, times(1)).logPeginBtc(expectedRskAddressToBeLogged, btcTransaction, Coin.ZERO, protocolVersion);
         verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
         verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
@@ -207,24 +210,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, times(1)).logUnrefundablePegin(
             btcTransaction,
             LEGACY_PEGIN_UNDETERMINED_SENDER
-        );
-
-        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-        verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
-        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
-        Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
-    }
-
-    private void assertInvalidPeginV1IsRejected(BtcTransaction btcTransaction) throws IOException {
-        verify(bridgeEventLogger, times(1)).logRejectedPegin(
-            btcTransaction, PEGIN_V1_INVALID_PAYLOAD
-        );
-        verify(bridgeEventLogger, never()).logUnrefundablePegin(
-            any(),
-            any()
         );
 
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
@@ -550,8 +535,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
-        Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
+
 
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
         btcTransaction.addOutput(amountToSend, userAddress);
@@ -574,7 +558,67 @@ class BridgeSupportRegisterBtcTransactionTest {
         // assert
         // fingerroot - unknown tx should be processed and try to register
         if (activations == fingerrootActivations) {
-            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction);
+            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction, 0);
+        }
+        // tbd600Activations but before grace period - unknown tx should be rejected
+        else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
+            assertUnknownTxIsRejectedWithInvalidAmountReason(btcTransaction);
+        }
+        // tbd600Activations and after grace period - unknown tx are just ignored
+        else {
+            assertUnknownTxIsIgnored();
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("btc_transaction_sending_funds_to_unknown_address_args")
+    void registering_btc_v1_transaction_sending_funds_to_unknown_address(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUsePegoutTxIndex,
+        boolean shouldSendAmountBelowMinimum,
+        boolean existsRetiringFederation
+    ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        // arrange
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+
+        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+
+        BtcECKey senderBtcKey = new BtcECKey();
+        ECKey senderRskKey = ECKey.fromPublicOnly(senderBtcKey.getPubKey());
+        RskAddress rskAddress = new RskAddress(senderRskKey.getAddress());
+
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
+
+        Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
+        btcTransaction.addOutput(amountToSend, userAddress);
+        btcTransaction.addOutput(
+            Coin.ZERO,
+            PegTestUtils.createOpReturnScriptForRsk(
+                1,
+                rskAddress,
+                Optional.empty()
+            )
+        );
+
+        PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
+
+        if (existsRetiringFederation) {
+            when(provider.getOldFederation()).thenReturn(retiringFederation);
+        }
+
+        // act
+        BridgeSupport bridgeSupport = buildBridgeSupport(activations);
+        bridgeSupport.registerBtcTransaction(
+            rskTx,
+            btcTransaction.bitcoinSerialize(),
+            height,
+            pmt.bitcoinSerialize()
+        );
+
+        // assert
+        // fingerroot - unknown tx should be processed and try to register
+        if (activations == fingerrootActivations) {
+            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction, 1);
         }
         // tbd600Activations but before grace period - unknown tx should be rejected
         else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
@@ -605,8 +649,6 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
-        Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
 
         btcTransaction.addOutput(amountToSend, userAddress);
@@ -633,7 +675,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // fingerroot - unknown tx should be processed and try to register
         if (activations == fingerrootActivations) {
-            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction);
+            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction, 0);
         }
         // tbd600Activations but before grace period - unknown tx should be rejected
         else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
@@ -697,8 +739,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
-
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         for (int i = 0; i < 10; i++) {
@@ -779,9 +819,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
-        Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
-
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
@@ -822,7 +859,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
-        Coin belowMinimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations).minus(Coin.SATOSHI);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(belowMinimumPeginTxValue, activeFederation.getAddress());
@@ -860,8 +896,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
-        Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
@@ -903,7 +937,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         Coin amountPerOutput = minimumPeginTxValue.div(10);
 
         for (int i = 0; i < 10; i++) {
@@ -942,7 +975,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
@@ -980,8 +1012,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
-        Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
@@ -1018,7 +1048,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
         btcTransaction.addOutput(minimumPeginTxValue, activeFederation.getAddress());
@@ -2126,9 +2155,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         RskAddress rskAddress = new RskAddress(senderRskKey.getAddress());
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
-        Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
-
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
         btcTransaction.addOutput(amountToSend, flyoverFederationAddress);
 
@@ -2145,7 +2171,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         // assert
         // fingerroot - unknown tx should be processed and try to register
         if (activations == fingerrootActivations) {
-            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction);
+            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction, 0);
         }
         // tbd600Activations but before grace period - unknown tx should be rejected
         else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
@@ -2197,9 +2223,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         RskAddress rskAddress = new RskAddress(senderRskKey.getAddress());
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
-        Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
-
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
         btcTransaction.addOutput(amountToSend, flyoverFederationAddress);
 
@@ -2221,7 +2244,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         // assert
         // fingerroot - unknown tx should be processed and try to register
         if (activations == fingerrootActivations) {
-            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction);
+            assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction, 0);
         }
         // tbd600Activations but before grace period - unknown tx should be rejected
         else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
@@ -2267,7 +2290,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         BtcECKey senderBtcKey = new BtcECKey();
         fundingTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-        Coin amountToSend = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        Coin amountToSend = minimumPeginTxValue;
         fundingTx.addOutput(amountToSend, flyoverFederationAddress);
         fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
 
@@ -2344,7 +2367,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         BtcECKey senderBtcKey = new BtcECKey();
         fundingTx.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
 
-        Coin amountToSend = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        Coin amountToSend = minimumPeginTxValue;
         fundingTx.addOutput(amountToSend, flyoverFederationAddress);
         fundingTx.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), amountToSend));
 
