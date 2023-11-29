@@ -23,6 +23,8 @@ import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 
+import javax.annotation.Nullable;
+
 public class GetCallStackDepth extends NativeMethod {
     private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
             "getCallStackDepth",
@@ -30,6 +32,11 @@ public class GetCallStackDepth extends NativeMethod {
             new String[]{"uint32"}
     );
 
+    /**
+     * This variable could receive null as a value, in those cases the execute function
+     * will return teh minimum value of 1 as specified in RSKIP-203.
+     */
+    @Nullable
     private final ProgramInvoke programInvoke;
 
     public GetCallStackDepth(ExecutionEnvironment executionEnvironment, ProgramInvoke programInvoke) {
