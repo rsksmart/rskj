@@ -7,6 +7,12 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.stream.Stream;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -42,46 +48,30 @@ class NonStandardErpRedeemScriptBuilderFactoryTest {
         Assertions.assertFalse(builder instanceof NonStandardErpRedeemScriptBuilderHardcoded);
     }
 
-    @Test
-    void postRSKIP284_preRSKIP293_returns_builderWithCsvUnsignedBE_testnet() {
+    @ParameterizedTest
+    @MethodSource("provideNetworkParameters")
+    void postRSKIP284_preRSKIP293_returns_builderWithCsvUnsignedBE(NetworkParameters networkParameters) {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         ErpRedeemScriptBuilder builder =
             NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
         Assertions.assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
     }
 
-    @Test
-    void postRSKIP284_preRSKIP293_returns_builderWithCsvUnsignedBE_mainnet() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-
-        ErpRedeemScriptBuilder builder =
-            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
-        Assertions.assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
-    }
-
-
-    @Test
-    void postRSKIP293_returns_builder_testnet() {
+    @ParameterizedTest
+    @MethodSource("provideNetworkParameters")
+    void postRSKIP293_returns_builder(NetworkParameters networkParameters) {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         ErpRedeemScriptBuilder builder =
             NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
         Assertions.assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
 
-    @Test
-    void postRSKIP293_returns_builder_mainnet() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-
-        ErpRedeemScriptBuilder builder =
-            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
-        Assertions.assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
+    // network parameters provider
+    private static Stream<NetworkParameters> provideNetworkParameters() {
+        return Stream.of(NetworkParameters.ID_TESTNET, NetworkParameters.ID_MAINNET)
+            .map(NetworkParameters::fromID);
     }
 }
