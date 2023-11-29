@@ -22,7 +22,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.pcc.environment.Environment;
-import co.rsk.pcc.environment.GetCallStackDepth;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -41,7 +40,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -203,7 +201,11 @@ class TransactionExecutorTest {
 
         assertTrue(executeValidTransaction(transaction, blockTxSignatureCache));
 
-        verify(precompiledContract).init(eq(transaction), eq(executionBlock), eq(cacheTrack), eq(blockStore), eq(receiptStore), any(List.class));
+        ArgumentCaptor<PrecompiledContractArgs> argsCaptor = ArgumentCaptor.forClass(PrecompiledContractArgs.class);
+
+        verify(precompiledContract, times(1)).init(argsCaptor.capture());
+
+        assertEquals(cacheTrack, argsCaptor.getValue().getRepository());
     }
 
     @Test

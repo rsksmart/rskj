@@ -310,7 +310,7 @@ public class TransactionExecutor {
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
                     .transaction(tx)
                     .executionBlock(executionBlock)
-                    .repository(track)
+                    .repository(cacheTrack)
                     .blockStore(blockStore)
                     .receiptStore(receiptStore)
                     .logs(result.getLogInfoList())
