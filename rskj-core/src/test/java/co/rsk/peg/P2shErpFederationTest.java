@@ -50,7 +50,6 @@ class P2shErpFederationTest {
     private List<BtcECKey> emergencyKeys;
     private int emergencyThreshold;
     private long activationDelayValue;
-    private ActivationConfig.ForBlock activations;
 
     @BeforeEach
     void setup() {
@@ -78,7 +77,6 @@ class P2shErpFederationTest {
 
         networkParameters = bridgeConstants.getBtcParams();
 
-        activations = mock(ActivationConfig.ForBlock.class);
         federation = createDefaultP2shErpFederation();
     }
 
