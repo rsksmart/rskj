@@ -77,4 +77,9 @@ class GetCallStackDepthTest {
                 1,
                 (int) methodWithNullProgramInvoke.execute(new Object[]{}));
     }
+
+    @Test
+    void gasCostShouldBeZero() {
+        Assertions.assertEquals(0L, method.getGas(null, null));
+    }
 }
