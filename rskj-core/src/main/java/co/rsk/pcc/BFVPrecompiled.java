@@ -66,18 +66,6 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 byte[] op1 = FhContext.getInstance().getEncryptedData(op1Hash).getData();
                 byte[] op2 = FhContext.getInstance().getEncryptedData(op2Hash).getData();
 
-//                byte[] result;
-//                int noiseBudget;
-//                if(FhContext.getInstance().enableBenchmark()) {
-//                    result = bfv.add(op1, op1.length, op2, op2.length);
-////                    // todo(fedejinich) this should be at callToPrecompiledAddress
-////                    VotingMocks vm = Op.getMocks();
-////                    noiseBudget = bfv.noiseBudget(result, result.length, vm.getBfvSK(), vm.getBfvSK().length);
-////                    FhContext.getInstance().addNoiseBudgetBenchmark(noiseBudget);
-//                } else {
-//                    result = bfv.add(op1, op1.length, op2, op2.length);
-//                }
-
                 byte[] result = bfv.add(op1, op1.length, op2, op2.length);
                 byte[] hash = Keccak256Helper.keccak256(result);
 
@@ -154,7 +142,7 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 byte[] parsedData = parsedDataBuff.array();
 
                 VotingMocks mocks = getMocks();
-                byte[] pastaSK = mocks.getPastaSK(); // todo(fedejinich) pasta sk shouldn't be mocked
+                byte[] pastaSK = mocks.getPastaSK();
                 byte[] bfvSK = mocks.getBfvSK();
                 byte[] rks = mocks.getRk();
 
@@ -295,11 +283,7 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
         }
 
         public static VotingMocks getMocks() {
-            // todo(fedejinich) this should be adapted for each use :)
             try {
-//                    TranscipherMocks tMock = new ObjectMapper().readValue(new File(
-//                                    "/Users/fedejinich/Projects/rskj/rskj-core/src/test/java/org/ethereum/vm/bfv/test_simple_hhe.json"),
-//                    TranscipherMocks.class);
                 VotingMocks vm = new ObjectMapper().readValue(new File(
                                 "/Users/fedejinich/Projects/rskj/rskj-core/src/test/java/org/ethereum/vm/bfv/votes.json"),
                         VotingMocks.class);
@@ -313,11 +297,3 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
         public abstract byte[] executeOperation(byte[] data, BFV bfv);
     }
 }
-
-
-// todo(fedejinich) benchmark EVM execution time
-//   instrument evm for this
-// todo(fedejinich) benchmark transciphering time
-//   instrument rskj for this
-// todo(fedejinich) print charts with server side benchmark
-

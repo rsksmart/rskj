@@ -26,9 +26,9 @@ contract BFVAddTest {
         //address addr = 0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826;
         bytes memory input = data;
         uint256 inputLen = input.length;
-        uint256 outLen = 32768; // todo(fedejinich) this cannot be calcuated at compile time
+        uint256 outLen = 32768;
 
-        bytes memory retval; // todo(fedejinich) this might be a bytes32 memory?
+        bytes memory retval;
 
         assembly {
             // allocate output byte array

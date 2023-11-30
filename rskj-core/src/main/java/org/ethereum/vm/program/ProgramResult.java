@@ -92,7 +92,6 @@ public class ProgramResult {
     }
 
     public void spendGas(long gas) {
-        // todo(fedejinich) modify this
         gasUsed = GasCost.add(gasUsed, gas);
         maxGasUsed = Math.max(gasUsed, maxGasUsed);
     }

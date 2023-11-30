@@ -155,7 +155,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
             // store encrypted params, so they can be accessed within tx execution
             FhContext.getInstance().putEncryptedData(hash, fhData);
-            FhContext.getInstance().putEncryptedParam("encryptedVote", hash); // todo(fedejinich) this is hardcoded :(
+            // todo(fedejinich) 'encryptedVote' is hardcoded for the PoC while the hash value is real
+            FhContext.getInstance().putEncryptedParam("encryptedVote", hash);
 
             // todo(fedejinich) signature cache is bringing problems, i had to do this ugly thing :(, research about it!
             tx.getSender();

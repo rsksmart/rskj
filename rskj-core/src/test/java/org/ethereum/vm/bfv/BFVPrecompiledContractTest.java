@@ -43,7 +43,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-// todo(fedejinich) this should/will be moved to PrecompiledContractTest
 class BFVPrecompiledContractTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null,

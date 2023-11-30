@@ -134,7 +134,7 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
         }
 
         if (!transactionInfo.getReceipt().isSuccessful()) {
-            throw transactionRevertedExecutionError(); // todo(fedejinich) it'd be nice if we throw the real cause, now it's only saying "tx reverted"
+            throw transactionRevertedExecutionError();
         }
 
         return txHash;

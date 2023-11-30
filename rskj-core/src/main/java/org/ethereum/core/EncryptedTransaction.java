@@ -30,7 +30,7 @@ public class EncryptedTransaction {
         // parse encrypted params
         byte[] encryptedParams = data.get(1).getRLPData();
         RLPList encryptedParamsRlp = RLP.decodeList(encryptedParams);
-        this.encryptedParams = parseEncryptedParams(encryptedParamsRlp);
+        this.encryptedParams = decodeElement(encryptedParamsRlp);
     }
     public static void reverse(byte[] array) {
         if (array == null) {
@@ -47,21 +47,6 @@ public class EncryptedTransaction {
             i++;
         }
     }
-    // todo(fedejinich) remove size from param
-    public static long[] toLongArray(byte[] message, int size, ByteOrder order) {
-        ByteBuffer buff = ByteBuffer.wrap(message).order(order);
-        long[] result = new long[size];
-        for (int i = 0; i < result.length/Long.BYTES; i++) {
-            result[i] = buff.getLong();
-        }
-
-        return result;
-    }
-
-    private byte[] parseEncryptedParams(RLPList encryptedParamsList) {
-        // todo(fedejinich) refactor this to support multiple params
-        return decodeElement(encryptedParamsList);
-    }
 
     private byte[] decodeElement(RLPList params) {
         int paramsSize = params.size();
@@ -72,10 +57,6 @@ public class EncryptedTransaction {
         }
 
         // decodes rlp encoded data into encrypted data
-//        List<Long> lo = params.getElements().stream()
-//                .map(e -> ByteUtil.byteArrayToLong(e.getRLPData()))
-//                .collect(Collectors.toList());
-
         long[] encryptedData = new long[paramsSize];
         for (int i = 0; i < paramsSize; i++) {
             byte[] data = params.get(i).getRLPData();
