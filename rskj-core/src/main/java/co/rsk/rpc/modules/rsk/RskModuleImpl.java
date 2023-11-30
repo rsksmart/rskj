@@ -1,36 +1,32 @@
 package co.rsk.rpc.modules.rsk;
 
+import co.rsk.ExecutionBenchmark;
+import co.rsk.FhBenchmarks;
 import co.rsk.Flusher;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.TransactionGateway;
-import co.rsk.pcc.VotingMocks;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.trie.Trie;
 import co.rsk.util.HexUtils;
 import co.rsk.util.NodeStopper;
-import co.rsk.util.RLPException;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ethereum.core.*;
-import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.FhContext;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.RLP;
-import org.rsksmart.BFV;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import java.util.*;
 
 public class RskModuleImpl implements RskModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -80,6 +76,42 @@ public class RskModuleImpl implements RskModule {
     @Override
     public void flush() {
         flusher.forceFlush();
+    }
+
+    @Override
+    public String getBenchmarks() {
+        List<ExecutionBenchmark> benchmarksAdd =  FhContext.getInstance().getBenchmarksAdd();
+        List<ExecutionBenchmark> benchmarksTxExecution =  FhContext.getInstance().getBenchmarksTxExecution();
+        List<ExecutionBenchmark> benchmarksTranscipher = FhContext.getInstance().getBenchmarksTranscipher();
+
+        FhBenchmarks benchmarks = new FhBenchmarks(benchmarksAdd, benchmarksTxExecution, benchmarksTranscipher);
+
+        String s;
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper = objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+            s = objectMapper.writeValueAsString(benchmarks);
+        } catch (JsonProcessingException e) {
+            System.out.println("error getBenchmarks");
+            throw new RuntimeException(e);
+        }
+
+//        List<String> transcipherBenchmarks =  FhContext.getInstance()
+//                .getAddOperationBenchmarks()
+//                .entrySet()
+//                .stream()
+//                .map(e -> e)
+//                .collect(Collectors.toList());
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("rsk_getBenchmarks()");
+        }
+
+        return s;
+    }
+
+    private ExecutionBenchmark toRlpString(Map.Entry<String, Long> entry) {
+        return new ExecutionBenchmark(entry.getKey(), entry.getValue());
     }
 
     @Override
@@ -186,4 +218,6 @@ public class RskModuleImpl implements RskModule {
             }
         }
     }
+
+
 }

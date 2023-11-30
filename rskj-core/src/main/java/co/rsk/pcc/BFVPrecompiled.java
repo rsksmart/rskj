@@ -66,18 +66,19 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 byte[] op1 = FhContext.getInstance().getEncryptedData(op1Hash).getData();
                 byte[] op2 = FhContext.getInstance().getEncryptedData(op2Hash).getData();
 
-                byte[] result;
-                int noiseBudget;
-                if(FhContext.getInstance().enableBenchmark()) {
-                    result = bfv.add(op1, op1.length, op2, op2.length);
+//                byte[] result;
+//                int noiseBudget;
+//                if(FhContext.getInstance().enableBenchmark()) {
+//                    result = bfv.add(op1, op1.length, op2, op2.length);
+////                    // todo(fedejinich) this should be at callToPrecompiledAddress
+////                    VotingMocks vm = Op.getMocks();
+////                    noiseBudget = bfv.noiseBudget(result, result.length, vm.getBfvSK(), vm.getBfvSK().length);
+////                    FhContext.getInstance().addNoiseBudgetBenchmark(noiseBudget);
+//                } else {
+//                    result = bfv.add(op1, op1.length, op2, op2.length);
+//                }
 
-                    VotingMocks vm = Op.getMocks();
-                    noiseBudget = bfv.noiseBudget(result, result.length, vm.getBfvSK(), vm.getBfvSK().length);
-                    FhContext.getInstance().addNoiseBudgetBenchmark(noiseBudget);
-                } else {
-                    result = bfv.add(op1, op1.length, op2, op2.length);
-                }
-
+                byte[] result = bfv.add(op1, op1.length, op2, op2.length);
                 byte[] hash = Keccak256Helper.keccak256(result);
 
                 FhContext.getInstance().putEncryptedData(hash, result);
@@ -293,7 +294,7 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
             return true;
         }
 
-        private static VotingMocks getMocks() {
+        public static VotingMocks getMocks() {
             // todo(fedejinich) this should be adapted for each use :)
             try {
 //                    TranscipherMocks tMock = new ObjectMapper().readValue(new File(

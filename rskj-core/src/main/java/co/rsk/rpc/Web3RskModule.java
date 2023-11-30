@@ -47,4 +47,8 @@ public interface Web3RskModule {
     }
 
     RskModule getRskModule();
+
+    default String rsk_getBenchmarks() {
+        return getRskModule().getBenchmarks();
+    }
 }

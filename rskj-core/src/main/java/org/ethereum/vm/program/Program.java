@@ -22,7 +22,9 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.pcc.BFVPrecompiled;
 import co.rsk.pcc.NativeContract;
+import co.rsk.pcc.VotingMocks;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.rpc.modules.trace.CallType;
@@ -35,6 +37,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.FhContext;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.*;
@@ -45,6 +48,7 @@ import org.ethereum.vm.program.invoke.*;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
 import org.ethereum.vm.trace.*;
+import org.rsksmart.BFV;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1452,7 +1456,21 @@ public class Program {
     private void executePrecompiledAndHandleError(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
         try {
             logger.trace("Executing Precompiled contract...");
-            this.returnDataBuffer = contract.execute(data);
+            if(msg.getCodeAddress().equals(PrecompiledContracts.BFV_ADD_DW) && FhContext.getInstance().enableBenchmarks()) {
+                System.out.println("benchmarking add");
+                long start = System.nanoTime();
+                this.returnDataBuffer = contract.execute(data);
+                long end = System.nanoTime();
+                FhContext.getInstance().addBenchmarkAdd(start, end, this.transaction.getHash().toHexString());
+                VotingMocks vm = BFVPrecompiled.Op.getMocks();
+                byte[] elem  = FhContext.getInstance()
+                        .getEncryptedData(this.returnDataBuffer)
+                        .getData();
+                int noiseBudget = new BFV().noiseBudget(elem, elem.length, vm.getBfvSK(), vm.getBfvSK().length);
+                FhContext.getInstance().addBenchmarkNoiseBudget(noiseBudget);
+            } else {
+                this.returnDataBuffer = contract.execute(data);
+            }
             logger.trace("Executing Precompiled setting output.");
             this.memorySaveLimited(msg.getOutDataOffs().intValue(), this.returnDataBuffer, msg.getOutDataSize().intValue());
             this.stackPushOne();

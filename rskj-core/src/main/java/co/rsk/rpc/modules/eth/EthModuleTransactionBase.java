@@ -18,7 +18,6 @@
 
 package co.rsk.rpc.modules.eth;
 
-import static org.ethereum.core.EncryptedTransaction.toLongArray;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 import co.rsk.pcc.VotingMocks;
@@ -41,7 +40,6 @@ import co.rsk.net.TransactionGateway;
 import co.rsk.util.HexUtils;
 
 import java.io.File;
-import java.nio.ByteOrder;
 
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
@@ -153,7 +151,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
             byte[] hash = Keccak256Helper.keccak256(fhData);
 
-            FhContext.getInstance().addTranscipherBenchmark(start, end, tx.getHash().toString());
+            FhContext.getInstance().addBenchmarkTranscipher(start, end, tx.getHash().toString());
 
             // store encrypted params, so they can be accessed within tx execution
             FhContext.getInstance().putEncryptedData(hash, fhData);

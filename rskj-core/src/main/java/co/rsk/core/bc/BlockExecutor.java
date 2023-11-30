@@ -30,6 +30,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.db.FhContext;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -292,7 +293,10 @@ public class BlockExecutor {
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts);
+            long start = System.nanoTime();
             boolean transactionExecuted = txExecutor.executeTransaction();
+            FhContext.getInstance().addBenchmarkTxExecution(tx.getHash().toHexString(),
+                    start, System.nanoTime());
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
