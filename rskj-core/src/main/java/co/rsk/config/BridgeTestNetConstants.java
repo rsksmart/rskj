@@ -38,24 +38,16 @@ public class BridgeTestNetConstants extends BridgeConstants {
         btcParamsString = NetworkParameters.ID_TESTNET;
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(
-            Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9")
+            Hex.decode("0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124")
         );
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(
-            Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da")
+            Hex.decode("03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db")
         );
         BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(
-            Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09")
-        );
-        BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(
-            Hex.decode("034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85")
+            Hex.decode("02cd53fc53a07f211641a677d250f6de99caf620e8e77071e811a28b3bcddf0be1")
         );
 
-        List<BtcECKey> genesisFederationPublicKeys = Arrays.asList(
-            federator0PublicKey,
-            federator1PublicKey,
-            federator2PublicKey,
-            federator3PublicKey
-        );
+        List<BtcECKey> genesisFederationPublicKeys = Arrays.asList(federator0PublicKey, federator1PublicKey, federator2PublicKey);
 
         // IMPORTANT: BTC, RSK and MST keys are the same.
         // Change upon implementation of the <INSERT FORK NAME HERE> fork.
@@ -63,7 +55,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         // Currently set to:
         // Currently set to: Monday, October 8, 2018 12:00:00 AM GMT-03:00
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1538967600l);
+        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1652990225L);
 
         genesisFederation = new StandardMultisigFederation(
             federationMembers,
@@ -72,9 +64,9 @@ public class BridgeTestNetConstants extends BridgeConstants {
             getBtcParams()
         );
 
-        btc2RskMinimumAcceptableConfirmations = 10;
-        btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
-        rsk2BtcMinimumAcceptableConfirmations = 10;
+        btc2RskMinimumAcceptableConfirmations = 2;
+        btc2RskMinimumAcceptableConfirmationsOnRsk = 2;
+        rsk2BtcMinimumAcceptableConfirmations = 2;
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
 
@@ -87,9 +79,9 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         // Passphrases are kept private
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
-            "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
-            "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
-            "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
+            "045af2d6d0fdc81d5eeec2460f01b3dbc67f1998d25384e6be18e760046202508eb34c59de6fc7fb484f6df38a3cd7117789fea97710b465c2142e145a9edb31c0",
+            "04d58edc18ea1bbddbaa0a44af4d8f20bcd2356ec3a85c1a8c54cc9719439cc69c639b366d12d2fd2de95c6fa909e0557982ee6382a770209d38c1e2806f7e6cc2",
+            "0446b927069372ff2f3cafc48d9804b34675e4cf23240302468c6d92501ea5015b69c7fbaeb1a3ec299bf196b1b1ceef13c7f00f7fdb9196832ab974f4faa925dc"
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         federationChangeAuthorizer = new AddressBasedAuthorizer(
@@ -99,7 +91,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         // Passphrases are kept private
         List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
-            "04bf7e3bca7f7c58326382ed9c2516a8773c21f1b806984bb1c5c33bd18046502d97b28c0ea5b16433fbb2b23f14e95b36209f304841e814017f1ede1ecbdcfce3"
+            "04765b6f50d100f54bffd5a4cf652b8396a31790601aab038799ca48171cd0f9ad0801bf119d320480bf94ea419a04c8b67890261e303d170a172aa6e69167868e"
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
@@ -107,12 +99,12 @@ public class BridgeTestNetConstants extends BridgeConstants {
             AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
-        federationActivationAgeLegacy = 60L;
-        federationActivationAge = 120L;
+        federationActivationAgeLegacy = 10L;
+        federationActivationAge = 20L;
 
-        fundsMigrationAgeSinceActivationBegin = 60L;
-        fundsMigrationAgeSinceActivationEnd = 900L;
-        specialCaseFundsMigrationAgeSinceActivationEnd = 900L;
+        fundsMigrationAgeSinceActivationBegin = 5L;
+        fundsMigrationAgeSinceActivationEnd = 120L;
+        specialCaseFundsMigrationAgeSinceActivationEnd = 160L;
 
         List<ECKey> feePerKbAuthorizedKeys = Arrays.stream(new String[]{
             "04701d1d27f8c2ae97912d96fb1f82f10c2395fd320e7a869049268c6b53d2060dfb2e22e3248955332d88cd2ae29a398f8f3858e48dd6d8ffbc37dfd6d1aa4934",
@@ -146,12 +138,12 @@ public class BridgeTestNetConstants extends BridgeConstants {
         btcHeightWhenBlockIndexActivates = 2_039_594;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
 
-        erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
+        erpFedActivationDelay = 720; // 1 year in BTC blocks (considering 1 block every 10 minutes)
 
         erpFedPubKeysList = Arrays.stream(new String[] {
-            "0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3",
-            "034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f",
-            "0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"
+            "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
+            "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
+            "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd"
         }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         // Multisig address created in bitcoind with the following private keys:
@@ -160,14 +152,14 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
 
-        maxInputsPerPegoutTransaction = 50;
+        maxInputsPerPegoutTransaction = 5;
 
-        numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
+        numberOfBlocksBetweenPegouts = 20; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
 
         btcHeightWhenPegoutTxIndexActivates = 150; // TODO: TBD and change current mock value. This is an estimation of the btc block number once RSKIP379 is activated.
         pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
