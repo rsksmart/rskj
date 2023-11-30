@@ -1123,7 +1123,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     @ParameterizedTest
     @MethodSource("pre_and_post_rskip379_args")
-    void pegin_v1_two_outputs_to_retiring_fed_cannot_be_registered(
+    void pegin_v1_two_rsk_op_return_cannot_be_registered(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
