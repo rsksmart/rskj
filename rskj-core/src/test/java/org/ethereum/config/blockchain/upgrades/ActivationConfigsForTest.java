@@ -175,7 +175,7 @@ public class ActivationConfigsForTest {
         return rskips;
     }
 
-    private static List<ConsensusRule> getTbd600Rskips() {
+    private static List<ConsensusRule> getArrowhead600Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(Arrays.asList(
             ConsensusRule.RSKIP376
@@ -304,11 +304,11 @@ public class ActivationConfigsForTest {
         return enableTheseDisableThose(rskips, except);
     }
 
-    public static ActivationConfig tbd600() {
-        return tbd600(Collections.emptyList());
+    public static ActivationConfig arrowhead600() {
+        return arrowhead600(Collections.emptyList());
     }
 
-    public static ActivationConfig tbd600(List<ConsensusRule> except) {
+    public static ActivationConfig arrowhead600(List<ConsensusRule> except) {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(getPaidBridgeTxsRskip());
         rskips.addAll(getOrchidRskips());
@@ -321,7 +321,7 @@ public class ActivationConfigsForTest {
         rskips.addAll(getHop400Rskips());
         rskips.addAll(getHop401Rskips());
         rskips.addAll(getFingerroot500Rskips());
-        rskips.addAll(getTbd600Rskips());
+        rskips.addAll(getArrowhead600Rskips());
 
         return enableTheseDisableThose(rskips, except);
     }
