@@ -52,8 +52,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 class NonStandardErpFederationsTest {
     private ErpFederation federation;
     private NetworkParameters networkParameters;
-    private int defaultThreshold;
     private List<BtcECKey> defaultKeys;
+    private int defaultThreshold;
     private List<BtcECKey> emergencyKeys;
     private int emergencyThreshold;
     private long activationDelayValue;
@@ -110,7 +110,7 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void createInvalidLegacyErpFederation_nullErpKeys() {
+    void createFederation_withNullErpKeys_throwsErpFederationCreationException() {
         emergencyKeys = null;
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class, this::createDefaultNonStandardErpFederation
@@ -119,7 +119,7 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void createInvalidLegacyErpFederation_emptyErpKeys() {
+    void createFederation_withEmptyErpKeys_throwsErpFederationCreationException() {
         emergencyKeys = new ArrayList<>();
         ErpFederationCreationException exception = assertThrows(
             ErpFederationCreationException.class, this::createDefaultNonStandardErpFederation
@@ -128,7 +128,7 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void createValidLegacyErpFederation_oneErpKey() {
+    void createFederation_withOneErpKey_valid() {
         emergencyKeys = Collections.singletonList(emergencyKeys.get(0));
         emergencyThreshold = emergencyKeys.size() / 2 + 1;
 
@@ -142,35 +142,37 @@ class NonStandardErpFederationsTest {
 
     @ParameterizedTest
     @ValueSource(longs = { 130L, 500L, 33_000L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE})
-    void createValidNonStandardErpFederation_csvValues_post_RSKIP293(long csvValue) {
+    void createFederation_postRSKIP293_withValidCsvValues_valid(long csvValue) {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         activationDelayValue = csvValue;
 
         createAndValidateFederation();
+
+        // Also check the builder is the expected one considering the activations
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
 
     @Test
-    void createErpRedeemScriptWithCsvUnsignedBE_csvValueOneByteLong_post_RSKIP284_pre_RSKIP293() {
-        // should create the redeem script with NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE
+    void createFederation_postRSKIP284_preRSKIP293_withValidCsvValueOneByteLong_valid() {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
-        // For a value that only uses 1 byte it should add leading zeroes to complete 2 bytes
         activationDelayValue = 20L;
-
+        // For a value that only uses 1 byte it should add leading zeroes to complete 2 bytes
         createAndValidateFederation();
+
+        // Also check the builder is the expected one considering the activations
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
     }
 
     @ParameterizedTest
     @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1, 100_000L, 8_400_000L })
-    void createInvalidNonStandardErpFederation_csvValues_post_RSKIP293(long csvValue) {
+    void createFederation_postRSKIP293_withInvalidCsvValues_throwsErpFederationCreationException(long csvValue) {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -182,7 +184,8 @@ class NonStandardErpFederationsTest {
             () -> federation.getRedeemScript());
         assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
 
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        // Check the builder throws the particular expected exception
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         RedeemScriptCreationException exception = assertThrows(
             RedeemScriptCreationException.class,
             () -> builder.createRedeemScriptFromKeys(
@@ -194,7 +197,7 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void createInvalidNonStandardBuilder_aboveMaxRedeemScriptSize() {
+    void createFederation_withRedeemScriptSizeAboveMaximum_throwsScriptCreationException() {
         // add one member to exceed redeem script size limit
         List<BtcECKey> newDefaultKeys = federation.getBtcPublicKeys();
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(
@@ -307,25 +310,11 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void createLegacyErpRedeemScript_fromNonStandardErpBuilders() {
-        ErpRedeemScriptBuilder builder;
-        Script obtainedRedeemScript;
-        byte[] expectedRedeemScriptProgram;
-
-        // the emergency keys and csvValue are the same for all non-standard feds
-        BtcECKey emergency0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3"));
-        BtcECKey emergency1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"));
-        BtcECKey emergency2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f"));
-        emergencyKeys = Arrays.asList(
-            emergency0PublicKey, emergency1PublicKey, emergency2PublicKey
-        );
-        emergencyThreshold = emergencyKeys.size() / 2 + 1;
-        activationDelayValue = 52_560L;
-
-        // test NonStandardErpRedeemScriptBuilderHardcoded
-        expectedRedeemScriptProgram = // this is the redeem script program from fed non-standard hardcoded
+    void createdRedeemScriptProgramFromNonStandardErpBuilderHardcoded_withRealValues_equalsRealRedeemScriptProgram_testnet() {
+        byte[] expectedRedeemScriptProgram = // this is the redeem script program from non-standard hardcoded fed
             Hex.decode("6453210208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce210225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f42102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da210344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a0921039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb955670300cd50b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f5368ae");
 
+        // these values belong to the non-standard hardcoded fed
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4"));
         BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed6"));
@@ -337,48 +326,23 @@ class NonStandardErpFederationsTest {
         );
         defaultThreshold = defaultKeys.size() / 2 + 1;
 
-        federation = createDefaultNonStandardErpFederation();
-        builder = new NonStandardErpRedeemScriptBuilderHardcoded();
-        obtainedRedeemScript = builder
-            .createRedeemScriptFromKeys(defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            );
-        assertArrayEquals(expectedRedeemScriptProgram, obtainedRedeemScript.getProgram());
-
-
-        // test NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE
-        expectedRedeemScriptProgram = // this is the redeem script program from fed non-standard with unsigned csv
-            Hex.decode("6453210208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce210225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f421025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed62102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da210344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09556702cd50b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f5368ae");
-        federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09"));
-        defaultKeys = Arrays.asList(
-            federator0PublicKey, federator1PublicKey, federator2PublicKey,
-            federator3PublicKey, federator4PublicKey
+        BtcECKey emergency0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3"));
+        BtcECKey emergency1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"));
+        BtcECKey emergency2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f"));
+        emergencyKeys = Arrays.asList(
+            emergency0PublicKey, emergency1PublicKey, emergency2PublicKey
         );
+        emergencyThreshold = emergencyKeys.size() / 2 + 1;
+        activationDelayValue = 52_560L;
 
-        federation = createDefaultNonStandardErpFederation();
-        builder = new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE();
-        obtainedRedeemScript = builder
-            .createRedeemScriptFromKeys(defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            );
-        assertArrayEquals(expectedRedeemScriptProgram, obtainedRedeemScript.getProgram());
+        // we should activate testnet network
+        networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
-
-        // test NonStandardErpRedeemScriptBuilder
-        expectedRedeemScriptProgram = // this is the redeem script program from fed non-standard
-            Hex.decode("6453210208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce210225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f421025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed62102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da2103fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce858155670350cd00b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f5368ae");
-
-        federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce8581"));
-        defaultKeys = Arrays.asList(
-            federator0PublicKey, federator1PublicKey, federator2PublicKey,
-            federator3PublicKey, federator4PublicKey
-        );
+        // this should create the expected non-standard hardcoded fed
         federation = createDefaultNonStandardErpFederation();
 
-        builder = new NonStandardErpRedeemScriptBuilder();
-        obtainedRedeemScript = builder
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        Script obtainedRedeemScript = builder
             .createRedeemScriptFromKeys(defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue
@@ -387,54 +351,122 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void getP2SHScriptAndAddress() {
-        // standard and emergency keys from last real non-standard erp fed in testnet
+    void createdRedeemScriptProgramFromNonStandardErpBuilderCsvUnsignedBE_withRealValues_equalsRealRedeemScriptProgram_mainnet() {
+        byte[] expectedRedeemScriptProgram = // this is the redeem script program from fed non-standard with unsigned csv
+            Hex.decode("6453210208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce210225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f421025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed62102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da210344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09556702cd50b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f5368ae");
+
+        // these values belong to the non-standard csv unsigned be fed
+        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce"));
+        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4"));
+        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed6"));
+        BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
+        BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09"));
+        defaultKeys = Arrays.asList(
+            federator0PublicKey, federator1PublicKey, federator2PublicKey,
+            federator3PublicKey, federator4PublicKey
+        );
+        defaultThreshold = defaultKeys.size() / 2 + 1;
+
+        BtcECKey emergency0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3"));
+        BtcECKey emergency1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"));
+        BtcECKey emergency2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f"));
+        emergencyKeys = Arrays.asList(
+            emergency0PublicKey, emergency1PublicKey, emergency2PublicKey
+        );
+        emergencyThreshold = emergencyKeys.size() / 2 + 1;
+        activationDelayValue = 52_560L;
+
+        // we should activate RSKIP284
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        // this should create the expected non-standard with csv unsigned be fed
+        federation = createDefaultNonStandardErpFederation();
+
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        Script obtainedRedeemScript = builder
+            .createRedeemScriptFromKeys(
+                defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            );
+        assertArrayEquals(expectedRedeemScriptProgram, obtainedRedeemScript.getProgram());
+    }
+
+    @Test
+    void createdRedeemScriptProgramFromNonStandardErpBuilder_withRealValues_equalsRealRedeemScriptProgram_mainnet() {
+        byte[] expectedRedeemScriptProgram = // this is the redeem script program from fed non-standard
+            Hex.decode("6453210208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce210225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f421025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed62102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da2103fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce858155670350cd00b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f5368ae");
+
+        // these values belong to the non-standard fed
+        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce"));
+        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4"));
+        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed6"));
+        BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
+        BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce8581"));
+        defaultKeys = Arrays.asList(
+            federator0PublicKey, federator1PublicKey, federator2PublicKey,
+            federator3PublicKey, federator4PublicKey
+        );
+        defaultThreshold = defaultKeys.size() / 2 + 1;
+
+        BtcECKey emergency0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3"));
+        BtcECKey emergency1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"));
+        BtcECKey emergency2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f"));
+        emergencyKeys = Arrays.asList(
+            emergency0PublicKey, emergency1PublicKey, emergency2PublicKey
+        );
+        emergencyThreshold = emergencyKeys.size() / 2 + 1;
+        activationDelayValue = 52_560L;
+
+        // we should activate RSKIP284 and RSKIP293
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        // this should create the expected non-standard fed
+        federation = createDefaultNonStandardErpFederation();
+
+        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        Script obtainedRedeemScript = builder
+            .createRedeemScriptFromKeys(defaultKeys, defaultThreshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue
+            );
+        assertArrayEquals(expectedRedeemScriptProgram, obtainedRedeemScript.getProgram());
+    }
+
+    @Test
+    void createdFederationInfo_withRealValues_equalsExistingFederationInfo_testnet() {
+        // values from last real non-standard erp fed in testnet
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
         networkParameters = bridgeTestNetConstants.getBtcParams();
         emergencyKeys = bridgeTestNetConstants.getErpFedPubKeysList();
         activationDelayValue = bridgeTestNetConstants.getErpFedActivationDelay();
 
-        defaultKeys = Arrays.asList(
-            BtcECKey.fromPublicOnly(
-                Hex.decode("0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce")
-            ),
-            BtcECKey.fromPublicOnly(
-                Hex.decode("0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4")
-            ),
-            BtcECKey.fromPublicOnly(
-                Hex.decode("025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed6")
-            ),
-            BtcECKey.fromPublicOnly(
-                Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da")
-            ),
-            BtcECKey.fromPublicOnly(
-                Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09")
-            )
-        );
+        defaultKeys = Arrays.stream(new String[]{
+            "0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce",
+            "0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4",
+            "025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed6",
+            "02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da",
+            "0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09",
+        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+        String expectedProgram = "a91412d5d2996618c8abcb1e6fc17be3cd8e2790c25f87";
+        Address expectedAddress = Address.fromBase58(networkParameters, "2MtxpJPt2xCa3AyFYUjTT7Aop9Z6gGf4rqA");
 
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        // this should create the real fed
         ErpFederation realLegacyErpFederation = createDefaultNonStandardErpFederation();
         Script p2shScript = realLegacyErpFederation.getP2SHScript();
         Address address = realLegacyErpFederation.getAddress();
 
-        String expectedProgram = "a91412d5d2996618c8abcb1e6fc17be3cd8e2790c25f87";
-        Address expectedAddress = Address.fromBase58(
-            networkParameters,
-            "2MtxpJPt2xCa3AyFYUjTT7Aop9Z6gGf4rqA"
-        );
-
         assertEquals(expectedProgram, Hex.toHexString(p2shScript.getProgram()));
         assertEquals(3, p2shScript.getChunks().size());
-        assertEquals(
-            address,
-            p2shScript.getToAddress(networkParameters)
-        );
+        assertEquals(address, p2shScript.getToAddress(networkParameters));
         assertEquals(expectedAddress, address);
     }
 
     @Test
-    void getErpPubKeys_uncompressed_public_keys() {
+    void getErpPubKeys_fromUncompressedPublicKeys_equals() {
         // Public keys used for creating federation, but uncompressed format now
         emergencyKeys = emergencyKeys
             .stream()
