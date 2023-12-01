@@ -177,7 +177,7 @@ class ReleaseTransactionBuilderTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         List<UTXO> utxos = Arrays.asList(

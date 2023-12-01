@@ -56,7 +56,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             erpFedKeys,
             5063,
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         federationList = Collections.singletonList(federation);

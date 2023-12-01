@@ -92,7 +92,7 @@ class P2shErpFederationTest {
             networkParameters,
             emergencyKeys,
             activationDelayValue,
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
     }
 
@@ -206,7 +206,6 @@ class P2shErpFederationTest {
 
     @Test
     void testEquals_same() {
-        P2shErpRedeemScriptBuilder p2shErpRedeemScriptBuilder = new P2shErpRedeemScriptBuilder();
         ErpFederation otherFederation = new ErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
@@ -214,7 +213,7 @@ class P2shErpFederationTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            p2shErpRedeemScriptBuilder
+            new P2shErpFederationContext()
         );
 
         assertEquals(federation, otherFederation);
@@ -342,7 +341,7 @@ class P2shErpFederationTest {
             btcParams,
             Arrays.asList(new BtcECKey(), new BtcECKey()),
             10_000,
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         assertEquals(legacyFed.getRedeemScript(), p2shFed.getDefaultRedeemScript());
@@ -454,7 +453,7 @@ class P2shErpFederationTest {
                     NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
                     generatedScript.emergencyFed,
                     generatedScript.timelock,
-                    new P2shErpRedeemScriptBuilder()
+                    new P2shErpFederationContext()
                 );
 
                 Script rskjScript = erpFederation.getRedeemScript();
@@ -488,7 +487,7 @@ class P2shErpFederationTest {
             networkParameters,
             emergencyKeys,
             activationDelay,
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         Coin value = Coin.valueOf(1_000_000);

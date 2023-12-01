@@ -14,9 +14,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -614,11 +611,11 @@ class BridgeStorageProviderFederationTests {
                     bridgeConstantsRegtest.getBtcParams(),
                     bridgeConstantsRegtest.getErpFedPubKeysList(),
                     bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    new P2shErpRedeemScriptBuilder()
+                    new P2shErpFederationContext()
                 );
             case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
-                ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-                    NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstantsRegtest.getBtcParams());
+                ErpFederationContext erpFederationContext =
+                    NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, bridgeConstantsRegtest.getBtcParams());
                 return new ErpFederation(
                     members,
                     Instant.now(),
@@ -626,7 +623,7 @@ class BridgeStorageProviderFederationTests {
                     bridgeConstantsRegtest.getBtcParams(),
                     bridgeConstantsRegtest.getErpFedPubKeysList(),
                     bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    erpRedeemScriptBuilder
+                    erpFederationContext
                 );
             default:
                 return new StandardMultisigFederation(

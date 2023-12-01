@@ -47,6 +47,7 @@ public abstract class Federation {
     protected Script redeemScript;
     protected Script p2shScript;
     protected Address address;
+    protected int formatVersion;
 
     protected Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber, NetworkParameters btcParams) {
         // Sorting members ensures same order of federation members for same members
@@ -57,6 +58,8 @@ public abstract class Federation {
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
     }
+
+    public abstract int getFormatVersion();
 
     public List<FederationMember> getMembers() {
         // Safe to return members since

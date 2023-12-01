@@ -13,7 +13,6 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -73,7 +72,7 @@ class BridgeSupportGetTransactionTypeTest {
             bridgeMainnetConstants.getGenesisFederation().getBtcParams(),
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         Block rskCurrentBlock = new BlockGenerator().createBlock(
@@ -102,7 +101,7 @@ class BridgeSupportGetTransactionTypeTest {
             btcMainnetParams,
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
         when(provider.getOldFederation()).thenReturn(p2shRetiringFederation);
 

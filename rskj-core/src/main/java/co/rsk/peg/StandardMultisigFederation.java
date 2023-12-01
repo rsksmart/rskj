@@ -26,6 +26,8 @@ import co.rsk.peg.bitcoin.ScriptValidations;
 import java.time.Instant;
 import java.util.List;
 
+import static co.rsk.peg.FederationFormatVersion.STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION;
+
 /**
  * Immutable representation of an RSK Federation in the context of
  * a specific BTC network.
@@ -43,6 +45,11 @@ public class StandardMultisigFederation extends Federation {
         super(members, creationTime, creationBlockNumber, btcParams);
 
         validateRedeemScriptSize();
+    }
+
+    @Override
+    public int getFormatVersion() {
+        return STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION;
     }
 
     @Override

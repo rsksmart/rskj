@@ -24,9 +24,6 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import co.rsk.peg.resources.TestConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -298,11 +295,11 @@ class PendingFederationTest {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                new P2shErpRedeemScriptBuilder()
+                new P2shErpFederationContext()
             );
         } else if (isRskip201Active) {
-            ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-                NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
+            ErpFederationContext erpFederationContext =
+                NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, bridgeConstants.getBtcParams());
             expectedFederation = new ErpFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
@@ -310,7 +307,7 @@ class PendingFederationTest {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                erpRedeemScriptBuilder
+                erpFederationContext
             );
         } else {
             expectedFederation = new StandardMultisigFederation(

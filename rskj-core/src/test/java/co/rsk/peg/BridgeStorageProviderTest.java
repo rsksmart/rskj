@@ -410,7 +410,7 @@ class BridgeStorageProviderTest {
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilderHardcoded()
+            new NonStandardErpFederationContextHardcoded()
         );
 
         testGetNewFederationPostMultiKey(erpFederation);
@@ -426,7 +426,7 @@ class BridgeStorageProviderTest {
             newFederation.getBtcParams(),
             bridgeTestnetInstance.getErpFedPubKeysList(),
             bridgeTestnetInstance.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         testGetNewFederationPostMultiKey(p2shErpFederation);
@@ -554,7 +554,7 @@ class BridgeStorageProviderTest {
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         testSaveNewFederationPostMultiKey(erpFederation, ERP_FEDERATION_FORMAT_VERSION, activations);
@@ -576,7 +576,7 @@ class BridgeStorageProviderTest {
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         testSaveNewFederationPostMultiKey(p2shErpFederation, P2SH_ERP_FEDERATION_FORMAT_VERSION, activations);
@@ -695,7 +695,7 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilderHardcoded()
+            new NonStandardErpFederationContextHardcoded()
         );
 
         testGetOldFederation(erpFederation, activations);
@@ -718,7 +718,7 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE()
+            new NonStandardErpFederationContextWithCsvUnsignedBE()
         );
 
         testGetOldFederation(erpFederation, activations);
@@ -742,7 +742,7 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         testGetOldFederation(erpFederation, activations);
@@ -761,7 +761,7 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         testGetOldFederation(p2shErpFederation, activations);
@@ -883,7 +883,7 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         testSaveOldFederation(erpFederation, ERP_FEDERATION_FORMAT_VERSION, activations);
@@ -903,7 +903,7 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         testSaveOldFederation(p2shErpFederation, P2SH_ERP_FEDERATION_FORMAT_VERSION, activations);

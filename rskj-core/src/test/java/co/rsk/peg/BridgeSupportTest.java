@@ -6576,7 +6576,7 @@ class BridgeSupportTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         Stream<Arguments> preRskip271 = Stream.of(
@@ -6644,7 +6644,7 @@ class BridgeSupportTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         Stream<Arguments> preRskip385 = Stream.of(
@@ -6711,7 +6711,7 @@ class BridgeSupportTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         Stream<Arguments> postRskip385 = Stream.of(

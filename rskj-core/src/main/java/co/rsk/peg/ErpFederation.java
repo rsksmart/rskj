@@ -7,8 +7,7 @@ import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.RedeemScriptCreationException;
+import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.utils.EcKeyUtils;
 import java.time.Instant;
 import java.util.Collections;
@@ -22,23 +21,32 @@ public class ErpFederation extends Federation {
     private final long activationDelay;
     private Script defaultRedeemScript;
     private Script defaultP2SHScript;
-    private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
+    private ErpFederationContext erpFederationContext;
 
-    protected ErpFederation(
+    public ErpFederation(
         List<FederationMember> members,
         Instant creationTime,
         long creationBlockNumber,
         NetworkParameters btcParams,
         List<BtcECKey> erpPubKeys,
         long activationDelay,
-        ErpRedeemScriptBuilder erpRedeemScriptBuilder) {
+        ErpFederationContext erpFederationContext) {
 
         super(members, creationTime, creationBlockNumber, btcParams);
         validateEmergencyKeys(erpPubKeys);
 
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
-        this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
+        this.erpFederationContext = erpFederationContext;
+    }
+
+    @Override
+    public int getFormatVersion() {
+        return erpFederationContext.getFederationFormatVersion();
+    }
+
+    public ErpRedeemScriptBuilder getErpRedeemScriptBuilder() {
+        return erpFederationContext.getRedeemScriptBuilder();
     }
 
     private void validateEmergencyKeys(List<BtcECKey> erpPubKeys) {
@@ -47,8 +55,6 @@ public class ErpFederation extends Federation {
             throw new ErpFederationCreationException(message, NULL_OR_EMPTY_EMERGENCY_KEYS);
         }
     }
-
-    public ErpRedeemScriptBuilder getErpRedeemScriptBuilder() { return erpRedeemScriptBuilder; }
 
     public List<BtcECKey> getErpPubKeys() {
         return Collections.unmodifiableList(erpPubKeys);
@@ -74,7 +80,7 @@ public class ErpFederation extends Federation {
     public Script getRedeemScript() {
         if (redeemScript == null) {
             try {
-                redeemScript = erpRedeemScriptBuilder.createRedeemScriptFromKeys(
+                redeemScript = getErpRedeemScriptBuilder().createRedeemScriptFromKeys(
                     getBtcPublicKeys(),
                     getNumberOfSignaturesRequired(),
                     erpPubKeys,
@@ -102,5 +108,4 @@ public class ErpFederation extends Federation {
 
         return defaultP2SHScript;
     }
-
 }

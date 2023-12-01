@@ -33,8 +33,6 @@ import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
@@ -836,7 +834,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -897,7 +895,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -957,7 +955,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         // Create a tx from the retired erp fed to the active fed
@@ -1013,7 +1011,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         // Create a tx from the retired erp fed to the active fed
@@ -1252,7 +1250,7 @@ class BridgeUtilsTest {
             networkParameters,
             emergencyKeys,
             activationDelay,
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         Script flyoverP2shErpRedeemScript = FastBridgeP2shErpRedeemScriptParser.createFastBridgeP2shErpRedeemScript(
@@ -1317,7 +1315,7 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         List<BtcECKey> activeFederationKeys = Stream.of(
@@ -1332,7 +1330,7 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1387,7 +1385,7 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         List<BtcECKey> activeFederationKeys = Stream.of(
@@ -1402,7 +1400,7 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1459,7 +1457,7 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1526,7 +1524,7 @@ class BridgeUtilsTest {
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1949,7 +1947,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
@@ -2025,7 +2023,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
@@ -3122,7 +3120,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         // Create a pegout tx with 50 inputs and 200 outputs
@@ -3166,7 +3164,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
 
         // Create a pegout tx with 100 inputs and 50 outputs
@@ -3543,7 +3541,7 @@ class BridgeUtilsTest {
             genesisFederation.getBtcParams(),
             bridgeConstantsRegtest.getErpFedPubKeysList(),
             bridgeConstantsRegtest.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilder()
+            new NonStandardErpFederationContext()
         );
     }
 

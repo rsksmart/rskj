@@ -58,7 +58,7 @@ class NonStandardErpFederationsTest {
     private int emergencyThreshold;
     private long activationDelayValue;
     private ActivationConfig.ForBlock activations;
-    private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
+    private ErpFederationContext erpFederationContext;
 
     @BeforeEach
     void setup() {
@@ -95,8 +95,8 @@ class NonStandardErpFederationsTest {
         List<FederationMember> standardMembers = FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
-        erpRedeemScriptBuilder =
-            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
+        erpFederationContext =
+            NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, networkParameters);
 
         return new ErpFederation(
             standardMembers,
@@ -105,7 +105,7 @@ class NonStandardErpFederationsTest {
             networkParameters,
             emergencyKeys,
             activationDelayValue,
-            erpRedeemScriptBuilder
+            erpFederationContext
         );
     }
 
@@ -242,7 +242,7 @@ class NonStandardErpFederationsTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            erpRedeemScriptBuilder
+            erpFederationContext
         );
         assertEquals(federation, otherFederation);
     }
@@ -256,7 +256,7 @@ class NonStandardErpFederationsTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            erpRedeemScriptBuilder
+            erpFederationContext
         );
         assertEquals(federation, otherFederation);
     }
@@ -270,7 +270,7 @@ class NonStandardErpFederationsTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            erpRedeemScriptBuilder
+            erpFederationContext
         );
         assertEquals(federation, otherFederation);
     }
@@ -690,7 +690,7 @@ class NonStandardErpFederationsTest {
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext federationContext = new NonStandardErpFederationContext();
         assertThrows(ErpFederationCreationException.class, () -> new ErpFederation(
             federationMembersWithBtcKeys,
             creationTime,
@@ -698,7 +698,7 @@ class NonStandardErpFederationsTest {
             btcParams,
             emergencyMultisigKeys,
             activationDelay,
-            builder
+            federationContext
         ));
     }
 

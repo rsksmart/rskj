@@ -1241,8 +1241,8 @@ class BridgeSerializationUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
         when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
 
-        ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
+        ErpFederationContext erpFederationContext =
+            NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, bridgeConstants.getBtcParams());
 
         for (int i = 0; i < NUM_CASES; i++) {
             int numMembers = randomInRange(2, 14);
@@ -1272,7 +1272,7 @@ class BridgeSerializationUtilsTest {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                erpRedeemScriptBuilder
+                erpFederationContext
             );
             byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
 
@@ -1299,7 +1299,7 @@ class BridgeSerializationUtilsTest {
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay(),
-                    new P2shErpRedeemScriptBuilder()
+                    new P2shErpFederationContext()
                 );
                 byte[] serializedTestP2shErpFederation = BridgeSerializationUtils.serializeFederation(testP2shErpFederation);
 

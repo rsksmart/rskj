@@ -24,9 +24,6 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
@@ -328,8 +325,8 @@ public class BridgeSerializationUtils {
             BridgeSerializationUtils::deserializeFederationMember
         );
 
-        ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
+        ErpFederationContext erpFederationContext
+            = NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, bridgeConstants.getBtcParams());
 
         return new ErpFederation(
             federation.getMembers(),
@@ -338,7 +335,7 @@ public class BridgeSerializationUtils {
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            erpRedeemScriptBuilder
+            erpFederationContext
         );
     }
 
@@ -358,7 +355,7 @@ public class BridgeSerializationUtils {
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            new P2shErpFederationContext()
         );
     }
 
