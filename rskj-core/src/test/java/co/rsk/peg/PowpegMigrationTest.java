@@ -1416,7 +1416,7 @@ class PowpegMigrationTest {
             .forBlock(0);
 
         ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest
-            .tbd600()
+            .arrowhead600()
             .forBlock(0);
 
         return Stream.of(
