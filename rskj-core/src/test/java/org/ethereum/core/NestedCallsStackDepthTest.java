@@ -90,7 +90,7 @@ public class NestedCallsStackDepthTest {
     @Test
     void testContractConsensusInactive() throws FileNotFoundException, DslProcessorException {
         TestSystemProperties rskip203Disabled = new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.hardforkActivationHeights.tbd600", ConfigValueFactory.fromAnyRef(-1))
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.arrowhead600", ConfigValueFactory.fromAnyRef(-1))
         );
         buildEthModule(rskip203Disabled);
 
