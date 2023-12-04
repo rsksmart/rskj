@@ -141,6 +141,32 @@ class NonStandardErpFederationsTest {
                 activationDelayValue));
     }
 
+
+    @ParameterizedTest
+    @ValueSource(ints = {-100, 0})
+    void createFederation_withInvalidThresholdValues_throwsIllegalArgumentException(int threshold) {
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        assertThrows(IllegalArgumentException.class,
+            () -> builder.createRedeemScriptFromKeys(
+                    defaultKeys, threshold,
+                    emergencyKeys, emergencyThreshold,
+                    activationDelayValue)
+        );
+    }
+
+    @Test
+    void createFederation_withThresholdAboveDefaultKeysSize_throwsIllegalArgumentException() {
+        int defaultKeysSize = defaultKeys.size();
+
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        assertThrows(IllegalArgumentException.class,
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultKeysSize + 1,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue)
+        );
+    }
+
     @ParameterizedTest
     @ValueSource(longs = { 130L, 500L, 33_000L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE})
     void createFederation_postRSKIP293_withValidCsvValues_valid(long csvValue) {
@@ -191,7 +217,11 @@ class NonStandardErpFederationsTest {
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         ScriptCreationException exception = assertThrows(
             ScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
+            () -> builder
+                .createRedeemScriptFromKeys(
+                    defaultKeys, defaultThreshold,
+                    emergencyKeys, emergencyThreshold,
+                    activationDelayValue)
         );
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
