@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 
+import static co.rsk.peg.FederationFormatVersion.*;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
@@ -48,9 +49,6 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
-    protected static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = 1000;
-    protected static final int LEGACY_ERP_FEDERATION_FORMAT_VERSION = 2000;
-    protected static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
 
     // Dummy value to use when saved Fast Bridge Derivation Argument Hash
     private static final byte FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE = (byte) 1;
@@ -413,7 +411,7 @@ public class BridgeStorageProvider {
                 // assume it is a standard federation to keep backwards compatibility
                 saveStorageVersion(
                     OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
+                    STANDARD_MULTISIG_FEDERATION.getFormatVersion()
                 );
             } else {
                 saveStorageVersion(
@@ -465,7 +463,7 @@ public class BridgeStorageProvider {
             RepositorySerializer<PendingFederation> serializer = BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys;
 
             if (activations.isActive(RSKIP123)) {
-                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
+                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION.getFormatVersion());
                 serializer = BridgeSerializationUtils::serializePendingFederation;
             }
 
@@ -1012,30 +1010,30 @@ public class BridgeStorageProvider {
         int version,
         BridgeConstants bridgeConstants
     ) {
-        switch (version) {
-            case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
-                return BridgeSerializationUtils.deserializeLegacyErpFederation(
-                    data,
-                    bridgeConstants,
-                    activations
-                );
-            case P2SH_ERP_FEDERATION_FORMAT_VERSION:
-                return BridgeSerializationUtils.deserializeP2shErpFederation(
-                    data,
-                    bridgeConstants
-                );
-            case STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION:
-                return BridgeSerializationUtils.deserializeStandardMultisigFederation(
-                    data,
-                    networkParameters
-                );
-            default:
-                // To keep backwards compatibility
-                return BridgeSerializationUtils.deserializeStandardMultisigFederation(
-                    data,
-                    networkParameters
-                );
+        if (version == STANDARD_MULTISIG_FEDERATION.getFormatVersion()) {
+            return BridgeSerializationUtils.deserializeStandardMultisigFederation(
+                data,
+                networkParameters
+            );
         }
+        if (version == NON_STANDARD_ERP_FEDERATION.getFormatVersion()) {
+            return BridgeSerializationUtils.deserializeLegacyErpFederation(
+                data,
+                bridgeConstants,
+                activations
+            );
+        }
+        if (version == P2SH_ERP_FEDERATION.getFormatVersion()) {
+            return BridgeSerializationUtils.deserializeP2shErpFederation(
+                data,
+                bridgeConstants
+            );
+        }
+        // To keep backwards compatibility
+        return BridgeSerializationUtils.deserializeStandardMultisigFederation(
+            data,
+            networkParameters
+        );
     }
 
     private <T> T safeGetFromRepository(BridgeStorageIndexKey keyAddress, RepositoryDeserializer<T> deserializer) {
