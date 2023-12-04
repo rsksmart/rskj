@@ -256,34 +256,13 @@ public enum MessageType {
     STATE_CHUNK_REQUEST_MESSAGE(20) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            byte[] rlpId = list.get(0).getRLPData();
-            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpBlockNumber = message.get(0).getRLPData();
-            byte[] rlpFrom = message.get(1).getRLPData();
-            byte[] rlpChunkSize = message.get(2).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
-            long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
-            long chunkSize = rlpChunkSize == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpChunkSize).longValue();
-            return new SnapStateChunkRequestMessage(id, blockNumber, from, chunkSize);
+            return SnapStateChunkRequestMessage.create(blockFactory, list);
         }
     },
     STATE_CHUNK_RESPONSE_MESSAGE(21) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            byte[] rlpId = list.get(0).getRLPData();
-            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] chunkOfTrieKeys = message.get(0).getRLPData();
-            byte[] rlpBlockNumber = message.get(1).getRLPData();
-            byte[] rlpFrom = message.get(2).getRLPData();
-            byte[] rlpTo = message.get(3).getRLPData();
-            byte[] rlpComplete = message.get(4).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
-            long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
-            long to = rlpTo == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpTo).longValue();
-            boolean complete = rlpComplete == null ? Boolean.FALSE : rlpComplete[0] != 0;
-            return new SnapStateChunkResponseMessage(id, chunkOfTrieKeys, blockNumber, from, to, complete);
+            return SnapStateChunkResponseMessage.create(blockFactory, list);
         }
     },
     SNAP_STATUS_REQUEST_MESSAGE(22) {

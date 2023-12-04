@@ -39,7 +39,7 @@ public class SnapshotProcessor {
     public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
-    private static final long DELAY_BTW_RUNS = 2 * 60 * 1000; // 20 minutes
+    private static final long DELAY_BTW_RUNS = 1 * 1000; // 20 minutes
     private static final int CHUNK_MAX = 400;
     private static final int CHUNK_MIN = 100;
     private final Blockchain blockchain;
@@ -61,7 +61,7 @@ public class SnapshotProcessor {
     private Block lastBlock;
     private BlockDifficulty lastBlockDifficulty;
 
-    private ConcurrentLinkedQueue<ChunkTask> chunkTasks = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<ChunkTask> chunkTasks = new ConcurrentLinkedQueue<>();
     private List<Peer> peers = new ArrayList<>();
 
     // flag for parallel requests
@@ -73,6 +73,8 @@ public class SnapshotProcessor {
     );
 
     private long nextExpectedFrom = 0L;
+
+    private boolean syncing;
 
     public SnapshotProcessor(Blockchain blockchain,
                              TrieStore trieStore,
@@ -91,10 +93,15 @@ public class SnapshotProcessor {
         this.difficulties = Lists.newArrayList();
         this.transactionPool = transactionPool;
         this.parallel = isParallelEnabled;
+        this.syncing = false;
     }
 
     public void startSyncing(List<Peer> peers, SnapSyncState snapSyncState) {
         // TODO(snap-poc) temporary hack, code in this should be moved to SnapSyncState probably
+        if (this.syncing) {
+            return;
+        }
+        this.syncing = true;
         this.snapSyncState = snapSyncState;
         this.peers = peers;
         this.stateSize = BigInteger.ZERO;
@@ -108,6 +115,7 @@ public class SnapshotProcessor {
 
     // TODO(snap-poc) should be called on errors too
     private void stopSyncing() {
+        this.syncing = false;
         this.stateSize = BigInteger.ZERO;
         this.stateChunkSize = BigInteger.ZERO;
         this.snapSyncState.finished();
@@ -207,6 +215,7 @@ public class SnapshotProcessor {
         logger.debug("CLIENT - Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
         SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(messageId++, blockNumber, from, chunkSize);
         peer.sendMessage(message);
+        logger.debug("CLIENT - Request sent state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
     }
 
     public void processStateChunkRequest(Peer sender, SnapStateChunkRequestMessage request) {
@@ -244,15 +253,17 @@ public class SnapshotProcessor {
 
         long totalChunkTime = System.currentTimeMillis() - startChunk;
 
-        logger.debug("SERVER - Sending state chunk of {} bytes to node {}, totalTime {}ms", chunkBytes.length, sender.getPeerNodeID(), totalChunkTime);
+        logger.debug("SERVER - Sending state chunk from {} of {} bytes to node {}, totalTime {}ms", request.getFrom(), chunkBytes.length, sender.getPeerNodeID(), totalChunkTime);
         sender.sendMessage(responseMessage);
     }
 
     public void processStateChunkResponse(Peer peer, SnapStateChunkResponseMessage message) {
         responseQueue.add(message);
+        logger.debug("CLIENT - State chunk received from: {}", message.getFrom());
         while (!responseQueue.isEmpty()) {
             SnapStateChunkResponseMessage nextMessage = responseQueue.peek();
-            if (nextMessage != null && nextMessage.getFrom() == nextExpectedFrom) {
+            logger.debug("CLIENT - State chunk dequeued from: {} - expected: {}", nextMessage.getFrom(), nextExpectedFrom);
+            if (nextMessage.getFrom() == nextExpectedFrom) {
                 processOrderedStateChunkResponse(peer, responseQueue.poll());
                 nextExpectedFrom += chunkSize * 1024L;
             } else {
@@ -263,6 +274,7 @@ public class SnapshotProcessor {
 
     public void processOrderedStateChunkResponse(Peer peer, SnapStateChunkResponseMessage message) {
         try {
+            logger.debug("CLIENT - Processing State chunk received from: {}", message.getFrom());
             peersInformation.getOrRegisterPeer(peer);
             snapSyncState.newChunk();
 
@@ -293,7 +305,7 @@ public class SnapshotProcessor {
 
             if (trieElements.size() > 0) {
                 for (int i = 0; i < trieElements.size(); i++) {
-                    final RLPElement trieElement =  trieElements.get(i);
+                    final RLPElement trieElement = trieElements.get(i);
                     byte[] value = trieElement.getRLPData();
                     nodes.add(TrieDTO.decodeFromSync(value));
                 }
@@ -323,21 +335,24 @@ public class SnapshotProcessor {
                 if (!message.isComplete()) {
                     executeNextChunkRequestTask(peer);
                 } else {
-                    rebuildStateAndSave();
-                    logger.info("CLIENT - Snapshot sync finished!");
-                    //TODO (pato): this.stopSyncing();
-                    try {
-                        Thread.sleep(DELAY_BTW_RUNS);
-                    } catch (InterruptedException ignored) {
-                    }
-                    this.allNodes = Lists.newArrayList();
-                    this.stateSize = BigInteger.ZERO;
-                    this.stateChunkSize = BigInteger.ZERO;
-                    this.chunkTasks = new ConcurrentLinkedQueue<>();
-                    duplicateTheChunkSize();
-                    logger.debug("Starting again the infinite loop! With chunk size = {}", this.chunkSize);
-                    generateChunkRequestTasks();
-                    startRequestingChunks();
+                    new Thread(() -> {
+                        rebuildStateAndSave();
+                        logger.info("CLIENT - Snapshot sync finished!");
+                        //TODO (pato): this.stopSyncing();
+                        try {
+                            Thread.sleep(DELAY_BTW_RUNS);
+                        } catch (InterruptedException ignored) {
+                        }
+                        SnapshotProcessor.this.allNodes = Lists.newArrayList();
+                        SnapshotProcessor.this.stateSize = BigInteger.ZERO;
+                        SnapshotProcessor.this.stateChunkSize = BigInteger.ZERO;
+                        SnapshotProcessor.this.chunkTasks.clear();
+                        SnapshotProcessor.this.nextExpectedFrom = 0;
+                        duplicateTheChunkSize();
+                        logger.debug("Starting again the infinite loop! With chunk size = {}", SnapshotProcessor.this.chunkSize);
+                        generateChunkRequestTasks();
+                        startRequestingChunks();
+                    }).start();
                 }
             } else {
                 logger.error("Error while verifying chunk response: {}", message);
@@ -372,6 +387,7 @@ public class SnapshotProcessor {
         this.chunkSize = this.chunkSize * 2;
         this.chunkSize = this.chunkSize > CHUNK_MAX ? CHUNK_MIN : this.chunkSize;
     }
+
     /**
      * Once state share is received, rebuild the trie, save it in db and save all the blocks.
      */
@@ -381,7 +397,8 @@ public class SnapshotProcessor {
         logger.debug("CLIENT - Mapping elements...");
         final TrieDTO[] nodeArray = this.allNodes.toArray(new TrieDTO[0]);
         logger.debug("CLIENT - Recovering trie...");
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, (t)->{});//TODO (pato): this.trieStore::saveDTO);
+        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, (t) -> {
+        });//TODO (pato): this.trieStore::saveDTO);
         if (!result.isPresent() || !Arrays.equals(this.remoteRootHash, result.get().calculateHash())) {
             logger.error("CLIENT - State final validation FAILED");
         } else {
@@ -414,8 +431,8 @@ public class SnapshotProcessor {
     }
 
     private void startRequestingChunks() {
-        peers.subList(0, parallel ? 0 : peers.size() - 1);
-        for (Peer peer : peers) {
+        List<Peer> peerList = peers.subList(0, !parallel ? 1 : peers.size());
+        for (Peer peer : peerList) {
             executeNextChunkRequestTask(peer);
         }
     }
