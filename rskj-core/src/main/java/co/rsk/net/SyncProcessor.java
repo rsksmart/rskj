@@ -279,8 +279,8 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startSnapSync(List<Peer> peers) {
-        logger.info("Start Snap syncing with #{} nodes", peers.size());
+    public void startSnapSync(PeersInformation peers) {
+        logger.info("Start Snap syncing with #{} nodes", peers);
         setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration, peers));
     }
 

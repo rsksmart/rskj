@@ -118,7 +118,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         syncEventsHandler.onLongSyncUpdate(true, peerBestBlockNumOpt.get());
 
         // send the LIST
-        syncEventsHandler.startSnapSync(bestPeers);
+        syncEventsHandler.startSnapSync(peersInformation);
         return true;
     }
 

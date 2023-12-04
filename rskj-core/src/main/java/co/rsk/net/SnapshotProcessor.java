@@ -62,7 +62,7 @@ public class SnapshotProcessor {
     private BlockDifficulty lastBlockDifficulty;
 
     private final ConcurrentLinkedQueue<ChunkTask> chunkTasks = new ConcurrentLinkedQueue<>();
-    private List<Peer> peers = new ArrayList<>();
+    private PeersInformation peers;
 
     // flag for parallel requests
     private final boolean parallel;
@@ -96,7 +96,7 @@ public class SnapshotProcessor {
         this.syncing = false;
     }
 
-    public void startSyncing(List<Peer> peers, SnapSyncState snapSyncState) {
+    public void startSyncing(PeersInformation peers, SnapSyncState snapSyncState) {
         // TODO(snap-poc) temporary hack, code in this should be moved to SnapSyncState probably
         if (this.syncing) {
             return;
@@ -108,7 +108,7 @@ public class SnapshotProcessor {
         this.stateChunkSize = BigInteger.ZERO;
         // get more than one peer, use the peer queue
         // TODO(snap-poc) deal with multiple peers algorithm here
-        Peer peer = peers.get(0);
+        Peer peer = peers.getBestPeerCandidates().get(0);
         logger.info("CLIENT - Starting Snapshot sync.");
         requestSnapStatus(peer);
     }
@@ -270,6 +270,9 @@ public class SnapshotProcessor {
                 break;
             }
         }
+        if (!message.isComplete()) {
+            executeNextChunkRequestTask(peer);
+        }
     }
 
     public void processOrderedStateChunkResponse(Peer peer, SnapStateChunkResponseMessage message) {
@@ -333,7 +336,7 @@ public class SnapshotProcessor {
                 this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
                 logger.debug("CLIENT - State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
                 if (!message.isComplete()) {
-                    executeNextChunkRequestTask(peer);
+                    //executeNextChunkRequestTask(peer);
                 } else {
                     new Thread(() -> {
                         rebuildStateAndSave();
@@ -410,7 +413,8 @@ public class SnapshotProcessor {
     }
 
     private void startRequestingChunks() {
-        List<Peer> peerList = peers.subList(0, !parallel ? 1 : peers.size());
+        List<Peer> bestPeerCandidates = peers.getBestPeerCandidates();
+        List<Peer> peerList = bestPeerCandidates.subList(0, !parallel ? 1 : bestPeerCandidates.size());
         for (Peer peer : peerList) {
             executeNextChunkRequestTask(peer);
         }

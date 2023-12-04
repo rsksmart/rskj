@@ -31,9 +31,9 @@ public class SnapSyncState extends BaseSyncState {
 
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
     private final SnapshotProcessor snapshotProcessor;
-    private final List<Peer> peers;
+    private final PeersInformation peers;
 
-    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor, SyncConfiguration syncConfiguration, List<Peer> peers) {
+    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor, SyncConfiguration syncConfiguration, PeersInformation peers) {
         super(syncEventsHandler, syncConfiguration);
         this.snapshotProcessor = snapshotProcessor; // TODO(snap-poc) code in SnapshotProcessor should be moved here probably
         this.peers = peers;
@@ -63,7 +63,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     protected void onMessageTimeOut() {
         // TODO(snap-poc) handle multiple peers here, not just stop syncing, similarly to co.rsk.net.sync.DownloadingBodiesSyncState.tick
-        Peer timeoutPeer = this.peers.get(0);
+        Peer timeoutPeer = this.peers.getBestPeer().get();
         syncEventsHandler.stopSyncing();
 
         logger.warn("Timeout on SnapSyncState for peer {}", timeoutPeer.getPeerNodeID());
