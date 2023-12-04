@@ -12,11 +12,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-import static co.rsk.peg.FederationFormatVersion.NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class NonStandardErpFederationContextFactoryTest {
+class NonStandardErpRedeemScriptBuilderFactoryTest {
 
     ActivationConfig.ForBlock activations;
     NetworkParameters networkParameters;
@@ -31,28 +30,20 @@ class NonStandardErpFederationContextFactoryTest {
     void preRSKIP284_returns_builderHardcoded_testnet() {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
-        ErpFederationContext context =
-            NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, networkParameters);
+        ErpRedeemScriptBuilder builder =
+            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
 
-        ErpRedeemScriptBuilder builder = context.getRedeemScriptBuilder();
         Assertions.assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderHardcoded);
-
-        int version = context.getFederationFormatVersion();
-        Assertions.assertEquals(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, version);
     }
 
     @Test
     void preRSKIP284_doesnt_return_builderHardcoded_mainnet() {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
-        ErpFederationContext context =
-            NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, networkParameters);
+        ErpRedeemScriptBuilder builder =
+            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
 
-        ErpRedeemScriptBuilder builder = context.getRedeemScriptBuilder();
         Assertions.assertFalse(builder instanceof NonStandardErpRedeemScriptBuilderHardcoded);
-
-        int version = context.getFederationFormatVersion();
-        Assertions.assertEquals(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, version);
     }
 
     @ParameterizedTest
@@ -60,14 +51,9 @@ class NonStandardErpFederationContextFactoryTest {
     void postRSKIP284_preRSKIP293_returns_builderWithCsvUnsignedBE(NetworkParameters networkParameters) {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        ErpFederationContext context =
-            NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, networkParameters);
-
-        ErpRedeemScriptBuilder builder = context.getRedeemScriptBuilder();
+        ErpRedeemScriptBuilder builder =
+            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
         Assertions.assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
-
-        int version = context.getFederationFormatVersion();
-        Assertions.assertEquals(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, version);
     }
 
     @ParameterizedTest
@@ -76,14 +62,9 @@ class NonStandardErpFederationContextFactoryTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederationContext context =
-            NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, networkParameters);
-
-        ErpRedeemScriptBuilder builder = context.getRedeemScriptBuilder();
+        ErpRedeemScriptBuilder builder =
+            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
         Assertions.assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
-
-        int version = context.getFederationFormatVersion();
-        Assertions.assertEquals(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, version);
     }
 
     // network parameters provider
