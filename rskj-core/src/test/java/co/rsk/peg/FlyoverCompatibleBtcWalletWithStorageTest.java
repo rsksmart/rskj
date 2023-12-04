@@ -14,6 +14,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.time.Instant;
@@ -49,6 +50,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
+        ErpRedeemScriptBuilder erpBuilder = new NonStandardErpRedeemScriptBuilder();
         erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
@@ -56,7 +58,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             erpFedKeys,
             5063,
-            new NonStandardErpFederationContext()
+            new NonStandardErpFederationContext(erpBuilder)
         );
 
         federationList = Collections.singletonList(federation);

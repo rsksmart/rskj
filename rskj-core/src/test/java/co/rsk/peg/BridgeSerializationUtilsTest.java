@@ -26,6 +26,8 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
+import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
 import co.rsk.peg.resources.TestConstants;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
@@ -1233,13 +1235,15 @@ class BridgeSerializationUtilsTest {
         } else {
             bridgeConstants = BridgeTestNetConstants.getInstance();
         }
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
         when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
 
-        ErpFederationContext erpFederationContext =
-            NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, bridgeConstants.getBtcParams());
+        ErpRedeemScriptBuilder builder = NonStandardErpRedeemScriptBuilderFactory
+            .getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
 
         for (int i = 0; i < NUM_CASES; i++) {
             int numMembers = randomInRange(2, 14);
@@ -1269,7 +1273,7 @@ class BridgeSerializationUtilsTest {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                erpFederationContext
+                context
             );
             byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
 

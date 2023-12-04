@@ -19,8 +19,11 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
+import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
@@ -120,8 +123,10 @@ public final class PendingFederation {
         if (activations.isActive(ConsensusRule.RSKIP201)) {
             logger.info("[buildFederation] Going to create an ERP Federation");
 
-            ErpFederationContext erpFederationContext
-                = NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, bridgeConstants.getBtcParams());
+            NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+            ErpRedeemScriptBuilder builder =
+                NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
+            ErpFederationContext context = new NonStandardErpFederationContext(builder);
 
             return new ErpFederation(
                 members,
@@ -130,7 +135,7 @@ public final class PendingFederation {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                erpFederationContext
+                context
             );
         }
 

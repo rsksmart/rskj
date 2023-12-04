@@ -10,6 +10,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
+import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
@@ -136,7 +138,10 @@ class PowpegMigrationTest {
         Federation originalPowpeg;
         switch (oldPowPegFederationType) {
             case legacyErp:
-                ErpFederationContext erpFederationContext = new NonStandardErpFederationContext();
+                NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+                ErpRedeemScriptBuilder builder =
+                    NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
+                ErpFederationContext context = new NonStandardErpFederationContext(builder);
                 originalPowpeg = new ErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
@@ -144,7 +149,7 @@ class PowpegMigrationTest {
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay(),
-                    erpFederationContext
+                    context
                 );
                 break;
             case p2shErp:

@@ -403,6 +403,10 @@ class BridgeStorageProviderTest {
     void getNewFederation_erp_fed() {
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation newFederation = buildMockFederation(100, 200, 300);
+
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilderHardcoded();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         ErpFederation erpFederation = new ErpFederation(
             newFederation.getMembers(),
             newFederation.getCreationTime(),
@@ -410,7 +414,7 @@ class BridgeStorageProviderTest {
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpFederationContextHardcoded()
+            context
         );
 
         testGetNewFederationPostMultiKey(erpFederation);
@@ -547,6 +551,9 @@ class BridgeStorageProviderTest {
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation newFederation = buildMockFederation(100, 200, 300);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         ErpFederation erpFederation = new ErpFederation(
             newFederation.getMembers(),
             newFederation.getCreationTime(),
@@ -554,7 +561,7 @@ class BridgeStorageProviderTest {
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpFederationContext()
+            context
         );
 
         testSaveNewFederationPostMultiKey(erpFederation, ERP_FEDERATION_FORMAT_VERSION, activations);
@@ -688,6 +695,9 @@ class BridgeStorageProviderTest {
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilderHardcoded();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         ErpFederation erpFederation = new ErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
@@ -695,7 +705,7 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpFederationContextHardcoded()
+            context
         );
 
         testGetOldFederation(erpFederation, activations);
@@ -711,6 +721,9 @@ class BridgeStorageProviderTest {
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         ErpFederation erpFederation = new ErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
@@ -718,7 +731,7 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpFederationContextWithCsvUnsignedBE()
+            context
         );
 
         testGetOldFederation(erpFederation, activations);
@@ -727,6 +740,7 @@ class BridgeStorageProviderTest {
     @Test
     void getOldFederation_nonStandard_fed() {
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
+        NetworkParameters networkParams = bridgeConstants.getBtcParams();
         Federation oldFederation = buildMockFederation(100, 200, 300);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -735,6 +749,10 @@ class BridgeStorageProviderTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
+        ErpRedeemScriptBuilder builder = NonStandardErpRedeemScriptBuilderFactory
+            .getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         ErpFederation erpFederation = new ErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
@@ -742,7 +760,7 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpFederationContext()
+            context
         );
 
         testGetOldFederation(erpFederation, activations);
@@ -876,6 +894,10 @@ class BridgeStorageProviderTest {
 
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation oldFederation = buildMockFederation(100, 200, 300);
+
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         ErpFederation erpFederation = new ErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
@@ -883,7 +905,7 @@ class BridgeStorageProviderTest {
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpFederationContext()
+            context
         );
 
         testSaveOldFederation(erpFederation, ERP_FEDERATION_FORMAT_VERSION, activations);

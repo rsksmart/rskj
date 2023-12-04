@@ -33,6 +33,8 @@ import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
+import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
@@ -827,6 +829,9 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
@@ -834,7 +839,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpFederationContext()
+            context
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -888,6 +893,9 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
@@ -895,7 +903,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpFederationContext()
+            context
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -948,6 +956,9 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
@@ -955,7 +966,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpFederationContext()
+            context
         );
 
         // Create a tx from the retired erp fed to the active fed
@@ -1004,6 +1015,9 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
@@ -1011,7 +1025,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpFederationContext()
+            context
         );
 
         // Create a tx from the retired erp fed to the active fed
@@ -1940,6 +1954,9 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         ErpFederation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
@@ -1947,7 +1964,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpFederationContext()
+            context
         );
 
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
@@ -2016,6 +2033,9 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
@@ -2023,7 +2043,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpFederationContext()
+            context
         );
 
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
@@ -3113,6 +3133,9 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
@@ -3120,7 +3143,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpFederationContext()
+            context
         );
 
         // Create a pegout tx with 50 inputs and 200 outputs
@@ -3157,6 +3180,9 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
@@ -3164,7 +3190,7 @@ class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            new NonStandardErpFederationContext()
+            context
         );
 
         // Create a pegout tx with 100 inputs and 50 outputs
@@ -3534,6 +3560,10 @@ class BridgeUtilsTest {
 
     private ErpFederation createErpFederation() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
+
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         return new ErpFederation(
             genesisFederation.getMembers(),
             genesisFederation.getCreationTime(),
@@ -3541,7 +3571,7 @@ class BridgeUtilsTest {
             genesisFederation.getBtcParams(),
             bridgeConstantsRegtest.getErpFedPubKeysList(),
             bridgeConstantsRegtest.getErpFedActivationDelay(),
-            new NonStandardErpFederationContext()
+            context
         );
     }
 

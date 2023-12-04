@@ -9,11 +9,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
+import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -614,8 +617,10 @@ class BridgeStorageProviderFederationTests {
                     new P2shErpFederationContext()
                 );
             case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
-                ErpFederationContext erpFederationContext =
-                    NonStandardErpFederationContextFactory.getNonStandardErpFederationContext(activations, bridgeConstantsRegtest.getBtcParams());
+                NetworkParameters networkParameters = bridgeConstantsRegtest.getBtcParams();
+                ErpRedeemScriptBuilder builder =
+                    NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
+                ErpFederationContext context = new NonStandardErpFederationContext(builder);
                 return new ErpFederation(
                     members,
                     Instant.now(),
@@ -623,7 +628,7 @@ class BridgeStorageProviderFederationTests {
                     bridgeConstantsRegtest.getBtcParams(),
                     bridgeConstantsRegtest.getErpFedPubKeysList(),
                     bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    erpFederationContext
+                    context
                 );
             default:
                 return new StandardMultisigFederation(

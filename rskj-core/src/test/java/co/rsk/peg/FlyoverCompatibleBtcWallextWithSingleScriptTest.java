@@ -10,6 +10,7 @@ import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.time.Instant;
@@ -44,6 +45,9 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
@@ -51,7 +55,7 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             erpFedKeys,
             5063,
-            new NonStandardErpFederationContext()
+            context
         );
 
         federationList = Collections.singletonList(federation);

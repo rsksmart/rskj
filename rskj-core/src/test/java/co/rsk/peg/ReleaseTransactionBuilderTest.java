@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -166,6 +167,9 @@ class ReleaseTransactionBuilderTest {
         // Use mainnet constants to test a real situation
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        ErpFederationContext context = new NonStandardErpFederationContext(builder);
+
         Federation erpFederation = new ErpFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(
                 new BtcECKey(),
@@ -177,7 +181,7 @@ class ReleaseTransactionBuilderTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpFederationContext()
+            context
         );
 
         List<UTXO> utxos = Arrays.asList(
