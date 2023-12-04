@@ -41,7 +41,7 @@ public class SnapshotProcessor {
     public static final int BLOCKS_REQUIRED = 6000;
     private static final long DELAY_BTW_RUNS = 1 * 1000; // 20 minutes
     private static final int CHUNK_MAX = 400;
-    private static final int CHUNK_MIN = 100;
+    private static final int CHUNK_MIN = 25;
     private final Blockchain blockchain;
     private final TrieStore trieStore;
     private final BlockStore blockStore;
@@ -327,7 +327,7 @@ public class SnapshotProcessor {
                 postRootNodes.add(node);
             }
 
-            if (verifyChunk(this.remoteRootHash, preRootNodes, nodes, postRootNodes)) {
+            if (TrieDTOInOrderRecoverer.verifyChunk(this.remoteRootHash, preRootNodes, nodes, postRootNodes)) {
                 this.allNodes.addAll(nodes);
                 this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
                 this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
@@ -364,28 +364,10 @@ public class SnapshotProcessor {
         }
     }
 
-    public static boolean verifyChunk(byte[] remoteRootHash, List<TrieDTO> preRootNodes, List<TrieDTO> nodes, List<TrieDTO> postRootNodes) {
-        List<TrieDTO> allNodes = Lists.newArrayList(preRootNodes);
-        allNodes.addAll(nodes);
-        allNodes.addAll(postRootNodes);
-        if (allNodes.isEmpty()) {
-            logger.error("CLIENT - Received empty chunk");
-            return false;
-        }
-        TrieDTO[] nodeArray = allNodes.toArray(new TrieDTO[0]);
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, (t) -> {
-        });
-        if (!result.isPresent() || !Arrays.equals(remoteRootHash, result.get().calculateHash())) {
-            logger.error("CLIENT - Received chunk with wrong trie");
-            return false;
-        }
-        logger.debug("CLIENT - Received chunk with correct trie");
-        return true;
-    }
+
 
     private void duplicateTheChunkSize() {
-        this.chunkSize = this.chunkSize * 2;
-        this.chunkSize = this.chunkSize > CHUNK_MAX ? CHUNK_MIN : this.chunkSize;
+        this.chunkSize = this.chunkSize * 2 > CHUNK_MAX ? CHUNK_MIN : this.chunkSize * 2;
     }
 
     /**
@@ -394,7 +376,6 @@ public class SnapshotProcessor {
     private void rebuildStateAndSave() {
         logger.debug("CLIENT - State Completed! {} chunks ({} bytes) - chunk size = {}",
                 this.stateSize.toString(), this.stateChunkSize.toString(), this.chunkSize);
-        logger.debug("CLIENT - Mapping elements...");
         final TrieDTO[] nodeArray = this.allNodes.toArray(new TrieDTO[0]);
         logger.debug("CLIENT - Recovering trie...");
         Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, (t) -> {
@@ -419,14 +400,12 @@ public class SnapshotProcessor {
 
     private void generateChunkRequestTasks() {
         long from = 0;
-
         logger.debug("Generating chunk request tasks...");
         while (from < remoteTrieSize) {
             ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize);
             chunkTasks.add(task);
             from += chunkSize * 1024L;
         }
-
         logger.debug("Generated: {} chunk request tasks.", chunkTasks.size());
     }
 

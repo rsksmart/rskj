@@ -19,6 +19,7 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
+import com.google.common.collect.Lists;
 import org.ethereum.crypto.Keccak256Helper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,12 +45,30 @@ public class TrieDTOInOrderRecoverer {
             return Optional.of(fromTrieDTO(trieCollection[start], Optional.empty(), Optional.empty()));
         }
         int indexRoot = findRoot(trieCollection, start, end);
-        //logger.info("-- indexRoot: {}, childrenSize:{}", indexRoot, trieCollection[indexRoot].getChildrenSize().value);
         Optional<TrieDTO> left = recoverSubtree(trieCollection, start, indexRoot - 1, processTrieDTO);
         left.ifPresent(processTrieDTO);
         Optional<TrieDTO> right = recoverSubtree(trieCollection, indexRoot + 1, end, processTrieDTO);
         right.ifPresent(processTrieDTO);
         return Optional.of(fromTrieDTO(trieCollection[indexRoot], left, right));
+    }
+
+    public static boolean verifyChunk(byte[] remoteRootHash, List<TrieDTO> preRootNodes, List<TrieDTO> nodes, List<TrieDTO> postRootNodes) {
+        List<TrieDTO> allNodes = Lists.newArrayList(preRootNodes);
+        allNodes.addAll(nodes);
+        allNodes.addAll(postRootNodes);
+        if (allNodes.isEmpty()) {
+            logger.warn("Received empty chunk");
+            return false;
+        }
+        TrieDTO[] nodeArray = allNodes.toArray(new TrieDTO[0]);
+        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, (t) -> {
+        });
+        if (!result.isPresent() || !Arrays.equals(remoteRootHash, result.get().calculateHash())) {
+            logger.warn("Root hash does not match! Calculated is present: {}", result.isPresent());
+            return false;
+        }
+        logger.debug("Received chunk with correct trie.");
+        return true;
     }
 
     private static int findRoot(TrieDTO[] trieCollection, int start, int end) {
@@ -77,13 +96,6 @@ public class TrieDTOInOrderRecoverer {
             Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(rightNode.toMessage()));
             result.setRightHash(hash.getBytes());
         });
-        /*logger.info("-- ChildrenSize: {} ,Hash: {}, Left: {}, Right:{}",
-                result.getChildrenSize().value,
-                getHashString(result.toMessage()).substring(0, 6),
-                left.isPresent() ? HexUtils.toJsonHex(result.getLeft()).substring(0, 6):"",
-                right.isPresent() ? HexUtils.toJsonHex(result.getRight()).substring(0, 6):"");
-*/
-
         return result;
     }
 
