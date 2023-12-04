@@ -86,6 +86,7 @@ public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
     private static final String CLIENT_VERSION_PREFIX = "RskJ";
+    private static final String NON_EXISTING_KEY_RESPONSE = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
     private final MinerClient minerClient;
     private final MinerServer minerServer;
@@ -474,22 +475,31 @@ public class Web3Impl implements Web3 {
     }
 
     private String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, String blockId) {
-        String response = null;
+        String s = null;
 
         try {
+            RskAddress addr = address.getAddress();
+
             AccountInformationProvider accountInformationProvider =
                     web3InformationRetriever.getInformationProvider(blockId);
-            DataWord key = DataWord.valueOf(HexUtils.strHexOrStrNumberToByteArray(storageIdx.getHexNumber()));
 
-            response = Optional.ofNullable(accountInformationProvider.getStorageValue(address.getAddress(), key))
-                    .map(DataWord::getData)
-                    .map(HexUtils::toUnformattedJsonHex)
-                    .orElse("0x0");
-            return response;
+            DataWord sv = accountInformationProvider
+                    .getStorageValue(addr, DataWord.valueOf(HexUtils.strHexOrStrNumberToByteArray(storageIdx.getHexNumber())));
+
+            if (sv == null) {
+                s = NON_EXISTING_KEY_RESPONSE;
+            } else {
+                s = HexUtils.toUnformattedJsonHex(sv.getData());
+            }
+
+            return s;
         } finally {
-            logger.debug("eth_getStorageAt({}, {}, {}): {}", address, storageIdx, blockId, response);
+            if (logger.isDebugEnabled()) {
+                logger.debug("eth_getStorageAt({}, {}, {}): {}", address, storageIdx, blockId, s);
+            }
         }
     }
+
 
     @Override
     public String rsk_getStorageBytesAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam) {
@@ -509,7 +519,7 @@ public class Web3Impl implements Web3 {
 
             response = Optional.ofNullable(accountInformationProvider.getStorageBytes(address.getAddress(), key))
                     .map(HexUtils::toUnformattedJsonHex)
-                    .orElse("0x0");
+                    .orElse("0x" + String.join("", Collections.nCopies(64, "0")));
             return response;
         } finally {
             logger.debug("rsk_getStorageAt({}, {}, {}): {}", address, storageIdx, blockId, response);

@@ -209,7 +209,7 @@ class Web3ImplUnitTest {
                 .thenReturn(null);
 
         String result = target.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam);
-        assertEquals("0x0",
+        assertEquals("0x0000000000000000000000000000000000000000000000000000000000000000",
                 result);
     }
 

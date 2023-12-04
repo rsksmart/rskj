@@ -110,7 +110,7 @@ class Web3ImplTest {
 
     private static final String BALANCE_10K_HEX = "0x2710"; //10.000
     private static final String CALL_RESPOND = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
-
+    private static final String NON_EXISTING_KEY_RESPONSE = "0x0000000000000000000000000000000000000000000000000000000000000000";
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final SyncProcessor syncProcessor = mock(SyncProcessor.class);
@@ -367,7 +367,7 @@ class Web3ImplTest {
         //[ "0x<address>", { "blockNumber": "0x0" } -> return storage at given address in genesis block
     void getStorageAtAccountAndBlockNumber() {
         final ChainParams chain = chainWithAccount10kBalance(false);
-        assertByBlockNumber("0x0", blockRef -> chain.web3.eth_getStorageAt(
+        assertByBlockNumber(NON_EXISTING_KEY_RESPONSE, blockRef -> chain.web3.eth_getStorageAt(
                 new HexAddressParam(chain.accountAddress),
                 new HexNumberParam("0x0"),
                 new BlockRefParam(blockRef)));
@@ -377,7 +377,7 @@ class Web3ImplTest {
         //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return storage at given address in genesis block
     void getStorageAtAccountAndBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(false);
-        assertByBlockHash("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(
+        assertByBlockHash(NON_EXISTING_KEY_RESPONSE, chain.block, blockRef -> chain.web3.eth_getStorageAt(
                 new HexAddressParam(chain.accountAddress),
                 new HexNumberParam("0x0"),
                 new BlockRefParam(blockRef)));
@@ -428,7 +428,7 @@ class Web3ImplTest {
         //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return storage at given address in genesis block
     void getStorageAtAccountAndCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
-        assertCanonicalBlockHashWhenCanonical("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(
+        assertCanonicalBlockHashWhenCanonical(NON_EXISTING_KEY_RESPONSE, chain.block, blockRef -> chain.web3.eth_getStorageAt(
                 new HexAddressParam(chain.accountAddress),
                 new HexNumberParam("0x0"),
                 new BlockRefParam(blockRef)));
@@ -438,7 +438,7 @@ class Web3ImplTest {
         //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return storage at given address in genesis block
     void getStorageAtAccountAndCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
-        assertCanonicalBlockHashWhenNotCanonical("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(
+        assertCanonicalBlockHashWhenNotCanonical(NON_EXISTING_KEY_RESPONSE, chain.block, blockRef -> chain.web3.eth_getStorageAt(
                 new HexAddressParam(chain.accountAddress),
                 new HexNumberParam("0x0"),
                 new BlockRefParam(blockRef)));
@@ -448,7 +448,7 @@ class Web3ImplTest {
         // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return storage at given address in specified block
     void getStorageAtAccountAndNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(true);
-        assertNonCanonicalBlockHashWhenNotCanonical("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(
+        assertNonCanonicalBlockHashWhenNotCanonical(NON_EXISTING_KEY_RESPONSE, chain.block, blockRef -> chain.web3.eth_getStorageAt(
                 new HexAddressParam(chain.accountAddress),
                 new HexNumberParam("0x0"),
                 new BlockRefParam(blockRef)));
@@ -458,7 +458,7 @@ class Web3ImplTest {
         // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return storage at given address in specified bloc
     void getStorageAtAccountAndNonCanonicalBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(true);
-        assertNonCanonicalBlockHash("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(
+        assertNonCanonicalBlockHash(NON_EXISTING_KEY_RESPONSE, chain.block, blockRef -> chain.web3.eth_getStorageAt(
                 new HexAddressParam(chain.accountAddress),
                 new HexNumberParam("0x0"),
                 new BlockRefParam(blockRef)));
