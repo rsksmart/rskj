@@ -3962,16 +3962,10 @@ class BridgeStorageProviderTest {
     }
 
     private int getFederationVersion(Federation federation) {
-        if (federation instanceof StandardMultisigFederation) {
-            return BridgeStorageProvider.STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION;
-        } else if (federation instanceof ErpFederation) {
-            ErpRedeemScriptBuilder builder = ((ErpFederation) federation).getErpRedeemScriptBuilder();
-            if (builder instanceof P2shErpRedeemScriptBuilder) {
-                return BridgeStorageProvider.P2SH_ERP_FEDERATION_FORMAT_VERSION;
-            } else {
-                return BridgeStorageProvider.LEGACY_ERP_FEDERATION_FORMAT_VERSION;
-            }
+        try {
+            return federation.getFormatVersion();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Unknown Federation type: " + federation.getClass());
         }
-        throw new IllegalArgumentException("Unknown Federation type: " + federation.getClass());
     }
 }

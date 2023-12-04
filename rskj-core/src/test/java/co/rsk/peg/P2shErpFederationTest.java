@@ -151,17 +151,6 @@ class P2shErpFederationTest {
             ErpFederationCreationException.class,
             () -> federation.getRedeemScript());
         assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
-
-        // Check the builder throws the particular expected exception
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        RedeemScriptCreationException builderException = assertThrows(
-            RedeemScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            ));
-        assertEquals(INVALID_CSV_VALUE, builderException.getReason());
     }
 
     @Test
@@ -174,7 +163,7 @@ class P2shErpFederationTest {
         newDefaultKeys.add(federator10PublicKey);
         defaultKeys = newDefaultKeys;
 
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         ScriptCreationException exception = assertThrows(
             ScriptCreationException.class,
             () -> builder.createRedeemScriptFromKeys(
@@ -256,7 +245,7 @@ class P2shErpFederationTest {
     @Test
     void createdRedeemScriptProgramFromP2shErpBuilder_withRealValues_equalsRealRedeemScriptProgram() {
         // this is a known redeem script program
-        byte[] redeemScriptProgram = Hex.decode("64542102099fd69cf6a350679a05593c3ff814bfaa281eb6dde505c953cf2875979b120921022a159227df514c7b7808ee182ae07d71770b67eda1e5ee668272761eefb2c24c210233bc8c1a994a921d7818f93e57a559373133ba531928843bf84c59c15e47eab02102937df9948c6f18359e473beeee0a19c27dd4f6d4114e5809aa862671bb765b5b2102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da2103db2ebad883823cefe8b2336c03b8d9c6afee4cbac77c7e935bc8c51ec20b26632103fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce858157ae670350cd00b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f53ae68");
+        byte[] expectedRedeemScriptProgram = Hex.decode("64542102099fd69cf6a350679a05593c3ff814bfaa281eb6dde505c953cf2875979b120921022a159227df514c7b7808ee182ae07d71770b67eda1e5ee668272761eefb2c24c210233bc8c1a994a921d7818f93e57a559373133ba531928843bf84c59c15e47eab02102937df9948c6f18359e473beeee0a19c27dd4f6d4114e5809aa862671bb765b5b2102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da2103db2ebad883823cefe8b2336c03b8d9c6afee4cbac77c7e935bc8c51ec20b26632103fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce858157ae670350cd00b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f53ae68");
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02099fd69cf6a350679a05593c3ff814bfaa281eb6dde505c953cf2875979b1209"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("022a159227df514c7b7808ee182ae07d71770b67eda1e5ee668272761eefb2c24c"));
@@ -284,14 +273,8 @@ class P2shErpFederationTest {
 
         createAndValidateFederation();
 
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        Script obtainedRedeemScript =
-            builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            );
-        assertArrayEquals(redeemScriptProgram, obtainedRedeemScript.getProgram());
+        Script redeemScript = federation.getRedeemScript();
+        assertArrayEquals(expectedRedeemScriptProgram, redeemScript.getProgram());
     }
 
     @ParameterizedTest

@@ -149,10 +149,6 @@ class NonStandardErpFederationsTest {
         activationDelayValue = csvValue;
 
         createAndValidateFederation();
-
-        // Also check the builder is the expected one considering the activations
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
     }
 
     @Test
@@ -164,10 +160,6 @@ class NonStandardErpFederationsTest {
         activationDelayValue = 20L;
         // For a value that only uses 1 byte it should add leading zeroes to complete 2 bytes
         createAndValidateFederation();
-
-        // Also check the builder is the expected one considering the activations
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
     }
 
     @ParameterizedTest
@@ -183,17 +175,6 @@ class NonStandardErpFederationsTest {
             ErpFederationCreationException.class,
             () -> federation.getRedeemScript());
         assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
-
-        // Check the builder throws the particular expected exception
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        RedeemScriptCreationException exception = assertThrows(
-            RedeemScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue)
-        );
-        assertEquals(INVALID_CSV_VALUE, exception.getReason());
     }
 
     @Test
@@ -341,13 +322,8 @@ class NonStandardErpFederationsTest {
         // this should create the expected non-standard hardcoded fed
         federation = createDefaultNonStandardErpFederation();
 
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        Script obtainedRedeemScript = builder
-            .createRedeemScriptFromKeys(defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            );
-        assertArrayEquals(expectedRedeemScriptProgram, obtainedRedeemScript.getProgram());
+        Script redeemScript = federation.getRedeemScript();
+        assertArrayEquals(expectedRedeemScriptProgram, redeemScript.getProgram());
     }
 
     @Test
@@ -382,14 +358,8 @@ class NonStandardErpFederationsTest {
         // this should create the expected non-standard with csv unsigned be fed
         federation = createDefaultNonStandardErpFederation();
 
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        Script obtainedRedeemScript = builder
-            .createRedeemScriptFromKeys(
-                defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            );
-        assertArrayEquals(expectedRedeemScriptProgram, obtainedRedeemScript.getProgram());
+        Script redeemScript = federation.getRedeemScript();
+        assertArrayEquals(expectedRedeemScriptProgram, redeemScript.getProgram());
     }
 
     @Test
@@ -425,13 +395,8 @@ class NonStandardErpFederationsTest {
         // this should create the expected non-standard fed
         federation = createDefaultNonStandardErpFederation();
 
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        Script obtainedRedeemScript = builder
-            .createRedeemScriptFromKeys(defaultKeys, defaultThreshold,
-                emergencyKeys, emergencyThreshold,
-                activationDelayValue
-            );
-        assertArrayEquals(expectedRedeemScriptProgram, obtainedRedeemScript.getProgram());
+        Script redeemScript = federation.getRedeemScript();
+        assertArrayEquals(expectedRedeemScriptProgram, redeemScript.getProgram());
     }
 
     @Test
@@ -610,8 +575,6 @@ class NonStandardErpFederationsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
         federation = createDefaultNonStandardErpFederation();
 
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
         Assertions.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, federation.getRedeemScript());
 
         validateErpRedeemScript(
@@ -626,15 +589,11 @@ class NonStandardErpFederationsTest {
 
         // check the hardcoded fed didnt exist on mainnet after rskip201
         federation = createDefaultNonStandardErpFederation();
-        builder = federation.getErpRedeemScriptBuilder();
         Assertions.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, federation.getRedeemScript());
-        assertFalse(builder instanceof NonStandardErpRedeemScriptBuilderHardcoded);
 
         // check the hardcoded fed didnt exist on mainnet after rskip284
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         federation = createDefaultNonStandardErpFederation();
-        builder = federation.getErpRedeemScriptBuilder();
-        assertFalse(builder instanceof NonStandardErpRedeemScriptBuilderHardcoded);
 
         validateErpRedeemScript(
             federation.getRedeemScript(),

@@ -46,10 +46,6 @@ public class ErpFederation extends Federation {
         return erpFederationContext.getFederationFormatVersion();
     }
 
-    public ErpRedeemScriptBuilder getErpRedeemScriptBuilder() {
-        return erpFederationContext.getRedeemScriptBuilder();
-    }
-
     private void validateEmergencyKeys(List<BtcECKey> erpPubKeys) {
         if (erpPubKeys == null || erpPubKeys.isEmpty()) {
             String message = "Emergency keys are not provided";
@@ -81,7 +77,8 @@ public class ErpFederation extends Federation {
     public Script getRedeemScript() {
         if (redeemScript == null) {
             try {
-                redeemScript = getErpRedeemScriptBuilder().createRedeemScriptFromKeys(
+                ErpRedeemScriptBuilder builder = erpFederationContext.getRedeemScriptBuilder();
+                redeemScript = builder.createRedeemScriptFromKeys(
                     getBtcPublicKeys(),
                     getNumberOfSignaturesRequired(),
                     erpPubKeys,

@@ -10,8 +10,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
@@ -46,13 +44,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static co.rsk.peg.FederationFormatVersion.NON_STANDARD_ERP_FEDERATION;
+import static co.rsk.peg.FederationFormatVersion.P2SH_ERP_FEDERATION;
 import static co.rsk.peg.PegTestUtils.BTC_TX_LEGACY_VERSION;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -206,14 +205,13 @@ class PowpegMigrationTest {
         // Verify new powpeg information
         Federation newPowPeg = argumentCaptor.getValue();
         assertEquals(newPowPegAddress, newPowPeg.getAddress());
+        int powpegVersion = newPowPeg.getFormatVersion();
         switch (newPowPegFederationType) {
             case legacyErp:
-                assertSame(ErpFederation.class, newPowPeg.getClass());
-                assertTrue(((ErpFederation) newPowPeg).getErpRedeemScriptBuilder() instanceof NonStandardErpRedeemScriptBuilder);
+                assertEquals(NON_STANDARD_ERP_FEDERATION.getFormatVersion(), powpegVersion);
                 break;
             case p2shErp:
-                assertSame(ErpFederation.class, newPowPeg.getClass());
-                assertTrue(((ErpFederation) newPowPeg).getErpRedeemScriptBuilder() instanceof P2shErpRedeemScriptBuilder);
+                assertEquals(P2SH_ERP_FEDERATION.getFormatVersion(), powpegVersion);
                 // TODO: CHECK REDEEMSCRIPT
                 break;
             default:

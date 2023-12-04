@@ -3,7 +3,7 @@ package co.rsk.peg;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderHardcoded;
 
-import static co.rsk.peg.FederationFormatVersion.NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION;
+import static co.rsk.peg.FederationFormatVersion.NON_STANDARD_ERP_FEDERATION;
 
 public class NonStandardErpFederationContextHardcoded implements ErpFederationContext {
     @Override
@@ -13,6 +13,6 @@ public class NonStandardErpFederationContextHardcoded implements ErpFederationCo
 
     @Override
     public int getFederationFormatVersion() {
-        return NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION;
+        return NON_STANDARD_ERP_FEDERATION.getFormatVersion();
     }
 }

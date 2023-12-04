@@ -26,7 +26,7 @@ import co.rsk.peg.bitcoin.ScriptValidations;
 import java.time.Instant;
 import java.util.List;
 
-import static co.rsk.peg.FederationFormatVersion.STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION;
+import static co.rsk.peg.FederationFormatVersion.STANDARD_MULTISIG_FEDERATION;
 
 /**
  * Immutable representation of an RSK Federation in the context of
@@ -49,7 +49,7 @@ public class StandardMultisigFederation extends Federation {
 
     @Override
     public int getFormatVersion() {
-        return STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION;
+        return STANDARD_MULTISIG_FEDERATION.getFormatVersion();
     }
 
     @Override

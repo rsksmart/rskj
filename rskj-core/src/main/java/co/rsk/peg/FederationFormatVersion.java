@@ -1,10 +1,17 @@
 package co.rsk.peg;
 
-public class FederationFormatVersion {
+public enum FederationFormatVersion {
+    STANDARD_MULTISIG_FEDERATION(1000),
+    NON_STANDARD_ERP_FEDERATION(2000),
+    P2SH_ERP_FEDERATION(3000);
 
-    public static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = 1000;
-    public static final int NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION = 2000;
-    public static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
+    private int version;
 
-    private FederationFormatVersion() {}
+    FederationFormatVersion(int i) {
+        this.version = i;
+    }
+
+    public int getFormatVersion() {
+        return version;
+    }
 }
