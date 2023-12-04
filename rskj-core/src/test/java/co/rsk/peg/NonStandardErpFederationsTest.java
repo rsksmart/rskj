@@ -290,29 +290,46 @@ class NonStandardErpFederationsTest {
         Assertions.assertNotEquals(federation, otherFederation);
     }
 
+    private List<BtcECKey> getRealFederatorsPublicKeys() {
+        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce"));
+        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4"));
+        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed6"));
+        BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
+        BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9"));
+        return Arrays.asList(
+            federator0PublicKey, federator1PublicKey, federator2PublicKey,
+            federator3PublicKey, federator4PublicKey
+        );
+    }
+
+    private List<BtcECKey> getRealFederatorsEmergencyPublicKeys() {
+        BtcECKey emergency0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3"));
+        BtcECKey emergency1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"));
+        BtcECKey emergency2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f"));
+
+        return Arrays.asList(emergency0PublicKey, emergency1PublicKey, emergency2PublicKey);
+    }
+
     @Test
     void createdRedeemScriptProgramFromNonStandardErpBuilderHardcoded_withRealValues_equalsRealRedeemScriptProgram_testnet() {
         byte[] expectedRedeemScriptProgram = // this is the redeem script program from non-standard hardcoded fed
             Hex.decode("6453210208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce210225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f42102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da210344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a0921039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb955670300cd50b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f5368ae");
 
         // these values belong to the non-standard hardcoded fed
-        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce"));
-        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4"));
-        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed6"));
-        BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
+        List<BtcECKey> federatorsPublicKeys = getRealFederatorsPublicKeys();
+        BtcECKey federator0PublicKey = federatorsPublicKeys.get(0);
+        BtcECKey federator1PublicKey = federatorsPublicKeys.get(1);
+        BtcECKey federator2PublicKey = federatorsPublicKeys.get(2);
+        BtcECKey federator3PublicKey = federatorsPublicKeys.get(3);
         BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9"));
+
         defaultKeys = Arrays.asList(
             federator0PublicKey, federator1PublicKey, federator2PublicKey,
             federator3PublicKey, federator4PublicKey
         );
         defaultThreshold = defaultKeys.size() / 2 + 1;
 
-        BtcECKey emergency0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3"));
-        BtcECKey emergency1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"));
-        BtcECKey emergency2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f"));
-        emergencyKeys = Arrays.asList(
-            emergency0PublicKey, emergency1PublicKey, emergency2PublicKey
-        );
+        emergencyKeys = getRealFederatorsEmergencyPublicKeys();
         emergencyThreshold = emergencyKeys.size() / 2 + 1;
         activationDelayValue = 52_560L;
 
@@ -332,23 +349,20 @@ class NonStandardErpFederationsTest {
             Hex.decode("6453210208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce210225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f421025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed62102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da210344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09556702cd50b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f5368ae");
 
         // these values belong to the non-standard csv unsigned be fed
-        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce"));
-        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4"));
-        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed6"));
-        BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
+        List<BtcECKey> federatorsPublicKeys = getRealFederatorsPublicKeys();
+        BtcECKey federator0PublicKey = federatorsPublicKeys.get(0);
+        BtcECKey federator1PublicKey = federatorsPublicKeys.get(1);
+        BtcECKey federator2PublicKey = federatorsPublicKeys.get(2);
+        BtcECKey federator3PublicKey = federatorsPublicKeys.get(3);
         BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09"));
+
         defaultKeys = Arrays.asList(
             federator0PublicKey, federator1PublicKey, federator2PublicKey,
             federator3PublicKey, federator4PublicKey
         );
         defaultThreshold = defaultKeys.size() / 2 + 1;
 
-        BtcECKey emergency0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3"));
-        BtcECKey emergency1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"));
-        BtcECKey emergency2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f"));
-        emergencyKeys = Arrays.asList(
-            emergency0PublicKey, emergency1PublicKey, emergency2PublicKey
-        );
+        emergencyKeys = getRealFederatorsEmergencyPublicKeys();
         emergencyThreshold = emergencyKeys.size() / 2 + 1;
         activationDelayValue = 52_560L;
 
@@ -368,23 +382,20 @@ class NonStandardErpFederationsTest {
             Hex.decode("6453210208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce210225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f421025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed62102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da2103fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce858155670350cd00b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f5368ae");
 
         // these values belong to the non-standard fed
-        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce"));
-        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4"));
-        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed6"));
-        BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
+        List<BtcECKey> federatorsPublicKeys = getRealFederatorsPublicKeys();
+        BtcECKey federator0PublicKey = federatorsPublicKeys.get(0);
+        BtcECKey federator1PublicKey = federatorsPublicKeys.get(1);
+        BtcECKey federator2PublicKey = federatorsPublicKeys.get(2);
+        BtcECKey federator3PublicKey = federatorsPublicKeys.get(3);
         BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce8581"));
+
         defaultKeys = Arrays.asList(
             federator0PublicKey, federator1PublicKey, federator2PublicKey,
             federator3PublicKey, federator4PublicKey
         );
         defaultThreshold = defaultKeys.size() / 2 + 1;
 
-        BtcECKey emergency0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3"));
-        BtcECKey emergency1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"));
-        BtcECKey emergency2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f"));
-        emergencyKeys = Arrays.asList(
-            emergency0PublicKey, emergency1PublicKey, emergency2PublicKey
-        );
+        emergencyKeys = getRealFederatorsEmergencyPublicKeys();
         emergencyThreshold = emergencyKeys.size() / 2 + 1;
         activationDelayValue = 52_560L;
 
@@ -407,13 +418,19 @@ class NonStandardErpFederationsTest {
         emergencyKeys = bridgeTestNetConstants.getErpFedPubKeysList();
         activationDelayValue = bridgeTestNetConstants.getErpFedActivationDelay();
 
-        defaultKeys = Arrays.stream(new String[]{
-            "0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce",
-            "0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4",
-            "025a2f522aea776fab5241ad72f7f05918e8606676461cb6ce38265a52d4ca9ed6",
-            "02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da",
-            "0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09",
-        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+        List<BtcECKey> federatorsPublicKeys = getRealFederatorsPublicKeys();
+        BtcECKey federator0PublicKey = federatorsPublicKeys.get(0);
+        BtcECKey federator1PublicKey = federatorsPublicKeys.get(1);
+        BtcECKey federator2PublicKey = federatorsPublicKeys.get(2);
+        BtcECKey federator3PublicKey = federatorsPublicKeys.get(3);
+        BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09"));
+
+        defaultKeys = Arrays.asList(
+            federator0PublicKey, federator1PublicKey, federator2PublicKey,
+            federator3PublicKey, federator4PublicKey
+        );
+        defaultThreshold = defaultKeys.size() / 2 + 1;
+
         String expectedProgram = "a91412d5d2996618c8abcb1e6fc17be3cd8e2790c25f87";
         Address expectedAddress = Address.fromBase58(networkParameters, "2MtxpJPt2xCa3AyFYUjTT7Aop9Z6gGf4rqA");
 
