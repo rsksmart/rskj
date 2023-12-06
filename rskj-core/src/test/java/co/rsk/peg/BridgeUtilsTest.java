@@ -1162,9 +1162,15 @@ class BridgeUtilsTest {
     }
 
     private void test_getSpendWallet(boolean isFlyoverCompatible) throws UTXOProviderException {
-        Federation federation = new FederationFactory().buildStandardMultiSigFederation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
-            BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
+        List<FederationMember> federationMembers =
+            FederationTestUtils.getFederationMembersWithBtcKeys(
+                Arrays.asList(
+                    BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
+                    BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
+                )
+            );
+        Federation federation = new FederationFactory().buildStandardMultiSigFederation(
+            federationMembers,
             Instant.ofEpochMilli(5005L),
             0L,
             networkParameters);
@@ -1193,9 +1199,15 @@ class BridgeUtilsTest {
     }
 
     private void test_getNoSpendWallet(boolean isFlyoverCompatible) {
-        Federation federation = new FederationFactory().buildStandardMultiSigFederation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
-            BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
+        List<FederationMember> federationMembers =
+            FederationTestUtils.getFederationMembersWithBtcKeys(
+                Arrays.asList(
+                    BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
+                    BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
+                )
+            );
+        Federation federation = new FederationFactory().buildStandardMultiSigFederation(
+            federationMembers,
             Instant.ofEpochMilli(5005L),
             0L,
             networkParameters);

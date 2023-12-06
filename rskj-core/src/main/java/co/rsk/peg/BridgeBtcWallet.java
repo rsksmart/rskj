@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.federation.Federation;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
