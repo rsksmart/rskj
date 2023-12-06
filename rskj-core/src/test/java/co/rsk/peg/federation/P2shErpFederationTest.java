@@ -130,6 +130,31 @@ class P2shErpFederationTest {
     }
 
     @ParameterizedTest
+    @ValueSource(ints = {-100, 0})
+    void createFederation_withInvalidThresholdValues_throwsIllegalArgumentException(int threshold) {
+        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
+        assertThrows(IllegalArgumentException.class,
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, threshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue)
+        );
+    }
+
+    @Test
+    void createFederation_withThresholdAboveDefaultKeysSize_throwsIllegalArgumentException() {
+        int defaultKeysSize = defaultKeys.size();
+
+        ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
+        assertThrows(IllegalArgumentException.class,
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultKeysSize + 1,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue)
+        );
+    }
+
+    @ParameterizedTest
     @ValueSource(longs = {20L, 130L, 500L, 33_000L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE})
     void createFederation_withValidCsvValues_valid(long csvValue) {
         activationDelayValue = csvValue;
