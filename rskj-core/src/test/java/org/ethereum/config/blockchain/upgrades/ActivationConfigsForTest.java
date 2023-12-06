@@ -180,6 +180,7 @@ public class ActivationConfigsForTest {
         rskips.addAll(Arrays.asList(
             ConsensusRule.RSKIP376,
             ConsensusRule.RSKIP379,
+            ConsensusRule.RSKIP398,
             ConsensusRule.RSKIP400
         ));
 
