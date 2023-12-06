@@ -28,7 +28,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.resources.TestConstants;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
@@ -154,7 +154,7 @@ class BridgeSerializationUtilsTest {
         };
 
         // Only actual keys serialized are BTC keys, so we don't really care about RSK or MST keys
-        Federation federation = new StandardMultisigFederation(
+        Federation federation = new FederationFactory().buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                 BtcECKey.fromPublicOnly(publicKeyBytes[1]),
@@ -305,7 +305,7 @@ class BridgeSerializationUtilsTest {
             members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
         }
 
-        Federation testFederation = new StandardMultisigFederation(
+        Federation testFederation = new FederationFactory().buildStandardMultiSigFederation(
             members, Instant.now(), 123, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
@@ -790,7 +790,7 @@ class BridgeSerializationUtilsTest {
         };
 
         // Only actual keys serialized are BTC keys, so deserialization will fill RSK and MST keys with those
-        Federation federation = new StandardMultisigFederation(
+        Federation federation = new FederationFactory().buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(
                 BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                 BtcECKey.fromPublicOnly(publicKeyBytes[1]),
@@ -1252,7 +1252,7 @@ class BridgeSerializationUtilsTest {
                 members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
             }
 
-            Federation testFederation = new StandardMultisigFederation(
+            Federation testFederation = new FederationFactory().buildStandardMultiSigFederation(
                 members,
                 Instant.now(),
                 123,
@@ -1265,14 +1265,14 @@ class BridgeSerializationUtilsTest {
                 bridgeConstants.getBtcParams()
             );
 
-            Federation testErpFederation = new ErpFederation(
+            Federation testErpFederation = new FederationFactory().buildNonStandardErpFederation(
                 members,
                 Instant.now(),
                 123,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                erpRedeemScriptBuilder
+                activations
             );
             byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
 
@@ -1292,14 +1292,13 @@ class BridgeSerializationUtilsTest {
             }
 
             if (isRskip353Active) {
-                Federation testP2shErpFederation = new ErpFederation(
+                Federation testP2shErpFederation = new FederationFactory().buildP2shErpFederation(
                     members,
                     Instant.now(),
                     123,
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
-                    bridgeConstants.getErpFedActivationDelay(),
-                    new P2shErpRedeemScriptBuilder()
+                    bridgeConstants.getErpFedActivationDelay()
                 );
                 byte[] serializedTestP2shErpFederation = BridgeSerializationUtils.serializeFederation(testP2shErpFederation);
 

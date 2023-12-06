@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -7,6 +7,7 @@ import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.peg.FederationMember;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.RedeemScriptCreationException;
 import co.rsk.peg.utils.EcKeyUtils;
@@ -14,8 +15,8 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
-import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
-import static co.rsk.peg.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
+import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
+import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 
 public class ErpFederation extends Federation {
     private final List<BtcECKey> erpPubKeys;
@@ -31,9 +32,11 @@ public class ErpFederation extends Federation {
         NetworkParameters btcParams,
         List<BtcECKey> erpPubKeys,
         long activationDelay,
-        ErpRedeemScriptBuilder erpRedeemScriptBuilder) {
+        ErpRedeemScriptBuilder erpRedeemScriptBuilder,
+        int formatVersion
+    ) {
 
-        super(members, creationTime, creationBlockNumber, btcParams);
+        super(members, creationTime, creationBlockNumber, btcParams, formatVersion);
         validateEmergencyKeys(erpPubKeys);
 
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);

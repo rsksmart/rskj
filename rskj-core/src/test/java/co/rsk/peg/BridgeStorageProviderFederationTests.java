@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -14,9 +15,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
+import co.rsk.peg.federation.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -27,9 +26,9 @@ import org.mockito.verification.VerificationMode;
 
 class BridgeStorageProviderFederationTests {
 
-    private static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = 1000;
-    private static final int LEGACY_ERP_FEDERATION_FORMAT_VERSION = 2000;
-    private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
+    private static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = STANDARD_MULTISIG_FEDERATION.getFormatVersion();
+    private static final int NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION = NON_STANDARD_ERP_FEDERATION.getFormatVersion();
+    private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = P2SH_ERP_FEDERATION.getFormatVersion();
 
     private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
     private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -46,9 +45,9 @@ class BridgeStorageProviderFederationTests {
 
     @Test
     void getNewFederation_should_return_erp_federation() {
-        Federation federation = createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION);
+        Federation federation = createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION);
         testGetNewFederation(
-            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
+            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
             federation
         );
     }
@@ -70,7 +69,7 @@ class BridgeStorageProviderFederationTests {
         );
 
         testGetNewFederation(
-            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
+            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
             null
         );
 
@@ -151,9 +150,9 @@ class BridgeStorageProviderFederationTests {
 
     @Test
     void getOldFederation_should_return_erp_federation() {
-        Federation federation = createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION);
+        Federation federation = createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION);
         testGetOldFederation(
-            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
+            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
             federation
         );
     }
@@ -175,7 +174,7 @@ class BridgeStorageProviderFederationTests {
         );
 
         testGetOldFederation(
-            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
+            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
             null
         );
 
@@ -252,8 +251,8 @@ class BridgeStorageProviderFederationTests {
         );
 
         testSaveNewFederation(
-            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
+            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
         );
 
         testSaveNewFederation(
@@ -303,8 +302,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP201
         ).forBlock(0);
         testSaveNewFederation(
-            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
+            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
         );
     }
 
@@ -316,8 +315,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP353
         ).forBlock(0);
         testSaveNewFederation(
-            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
+            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
         );
     }
 
@@ -425,8 +424,8 @@ class BridgeStorageProviderFederationTests {
         );
 
         testSaveOldFederation(
-            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
+            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
         );
 
         testSaveOldFederation(
@@ -476,8 +475,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP201
         ).forBlock(0);
         testSaveOldFederation(
-            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
+            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
         );
     }
 
@@ -489,8 +488,8 @@ class BridgeStorageProviderFederationTests {
             ConsensusRule.RSKIP353
         ).forBlock(0);
         testSaveOldFederation(
-            LEGACY_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(LEGACY_ERP_FEDERATION_FORMAT_VERSION)
+            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
+            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
         );
     }
 
@@ -605,36 +604,41 @@ class BridgeStorageProviderFederationTests {
             PegTestUtils.createRandomBtcECKeys(7)
         );
 
-        switch (version) {
-            case P2SH_ERP_FEDERATION_FORMAT_VERSION:
-                return new ErpFederation(
-                    members,
-                    Instant.now(),
-                    1L,
-                    bridgeConstantsRegtest.getBtcParams(),
-                    bridgeConstantsRegtest.getErpFedPubKeysList(),
-                    bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    new P2shErpRedeemScriptBuilder()
-                );
-            case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
-                ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-                    NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstantsRegtest.getBtcParams());
-                return new ErpFederation(
-                    members,
-                    Instant.now(),
-                    1L,
-                    bridgeConstantsRegtest.getBtcParams(),
-                    bridgeConstantsRegtest.getErpFedPubKeysList(),
-                    bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    erpRedeemScriptBuilder
-                );
-            default:
-                return new StandardMultisigFederation(
-                    members,
-                    Instant.now(),
-                    1L,
-                    bridgeConstantsRegtest.getBtcParams()
+        if (version == STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION) {
+            return new FederationFactory().buildStandardMultiSigFederation(
+                members,
+                Instant.now(),
+                1L,
+                bridgeConstantsRegtest.getBtcParams()
+            );
+        }
+        if (version == NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION) {
+            return new FederationFactory().buildNonStandardErpFederation(
+                members,
+                Instant.now(),
+                1L,
+                bridgeConstantsRegtest.getBtcParams(),
+                bridgeConstantsRegtest.getErpFedPubKeysList(),
+                bridgeConstantsRegtest.getErpFedActivationDelay(),
+                activations
+            );
+        }
+        if (version == P2SH_ERP_FEDERATION_FORMAT_VERSION) {
+            return new FederationFactory().buildP2shErpFederation(
+                members,
+                Instant.now(),
+                1L,
+                bridgeConstantsRegtest.getBtcParams(),
+                bridgeConstantsRegtest.getErpFedPubKeysList(),
+                bridgeConstantsRegtest.getErpFedActivationDelay()
                 );
         }
+        // To keep backwards compatibility
+        return new FederationFactory().buildStandardMultiSigFederation(
+            members,
+            Instant.now(),
+            1L,
+            bridgeConstantsRegtest.getBtcParams()
+        );
     }
 }

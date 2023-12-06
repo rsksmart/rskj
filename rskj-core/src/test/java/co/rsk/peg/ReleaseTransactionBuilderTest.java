@@ -53,7 +53,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
+import co.rsk.peg.federation.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
@@ -92,7 +92,7 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void first_output_pay_fees() {
-        Federation federation = new StandardMultisigFederation(
+        Federation federation = new FederationFactory().buildStandardMultiSigFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
@@ -161,12 +161,13 @@ class ReleaseTransactionBuilderTest {
     @Test
     void build_pegout_tx_from_erp_federation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
         // Use mainnet constants to test a real situation
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new FederationFactory().buildNonStandardErpFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
@@ -177,7 +178,7 @@ class ReleaseTransactionBuilderTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilder()
+            activations
         );
 
         List<UTXO> utxos = Arrays.asList(
@@ -210,7 +211,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             bridgeConstants.getBtcParams(),
             thisWallet,
-            erpFederation.address,
+            erpFederation.getAddress(),
             Coin.SATOSHI.multiply(1000),
             activations
         );

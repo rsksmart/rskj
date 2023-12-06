@@ -21,7 +21,7 @@ package co.rsk.peg.utils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.Federation;
+import co.rsk.peg.federation.Federation;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;

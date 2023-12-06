@@ -36,12 +36,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import co.rsk.peg.federation.ErpFederation;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
 import org.ethereum.crypto.ECKey;
 
 public class FederationTestUtils {
 
     public static Federation getFederation(Integer... federationMemberPks) {
-        return new StandardMultisigFederation(
+        return new FederationFactory().buildStandardMultiSigFederation(
             getFederationMembersFromPks(federationMemberPks),
             ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
             0L,
