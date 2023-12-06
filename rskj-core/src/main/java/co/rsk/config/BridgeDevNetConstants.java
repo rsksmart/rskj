@@ -23,7 +23,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.FederationMember;
-import co.rsk.peg.StandardMultisigFederation;
+import co.rsk.peg.federation.FederationFactory;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -57,7 +57,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
-        genesisFederation = new StandardMultisigFederation(
+        genesisFederation = new FederationFactory().buildStandardMultiSigFederation(
             federationMembers,
             genesisFederationAddressCreatedAt,
             1L,

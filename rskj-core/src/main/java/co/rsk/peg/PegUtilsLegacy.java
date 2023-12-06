@@ -22,6 +22,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import co.rsk.peg.federation.ErpFederation;
+import co.rsk.peg.federation.Federation;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -388,13 +391,13 @@ public class PegUtilsLegacy {
 
     private static Script getFederationStandardRedeemScript(Federation federation) {
         return federation instanceof ErpFederation ?
-            ((ErpFederation) federation).getStandardRedeemScript() :
+            ((ErpFederation) federation).getDefaultRedeemScript() :
             federation.getRedeemScript();
     }
 
     private static Script getFederationStandardP2SHScript(Federation federation) {
         return federation instanceof ErpFederation ?
-            ((ErpFederation) federation).getStandardP2SHScript() :
+            ((ErpFederation) federation).getDefaultP2SHScript() :
             federation.getP2SHScript();
     }
 }

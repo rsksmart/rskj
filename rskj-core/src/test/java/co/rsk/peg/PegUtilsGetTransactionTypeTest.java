@@ -17,6 +17,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.federation.ErpFederation;
+import co.rsk.peg.federation.Federation;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -57,7 +59,7 @@ class PegUtilsGetTransactionTypeTest {
     private Address userAddress;
 
     private List<BtcECKey> retiredFedSigners;
-    private P2shErpFederation retiredFed;
+    private ErpFederation retiredFed;
 
     private List<BtcECKey> retiringFedSigners;
     private Federation retiringFederation;
@@ -2117,7 +2119,7 @@ class PegUtilsGetTransactionTypeTest {
 
         FederationTestUtils.addSignatures(oldFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
 
-        Assertions.assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.address));
+        Assertions.assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.getAddress()));
 
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
@@ -2174,7 +2176,7 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFed.getStandardP2SHScript()));
+        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFed.getDefaultP2SHScript()));
 
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 

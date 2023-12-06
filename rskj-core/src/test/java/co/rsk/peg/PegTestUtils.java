@@ -26,13 +26,14 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.federation.ErpFederation;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
-import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -300,7 +301,7 @@ public final class PegTestUtils {
 
     public static Federation createFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        return new StandardMultisigFederation(
+        return new FederationFactory().buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -308,16 +309,15 @@ public final class PegTestUtils {
         );
     }
 
-    public static P2shErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
+    public static ErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        return new P2shErpFederation(
+        return new FederationFactory().buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            Mockito.mock(ActivationConfig.ForBlock.class)
+            bridgeConstants.getErpFedActivationDelay()
         );
     }
 

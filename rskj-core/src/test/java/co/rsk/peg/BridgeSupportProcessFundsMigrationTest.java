@@ -7,6 +7,8 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
@@ -127,7 +129,7 @@ class BridgeSupportProcessFundsMigrationTest {
             federationActivationAge +
             bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations) + 1;
 
-        Federation newFederation = new StandardMultisigFederation(
+        Federation newFederation = new FederationFactory().buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             federationCreationBlockNumber,

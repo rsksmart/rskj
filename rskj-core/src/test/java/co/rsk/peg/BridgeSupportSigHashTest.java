@@ -11,6 +11,8 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -119,7 +121,7 @@ class BridgeSupportSigHashTest {
 
         Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
         long newFedCreationBlockNumber = 5L;
-        Federation newFederation = new StandardMultisigFederation(
+        Federation newFederation = new FederationFactory().buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             newFedCreationBlockNumber,
@@ -188,7 +190,7 @@ class BridgeSupportSigHashTest {
         Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
 
         long newFedCreationBlockNumber = 5L;
-        Federation newFederation = new StandardMultisigFederation(
+        Federation newFederation = new FederationFactory().buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             newFedCreationBlockNumber,
