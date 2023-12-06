@@ -62,7 +62,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     void hasPegoutSigHash_null_sigHash(boolean isRskip379HardForkActive) {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
-                                                    ActivationConfigsForTest.tbd600().forBlock(0) :
+                                                    ActivationConfigsForTest.arrowhead600().forBlock(0) :
                                                     ActivationConfigsForTest.fingerroot500().forBlock(0);
 
         Repository repository = mock(Repository.class);
@@ -95,7 +95,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     @Test
     void hasPegoutTxSigHash_null_stored_value() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Repository repository = mock(Repository.class);
 
@@ -131,7 +131,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     @MethodSource("invalid_entry_values")
     void hasPegoutTxSigHash_invalid_stored_data(byte[] invalidStoredValue) {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Repository repository = mock(Repository.class);
 
@@ -168,7 +168,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     void hasPegoutTxSigHash_non_null_sigHash(boolean isRskip379HardForkActive, Sha256Hash sigHash) {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
-                                                    ActivationConfigsForTest.tbd600().forBlock(0) :
+                                                    ActivationConfigsForTest.arrowhead600().forBlock(0) :
                                                     ActivationConfigsForTest.fingerroot500().forBlock(0);
 
         Repository repository = mock(Repository.class);
@@ -206,7 +206,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     @Test
     void hasPegoutTxSigHash_passing_existing_sigHash() throws IOException {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Sha256Hash sigHash = BitcoinTestUtils.createHash(15);
 
@@ -285,7 +285,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     void setPegoutTxSigHash_null(boolean isRskip379HardForkActive) throws IOException {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
-                                                    ActivationConfigsForTest.tbd600().forBlock(0) :
+                                                    ActivationConfigsForTest.arrowhead600().forBlock(0) :
                                                     ActivationConfigsForTest.fingerroot500().forBlock(0);
 
         Repository repository = mock(Repository.class);
@@ -319,7 +319,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     void setPegoutTxSigHash_non_null(boolean isRskip379HardForkActive, Sha256Hash sigHash) throws IOException {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
-                                                    ActivationConfigsForTest.tbd600().forBlock(0) :
+                                                    ActivationConfigsForTest.arrowhead600().forBlock(0) :
                                                     ActivationConfigsForTest.fingerroot500().forBlock(0);
 
         Repository repository = mock(Repository.class);
@@ -363,7 +363,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     @Test
     void setPegoutTxSigHash_passing_existing() throws IOException {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Sha256Hash sigHash = BitcoinTestUtils.createHash(15);
 
@@ -436,7 +436,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     @Test
     void setPegoutTxSigHash_multiple_sigHash_in_a_single_rsk_tx() throws IOException {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Sha256Hash sigHash = BitcoinTestUtils.createHash(15);
         Sha256Hash sigHash2 = BitcoinTestUtils.createHash(25);

@@ -25,7 +25,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
-    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
     private List<BtcECKey> retiringFedSigners;
     private Federation retiringFederation;
@@ -71,7 +71,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Wallet fedWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
@@ -111,7 +111,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Address randomAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "add1");
 
@@ -158,7 +158,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Address randomAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "add1");
 
@@ -207,7 +207,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Address randomAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "add1");
 
@@ -256,7 +256,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Coin amountJustBelowMinimum = minimumPegInTxValue.minus(Coin.SATOSHI);
 
@@ -303,7 +303,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         btcTx.addOutput(minimumPegInTxValue, activeFederation.getAddress()); // With minimum
         btcTx.addOutput(minimumPegInTxValue.add(Coin.SATOSHI), activeFederation.getAddress()); // Above minimum
@@ -346,7 +346,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         btcTx.addOutput(minimumPegInTxValue, activeFederation.getAddress()); // With minimum
         btcTx.addOutput(minimumPegInTxValue.add(Coin.SATOSHI), activeFederation.getAddress()); // Above minimum
@@ -394,7 +394,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         btcTx.addOutput(minimumPegInTxValue.minus(Coin.SATOSHI), activeFederation.getAddress()); // Below minimum to active fed
         btcTx.addOutput(minimumPegInTxValue, activeFederation.getAddress()); // Minimum to active fed
@@ -537,7 +537,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Coin belowMinimumValue = minimumPegInTxValue.minus(Coin.SATOSHI);
         btcTx.addOutput(belowMinimumValue, activeFederation.getAddress());

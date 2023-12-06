@@ -38,7 +38,7 @@ class PegUtilsTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
-    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;

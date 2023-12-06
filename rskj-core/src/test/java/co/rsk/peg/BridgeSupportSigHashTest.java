@@ -63,7 +63,7 @@ class BridgeSupportSigHashTest {
     private static Stream<Arguments> pegoutTxIndexArgsProvider() {
         return Stream.of(
             Arguments.of(ActivationConfigsForTest.fingerroot500().forBlock(0)),
-            Arguments.of(ActivationConfigsForTest.tbd600().forBlock(0))
+            Arguments.of(ActivationConfigsForTest.arrowhead600().forBlock(0))
         );
     }
     @ParameterizedTest
