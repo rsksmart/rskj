@@ -55,7 +55,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
-        genesisFederation = new FederationFactory().buildStandardMultiSigFederation(
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(
             federationMembers,
             genesisFederationCreatedAt,
             1L,

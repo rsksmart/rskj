@@ -274,7 +274,7 @@ public class BridgeSerializationUtils {
             federationMembers.add(member);
         }
 
-        return new FederationFactory().buildStandardMultiSigFederation(
+        return FederationFactory.buildStandardMultiSigFederation(
             federationMembers,
             creationTime,
             creationBlockNumber,
@@ -331,7 +331,7 @@ public class BridgeSerializationUtils {
             BridgeSerializationUtils::deserializeFederationMember
         );
 
-        return new FederationFactory().buildNonStandardErpFederation(
+        return FederationFactory.buildNonStandardErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
@@ -351,7 +351,7 @@ public class BridgeSerializationUtils {
             bridgeConstants.getBtcParams(),
             BridgeSerializationUtils::deserializeFederationMember
         );
-        return new FederationFactory().buildP2shErpFederation(
+        return FederationFactory.buildP2shErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),

@@ -108,7 +108,7 @@ public final class PendingFederation {
 
         if (activations.isActive(ConsensusRule.RSKIP353)) {
             logger.info("[buildFederation] Going to create a P2SH ERP Federation");
-            return new FederationFactory().buildP2shErpFederation(
+            return FederationFactory.buildP2shErpFederation(
                 members,
                 creationTime,
                 blockNumber,
@@ -121,7 +121,7 @@ public final class PendingFederation {
         if (activations.isActive(ConsensusRule.RSKIP201)) {
             logger.info("[buildFederation] Going to create an ERP Federation");
 
-            return new FederationFactory().buildNonStandardErpFederation(
+            return FederationFactory.buildNonStandardErpFederation(
                 members,
                 creationTime,
                 blockNumber,
@@ -132,7 +132,7 @@ public final class PendingFederation {
             );
         }
 
-        return new FederationFactory().buildStandardMultiSigFederation(
+        return FederationFactory.buildStandardMultiSigFederation(
                 members,
                 creationTime,
                 blockNumber,

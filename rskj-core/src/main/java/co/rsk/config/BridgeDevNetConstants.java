@@ -57,7 +57,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
-        genesisFederation = new FederationFactory().buildStandardMultiSigFederation(
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(
             federationMembers,
             genesisFederationAddressCreatedAt,
             1L,

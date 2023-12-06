@@ -67,7 +67,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         );
 
         // Arrange
-        ErpFederation activeFederation = new FederationFactory().buildP2shErpFederation(
+        ErpFederation activeFederation = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(standardKeys),
             bridgeMainnetConstants.getGenesisFederation().getCreationTime(),
             5L,
@@ -80,7 +80,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
             new String[]{"fa01", "fa02", "fa03"}, true
         );
 
-        ErpFederation p2shRetiringFederation = new FederationFactory().buildP2shErpFederation(
+        ErpFederation p2shRetiringFederation = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(fedKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -135,7 +135,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         );
 
         // Arrange
-        Federation activeFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
             bridgeRegTestConstants.getGenesisFederation().getMembers(),
             bridgeRegTestConstants.getGenesisFederation().getCreationTime(),
             5L,
@@ -339,7 +339,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
             new String[]{"fa04", "fa05", "fa06"}, true
         );
 
-        ErpFederation activeFederation = new FederationFactory().buildP2shErpFederation(
+        ErpFederation activeFederation = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(activeFedKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -377,7 +377,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
             new String[]{"fa01", "fa02", "fa03"}, true
         );
 
-        Federation activeFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(fedKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -420,7 +420,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
             new String[]{"fa01", "fa02", "fa03"}, true
         );;
 
-        Federation retiringFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedKeys),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -458,7 +458,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
             new String[]{"fa01", "fa02", "fa03"}, true
         );
 
-        Federation retiringFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedKeys),
             Instant.ofEpochMilli(1000L),
             0L,

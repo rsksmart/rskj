@@ -121,7 +121,7 @@ class BridgeSupportSigHashTest {
 
         Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
         long newFedCreationBlockNumber = 5L;
-        Federation newFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             newFedCreationBlockNumber,
@@ -190,7 +190,7 @@ class BridgeSupportSigHashTest {
         Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
 
         long newFedCreationBlockNumber = 5L;
-        Federation newFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             newFedCreationBlockNumber,
