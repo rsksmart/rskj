@@ -206,7 +206,7 @@ class PegUtilsTest {
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
-        ErpFederation activeFed = new FederationFactory().buildP2shErpFederation(
+        ErpFederation activeFed = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(signers),
             Instant.ofEpochMilli(1000L),
             0L,
@@ -608,7 +608,7 @@ class PegUtilsTest {
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
-        ErpFederation activeFed = new FederationFactory().buildP2shErpFederation(
+        ErpFederation activeFed = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(signers),
             Instant.ofEpochMilli(1000L),
             0L,

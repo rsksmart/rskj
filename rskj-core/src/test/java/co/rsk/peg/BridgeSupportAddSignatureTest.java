@@ -77,7 +77,7 @@ class BridgeSupportAddSignatureTest {
         );
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
                 Instant.ofEpochMilli(1000L),
                 0L,
@@ -135,7 +135,7 @@ class BridgeSupportAddSignatureTest {
                 BtcECKey.fromPrivate(Hex.decode("fa02")));
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation retiringFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
                 Instant.ofEpochMilli(1000L),
                 0L,
@@ -149,7 +149,7 @@ class BridgeSupportAddSignatureTest {
         );
         activeFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
                 Instant.ofEpochMilli(1000L),
                 0L,
@@ -193,7 +193,7 @@ class BridgeSupportAddSignatureTest {
         );
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation retiringFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
                 Instant.ofEpochMilli(1000L),
                 0L,
@@ -207,7 +207,7 @@ class BridgeSupportAddSignatureTest {
         );
         activeFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
                 Instant.ofEpochMilli(1000L),
                 0L,

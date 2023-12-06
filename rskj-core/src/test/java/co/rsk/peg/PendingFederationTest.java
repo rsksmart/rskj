@@ -292,7 +292,7 @@ class PendingFederationTest {
 
         Federation expectedFederation;
         if (isRskip353Active) {
-            expectedFederation = new FederationFactory().buildP2shErpFederation(
+            expectedFederation = FederationFactory.buildP2shErpFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
                 0L,
@@ -301,7 +301,7 @@ class PendingFederationTest {
                 bridgeConstants.getErpFedActivationDelay()
             );
         } else if (isRskip201Active) {
-            expectedFederation = new FederationFactory().buildNonStandardErpFederation(
+            expectedFederation = FederationFactory.buildNonStandardErpFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
                 0L,
@@ -311,7 +311,7 @@ class PendingFederationTest {
                 activations
             );
         } else {
-            expectedFederation = new FederationFactory().buildStandardMultiSigFederation(
+            expectedFederation = FederationFactory.buildStandardMultiSigFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
                 0L,

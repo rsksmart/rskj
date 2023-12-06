@@ -43,14 +43,14 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
     @BeforeEach
     void setup() {
 
-        federation = new FederationFactory().buildStandardMultiSigFederation(
+        federation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        erpFederation = new FederationFactory().buildNonStandardErpFederation(
+        erpFederation = FederationFactory.buildNonStandardErpFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,

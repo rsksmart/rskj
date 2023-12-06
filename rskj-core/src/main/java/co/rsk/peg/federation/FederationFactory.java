@@ -15,7 +15,9 @@ import static co.rsk.peg.federation.FederationFormatVersion.*;
 
 public class FederationFactory {
 
-    public StandardMultisigFederation buildStandardMultiSigFederation(List<FederationMember> members,
+    private FederationFactory() {}
+
+    public static StandardMultisigFederation buildStandardMultiSigFederation(List<FederationMember> members,
                                                                       Instant creationTime,
                                                                       long creationBlockNumber,
                                                                       NetworkParameters btcParams) {
@@ -28,7 +30,7 @@ public class FederationFactory {
         );
     }
 
-    public ErpFederation buildNonStandardErpFederation(List<FederationMember> members,
+    public static ErpFederation buildNonStandardErpFederation(List<FederationMember> members,
                                                        Instant creationTime,
                                                        long creationBlockNumber,
                                                        NetworkParameters btcParams,
@@ -50,7 +52,7 @@ public class FederationFactory {
         );
     }
 
-    public ErpFederation buildP2shErpFederation(List<FederationMember> members,
+    public static ErpFederation buildP2shErpFederation(List<FederationMember> members,
                                                        Instant creationTime,
                                                        long creationBlockNumber,
                                                        NetworkParameters btcParams,

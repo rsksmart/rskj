@@ -458,7 +458,7 @@ class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
@@ -480,7 +480,7 @@ class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
@@ -495,7 +495,7 @@ class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,

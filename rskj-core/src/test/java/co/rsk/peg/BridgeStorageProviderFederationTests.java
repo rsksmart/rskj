@@ -605,7 +605,7 @@ class BridgeStorageProviderFederationTests {
         );
 
         if (version == STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION) {
-            return new FederationFactory().buildStandardMultiSigFederation(
+            return FederationFactory.buildStandardMultiSigFederation(
                 members,
                 Instant.now(),
                 1L,
@@ -613,7 +613,7 @@ class BridgeStorageProviderFederationTests {
             );
         }
         if (version == NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION) {
-            return new FederationFactory().buildNonStandardErpFederation(
+            return FederationFactory.buildNonStandardErpFederation(
                 members,
                 Instant.now(),
                 1L,
@@ -624,7 +624,7 @@ class BridgeStorageProviderFederationTests {
             );
         }
         if (version == P2SH_ERP_FEDERATION_FORMAT_VERSION) {
-            return new FederationFactory().buildP2shErpFederation(
+            return FederationFactory.buildP2shErpFederation(
                 members,
                 Instant.now(),
                 1L,
@@ -634,7 +634,7 @@ class BridgeStorageProviderFederationTests {
                 );
         }
         // To keep backwards compatibility
-        return new FederationFactory().buildStandardMultiSigFederation(
+        return FederationFactory.buildStandardMultiSigFederation(
             members,
             Instant.now(),
             1L,

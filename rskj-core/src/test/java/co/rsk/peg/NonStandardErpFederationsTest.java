@@ -100,7 +100,7 @@ class NonStandardErpFederationsTest {
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
 
-        return new FederationFactory().buildNonStandardErpFederation(
+        return FederationFactory.buildNonStandardErpFederation(
             standardMembers,
             creationTime,
             creationBlockNumber,
@@ -262,7 +262,7 @@ class NonStandardErpFederationsTest {
 
     @Test
     void testEquals_same() {
-        ErpFederation otherFederation = new FederationFactory().buildNonStandardErpFederation(
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
@@ -276,7 +276,7 @@ class NonStandardErpFederationsTest {
 
     @Test
     void testEquals_differentCreationTime() {
-        ErpFederation otherFederation = new FederationFactory().buildNonStandardErpFederation(
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
             federation.getMembers(),
             federation.getCreationTime().plus(1, ChronoUnit.MILLIS),
             federation.getCreationBlockNumber(),
@@ -290,7 +290,7 @@ class NonStandardErpFederationsTest {
 
     @Test
     void testEquals_differentCreationBlockNumber() {
-        ErpFederation otherFederation = new FederationFactory().buildNonStandardErpFederation(
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber() + 1,
@@ -717,9 +717,8 @@ class NonStandardErpFederationsTest {
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
-        FederationFactory federationFactory = new FederationFactory();
         assertThrows(ErpFederationCreationException.class,
-            () -> federationFactory.buildNonStandardErpFederation(
+            () -> FederationFactory.buildNonStandardErpFederation(
             federationMembersWithBtcKeys,
             creationTime,
             1,

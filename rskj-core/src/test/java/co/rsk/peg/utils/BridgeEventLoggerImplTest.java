@@ -225,7 +225,7 @@ class BridgeEventLoggerImplTest {
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
 
-        Federation oldFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(
             oldFederationMembers,
             Instant.ofEpochMilli(15005L),
             15L,
@@ -240,7 +240,7 @@ class BridgeEventLoggerImplTest {
 
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
 
-        Federation newFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
             newFederationMembers,
             Instant.ofEpochMilli(5005L),
             0L,
