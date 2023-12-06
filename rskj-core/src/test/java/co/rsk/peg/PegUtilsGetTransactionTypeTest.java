@@ -57,7 +57,7 @@ class PegUtilsGetTransactionTypeTest {
     private Address userAddress;
 
     private List<BtcECKey> retiredFedSigners;
-    private P2shErpFederation retiredFed;
+    private ErpFederation retiredFed;
 
     private List<BtcECKey> retiringFedSigners;
     private Federation retiringFederation;
@@ -2174,7 +2174,7 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFed.getStandardP2SHScript()));
+        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFed.getDefaultP2SHScript()));
 
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
