@@ -81,7 +81,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
 
     private static final ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
-    private static final ActivationConfig.ForBlock tbd600Activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+    private static final ActivationConfig.ForBlock arrowhead600Activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
     private static final Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(ActivationConfigsForTest.all().forBlock(0));
     private static final Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
@@ -147,7 +147,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         Assertions.assertTrue(retiringFederationUtxos.isEmpty());
     }
 
-    // After tbd600Activations but before grace period
+    // After arrowhead600Activations but before grace period
     private void assertUnknownTxIsRejectedWithInvalidAmountReason(BtcTransaction btcTransaction) throws IOException {
         verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
         verify(bridgeEventLogger, times(1)).logUnrefundablePegin(btcTransaction, UnrefundablePeginReason.INVALID_AMOUNT);
@@ -157,7 +157,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         Assertions.assertTrue(retiringFederationUtxos.isEmpty());
     }
 
-    // After tbd600Activations and grace period
+    // After arrowhead600Activations and grace period
     private void assertUnknownTxIsIgnored() throws IOException {
         verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
         verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
@@ -181,7 +181,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         Assertions.assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
     }
 
-    // Before tbd600Activations is activated
+    // Before arrowhead600Activations is activated
     private void assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(BtcTransaction btcTransaction) throws IOException {
         verify(bridgeEventLogger, times(1)).logRejectedPegin(
             btcTransaction, PEGIN_V1_INVALID_PAYLOAD
@@ -202,7 +202,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
     }
 
-    // After tbd600Activations is activated
+    // After arrowhead600Activations is activated
     private void assertLegacyUndeterminedSenderPeginIsRejected(BtcTransaction btcTransaction) throws IOException {
         verify(bridgeEventLogger, times(1)).logRejectedPegin(
             btcTransaction, RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER
@@ -237,24 +237,24 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             // after RSKIP379 activation but before blockNumber to start using Pegout Index
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 false,
                 false
             ),
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 false,
                 true
             ),
 
             // after RSKIP379 activation and after blockNumber to start using Pegout Index
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 true,
                 false
             ),
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 true,
                 true
             )
@@ -270,12 +270,12 @@ class BridgeSupportRegisterBtcTransactionTest {
             ),
             // after RSKIP379 activation but before blockNumber to start using Pegout Index
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 false
             ),
             // after RSKIP379 activation and after blockNumber to start using Pegout Index
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 true
             )
         );
@@ -311,50 +311,50 @@ class BridgeSupportRegisterBtcTransactionTest {
 
 
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 false,
                 false,
                 false
             ),
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 false,
                 true,
                 false
             ),
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 false,
                 true,
                 true
             ),
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 false,
                 false,
                 true
             ),
 
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 true,
                 false,
                 false
             ),
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 true,
                 true,
                 false
             ),
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 true,
                 true,
                 true
             ),
             Arguments.of(
-                tbd600Activations,
+                arrowhead600Activations,
                 true,
                 false,
                 true
@@ -385,7 +385,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             bridgeMainnetConstants.getBtcParams(),
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay(),
-            tbd600Activations
+            arrowhead600Activations
         );
 
         activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
@@ -399,7 +399,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             bridgeMainnetConstants.getBtcParams(),
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay(),
-            tbd600Activations
+            arrowhead600Activations
         );
 
         mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -429,7 +429,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // Set executionBlock right after the migration should start
         long blockNumber = activeFederation.getCreationBlockNumber() +
-                               bridgeMainnetConstants.getFederationActivationAge(tbd600Activations) +
+                               bridgeMainnetConstants.getFederationActivationAge(arrowhead600Activations) +
                                bridgeMainnetConstants.getFundsMigrationAgeSinceActivationBegin() +
                                1;
         rskExecutionBlock = mock(Block.class);
@@ -560,11 +560,11 @@ class BridgeSupportRegisterBtcTransactionTest {
         if (activations == fingerrootActivations) {
             assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction, 0);
         }
-        // tbd600Activations but before grace period - unknown tx should be rejected
-        else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
+        // arrowhead600Activations but before grace period - unknown tx should be rejected
+        else if (activations == arrowhead600Activations && !shouldUsePegoutTxIndex) {
             assertUnknownTxIsRejectedWithInvalidAmountReason(btcTransaction);
         }
-        // tbd600Activations and after grace period - unknown tx are just ignored
+        // arrowhead600Activations and after grace period - unknown tx are just ignored
         else {
             assertUnknownTxIsIgnored();
         }
@@ -620,11 +620,11 @@ class BridgeSupportRegisterBtcTransactionTest {
         if (activations == fingerrootActivations) {
             assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction, 1);
         }
-        // tbd600Activations but before grace period - unknown tx should be rejected
-        else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
+        // arrowhead600Activations but before grace period - unknown tx should be rejected
+        else if (activations == arrowhead600Activations && !shouldUsePegoutTxIndex) {
             assertUnknownTxIsRejectedWithInvalidAmountReason(btcTransaction);
         }
-        // tbd600Activations and after grace period - unknown tx are just ignored
+        // arrowhead600Activations and after grace period - unknown tx are just ignored
         else {
             assertUnknownTxIsIgnored();
         }
@@ -677,11 +677,11 @@ class BridgeSupportRegisterBtcTransactionTest {
         if (activations == fingerrootActivations) {
             assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction, 0);
         }
-        // tbd600Activations but before grace period - unknown tx should be rejected
-        else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
+        // arrowhead600Activations but before grace period - unknown tx should be rejected
+        else if (activations == arrowhead600Activations && !shouldUsePegoutTxIndex) {
             assertUnknownTxIsRejectedWithInvalidAmountReason(btcTransaction);
         }
-        // tbd600Activations and after grace period - unknown tx are just ignored
+        // arrowhead600Activations and after grace period - unknown tx are just ignored
         else {
             assertUnknownTxIsIgnored();
         }
@@ -1395,7 +1395,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        if (activations == tbd600Activations){
+        if (activations == arrowhead600Activations){
             assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
         } else {
             assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
@@ -1449,7 +1449,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         // assert
 
         // SINCE RSKIP379 ONLY TRANSACTIONS THAT REALLY ARE PROCESSED, REFUNDS OR REGISTER WILL BE MARK AS PROCESSED.
-        if (activations == tbd600Activations){
+        if (activations == arrowhead600Activations){
             assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
         } else {
             assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
@@ -1498,7 +1498,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        if (activations == tbd600Activations){
+        if (activations == arrowhead600Activations){
 
         } else {
             assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
@@ -1582,7 +1582,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(provider.getOldFederation()).thenReturn(retiringFederation);
 
         // act
-        BridgeSupport bridgeSupport = buildBridgeSupport(tbd600Activations);
+        BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
         bridgeSupport.registerBtcTransaction(
             rskTx,
             btcTransaction.bitcoinSerialize(),
@@ -1905,7 +1905,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(provider.getOldFederation()).thenReturn(retiringFederation);
 
         // act
-        BridgeSupport bridgeSupport = buildBridgeSupport(tbd600Activations);
+        BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
         bridgeSupport.registerBtcTransaction(
             rskTx,
             btcTransaction.bitcoinSerialize(),
@@ -2173,11 +2173,11 @@ class BridgeSupportRegisterBtcTransactionTest {
         if (activations == fingerrootActivations) {
             assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction, 0);
         }
-        // tbd600Activations but before grace period - unknown tx should be rejected
-        else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
+        // arrowhead600Activations but before grace period - unknown tx should be rejected
+        else if (activations == arrowhead600Activations && !shouldUsePegoutTxIndex) {
             assertUnknownTxIsRejectedWithInvalidAmountReason(btcTransaction);
         }
-        // tbd600Activations and after grace period - unknown tx are just ignored
+        // arrowhead600Activations and after grace period - unknown tx are just ignored
         else {
             assertUnknownTxIsIgnored();
         }
@@ -2246,11 +2246,11 @@ class BridgeSupportRegisterBtcTransactionTest {
         if (activations == fingerrootActivations) {
             assertUnknownTxIsProcessedAsPegin(rskAddress, btcTransaction, 0);
         }
-        // tbd600Activations but before grace period - unknown tx should be rejected
-        else if (activations == tbd600Activations && !shouldUsePegoutTxIndex) {
+        // arrowhead600Activations but before grace period - unknown tx should be rejected
+        else if (activations == arrowhead600Activations && !shouldUsePegoutTxIndex) {
             assertUnknownTxIsRejectedWithInvalidAmountReason(btcTransaction);
         }
-        // tbd600Activations and after grace period - unknown tx are just ignored
+        // arrowhead600Activations and after grace period - unknown tx are just ignored
         else {
             assertUnknownTxIsIgnored();
         }
