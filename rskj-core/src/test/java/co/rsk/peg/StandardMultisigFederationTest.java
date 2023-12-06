@@ -86,13 +86,16 @@ class StandardMultisigFederationTest {
         newKeys.add(federator15PublicKey);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newKeys);
         Instant creationTime = federation.getCreationTime();
+        long creationBlockNumber = federation.getCreationBlockNumber();
+        NetworkParameters networkParameters = federation.getBtcParams();
+        FederationFactory federationFactory = new FederationFactory();
         ScriptCreationException exception =
             assertThrows(ScriptCreationException.class,
-                () -> new FederationFactory().buildStandardMultiSigFederation(
+                () -> federationFactory.buildStandardMultiSigFederation(
                 newMembers,
                 creationTime,
-                federation.getCreationBlockNumber(),
-                federation.getBtcParams()
+                creationBlockNumber,
+                networkParameters
             ));
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
@@ -199,10 +202,12 @@ class StandardMultisigFederationTest {
         newKeys.add(anotherPublicKey);
         List<FederationMember> differentMembers = FederationTestUtils.getFederationMembersWithKeys(newKeys);
 
+        Instant creationTime = federation.getCreationTime();
+        long creationBlockNumber = federation.getCreationBlockNumber();
         Federation otherFederation = new FederationFactory().buildStandardMultiSigFederation(
             differentMembers,
-            federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
+            creationTime,
+            creationBlockNumber,
             networkParameters
         );
 
