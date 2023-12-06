@@ -57,19 +57,21 @@ class PocSighashTest {
         // Arrange
         int erpFedActivationDelay = 720;
 
-        List<FedSigner> fedMembers = FedSigner.listOf("fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7");
-        List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+        List<FedSigner> fedSigners = FedSigner.listOf("fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7");
+        List<FedSigner> erpFedSigners = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
+        List<FederationMember> fedMembers = fedSigners.stream().map(FedSigner::getFed).collect(Collectors.toList());
+        List<BtcECKey> erpFedPubKeys = erpFedSigners.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
         ErpFederation fed = new FederationFactory().buildP2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
+            fedMembers,
             Instant.now(),
             0L,
             networkParameters,
-            erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
+            erpFedPubKeys,
             erpFedActivationDelay
         );
 
@@ -101,7 +103,7 @@ class PocSighashTest {
             networkParameters,
             erpFedActivationDelay,
             fed,
-            fedMembers,
+            fedSigners,
             false,
             utxos,
             totalAmount.minus(Coin.valueOf(15_000)),

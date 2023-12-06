@@ -6,7 +6,6 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import java.time.Instant;
 import java.util.List;
-
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFactory;
 import org.bouncycastle.util.encoders.Hex;

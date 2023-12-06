@@ -109,13 +109,11 @@ class BridgeSupportTest {
 
     protected ActivationConfig.ForBlock activationsBeforeForks;
     protected ActivationConfig.ForBlock activationsAfterForks;
-    protected ActivationConfig.ForBlock activations;
 
     protected SignatureCache signatureCache;
 
     @BeforeEach
     void setUpOnEachTest() {
-        activations = mock(ActivationConfig.ForBlock.class);
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
