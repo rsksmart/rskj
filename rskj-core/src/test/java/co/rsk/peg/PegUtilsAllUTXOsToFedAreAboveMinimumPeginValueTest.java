@@ -71,12 +71,12 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock activationsForArrowhead600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Wallet fedWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         assertFalse(
-            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForTbd600),
+            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForArrowhead600),
             "When RSKIP379 is active and the utxo list to the fed is empty, it should return false."
         );
     }
@@ -111,7 +111,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock activationsForArrowhead600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Address randomAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "add1");
 
@@ -122,7 +122,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
         Wallet fedWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         assertFalse(
-            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForTbd600),
+            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForArrowhead600),
         "When RSKIP379 is active and there are many utxos but none for the fed, it should return false."
         );
     }
@@ -158,7 +158,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock activationsForArrowhead600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Address randomAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "add1");
 
@@ -169,7 +169,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
         Wallet fedWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         assertFalse(
-            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForTbd600),
+            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForArrowhead600),
             "When RSKIP379 is active and there are many utxos equal and above minimum but none for the fed, it returns false."
         );
     }
@@ -207,7 +207,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock activationsForArrowhead600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Address randomAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "add1");
 
@@ -221,7 +221,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
         Wallet fedWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         assertTrue(
-            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForTbd600),
+            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForArrowhead600),
         "When RSKIP379 is active and there are many utxos for fed above minimum and many utxos to random addresses below minimum, it returns true."
         );
     }
@@ -256,7 +256,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock activationsForArrowhead600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Coin amountJustBelowMinimum = minimumPegInTxValue.minus(Coin.SATOSHI);
 
@@ -267,7 +267,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
         Wallet fedWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         assertFalse(
-            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForTbd600),
+            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForArrowhead600),
         "When RSKIP379 is active and there are many utxos to the fed but there is at least one of them below the minimum," +
                     " even though the sum of all those utxos is above minimum, it should return false."
         );
@@ -303,7 +303,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock activationsForArrowhead600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         btcTx.addOutput(minimumPegInTxValue, activeFederation.getAddress()); // With minimum
         btcTx.addOutput(minimumPegInTxValue.add(Coin.SATOSHI), activeFederation.getAddress()); // Above minimum
@@ -312,7 +312,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
         Wallet fedWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         assertFalse(
-            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForTbd600),
+            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForArrowhead600),
         "When RSKIP379 is active and there are many utxos to the fed but there is at least one of them below the minimum, it should return true."
         );
 
@@ -346,7 +346,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock activationsForArrowhead600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         btcTx.addOutput(minimumPegInTxValue, activeFederation.getAddress()); // With minimum
         btcTx.addOutput(minimumPegInTxValue.add(Coin.SATOSHI), activeFederation.getAddress()); // Above minimum
@@ -355,7 +355,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
         Wallet fedWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         assertTrue(
-            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForTbd600),
+            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForArrowhead600),
             "When RSKIP379 is active and there are many utxos to the fed above minimum, it returns true."
         );
     }
@@ -394,7 +394,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock activationsForArrowhead600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         btcTx.addOutput(minimumPegInTxValue.minus(Coin.SATOSHI), activeFederation.getAddress()); // Below minimum to active fed
         btcTx.addOutput(minimumPegInTxValue, activeFederation.getAddress()); // Minimum to active fed
@@ -408,7 +408,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
         Wallet fedWallet = new BridgeBtcWallet(context, federations);
 
         assertFalse(
-            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForTbd600),
+            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForArrowhead600),
         "When PreRSKIP379 is active and there are 2 feds, 1 retiring and 1 active, and there are utxos equal and above minimum for " +
                         "one of them and utxos below minimum for the other, it should return false."
         );
@@ -537,7 +537,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeMainnetConstants.getBtcParams());
 
-        ActivationConfig.ForBlock activationsForTbd600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock activationsForArrowhead600 = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Coin belowMinimumValue = minimumPegInTxValue.minus(Coin.SATOSHI);
         btcTx.addOutput(belowMinimumValue, activeFederation.getAddress());
@@ -552,7 +552,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
         Wallet fedWallet = new BridgeBtcWallet(context, federations);
 
         assertFalse(
-            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForTbd600),
+            PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPegInTxValue, activationsForArrowhead600),
         "When PreRSKIP379 is active and there are 2 feds, 1 retiring and 1 active, and there are utxos below minimum for both, it should return false."
         );
     }
