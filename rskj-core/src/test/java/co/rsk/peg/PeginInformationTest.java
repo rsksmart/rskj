@@ -39,7 +39,7 @@ class PeginInformationTest {
     private static NetworkParameters networkParameters;
 
     private static final ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
-    private static final ActivationConfig.ForBlock tbd600Activations = ActivationConfigsForTest.tbd600().forBlock(0);
+    private static final ActivationConfig.ForBlock tbd600Activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
     @BeforeAll
      static void setup() {
