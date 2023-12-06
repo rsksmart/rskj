@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Context;
@@ -10,7 +11,7 @@ import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.time.Instant;
 import java.util.Arrays;
@@ -18,6 +19,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,25 +36,31 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     private ErpFederation erpFederation;
     private List<Federation> federationList;
     private List<Federation> erpFederationList;
+    private ActivationConfig.ForBlock activations;
 
     @BeforeEach
     void setup() {
 
-        federation = new StandardMultisigFederation(
+        federation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        erpFederation = new ErpFederation(
+        activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        erpFederation = FederationFactory.buildNonStandardErpFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             erpFedKeys,
             5063,
-            new NonStandardErpRedeemScriptBuilder()
+            activations
         );
 
         federationList = Collections.singletonList(federation);

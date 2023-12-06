@@ -6,6 +6,8 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import java.time.Instant;
 import java.util.List;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -456,7 +458,7 @@ class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new StandardMultisigFederation(
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
@@ -478,7 +480,7 @@ class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new StandardMultisigFederation(
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
@@ -493,7 +495,7 @@ class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = new StandardMultisigFederation(
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,

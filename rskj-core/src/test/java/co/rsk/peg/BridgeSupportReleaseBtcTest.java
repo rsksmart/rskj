@@ -25,6 +25,8 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.RejectedPegoutReason;
@@ -1250,7 +1252,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private static Federation getFederation() {
-        return new StandardMultisigFederation(
+        return FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,

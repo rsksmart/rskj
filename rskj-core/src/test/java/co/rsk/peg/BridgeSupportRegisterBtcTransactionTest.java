@@ -1,16 +1,6 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.StoredBlock;
-import co.rsk.bitcoinj.core.TransactionWitness;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -21,8 +11,9 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -33,11 +24,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockTxSignatureCache;
-import org.ethereum.core.ReceivedTxSignatureCache;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
@@ -50,31 +37,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
-import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
-import static co.rsk.peg.PegTestUtils.createBech32Output;
-import static co.rsk.peg.PegTestUtils.createFederation;
-import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
-import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
-import static co.rsk.peg.pegin.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
+import static co.rsk.peg.PegTestUtils.*;
+import static co.rsk.peg.pegin.RejectedPeginReason.*;
 import static co.rsk.peg.utils.UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class BridgeSupportRegisterBtcTransactionTest {
 
@@ -382,28 +353,26 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         retiringFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
-        retiringFederation = new ErpFederation(
+        retiringFederation = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedSigners),
             Instant.ofEpochMilli(1000L),
             1,
             bridgeMainnetConstants.getBtcParams(),
             bridgeMainnetConstants.getErpFedPubKeysList(),
-            bridgeMainnetConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            bridgeMainnetConstants.getErpFedActivationDelay()
         );
 
         activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa07", "fa08", "fa09", "fa10", "fa11"}, true
         );
         activeFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
-        activeFederation = new ErpFederation(
+        activeFederation = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners),
             Instant.ofEpochMilli(1000L),
             2L,
             bridgeMainnetConstants.getBtcParams(),
             bridgeMainnetConstants.getErpFedPubKeysList(),
-            bridgeMainnetConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            bridgeMainnetConstants.getErpFedActivationDelay()
         );
 
         mockFactory = mock(BtcBlockStoreWithCache.Factory.class);

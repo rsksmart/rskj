@@ -1,12 +1,6 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
@@ -16,7 +10,9 @@ import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
+import co.rsk.peg.federation.ErpFederation;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -210,14 +206,13 @@ class PegUtilsTest {
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
-        ErpFederation activeFed = new ErpFederation(
+        ErpFederation activeFed = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(signers),
             Instant.ofEpochMilli(1000L),
             0L,
             btcMainnetParams,
             bridgeMainnetConstants.getErpFedPubKeysList(),
-            bridgeMainnetConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            bridgeMainnetConstants.getErpFedActivationDelay()
         );
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFed, activeFed));
 
@@ -613,14 +608,13 @@ class PegUtilsTest {
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
-        ErpFederation activeFed = new ErpFederation(
+        ErpFederation activeFed = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(signers),
             Instant.ofEpochMilli(1000L),
             0L,
             btcTestNetParams,
             bridgeTestNetConstants.getErpFedPubKeysList(),
-            bridgeTestNetConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            bridgeTestNetConstants.getErpFedActivationDelay()
         );
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Arrays.asList(retiringFed, activeFed));
 

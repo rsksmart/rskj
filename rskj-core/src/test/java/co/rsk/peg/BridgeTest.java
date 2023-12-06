@@ -7,6 +7,8 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -238,7 +240,7 @@ class BridgeTest {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(false).when(activations).isActive(eq(RSKIP199), anyLong());
 
-        Federation activeFederation = new StandardMultisigFederation(
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,
@@ -284,7 +286,7 @@ class BridgeTest {
         List<BtcECKey> federationKeys = Arrays.asList(fed1Key, new BtcECKey(), new BtcECKey());
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = new StandardMultisigFederation(
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembersWithKeys(federationKeys),
             Instant.ofEpochMilli(1000),
             0L,

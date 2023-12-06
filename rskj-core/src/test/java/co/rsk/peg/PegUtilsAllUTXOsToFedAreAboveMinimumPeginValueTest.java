@@ -18,6 +18,7 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import co.rsk.peg.federation.Federation;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.BeforeEach;

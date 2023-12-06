@@ -5,7 +5,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.FederationMember;
-import co.rsk.peg.StandardMultisigFederation;
+import co.rsk.peg.federation.FederationFactory;
 import com.google.common.collect.Lists;
 import java.time.Instant;
 import java.util.Arrays;
@@ -52,7 +52,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400L);
 
-        genesisFederation = new StandardMultisigFederation(
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(
             federationMembers,
             genesisFederationAddressCreatedAt,
             1L,

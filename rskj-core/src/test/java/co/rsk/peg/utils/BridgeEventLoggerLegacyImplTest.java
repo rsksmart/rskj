@@ -24,6 +24,9 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.PegTestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -207,7 +210,7 @@ class BridgeEventLoggerLegacyImplTest {
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
 
-        Federation oldFederation = new StandardMultisigFederation(oldFederationMembers,
+        Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(oldFederationMembers,
             Instant.ofEpochMilli(15005L), 15L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
 
         List<BtcECKey> newFederationKeys = Arrays.asList(
@@ -218,7 +221,7 @@ class BridgeEventLoggerLegacyImplTest {
 
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
 
-        Federation newFederation = new StandardMultisigFederation(
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
             newFederationMembers,
             Instant.ofEpochMilli(5005L),
             0L,

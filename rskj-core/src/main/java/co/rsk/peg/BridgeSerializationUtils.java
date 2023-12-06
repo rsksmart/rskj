@@ -24,9 +24,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
@@ -276,7 +274,12 @@ public class BridgeSerializationUtils {
             federationMembers.add(member);
         }
 
-        return new StandardMultisigFederation(federationMembers, creationTime, creationBlockNumber, networkParameters);
+        return FederationFactory.buildStandardMultiSigFederation(
+            federationMembers,
+            creationTime,
+            creationBlockNumber,
+            networkParameters
+        );
     }
 
     /**
@@ -328,17 +331,14 @@ public class BridgeSerializationUtils {
             BridgeSerializationUtils::deserializeFederationMember
         );
 
-        ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
-
-        return new ErpFederation(
+        return FederationFactory.buildNonStandardErpFederation(
             federation.getMembers(),
-            federation.creationTime,
+            federation.getCreationTime(),
             federation.getCreationBlockNumber(),
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            erpRedeemScriptBuilder
+            activations
         );
     }
 
@@ -351,14 +351,13 @@ public class BridgeSerializationUtils {
             bridgeConstants.getBtcParams(),
             BridgeSerializationUtils::deserializeFederationMember
         );
-        return new ErpFederation(
+        return FederationFactory.buildP2shErpFederation(
             federation.getMembers(),
-            federation.creationTime,
+            federation.getCreationTime(),
             federation.getCreationBlockNumber(),
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            bridgeConstants.getErpFedActivationDelay()
         );
     }
 
