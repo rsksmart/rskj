@@ -16,13 +16,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.peg.FederationMember;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -45,10 +46,17 @@ public abstract class Federation {
     protected final NetworkParameters btcParams;
 
     protected Script redeemScript;
+    protected int formatVersion;
     protected Script p2shScript;
     protected Address address;
 
-    protected Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber, NetworkParameters btcParams) {
+    protected Federation(
+        List<FederationMember> members,
+        Instant creationTime,
+        long creationBlockNumber,
+        NetworkParameters btcParams,
+        int formatVersion
+    ) {
         // Sorting members ensures same order of federation members for same members
         // Immutability provides protection against unwanted modification, thus making the Federation instance
         // effectively immutable
@@ -56,6 +64,11 @@ public abstract class Federation {
         this.creationTime = creationTime.truncatedTo(ChronoUnit.MILLIS);
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
+        this.formatVersion = formatVersion;
+    }
+
+    public int getFormatVersion() {
+        return formatVersion;
     }
 
     public List<FederationMember> getMembers() {

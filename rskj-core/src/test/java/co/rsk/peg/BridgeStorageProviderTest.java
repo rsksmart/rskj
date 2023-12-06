@@ -28,6 +28,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
@@ -65,6 +66,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
@@ -79,13 +81,14 @@ import static co.rsk.peg.BridgeStorageIndexKey.*;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BridgeStorageProviderTest {
     private static final byte FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST = (byte) 1;
-    private static final int FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
-    private static final int ERP_FEDERATION_FORMAT_VERSION = 2000;
-    private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
+    private static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = STANDARD_MULTISIG_FEDERATION.getFormatVersion();
+    private static final int NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION = NON_STANDARD_ERP_FEDERATION.getFormatVersion();
+    private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = P2SH_ERP_FEDERATION.getFormatVersion();
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
     private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
+    private final ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
     private final BridgeTestNetConstants bridgeTestnetInstance = BridgeTestNetConstants.getInstance();
     private final NetworkParameters networkParameters = bridgeTestnetInstance.getBtcParams();
 
@@ -403,14 +406,16 @@ class BridgeStorageProviderTest {
     void getNewFederation_erp_fed() {
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation newFederation = buildMockFederation(100, 200, 300);
-        ErpFederation erpFederation = new ErpFederation(
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        ErpFederation erpFederation = new FederationFactory().buildNonStandardErpFederation(
             newFederation.getMembers(),
             newFederation.getCreationTime(),
             newFederation.getCreationBlockNumber(),
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilderHardcoded()
+            activations
         );
 
         testGetNewFederationPostMultiKey(erpFederation);
@@ -419,14 +424,13 @@ class BridgeStorageProviderTest {
     @Test
     void getNewFederation_p2sh_erp_fed() {
         Federation newFederation = buildMockFederation(100, 200, 300);
-        ErpFederation p2shErpFederation = new ErpFederation(
+        ErpFederation p2shErpFederation = new FederationFactory().buildP2shErpFederation(
             newFederation.getMembers(),
             newFederation.getCreationTime(),
             newFederation.getCreationBlockNumber(),
             newFederation.getBtcParams(),
             bridgeTestnetInstance.getErpFedPubKeysList(),
-            bridgeTestnetInstance.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            bridgeTestnetInstance.getErpFedActivationDelay()
         );
 
         testGetNewFederationPostMultiKey(p2shErpFederation);
@@ -535,7 +539,7 @@ class BridgeStorageProviderTest {
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
 
         Federation newFederation = buildMockFederation(100, 200, 300);
-        testSaveNewFederationPostMultiKey(newFederation, FEDERATION_FORMAT_VERSION_MULTIKEY, activations);
+        testSaveNewFederationPostMultiKey(newFederation, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, activations);
     }
 
     @Test
@@ -547,17 +551,17 @@ class BridgeStorageProviderTest {
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation newFederation = buildMockFederation(100, 200, 300);
 
-        ErpFederation erpFederation = new ErpFederation(
+        ErpFederation erpFederation = new FederationFactory().buildNonStandardErpFederation(
             newFederation.getMembers(),
             newFederation.getCreationTime(),
             newFederation.getCreationBlockNumber(),
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilder()
+            activations
         );
 
-        testSaveNewFederationPostMultiKey(erpFederation, ERP_FEDERATION_FORMAT_VERSION, activations);
+        testSaveNewFederationPostMultiKey(erpFederation, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, activations);
     }
 
     @Test
@@ -569,14 +573,13 @@ class BridgeStorageProviderTest {
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation newFederation = buildMockFederation(100, 200, 300);
 
-        ErpFederation p2shErpFederation = new ErpFederation(
+        ErpFederation p2shErpFederation = new FederationFactory().buildP2shErpFederation(
             newFederation.getMembers(),
             newFederation.getCreationTime(),
             newFederation.getCreationBlockNumber(),
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            bridgeConstants.getErpFedActivationDelay()
         );
 
         testSaveNewFederationPostMultiKey(p2shErpFederation, P2SH_ERP_FEDERATION_FORMAT_VERSION, activations);
@@ -688,14 +691,14 @@ class BridgeStorageProviderTest {
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        ErpFederation erpFederation = new ErpFederation(
+        ErpFederation erpFederation = new FederationFactory().buildNonStandardErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
             oldFederation.getCreationBlockNumber(),
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilderHardcoded()
+            activations
         );
 
         testGetOldFederation(erpFederation, activations);
@@ -711,14 +714,14 @@ class BridgeStorageProviderTest {
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        ErpFederation erpFederation = new ErpFederation(
+        ErpFederation erpFederation = new FederationFactory().buildNonStandardErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
             oldFederation.getCreationBlockNumber(),
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE()
+            activations
         );
 
         testGetOldFederation(erpFederation, activations);
@@ -735,14 +738,14 @@ class BridgeStorageProviderTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederation erpFederation = new ErpFederation(
+        ErpFederation erpFederation = new FederationFactory().buildNonStandardErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
             oldFederation.getCreationBlockNumber(),
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilder()
+            activations
         );
 
         testGetOldFederation(erpFederation, activations);
@@ -754,14 +757,13 @@ class BridgeStorageProviderTest {
         Federation oldFederation = buildMockFederation(100, 200, 300);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        ErpFederation p2shErpFederation = new ErpFederation(
+        ErpFederation p2shErpFederation = new FederationFactory().buildP2shErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
             oldFederation.getCreationBlockNumber(),
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            bridgeConstants.getErpFedActivationDelay()
         );
 
         testGetOldFederation(p2shErpFederation, activations);
@@ -866,44 +868,48 @@ class BridgeStorageProviderTest {
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
 
         Federation oldFederation = buildMockFederation(100, 200, 300);
-        testSaveOldFederation(oldFederation, FEDERATION_FORMAT_VERSION_MULTIKEY, activations);
+        testSaveOldFederation(oldFederation, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, activations);
     }
 
     @Test
     void saveOldFederation_postMultikey_RSKIP_201_active_erp_fed() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation oldFederation = buildMockFederation(100, 200, 300);
-        ErpFederation erpFederation = new ErpFederation(
+        ErpFederation erpFederation = new FederationFactory().buildNonStandardErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
             oldFederation.getCreationBlockNumber(),
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            new NonStandardErpRedeemScriptBuilder()
+            activations
         );
 
-        testSaveOldFederation(erpFederation, ERP_FEDERATION_FORMAT_VERSION, activations);
+        testSaveOldFederation(erpFederation, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, activations);
     }
 
     @Test
     void saveOldFederation_postMultikey_RSKIP_353_active_p2sh_erp_fed() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(true);
 
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation oldFederation = buildMockFederation(100, 200, 300);
-        ErpFederation p2shErpFederation = new ErpFederation(
+        ErpFederation p2shErpFederation = new FederationFactory().buildP2shErpFederation(
             oldFederation.getMembers(),
             oldFederation.getCreationTime(),
             oldFederation.getCreationBlockNumber(),
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            new P2shErpRedeemScriptBuilder()
+            bridgeConstants.getErpFedActivationDelay()
         );
 
         testSaveOldFederation(p2shErpFederation, P2SH_ERP_FEDERATION_FORMAT_VERSION, activations);
@@ -3642,7 +3648,7 @@ class BridgeStorageProviderTest {
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
                 Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
-                int federationVersion = getFederationVersion(oldFederation);
+                int federationVersion = oldFederation.getFormatVersion();
                 return RLP.encodeBigInteger(BigInteger.valueOf(federationVersion));
             } else {
                 // Second call is the actual storage getter
@@ -3733,7 +3739,7 @@ class BridgeStorageProviderTest {
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
                 Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
-                int federationVersion = getFederationVersion(federation);
+                int federationVersion = federation.getFormatVersion();
                 return RLP.encodeBigInteger(BigInteger.valueOf(federationVersion));
             } else {
                 // Second call is the actual storage getter
@@ -3939,7 +3945,7 @@ class BridgeStorageProviderTest {
     }
 
     private Federation buildMockFederation(Integer... pks) {
-        return new StandardMultisigFederation(
+        return new FederationFactory().buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembersFromPks(pks),
             Instant.ofEpochMilli(1000),
             1,
@@ -3959,19 +3965,5 @@ class BridgeStorageProviderTest {
     private static Repository createRepository() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie(trieStore))));
-    }
-
-    private int getFederationVersion(Federation federation) {
-        if (federation instanceof StandardMultisigFederation) {
-            return BridgeStorageProvider.STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION;
-        } else if (federation instanceof ErpFederation) {
-            ErpRedeemScriptBuilder builder = ((ErpFederation) federation).getErpRedeemScriptBuilder();
-            if (builder instanceof P2shErpRedeemScriptBuilder) {
-                return BridgeStorageProvider.P2SH_ERP_FEDERATION_FORMAT_VERSION;
-            } else {
-                return BridgeStorageProvider.LEGACY_ERP_FEDERATION_FORMAT_VERSION;
-            }
-        }
-        throw new IllegalArgumentException("Unknown Federation type: " + federation.getClass());
     }
 }

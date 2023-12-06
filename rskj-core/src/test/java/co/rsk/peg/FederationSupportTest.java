@@ -23,6 +23,9 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.StandardMultisigFederation;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -37,7 +40,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -167,7 +169,7 @@ class FederationSupportTest {
         ECKey rskKey1 = new ECKey();
         ECKey mstKey1 = new ECKey();
 
-        Federation theFederation = new StandardMultisigFederation(
+        Federation theFederation = new FederationFactory().buildStandardMultiSigFederation(
             Arrays.asList(
                 new FederationMember(btcKey0, rskKey0, mstKey0),
                 new FederationMember(btcKey1, rskKey1, mstKey1)
@@ -243,9 +245,11 @@ class FederationSupportTest {
         );
         List<FederationMember> members = FederationTestUtils.getFederationMembersWithBtcKeys(keys);
 
-        return new StandardMultisigFederation(
-            members, Instant.ofEpochMilli(123),
-            creationBlockNumber, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        return new FederationFactory().buildStandardMultiSigFederation(
+            members,
+            Instant.ofEpochMilli(123),
+            creationBlockNumber,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
     }
 }
