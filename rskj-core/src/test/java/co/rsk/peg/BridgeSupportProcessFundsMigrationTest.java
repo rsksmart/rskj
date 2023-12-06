@@ -129,7 +129,7 @@ class BridgeSupportProcessFundsMigrationTest {
             federationActivationAge +
             bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations) + 1;
 
-        Federation newFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             federationCreationBlockNumber,

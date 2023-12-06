@@ -41,7 +41,7 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     @BeforeEach
     void setup() {
 
-        federation = new FederationFactory().buildStandardMultiSigFederation(
+        federation = FederationFactory.buildStandardMultiSigFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,
@@ -53,7 +53,7 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        erpFederation = new FederationFactory().buildNonStandardErpFederation(
+        erpFederation = FederationFactory.buildNonStandardErpFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,

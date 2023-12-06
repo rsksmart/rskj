@@ -169,7 +169,7 @@ class FederationSupportTest {
         ECKey rskKey1 = new ECKey();
         ECKey mstKey1 = new ECKey();
 
-        Federation theFederation = new FederationFactory().buildStandardMultiSigFederation(
+        Federation theFederation = FederationFactory.buildStandardMultiSigFederation(
             Arrays.asList(
                 new FederationMember(btcKey0, rskKey0, mstKey0),
                 new FederationMember(btcKey1, rskKey1, mstKey1)
@@ -245,7 +245,7 @@ class FederationSupportTest {
         );
         List<FederationMember> members = FederationTestUtils.getFederationMembersWithBtcKeys(keys);
 
-        return new FederationFactory().buildStandardMultiSigFederation(
+        return FederationFactory.buildStandardMultiSigFederation(
             members,
             Instant.ofEpochMilli(123),
             creationBlockNumber,

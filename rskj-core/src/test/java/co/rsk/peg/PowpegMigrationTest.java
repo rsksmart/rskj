@@ -133,7 +133,7 @@ class PowpegMigrationTest {
         Federation originalPowpeg;
         switch (oldPowPegFederationType) {
             case legacyErp:
-                originalPowpeg = new FederationFactory().buildNonStandardErpFederation(
+                originalPowpeg = FederationFactory.buildNonStandardErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
                     0,
@@ -144,7 +144,7 @@ class PowpegMigrationTest {
                 );
                 break;
             case p2shErp:
-                originalPowpeg = new FederationFactory().buildP2shErpFederation(
+                originalPowpeg = FederationFactory.buildP2shErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
                     0,

@@ -353,7 +353,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         retiringFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
-        retiringFederation = new FederationFactory().buildP2shErpFederation(
+        retiringFederation = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedSigners),
             Instant.ofEpochMilli(1000L),
             1,
@@ -366,7 +366,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             new String[]{"fa07", "fa08", "fa09", "fa10", "fa11"}, true
         );
         activeFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
-        activeFederation = new FederationFactory().buildP2shErpFederation(
+        activeFederation = FederationFactory.buildP2shErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners),
             Instant.ofEpochMilli(1000L),
             2L,
