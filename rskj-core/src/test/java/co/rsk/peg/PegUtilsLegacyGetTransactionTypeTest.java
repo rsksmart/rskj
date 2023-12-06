@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
+
+import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -69,28 +71,28 @@ class PegUtilsLegacyGetTransactionTypeTest {
         );
 
         // Arrange
-        Federation activeFederation = new P2shErpFederation(
+        Federation activeFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(standardKeys),
             bridgeMainnetConstants.getGenesisFederation().getCreationTime(),
             5L,
             bridgeMainnetConstants.getGenesisFederation().getBtcParams(),
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
+            new P2shErpRedeemScriptBuilder()
         );
 
         List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
 
-        P2shErpFederation p2shRetiringFederation = new P2shErpFederation(
+        ErpFederation p2shRetiringFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(fedKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             btcMainnetParams,
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay(),
-            activations
+            new P2shErpRedeemScriptBuilder()
         );
 
         // Create a migrationTx from the p2sh erp fed
@@ -343,14 +345,14 @@ class PegUtilsLegacyGetTransactionTypeTest {
             new String[]{"fa04", "fa05", "fa06"}, true
         );
 
-        Federation activeFederation = new P2shErpFederation(
+        Federation activeFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(activeFedKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             btcMainnetParams,
             erpFedKeys,
             100L,
-            activations
+            new P2shErpRedeemScriptBuilder()
         );
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);

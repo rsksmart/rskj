@@ -388,13 +388,13 @@ public class PegUtilsLegacy {
 
     private static Script getFederationStandardRedeemScript(Federation federation) {
         return federation instanceof ErpFederation ?
-            ((ErpFederation) federation).getStandardRedeemScript() :
+            ((ErpFederation) federation).getDefaultRedeemScript() :
             federation.getRedeemScript();
     }
 
     private static Script getFederationStandardP2SHScript(Federation federation) {
         return federation instanceof ErpFederation ?
-            ((ErpFederation) federation).getStandardP2SHScript() :
+            ((ErpFederation) federation).getDefaultP2SHScript() :
             federation.getP2SHScript();
     }
 }
