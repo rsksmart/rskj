@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 class PegUtilsGetTransactionTypeTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
-    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
@@ -95,7 +95,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> unknown_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -228,7 +228,7 @@ class PegUtilsGetTransactionTypeTest {
     // Pegin tests
     private static Stream<Arguments> pegin_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -440,7 +440,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> pegin_multiple_outputs_to_active_fed_sum_amount_equal_to_minimum_pegin_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -550,7 +550,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> pegin_retired_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -771,7 +771,7 @@ class PegUtilsGetTransactionTypeTest {
     @Test
     void unknown_anyAddressToAnyAddress_unknown_after_RSIP379_and_using_pegout_tx_index() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
 
@@ -799,7 +799,7 @@ class PegUtilsGetTransactionTypeTest {
     @Test
     void unknown_anyAddressToAnyAddress_below_minimum_unknown_after_RSIP379_and_using_pegout_tx_index() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         Coin belowMinimum = bridgeMainnetConstants.getMinimumPeginTxValue(activations).minus(Coin.SATOSHI);
 
@@ -826,7 +826,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> sending_funds_below_minimum_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -921,7 +921,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> sending_funds_equal_or_above_to_minimum_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -1005,7 +1005,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> pegout_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -1394,7 +1394,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> migration_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -1588,7 +1588,7 @@ class PegUtilsGetTransactionTypeTest {
     // Flyover tests
     private static Stream<Arguments> flyover_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -1806,7 +1806,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> flyover_migration_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -2060,7 +2060,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> old_fed_to_live_fed_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -2143,7 +2143,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> retired_fed_to_live_fed_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -2214,7 +2214,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> retired_fed_no_existing_in_the_storage_to_live_fed_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(

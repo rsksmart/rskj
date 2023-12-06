@@ -179,7 +179,8 @@ public class ActivationConfigsForTest {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(Arrays.asList(
             ConsensusRule.RSKIP376,
-            ConsensusRule.RSKIP379
+            ConsensusRule.RSKIP379,
+            ConsensusRule.RSKIP400
         ));
 
         return rskips;

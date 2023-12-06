@@ -34,7 +34,7 @@ class PegUtilsEvaluatePeginTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters networkParameters = bridgeMainnetConstants.getBtcParams();
     private static final Context context = new Context(networkParameters);
-    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd600().forBlock(0);
+    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
     private Federation activeFederation;
     private Coin minimumPegInTxValue;

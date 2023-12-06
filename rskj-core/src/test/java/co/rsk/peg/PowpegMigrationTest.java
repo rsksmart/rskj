@@ -1557,7 +1557,7 @@ class PowpegMigrationTest {
     @Test
     void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg_post_RSKIP_379_pegout_tx_index() throws Exception {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest
-            .tbd600()
+            .arrowhead600()
             .forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(
