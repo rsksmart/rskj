@@ -26,6 +26,8 @@ import co.rsk.peg.*;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;

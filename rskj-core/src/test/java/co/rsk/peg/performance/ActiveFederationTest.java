@@ -23,7 +23,7 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.*;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.StandardMultisigFederation;
+import co.rsk.peg.federation.FederationMember;
 import org.ethereum.TestUtils;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;

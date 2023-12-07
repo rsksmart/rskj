@@ -9,6 +9,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;

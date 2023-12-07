@@ -7,7 +7,6 @@ import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.peg.FederationMember;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.RedeemScriptCreationException;
 import co.rsk.peg.utils.EcKeyUtils;

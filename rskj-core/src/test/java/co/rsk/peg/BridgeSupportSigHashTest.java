@@ -13,6 +13,7 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;

@@ -29,6 +29,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;

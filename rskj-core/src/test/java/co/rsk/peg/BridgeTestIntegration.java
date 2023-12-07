@@ -51,6 +51,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationMember;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;

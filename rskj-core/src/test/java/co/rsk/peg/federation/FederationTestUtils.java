@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
@@ -36,9 +36,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import co.rsk.peg.federation.ErpFederation;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFactory;
 import org.ethereum.crypto.ECKey;
 
 public class FederationTestUtils {
