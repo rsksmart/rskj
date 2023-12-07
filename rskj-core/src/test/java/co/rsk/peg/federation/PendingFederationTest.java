@@ -25,6 +25,7 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.PendingFederation;
 import co.rsk.peg.resources.TestConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
