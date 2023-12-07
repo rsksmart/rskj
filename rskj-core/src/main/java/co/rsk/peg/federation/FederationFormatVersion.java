@@ -7,8 +7,8 @@ public enum FederationFormatVersion {
 
     private int version;
 
-    FederationFormatVersion(int i) {
-        this.version = i;
+    FederationFormatVersion(int version) {
+        this.version = version;
     }
 
     public int getFormatVersion() {
