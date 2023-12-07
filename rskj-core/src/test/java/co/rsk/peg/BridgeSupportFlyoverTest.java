@@ -42,7 +42,6 @@ import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
