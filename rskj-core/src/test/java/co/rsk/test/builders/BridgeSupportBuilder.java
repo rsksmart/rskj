@@ -7,7 +7,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
-import co.rsk.peg.FederationSupport;
+import co.rsk.peg.federation.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;

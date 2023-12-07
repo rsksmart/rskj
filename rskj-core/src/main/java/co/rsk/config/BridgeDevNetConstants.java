@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.FederationMember;
+import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.FederationFactory;
 import java.time.Instant;
 import java.util.Arrays;

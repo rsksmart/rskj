@@ -29,6 +29,7 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import java.util.Arrays;
 import java.util.List;
