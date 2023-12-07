@@ -42,6 +42,14 @@ public final class FederationMember {
     private final ECKey rskPublicKey;
     private final ECKey mstPublicKey;
 
+    public FederationMember(BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
+        // Copy public keys to ensure effective immutability
+        // Make sure we always use compressed versions of public keys
+        this.btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
+        this.rskPublicKey = ECKey.fromPublicOnly(rskPublicKey.getPubKey(true));
+        this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey(true));
+    }
+
     public enum KeyType {
         BTC("btc"),
         RSK("rsk"),
@@ -117,14 +125,6 @@ public final class FederationMember {
             return btcKeysComparison;
         }
     };
-
-    public FederationMember(BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
-        // Copy public keys to ensure effective immutability
-        // Make sure we always use compressed versions of public keys
-        this.btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
-        this.rskPublicKey = ECKey.fromPublicOnly(rskPublicKey.getPubKey(true));
-        this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey(true));
-    }
 
     public BtcECKey getBtcPublicKey() {
         // Return a copy

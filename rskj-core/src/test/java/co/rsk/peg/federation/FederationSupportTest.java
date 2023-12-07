@@ -23,6 +23,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.FederationSupport;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
