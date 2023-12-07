@@ -19,7 +19,11 @@
 package co.rsk.net.discovery;
 
 import co.rsk.net.NodeID;
-import co.rsk.net.discovery.message.*;
+import co.rsk.net.discovery.message.DiscoveryMessageType;
+import co.rsk.net.discovery.message.FindNodePeerMessage;
+import co.rsk.net.discovery.message.NeighborsPeerMessage;
+import co.rsk.net.discovery.message.PingPeerMessage;
+import co.rsk.net.discovery.message.PongPeerMessage;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
@@ -37,7 +41,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -377,7 +386,6 @@ public class PeerExplorer {
 
     private NeighborsPeerMessage sendNeighbors(InetSocketAddress nodeAddress, List<Node> nodes, String id) {
         List<Node> nodesToSend = getRandomizeLimitedList(nodes, MAX_NODES_PER_MSG, 5);
-
         NeighborsPeerMessage sendNodesMessage = NeighborsPeerMessage.create(nodesToSend, id, this.key, networkId);
 
         logger.debug("sendNeighbors - Sending neighbors message to " +
