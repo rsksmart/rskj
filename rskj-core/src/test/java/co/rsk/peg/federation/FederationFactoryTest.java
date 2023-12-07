@@ -156,7 +156,7 @@ class FederationFactoryTest {
         }
 
         @Test
-        void differentP2shErpFederations_haveP2shFedFormat() {
+        void p2shErpFederation_haveP2shFedFormat() {
             ErpFederation federation;
             int version;
 
