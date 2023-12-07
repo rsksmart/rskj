@@ -438,7 +438,8 @@ public class PeerExplorer {
     private void checkPeersPulse(List<Node> closestNodes) {
         List<Node> nodesToCheck = this.getRandomizeLimitedList(closestNodes, MAX_NODES_TO_CHECK, 10);
 
-        logger.trace("checkPeersPulse - Checking peers pulse for nodes: [{}], nodesToCheck: [{}]", closestNodes, nodesToCheck);
+        logger.trace("checkPeersPulse - Checking peers pulse for nodes: [{}], nodesToCheck: [{}]"
+                , closestNodes, nodesToCheck);
 
         nodesToCheck.forEach(node -> sendPing(node.getAddress(), 1, node));
     }
@@ -446,7 +447,8 @@ public class PeerExplorer {
     private void askForMoreNodes(List<Node> closestNodes) {
         List<Node> nodesToAsk = getRandomizeLimitedList(closestNodes, MAX_NODES_TO_ASK, 5);
 
-        logger.trace("askForMoreNodes - Asking for more nodes from closestNodes: [{}], nodesToAsk: [{}]", closestNodes, nodesToAsk);
+        logger.trace("askForMoreNodes - Asking for more nodes from closestNodes: [{}], nodesToAsk: [{}]"
+                , closestNodes, nodesToAsk);
 
         nodesToAsk.forEach(this::sendFindNode);
     }
@@ -456,7 +458,8 @@ public class PeerExplorer {
                 .filter(PeerDiscoveryRequest::hasExpired).collect(Collectors.toList());
         requests.forEach(r -> pendingRequests.remove(r.getMessageId()));
 
-        logger.trace("removeExpiredRequests - Removing expired requests from pendingRequests: [{}], requests: [{}]", pendingRequests, requests);
+        logger.trace("removeExpiredRequests - Removing expired requests from pendingRequests: [{}], requests: [{}]"
+                , pendingRequests, requests);
 
         return requests;
     }
