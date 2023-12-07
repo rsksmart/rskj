@@ -10,6 +10,7 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationTestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;

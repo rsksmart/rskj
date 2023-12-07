@@ -15,17 +15,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
+import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.StandardMultisigFederation;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;

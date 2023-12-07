@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
@@ -22,10 +22,6 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.bitcoin.*;
-import co.rsk.peg.federation.ErpFederation;
-import co.rsk.peg.federation.ErpFederationCreationException;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.resources.TestConstants;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
