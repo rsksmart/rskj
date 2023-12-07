@@ -38,18 +38,6 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public final class FederationMember {
-    private final BtcECKey btcPublicKey;
-    private final ECKey rskPublicKey;
-    private final ECKey mstPublicKey;
-
-    public FederationMember(BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
-        // Copy public keys to ensure effective immutability
-        // Make sure we always use compressed versions of public keys
-        this.btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
-        this.rskPublicKey = ECKey.fromPublicOnly(rskPublicKey.getPubKey(true));
-        this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey(true));
-    }
-
     /**
      * Compares federation members based on their underlying keys.
      *
@@ -84,6 +72,18 @@ public final class FederationMember {
             return btcKeysComparison;
         }
     };
+
+    private final BtcECKey btcPublicKey;
+    private final ECKey rskPublicKey;
+    private final ECKey mstPublicKey;
+
+    public FederationMember(BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
+        // Copy public keys to ensure effective immutability
+        // Make sure we always use compressed versions of public keys
+        this.btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
+        this.rskPublicKey = ECKey.fromPublicOnly(rskPublicKey.getPubKey(true));
+        this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey(true));
+    }
 
     public enum KeyType {
         BTC("btc"),
