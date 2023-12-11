@@ -272,6 +272,11 @@ public enum OpCode {
      */
     CHAINID(0x46, 0, 1, BASE_TIER),
 
+    /**
+     * (0x48) Get the block base fee
+     */
+    BASEFEE(0x48, 0, 1, BASE_TIER),
+
     /*  Memory, Storage and Flow Operations */
 
     /**
