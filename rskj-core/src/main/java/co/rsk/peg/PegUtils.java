@@ -18,7 +18,6 @@ import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.pegin.PeginEvaluationResult;
 import co.rsk.peg.pegin.PeginProcessAction;
-import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import java.util.ArrayList;
 import java.util.List;
