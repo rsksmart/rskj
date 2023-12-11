@@ -219,42 +219,44 @@ public class SnapshotProcessor {
     }
 
     public void processStateChunkRequest(Peer sender, SnapStateChunkRequestMessage request) {
-        long startChunk = System.currentTimeMillis();
-        logger.debug("SERVER - Processing state chunk request from node {}", sender.getPeerNodeID());
-        List<byte[]> trieEncoded = new ArrayList<>();
-        Block block = blockchain.getBlockByNumber(request.getBlockNumber());
-        final long to = request.getFrom() + (request.getChunkSize() * 1024);
-        TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom(), to);
+        new Thread(() -> {
+            long startChunk = System.currentTimeMillis();
+            logger.debug("SERVER - Processing state chunk request from node {}", sender.getPeerNodeID());
+            List<byte[]> trieEncoded = new ArrayList<>();
+            Block block = blockchain.getBlockByNumber(request.getBlockNumber());
+            final long to = request.getFrom() + (request.getChunkSize() * 1024);
+            TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom(), to);
 
-        // First we add the root nodes on the left of the current node. They are used to validate the chunk.
-        List<byte[]> preRootNodes = it.getPreRootNodes().stream().map((t) -> RLP.encodeList(RLP.encodeElement(t.getEncoded()), RLP.encodeElement(getBytes(t.getLeftHash())))).collect(Collectors.toList());
-        byte[] preRootNodesBytes = !preRootNodes.isEmpty() ? RLP.encodeList(preRootNodes.toArray(new byte[0][0])) : RLP.encodedEmptyList();
+            // First we add the root nodes on the left of the current node. They are used to validate the chunk.
+            List<byte[]> preRootNodes = it.getPreRootNodes().stream().map((t) -> RLP.encodeList(RLP.encodeElement(t.getEncoded()), RLP.encodeElement(getBytes(t.getLeftHash())))).collect(Collectors.toList());
+            byte[] preRootNodesBytes = !preRootNodes.isEmpty() ? RLP.encodeList(preRootNodes.toArray(new byte[0][0])) : RLP.encodedEmptyList();
 
-        // Then we add the nodes corresponding to the chunk.
-        TrieDTO first = it.peek();
-        TrieDTO last = null;
-        while (it.hasNext()) {
-            TrieDTO e = it.next();
-            if (it.hasNext() || it.isEmpty()) {
-                last = e;
-                trieEncoded.add(RLP.encodeElement(e.getEncoded()));
+            // Then we add the nodes corresponding to the chunk.
+            TrieDTO first = it.peek();
+            TrieDTO last = null;
+            while (it.hasNext()) {
+                TrieDTO e = it.next();
+                if (it.hasNext() || it.isEmpty()) {
+                    last = e;
+                    trieEncoded.add(RLP.encodeElement(e.getEncoded()));
+                }
             }
-        }
-        byte[] firstNodeLeftHash = RLP.encodeElement(first.getLeftHash());
-        byte[] nodesBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
-        byte[] lastNodeHashes = last != null ? RLP.encodeList(RLP.encodeElement(getBytes(last.getLeftHash())), RLP.encodeElement(getBytes(last.getRightHash()))) : RLP.encodedEmptyList();
+            byte[] firstNodeLeftHash = RLP.encodeElement(first.getLeftHash());
+            byte[] nodesBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
+            byte[] lastNodeHashes = last != null ? RLP.encodeList(RLP.encodeElement(getBytes(last.getLeftHash())), RLP.encodeElement(getBytes(last.getRightHash()))) : RLP.encodedEmptyList();
 
-        // Last we add the root nodes on the right of the last visited node. They are used to validate the chunk.
-        List<byte[]> postRootNodes = it.getNodesLeftVisiting().stream().map((t) -> RLP.encodeList(RLP.encodeElement(t.getEncoded()), RLP.encodeElement(getBytes(t.getRightHash())))).collect(Collectors.toList());
-        byte[] postRootNodesBytes = !postRootNodes.isEmpty() ? RLP.encodeList(postRootNodes.toArray(new byte[0][0])) : RLP.encodedEmptyList();
-        byte[] chunkBytes = RLP.encodeList(preRootNodesBytes, nodesBytes, firstNodeLeftHash, lastNodeHashes, postRootNodesBytes);
+            // Last we add the root nodes on the right of the last visited node. They are used to validate the chunk.
+            List<byte[]> postRootNodes = it.getNodesLeftVisiting().stream().map((t) -> RLP.encodeList(RLP.encodeElement(t.getEncoded()), RLP.encodeElement(getBytes(t.getRightHash())))).collect(Collectors.toList());
+            byte[] postRootNodesBytes = !postRootNodes.isEmpty() ? RLP.encodeList(postRootNodes.toArray(new byte[0][0])) : RLP.encodedEmptyList();
+            byte[] chunkBytes = RLP.encodeList(preRootNodesBytes, nodesBytes, firstNodeLeftHash, lastNodeHashes, postRootNodesBytes);
 
-        SnapStateChunkResponseMessage responseMessage = new SnapStateChunkResponseMessage(request.getId(), chunkBytes, request.getBlockNumber(), request.getFrom(), to, it.isEmpty());
+            SnapStateChunkResponseMessage responseMessage = new SnapStateChunkResponseMessage(request.getId(), chunkBytes, request.getBlockNumber(), request.getFrom(), to, it.isEmpty());
 
-        long totalChunkTime = System.currentTimeMillis() - startChunk;
+            long totalChunkTime = System.currentTimeMillis() - startChunk;
 
-        logger.debug("SERVER - Sending state chunk from {} of {} bytes to node {}, totalTime {}ms", request.getFrom(), chunkBytes.length, sender.getPeerNodeID(), totalChunkTime);
-        sender.sendMessage(responseMessage);
+            logger.debug("SERVER - Sending state chunk from {} of {} bytes to node {}, totalTime {}ms", request.getFrom(), chunkBytes.length, sender.getPeerNodeID(), totalChunkTime);
+            sender.sendMessage(responseMessage);
+        }).start();
     }
 
     public void processStateChunkResponse(Peer peer, SnapStateChunkResponseMessage message) {
@@ -366,7 +368,6 @@ public class SnapshotProcessor {
             logger.error("Error while processing chunk response.", e);
         }
     }
-
 
 
     private void duplicateTheChunkSize() {

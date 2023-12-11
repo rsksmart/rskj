@@ -106,7 +106,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
 
 
     @Override
-    public void startSnapSync(List<Peer> peers) {
+    public void startSnapSync(PeersInformation peers) {
 
     }
 
