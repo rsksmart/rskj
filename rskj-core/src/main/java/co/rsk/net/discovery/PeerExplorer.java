@@ -19,7 +19,11 @@
 package co.rsk.net.discovery;
 
 import co.rsk.net.NodeID;
-import co.rsk.net.discovery.message.*;
+import co.rsk.net.discovery.message.DiscoveryMessageType;
+import co.rsk.net.discovery.message.FindNodePeerMessage;
+import co.rsk.net.discovery.message.NeighborsPeerMessage;
+import co.rsk.net.discovery.message.PingPeerMessage;
+import co.rsk.net.discovery.message.PongPeerMessage;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
@@ -37,7 +41,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -160,6 +169,12 @@ public class PeerExplorer {
     }
 
     synchronized void handleMessage(DiscoveryEvent event) {
+        logger.debug("handleMessage - Handling message with " +
+                        "type: [{}], " +
+                        "networkId: [{}]",
+                event.getMessage().getMessageType(),
+                event.getMessage().getNetworkId());
+
         if (state != ExecState.RUNNING) {
             logger.warn("Cannot handle message as current state is {}", state);
             return;
@@ -170,6 +185,8 @@ public class PeerExplorer {
         //have a networkId in the message yet, then just let them through, for now.
         if (event.getMessage().getNetworkId().isPresent() &&
                 event.getMessage().getNetworkId().getAsInt() != this.networkId) {
+            logger.warn("handleMessage - Message ignored because remote peer's network id: [{}] is different from local network id: [{}]",
+                    event.getMessage().getNetworkId(), this.networkId);
             return;
         }
         if (type == DiscoveryMessageType.PING) {
@@ -191,8 +208,13 @@ public class PeerExplorer {
 
     private void handlePingMessage(InetSocketAddress address, PingPeerMessage message) {
         this.sendPong(address, message);
-
         Node connectedNode = this.establishedConnections.get(message.getNodeId());
+
+        logger.debug("handlePingMessage - Handling ping message with " +
+                        "address: [{}/{}], " +
+                        "nodeId: [{}], " +
+                        "connectedNode: [{}]"
+                , address.getHostName(), address.getPort(), message.getNodeId(), connectedNode);
 
         if (connectedNode == null) {
             this.sendPing(address, 1);
@@ -204,12 +226,20 @@ public class PeerExplorer {
     private void handlePong(InetSocketAddress pongAddress, PongPeerMessage message) {
         PeerDiscoveryRequest request = this.pendingPingRequests.get(message.getMessageId());
 
+        logger.debug("handlePong - Handling pong message with " +
+                        "address: [{}/{}], " +
+                        "messageId: [{}], " +
+                        "request: [{}]"
+                , pongAddress.getHostName(), pongAddress.getPort(), message.getMessageId(), request);
+
         if (request != null && request.validateMessageResponse(pongAddress, message)) {
             this.pendingPingRequests.remove(message.getMessageId());
             NodeChallenge challenge = this.challengeManager.removeChallenge(message.getMessageId());
             if (challenge == null) {
                 this.addConnection(message, request.getAddress().getHostString(), request.getAddress().getPort());
             }
+        } else {
+            logger.warn("handlePong - Peer discovery request with id [{}] is either null or invalid", message.getMessageId());
         }
     }
 
@@ -219,17 +249,29 @@ public class PeerExplorer {
 
         if (connectedNode != null) {
             List<Node> nodesToSend = this.distanceTable.getClosestNodes(nodeId);
-            logger.debug("About to send [{}] neighbors to ip[{}] port[{}] nodeId[{}]", nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexId());
+            logger.debug("handleFindNode - About to send [{}] neighbors to address: [{}/{}], nodeId: [{}] with messageId: [{}]",
+                    nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexId(), message.getMessageId());
             this.sendNeighbors(connectedNode.getAddress(), nodesToSend, message.getMessageId());
             updateEntry(connectedNode);
+        } else {
+            logger.warn("handleFindNode - Node with id: [{}] is not connected. Ignored", nodeId);
         }
     }
 
     private void handleNeighborsMessage(InetSocketAddress neighborsResponseAddress, NeighborsPeerMessage message) {
-        Node connectedNode = this.establishedConnections.get(message.getNodeId());
+        NodeID nodeId = message.getNodeId();
+        Node connectedNode = this.establishedConnections.get(nodeId);
 
         if (connectedNode != null) {
-            logger.debug("Neighbors received from [{}]", connectedNode.getHexId());
+            logger.debug("handleNeighborsMessage - Neighbors received from id: [{}], address: [{}/{}] with " +
+                            "nodeId: [{}]," +
+                            "messageId: [{}], " +
+                            "nodesCount: [{}], " +
+                            "nodes: [{}], " +
+                            "connectedNode: [{}]",
+                    connectedNode.getHexId(), neighborsResponseAddress.getHostName(), neighborsResponseAddress.getPort(), message.getNodeId(),
+                    message.getMessageId(), message.countNodes(), message.getNodes(), connectedNode);
+
             PeerDiscoveryRequest request = this.pendingFindNodeRequests.remove(message.getMessageId());
 
             if (request != null && request.validateMessageResponse(neighborsResponseAddress, message)) {
@@ -239,6 +281,8 @@ public class PeerExplorer {
                 this.startConversationWithNewNodes();
             }
             updateEntry(connectedNode);
+        } else {
+            logger.warn("handleFindNode - Node with id: [{}] is not connected. Ignored", nodeId);
         }
     }
 
@@ -254,6 +298,8 @@ public class PeerExplorer {
         PingPeerMessage nodeMessage = checkPendingPeerToAddress(nodeAddress);
 
         if (nodeMessage != null) {
+            logger.warn("sendPing - No ping message has been sent to address: [{}/{}], as there's pending one", nodeAddress.getHostName(), nodeAddress.getPort());
+
             return nodeMessage;
         }
 
@@ -263,6 +309,13 @@ public class PeerExplorer {
                 localAddress.getAddress().getHostAddress(),
                 localAddress.getPort(),
                 id, this.key, this.networkId);
+
+        logger.debug("sendPing - Sending ping message to " +
+                        "address: [{}/{}], " +
+                        "attempt: [{}], " +
+                        "nodeMessage: [{}]"
+                , nodeAddress.getHostName(), nodeAddress.getPort(), attempt, nodeMessage);
+
         udpChannel.write(new DiscoveryEvent(nodeMessage, nodeAddress));
 
         PeerDiscoveryRequest request = PeerDiscoveryRequestBuilder.builder().messageId(id)
@@ -275,6 +328,7 @@ public class PeerExplorer {
     }
 
     private void updateEntry(Node connectedNode) {
+        logger.trace("updateEntry - Updating node [{}]", connectedNode.getHexId());
         try {
             updateEntryLock.lock();
             this.distanceTable.updateEntry(connectedNode);
@@ -296,6 +350,13 @@ public class PeerExplorer {
     private PongPeerMessage sendPong(InetSocketAddress nodeAddress, PingPeerMessage message) {
         InetSocketAddress localAddress = this.localNode.getAddress();
         PongPeerMessage pongPeerMessage = PongPeerMessage.create(localAddress.getHostName(), localAddress.getPort(), message.getMessageId(), this.key, this.networkId);
+
+        logger.debug("sendPong - Sending pong message to " +
+                        "address: [{}/{}], " +
+                        "messageId: [{}], " +
+                        "pongPeerMessage: [{}]"
+                , nodeAddress.getHostName(), nodeAddress.getPort(), message.getMessageId(), pongPeerMessage);
+
         udpChannel.write(new DiscoveryEvent(pongPeerMessage, nodeAddress));
 
         return pongPeerMessage;
@@ -306,10 +367,18 @@ public class PeerExplorer {
         InetSocketAddress nodeAddress = node.getAddress();
         String id = UUID.randomUUID().toString();
         FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(this.key.getNodeId(), id, this.key, this.networkId);
+
         udpChannel.write(new DiscoveryEvent(findNodePeerMessage, nodeAddress));
         PeerDiscoveryRequest request = PeerDiscoveryRequestBuilder.builder().messageId(id).relatedNode(node)
                 .message(findNodePeerMessage).address(nodeAddress).expectedResponse(DiscoveryMessageType.NEIGHBORS)
                 .expirationPeriod(requestTimeout).build();
+
+        logger.debug("sendFindNode - Sending find node message to " +
+                        "address: [{}/{}], " +
+                        "findNodePeerMessage: [{}], " +
+                        "request: [{}]"
+                , nodeAddress.getHostName(), nodeAddress.getPort(), findNodePeerMessage, request);
+
         pendingFindNodeRequests.put(findNodePeerMessage.getMessageId(), request);
 
         return findNodePeerMessage;
@@ -318,8 +387,16 @@ public class PeerExplorer {
     private NeighborsPeerMessage sendNeighbors(InetSocketAddress nodeAddress, List<Node> nodes, String id) {
         List<Node> nodesToSend = getRandomizeLimitedList(nodes, MAX_NODES_PER_MSG, 5);
         NeighborsPeerMessage sendNodesMessage = NeighborsPeerMessage.create(nodesToSend, id, this.key, networkId);
+
+        logger.debug("sendNeighbors - Sending neighbors message to " +
+                        "address: [{}/{}], " +
+                        "id: [{}], " +
+                        "nodes: [{}], " +
+                        "nodesToSend: [{}], " +
+                        "sendNodesMessage: [{}]"
+                , nodeAddress.getHostName(), nodeAddress.getPort(), id, nodes, nodesToSend, sendNodesMessage);
+
         udpChannel.write(new DiscoveryEvent(sendNodesMessage, nodeAddress));
-        logger.debug(" [{}] Neighbors Sent to ip:[{}] port:[{}]", nodesToSend.size(), nodeAddress.getAddress().getHostAddress(), nodeAddress.getPort());
 
         return sendNodesMessage;
     }
@@ -340,6 +417,7 @@ public class PeerExplorer {
             return;
         }
 
+        logger.trace("clean - Cleaning obsolete requests");
         this.purgeRequests();
     }
 
@@ -350,17 +428,28 @@ public class PeerExplorer {
         }
 
         List<Node> closestNodes = this.distanceTable.getClosestNodes(this.localNode.getId());
+
+        logger.trace("update - closestNodes: [{}]", closestNodes);
+
         this.askForMoreNodes(closestNodes);
         this.checkPeersPulse(closestNodes);
     }
 
     private void checkPeersPulse(List<Node> closestNodes) {
         List<Node> nodesToCheck = this.getRandomizeLimitedList(closestNodes, MAX_NODES_TO_CHECK, 10);
+
+        logger.trace("checkPeersPulse - Checking peers pulse for nodes: [{}], nodesToCheck: [{}]"
+                , closestNodes, nodesToCheck);
+
         nodesToCheck.forEach(node -> sendPing(node.getAddress(), 1, node));
     }
 
     private void askForMoreNodes(List<Node> closestNodes) {
         List<Node> nodesToAsk = getRandomizeLimitedList(closestNodes, MAX_NODES_TO_ASK, 5);
+
+        logger.trace("askForMoreNodes - Asking for more nodes from closestNodes: [{}], nodesToAsk: [{}]"
+                , closestNodes, nodesToAsk);
+
         nodesToAsk.forEach(this::sendFindNode);
     }
 
@@ -368,6 +457,9 @@ public class PeerExplorer {
         List<PeerDiscoveryRequest> requests = pendingRequests.values().stream()
                 .filter(PeerDiscoveryRequest::hasExpired).collect(Collectors.toList());
         requests.forEach(r -> pendingRequests.remove(r.getMessageId()));
+
+        logger.trace("removeExpiredRequests - Removing expired requests from pendingRequests: [{}], requests: [{}]"
+                , pendingRequests, requests);
 
         return requests;
     }
@@ -377,6 +469,8 @@ public class PeerExplorer {
     }
 
     private void resendExpiredPing(List<PeerDiscoveryRequest> peerDiscoveryRequests) {
+        logger.trace("resendExpiredPing - Resending expired pings form peerDiscoveryRequests: [{}]", peerDiscoveryRequests);
+
         peerDiscoveryRequests.stream().filter(r -> r.getAttemptNumber() < RETRIES_COUNT)
                 .forEach(r -> sendPing(r.getAddress(), r.getAttemptNumber() + 1, r.getRelatedNode()));
     }
@@ -392,6 +486,12 @@ public class PeerExplorer {
     }
 
     private void removeConnection(Node node) {
+        if (logger.isDebugEnabled()) {
+            InetSocketAddress address = node.getAddress();
+            logger.debug("removeConnection - Removing node: [{}], " +
+                    "nodeAddress address: [{}/{}]", node.getHexId(), address.getHostName(), address.getPort());
+        }
+
         this.establishedConnections.remove(node.getId());
         this.distanceTable.removeNode(node);
         this.knownHosts.remove(node.getAddressAsString());
@@ -400,6 +500,14 @@ public class PeerExplorer {
     private void addConnection(PongPeerMessage message, String ip, int port) {
         Node senderNode = new Node(message.getNodeId().getID(), ip, port);
         boolean isLocalNode = StringUtils.equals(senderNode.getHexId(), this.localNode.getHexId());
+
+        logger.debug("addConnection - Adding node with " +
+                "address: [{}/{}], " +
+                "messageId: [{}], " +
+                "allowMultipleConnectionsPerHostPort: [{}], " +
+                "senderNode: [{}], " +
+                "isLocalNode: [{}], ", ip, port, message.getMessageId(), this.allowMultipleConnectionsPerHostPort, senderNode, isLocalNode);
+
         if (isLocalNode) {
             return;
         }
@@ -409,6 +517,9 @@ public class PeerExplorer {
         }
 
         OperationResult result = this.distanceTable.addNode(senderNode);
+
+        logger.debug("addConnection - result: [{}]", result);
+
         if (result.isSuccess()) {
             this.knownHosts.put(senderNode.getAddressAsString(), senderNode.getId());
             this.establishedConnections.put(senderNode.getId(), senderNode);
