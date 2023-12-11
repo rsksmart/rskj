@@ -31,6 +31,8 @@ import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -235,8 +237,8 @@ class BridgeSupportSigHashTest {
         assertEquals(2, pegoutsWaitingForConfirmations.getEntries().size());
 
         if (activations.isActive(ConsensusRule.RSKIP379)){
-            PegoutsWaitingForConfirmations.Entry migrationTx = null;
-            PegoutsWaitingForConfirmations.Entry pegoutBatchTx = null;
+            Optional<PegoutsWaitingForConfirmations.Entry> migrationTx = Optional.empty();
+            Optional<PegoutsWaitingForConfirmations.Entry> pegoutBatchTx = Optional.empty();
 
             // Get new fed wallet to identify the migration tx
             Wallet newFedWallet = BridgeUtils.getFederationNoSpendWallet(
@@ -250,20 +252,20 @@ class BridgeSupportSigHashTest {
             for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries()) {
                 List<TransactionOutput> walletOutputs = entry.getBtcTransaction().getWalletOutputs(newFedWallet);
                 if (walletOutputs.size() == entry.getBtcTransaction().getOutputs().size()){
-                    migrationTx = entry;
+                    migrationTx = Optional.of(entry);
                 } else {
-                    pegoutBatchTx = entry;
+                    pegoutBatchTx = Optional.of(entry);
                 }
             }
+            assertTrue(migrationTx.isPresent());
+            assertTrue(pegoutBatchTx.isPresent());
 
-            Optional<Sha256Hash> migrationTxSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx.getBtcTransaction());
+            Optional<Sha256Hash> migrationTxSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx.get().getBtcTransaction());
             assertTrue(migrationTxSigHash.isPresent());
-
             verify(provider, times(1)).setPegoutTxSigHash(migrationTxSigHash.get());
 
-            Optional<Sha256Hash> pegoutBatchTxSigHash = BitcoinUtils.getFirstInputSigHash(pegoutBatchTx.getBtcTransaction());
+            Optional<Sha256Hash> pegoutBatchTxSigHash = BitcoinUtils.getFirstInputSigHash(pegoutBatchTx.get().getBtcTransaction());
             assertTrue(pegoutBatchTxSigHash.isPresent());
-
             verify(provider, times(1)).setPegoutTxSigHash(pegoutBatchTxSigHash.get());
         } else {
             verify(provider, never()).hasPegoutTxSigHash(any());
