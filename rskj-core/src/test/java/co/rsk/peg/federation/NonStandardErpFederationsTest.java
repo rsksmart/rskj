@@ -152,12 +152,12 @@ class NonStandardErpFederationsTest {
 
     @Test
     void createFederation_withThresholdAboveDefaultKeysSize_throwsIllegalArgumentException() {
-        int defaultKeysSize = defaultKeys.size();
+        int defaultThresholdAboveDefaultKeysSize = defaultKeys.size() + 1;
 
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         assertThrows(IllegalArgumentException.class,
             () -> builder.createRedeemScriptFromKeys(
-                defaultKeys, defaultKeysSize + 1,
+                defaultKeys, defaultThresholdAboveDefaultKeysSize,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue)
         );
