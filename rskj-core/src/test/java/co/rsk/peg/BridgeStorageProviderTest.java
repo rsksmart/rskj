@@ -88,7 +88,6 @@ class BridgeStorageProviderTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
     private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
-    private final ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
     private final BridgeTestNetConstants bridgeTestnetInstance = BridgeTestNetConstants.getInstance();
     private final NetworkParameters networkParameters = bridgeTestnetInstance.getBtcParams();
 
@@ -406,7 +405,7 @@ class BridgeStorageProviderTest {
     void getNewFederation_erp_fed() {
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation newFederation = buildMockFederation(100, 200, 300);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0);
 
         ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(
             newFederation.getMembers(),
@@ -535,8 +534,7 @@ class BridgeStorageProviderTest {
 
     @Test
     void saveNewFederation_postMultiKey() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.papyrus200().forBlock(0);
 
         Federation newFederation = buildMockFederation(100, 200, 300);
         testSaveNewFederationPostMultiKey(newFederation, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, activations);
@@ -544,9 +542,7 @@ class BridgeStorageProviderTest {
 
     @Test
     void saveNewFederation_postMultiKey_RSKIP_201_active_erp_fed() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0);
 
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation newFederation = buildMockFederation(100, 200, 300);
@@ -566,10 +562,6 @@ class BridgeStorageProviderTest {
 
     @Test
     void saveNewFederation_postMultiKey_RSKIP_353_active_p2sh_erp_fed() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(true);
-
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation newFederation = buildMockFederation(100, 200, 300);
 
@@ -582,7 +574,7 @@ class BridgeStorageProviderTest {
             bridgeConstants.getErpFedActivationDelay()
         );
 
-        testSaveNewFederationPostMultiKey(p2shErpFederation, P2SH_ERP_FEDERATION_FORMAT_VERSION, activations);
+        testSaveNewFederationPostMultiKey(p2shErpFederation, P2SH_ERP_FEDERATION_FORMAT_VERSION, activationsAllForks);
     }
 
     @Test
@@ -683,13 +675,11 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void getOldFederation_nonStandardHardcoaded_fed() {
+    void getOldFederation_nonStandardHardcoded_fed() {
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation oldFederation = buildMockFederation(100, 200, 300);
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0);
 
         ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(
             oldFederation.getMembers(),
@@ -709,10 +699,8 @@ class BridgeStorageProviderTest {
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation oldFederation = buildMockFederation(100, 200, 300);
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        List<ConsensusRule> rulesToDisable = Arrays.asList(ConsensusRule.RSKIP293);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400(rulesToDisable).forBlock(0);
 
         ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(
             oldFederation.getMembers(),
@@ -732,11 +720,7 @@ class BridgeStorageProviderTest {
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation oldFederation = buildMockFederation(100, 200, 300);
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
 
         ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(
             oldFederation.getMembers(),
@@ -894,12 +878,6 @@ class BridgeStorageProviderTest {
 
     @Test
     void saveOldFederation_postMultikey_RSKIP_353_active_p2sh_erp_fed() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(true);
 
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
         Federation oldFederation = buildMockFederation(100, 200, 300);
@@ -912,7 +890,7 @@ class BridgeStorageProviderTest {
             bridgeConstants.getErpFedActivationDelay()
         );
 
-        testSaveOldFederation(p2shErpFederation, P2SH_ERP_FEDERATION_FORMAT_VERSION, activations);
+        testSaveOldFederation(p2shErpFederation, P2SH_ERP_FEDERATION_FORMAT_VERSION, activationsAllForks);
     }
 
     @Test
