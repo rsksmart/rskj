@@ -39,7 +39,7 @@ public class SnapshotProcessor {
     public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
-    private static final long DELAY_BTW_RUNS = 1 * 1000; // 20 minutes
+    private static final long DELAY_BTW_RUNS = 5 * 60 * 1000; // 20 minutes
     private static final int CHUNK_MAX = 400;
     private static final int CHUNK_MIN = 25;
     private final Blockchain blockchain;
