@@ -171,7 +171,7 @@ class FederationFactoryTest {
 
     }
 
-    public Federation createStandardMultisigFederation() {
+    private Federation createStandardMultisigFederation() {
         return FederationFactory.buildStandardMultiSigFederation(
             federationMembers,
             creationTime,
@@ -180,7 +180,7 @@ class FederationFactoryTest {
         );
     }
 
-    public ErpFederation createNonStandardErpFederation() {
+    private ErpFederation createNonStandardErpFederation() {
         return FederationFactory.buildNonStandardErpFederation(
             federationMembers,
             creationTime,
@@ -192,7 +192,7 @@ class FederationFactoryTest {
         );
     }
 
-    public ErpFederation createP2shErpFederation() {
+    private ErpFederation createP2shErpFederation() {
         return FederationFactory.buildP2shErpFederation(
             federationMembers,
             creationTime,
