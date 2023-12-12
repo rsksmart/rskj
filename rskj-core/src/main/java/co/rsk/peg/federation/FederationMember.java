@@ -23,7 +23,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -37,7 +36,7 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public final class FederationMember {
-    public static final Comparator<FederationMember> BTC_RSK_MST_PUBKEYS_COMPARATOR = new FederationMemberPubKeysComparator();
+    public static final FederationMemberPubKeysComparator BTC_RSK_MST_PUBKEYS_COMPARATOR = new FederationMemberPubKeysComparator();
     private final BtcECKey btcPublicKey;
     private final ECKey rskPublicKey;
     private final ECKey mstPublicKey;
