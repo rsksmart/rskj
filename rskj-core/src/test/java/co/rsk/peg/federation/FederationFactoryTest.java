@@ -31,9 +31,7 @@ class FederationFactoryTest {
     private List<BtcECKey> defaultKeys;
     private Instant creationTime;
     private long creationBlockNumber;
-    private int defaultThreshold;
     private List<BtcECKey> emergencyKeys;
-    private int emergencyThreshold;
     private long activationDelayValue;
     private ActivationConfig.ForBlock activations;
 
@@ -76,9 +74,7 @@ class FederationFactoryTest {
         @BeforeEach
         @Tag("erpFeds")
         void setUp() {
-            defaultThreshold = defaultKeys.size() / 2 + 1;
             emergencyKeys = bridgeConstants.getErpFedPubKeysList();
-            emergencyThreshold = emergencyKeys.size() / 2 + 1;
             activationDelayValue = bridgeConstants.getErpFedActivationDelay();
             activations = mock(ActivationConfig.ForBlock.class);
         }
