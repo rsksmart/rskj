@@ -353,7 +353,7 @@ public class SnapshotProcessor {
                         SnapshotProcessor.this.stateChunkSize = BigInteger.ZERO;
                         SnapshotProcessor.this.chunkTasks.clear();
                         SnapshotProcessor.this.nextExpectedFrom = 0;
-                        duplicateTheChunkSize();
+                        //duplicateTheChunkSize();
                         logger.debug("Starting again the infinite loop! With chunk size = {}", SnapshotProcessor.this.chunkSize);
                         generateChunkRequestTasks();
                         startRequestingChunks();
