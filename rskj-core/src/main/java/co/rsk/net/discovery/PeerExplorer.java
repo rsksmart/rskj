@@ -63,6 +63,8 @@ public class PeerExplorer {
     private static final int MAX_NODES_TO_CHECK = 16;
     private static final int RETRIES_COUNT = 3;
 
+    private static final int MAX_RETRY_ATTEMPTS = 5;
+    private int retryCounter = 0;
     private final Set<InetSocketAddress> bootNodes = ConcurrentHashMap.newKeySet();
 
     private final Map<String, PeerDiscoveryRequest> pendingPingRequests = new ConcurrentHashMap<>();
@@ -427,12 +429,25 @@ public class PeerExplorer {
             return;
         }
 
-        List<Node> closestNodes = this.distanceTable.getClosestNodes(this.localNode.getId());
+        if (shouldRetryConnection()) {
+            retryCounter++;
+            if (retryCounter <= MAX_RETRY_ATTEMPTS) {
+                logger.info("retrying connection to bootstrap nodes. Attempt: {}", retryCounter);
+                startConversationWithNewNodes();
+            } else {
+                logger.warn("max retry attempts reached.");
+            }
+        } else {
+            List<Node> closestNodes = this.distanceTable.getClosestNodes(this.localNode.getId());
+            logger.trace("update - closestNodes: [{}]", closestNodes);
+            this.askForMoreNodes(closestNodes);
+            this.checkPeersPulse(closestNodes);
+        }
+    }
 
-        logger.trace("update - closestNodes: [{}]", closestNodes);
-
-        this.askForMoreNodes(closestNodes);
-        this.checkPeersPulse(closestNodes);
+    private boolean shouldRetryConnection() {
+        return bootNodes.isEmpty() && pendingPingRequests.isEmpty() &&
+                pendingFindNodeRequests.isEmpty() && establishedConnections.isEmpty();
     }
 
     private void checkPeersPulse(List<Node> closestNodes) {
