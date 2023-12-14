@@ -99,27 +99,27 @@ class FederationFactoryTest {
 
             // in testnet it should build non standard hardcoded fed
             when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
-            ErpFederation federationPostRSKIP201PreRSKIP284 = createNonStandardErpFederation();
-            version = federationPostRSKIP201PreRSKIP284.getFormatVersion();
+            ErpFederation federationPostRSKIP201 = createNonStandardErpFederation();
+            version = federationPostRSKIP201.getFormatVersion();
 
             assertEquals(NON_STANDARD_ERP_FEDERATION.getFormatVersion(), version);
 
             // build non standard fed with csv unsigned big endian
             when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-            ErpFederation federationPostRSKIP201PostRSKIP284PreRSKIP293 = createNonStandardErpFederation();
-            version = federationPostRSKIP201PostRSKIP284PreRSKIP293.getFormatVersion();
+            ErpFederation federationPostRSKIP284 = createNonStandardErpFederation();
+            version = federationPostRSKIP284.getFormatVersion();
 
             assertEquals(NON_STANDARD_ERP_FEDERATION.getFormatVersion(), version);
-            assertNotEquals(federationPostRSKIP201PreRSKIP284, federationPostRSKIP201PostRSKIP284PreRSKIP293);
+            assertNotEquals(federationPostRSKIP201, federationPostRSKIP284);
 
             // build non standard fed
             when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-            ErpFederation federationPostRSKIP201PostRSKIP284PostRSKIP293 = createNonStandardErpFederation();
-            version = federationPostRSKIP201PostRSKIP284PostRSKIP293.getFormatVersion();
+            ErpFederation federationPostRSKIP293 = createNonStandardErpFederation();
+            version = federationPostRSKIP293.getFormatVersion();
 
             assertEquals(NON_STANDARD_ERP_FEDERATION.getFormatVersion(), version);
-            assertNotEquals(federationPostRSKIP201PreRSKIP284, federationPostRSKIP201PostRSKIP284PostRSKIP293);
-            assertNotEquals(federationPostRSKIP201PostRSKIP284PreRSKIP293, federationPostRSKIP201PostRSKIP284PostRSKIP293);
+            assertNotEquals(federationPostRSKIP201, federationPostRSKIP293);
+            assertNotEquals(federationPostRSKIP284, federationPostRSKIP293);
         }
 
         @Test
@@ -128,27 +128,27 @@ class FederationFactoryTest {
 
             // in mainnet it should build non standard fed with csv unsigned big endian
             when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
-            ErpFederation federationPostRSKIP201PreRSKIP284 = createNonStandardErpFederation();
-            version = federationPostRSKIP201PreRSKIP284.getFormatVersion();
+            ErpFederation federationPostRSKIP201 = createNonStandardErpFederation();
+            version = federationPostRSKIP201.getFormatVersion();
 
             assertEquals(NON_STANDARD_ERP_FEDERATION.getFormatVersion(), version);
 
             // should build non standard fed with csv unsigned big endian
             when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-            ErpFederation federationPostRSKIP201PostRSKIP284PreRSKIP293 = createNonStandardErpFederation();
-            version = federationPostRSKIP201PostRSKIP284PreRSKIP293.getFormatVersion();
+            ErpFederation federationPostRSKIP284 = createNonStandardErpFederation();
+            version = federationPostRSKIP284.getFormatVersion();
 
             assertEquals(NON_STANDARD_ERP_FEDERATION.getFormatVersion(), version);
-            assertEquals(federationPostRSKIP201PreRSKIP284, federationPostRSKIP201PostRSKIP284PreRSKIP293);
+            assertEquals(federationPostRSKIP201, federationPostRSKIP284);
 
             // build non standard fed
             when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-            ErpFederation federationPostRSKIP201PostRSKIP284PostRSKIP293 = createNonStandardErpFederation();
-            version = federationPostRSKIP201PostRSKIP284PostRSKIP293.getFormatVersion();
+            ErpFederation federationPostRSKIP293 = createNonStandardErpFederation();
+            version = federationPostRSKIP293.getFormatVersion();
 
             assertEquals(NON_STANDARD_ERP_FEDERATION.getFormatVersion(), version);
-            assertNotEquals(federationPostRSKIP201PreRSKIP284, federationPostRSKIP201PostRSKIP284PostRSKIP293);
-            assertNotEquals(federationPostRSKIP201PostRSKIP284PreRSKIP293, federationPostRSKIP201PostRSKIP284PostRSKIP293);
+            assertNotEquals(federationPostRSKIP201, federationPostRSKIP293);
+            assertNotEquals(federationPostRSKIP284, federationPostRSKIP293);
         }
 
         @Test
