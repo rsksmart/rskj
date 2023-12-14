@@ -17,6 +17,7 @@
  */
 package co.rsk.util;
 
+import co.rsk.altbn128.cloudflare.Utils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 
@@ -35,6 +36,13 @@ public class SystemUtils {
     );
 
     private SystemUtils() { /* hidden */ }
+
+    /**
+    * Wrapper for {@link Utils::isArm()} from external library
+    */
+    public static boolean isArm() {
+        return Utils.isArm();
+    }
 
     /**
      * Helper method that prints some system and runtime properties available to JVM.

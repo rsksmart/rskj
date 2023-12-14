@@ -1,5 +1,6 @@
 package org.ethereum.datasource;
 
+import co.rsk.util.SystemUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
@@ -272,18 +273,26 @@ class KeyValueDataSourceTest {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws IOException {
             Path tmpDir = Files.createTempDirectory("rskj");
-            return Stream.of(
+            Stream<Arguments> argumentsStream = Stream.of(
                     Arguments.of(initHashmapDB(), HashMapDB.class.getSimpleName(), true),
-                    Arguments.of(initLevelDBDatasource(tmpDir), LevelDbDataSource.class.getSimpleName(), true),
                     Arguments.of(initRocksDBDatasource(tmpDir), RocksDbDataSource.class.getSimpleName(), true),
                     Arguments.of(initHashmapDBWithCache(), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true),
                     Arguments.of(initDatasourceWithCache(tmpDir), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true),
                     Arguments.of(initHashmapDB(), HashMapDB.class.getSimpleName(), false),
-                    Arguments.of(initLevelDBDatasource(tmpDir), LevelDbDataSource.class.getSimpleName(), true),
                     Arguments.of(initRocksDBDatasource(tmpDir), RocksDbDataSource.class.getSimpleName(), false),
                     Arguments.of(initHashmapDBWithCache(), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false),
                     Arguments.of(initDatasourceWithCache(tmpDir), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false)
             );
+
+            if (SystemUtils.isArm()) {
+                return argumentsStream;
+            }
+
+            // if not arm, then add LevelDB data sources
+            return Stream.concat(argumentsStream, Stream.of(
+                    Arguments.of(initLevelDBDatasource(tmpDir), LevelDbDataSource.class.getSimpleName(), true),
+                    Arguments.of(initLevelDBDatasource(tmpDir), LevelDbDataSource.class.getSimpleName(), true)
+            ));
         }
 
         private static HashMapDB initHashmapDB() {
