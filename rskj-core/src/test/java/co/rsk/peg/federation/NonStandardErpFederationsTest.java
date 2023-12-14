@@ -58,7 +58,6 @@ class NonStandardErpFederationsTest {
     private int emergencyThreshold;
     private long activationDelayValue;
     private ActivationConfig.ForBlock activations;
-    private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
 
     @BeforeEach
     void setup() {
