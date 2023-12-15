@@ -1,8 +1,8 @@
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
-import static co.rsk.peg.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
-import static co.rsk.peg.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
+import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
+import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
 import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -58,7 +58,6 @@ class NonStandardErpFederationsTest {
     private int emergencyThreshold;
     private long activationDelayValue;
     private ActivationConfig.ForBlock activations;
-    private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
 
     @BeforeEach
     void setup() {
@@ -95,17 +94,15 @@ class NonStandardErpFederationsTest {
         List<FederationMember> standardMembers = FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
-        erpRedeemScriptBuilder =
-            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
 
-        return new ErpFederation(
+        return FederationFactory.buildNonStandardErpFederation(
             standardMembers,
             creationTime,
             creationBlockNumber,
             networkParameters,
             emergencyKeys,
             activationDelayValue,
-            erpRedeemScriptBuilder
+            activations
         );
     }
 
@@ -138,6 +135,31 @@ class NonStandardErpFederationsTest {
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-100, 0})
+    void createFederation_withInvalidThresholdValues_throwsIllegalArgumentException(int threshold) {
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        assertThrows(IllegalArgumentException.class,
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, threshold,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue)
+        );
+    }
+
+    @Test
+    void createFederation_withThresholdAboveDefaultKeysSize_throwsIllegalArgumentException() {
+        int defaultThresholdAboveDefaultKeysSize = defaultKeys.size() + 1;
+
+        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
+        assertThrows(IllegalArgumentException.class,
+            () -> builder.createRedeemScriptFromKeys(
+                defaultKeys, defaultThresholdAboveDefaultKeysSize,
+                emergencyKeys, emergencyThreshold,
+                activationDelayValue)
+        );
     }
 
     @ParameterizedTest
@@ -235,42 +257,42 @@ class NonStandardErpFederationsTest {
 
     @Test
     void testEquals_same() {
-        ErpFederation otherFederation = new ErpFederation(
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            erpRedeemScriptBuilder
+            activations
         );
         assertEquals(federation, otherFederation);
     }
 
     @Test
     void testEquals_differentCreationTime() {
-        ErpFederation otherFederation = new ErpFederation(
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
             federation.getMembers(),
             federation.getCreationTime().plus(1, ChronoUnit.MILLIS),
             federation.getCreationBlockNumber(),
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            erpRedeemScriptBuilder
+            activations
         );
         assertEquals(federation, otherFederation);
     }
 
     @Test
     void testEquals_differentCreationBlockNumber() {
-        ErpFederation otherFederation = new ErpFederation(
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber() + 1,
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            erpRedeemScriptBuilder
+            activations
         );
         assertEquals(federation, otherFederation);
     }
@@ -690,15 +712,15 @@ class NonStandardErpFederationsTest {
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
-        ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
-        assertThrows(ErpFederationCreationException.class, () -> new ErpFederation(
+        assertThrows(ErpFederationCreationException.class,
+            () -> FederationFactory.buildNonStandardErpFederation(
             federationMembersWithBtcKeys,
             creationTime,
             1,
             btcParams,
             emergencyMultisigKeys,
             activationDelay,
-            builder
+            activations
         ));
     }
 

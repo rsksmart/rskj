@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -83,12 +83,15 @@ class StandardMultisigFederationTest {
         newKeys.add(federator15PublicKey);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newKeys);
         Instant creationTime = federation.getCreationTime();
+        long creationBlockNumber = federation.getCreationBlockNumber();
+        NetworkParameters networkParameters = federation.getBtcParams();
         ScriptCreationException exception =
-            assertThrows(ScriptCreationException.class, () -> new StandardMultisigFederation(
+            assertThrows(ScriptCreationException.class,
+                () -> FederationFactory.buildStandardMultiSigFederation(
                 newMembers,
                 creationTime,
-                federation.creationBlockNumber,
-                federation.btcParams
+                creationBlockNumber,
+                networkParameters
             ));
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
@@ -123,7 +126,7 @@ class StandardMultisigFederationTest {
 
     @Test
     void testEquals_same() {
-        Federation otherFederation = new StandardMultisigFederation(
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
@@ -135,7 +138,7 @@ class StandardMultisigFederationTest {
 
     @Test
     void testEquals_differentCreationTime() {
-        Federation otherFederation = new StandardMultisigFederation(
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
             federation.getMembers(),
             federation.getCreationTime().plus(1, ChronoUnit.MILLIS),
             federation.getCreationBlockNumber(),
@@ -146,7 +149,7 @@ class StandardMultisigFederationTest {
 
     @Test
     void testEquals_differentCreationBlockNumber() {
-        Federation otherFederation = new StandardMultisigFederation(
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber() + 1,
@@ -157,7 +160,7 @@ class StandardMultisigFederationTest {
 
     @Test
     void testEquals_differentNetworkParameters() {
-        Federation otherFederation = new StandardMultisigFederation(
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
@@ -174,7 +177,7 @@ class StandardMultisigFederationTest {
         newKeys.remove(14);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithKeys(newKeys);
 
-        Federation otherFederation = new StandardMultisigFederation(
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
             newMembers,
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
@@ -195,10 +198,12 @@ class StandardMultisigFederationTest {
         newKeys.add(anotherPublicKey);
         List<FederationMember> differentMembers = FederationTestUtils.getFederationMembersWithKeys(newKeys);
 
-        Federation otherFederation = new StandardMultisigFederation(
+        Instant creationTime = federation.getCreationTime();
+        long creationBlockNumber = federation.getCreationBlockNumber();
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
             differentMembers,
-            federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
+            creationTime,
+            creationBlockNumber,
             networkParameters
         );
 

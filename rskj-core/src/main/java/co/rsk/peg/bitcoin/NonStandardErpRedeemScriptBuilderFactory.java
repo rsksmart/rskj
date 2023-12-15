@@ -6,8 +6,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public class NonStandardErpRedeemScriptBuilderFactory {
 
-    private NonStandardErpRedeemScriptBuilderFactory() {
-    }
+    private NonStandardErpRedeemScriptBuilderFactory() {}
 
     public static ErpRedeemScriptBuilder getNonStandardErpRedeemScriptBuilder(
         ActivationConfig.ForBlock activations,

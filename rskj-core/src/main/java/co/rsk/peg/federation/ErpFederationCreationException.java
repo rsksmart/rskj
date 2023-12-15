@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 /**
  * Exception to be thrown when attempting to create a Federation with invalid values

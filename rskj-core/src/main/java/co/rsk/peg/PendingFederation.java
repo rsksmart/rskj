@@ -21,9 +21,9 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationMember;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
@@ -109,35 +109,31 @@ public final class PendingFederation {
 
         if (activations.isActive(ConsensusRule.RSKIP353)) {
             logger.info("[buildFederation] Going to create a P2SH ERP Federation");
-            return new ErpFederation(
+            return FederationFactory.buildP2shErpFederation(
                 members,
                 creationTime,
                 blockNumber,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
-                bridgeConstants.getErpFedActivationDelay(),
-                new P2shErpRedeemScriptBuilder()
+                bridgeConstants.getErpFedActivationDelay()
             );
         }
 
         if (activations.isActive(ConsensusRule.RSKIP201)) {
             logger.info("[buildFederation] Going to create an ERP Federation");
 
-            ErpRedeemScriptBuilder erpRedeemScriptBuilder
-                = NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
-
-            return new ErpFederation(
+            return FederationFactory.buildNonStandardErpFederation(
                 members,
                 creationTime,
                 blockNumber,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                erpRedeemScriptBuilder
+                activations
             );
         }
 
-        return new StandardMultisigFederation(
+        return FederationFactory.buildStandardMultiSigFederation(
                 members,
                 creationTime,
                 blockNumber,

@@ -24,9 +24,10 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.resources.TestConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -38,12 +39,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -291,29 +292,26 @@ class PendingFederationTest {
 
         Federation expectedFederation;
         if (isRskip353Active) {
-            expectedFederation = new ErpFederation(
+            expectedFederation = FederationFactory.buildP2shErpFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
                 0L,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
-                bridgeConstants.getErpFedActivationDelay(),
-                new P2shErpRedeemScriptBuilder()
+                bridgeConstants.getErpFedActivationDelay()
             );
         } else if (isRskip201Active) {
-            ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-                NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
-            expectedFederation = new ErpFederation(
+            expectedFederation = FederationFactory.buildNonStandardErpFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
                 0L,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                erpRedeemScriptBuilder
+                activations
             );
         } else {
-            expectedFederation = new StandardMultisigFederation(
+            expectedFederation = FederationFactory.buildStandardMultiSigFederation(
                 FederationTestUtils.getFederationMembersFromPks(privateKeys),
                 creationTime,
                 0L,

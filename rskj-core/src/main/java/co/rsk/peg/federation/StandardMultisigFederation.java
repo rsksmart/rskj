@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
@@ -34,13 +34,14 @@ import java.util.List;
 
 public class StandardMultisigFederation extends Federation {
 
-    public StandardMultisigFederation(
+    protected StandardMultisigFederation(
         List<FederationMember> members,
         Instant creationTime,
         long creationBlockNumber,
-        NetworkParameters btcParams) {
+        NetworkParameters btcParams,
+        int formatVersion) {
 
-        super(members, creationTime, creationBlockNumber, btcParams);
+        super(members, creationTime, creationBlockNumber, btcParams, formatVersion);
 
         validateRedeemScriptSize();
     }
