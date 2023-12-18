@@ -238,7 +238,7 @@ public class ChannelManagerImpl implements ChannelManager {
                     });
 
             for (BlockIdentifier bi : identifiers){
-                loggerSnapExperiment.debug("NewBlockHashes Message block arrived number: [{}] hash: [{}] from: [client]", bi.getNumber(), HashUtil.toPrintableHash(bi.getHash()));
+                loggerSnapExperiment.debug("NewBlockHashes Message block sent number: [{}] hash: [{}] from: [client]", bi.getNumber(), HashUtil.toPrintableHash(bi.getHash()));
             }
         }
 
