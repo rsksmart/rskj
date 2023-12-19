@@ -239,7 +239,7 @@ public class PeerExplorer {
                 this.addConnection(message, request.getAddress().getHostString(), request.getAddress().getPort());
             }
         } else {
-            logger.warn("handlePong - Peer discovery request with id [{}] is either null or invalid", message.getMessageId());
+            logger.debug("handlePong - Peer discovery request with id [{}] is either null or invalid", message.getMessageId());
         }
     }
 
@@ -254,7 +254,7 @@ public class PeerExplorer {
             this.sendNeighbors(connectedNode.getAddress(), nodesToSend, message.getMessageId());
             updateEntry(connectedNode);
         } else {
-            logger.warn("handleFindNode - Node with id: [{}] is not connected. Ignored", nodeId);
+            logger.debug("handleFindNode - Node with id: [{}] is not connected. Ignored", nodeId);
         }
     }
 
@@ -282,7 +282,7 @@ public class PeerExplorer {
             }
             updateEntry(connectedNode);
         } else {
-            logger.warn("handleFindNode - Node with id: [{}] is not connected. Ignored", nodeId);
+            logger.debug("handleNeighborsMessage - Node with id: [{}] is not connected. Ignored", nodeId);
         }
     }
 
@@ -298,7 +298,7 @@ public class PeerExplorer {
         PingPeerMessage nodeMessage = checkPendingPeerToAddress(nodeAddress);
 
         if (nodeMessage != null) {
-            logger.warn("sendPing - No ping message has been sent to address: [{}/{}], as there's pending one", nodeAddress.getHostName(), nodeAddress.getPort());
+            logger.trace("sendPing - No ping message has been sent to address: [{}/{}], as there's pending one", nodeAddress.getHostName(), nodeAddress.getPort());
 
             return nodeMessage;
         }
