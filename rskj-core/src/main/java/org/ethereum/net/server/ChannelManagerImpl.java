@@ -223,7 +223,7 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     @Nonnull
-    public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, final Set<NodeID> targets) {
+    public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, final Set<NodeID> targets, Peer sender) {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
         final Message newBlockHash = new NewBlockHashesMessage(identifiers);
 
@@ -238,7 +238,7 @@ public class ChannelManagerImpl implements ChannelManager {
                     });
 
             for (BlockIdentifier bi : identifiers){
-                loggerSnapExperiment.debug("NewBlockHashes Message block sent number: [{}] hash: [{}] from: [client]", bi.getNumber(), HashUtil.toPrintableHash(bi.getHash()));
+                loggerSnapExperiment.debug("NewBlockHashes Message block broadcast number: [{}] hash: [{}] from: [{}]", bi.getNumber(), HashUtil.toPrintableHash(bi.getHash()), sender.getPeerNodeID());
             }
         }
 
