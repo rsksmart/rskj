@@ -143,9 +143,10 @@ public class SnapshotProcessor {
 //        }
 //
 //        Block checkpointBlock = blockchain.getBlockByNumber(checkpointBlockNumber);
-//        blocks.add(checkpointBlock);
-//        difficulties.add(blockStore.getTotalDifficultyForHash(checkpointBlock.getHash().getBytes()));
+
         Block checkpointBlock = blockchain.getBlockByNumber(bestBlockNumber);
+        blocks.add(checkpointBlock);
+        difficulties.add(blockStore.getTotalDifficultyForHash(checkpointBlock.getHash().getBytes()));
         byte[] rootHash = checkpointBlock.getStateRoot();
         Optional<TrieDTO> opt = trieStore.retrieveDTO(rootHash);
 
