@@ -131,19 +131,21 @@ public class SnapshotProcessor {
 
     public void processSnapStatusRequest(Peer sender) {
         logger.debug("SERVER - Processing snapshot status request.");
-        long bestBlockNumber = blockchain.getBestBlock().getNumber();
-        long checkpointBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
+//        long bestBlockNumber = blockchain.getBestBlock().getNumber();
+//        long checkpointBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
+        long bestBlockNumber = 5637110L;
         List<Block> blocks = Lists.newArrayList();
         List<BlockDifficulty> difficulties = Lists.newArrayList();
-        for (long i = checkpointBlockNumber - BLOCK_CHUNK_SIZE; i < checkpointBlockNumber; i++) {
-            Block block = blockchain.getBlockByNumber(i);
-            blocks.add(block);
-            difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
-        }
-
-        Block checkpointBlock = blockchain.getBlockByNumber(checkpointBlockNumber);
-        blocks.add(checkpointBlock);
-        difficulties.add(blockStore.getTotalDifficultyForHash(checkpointBlock.getHash().getBytes()));
+//        for (long i = checkpointBlockNumber - BLOCK_CHUNK_SIZE; i < checkpointBlockNumber; i++) {
+//            Block block = blockchain.getBlockByNumber(i);
+//            blocks.add(block);
+//            difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
+//        }
+//
+//        Block checkpointBlock = blockchain.getBlockByNumber(checkpointBlockNumber);
+//        blocks.add(checkpointBlock);
+//        difficulties.add(blockStore.getTotalDifficultyForHash(checkpointBlock.getHash().getBytes()));
+        Block checkpointBlock = blockchain.getBlockByNumber(bestBlockNumber);
         byte[] rootHash = checkpointBlock.getStateRoot();
         Optional<TrieDTO> opt = trieStore.retrieveDTO(rootHash);
 
