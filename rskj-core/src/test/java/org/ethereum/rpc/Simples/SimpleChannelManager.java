@@ -69,7 +69,7 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Nonnull
     @Override
-    public Set<NodeID> broadcastBlockHash(@Nonnull List<BlockIdentifier> identifiers, @Nullable Set<NodeID> targets) {
+    public Set<NodeID> broadcastBlockHash(@Nonnull List<BlockIdentifier> identifiers, @Nullable Set<NodeID> targets, Peer sender) {
         return new HashSet<>();
     }
 

@@ -31,6 +31,7 @@ import org.ethereum.config.NodeFilter;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.sync.SyncPool;
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ import java.util.stream.Collectors;
 public class ChannelManagerImpl implements ChannelManager {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
+    private static final Logger loggerSnapExperiment = LoggerFactory.getLogger("snapExperiment");
 
     // If the inbound peer connection was dropped by us with a reason message
     // then we ban that peer IP on any connections for some time to protect from
@@ -220,7 +222,7 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     @Nonnull
-    public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, final Set<NodeID> targets) {
+    public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, final Set<NodeID> targets, Peer sender) {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
         final Message newBlockHash = new NewBlockHashesMessage(identifiers);
 
@@ -233,6 +235,10 @@ public class ChannelManagerImpl implements ChannelManager {
                         logger.trace("RSK announce hash: {}", peer);
                         peer.sendMessage(newBlockHash);
                     });
+
+            for (BlockIdentifier bi : identifiers){
+                loggerSnapExperiment.debug("NewBlockHashes Message block broadcast number: [{}] hash: [{}] from: [{}]", bi.getNumber(), HashUtil.toPrintableHash(bi.getHash()), sender.getPeerNodeID());
+            }
         }
 
         return nodesIdsBroadcastedTo;

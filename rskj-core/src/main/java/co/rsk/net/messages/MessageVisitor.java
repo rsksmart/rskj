@@ -234,9 +234,8 @@ public class MessageVisitor {
         final Set<NodeID> newNodes = this.syncProcessor.getKnownPeersNodeIDs().stream()
                 .filter(p -> !nodesWithBlock.contains(p))
                 .collect(Collectors.toSet());
-
         List<BlockIdentifier> identifiers = new ArrayList<>();
         identifiers.add(new BlockIdentifier(blockHash.getBytes(), block.getNumber()));
-        channelManager.broadcastBlockHash(identifiers, newNodes);
+        channelManager.broadcastBlockHash(identifiers, newNodes, this.sender);
     }
 }
