@@ -66,6 +66,7 @@ public class PeerExplorer {
     private static final int MAX_RETRY_ATTEMPTS = 5;
     private final List<String> initialBootNodes;
     private int retryCounter = 0;
+    private final long maxBootRetries;
     private final Set<InetSocketAddress> bootNodes = ConcurrentHashMap.newKeySet();
 
     private final Map<String, PeerDiscoveryRequest> pendingPingRequests = new ConcurrentHashMap<>();
@@ -101,7 +102,7 @@ public class PeerExplorer {
     public PeerExplorer(List<String> initialBootNodes,
                         Node localNode, NodeDistanceTable distanceTable, ECKey key,
                         long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
-                        PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHostPort) {
+                        PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHostPort, long maxBootRetries) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
@@ -118,6 +119,8 @@ public class PeerExplorer {
 
         this.knownHosts = new ConcurrentHashMap<>();
         this.allowMultipleConnectionsPerHostPort = allowMultipleConnectionsPerHostPort;
+
+        this.maxBootRetries = maxBootRetries;
     }
 
     void start() {
@@ -434,8 +437,8 @@ public class PeerExplorer {
         List<Node> closestNodes = this.distanceTable.getClosestNodes(this.localNode.getId());
 
         if (shouldRetryConnection(closestNodes)) {
-            retryCounter++;
-            if (retryCounter <= MAX_RETRY_ATTEMPTS) {
+            if (maxBootRetries == -1 || retryCounter < maxBootRetries) {
+                retryCounter++;
                 logger.info("retrying connection to bootstrap nodes. Attempt: {}", retryCounter);
                 loadInitialBootNodes(initialBootNodes);
                 startConversationWithNewNodes();
