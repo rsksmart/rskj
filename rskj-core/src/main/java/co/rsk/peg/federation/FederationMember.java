@@ -87,7 +87,7 @@ public final class FederationMember {
     }
 
     public static List<FederationMember> getFederationMembersFromKeys(List<BtcECKey> pks) {
-        return pks.stream().map(pk -> getFederationMemberFromKey(pk)).collect(Collectors.toList());
+        return pks.stream().map(FederationMember::getFederationMemberFromKey).collect(Collectors.toList());
     }
 
     public BtcECKey getBtcPublicKey() {

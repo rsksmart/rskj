@@ -26,12 +26,12 @@ public class FederationMemberPubKeysComparator implements Comparator<FederationM
     private final Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
 
     @Override
-    public int compare(FederationMember m1, FederationMember m2) {
-        int btcKeysComparison = comparator.compare(m1.getBtcPublicKey().getPubKey(), m2.getBtcPublicKey().getPubKey());
+    public int compare(FederationMember fed1, FederationMember fed2) {
+        int btcKeysComparison = comparator.compare(fed1.getBtcPublicKey().getPubKey(), fed2.getBtcPublicKey().getPubKey());
         if (btcKeysComparison == 0) {
-            int rskKeysComparison = comparator.compare(m1.getRskPublicKey().getPubKey(), m2.getRskPublicKey().getPubKey());
+            int rskKeysComparison = comparator.compare(fed1.getRskPublicKey().getPubKey(), fed2.getRskPublicKey().getPubKey());
             if (rskKeysComparison == 0) {
-                return comparator.compare(m1.getMstPublicKey().getPubKey(), m2.getMstPublicKey().getPubKey());
+                return comparator.compare(fed1.getMstPublicKey().getPubKey(), fed2.getMstPublicKey().getPubKey());
             }
             return rskKeysComparison;
         }
