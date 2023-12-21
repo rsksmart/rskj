@@ -486,15 +486,11 @@ public class PeerExplorer {
     }
 
     private void removeConnection(Node node) {
-        if (logger.isDebugEnabled()) {
-            InetSocketAddress address = node.getAddress();
-            logger.debug("removeConnection - Removing node: [{}], " +
-                    "nodeAddress address: [{}/{}]", node.getHexId(), address.getHostName(), address.getPort());
-        }
-
         this.establishedConnections.remove(node.getId());
         this.distanceTable.removeNode(node);
         this.knownHosts.remove(node.getAddressAsString());
+
+        logger.info("removeConnection - Removed peer: [{}]. Total num of peers: [{}]", node, this.establishedConnections.size());
     }
 
     private void addConnection(PongPeerMessage message, String ip, int port) {
@@ -523,7 +519,7 @@ public class PeerExplorer {
         if (result.isSuccess()) {
             this.knownHosts.put(senderNode.getAddressAsString(), senderNode.getId());
             this.establishedConnections.put(senderNode.getId(), senderNode);
-            logger.debug("New Peer found or id changed: ip[{}] port[{}] id [{}]", ip, port, senderNode.getId());
+            logger.info("New Peer found or id changed: ip[{}] port[{}] id [{}]. Total num of peers: [{}]", ip, port, senderNode.getId(), this.establishedConnections.size());
         } else {
             this.challengeManager.startChallenge(result.getAffectedEntry().getNode(), senderNode, this);
         }
