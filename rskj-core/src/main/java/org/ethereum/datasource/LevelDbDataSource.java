@@ -62,7 +62,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public LevelDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
         this.name = name;
-        logger.debug("New LevelDbDataSource: {}", name);
+        logger.info("New LevelDbDataSource: {}", name);
     }
 
     public static KeyValueDataSource makeDataSource(Path datasourcePath) {
