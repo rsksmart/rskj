@@ -480,7 +480,7 @@ public class BridgeStorageProvider {
         if (pendingFederation != null) {
             fedSerialized = pendingFederation.serializeOnlyBtcKeys();
         }
-        safeSavePendingFederationToRepository(PENDING_FEDERATION_KEY, fedSerialized);
+        safeSavePendingFederationToRepository(fedSerialized);
     }
 
     /**
@@ -497,7 +497,7 @@ public class BridgeStorageProvider {
         if (pendingFederation != null) {
              fedSerialized = pendingFederation.serialize();
         }
-        safeSavePendingFederationToRepository(PENDING_FEDERATION_KEY, fedSerialized);
+        safeSavePendingFederationToRepository(fedSerialized);
     }
 
     /**
@@ -1160,17 +1160,17 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(contractAddress, addressKey, data);
     }
 
-    private void safeSavePendingFederationToRepository(BridgeStorageIndexKey addressKey, byte[] federationSerialized) {
+    private void safeSavePendingFederationToRepository(byte[] federationSerialized) {
         try {
-            savePendingFederationToRepository(addressKey, federationSerialized);
+            savePendingFederationToRepository(federationSerialized);
         } catch (IOException ioe) {
-            throw new RuntimeException("Unable to save to repository: " + addressKey, ioe);
+            throw new RuntimeException("Unable to save to repository: " + Arrays.toString(federationSerialized), ioe);
         }
     }
 
-    private void savePendingFederationToRepository(BridgeStorageIndexKey addressKey, byte[] federationSerialized) throws IOException {
-        DataWord keyFromAddressKey = addressKey.getKey();
-        repository.addStorageBytes(contractAddress, keyFromAddressKey, federationSerialized);
+    private void savePendingFederationToRepository(byte[] federationSerialized) throws IOException {
+        DataWord pendingFederationKey = PENDING_FEDERATION_KEY.getKey();
+        repository.addStorageBytes(contractAddress, pendingFederationKey, federationSerialized);
     }
 
     private interface RepositoryDeserializer<T> {
