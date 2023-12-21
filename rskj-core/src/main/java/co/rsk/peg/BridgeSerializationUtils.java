@@ -393,17 +393,6 @@ public class BridgeSerializationUtils {
         return new FederationMember(btcKey, rskKey, mstKey);
     }
 
-    /**
-     * A pending federation is serialized as the
-     * public keys conforming it.
-     * This is a legacy format for blocks before the Wasabi
-     * network upgrade.
-     * See BridgeSerializationUtils::serializeBtcPublicKeys
-     */
-    public static byte[] serializePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) {
-        return serializeBtcPublicKeys(pendingFederation.getBtcPublicKeys());
-    }
-
     // For the serialization format, see BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys
     // and serializePublicKeys::deserializeBtcPublicKeys
     public static PendingFederation deserializePendingFederationOnlyBtcKeys(byte[] data) {
@@ -413,19 +402,6 @@ public class BridgeSerializationUtils {
         ).collect(Collectors.toList());
 
         return new PendingFederation(members);
-    }
-
-    /**
-     * A pending federation is serialized as the
-     * list of its sorted members serialized.
-     * For the member serialization format, see BridgeSerializationUtils::serializeFederationMember
-     */
-    public static byte[] serializePendingFederation(PendingFederation pendingFederation) {
-        List<byte[]> encodedMembers = pendingFederation.getMembers().stream()
-                .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
-                .map(BridgeSerializationUtils::serializeFederationMember)
-                .collect(Collectors.toList());
-        return RLP.encodeList(encodedMembers.toArray(new byte[0][]));
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePendingFederation
@@ -889,18 +865,6 @@ public class BridgeSerializationUtils {
         }
 
         return new ABICallSpec(function, arguments);
-    }
-
-    // A list of btc public keys is serialized as
-    // [pubkey1, pubkey2, ..., pubkeyn], sorted
-    // using the lexicographical order of the public keys
-    // (see BtcECKey.PUBKEY_COMPARATOR).
-    private static byte[] serializeBtcPublicKeys(List<BtcECKey> keys) {
-        List<byte[]> encodedKeys = keys.stream()
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(key -> RLP.encodeElement(key.getPubKey()))
-                .collect(Collectors.toList());
-        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePublicKeys

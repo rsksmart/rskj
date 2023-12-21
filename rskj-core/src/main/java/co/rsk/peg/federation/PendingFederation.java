@@ -16,14 +16,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationMember;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
@@ -34,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +48,11 @@ public final class PendingFederation {
     private static final int MIN_MEMBERS_REQUIRED = 2;
 
     private final List<FederationMember> members;
+
+    private static final int FEDERATION_MEMBER_LIST_SIZE = 3;
+    private static final int FEDERATION_MEMBER_BTC_KEY_INDEX = 0;
+    private static final int FEDERATION_MEMBER_RSK_KEY_INDEX = 1;
+    private static final int FEDERATION_MEMBER_MST_KEY_INDEX = 2;
 
     public PendingFederation(List<FederationMember> members) {
         // Sorting members ensures same order for members
@@ -160,7 +163,7 @@ public final class PendingFederation {
     }
 
     public Keccak256 getHash() {
-        byte[] encoded = BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(this);
+        byte[] encoded = serializeOnlyBtcKeys();
         return new Keccak256(HashUtil.keccak256(encoded));
     }
 
@@ -169,5 +172,53 @@ public final class PendingFederation {
         // Can use java.util.Objects.hash since List<BtcECKey> has a
         // well-defined hashCode()
         return Objects.hash(getBtcPublicKeys());
+    }
+
+    /**
+     * A pending federation is serialized as the
+     * public keys conforming it.
+     * A list of btc public keys is serialized as
+     * [pubkey1, pubkey2, ..., pubkeyn], sorted
+     * using the lexicographical order of the public keys
+     * (see BtcECKey.PUBKEY_COMPARATOR).
+     * This is a legacy format for blocks before the Wasabi
+     * network upgrade.
+     */
+    public byte[] serializeOnlyBtcKeys() {
+        return serializeBtcPublicKeys(this.getBtcPublicKeys());
+    }
+    private static byte[] serializeBtcPublicKeys(List<BtcECKey> keys) {
+        List<byte[]> encodedKeys = keys.stream()
+            .sorted(BtcECKey.PUBKEY_COMPARATOR)
+            .map(key -> RLP.encodeElement(key.getPubKey()))
+            .collect(Collectors.toList());
+        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
+    }
+
+    /**
+     * A pending federation is serialized as the
+     * list of its sorted members serialized.
+     * A FederationMember is serialized as a list in the following order:
+     * - BTC public key
+     * - RSK public key
+     * - MST public key
+     * All keys are stored in their COMPRESSED versions.
+     */
+    public byte[] serialize() {
+        List<byte[]> encodedMembers = this.getMembers().stream()
+            .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
+            .map(PendingFederation::serializeMember)
+            .collect(Collectors.toList());
+        return RLP.encodeList(encodedMembers.toArray(new byte[0][]));
+    }
+
+    private static byte[] serializeMember(FederationMember federationMember) {
+        byte[][] rlpElements = new byte[FEDERATION_MEMBER_LIST_SIZE][];
+        rlpElements[FEDERATION_MEMBER_BTC_KEY_INDEX] = RLP.encodeElement(
+            federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true)
+        );
+        rlpElements[FEDERATION_MEMBER_RSK_KEY_INDEX] = RLP.encodeElement(federationMember.getRskPublicKey().getPubKey(true));
+        rlpElements[FEDERATION_MEMBER_MST_KEY_INDEX] = RLP.encodeElement(federationMember.getMstPublicKey().getPubKey(true));
+        return RLP.encodeList(rlpElements);
     }
 }
