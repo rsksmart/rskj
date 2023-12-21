@@ -63,7 +63,6 @@ public class PeerExplorer {
     private static final int MAX_NODES_TO_CHECK = 16;
     private static final int RETRIES_COUNT = 3;
 
-    private static final int MAX_RETRY_ATTEMPTS = 5;
     private final List<String> initialBootNodes;
     private int retryCounter = 0;
     private final long maxBootRetries;
