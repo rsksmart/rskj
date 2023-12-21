@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.PendingFederation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
@@ -462,19 +463,41 @@ public class BridgeStorageProvider {
      */
     public void savePendingFederation() {
         if (shouldSavePendingFederation) {
-            RepositorySerializer<PendingFederation> serializer = BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys;
-
-            if (activations.isActive(RSKIP123)) {
-                // we only need to save the standard part of the fed since the emergency part is constant
-                saveStorageVersion(
-                    PENDING_FEDERATION_FORMAT_VERSION.getKey(),
-                    STANDARD_MULTISIG_FEDERATION.getFormatVersion()
-                );
-                serializer = BridgeSerializationUtils::serializePendingFederation;
+            if (!activations.isActive(RSKIP123)) {
+                savePendingFederationOnlyBtcKeys(pendingFederation);
             }
-
-            safeSaveToRepository(PENDING_FEDERATION_KEY, pendingFederation, serializer);
+            else {
+                savePendingFederation(pendingFederation);
+            }
         }
+    }
+
+    /**
+     * Save the pending federation before RSKIP123
+     */
+    public void savePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) {
+        byte[] fedSerialized = null;
+        if (pendingFederation != null) {
+            fedSerialized = pendingFederation.serializeOnlyBtcKeys();
+        }
+        safeSavePendingFederationToRepository(PENDING_FEDERATION_KEY, fedSerialized);
+    }
+
+    /**
+     * Save the pending federation
+     */
+    public void savePendingFederation(PendingFederation pendingFederation) {
+        // we only need to save the standard part of the fed since the emergency part is constant
+        saveStorageVersion(
+            PENDING_FEDERATION_FORMAT_VERSION.getKey(),
+            STANDARD_MULTISIG_FEDERATION.getFormatVersion()
+        );
+
+        byte[] fedSerialized = null;
+        if (pendingFederation != null) {
+             fedSerialized = pendingFederation.serialize();
+        }
+        safeSavePendingFederationToRepository(PENDING_FEDERATION_KEY, fedSerialized);
     }
 
     /**
@@ -1135,6 +1158,19 @@ public class BridgeStorageProvider {
             data = serializer.serialize(object);
         }
         repository.addStorageBytes(contractAddress, addressKey, data);
+    }
+
+    private void safeSavePendingFederationToRepository(BridgeStorageIndexKey addressKey, byte[] federationSerialized) {
+        try {
+            savePendingFederationToRepository(addressKey, federationSerialized);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unable to save to repository: " + addressKey, ioe);
+        }
+    }
+
+    private void savePendingFederationToRepository(BridgeStorageIndexKey addressKey, byte[] federationSerialized) throws IOException {
+        DataWord keyFromAddressKey = addressKey.getKey();
+        repository.addStorageBytes(contractAddress, keyFromAddressKey, federationSerialized);
     }
 
     private interface RepositoryDeserializer<T> {

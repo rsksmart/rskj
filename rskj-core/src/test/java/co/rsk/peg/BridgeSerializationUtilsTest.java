@@ -363,7 +363,7 @@ class BridgeSerializationUtilsTest {
             }
             PendingFederation testPendingFederation = new PendingFederation(members);
 
-            byte[] serializedTestPendingFederation = BridgeSerializationUtils.serializePendingFederation(testPendingFederation);
+            byte[] serializedTestPendingFederation = testPendingFederation.serialize();
 
             PendingFederation deserializedTestPendingFederation = BridgeSerializationUtils.deserializePendingFederation(
                 serializedTestPendingFederation);
@@ -385,7 +385,7 @@ class BridgeSerializationUtilsTest {
 
         PendingFederation testPendingFederation = new PendingFederation(members);
 
-        byte[] serializedPendingFederation = BridgeSerializationUtils.serializePendingFederation(testPendingFederation);
+        byte[] serializedPendingFederation = testPendingFederation.serialize();
 
         RLPList memberList = (RLPList) RLP.decode2(serializedPendingFederation).get(0);
 
@@ -438,7 +438,7 @@ class BridgeSerializationUtilsTest {
             }))
         );
 
-        byte[] result = BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(pendingFederation);
+        byte[] result = pendingFederation.serializeOnlyBtcKeys();
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("f8cc");
         pendingFederation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
