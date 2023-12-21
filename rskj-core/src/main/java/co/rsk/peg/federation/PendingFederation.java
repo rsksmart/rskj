@@ -46,13 +46,12 @@ import org.slf4j.LoggerFactory;
 public final class PendingFederation {
     private static final Logger logger = LoggerFactory.getLogger("PendingFederation");
     private static final int MIN_MEMBERS_REQUIRED = 2;
-
-    private final List<FederationMember> members;
-
     private static final int FEDERATION_MEMBER_LIST_SIZE = 3;
     private static final int FEDERATION_MEMBER_BTC_KEY_INDEX = 0;
     private static final int FEDERATION_MEMBER_RSK_KEY_INDEX = 1;
     private static final int FEDERATION_MEMBER_MST_KEY_INDEX = 2;
+    private final List<FederationMember> members;
+
 
     public PendingFederation(List<FederationMember> members) {
         // Sorting members ensures same order for members
