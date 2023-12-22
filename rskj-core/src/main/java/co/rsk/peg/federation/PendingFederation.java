@@ -46,10 +46,6 @@ import org.slf4j.LoggerFactory;
 public final class PendingFederation {
     private static final Logger logger = LoggerFactory.getLogger("PendingFederation");
     private static final int MIN_MEMBERS_REQUIRED = 2;
-    private static final int FEDERATION_MEMBER_LIST_SIZE = 3;
-    private static final int FEDERATION_MEMBER_BTC_KEY_INDEX = 0;
-    private static final int FEDERATION_MEMBER_RSK_KEY_INDEX = 1;
-    private static final int FEDERATION_MEMBER_MST_KEY_INDEX = 2;
     private final List<FederationMember> members;
 
 
@@ -162,7 +158,7 @@ public final class PendingFederation {
     }
 
     public Keccak256 getHash() {
-        byte[] encoded = serializeOnlyBtcKeys();
+        byte[] encoded = this.serializeOnlyBtcKeys();
         return new Keccak256(HashUtil.keccak256(encoded));
     }
 
@@ -184,10 +180,7 @@ public final class PendingFederation {
      * network upgrade.
      */
     public byte[] serializeOnlyBtcKeys() {
-        return serializeBtcPublicKeys(this.getBtcPublicKeys());
-    }
-    private static byte[] serializeBtcPublicKeys(List<BtcECKey> keys) {
-        List<byte[]> encodedKeys = keys.stream()
+        List<byte[]> encodedKeys = this.getBtcPublicKeys().stream()
             .sorted(BtcECKey.PUBKEY_COMPARATOR)
             .map(key -> RLP.encodeElement(key.getPubKey()))
             .collect(Collectors.toList());
@@ -206,18 +199,8 @@ public final class PendingFederation {
     public byte[] serialize() {
         List<byte[]> encodedMembers = this.getMembers().stream()
             .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
-            .map(PendingFederation::serializeMember)
+            .map(FederationMember::serialize)
             .collect(Collectors.toList());
         return RLP.encodeList(encodedMembers.toArray(new byte[0][]));
-    }
-
-    private static byte[] serializeMember(FederationMember federationMember) {
-        byte[][] rlpElements = new byte[FEDERATION_MEMBER_LIST_SIZE][];
-        rlpElements[FEDERATION_MEMBER_BTC_KEY_INDEX] = RLP.encodeElement(
-            federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true)
-        );
-        rlpElements[FEDERATION_MEMBER_RSK_KEY_INDEX] = RLP.encodeElement(federationMember.getRskPublicKey().getPubKey(true));
-        rlpElements[FEDERATION_MEMBER_MST_KEY_INDEX] = RLP.encodeElement(federationMember.getMstPublicKey().getPubKey(true));
-        return RLP.encodeList(rlpElements);
     }
 }
