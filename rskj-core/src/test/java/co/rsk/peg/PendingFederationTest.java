@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -241,12 +240,12 @@ class PendingFederationTest {
         fail();
     }
 
-/*    @Test
+    @Test
     void getHash() {
-        byte[] pendingFederationBytes = {39, 127, 53, -79, -61, -73, 66, -15, 94, -22, -69, 36, 57, 103, 121, 77, -112, -93, -110, 109, 74, 74, -111, -53, -7, -41, -39, -20, -22, -59, 74, 86};
-        Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(pendingFederationBytes));
+        byte[] pendingFederationData = pendingFederation.serializeOnlyBtcKeys();
+        Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(pendingFederationData));
         assertEquals(expectedHash, pendingFederation.getHash());
-    }*/
+    }
 
     private void testBuildFederation(
         boolean isRskip201Active,
