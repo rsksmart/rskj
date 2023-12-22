@@ -48,7 +48,6 @@ public final class PendingFederation {
     private static final int MIN_MEMBERS_REQUIRED = 2;
     private final List<FederationMember> members;
 
-
     public PendingFederation(List<FederationMember> members) {
         // Sorting members ensures same order for members
         // Immutability provides protection against unwanted modification, thus making the Pending Federation instance
