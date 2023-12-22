@@ -48,7 +48,6 @@ public final class PendingFederation {
     private static final int MIN_MEMBERS_REQUIRED = 2;
     private final List<FederationMember> members;
 
-
     public PendingFederation(List<FederationMember> members) {
         // Sorting members ensures same order for members
         // Immutability provides protection against unwanted modification, thus making the Pending Federation instance
@@ -169,6 +168,31 @@ public final class PendingFederation {
         return Objects.hash(getBtcPublicKeys());
     }
 
+    public byte[] serialize(ActivationConfig.ForBlock activations) {
+        if (activations.isActive(ConsensusRule.RSKIP123)) {
+            return serializeFromMembers();
+        } else {
+            return serializeOnlyBtcKeys();
+        }
+    }
+
+    /**
+     * A pending federation is serialized as the
+     * list of its sorted members serialized.
+     * A FederationMember is serialized as a list in the following order:
+     * - BTC public key
+     * - RSK public key
+     * - MST public key
+     * All keys are stored in their COMPRESSED versions.
+     */
+    private byte[] serializeFromMembers() {
+        List<byte[]> encodedMembers = this.getMembers().stream()
+            .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
+            .map(FederationMember::serialize)
+            .collect(Collectors.toList());
+        return RLP.encodeList(encodedMembers.toArray(new byte[0][]));
+    }
+
     /**
      * A pending federation is serialized as the
      * public keys conforming it.
@@ -185,22 +209,5 @@ public final class PendingFederation {
             .map(key -> RLP.encodeElement(key.getPubKey()))
             .collect(Collectors.toList());
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
-    }
-
-    /**
-     * A pending federation is serialized as the
-     * list of its sorted members serialized.
-     * A FederationMember is serialized as a list in the following order:
-     * - BTC public key
-     * - RSK public key
-     * - MST public key
-     * All keys are stored in their COMPRESSED versions.
-     */
-    public byte[] serialize() {
-        List<byte[]> encodedMembers = this.getMembers().stream()
-            .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
-            .map(FederationMember::serialize)
-            .collect(Collectors.toList());
-        return RLP.encodeList(encodedMembers.toArray(new byte[0][]));
     }
 }

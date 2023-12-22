@@ -464,38 +464,23 @@ public class BridgeStorageProvider {
     public void savePendingFederation() throws IOException {
         if (shouldSavePendingFederation) {
             if (activations.isActive(RSKIP123)) {
-                savePendingFederation(pendingFederation);
+                // we only need to save the standard part of the fed since the emergency part is constant
+                saveStorageVersion(
+                    PENDING_FEDERATION_FORMAT_VERSION.getKey(),
+                    STANDARD_MULTISIG_FEDERATION.getFormatVersion()
+                );
             }
-            else {
-                savePendingFederationOnlyBtcKeys(pendingFederation);
-            }
+            savePendingFederation(pendingFederation);
         }
-    }
-
-    /**
-     * Save the pending federation before RSKIP123
-     */
-    private void savePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) throws IOException {
-        byte[] fedSerialized = null;
-        if (pendingFederation != null) {
-            fedSerialized = pendingFederation.serializeOnlyBtcKeys();
-        }
-        savePendingFederationToRepository(fedSerialized);
     }
 
     /**
      * Save the pending federation
      */
     private void savePendingFederation(PendingFederation pendingFederation) throws IOException {
-        // we only need to save the standard part of the fed since the emergency part is constant
-        saveStorageVersion(
-            PENDING_FEDERATION_FORMAT_VERSION.getKey(),
-            STANDARD_MULTISIG_FEDERATION.getFormatVersion()
-        );
-
         byte[] fedSerialized = null;
         if (pendingFederation != null) {
-             fedSerialized = pendingFederation.serialize();
+             fedSerialized = pendingFederation.serialize(activations);
         }
         savePendingFederationToRepository(fedSerialized);
     }
