@@ -461,13 +461,13 @@ public class BridgeStorageProvider {
     /**
      * Save the pending federation
      */
-    public void savePendingFederation() {
+    public void savePendingFederation() throws IOException {
         if (shouldSavePendingFederation) {
-            if (!activations.isActive(RSKIP123)) {
-                savePendingFederationOnlyBtcKeys(pendingFederation);
+            if (activations.isActive(RSKIP123)) {
+                savePendingFederation(pendingFederation);
             }
             else {
-                savePendingFederation(pendingFederation);
+                savePendingFederationOnlyBtcKeys(pendingFederation);
             }
         }
     }
@@ -475,18 +475,18 @@ public class BridgeStorageProvider {
     /**
      * Save the pending federation before RSKIP123
      */
-    public void savePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) {
+    private void savePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) throws IOException {
         byte[] fedSerialized = null;
         if (pendingFederation != null) {
             fedSerialized = pendingFederation.serializeOnlyBtcKeys();
         }
-        safeSavePendingFederationToRepository(fedSerialized);
+        savePendingFederationToRepository(fedSerialized);
     }
 
     /**
      * Save the pending federation
      */
-    public void savePendingFederation(PendingFederation pendingFederation) {
+    private void savePendingFederation(PendingFederation pendingFederation) throws IOException {
         // we only need to save the standard part of the fed since the emergency part is constant
         saveStorageVersion(
             PENDING_FEDERATION_FORMAT_VERSION.getKey(),
@@ -497,7 +497,7 @@ public class BridgeStorageProvider {
         if (pendingFederation != null) {
              fedSerialized = pendingFederation.serialize();
         }
-        safeSavePendingFederationToRepository(fedSerialized);
+        savePendingFederationToRepository(fedSerialized);
     }
 
     /**
@@ -1160,17 +1160,13 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(contractAddress, addressKey, data);
     }
 
-    private void safeSavePendingFederationToRepository(byte[] federationSerialized) {
-        try {
-            savePendingFederationToRepository(federationSerialized);
-        } catch (IOException ioe) {
-            throw new RuntimeException("Unable to save to repository: " + Arrays.toString(federationSerialized), ioe);
-        }
-    }
-
     private void savePendingFederationToRepository(byte[] federationSerialized) throws IOException {
-        DataWord pendingFederationKey = PENDING_FEDERATION_KEY.getKey();
-        repository.addStorageBytes(contractAddress, pendingFederationKey, federationSerialized);
+        try {
+            DataWord pendingFederationKey = PENDING_FEDERATION_KEY.getKey();
+            repository.addStorageBytes(contractAddress, pendingFederationKey, federationSerialized);
+        } catch (RuntimeException e) {
+            throw new IOException("Unable to save to repository: " + Arrays.toString(federationSerialized), e);
+        }
     }
 
     private interface RepositoryDeserializer<T> {

@@ -1126,7 +1126,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void savePendingFederation_preMultikey() {
+    void savePendingFederation_preMultikey() throws IOException {
         PendingFederation pendingFederation = buildMockPendingFederation(100, 200, 300);
         List<Integer> storageBytesCalls = new ArrayList<>();
         List<Integer> serializeCalls = new ArrayList<>();
@@ -1156,7 +1156,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void savePendingFederation_preMultikey_setToNull() {
+    void savePendingFederation_preMultikey_setToNull() throws IOException {
         List<Integer> storageBytesCalls = new ArrayList<>();
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), bridgeTestnetInstance, activationsBeforeFork);
@@ -1182,7 +1182,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void savePendingFederation_postMultikey() {
+    void savePendingFederation_postMultikey() throws IOException {
         PendingFederation pendingFederation = buildMockPendingFederation(100, 200, 300);
         List<Integer> storageBytesCalls = new ArrayList<>();
         Repository repositoryMock = mock(Repository.class);
@@ -1219,7 +1219,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void savePendingFederation_postMultikey_setToNull() {
+    void savePendingFederation_postMultikey_setToNull() throws IOException {
         try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class, Mockito.CALLS_REAL_METHODS)) {
             List<Integer> storageBytesCalls = new ArrayList<>();
             Repository repositoryMock = mock(Repository.class);

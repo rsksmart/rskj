@@ -21,6 +21,7 @@ package co.rsk.peg.federation;
 import co.rsk.bitcoinj.core.BtcECKey;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +38,10 @@ import java.util.stream.Collectors;
  */
 public final class FederationMember {
     public static final FederationMemberPubKeysComparator BTC_RSK_MST_PUBKEYS_COMPARATOR = new FederationMemberPubKeysComparator();
+    private static final int FEDERATION_MEMBER_LIST_SIZE = 3;
+    private static final int FEDERATION_MEMBER_BTC_KEY_INDEX = 0;
+    private static final int FEDERATION_MEMBER_RSK_KEY_INDEX = 1;
+    private static final int FEDERATION_MEMBER_MST_KEY_INDEX = 2;
     private final BtcECKey btcPublicKey;
     private final ECKey rskPublicKey;
     private final ECKey mstPublicKey;
@@ -153,5 +158,15 @@ public final class FederationMember {
                 rskPublicKey,
                 mstPublicKey
         );
+    }
+
+    public byte[] serialize() {
+        byte[][] rlpElements = new byte[FEDERATION_MEMBER_LIST_SIZE][];
+        rlpElements[FEDERATION_MEMBER_BTC_KEY_INDEX] = RLP.encodeElement(
+            this.getBtcPublicKey().getPubKeyPoint().getEncoded(true)
+        );
+        rlpElements[FEDERATION_MEMBER_RSK_KEY_INDEX] = RLP.encodeElement(this.getRskPublicKey().getPubKey(true));
+        rlpElements[FEDERATION_MEMBER_MST_KEY_INDEX] = RLP.encodeElement(this.getMstPublicKey().getPubKey(true));
+        return RLP.encodeList(rlpElements);
     }
 }
