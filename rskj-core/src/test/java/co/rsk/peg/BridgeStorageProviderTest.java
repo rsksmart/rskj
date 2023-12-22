@@ -1213,7 +1213,7 @@ class BridgeStorageProviderTest {
         storageProvider.setPendingFederation(pendingFederation);
         // Should save the pending federation because is now set
         storageProvider.savePendingFederation();
-        // Should have called storage two times
+        // Should have called storage two times since RSKIP123 is activated
         Assertions.assertEquals(2, storageBytesCalls.size());
     }
 
