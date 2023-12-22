@@ -353,6 +353,10 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void serializeAndDeserializePendingFederation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        // we want serialization from members
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+
         final int NUM_CASES = 20;
 
         for (int i = 0; i < NUM_CASES; i++) {
@@ -363,7 +367,7 @@ class BridgeSerializationUtilsTest {
             }
             PendingFederation testPendingFederation = new PendingFederation(members);
 
-            byte[] serializedTestPendingFederation = testPendingFederation.serialize();
+            byte[] serializedTestPendingFederation = testPendingFederation.serialize(activations);
 
             PendingFederation deserializedTestPendingFederation = BridgeSerializationUtils.deserializePendingFederation(
                 serializedTestPendingFederation);
@@ -374,6 +378,10 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void serializePendingFederation_serializedKeysAreCompressedAndThree() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        // we want serialization from members
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+
         final int NUM_MEMBERS = 10;
         final int EXPECTED_NUM_KEYS = 3;
         final int EXPECTED_PUBLICKEY_SIZE = 33;
@@ -385,7 +393,7 @@ class BridgeSerializationUtilsTest {
 
         PendingFederation testPendingFederation = new PendingFederation(members);
 
-        byte[] serializedPendingFederation = testPendingFederation.serialize();
+        byte[] serializedPendingFederation = testPendingFederation.serialize(activations);
 
         RLPList memberList = (RLPList) RLP.decode2(serializedPendingFederation).get(0);
 
@@ -417,6 +425,10 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void serializePendingFederationOnlyBtcKeys() throws Exception {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        // we want serialization from pub keys
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+
         byte[][] publicKeyBytes = new byte[][]{
             BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
             BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
@@ -438,7 +450,7 @@ class BridgeSerializationUtilsTest {
             }))
         );
 
-        byte[] result = pendingFederation.serializeOnlyBtcKeys();
+        byte[] result = pendingFederation.serialize(activations);
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("f8cc");
         pendingFederation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
