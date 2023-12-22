@@ -222,7 +222,6 @@ public class SnapshotProcessor {
     }
 
     public void processStateChunkRequest(Peer sender, SnapStateChunkRequestMessage request) {
-        new Thread(() -> {
             long startChunk = System.currentTimeMillis();
             logger.debug("SERVER - Processing state chunk request from node {}", sender.getPeerNodeID());
             List<byte[]> trieEncoded = new ArrayList<>();
@@ -259,7 +258,6 @@ public class SnapshotProcessor {
 
             logger.debug("SERVER - Sending state chunk from {} of {} bytes to node {}, totalTime {}ms", request.getFrom(), chunkBytes.length, sender.getPeerNodeID(), totalChunkTime);
             sender.sendMessage(responseMessage);
-        }).start();
     }
 
     public void processStateChunkResponse(Peer peer, SnapStateChunkResponseMessage message) {
@@ -356,7 +354,7 @@ public class SnapshotProcessor {
                         SnapshotProcessor.this.stateChunkSize = BigInteger.ZERO;
                         SnapshotProcessor.this.chunkTasks.clear();
                         SnapshotProcessor.this.nextExpectedFrom = 0;
-                        //duplicateTheChunkSize();
+                        duplicateTheChunkSize();
                         logger.debug("Starting again the infinite loop! With chunk size = {}", SnapshotProcessor.this.chunkSize);
                         generateChunkRequestTasks();
                         startRequestingChunks();
