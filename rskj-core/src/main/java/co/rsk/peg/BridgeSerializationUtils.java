@@ -268,11 +268,9 @@ public class BridgeSerializationUtils {
             federationMembers.add(member);
         }
 
+        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, creationBlockNumber, networkParameters);
         return FederationFactory.buildStandardMultiSigFederation(
-            federationMembers,
-            creationTime,
-            creationBlockNumber,
-            networkParameters
+            federationArgs
         );
     }
 
@@ -325,15 +323,16 @@ public class BridgeSerializationUtils {
             FederationMember::deserialize
         );
 
-        return FederationFactory.buildNonStandardErpFederation(
-            federation.getMembers(),
-            federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
-            federation.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            activations
-        );
+        List<FederationMember> fedMembers = federation.getMembers();
+        Instant creationTime = federation.getCreationTime();
+        long creationBlockNumber = federation.getCreationBlockNumber();
+        NetworkParameters btcParams = federation.getBtcParams();
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, creationTime, creationBlockNumber, btcParams,
+            erpPubKeys, activationDelay);
+        return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
     }
 
     public static ErpFederation deserializeP2shErpFederation(
@@ -345,14 +344,17 @@ public class BridgeSerializationUtils {
             bridgeConstants.getBtcParams(),
             FederationMember::deserialize
         );
-        return FederationFactory.buildP2shErpFederation(
-            federation.getMembers(),
-            federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
-            federation.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
-        );
+
+        List<FederationMember> fedMembers = federation.getMembers();
+        Instant creationTime = federation.getCreationTime();
+        long creationBlockNumber = federation.getCreationBlockNumber();
+        NetworkParameters btcParams = federation.getBtcParams();
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, creationTime, creationBlockNumber, btcParams,
+            erpPubKeys, activationDelay);
+        return FederationFactory.buildP2shErpFederation(erpFederationArgs);
     }
 
     // An ABI call election is serialized as a list of the votes, like so:

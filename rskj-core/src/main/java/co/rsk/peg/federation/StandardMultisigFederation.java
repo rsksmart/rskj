@@ -18,13 +18,9 @@
 
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.bitcoin.ScriptValidations;
-
-import java.time.Instant;
-import java.util.List;
 
 /**
  * Immutable representation of an RSK Federation in the context of
@@ -35,13 +31,10 @@ import java.util.List;
 public class StandardMultisigFederation extends Federation {
 
     protected StandardMultisigFederation(
-        List<FederationMember> members,
-        Instant creationTime,
-        long creationBlockNumber,
-        NetworkParameters btcParams,
+        FederationArgs federationArgs,
         int formatVersion) {
 
-        super(members, creationTime, creationBlockNumber, btcParams, formatVersion);
+        super(federationArgs, formatVersion);
 
         validateRedeemScriptSize();
     }

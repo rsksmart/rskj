@@ -627,11 +627,14 @@ public class BridgeSupportTestIntegration {
         Federation oldFederation = bridgeConstants.getGenesisFederation();
         BtcECKey key = new BtcECKey(new SecureRandom());
         FederationMember member = new FederationMember(key, new ECKey(), new ECKey());
+        FederationArgs newFederationArgs = new FederationArgs(
+            Collections.singletonList(member),
+            Instant.EPOCH,
+            5L,
+            bridgeConstants.getBtcParams()
+        );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-                Collections.singletonList(member),
-                Instant.EPOCH,
-                5L,
-                bridgeConstants.getBtcParams()
+            newFederationArgs
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -1390,11 +1393,13 @@ public class BridgeSupportTestIntegration {
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
         List<FederationMember> activeFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys);
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-            activeFederationMembers,
+        FederationArgs activeFedArgs = new FederationArgs(activeFederationMembers,
             Instant.ofEpochMilli(2000L),
             2L,
             parameters
+        );
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
+            activeFedArgs
         );
 
         List<BtcECKey> retiringFederationKeys = Stream.of(
@@ -1403,11 +1408,12 @@ public class BridgeSupportTestIntegration {
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
         List<FederationMember> retiringFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys);
-        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
-            retiringFederationMembers,
+        FederationArgs retiringFedArgs = new FederationArgs(retiringFederationMembers,
             Instant.ofEpochMilli(1000L),
             1L,
-            parameters);
+            parameters
+        );
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(retiringFedArgs);
 
         Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
@@ -1513,11 +1519,14 @@ public class BridgeSupportTestIntegration {
                 .collect(Collectors.toList());
 
         List<FederationMember> activeFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys);
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs activeFedArgs = new FederationArgs(
             activeFederationMembers,
             Instant.ofEpochMilli(1000L),
             5L,
             params
+        );
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
+            activeFedArgs
         );
 
         final List<BtcECKey> retiringFedPrivateKeys = Arrays.asList(
@@ -1611,11 +1620,13 @@ public class BridgeSupportTestIntegration {
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
         List<FederationMember> federation1Members = FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys);
-        Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
-            federation1Members,
+        FederationArgs federation1Args = new FederationArgs(federation1Members,
             Instant.ofEpochMilli(1000L),
             0L,
             btcParams
+        );
+        Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
+            federation1Args
         );
 
         List<BtcECKey> federation2Keys = Arrays.asList(new BtcECKey[]{
@@ -1626,11 +1637,12 @@ public class BridgeSupportTestIntegration {
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
         List<FederationMember> federation2Members = FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys);
-        Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
-            federation2Members,
+        FederationArgs federation2Args = new FederationArgs(federation2Members,
             Instant.ofEpochMilli(2000L),
             0L,
-            btcParams
+            btcParams);
+        Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
+            federation2Args
         );
 
         Repository repository = createRepository();
@@ -1782,17 +1794,22 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void getFederationMethods_genesis() throws IOException {
+        FederationArgs activeFedArgs = new FederationArgs(FederationTestUtils.getFederationMembers(3),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
         Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(3),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            activeFedArgs
+        );
+
+        FederationArgs genesisFedArgs = new FederationArgs(FederationTestUtils.getFederationMembers(6),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation genesisFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(6),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            genesisFedArgs
         );
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation, null, null, null, null);
 
@@ -1810,17 +1827,22 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void getFederationMethods_active() throws IOException {
+        FederationArgs activeFedArgs = new FederationArgs(FederationTestUtils.getFederationMembers(3),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
         Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(3),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            activeFedArgs
+        );
+
+        FederationArgs genesisFedArgs = new FederationArgs(FederationTestUtils.getFederationMembers(6),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation genesisFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(6),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            genesisFedArgs
         );
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
@@ -1846,17 +1868,23 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void getFederationMethods_newActivated() throws IOException {
+        FederationArgs newFederationArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembers(3),
+            Instant.ofEpochMilli(1000),
+            15L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(3),
-                Instant.ofEpochMilli(1000),
-                15L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            newFederationArgs
+        );
+
+        FederationArgs oldFedArgs = new FederationArgs(FederationTestUtils.getFederationMembers(6),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(6),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            oldFedArgs
         );
 
         Block mockedBlock = mock(Block.class);
@@ -1886,17 +1914,24 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void getFederationMethods_newNotActivated() throws IOException {
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        FederationArgs newFederationArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembers(3),
+            Instant.ofEpochMilli(1000),
+            15L,
+            btcParams
+        );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(3),
-                Instant.ofEpochMilli(1000),
-                15L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            newFederationArgs
+        );
+
+        FederationArgs oldFedArgs = new FederationArgs(FederationTestUtils.getFederationMembers(6),
+            Instant.ofEpochMilli(1000),
+            0L,
+            btcParams
         );
         Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(6),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            oldFedArgs
         );
 
         Block mockedBlock = mock(Block.class);
@@ -1939,18 +1974,25 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void getRetiringFederationMethods_presentNewInactive() throws IOException {
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        FederationArgs mockedNewFedArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembers(2),
+            Instant.ofEpochMilli(1000),
+            10L,
+            btcParams
+        );
         Federation mockedNewFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(2),
-                Instant.ofEpochMilli(2000),
-                10L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            mockedNewFedArgs
         );
 
+        FederationArgs mockedOldFedArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembers(4),
+            Instant.ofEpochMilli(1000),
+            0L,
+            btcParams
+        );
         Federation mockedOldFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(4),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            mockedOldFedArgs
         );
 
         Block mockedBlock = mock(Block.class);
@@ -1976,18 +2018,25 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void getRetiringFederationMethods_presentNewActive() throws IOException {
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        FederationArgs mockedNewFedArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembers(2),
+            Instant.ofEpochMilli(1000),
+            10L,
+            btcParams
+        );
         Federation mockedNewFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(2),
-                Instant.ofEpochMilli(2000),
-                10L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            mockedNewFedArgs
         );
 
+        FederationArgs mockedOldFedArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembers(4),
+            Instant.ofEpochMilli(1000),
+            0L,
+            btcParams
+        );
         Federation mockedOldFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(4),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            mockedOldFedArgs
         );
 
         Block mockedBlock = mock(Block.class);
@@ -2192,19 +2241,26 @@ public class BridgeSupportTestIntegration {
     @Test
     void createFederation_withPendingActivation() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("create", new byte[][]{}, false);
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
+        FederationArgs mockedNewFedArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembers(2),
+            Instant.ofEpochMilli(2000),
+            10L,
+            btcParams
+        );
         Federation mockedNewFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(2),
-                Instant.ofEpochMilli(2000),
-                10L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            mockedNewFedArgs
         );
 
+        FederationArgs mockedOldFedArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembers(4),
+            Instant.ofEpochMilli(1000),
+            0L,
+            btcParams
+        );
         Federation mockedOldFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(4),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            mockedOldFedArgs
         );
 
         Block mockedBlock = mock(Block.class);
@@ -2233,19 +2289,26 @@ public class BridgeSupportTestIntegration {
     @Test
     void createFederation_withExistingRetiringFederation() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("create", new byte[][]{}, false);
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
+        FederationArgs mockedNewFedArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembers(2),
+            Instant.ofEpochMilli(2000),
+            10L,
+            btcParams
+        );
         Federation mockedNewFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(2),
-                Instant.ofEpochMilli(2000),
-                10L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            mockedNewFedArgs
         );
 
+        FederationArgs mockedOldFedArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembers(4),
+            Instant.ofEpochMilli(1000),
+            0L,
+            btcParams
+        );
         Federation mockedOldFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(4),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            mockedOldFedArgs
         );
 
         Block mockedBlock = mock(Block.class);
@@ -2763,7 +2826,7 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void commitFederation_ok() throws IOException, BridgeIllegalArgumentException {
-
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
@@ -2788,11 +2851,13 @@ public class BridgeSupportTestIntegration {
                     BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49"))
                 )
             );
-        Federation expectedFederation = FederationFactory.buildStandardMultiSigFederation(
-            expectedFederationMembers,
+        FederationArgs expectedFedArgs = new FederationArgs(expectedFederationMembers,
             Instant.ofEpochMilli(15005L),
             15L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            btcParams
+        );
+        Federation expectedFederation = FederationFactory.buildStandardMultiSigFederation(
+            expectedFedArgs
         );
 
         List<FederationMember> newFederationMembers =
@@ -2803,11 +2868,13 @@ public class BridgeSupportTestIntegration {
                     BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
                 )
             );
-        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            newFederationMembers,
+        FederationArgs newFederationArgs = new FederationArgs(newFederationMembers,
             Instant.ofEpochMilli(5005L),
             0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            btcParams
+        );
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
+            newFederationArgs
         );
 
         BridgeEventLogger eventLoggerMock = mock(BridgeEventLogger.class);
@@ -2958,11 +3025,13 @@ public class BridgeSupportTestIntegration {
                     BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
                 )
             );
-        Federation expectedFederation = FederationFactory.buildStandardMultiSigFederation(
-            expectedFederationMembers,
+        FederationArgs expectedFederationArgs = new FederationArgs(expectedFederationMembers,
             Instant.ofEpochMilli(5005L),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Federation expectedFederation = FederationFactory.buildStandardMultiSigFederation(
+            expectedFederationArgs
         );
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -2994,17 +3063,29 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void getRetiringFederationWallet_nonEmpty() throws IOException {
+        FederationArgs mockedFedArgs = new FederationArgs(FederationTestUtils.getFederationMembers(2),
+            Instant.ofEpochMilli(2000),
+            10L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
         Federation mockedNewFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembers(2),
-                Instant.ofEpochMilli(2000),
-                10L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            mockedFedArgs
         );
 
-        Federation expectedFederation = FederationFactory.buildStandardMultiSigFederation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
+        List<FederationMember> expectedFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(
+            Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        })), Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
+        }));
+        FederationArgs expectedFederationArgs = new FederationArgs(
+            expectedFederationMembers,
+            Instant.ofEpochMilli(5005L),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Federation expectedFederation = FederationFactory.buildStandardMultiSigFederation(
+            expectedFederationArgs
+        );
 
         Block mockedBlock = mock(Block.class);
         when(mockedBlock.getNumber()).thenReturn(25L);

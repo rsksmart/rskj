@@ -42,23 +42,17 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
 
     @BeforeEach
     void setup() {
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembers(3);
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
-        federation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembers(3),
-            Instant.ofEpochMilli(1000),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
+        FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.ofEpochMilli(1000), 0L, btcParams);
+        federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
-        erpFederation = FederationFactory.buildNonStandardErpFederation(
-            FederationTestUtils.getFederationMembers(3),
-            Instant.ofEpochMilli(1000),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            erpFedKeys,
-            5063,
-            mock(ActivationConfig.ForBlock.class)
-        );
+        long activationDelay = 5063;
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, Instant.ofEpochMilli(1000), 0L, btcParams,
+            erpFedKeys, activationDelay);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         federationList = Collections.singletonList(federation);
         erpFederationList = Collections.singletonList(erpFederation);

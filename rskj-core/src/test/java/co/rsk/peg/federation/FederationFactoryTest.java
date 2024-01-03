@@ -172,35 +172,22 @@ class FederationFactoryTest {
     }
 
     private Federation createStandardMultisigFederation() {
-        return FederationFactory.buildStandardMultiSigFederation(
-            federationMembers,
-            creationTime,
-            creationBlockNumber,
-            networkParameters
-        );
+        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, creationBlockNumber, networkParameters);
+        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
     private ErpFederation createNonStandardErpFederation() {
-        return FederationFactory.buildNonStandardErpFederation(
-            federationMembers,
-            creationTime,
-            creationBlockNumber,
-            networkParameters,
-            emergencyKeys,
-            activationDelayValue,
-            activations
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(federationMembers, creationTime, creationBlockNumber, networkParameters,
+            emergencyKeys, activationDelayValue
         );
+        return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
     }
 
     private ErpFederation createP2shErpFederation() {
-        return FederationFactory.buildP2shErpFederation(
-            federationMembers,
-            creationTime,
-            creationBlockNumber,
-            networkParameters,
-            emergencyKeys,
-            activationDelayValue
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(federationMembers, creationTime, creationBlockNumber, networkParameters,
+            emergencyKeys, activationDelayValue
         );
+        return FederationFactory.buildP2shErpFederation(erpFederationArgs);
     }
 
 }

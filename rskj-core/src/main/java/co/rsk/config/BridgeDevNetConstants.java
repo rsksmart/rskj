@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
+import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.FederationFactory;
 import java.time.Instant;
@@ -57,12 +58,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(
-            federationMembers,
-            genesisFederationAddressCreatedAt,
-            1L,
-            getBtcParams()
-        );
+        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, getBtcParams());
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         btc2RskMinimumAcceptableConfirmations = 1;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;

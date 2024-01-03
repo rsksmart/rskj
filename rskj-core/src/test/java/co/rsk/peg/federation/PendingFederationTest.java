@@ -418,32 +418,21 @@ class PendingFederationTest {
         );
 
         Federation expectedFederation;
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersFromPks(privateKeys);
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
+
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, creationTime, 0L, btcParams,
+            erpPubKeys, activationDelay);
+
         if (isRskip353Active) {
-            expectedFederation = FederationFactory.buildP2shErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(privateKeys),
-                creationTime,
-                0L,
-                bridgeConstants.getBtcParams(),
-                bridgeConstants.getErpFedPubKeysList(),
-                bridgeConstants.getErpFedActivationDelay()
-            );
+            expectedFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
         } else if (isRskip201Active) {
-            expectedFederation = FederationFactory.buildNonStandardErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(privateKeys),
-                creationTime,
-                0L,
-                bridgeConstants.getBtcParams(),
-                bridgeConstants.getErpFedPubKeysList(),
-                bridgeConstants.getErpFedActivationDelay(),
-                activations
-            );
+            expectedFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
         } else {
-            expectedFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembersFromPks(privateKeys),
-                creationTime,
-                0L,
-                bridgeConstants.getBtcParams()
-            );
+            expectedFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
         }
 
         assertEquals(expectedFederation, builtFederation);

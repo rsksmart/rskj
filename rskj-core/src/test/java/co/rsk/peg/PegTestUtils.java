@@ -26,10 +26,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.federation.ErpFederation;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;
@@ -302,24 +299,21 @@ public final class PegTestUtils {
 
     public static Federation createFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        return FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            bridgeConstants.getBtcParams()
-        );
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys);
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.ofEpochMilli(1000L), 0L, btcParams);
+        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
     public static ErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        return FederationFactory.buildP2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            bridgeConstants.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
-        );
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys);
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, Instant.ofEpochMilli(1000L), 0L, btcParams,
+                erpPubKeys, activationDelay);
+        return FederationFactory.buildP2shErpFederation(erpFederationArgs);
     }
 
     public static BtcTransaction createBtcTransactionWithOutputToAddress(NetworkParameters networkParameters, Coin amount, Address btcAddress) {

@@ -5,9 +5,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import co.rsk.config.BridgeConstants;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.federation.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -58,6 +56,8 @@ class BridgeSupportAddSignatureTest {
     private BridgeSupportBuilder bridgeSupportBuilder;
     private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
     private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
+    private final Instant creationTime = Instant.ofEpochMilli(1000L);
+    private final long creationBlockNumber = 0L;
 
     @BeforeEach
     void setUpOnEachTest() {
@@ -72,18 +72,16 @@ class BridgeSupportAddSignatureTest {
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
 
         // Creates new federation
-        List<BtcECKey> federation1Keys = Arrays.asList(
+        List<BtcECKey> activeFedKeys = Arrays.asList(
                 BtcECKey.fromPrivate(Hex.decode("fa01")),
                 BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
-        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        activeFedKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
-                Instant.ofEpochMilli(1000L),
-                0L,
-                btcRegTestParams
-        );
+        List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFedKeys);
+        FederationArgs activeFedArgs =
+            new FederationArgs(activeFedMembers, creationTime, creationBlockNumber, btcRegTestParams);
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFedArgs);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BridgeSupport bridgeSupport = new BridgeSupport(
@@ -131,17 +129,15 @@ class BridgeSupportAddSignatureTest {
         );
 
         // Creates retiring federation
-        List<BtcECKey> federation1Keys = Arrays.asList(
+        List<BtcECKey> retiringFedKeys = Arrays.asList(
                 BtcECKey.fromPrivate(Hex.decode("fa01")),
                 BtcECKey.fromPrivate(Hex.decode("fa02")));
-        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        retiringFedKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
-                Instant.ofEpochMilli(1000L),
-                0L,
-                btcRegTestParams
-        );
+        List<FederationMember> retiringFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedKeys);
+        FederationArgs retiringFedArgs =
+            new FederationArgs(retiringFedMembers, creationTime, creationBlockNumber, btcRegTestParams);
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(retiringFedArgs);
 
         // Creates active federation
         List<BtcECKey> activeFederationKeys = Arrays.asList(
@@ -149,13 +145,10 @@ class BridgeSupportAddSignatureTest {
                 BtcECKey.fromPrivate(Hex.decode("fa04"))
         );
         activeFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
-                Instant.ofEpochMilli(1000L),
-                0L,
-                btcRegTestParams
-        );
+        List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys);
+        FederationArgs activeFedArgs =
+            new FederationArgs(activeFedMembers, creationTime, creationBlockNumber, btcRegTestParams);
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFedArgs);
 
         when(mockFederationSupport.getActiveFederation()).thenReturn(activeFederation);
         when(mockFederationSupport.getRetiringFederation()).thenReturn(retiringFederation);
@@ -188,18 +181,15 @@ class BridgeSupportAddSignatureTest {
         );
 
         // Creates retiring federation
-        List<BtcECKey> federation1Keys = Arrays.asList(
+        List<BtcECKey> retiringFedKeys = Arrays.asList(
                 BtcECKey.fromPrivate(Hex.decode("fa01")),
                 BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
-        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
-                Instant.ofEpochMilli(1000L),
-                0L,
-                btcRegTestParams
-        );
+        retiringFedKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        List<FederationMember> retiringFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedKeys);
+        FederationArgs retiringFedArgs =
+            new FederationArgs(retiringFedMembers, creationTime, creationBlockNumber, btcRegTestParams);
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(retiringFedArgs);
 
         // Creates active federation
         List<BtcECKey> activeFederationKeys = Arrays.asList(
@@ -208,11 +198,10 @@ class BridgeSupportAddSignatureTest {
         );
         activeFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
-                Instant.ofEpochMilli(1000L),
-                0L,
-                btcRegTestParams);
+        List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys);
+        FederationArgs activeFedArgs =
+            new FederationArgs(activeFedMembers, creationTime, creationBlockNumber, btcRegTestParams);
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFedArgs);
 
         when(mockFederationSupport.getActiveFederation()).thenReturn(activeFederation);
         when(mockFederationSupport.getRetiringFederation()).thenReturn(retiringFederation);

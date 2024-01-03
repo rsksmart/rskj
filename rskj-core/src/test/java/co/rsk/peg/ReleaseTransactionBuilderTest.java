@@ -92,15 +92,21 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void first_output_pay_fees() {
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            FederationMember.getFederationMembersFromKeys(Arrays.asList(
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
+            Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
-                new BtcECKey())
-            ),
+                new BtcECKey()
+            )
+        );
+        FederationArgs federationArgs = new FederationArgs(
+            members,
             Instant.now(),
             0,
             networkParameters
+        );
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
 
         List<UTXO> utxos = Arrays.asList(
@@ -167,17 +173,24 @@ class ReleaseTransactionBuilderTest {
         // Use mainnet constants to test a real situation
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
-            FederationMember.getFederationMembersFromKeys(Arrays.asList(
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
+            Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
-                new BtcECKey())
-            ),
+                new BtcECKey()
+            )
+        );
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
+            members,
             Instant.now(),
             0,
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
+            bridgeConstants.getErpFedActivationDelay()
+        );
+
+        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+            erpFederationArgs,
             activations
         );
 

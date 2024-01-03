@@ -199,20 +199,19 @@ class PegUtilsLegacyTest {
 
     @Test
     void testIsValidPegInTxForTwoFederations() {
-        Context btcContext = new Context(networkParameters);
         when(activations.isActive(any(ConsensusRule.class))).thenReturn(false);
+
+        Context btcContext = new Context(networkParameters);
+        NetworkParameters btcParams = btcContext.getParams();
 
         List<BtcECKey> federation1Keys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            networkParameters
-        );
+        List<FederationMember> fed1Members = FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys);
+        FederationArgs federation1Args = new FederationArgs(fed1Members, Instant.ofEpochMilli(1000L), 0L, btcParams);
+        Federation federation1 = FederationFactory.buildStandardMultiSigFederation(federation1Args);
 
         List<BtcECKey> federation2Keys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fb01")),
@@ -220,12 +219,9 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fb03"))
         );
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
-            Instant.ofEpochMilli(2000L),
-            0L,
-            networkParameters
-        );
+        List<FederationMember> fed2Members = FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys);
+        FederationArgs federation2Args = new FederationArgs(fed2Members, Instant.ofEpochMilli(1000L), 0L, btcParams);
+        Federation federation2 = FederationFactory.buildStandardMultiSigFederation(federation2Args);
 
         Address address1 = federation1.getAddress();
         Address address2 = federation2.getAddress();
@@ -528,29 +524,27 @@ class PegUtilsLegacyTest {
 
     @Test
     void testIsValidPegInTx_hasChangeUtxoFromFlyoverErpFederation_beforeRskip201_isPegin() {
-        Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
+        Context btcContext = new Context(networkParameters);
+        NetworkParameters btcParams = btcContext.getParams();
+
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
-        List<BtcECKey> erpFederationKeys = Arrays.asList(
+        List<FederationMember> fedMembers = activeFederation.getMembers();
+        List<BtcECKey> erpPubKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
-        erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation erpFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            networkParameters
-        );
+        erpPubKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        long activationDelay = 500L;
 
-        Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
-            activeFederation.getRedeemScript(),
-            erpFederation.getRedeemScript(),
-            500L
-        );
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, Instant.ofEpochMilli(1000L), 0L, btcParams,
+            erpPubKeys, activationDelay);
+        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+
+        Script redeemScript = erpFederation.getRedeemScript();
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            erpRedeemScript,
+            redeemScript,
             Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
         );
 
@@ -581,12 +575,10 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation erpFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            networkParameters
-        );
+
+        List<FederationMember> erpFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys);
+        FederationArgs args = new FederationArgs(erpFedMembers, Instant.ofEpochMilli(1000L), 0L, networkParameters);
+        Federation erpFederation = FederationFactory.buildStandardMultiSigFederation(args);
 
         Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
             activeFederation.getRedeemScript(),
@@ -625,11 +617,14 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation erpFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation erpFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
@@ -660,11 +655,14 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation erpFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation erpFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
@@ -695,11 +693,14 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -742,11 +743,14 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -789,11 +793,14 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -801,16 +808,15 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa04"))
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L,
-            activations
+            500L
         );
+        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         // Create a tx from the retired fast bridge fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
@@ -852,11 +858,14 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -865,15 +874,15 @@ class PegUtilsLegacyTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L,
-            activations
+            500L
         );
+        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         // Create a tx from the retired fast bridge fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
@@ -914,11 +923,14 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -927,15 +939,15 @@ class PegUtilsLegacyTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L,
-            activations
+            500L
         );
+        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         // Create a tx from the retired erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
@@ -972,11 +984,14 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs retiredFedArgs = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+            retiredFedArgs
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -984,14 +999,16 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa04"))
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+        ErpFederationArgs erpFedArgs = new ErpFederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L,
+            500L
+        );
+        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+            erpFedArgs,
             activations
         );
 
@@ -1234,13 +1251,15 @@ class PegUtilsLegacyTest {
         List<BtcECKey> emergencyKeys = PegTestUtils.createRandomBtcECKeys(3);
         long activationDelay = 256L;
 
-        Federation p2shErpFederation = FederationFactory.buildP2shErpFederation(
-            activeFederation.getMembers(),
+        ErpFederationArgs args = new ErpFederationArgs(activeFederation.getMembers(),
             activeFederation.getCreationTime(),
             activeFederation.getCreationBlockNumber(),
             networkParameters,
             emergencyKeys,
             activationDelay
+        );
+        Federation p2shErpFederation = FederationFactory.buildP2shErpFederation(
+            args
         );
 
         Script flyoverP2shErpRedeemScript = FastBridgeP2shErpRedeemScriptParser.createFastBridgeP2shErpRedeemScript(
@@ -1300,7 +1319,7 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        ErpFederation retiredFederation = FederationFactory.buildP2shErpFederation(
+        ErpFederationArgs retiredFedArgs = new ErpFederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
@@ -1308,19 +1327,24 @@ class PegUtilsLegacyTest {
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay()
         );
+        ErpFederation retiredFederation = FederationFactory.buildP2shErpFederation(
+            retiredFedArgs
+        );
 
         List<BtcECKey> activeFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation activeFederation = FederationFactory.buildP2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        ErpFederationArgs activeFedArgs = new ErpFederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay()
+        );
+        Federation activeFederation = FederationFactory.buildP2shErpFederation(
+            activeFedArgs
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1370,13 +1394,15 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiringFederation = FederationFactory.buildP2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(retiringFed),
+        ErpFederationArgs retiringFedArgs = new ErpFederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(retiringFed),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay()
+        );
+        Federation retiringFederation = FederationFactory.buildP2shErpFederation(
+            retiringFedArgs
         );
 
         List<BtcECKey> activeFederationKeys = Stream.of(
@@ -1384,13 +1410,15 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation activeFederation = FederationFactory.buildP2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        ErpFederationArgs activeFedArgs = new ErpFederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay()
+        );
+        Federation activeFederation = FederationFactory.buildP2shErpFederation(
+            activeFedArgs
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1430,11 +1458,13 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+        FederationArgs retiredFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams()
+        );
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+            retiredFedArgs
         );
 
         List<BtcECKey> activeFederationKeys = Stream.of(
@@ -1442,13 +1472,15 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation activeFederation = FederationFactory.buildP2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        ErpFederationArgs activeFedArgs = new ErpFederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay()
+        );
+        Federation activeFederation = FederationFactory.buildP2shErpFederation(
+            activeFedArgs
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1498,11 +1530,13 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
+        FederationArgs retiringFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams()
+        );
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
+            retiringFedArgs
         );
 
         List<BtcECKey> activeFederationKeys = Stream.of(
@@ -1510,13 +1544,15 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation activeFederation = FederationFactory.buildP2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        ErpFederationArgs activeFedArgs = new ErpFederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams(),
             bridgeConstantsMainnet.getErpFedPubKeysList(),
             bridgeConstantsMainnet.getErpFedActivationDelay()
+        );
+        Federation activeFederation = FederationFactory.buildP2shErpFederation(
+            activeFedArgs
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1556,11 +1592,13 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+        FederationArgs retiredFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams()
+        );
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+            retiredFedArgs
         );
 
         List<BtcECKey> activeFederationKeys = Stream.of(
@@ -1568,11 +1606,13 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        FederationArgs activeFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams()
+        );
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
+            activeFedArgs
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1622,11 +1662,14 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs retiringFedArgs = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams()
+        );
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
+            retiringFedArgs
         );
 
         List<BtcECKey> activeFederationKeys = Stream.of(
@@ -1634,11 +1677,13 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        FederationArgs activeFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             bridgeConstantsMainnet.getBtcParams()
+        );
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
+            activeFedArgs
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1675,11 +1720,14 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+
+        FederationArgs activeFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(2000L),
             2L,
             networkParameters
+        );
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
+            activeFedArgs
         );
 
         List<BtcECKey> retiringFederationKeys = Stream.of(
@@ -1687,22 +1735,27 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fb02")),
             BtcECKey.fromPrivate(Hex.decode("fb03"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
+
+        FederationArgs retiringFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             networkParameters
+        );
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
+            retiringFedArgs
         );
 
         List<BtcECKey> retiredFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fc01")),
             BtcECKey.fromPrivate(Hex.decode("fc02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
+        FederationArgs retiredFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
             networkParameters
+        );
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(
+            retiredFedArgs
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1834,11 +1887,13 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02")),
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
+        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(2000L),
             2L,
             bridgeConstantsRegtest.getBtcParams()
+        );
+        Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
@@ -1871,11 +1926,13 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         );
         flyoverFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation flyoverFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(flyoverFederationKeys),
+        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(flyoverFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation flyoverFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
@@ -1929,11 +1986,13 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         );
         defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation defaultFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
+        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation defaultFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -1942,14 +2001,15 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa05"))
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
+        ErpFederationArgs erpArgs = new ErpFederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L,
+            500L
+        );
+        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(
+            erpArgs,
             activations
         );
 
@@ -2005,11 +2065,13 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         );
         defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation defaultFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
+        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
+        );
+        Federation defaultFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -2019,13 +2081,15 @@ class PegUtilsLegacyTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
+        ErpFederationArgs erpArgs = new ErpFederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L,
+            500L
+        );
+        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+            erpArgs,
             activations
         );
 
@@ -2119,9 +2183,14 @@ class PegUtilsLegacyTest {
             .map(BtcECKey::fromPrivate)
             .sorted(BtcECKey.PUBKEY_COMPARATOR)
             .collect(Collectors.toList());
-        Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args1 = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
-            Instant.ofEpochMilli(1000L), 0L, networkParameters
+            Instant.ofEpochMilli(1000L),
+            0L,
+            networkParameters
+        );
+        Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
+            args1
         );
 
         List<BtcECKey> federation2Keys = Stream.of("fb01", "fb02", "fb03")
@@ -2130,11 +2199,13 @@ class PegUtilsLegacyTest {
             .sorted(BtcECKey.PUBKEY_COMPARATOR)
             .collect(Collectors.toList());
         List<FederationMember> federation2Members = FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys);
-        Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
-            federation2Members,
+        FederationArgs args2 = new FederationArgs(federation2Members,
             Instant.ofEpochMilli(2000L),
             0L,
             networkParameters
+        );
+        Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
+            args2
         );
 
         Address federation2Address = federation2.getAddress();

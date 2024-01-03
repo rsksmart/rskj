@@ -19,6 +19,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -97,47 +98,41 @@ public final class PendingFederation {
      * @return a Federation
      */
     public Federation buildFederation(
-        Instant creationTime,
-        long blockNumber,
-        BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations
+            Instant creationTime,
+            long blockNumber,
+            BridgeConstants bridgeConstants,
+            ActivationConfig.ForBlock activations
         ) {
         if (!this.isComplete()) {
             throw new IllegalStateException("PendingFederation is incomplete");
         }
 
-        if (activations.isActive(ConsensusRule.RSKIP353)) {
-            logger.info("[buildFederation] Going to create a P2SH ERP Federation");
-            return FederationFactory.buildP2shErpFederation(
-                members,
-                creationTime,
-                blockNumber,
-                bridgeConstants.getBtcParams(),
-                bridgeConstants.getErpFedPubKeysList(),
-                bridgeConstants.getErpFedActivationDelay()
-            );
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+
+        if (shouldBuildStandardMultisigFederation(activations)){
+            FederationArgs federationArgs = new FederationArgs(members, creationTime, blockNumber, btcParams);
+            return FederationFactory.buildStandardMultiSigFederation(federationArgs);
         }
 
-        if (activations.isActive(ConsensusRule.RSKIP201)) {
+        // should build and erp federation due to activations
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(members, creationTime, blockNumber, btcParams, erpPubKeys, activationDelay);
+        if (shouldBuildNonStandardErpFederation(activations)) {
             logger.info("[buildFederation] Going to create an ERP Federation");
-
-            return FederationFactory.buildNonStandardErpFederation(
-                members,
-                creationTime,
-                blockNumber,
-                bridgeConstants.getBtcParams(),
-                bridgeConstants.getErpFedPubKeysList(),
-                bridgeConstants.getErpFedActivationDelay(),
-                activations
-            );
+            return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
         }
 
-        return FederationFactory.buildStandardMultiSigFederation(
-                members,
-                creationTime,
-                blockNumber,
-                bridgeConstants.getBtcParams()
-        );
+        logger.info("[buildFederation] Going to create a P2SH ERP Federation");
+        return FederationFactory.buildP2shErpFederation(erpFederationArgs);
+    }
+
+    private boolean shouldBuildStandardMultisigFederation(ActivationConfig.ForBlock activations) {
+        return !activations.isActive(ConsensusRule.RSKIP201);
+    }
+
+    private boolean shouldBuildNonStandardErpFederation(ActivationConfig.ForBlock activations) {
+        return !activations.isActive(ConsensusRule.RSKIP353);
     }
 
     @Override
