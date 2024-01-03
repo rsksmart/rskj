@@ -604,19 +604,19 @@ class BridgeStorageProviderFederationTests {
             PegTestUtils.createRandomBtcECKeys(7)
         );
 
+        FederationArgs args = new FederationArgs(members,
+            Instant.now(),
+            1L);
+
         if (version == STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION) {
             return FederationFactory.buildStandardMultiSigFederation(
-                members,
-                Instant.now(),
-                1L,
+                args,
                 bridgeConstantsRegtest.getBtcParams()
             );
         }
         if (version == NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION) {
             return FederationFactory.buildNonStandardErpFederation(
-                members,
-                Instant.now(),
-                1L,
+                args,
                 bridgeConstantsRegtest.getBtcParams(),
                 bridgeConstantsRegtest.getErpFedPubKeysList(),
                 bridgeConstantsRegtest.getErpFedActivationDelay(),
@@ -625,9 +625,7 @@ class BridgeStorageProviderFederationTests {
         }
         if (version == P2SH_ERP_FEDERATION_FORMAT_VERSION) {
             return FederationFactory.buildP2shErpFederation(
-                members,
-                Instant.now(),
-                1L,
+                args,
                 bridgeConstantsRegtest.getBtcParams(),
                 bridgeConstantsRegtest.getErpFedPubKeysList(),
                 bridgeConstantsRegtest.getErpFedActivationDelay()
@@ -635,9 +633,7 @@ class BridgeStorageProviderFederationTests {
         }
         // To keep backwards compatibility
         return FederationFactory.buildStandardMultiSigFederation(
-            members,
-            Instant.now(),
-            1L,
+            args,
             bridgeConstantsRegtest.getBtcParams()
         );
     }

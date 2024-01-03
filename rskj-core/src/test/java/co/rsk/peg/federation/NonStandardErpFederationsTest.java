@@ -95,10 +95,13 @@ class NonStandardErpFederationsTest {
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
 
-        return FederationFactory.buildNonStandardErpFederation(
+        FederationArgs args = new FederationArgs(
             standardMembers,
             creationTime,
-            creationBlockNumber,
+            creationBlockNumber
+        );
+        return FederationFactory.buildNonStandardErpFederation(
+            args,
             networkParameters,
             emergencyKeys,
             activationDelayValue,
@@ -257,10 +260,13 @@ class NonStandardErpFederationsTest {
 
     @Test
     void testEquals_same() {
-        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
+        FederationArgs args = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
+            federation.getCreationBlockNumber()
+        );
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
+            args,
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
@@ -271,10 +277,13 @@ class NonStandardErpFederationsTest {
 
     @Test
     void testEquals_differentCreationTime() {
-        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
+        FederationArgs args = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime().plus(1, ChronoUnit.MILLIS),
-            federation.getCreationBlockNumber(),
+            federation.getCreationBlockNumber()
+        );
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
+            args,
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
@@ -285,10 +294,13 @@ class NonStandardErpFederationsTest {
 
     @Test
     void testEquals_differentCreationBlockNumber() {
-        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
+        FederationArgs args = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime(),
-            federation.getCreationBlockNumber() + 1,
+            federation.getCreationBlockNumber() + 1
+        );
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
+            args,
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
@@ -710,13 +722,16 @@ class NonStandardErpFederationsTest {
 
         List<FederationMember> federationMembersWithBtcKeys = FederationTestUtils.getFederationMembersWithBtcKeys(standardMultisigKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
+        FederationArgs args = new FederationArgs(
+            federationMembersWithBtcKeys,
+            creationTime,
+            1
+        );
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         assertThrows(ErpFederationCreationException.class,
             () -> FederationFactory.buildNonStandardErpFederation(
-            federationMembersWithBtcKeys,
-            creationTime,
-            1,
+            args,
             btcParams,
             emergencyMultisigKeys,
             activationDelay,

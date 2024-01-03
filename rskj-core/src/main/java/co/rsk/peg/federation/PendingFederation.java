@@ -104,12 +104,11 @@ public final class PendingFederation {
             throw new IllegalStateException("PendingFederation is incomplete");
         }
 
+        FederationArgs args = new FederationArgs(members, creationTime, blockNumber);
         if (activations.isActive(ConsensusRule.RSKIP353)) {
             logger.info("[buildFederation] Going to create a P2SH ERP Federation");
             return FederationFactory.buildP2shErpFederation(
-                members,
-                creationTime,
-                blockNumber,
+                args,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay()
@@ -120,9 +119,7 @@ public final class PendingFederation {
             logger.info("[buildFederation] Going to create an ERP Federation");
 
             return FederationFactory.buildNonStandardErpFederation(
-                members,
-                creationTime,
-                blockNumber,
+                args,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
@@ -131,9 +128,7 @@ public final class PendingFederation {
         }
 
         return FederationFactory.buildStandardMultiSigFederation(
-                members,
-                creationTime,
-                blockNumber,
+                args,
                 bridgeConstants.getBtcParams()
         );
     }

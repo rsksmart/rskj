@@ -9,10 +9,7 @@ import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.federation.ErpFederation;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -67,10 +64,12 @@ class PocSighashTest {
 
         List<FederationMember> fedMembers = fedSigners.stream().map(FedSigner::getFed).collect(Collectors.toList());
         List<BtcECKey> erpFedPubKeys = erpFedSigners.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(
-            fedMembers,
+
+        FederationArgs args = new FederationArgs(fedMembers,
             Instant.now(),
-            0L,
+            0L);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(
+            args,
             networkParameters,
             erpFedPubKeys,
             erpFedActivationDelay
@@ -140,10 +139,11 @@ class PocSighashTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
+        FederationArgs args = new FederationArgs(fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
             Instant.now(),
-            0L,
+            0L);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(
+            args,
             networkParameters,
             erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
             erpFedActivationDelay
@@ -236,10 +236,11 @@ class PocSighashTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
+        FederationArgs args = new FederationArgs(fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
             Instant.now(),
-            0L,
+            0L);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(
+            args,
             networkParameters,
             erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
             erpFedActivationDelay
@@ -297,10 +298,11 @@ class PocSighashTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
+        FederationArgs args = new FederationArgs(fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
             Instant.now(),
-            0L,
+            0L);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(
+            args,
             networkParameters,
             erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
             erpFedActivationDelay
@@ -383,10 +385,11 @@ class PocSighashTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
+        FederationArgs args = new FederationArgs(fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
             Instant.now(),
-            0L,
+            0L);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(
+            args,
             networkParameters,
             fedPubKeys,
             erpFedActivationDelay
@@ -473,10 +476,11 @@ class PocSighashTest {
             FedSigner::getFed
         ).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
 
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(
-            fedMembers,
+        FederationArgs args = new FederationArgs(fedMembers,
             Instant.now(),
-            0L,
+            0L);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(
+            args,
             networkParameters,
             erpPubKeys,
             erpFedActivationDelay

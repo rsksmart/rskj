@@ -7,6 +7,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import java.time.Instant;
 import java.util.List;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationMember;
 import org.bouncycastle.util.encoders.Hex;
@@ -459,10 +460,11 @@ class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            FederationMember.getFederationMembersFromKeys(keys),
+        FederationArgs args = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
-            0,
+            0);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             bridgeConstantsRegtest.getBtcParams()
         );
 
@@ -481,10 +483,12 @@ class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            FederationMember.getFederationMembersFromKeys(keys),
+
+        FederationArgs args = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
-            0,
+            0);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             bridgeConstantsRegtest.getBtcParams()
         );
 
@@ -496,10 +500,11 @@ class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            FederationMember.getFederationMembersFromKeys(keys),
+        FederationArgs args = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
-            0,
+            0);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             bridgeConstantsRegtest.getBtcParams()
         );
 

@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
+import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.FederationFactory;
 import java.nio.charset.StandardCharsets;
@@ -55,10 +56,9 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
+        FederationArgs args = new FederationArgs(federationMembers, genesisFederationCreatedAt, 1L);
         genesisFederation = FederationFactory.buildStandardMultiSigFederation(
-            federationMembers,
-            genesisFederationCreatedAt,
-            1L,
+            args,
             getBtcParams()
         );
 

@@ -92,14 +92,20 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void first_output_pay_fees() {
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            FederationMember.getFederationMembersFromKeys(Arrays.asList(
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
+            Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
-                new BtcECKey())
-            ),
+                new BtcECKey()
+            )
+        );
+        FederationArgs args = new FederationArgs(
+            members,
             Instant.now(),
-            0,
+            0
+        );
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             networkParameters
         );
 
@@ -164,17 +170,23 @@ class ReleaseTransactionBuilderTest {
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
+            Arrays.asList(
+                new BtcECKey(),
+                new BtcECKey(),
+                new BtcECKey()
+            )
+        );
+        FederationArgs args = new FederationArgs(
+            members,
+            Instant.now(),
+            0
+        );
         // Use mainnet constants to test a real situation
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
         Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
-            FederationMember.getFederationMembersFromKeys(Arrays.asList(
-                new BtcECKey(),
-                new BtcECKey(),
-                new BtcECKey())
-            ),
-            Instant.now(),
-            0,
+            args,
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),

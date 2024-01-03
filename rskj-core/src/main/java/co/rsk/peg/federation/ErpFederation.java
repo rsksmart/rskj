@@ -10,7 +10,6 @@ import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.RedeemScriptCreationException;
 import co.rsk.peg.utils.EcKeyUtils;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,9 +24,7 @@ public class ErpFederation extends Federation {
     private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
 
     protected ErpFederation(
-        List<FederationMember> members,
-        Instant creationTime,
-        long creationBlockNumber,
+        FederationArgs args,
         NetworkParameters btcParams,
         List<BtcECKey> erpPubKeys,
         long activationDelay,
@@ -35,7 +32,7 @@ public class ErpFederation extends Federation {
         int formatVersion
     ) {
 
-        super(members, creationTime, creationBlockNumber, btcParams, formatVersion);
+        super(args, btcParams, formatVersion);
         validateEmergencyKeys(erpPubKeys);
 
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);

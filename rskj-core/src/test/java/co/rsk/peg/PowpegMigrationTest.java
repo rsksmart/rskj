@@ -131,12 +131,13 @@ class PowpegMigrationTest {
         ).collect(Collectors.toList());
 
         Federation originalPowpeg;
+        FederationArgs args = new FederationArgs(originalPowpegMembers,
+            Instant.now(),
+            0);
         switch (oldPowPegFederationType) {
             case legacyErp:
                 originalPowpeg = FederationFactory.buildNonStandardErpFederation(
-                    originalPowpegMembers,
-                    Instant.now(),
-                    0,
+                    args,
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay(),
@@ -145,9 +146,7 @@ class PowpegMigrationTest {
                 break;
             case p2shErp:
                 originalPowpeg = FederationFactory.buildP2shErpFederation(
-                    originalPowpegMembers,
-                    Instant.now(),
-                    0,
+                    args,
                     bridgeConstants.getBtcParams(),
                     bridgeConstants.getErpFedPubKeysList(),
                     bridgeConstants.getErpFedActivationDelay()

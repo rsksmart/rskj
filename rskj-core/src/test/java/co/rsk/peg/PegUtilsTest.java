@@ -10,10 +10,7 @@ import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.federation.ErpFederation;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.federation.*;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -207,10 +204,13 @@ class PegUtilsTest {
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
-        ErpFederation activeFed = FederationFactory.buildP2shErpFederation(
+        FederationArgs args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(signers),
             Instant.ofEpochMilli(1000L),
-            0L,
+            0L
+        );
+        ErpFederation activeFed = FederationFactory.buildP2shErpFederation(
+            args,
             btcMainnetParams,
             bridgeMainnetConstants.getErpFedPubKeysList(),
             bridgeMainnetConstants.getErpFedActivationDelay()
@@ -609,10 +609,14 @@ class PegUtilsTest {
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
-        ErpFederation activeFed = FederationFactory.buildP2shErpFederation(
+
+        FederationArgs args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(signers),
             Instant.ofEpochMilli(1000L),
-            0L,
+            0L
+        );
+        ErpFederation activeFed = FederationFactory.buildP2shErpFederation(
+            args,
             btcTestNetParams,
             bridgeTestNetConstants.getErpFedPubKeysList(),
             bridgeTestNetConstants.getErpFedActivationDelay()

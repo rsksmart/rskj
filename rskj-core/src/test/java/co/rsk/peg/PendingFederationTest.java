@@ -283,20 +283,19 @@ class PendingFederationTest {
         );
 
         Federation expectedFederation;
+        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersFromPks(privateKeys),
+            creationTime,
+            0L);
         if (isRskip353Active) {
             expectedFederation = FederationFactory.buildP2shErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(privateKeys),
-                creationTime,
-                0L,
+                args,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay()
             );
         } else if (isRskip201Active) {
             expectedFederation = FederationFactory.buildNonStandardErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(privateKeys),
-                creationTime,
-                0L,
+                args,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
@@ -304,9 +303,7 @@ class PendingFederationTest {
             );
         } else {
             expectedFederation = FederationFactory.buildStandardMultiSigFederation(
-                FederationTestUtils.getFederationMembersFromPks(privateKeys),
-                creationTime,
-                0L,
+                args,
                 bridgeConstants.getBtcParams()
             );
         }

@@ -26,6 +26,7 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -1253,10 +1254,11 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private static Federation getFederation() {
-        return FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembers(3),
+        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
-            0L,
+            0L);
+        return FederationFactory.buildStandardMultiSigFederation(
+            args,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
     }

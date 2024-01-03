@@ -23,11 +23,8 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -226,11 +223,13 @@ class BridgeEventLoggerImplTest {
         );
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
+        FederationArgs args;
+        args = new FederationArgs(oldFederationMembers,
+            Instant.ofEpochMilli(15005L),
+            15L);
 
         Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(
-            oldFederationMembers,
-            Instant.ofEpochMilli(15005L),
-            15L,
+            args,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
@@ -241,11 +240,12 @@ class BridgeEventLoggerImplTest {
         );
 
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
+        args = new FederationArgs(newFederationMembers,
+            Instant.ofEpochMilli(5005L),
+            0L);
 
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            newFederationMembers,
-            Instant.ofEpochMilli(5005L),
-            0L,
+            args,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 

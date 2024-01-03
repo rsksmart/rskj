@@ -274,10 +274,9 @@ public class BridgeSerializationUtils {
             federationMembers.add(member);
         }
 
+        FederationArgs args = new FederationArgs(federationMembers, creationTime, creationBlockNumber);
         return FederationFactory.buildStandardMultiSigFederation(
-            federationMembers,
-            creationTime,
-            creationBlockNumber,
+            args,
             networkParameters
         );
     }
@@ -331,10 +330,9 @@ public class BridgeSerializationUtils {
             BridgeSerializationUtils::deserializeFederationMember
         );
 
+        FederationArgs args = new FederationArgs(federation.getMembers(), federation.getCreationTime(), federation.getCreationBlockNumber());
         return FederationFactory.buildNonStandardErpFederation(
-            federation.getMembers(),
-            federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
+            args,
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
@@ -351,10 +349,10 @@ public class BridgeSerializationUtils {
             bridgeConstants.getBtcParams(),
             BridgeSerializationUtils::deserializeFederationMember
         );
+
+        FederationArgs args = new FederationArgs(federation.getMembers(), federation.getCreationTime(), federation.getCreationBlockNumber());
         return FederationFactory.buildP2shErpFederation(
-            federation.getMembers(),
-            federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
+            args,
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay()

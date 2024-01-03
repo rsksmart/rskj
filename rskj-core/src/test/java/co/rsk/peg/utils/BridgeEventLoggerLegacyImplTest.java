@@ -24,11 +24,8 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationTestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -211,9 +208,14 @@ class BridgeEventLoggerLegacyImplTest {
         );
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
+        FederationArgs args;
+        args = new FederationArgs(oldFederationMembers,
+            Instant.ofEpochMilli(15005L), 15L);
 
-        Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(oldFederationMembers,
-            Instant.ofEpochMilli(15005L), 15L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(
+            args,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
 
         List<BtcECKey> newFederationKeys = Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
@@ -222,11 +224,12 @@ class BridgeEventLoggerLegacyImplTest {
         );
 
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
+        args = new FederationArgs(newFederationMembers,
+            Instant.ofEpochMilli(5005L),
+            0L);
 
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            newFederationMembers,
-            Instant.ofEpochMilli(5005L),
-            0L,
+            args,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 

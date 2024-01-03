@@ -81,11 +81,14 @@ class P2shErpFederationTest {
         List<FederationMember> standardMembers = FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
-
-        return FederationFactory.buildP2shErpFederation(
+        FederationArgs args = new FederationArgs(
             standardMembers,
             creationTime,
-            creationBlockNumber,
+            creationBlockNumber
+        );
+
+        return FederationFactory.buildP2shErpFederation(
+            args,
             networkParameters,
             emergencyKeys,
             activationDelayValue
@@ -227,10 +230,13 @@ class P2shErpFederationTest {
 
     @Test
     void testEquals_same() {
-        ErpFederation otherFederation = FederationFactory.buildP2shErpFederation(
+        FederationArgs args = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
+            federation.getCreationBlockNumber()
+        );
+        ErpFederation otherFederation = FederationFactory.buildP2shErpFederation(
+            args,
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay()
@@ -343,19 +349,20 @@ class P2shErpFederationTest {
         );
         Instant creationTime = Instant.now();
         int creationBlock = 0;
+        FederationArgs args = new FederationArgs(
+            members,
+            creationTime,
+            creationBlock
+        );
         NetworkParameters btcParams = BridgeRegTestConstants.getInstance().getBtcParams();
 
         // Create a standard multisig powpeg and then a p2sh valid one. Both of them should produce the same default redeem script
         StandardMultisigFederation standardMultisigFed = FederationFactory.buildStandardMultiSigFederation(
-            members,
-            creationTime,
-            creationBlock,
+            args,
             btcParams
         );
         ErpFederation p2shFed = FederationFactory.buildP2shErpFederation(
-            members,
-            creationTime,
-            creationBlock,
+            args,
             btcParams,
             Arrays.asList(new BtcECKey(), new BtcECKey()),
             10_000
@@ -463,10 +470,13 @@ class P2shErpFederationTest {
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
             // Skip test cases with invalid redeem script that exceed the maximum size
             if (generatedScript.script.getProgram().length <= MAX_SCRIPT_ELEMENT_SIZE) {
-                Federation erpFederation = FederationFactory.buildP2shErpFederation(
+                FederationArgs args = new FederationArgs(
                     FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                     ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                    1,
+                    1
+                );
+                Federation erpFederation = FederationFactory.buildP2shErpFederation(
+                    args,
                     NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
                     generatedScript.emergencyFed,
                     generatedScript.timelock
@@ -496,10 +506,13 @@ class P2shErpFederationTest {
             true
         );
 
-        ErpFederation p2shErpFed = FederationFactory.buildP2shErpFederation(
+        FederationArgs args = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(defaultKeys),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
+            0L
+        );
+        ErpFederation p2shErpFed = FederationFactory.buildP2shErpFederation(
+            args,
             networkParameters,
             emergencyKeys,
             activationDelay
