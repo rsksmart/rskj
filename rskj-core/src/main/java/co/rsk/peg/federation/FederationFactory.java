@@ -7,7 +7,6 @@ import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
 import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
-import java.time.Instant;
 import java.util.List;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
@@ -16,22 +15,16 @@ public class FederationFactory {
 
     private FederationFactory() {}
 
-    public static StandardMultisigFederation buildStandardMultiSigFederation(List<FederationMember> members,
-                                                                      Instant creationTime,
-                                                                      long creationBlockNumber,
+    public static StandardMultisigFederation buildStandardMultiSigFederation(FederationArgs args,
                                                                       NetworkParameters btcParams) {
         return new StandardMultisigFederation(
-            members,
-            creationTime,
-            creationBlockNumber,
+            args,
             btcParams,
             STANDARD_MULTISIG_FEDERATION.getFormatVersion()
         );
     }
 
-    public static ErpFederation buildNonStandardErpFederation(List<FederationMember> members,
-                                                       Instant creationTime,
-                                                       long creationBlockNumber,
+    public static ErpFederation buildNonStandardErpFederation(FederationArgs args,
                                                        NetworkParameters btcParams,
                                                        List<BtcECKey> erpPubKeys,
                                                        long activationDelay,
@@ -40,9 +33,7 @@ public class FederationFactory {
             NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, btcParams);
 
         return new ErpFederation(
-            members,
-            creationTime,
-            creationBlockNumber,
+            args,
             btcParams,
             erpPubKeys,
             activationDelay,
@@ -51,18 +42,14 @@ public class FederationFactory {
         );
     }
 
-    public static ErpFederation buildP2shErpFederation(List<FederationMember> members,
-                                                       Instant creationTime,
-                                                       long creationBlockNumber,
+    public static ErpFederation buildP2shErpFederation(FederationArgs args,
                                                        NetworkParameters btcParams,
                                                        List<BtcECKey> erpPubKeys,
                                                        long activationDelay) {
 
         ErpRedeemScriptBuilder erpRedeemScriptBuilder = new P2shErpRedeemScriptBuilder();
         return new ErpFederation(
-            members,
-            creationTime,
-            creationBlockNumber,
+            args,
             btcParams,
             erpPubKeys,
             activationDelay,

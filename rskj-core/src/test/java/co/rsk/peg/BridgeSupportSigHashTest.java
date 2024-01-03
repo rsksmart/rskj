@@ -12,6 +12,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.test.builders.BridgeSupportBuilder;
@@ -122,10 +123,12 @@ class BridgeSupportSigHashTest {
 
         Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
         long newFedCreationBlockNumber = 5L;
-        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembers(1),
+
+        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            newFedCreationBlockNumber,
+            newFedCreationBlockNumber);
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             btcMainnetParams
         );
         when(provider.getOldFederation())
@@ -191,10 +194,11 @@ class BridgeSupportSigHashTest {
         Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
 
         long newFedCreationBlockNumber = 5L;
-        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            FederationTestUtils.getFederationMembers(1),
+        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            newFedCreationBlockNumber,
+            newFedCreationBlockNumber);
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             btcMainnetParams
         );
         when(provider.getOldFederation())
