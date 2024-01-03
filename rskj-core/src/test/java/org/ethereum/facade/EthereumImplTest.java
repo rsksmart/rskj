@@ -22,7 +22,13 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.GasPriceTracker;
+import org.ethereum.util.Utils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -30,6 +36,10 @@ import static org.mockito.Mockito.when;
 
 class EthereumImplTest {
 
+    @AfterEach
+    void resetMocks() {
+        Mockito.reset();
+    }
 
     @Test
     void getGasPrice_returns_GasPriceTrackerValue_when_feeMarketWorking_is_true() {
@@ -59,5 +69,28 @@ class EthereumImplTest {
         Coin price = ethereum.getGasPrice();
 
         assertEquals(12, price.asBigInteger().intValue());
+    }
+
+    @Test
+    void getGasPrice_returns_user_defined_value_when_property_is_set() {
+        GasPriceTracker gasPriceTracker = mock(GasPriceTracker.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        MockedStatic<Utils> utils = Mockito.mockStatic(Utils.class);
+        double minGasPriceMultiplier = 1.2;
+        Properties testProperties = new Properties();
+        testProperties.setProperty("gasPrice", "15");
+
+
+        utils.when(() -> Utils.getPropertiesFromFile("gas-price"))
+                .thenReturn(testProperties);
+
+        Ethereum ethereum = new EthereumImpl(null, null, new CompositeEthereumListener(), blockchain, gasPriceTracker, minGasPriceMultiplier);
+        Coin price = ethereum.getGasPrice();
+
+        assertEquals(15, price.asBigInteger().intValue());
+
+        if(!utils.isClosed()) {
+            utils.close();
+        }
     }
 }
