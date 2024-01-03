@@ -41,10 +41,13 @@ import org.ethereum.crypto.ECKey;
 public class FederationTestUtils {
 
     public static Federation getFederation(Integer... federationMemberPks) {
-        return FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             getFederationMembersFromPks(federationMemberPks),
             ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
-            0L,
+            0L
+        );
+        return FederationFactory.buildStandardMultiSigFederation(
+            args,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
     }
