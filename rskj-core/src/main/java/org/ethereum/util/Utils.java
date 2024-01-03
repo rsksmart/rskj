@@ -263,13 +263,13 @@ public class Utils {
     /**
      * Return the properties contained in the specified configuration file
      *
-     * @param String the file name, and path if it is inside a sub-folder
-     * @return Properties the properties found in the file
+     * @param name String the file name, and path if it is inside a sub-folder
+     * @return Properties the properties found in the file or null if no file was found
      */
     public static Properties getPropertiesFromFile(String name) {
         try (InputStream inputStream = EthereumImpl.class.getClassLoader().getResourceAsStream(name + ".conf")) {
             if (inputStream == null) {
-                throw new IllegalStateException("Configuration file not found for name: " + name);
+                return null;
             }
 
             Properties props = new Properties();

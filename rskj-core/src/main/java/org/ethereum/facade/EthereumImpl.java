@@ -86,12 +86,10 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public Coin getGasPrice() {
-        Properties props = Utils.getPropertiesFromFile("gas-price");
-        String gasPrice = props.getProperty("gasPrice");
+        Long gasPrice = getGasPriceFromConfig();
 
-        if(gasPrice != null && !gasPrice.isEmpty()) {
-            long gasPriceLong = Long.parseLong(gasPrice);
-            return Coin.valueOf(gasPriceLong);
+        if(gasPrice != null) {
+            return Coin.valueOf(gasPrice);
         }
 
         if (gasPriceTracker.isFeeMarketWorking()) {
@@ -99,5 +97,21 @@ public class EthereumImpl implements Ethereum {
         }
         double estimatedGasPrice = blockchain.getBestBlock().getMinimumGasPrice().asBigInteger().doubleValue() * minGasPriceMultiplier;
         return new Coin(BigDecimal.valueOf(estimatedGasPrice).toBigInteger());
+    }
+
+    private Long getGasPriceFromConfig() {
+        Properties properties = Utils.getPropertiesFromFile("gas-price");
+
+        if(properties == null) {
+            return null;
+        }
+
+        String gasPrice = properties.getProperty("gasPrice");
+
+        if(gasPrice != null && !gasPrice.isEmpty()) {
+            return Long.parseLong(gasPrice);
+        }
+
+        return null;
     }
 }
