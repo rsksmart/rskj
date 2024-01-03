@@ -84,13 +84,17 @@ class StandardMultisigFederationTest {
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newKeys);
         Instant creationTime = federation.getCreationTime();
         long creationBlockNumber = federation.getCreationBlockNumber();
+        FederationArgs args = new FederationArgs(
+            newMembers,
+            creationTime,
+            creationBlockNumber
+        );
         NetworkParameters networkParameters = federation.getBtcParams();
+
         ScriptCreationException exception =
             assertThrows(ScriptCreationException.class,
                 () -> FederationFactory.buildStandardMultiSigFederation(
-                newMembers,
-                creationTime,
-                creationBlockNumber,
+                args,
                 networkParameters
             ));
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
@@ -126,10 +130,13 @@ class StandardMultisigFederationTest {
 
     @Test
     void testEquals_same() {
-        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
+            federation.getCreationBlockNumber()
+        );
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             federation.getBtcParams()
         );
 
@@ -138,10 +145,13 @@ class StandardMultisigFederationTest {
 
     @Test
     void testEquals_differentCreationTime() {
-        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime().plus(1, ChronoUnit.MILLIS),
-            federation.getCreationBlockNumber(),
+            federation.getCreationBlockNumber()
+        );
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             networkParameters
         );
         assertEquals(federation, otherFederation);
@@ -149,10 +159,13 @@ class StandardMultisigFederationTest {
 
     @Test
     void testEquals_differentCreationBlockNumber() {
-        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime(),
-            federation.getCreationBlockNumber() + 1,
+            federation.getCreationBlockNumber() + 1
+        );
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             networkParameters
         );
         assertEquals(federation, otherFederation);
@@ -160,10 +173,13 @@ class StandardMultisigFederationTest {
 
     @Test
     void testEquals_differentNetworkParameters() {
-        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
+            federation.getCreationBlockNumber()
+        );
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         // Different network parameters will result in a different address
@@ -176,11 +192,14 @@ class StandardMultisigFederationTest {
         List<BtcECKey> newKeys = federation.getBtcPublicKeys();
         newKeys.remove(14);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithKeys(newKeys);
-
-        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             newMembers,
             federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
+            federation.getCreationBlockNumber()
+        );
+
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             federation.getBtcParams()
         );
 
@@ -200,10 +219,14 @@ class StandardMultisigFederationTest {
 
         Instant creationTime = federation.getCreationTime();
         long creationBlockNumber = federation.getCreationBlockNumber();
-        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+        FederationArgs args = new FederationArgs(
             differentMembers,
             creationTime,
-            creationBlockNumber,
+            creationBlockNumber
+        );
+
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            args,
             networkParameters
         );
 
