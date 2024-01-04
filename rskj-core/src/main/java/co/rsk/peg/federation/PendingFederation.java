@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -169,11 +171,23 @@ public final class PendingFederation {
     }
 
     public byte[] serialize(ActivationConfig.ForBlock activations) {
-        if (activations.isActive(ConsensusRule.RSKIP123)) {
-            return serializeFromMembers();
-        } else {
+        if (!activations.isActive(ConsensusRule.RSKIP123)) {
             return serializeOnlyBtcKeys();
         }
+        return serializeFromMembers();
+    }
+
+    public static PendingFederation deserialize(byte[] data) {
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        List<FederationMember> deserializedMembers = new ArrayList<>();
+
+        for (int k = 0; k < rlpList.size(); k++) {
+            RLPElement element = rlpList.get(k);
+            FederationMember member = FederationMember.deserialize(element.getRLPData());
+            deserializedMembers.add(member);
+        }
+
+        return new PendingFederation(deserializedMembers);
     }
 
     /**
@@ -203,11 +217,32 @@ public final class PendingFederation {
      * This is a legacy format for blocks before the Wasabi
      * network upgrade.
      */
-    public byte[] serializeOnlyBtcKeys() {
+    private byte[] serializeOnlyBtcKeys() {
         List<byte[]> encodedKeys = this.getBtcPublicKeys().stream()
             .sorted(BtcECKey.PUBKEY_COMPARATOR)
             .map(key -> RLP.encodeElement(key.getPubKey()))
             .collect(Collectors.toList());
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
+    }
+
+    public static PendingFederation deserializeFromBtcKeys(byte[] data) {
+        // BTC, RSK and MST keys are the same
+        List<FederationMember> deserializedMembers = deserializeBtcPublicKeys(data).stream()
+            .map(FederationMember::getFederationMemberFromKey)
+            .collect(Collectors.toList());
+
+        return new PendingFederation(deserializedMembers);
+    }
+
+    private static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        List<BtcECKey> keys = new ArrayList<>();
+        for (int k = 0; k < rlpList.size(); k++) {
+            RLPElement element = rlpList.get(k);
+            BtcECKey key = BtcECKey.fromPublicOnly(element.getRLPData());
+            keys.add(key);
+        }
+        return keys;
     }
 }

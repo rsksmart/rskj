@@ -997,8 +997,8 @@ class BridgeStorageProviderTest {
             }
         });
 
-        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
-            bridgeSerializationUtilsMocked.when(() -> BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(any(byte[].class))).then((InvocationOnMock invocation) -> {
+        try (MockedStatic<PendingFederation> pendingFederationMocked = mockStatic(PendingFederation.class)) {
+            pendingFederationMocked.when(() -> PendingFederation.deserializeFromBtcKeys(any(byte[].class))).then((InvocationOnMock invocation) -> {
                 deserializeCalls.add(0);
                 byte[] data = invocation.getArgument(0);
                 // Make sure we're deserializing what just came from the repo with the correct BTC context
@@ -1014,7 +1014,7 @@ class BridgeStorageProviderTest {
 
     @Test
     void getPendingFederation_initialVersion_nullBytes() {
-        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
+        try (MockedStatic<PendingFederation> pendingFederationMocked = mockStatic(PendingFederation.class)) {
 
             List<Integer> storageCalls = new ArrayList<>();
             Repository repositoryMock = mock(Repository.class);
@@ -1042,7 +1042,7 @@ class BridgeStorageProviderTest {
             assertNull(storageProvider.getPendingFederation());
             Assertions.assertEquals(2, storageCalls.size());
 
-            bridgeSerializationUtilsMocked.verify(() -> BridgeSerializationUtils.deserializePendingFederation(any(byte[].class)), never());
+            pendingFederationMocked.verify(() -> PendingFederation.deserialize(any(byte[].class)), never());
         }
     }
 
@@ -1073,8 +1073,8 @@ class BridgeStorageProviderTest {
             }
         });
 
-        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
-            bridgeSerializationUtilsMocked.when(() -> BridgeSerializationUtils.deserializePendingFederation(any(byte[].class))).then((InvocationOnMock invocation) -> {
+        try (MockedStatic<PendingFederation> pendingFederationMocked = mockStatic(PendingFederation.class)) {
+            pendingFederationMocked.when(() -> PendingFederation.deserialize(any(byte[].class))).then((InvocationOnMock invocation) -> {
                 deserializeCalls.add(0);
                 byte[] data = invocation.getArgument(0);
                 // Make sure we're deserializing what just came from the repo with the correct BTC context
@@ -1090,7 +1090,7 @@ class BridgeStorageProviderTest {
 
     @Test
     void getPendingFederation_multiKeyVersion_nullBytes() {
-        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
+        try (MockedStatic<PendingFederation> pendingFederationMocked = mockStatic(PendingFederation.class)) {
             List<Integer> storageCalls = new ArrayList<>();
             Repository repositoryMock = mock(Repository.class);
             BridgeStorageProvider storageProvider = new BridgeStorageProvider(
@@ -1121,7 +1121,7 @@ class BridgeStorageProviderTest {
 
             assertNull(storageProvider.getPendingFederation());
             assertEquals(2, storageCalls.size());
-            bridgeSerializationUtilsMocked.verify(() -> BridgeSerializationUtils.deserializePendingFederation(any(byte[].class)), never());
+            pendingFederationMocked.verify(() -> PendingFederation.deserialize(any(byte[].class)), never());
         }
     }
 

@@ -443,10 +443,10 @@ public class BridgeStorageProvider {
                     return null;
                 }
                 if (storageVersion.isPresent()) {
-                    return BridgeSerializationUtils.deserializePendingFederation(data); // Assume this is the multi-key version
+                    return PendingFederation.deserialize(data); // Assume this is the multi-key version
                 }
 
-                return BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(data);
+                return PendingFederation.deserializeFromBtcKeys(data);
             }
         );
 
@@ -461,7 +461,7 @@ public class BridgeStorageProvider {
     /**
      * Save the pending federation
      */
-    public void savePendingFederation() throws IOException {
+    protected void savePendingFederation() throws IOException {
         if (shouldSavePendingFederation) {
             if (activations.isActive(RSKIP123)) {
                 // we only need to save the standard part of the fed since the emergency part is constant
@@ -470,19 +470,15 @@ public class BridgeStorageProvider {
                     STANDARD_MULTISIG_FEDERATION.getFormatVersion()
                 );
             }
-            savePendingFederation(pendingFederation);
+            savePendingFederationToRepository(pendingFederation);
         }
     }
-
-    /**
-     * Save the pending federation
-     */
-    private void savePendingFederation(PendingFederation pendingFederation) throws IOException {
+    private void savePendingFederationToRepository(PendingFederation pendingFederation) throws IOException {
         byte[] fedSerialized = null;
         if (pendingFederation != null) {
              fedSerialized = pendingFederation.serialize(activations);
         }
-        savePendingFederationToRepository(fedSerialized);
+        saveSerializedPendingFederationToRepository(fedSerialized);
     }
 
     /**
@@ -1145,12 +1141,12 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(contractAddress, addressKey, data);
     }
 
-    private void savePendingFederationToRepository(byte[] federationSerialized) throws IOException {
+    private void saveSerializedPendingFederationToRepository(byte[] federationSerialized) throws IOException {
         try {
             DataWord pendingFederationKey = PENDING_FEDERATION_KEY.getKey();
             repository.addStorageBytes(contractAddress, pendingFederationKey, federationSerialized);
         } catch (RuntimeException e) {
-            throw new IOException("Unable to save to repository: " + Arrays.toString(federationSerialized), e);
+            throw new IOException("Unable to save pending federation to repository: " + Arrays.toString(federationSerialized), e);
         }
     }
 
