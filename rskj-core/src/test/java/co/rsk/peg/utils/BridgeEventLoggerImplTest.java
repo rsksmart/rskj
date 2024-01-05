@@ -224,21 +224,19 @@ class BridgeEventLoggerImplTest {
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        FederationArgs args;
-        args = new FederationArgs(oldFederationMembers, Instant.ofEpochMilli(15005L), 15L, btcParams);
+        FederationArgs oldFedArgs = new FederationArgs(oldFederationMembers, Instant.ofEpochMilli(15005L), 15L, btcParams);
 
-        Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(args);
+        Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(oldFedArgs);
 
         List<BtcECKey> newFederationKeys = Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
             BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
             BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
         );
-
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
-        args = new FederationArgs(newFederationMembers, Instant.ofEpochMilli(15005L), 15L, btcParams);
+        FederationArgs newFedArgs = new FederationArgs(newFederationMembers, Instant.ofEpochMilli(15005L), 15L, btcParams);
 
-        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(args);
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFedArgs);
 
         // Act
         eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
