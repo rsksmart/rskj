@@ -117,7 +117,7 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
             if (!genesis) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
                 List<FederationMember> members = getNRandomFederationMembers(numFederators);
-                FederationArgs args = new FederationArgs(
+                FederationArgs federationArgs = new FederationArgs(
                     members,
                     Instant.ofEpochMilli(TestUtils.generateLong(String.valueOf(executionIndex))),
                     Helper.randomInRange(1, 10),
@@ -125,7 +125,7 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
                 );
 
                 federation = FederationFactory.buildStandardMultiSigFederation(
-                        args
+                    federationArgs
                 );
                 provider.setNewFederation(federation);
             } else {

@@ -243,10 +243,10 @@ class BridgeTest {
         doReturn(false).when(activations).isActive(eq(RSKIP199), anyLong());
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
-        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(3),
+        FederationArgs activeFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L, btcParams);
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(args);
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFederationArgs);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);
@@ -288,11 +288,11 @@ class BridgeTest {
         List<BtcECKey> federationKeys = Arrays.asList(fed1Key, new BtcECKey(), new BtcECKey());
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithKeys(federationKeys),
+        FederationArgs activeFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithKeys(federationKeys),
             Instant.ofEpochMilli(1000),
             0L,
             btcParams);
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(args);
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFederationArgs);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);
