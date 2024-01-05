@@ -171,10 +171,10 @@ class FederationSupportTest {
             new FederationMember(btcKey0, rskKey0, mstKey0),
             new FederationMember(btcKey1, rskKey1, mstKey1)
         );
-        FederationArgs args = new FederationArgs(members, Instant.ofEpochMilli(123), 456,
+        FederationArgs federationArgs = new FederationArgs(members, Instant.ofEpochMilli(123), 456,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Federation theFederation = FederationFactory.buildStandardMultiSigFederation(
-            args
+            federationArgs
         );
         when(provider.getNewFederation()).thenReturn(theFederation);
 
@@ -244,14 +244,14 @@ class FederationSupportTest {
             true
         );
         List<FederationMember> members = FederationTestUtils.getFederationMembersWithBtcKeys(keys);
-        FederationArgs args = new FederationArgs(members,
+        FederationArgs federationArgs = new FederationArgs(members,
             Instant.ofEpochMilli(123),
             creationBlockNumber,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         return FederationFactory.buildStandardMultiSigFederation(
-            args
+            federationArgs
         );
     }
 }

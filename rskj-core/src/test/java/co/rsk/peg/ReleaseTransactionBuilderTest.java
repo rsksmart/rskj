@@ -99,14 +99,14 @@ class ReleaseTransactionBuilderTest {
                 new BtcECKey()
             )
         );
-        FederationArgs args = new FederationArgs(
+        FederationArgs federationArgs = new FederationArgs(
             members,
             Instant.now(),
             0,
             networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args
+            federationArgs
         );
 
         List<UTXO> utxos = Arrays.asList(
@@ -180,7 +180,7 @@ class ReleaseTransactionBuilderTest {
                 new BtcECKey()
             )
         );
-        ErpFederationArgs args = new ErpFederationArgs(
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
             members,
             Instant.now(),
             0,
@@ -190,7 +190,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
-            args,
+            erpFederationArgs,
             activations
         );
 

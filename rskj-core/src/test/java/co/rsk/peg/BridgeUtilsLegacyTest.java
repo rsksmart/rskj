@@ -461,9 +461,9 @@ class BridgeUtilsLegacyTest {
         NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs args = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
+        FederationArgs federationArgs = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(), 0, btcParams);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(args);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         int pegoutTxSize = BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
 
@@ -482,9 +482,9 @@ class BridgeUtilsLegacyTest {
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
 
-        FederationArgs args = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
+        FederationArgs federationArgs = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(), 0, btcParams);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(args);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         Assertions.assertThrows(DeprecatedMethodCallException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2));
     }
@@ -495,9 +495,9 @@ class BridgeUtilsLegacyTest {
         NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs args = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
+        FederationArgs federationArgs = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(), 0, btcParams);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(args);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0));
     }

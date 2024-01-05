@@ -301,8 +301,8 @@ public final class PegTestUtils {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        FederationArgs args = new FederationArgs(fedMembers, Instant.ofEpochMilli(1000L), 0L, btcParams);
-        return FederationFactory.buildStandardMultiSigFederation(args);
+        FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.ofEpochMilli(1000L), 0L, btcParams);
+        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
     public static ErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
