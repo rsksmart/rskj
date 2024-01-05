@@ -59,8 +59,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
-        FederationArgs args = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, btcParams);
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(args);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, btcParams);
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         btc2RskMinimumAcceptableConfirmations = 1;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;

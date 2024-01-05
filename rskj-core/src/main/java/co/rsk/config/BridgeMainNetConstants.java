@@ -54,8 +54,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400L);
 
-        FederationArgs args = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, btcParams);
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(args);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, btcParams);
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         btc2RskMinimumAcceptableConfirmations = 100;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;
