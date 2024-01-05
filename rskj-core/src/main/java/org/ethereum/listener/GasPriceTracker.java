@@ -60,6 +60,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private final AtomicReference<Coin> bestBlockPriceRef = new AtomicReference<>();
     private final BlockStore blockStore;
+    private final BigInteger configBuffer;
 
     private Coin defaultPrice = Coin.valueOf(20_000_000_000L);
     private int txIdx = TX_WINDOW_SIZE - 1;
@@ -68,12 +69,17 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private Coin lastVal;
 
-    private GasPriceTracker(BlockStore blockStore) {
+    private GasPriceTracker(BlockStore blockStore, BigInteger configBuffer) {
         this.blockStore = blockStore;
+        this.configBuffer = configBuffer;
     }
 
     public static GasPriceTracker create(BlockStore blockStore) {
-        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore);
+        return create(blockStore, null);
+    }
+
+    public static GasPriceTracker create(BlockStore blockStore, BigInteger configBuffer) {
+        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore, configBuffer);
         gasPriceTracker.initializeWindowsFromDB();
         return gasPriceTracker;
     }
@@ -122,7 +128,8 @@ public class GasPriceTracker extends EthereumListenerAdapter {
             return lastVal;
         }
 
-        return Coin.max(lastVal, bestBlockPrice.multiply(BI_11).divide(BI_10));
+        return Coin.max(lastVal, bestBlockPrice.multiply(BI_11)
+                .divide(configBuffer == null ? BI_10 : configBuffer));
     }
 
     public synchronized boolean isFeeMarketWorking() {

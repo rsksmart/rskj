@@ -23,10 +23,12 @@ import co.rsk.cli.RskCli;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -222,5 +224,30 @@ class RskSystemPropertiesTest {
         assertEquals(1, netModule.getDisabledMethods().size());
         assertEquals(9000, netModule.getTimeout());
         assertEquals(30000, netModule.getMethodTimeout("eth_getBlockByHash"));
+    }
+
+    @Test
+    void testGasPriceBuffer() {
+        assertEquals(BigInteger.valueOf(5), config.gasPriceBuffer());
+    }
+
+    @Test
+    void testGasPriceBufferWithNull() {
+        TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "miner.gasPriceBuffer = null" +
+                        " }").withFallback(rawConfig));
+
+        assertNull(testSystemProperties.gasPriceBuffer());
+    }
+
+    @Test
+    void testGasPriceBufferThrowsError() {
+        TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "miner.gasPriceBuffer = invalid" +
+                        " }").withFallback(rawConfig));
+
+        Assertions.assertThrows(NumberFormatException.class, testSystemProperties::gasPriceBuffer);
     }
 }

@@ -26,11 +26,9 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.util.Utils;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
-import java.util.Properties;
 
 public class EthereumImpl implements Ethereum {
 
@@ -86,32 +84,10 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public Coin getGasPrice() {
-        Long gasPrice = getGasPriceFromConfig();
-
-        if(gasPrice != null) {
-            return Coin.valueOf(gasPrice);
-        }
-
         if (gasPriceTracker.isFeeMarketWorking()) {
             return gasPriceTracker.getGasPrice();
         }
         double estimatedGasPrice = blockchain.getBestBlock().getMinimumGasPrice().asBigInteger().doubleValue() * minGasPriceMultiplier;
         return new Coin(BigDecimal.valueOf(estimatedGasPrice).toBigInteger());
-    }
-
-    private Long getGasPriceFromConfig() {
-        Properties properties = Utils.getPropertiesFromFile("gas-price");
-
-        if(properties == null) {
-            return null;
-        }
-
-        String gasPrice = properties.getProperty("gasPrice");
-
-        if(gasPrice != null && !gasPrice.isEmpty()) {
-            return Long.parseLong(gasPrice);
-        }
-
-        return null;
     }
 }

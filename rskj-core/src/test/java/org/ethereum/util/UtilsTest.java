@@ -27,7 +27,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -297,23 +296,5 @@ class UtilsTest {
         Assertions.assertEquals(3, Utils.significantBitCount(0b101));
         Assertions.assertEquals(13, Utils.significantBitCount(0b1000111000101));
         Assertions.assertEquals(9, Utils.significantBitCount(0b000111000101));
-    }
-
-    @Test
-    void getPropertiesFromFile() {
-        Properties properties = Utils.getPropertiesFromFile("loadProperties/test-props-1");
-
-        Assertions.assertEquals(2, properties.size());
-        Assertions.assertEquals("1000", properties.getProperty("testGasPrice"));
-        Assertions.assertEquals("testName", properties.getProperty("testName"));
-    }
-
-    @Test
-    void getPropertiesFromFile_empty_properties() {
-        Properties properties = Utils.getPropertiesFromFile("loadProperties/test-props-empty");
-
-        Assertions.assertEquals(1, properties.size());
-        Assertions.assertEquals("", properties.getProperty("testGasPrice"));
-        Assertions.assertNull(properties.getProperty("testName"));
     }
 }

@@ -31,6 +31,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 
 import javax.annotation.Nullable;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -183,6 +184,20 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean isWalletEnabled() {
         return getBoolean("wallet.enabled", false);
+    }
+
+    public BigInteger gasPriceBuffer() {
+        String gasPriceBuffer = getString("miner.gasPriceBuffer", "");
+
+        if(!gasPriceBuffer.isEmpty()) {
+            try {
+                return new BigInteger(gasPriceBuffer);
+            } catch (NumberFormatException e) {
+                throw new NumberFormatException("Invalid gasPriceBuffer value in config file");
+            }
+        }
+
+        return null;
     }
 
     public List<WalletAccount> walletAccounts() {

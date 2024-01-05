@@ -21,10 +21,6 @@ package org.ethereum.util;
 
 import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.facade.EthereumImpl;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -33,7 +29,6 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import java.util.regex.Pattern;
 
 
@@ -258,25 +253,5 @@ public class Utils {
             number >>= 1;
         }
         return result;
-    }
-
-    /**
-     * Return the properties contained in the specified configuration file
-     *
-     * @param name String the file name, and path if it is inside a sub-folder
-     * @return Properties the properties found in the file or null if no file was found
-     */
-    public static Properties getPropertiesFromFile(String name) {
-        try (InputStream inputStream = EthereumImpl.class.getClassLoader().getResourceAsStream(name + ".conf")) {
-            if (inputStream == null) {
-                return null;
-            }
-
-            Properties props = new Properties();
-            props.load(inputStream);
-            return props;
-        } catch (IOException e) { // NOSONAR
-            throw new IllegalStateException("Could not get properties from: " + name);
-        }
     }
 }
