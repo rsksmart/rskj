@@ -1,13 +1,10 @@
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
 import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-
-import java.util.List;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 
@@ -15,47 +12,26 @@ public class FederationFactory {
 
     private FederationFactory() {}
 
-    public static StandardMultisigFederation buildStandardMultiSigFederation(FederationArgs args,
-                                                                      NetworkParameters btcParams) {
+    public static StandardMultisigFederation buildStandardMultiSigFederation(FederationArgs federationArgs) {
         return new StandardMultisigFederation(
-            args,
-            btcParams,
+            federationArgs,
             STANDARD_MULTISIG_FEDERATION.getFormatVersion()
         );
     }
 
-    public static ErpFederation buildNonStandardErpFederation(FederationArgs args,
-                                                       NetworkParameters btcParams,
-                                                       List<BtcECKey> erpPubKeys,
-                                                       long activationDelay,
-                                                       ActivationConfig.ForBlock activations) {
+    public static ErpFederation buildNonStandardErpFederation(ErpFederationArgs erpFederationArgs,
+                                                              ActivationConfig.ForBlock activations) {
+        NetworkParameters btcParams = erpFederationArgs.btcParams;
         ErpRedeemScriptBuilder erpRedeemScriptBuilder =
             NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, btcParams);
 
-        return new ErpFederation(
-            args,
-            btcParams,
-            erpPubKeys,
-            activationDelay,
-            erpRedeemScriptBuilder,
-            NON_STANDARD_ERP_FEDERATION.getFormatVersion()
+        return new ErpFederation(erpFederationArgs, erpRedeemScriptBuilder, NON_STANDARD_ERP_FEDERATION.getFormatVersion()
         );
     }
 
-    public static ErpFederation buildP2shErpFederation(FederationArgs args,
-                                                       NetworkParameters btcParams,
-                                                       List<BtcECKey> erpPubKeys,
-                                                       long activationDelay) {
-
+    public static ErpFederation buildP2shErpFederation(ErpFederationArgs erpFederationArgs) {
         ErpRedeemScriptBuilder erpRedeemScriptBuilder = new P2shErpRedeemScriptBuilder();
-        return new ErpFederation(
-            args,
-            btcParams,
-            erpPubKeys,
-            activationDelay,
-            erpRedeemScriptBuilder,
-            P2SH_ERP_FEDERATION.getFormatVersion()
+        return new ErpFederation(erpFederationArgs, erpRedeemScriptBuilder, P2SH_ERP_FEDERATION.getFormatVersion()
         );
     }
-
 }
