@@ -969,14 +969,14 @@ class BridgeSupportTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
 
-        FederationArgs args1 = new FederationArgs(
+        FederationArgs federation1Args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
             Instant.ofEpochMilli(1000L),
             0L,
             btcParams
         );
         Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
-            args1
+            federation1Args
         );
 
         //Creates federation 2
@@ -985,14 +985,14 @@ class BridgeSupportTest {
             BtcECKey.fromPrivate(Hex.decode("fb02")),
             BtcECKey.fromPrivate(Hex.decode("fb03")));
 
-        FederationArgs args2 = new FederationArgs(
+        FederationArgs federation2Args = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
             Instant.ofEpochMilli(2000L),
             0L,
             btcParams
         );
         Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
-            args2
+            federation2Args
         );
 
         Repository repository = createRepository();
@@ -1146,13 +1146,13 @@ class BridgeSupportTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
 
-        FederationArgs args1 = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+        FederationArgs federation1Args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
             Instant.ofEpochMilli(1000L),
             0L,
             btcParams
         );
         Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
-            args1
+            federation1Args
         );
 
         //Creates federation 2
@@ -1161,13 +1161,13 @@ class BridgeSupportTest {
             BtcECKey.fromPrivate(Hex.decode("fb02")),
             BtcECKey.fromPrivate(Hex.decode("fb03")));
 
-        FederationArgs args2 = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
+        FederationArgs federation2Args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
             Instant.ofEpochMilli(2000L),
             0L,
             btcParams
         );
         Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
-            args2
+            federation2Args
         );
 
         Repository repository = createRepository();
