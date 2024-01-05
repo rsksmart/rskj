@@ -163,11 +163,11 @@ class BridgeSerializationUtilsTest {
         FederationArgs args = new FederationArgs(
             members,
             Instant.ofEpochMilli(0xabcdef),
-            42L
+            42L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            args
         );
 
         byte[] result = BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
@@ -307,10 +307,10 @@ class BridgeSerializationUtilsTest {
             members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
         }
 
-        FederationArgs args = new FederationArgs(members, Instant.now(), 123);
+        FederationArgs args = new FederationArgs(members, Instant.now(), 123,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Federation testFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            args
         );
 
         byte[] serializedFederation = BridgeSerializationUtils.serializeFederation(testFederation);
@@ -659,7 +659,8 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void serializeAndDeserializeFederationOnlyBtcKeysWithRealRLP() {
-        NetworkParameters networkParms = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        NetworkParameters networkParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+
         byte[][] publicKeyBytes = new byte[][]{
             BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
             BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
@@ -678,14 +679,14 @@ class BridgeSerializationUtilsTest {
             BtcECKey.fromPublicOnly(publicKeyBytes[4]),
             BtcECKey.fromPublicOnly(publicKeyBytes[5])
         ));
-        FederationArgs args = new FederationArgs(members, Instant.ofEpochMilli(0xabcdef), 42L);
+        FederationArgs args = new FederationArgs(members, Instant.ofEpochMilli(0xabcdef), 42L,
+            networkParams);
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParms
+            args
         );
 
         byte[] result = BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
-        Federation deserializedFederation = BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(result, networkParms);
+        Federation deserializedFederation = BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(result, networkParams);
         MatcherAssert.assertThat(federation, is(deserializedFederation));
     }
 
@@ -1129,10 +1130,10 @@ class BridgeSerializationUtilsTest {
                 members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
             }
 
-            FederationArgs args = new FederationArgs(members, Instant.now(), 123);
+            FederationArgs args = new FederationArgs(members, Instant.now(), 123,
+                bridgeConstants.getBtcParams());
             Federation testFederation = FederationFactory.buildStandardMultiSigFederation(
-                args,
-                bridgeConstants.getBtcParams()
+                args
             );
             byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
 
@@ -1141,11 +1142,13 @@ class BridgeSerializationUtilsTest {
                 bridgeConstants.getBtcParams()
             );
 
-            Federation testErpFederation = FederationFactory.buildNonStandardErpFederation(
-                args,
+            ErpFederationArgs erpArgs = new ErpFederationArgs(members, Instant.now(), 123,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
-                bridgeConstants.getErpFedActivationDelay(),
+                bridgeConstants.getErpFedActivationDelay()
+            );
+            Federation testErpFederation = FederationFactory.buildNonStandardErpFederation(
+                erpArgs,
                 activations
             );
             byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
@@ -1166,12 +1169,7 @@ class BridgeSerializationUtilsTest {
             }
 
             if (isRskip353Active) {
-                Federation testP2shErpFederation = FederationFactory.buildP2shErpFederation(
-                    args,
-                    bridgeConstants.getBtcParams(),
-                    bridgeConstants.getErpFedPubKeysList(),
-                    bridgeConstants.getErpFedActivationDelay()
-                );
+                Federation testP2shErpFederation = FederationFactory.buildP2shErpFederation(erpArgs);
                 byte[] serializedTestP2shErpFederation = BridgeSerializationUtils.serializeFederation(testP2shErpFederation);
 
                 Federation deserializedTestP2shErpFederation = BridgeSerializationUtils.deserializeP2shErpFederation(

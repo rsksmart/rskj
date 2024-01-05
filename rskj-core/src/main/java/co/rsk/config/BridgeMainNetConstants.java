@@ -20,6 +20,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
     BridgeMainNetConstants() {
         btcParamsString = NetworkParameters.ID_MAINNET;
+        NetworkParameters btcParams = NetworkParameters.fromID(btcParamsString);
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344"));
@@ -53,11 +54,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400L);
 
-        FederationArgs args = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L);
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            getBtcParams()
-        );
+        FederationArgs args = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, btcParams);
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(args);
 
         btc2RskMinimumAcceptableConfirmations = 100;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;

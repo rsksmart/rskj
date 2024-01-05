@@ -473,11 +473,11 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
             Instant.now(),
-            0
+            0,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters
+            args
         );
 
         // Create a tx from the Fed to a random btc address
@@ -524,11 +524,11 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
             Instant.now(),
-            0
+            0,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters
+            args
         );
 
         // Create a tx from the Fed to a random btc address
@@ -575,11 +575,11 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
             Instant.now(),
-            0
+            0,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters
+            args
         );
 
         // Create a tx from the Fed to a random btc address
@@ -924,11 +924,11 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
-            0
+            0,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters
+            args
         );
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtils.calculatePegoutTxSize(activations, federation, 0, 0));
@@ -943,11 +943,11 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
-            0
+            0,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters
+            args
         );
 
         int inputSize = 2;
@@ -971,11 +971,11 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
-            0
+            0,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters
+            args
         );
 
         int inputSize = 9;
@@ -999,11 +999,11 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
-            0
+            0,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters
+            args
         );
 
         // Create a pegout tx with 10 inputs and 20 outputs
@@ -1030,11 +1030,11 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
-            0
+            0,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters
+            args
         );
 
         // Create a pegout tx with 50 inputs and 200 outputs
@@ -1071,16 +1071,16 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        FederationArgs args = new FederationArgs(
+        ErpFederationArgs args = new ErpFederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
-            0L
+            0L,
+            networkParameters,
+            erpFederationPublicKeys,
+            500L
         );
         Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
             args,
-            networkParameters,
-            erpFederationPublicKeys,
-            500L,
             activations
         );
 
@@ -1118,16 +1118,16 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        FederationArgs args = new FederationArgs(
+        ErpFederationArgs args = new ErpFederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
-            0L
+            0L,
+            networkParameters,
+            erpFederationPublicKeys,
+            500L
         );
         Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
             args,
-            networkParameters,
-            erpFederationPublicKeys,
-            500L,
             activations
         );
 
@@ -1158,11 +1158,11 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
-            0
+            0,
+            networkParameters
         );
         Federation fed = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters
+            args
         );
 
         // Create a pegout tx with two inputs and two outputs
@@ -1205,11 +1205,12 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             federationMembers,
             Instant.ofEpochMilli(5005L),
-            0L
+            0L,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters);
+            args
+        );
         Context mockedBtcContext = mock(Context.class);
         when(mockedBtcContext.getParams()).thenReturn(networkParameters);
 
@@ -1245,11 +1246,11 @@ class BridgeUtilsTest {
         FederationArgs args = new FederationArgs(
             federationMembers,
             Instant.ofEpochMilli(5005L),
-            0L
+            0L,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters);
+            args);
         Context mockedBtcContext = mock(Context.class);
         when(mockedBtcContext.getParams()).thenReturn(networkParameters);
 
@@ -1473,16 +1474,16 @@ class BridgeUtilsTest {
 
     private ErpFederation createErpFederation() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
-        FederationArgs args = new FederationArgs(
+        ErpFederationArgs args = new ErpFederationArgs(
             genesisFederation.getMembers(),
             genesisFederation.getCreationTime(),
-            genesisFederation.getCreationBlockNumber()
+            genesisFederation.getCreationBlockNumber(),
+            genesisFederation.getBtcParams(),
+            bridgeConstantsRegtest.getErpFedPubKeysList(),
+            bridgeConstantsRegtest.getErpFedActivationDelay()
         );
         return FederationFactory.buildNonStandardErpFederation(
             args,
-            genesisFederation.getBtcParams(),
-            bridgeConstantsRegtest.getErpFedPubKeysList(),
-            bridgeConstantsRegtest.getErpFedActivationDelay(),
             activations
         );
     }

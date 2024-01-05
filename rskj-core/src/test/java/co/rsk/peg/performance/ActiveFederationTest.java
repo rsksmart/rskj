@@ -120,12 +120,12 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
                 FederationArgs args = new FederationArgs(
                     members,
                     Instant.ofEpochMilli(TestUtils.generateLong(String.valueOf(executionIndex))),
-                    Helper.randomInRange(1, 10)
+                    Helper.randomInRange(1, 10),
+                    networkParameters
                 );
 
                 federation = FederationFactory.buildStandardMultiSigFederation(
-                        args,
-                        networkParameters
+                        args
                 );
                 provider.setNewFederation(federation);
             } else {

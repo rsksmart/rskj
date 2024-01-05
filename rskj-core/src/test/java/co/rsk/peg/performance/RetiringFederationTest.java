@@ -108,11 +108,11 @@ class RetiringFederationTest extends BridgePerformanceTestCase {
                 FederationArgs args = new FederationArgs(
                     ActiveFederationTest.getNRandomFederationMembers(numFederators),
                     Instant.ofEpochMilli(random.nextLong()),
-                    Helper.randomInRange(1, 10)
+                    Helper.randomInRange(1, 10),
+                    networkParameters
                 );
                 retiringFederation = FederationFactory.buildStandardMultiSigFederation(
-                        args,
-                        networkParameters
+                        args
                 );
                 provider.setNewFederation(bridgeConstants.getGenesisFederation());
                 provider.setOldFederation(retiringFederation);
