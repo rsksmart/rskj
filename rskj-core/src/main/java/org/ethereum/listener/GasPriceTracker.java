@@ -51,8 +51,8 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private static final double BLOCK_COMPLETION_PERCENT_FOR_FEE_MARKET_WORKING = 0.9;
 
-    private static final BigInteger BI_10 = BigInteger.valueOf(10);
-    private static final BigInteger BI_11 = BigInteger.valueOf(11);
+    private static final BigInteger BI_100 = BigInteger.valueOf(100);
+    private static final BigInteger DEFAULT_BI_110 = BigInteger.valueOf(110);
 
     private final Coin[] txWindow = new Coin[TX_WINDOW_SIZE];
 
@@ -60,7 +60,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private final AtomicReference<Coin> bestBlockPriceRef = new AtomicReference<>();
     private final BlockStore blockStore;
-    private final BigInteger configBuffer;
+    private final BigInteger gasPriceBuffer;
 
     private Coin defaultPrice = Coin.valueOf(20_000_000_000L);
     private int txIdx = TX_WINDOW_SIZE - 1;
@@ -71,11 +71,11 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private GasPriceTracker(BlockStore blockStore, BigInteger configBuffer) {
         this.blockStore = blockStore;
-        this.configBuffer = configBuffer;
+        this.gasPriceBuffer = configBuffer;
     }
 
     public static GasPriceTracker create(BlockStore blockStore) {
-        return create(blockStore, null);
+        return create(blockStore, DEFAULT_BI_110);
     }
 
     public static GasPriceTracker create(BlockStore blockStore, BigInteger configBuffer) {
@@ -128,8 +128,8 @@ public class GasPriceTracker extends EthereumListenerAdapter {
             return lastVal;
         }
 
-        return Coin.max(lastVal, bestBlockPrice.multiply(BI_11)
-                .divide(configBuffer == null ? BI_10 : configBuffer));
+        return Coin.max(lastVal, bestBlockPrice.multiply(gasPriceBuffer)
+                .divide(BI_100));
     }
 
     public synchronized boolean isFeeMarketWorking() {

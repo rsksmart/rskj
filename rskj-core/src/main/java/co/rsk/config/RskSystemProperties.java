@@ -52,6 +52,7 @@ public class RskSystemProperties extends SystemProperties {
 
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
+    private static final String MINER_GAS_PRICE_BUFFER_CONFIG = "miner.gasPriceBuffer";
     private static final String RPC_MODULES_PATH = "rpc.modules";
     private static final String RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY = "rpc.logs.maxBlocksToQuery";
     private static final String RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN = "rpc.logs.maxLogsToReturn";
@@ -187,17 +188,13 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public BigInteger gasPriceBuffer() {
-        String gasPriceBuffer = getString("miner.gasPriceBuffer", "");
+        int gasPriceBuffer = getInt(MINER_GAS_PRICE_BUFFER_CONFIG, 110);
 
-        if(!gasPriceBuffer.isEmpty()) {
-            try {
-                return new BigInteger(gasPriceBuffer);
-            } catch (NumberFormatException e) {
-                throw new NumberFormatException("Invalid gasPriceBuffer value in config file");
-            }
+        if(gasPriceBuffer > 100) {
+            return BigInteger.valueOf(gasPriceBuffer);
+        } else {
+            throw new RskConfigurationException(MINER_GAS_PRICE_BUFFER_CONFIG + " must be greater than 100");
         }
-
-        return null;
     }
 
     public List<WalletAccount> walletAccounts() {

@@ -22,6 +22,7 @@ import co.rsk.cli.CliArgs;
 import co.rsk.cli.RskCli;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -228,17 +229,18 @@ class RskSystemPropertiesTest {
 
     @Test
     void testGasPriceBuffer() {
-        assertEquals(BigInteger.valueOf(5), config.gasPriceBuffer());
+        assertEquals(BigInteger.valueOf(105), config.gasPriceBuffer());
     }
 
     @Test
     void testGasPriceBufferWithNull() {
+        // Set miner.gasPriceBuffer to null which yields the same result as not finding the path
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
                 ConfigFactory.parseString("{" +
                         "miner.gasPriceBuffer = null" +
                         " }").withFallback(rawConfig));
 
-        assertNull(testSystemProperties.gasPriceBuffer());
+        assertEquals(BigInteger.valueOf(110), testSystemProperties.gasPriceBuffer());
     }
 
     @Test
@@ -248,6 +250,6 @@ class RskSystemPropertiesTest {
                         "miner.gasPriceBuffer = invalid" +
                         " }").withFallback(rawConfig));
 
-        Assertions.assertThrows(NumberFormatException.class, testSystemProperties::gasPriceBuffer);
+        Assertions.assertThrows(ConfigException.WrongType.class, testSystemProperties::gasPriceBuffer);
     }
 }
