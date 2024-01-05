@@ -217,7 +217,7 @@ public final class PendingFederation {
      * This is a legacy format for blocks before the Wasabi
      * network upgrade.
      */
-    protected byte[] serializeOnlyBtcKeys() {
+    private byte[] serializeOnlyBtcKeys() {
         List<byte[]> encodedKeys = this.getBtcPublicKeys().stream()
             .sorted(BtcECKey.PUBKEY_COMPARATOR)
             .map(key -> RLP.encodeElement(key.getPubKey()))
