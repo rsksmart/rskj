@@ -1,7 +1,6 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
@@ -13,7 +12,6 @@ import co.rsk.peg.utils.EcKeyUtils;
 import java.util.Collections;
 import java.util.List;
 
-import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 
 public class ErpFederation extends Federation {
@@ -21,31 +19,20 @@ public class ErpFederation extends Federation {
     private final long activationDelay;
     private Script defaultRedeemScript;
     private Script defaultP2SHScript;
-    private ErpRedeemScriptBuilder erpRedeemScriptBuilder;
+    private final ErpRedeemScriptBuilder erpRedeemScriptBuilder;
 
     protected ErpFederation(
-        FederationArgs args,
-        NetworkParameters btcParams,
-        List<BtcECKey> erpPubKeys,
-        long activationDelay,
+        ErpFederationArgs erpFederationArgs,
         ErpRedeemScriptBuilder erpRedeemScriptBuilder,
         int formatVersion
     ) {
+        super(erpFederationArgs, formatVersion);
 
-        super(args, btcParams, formatVersion);
-        validateEmergencyKeys(erpPubKeys);
-
-        this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
-        this.activationDelay = activationDelay;
+        this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpFederationArgs.erpPubKeys);
+        this.activationDelay = erpFederationArgs.activationDelay;
         this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
     }
 
-    private void validateEmergencyKeys(List<BtcECKey> erpPubKeys) {
-        if (erpPubKeys == null || erpPubKeys.isEmpty()) {
-            String message = "Emergency keys are not provided";
-            throw new ErpFederationCreationException(message, NULL_OR_EMPTY_EMERGENCY_KEYS);
-        }
-    }
 
     public ErpRedeemScriptBuilder getErpRedeemScriptBuilder() { return erpRedeemScriptBuilder; }
 

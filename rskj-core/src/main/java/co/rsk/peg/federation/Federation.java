@@ -50,17 +50,16 @@ public abstract class Federation {
     protected Address address;
 
     protected Federation(
-        FederationArgs args,
-        NetworkParameters btcParams,
+        FederationArgs federationArgs,
         int formatVersion
     ) {
         // Sorting members ensures same order of federation members for same members
         // Immutability provides protection against unwanted modification, thus making the Federation instance
         // effectively immutable
-        this.members = Collections.unmodifiableList(args.members.stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
-        this.creationTime = args.creationTime.truncatedTo(ChronoUnit.MILLIS);
-        this.creationBlockNumber = args.creationBlockNumber;
-        this.btcParams = btcParams;
+        this.members = Collections.unmodifiableList(federationArgs.members.stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
+        this.creationTime = federationArgs.creationTime.truncatedTo(ChronoUnit.MILLIS);
+        this.creationBlockNumber = federationArgs.creationBlockNumber;
+        this.btcParams = federationArgs.btcParams;
         this.formatVersion = formatVersion;
     }
 

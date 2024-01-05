@@ -1256,10 +1256,10 @@ class BridgeSupportReleaseBtcTest {
     private static Federation getFederation() {
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
-            0L);
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         return FederationFactory.buildStandardMultiSigFederation(
-            args,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            args
         );
     }
 

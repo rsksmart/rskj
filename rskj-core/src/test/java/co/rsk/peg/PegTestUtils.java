@@ -299,26 +299,21 @@ public final class PegTestUtils {
 
     public static Federation createFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
-            Instant.ofEpochMilli(1000L),
-            0L);
-        return FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstants.getBtcParams()
-        );
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys);
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        FederationArgs args = new FederationArgs(fedMembers, Instant.ofEpochMilli(1000L), 0L, btcParams);
+        return FederationFactory.buildStandardMultiSigFederation(args);
     }
 
     public static ErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
-            Instant.ofEpochMilli(1000L),
-            0L);
-        return FederationFactory.buildP2shErpFederation(
-            args,
-            bridgeConstants.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
-        );
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys);
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, Instant.ofEpochMilli(1000L), 0L, btcParams,
+                erpPubKeys, activationDelay);
+        return FederationFactory.buildP2shErpFederation(erpFederationArgs);
     }
 
     public static BtcTransaction createBtcTransactionWithOutputToAddress(NetworkParameters networkParameters, Coin amount, Address btcAddress) {

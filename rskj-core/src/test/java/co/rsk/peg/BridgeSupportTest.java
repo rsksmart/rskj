@@ -960,6 +960,7 @@ class BridgeSupportTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
         //Creates federation 1
@@ -971,11 +972,11 @@ class BridgeSupportTest {
         FederationArgs args1 = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
             Instant.ofEpochMilli(1000L),
-            0L
+            0L,
+            btcParams
         );
         Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
-            args1,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            args1
         );
 
         //Creates federation 2
@@ -987,11 +988,11 @@ class BridgeSupportTest {
         FederationArgs args2 = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
             Instant.ofEpochMilli(2000L),
-            0L
+            0L,
+            btcParams
         );
         Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
-            args2,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            args2
         );
 
         Repository repository = createRepository();
@@ -1136,6 +1137,7 @@ class BridgeSupportTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
         //Creates federation 1
@@ -1146,10 +1148,11 @@ class BridgeSupportTest {
 
         FederationArgs args1 = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
             Instant.ofEpochMilli(1000L),
-            0L);
+            0L,
+            btcParams
+        );
         Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
-            args1,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            args1
         );
 
         //Creates federation 2
@@ -1160,10 +1163,11 @@ class BridgeSupportTest {
 
         FederationArgs args2 = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
             Instant.ofEpochMilli(2000L),
-            0L);
+            0L,
+            btcParams
+        );
         Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
-            args2,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            args2
         );
 
         Repository repository = createRepository();
@@ -1332,10 +1336,11 @@ class BridgeSupportTest {
 
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(fedKeys),
             Instant.ofEpochMilli(1000L),
-            0L);
+            0L,
+            btcRegTestParams
+        );
         Federation fed = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            args
         );
 
         txWithWitness.addOutput(Coin.COIN.multiply(5), fed.getAddress());
@@ -1425,10 +1430,11 @@ class BridgeSupportTest {
 
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            5L);
+            5L,
+            btcRegTestParams
+        );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstantsRegtest.getBtcParams()
+            args
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -1489,10 +1495,11 @@ class BridgeSupportTest {
 
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            5L);
+            5L,
+            btcRegTestParams
+        );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstantsRegtest.getBtcParams()
+            args
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -1555,10 +1562,11 @@ class BridgeSupportTest {
 
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            5L);
+            5L,
+            btcRegTestParams
+        );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstantsRegtest.getBtcParams()
+            args
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -1619,10 +1627,11 @@ class BridgeSupportTest {
 
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            5L);
+            5L,
+            btcRegTestParams
+        );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstantsRegtest.getBtcParams()
+            args
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -1684,10 +1693,11 @@ class BridgeSupportTest {
 
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            5L);
+            5L,
+            btcRegTestParams
+        );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstantsRegtest.getBtcParams()
+            args
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -1748,10 +1758,11 @@ class BridgeSupportTest {
 
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            5L);
+            5L,
+            btcRegTestParams
+        );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstantsRegtest.getBtcParams()
+            args
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -2130,10 +2141,11 @@ class BridgeSupportTest {
         Federation oldFederation = bridgeConstants.getGenesisFederation();
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
-            5L);
-        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
+            5L,
             bridgeConstants.getBtcParams()
+        );
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
+            args
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -6423,10 +6435,11 @@ class BridgeSupportTest {
 
         FederationArgs oldFedArgs = new FederationArgs(oldFedMembers,
             Instant.now(),
-            0);
-        Federation oldFed = FederationFactory.buildStandardMultiSigFederation(
-            oldFedArgs,
+            0,
             btcRegTestParams
+        );
+        Federation oldFed = FederationFactory.buildStandardMultiSigFederation(
+            oldFedArgs
         );
 
         List<FederationMember> members = Arrays.asList(
@@ -6434,10 +6447,11 @@ class BridgeSupportTest {
             FederationMember.getFederationMemberFromKey(new BtcECKey()),
             FederationMember.getFederationMemberFromKey(new BtcECKey())
         );
-        FederationArgs newFedArgs = new FederationArgs(members, Instant.now(), 1);
-        Federation newFed = FederationFactory.buildStandardMultiSigFederation(
-            newFedArgs,
+        FederationArgs newFedArgs = new FederationArgs(members, Instant.now(), 1,
             btcRegTestParams
+        );
+        Federation newFed = FederationFactory.buildStandardMultiSigFederation(
+            newFedArgs
         );
 
         Block block = mock(Block.class);
@@ -6581,14 +6595,15 @@ class BridgeSupportTest {
         when(preRSKIP271_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
         when(preRSKIP271_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(false);
 
-        FederationArgs args = new FederationArgs(members,
+        ErpFederationArgs args = new ErpFederationArgs(members,
             Instant.now(),
-            1L);
-        Federation p2shFed = FederationFactory.buildP2shErpFederation(
-            args,
+            1L,
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay()
+        );
+        Federation p2shFed = FederationFactory.buildP2shErpFederation(
+            args
         );
 
         Stream<Arguments> preRskip271 = Stream.of(
@@ -6649,14 +6664,15 @@ class BridgeSupportTest {
         when(preRSKIP385_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
         when(preRSKIP385_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(false);
 
-        FederationArgs args = new FederationArgs(members,
+        ErpFederationArgs args = new ErpFederationArgs(members,
             Instant.now(),
-            1L);
-        Federation p2shFed = FederationFactory.buildP2shErpFederation(
-            args,
+            1L,
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay()
+        );
+        Federation p2shFed = FederationFactory.buildP2shErpFederation(
+            args
         );
 
         Stream<Arguments> preRskip385 = Stream.of(
@@ -6716,14 +6732,15 @@ class BridgeSupportTest {
             PegTestUtils.createRandomBtcECKeys(7)
         );
 
-        FederationArgs args = new FederationArgs(members,
+        ErpFederationArgs args = new ErpFederationArgs(members,
             Instant.now(),
-            1L);
-        ErpFederation p2shFed = FederationFactory.buildP2shErpFederation(
-            args,
+            1L,
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay()
+        );
+        ErpFederation p2shFed = FederationFactory.buildP2shErpFederation(
+            args
         );
 
         Stream<Arguments> postRskip385 = Stream.of(

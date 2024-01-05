@@ -129,28 +129,19 @@ class PowpegMigrationTest {
                 theseKeys.getRight()
             )
         ).collect(Collectors.toList());
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
         Federation originalPowpeg;
-        FederationArgs args = new FederationArgs(originalPowpegMembers,
-            Instant.now(),
-            0);
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(originalPowpegMembers, Instant.now(), 0, btcParams,
+            erpPubKeys, activationDelay);
         switch (oldPowPegFederationType) {
             case legacyErp:
-                originalPowpeg = FederationFactory.buildNonStandardErpFederation(
-                    args,
-                    bridgeConstants.getBtcParams(),
-                    bridgeConstants.getErpFedPubKeysList(),
-                    bridgeConstants.getErpFedActivationDelay(),
-                    activations
-                );
+                originalPowpeg = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
                 break;
             case p2shErp:
-                originalPowpeg = FederationFactory.buildP2shErpFederation(
-                    args,
-                    bridgeConstants.getBtcParams(),
-                    bridgeConstants.getErpFedPubKeysList(),
-                    bridgeConstants.getErpFedActivationDelay()
-                );
+                originalPowpeg = FederationFactory.buildP2shErpFederation(erpFederationArgs);
                 // TODO: CHECK REDEEMSCRIPT
                 break;
             default:

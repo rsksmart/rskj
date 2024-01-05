@@ -95,18 +95,9 @@ class NonStandardErpFederationsTest {
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
 
-        FederationArgs args = new FederationArgs(
-            standardMembers,
-            creationTime,
-            creationBlockNumber
-        );
-        return FederationFactory.buildNonStandardErpFederation(
-            args,
-            networkParameters,
-            emergencyKeys,
-            activationDelayValue,
-            activations
-        );
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(standardMembers, creationTime, creationBlockNumber, networkParameters,
+            emergencyKeys, activationDelayValue);
+        return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
     }
 
     @Test
@@ -260,52 +251,30 @@ class NonStandardErpFederationsTest {
 
     @Test
     void testEquals_same() {
-        FederationArgs args = new FederationArgs(
-            federation.getMembers(),
-            federation.getCreationTime(),
-            federation.getCreationBlockNumber()
+        ErpFederationArgs args = new ErpFederationArgs(federation.getMembers(), federation.getCreationTime(), federation.getCreationBlockNumber(),
+            federation.getBtcParams(), federation.getErpPubKeys(), federation.getActivationDelay()
         );
-        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
-            args,
-            federation.getBtcParams(),
-            federation.getErpPubKeys(),
-            federation.getActivationDelay(),
-            activations
-        );
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(args, activations);
         assertEquals(federation, otherFederation);
     }
 
     @Test
     void testEquals_differentCreationTime() {
-        FederationArgs args = new FederationArgs(
-            federation.getMembers(),
-            federation.getCreationTime().plus(1, ChronoUnit.MILLIS),
-            federation.getCreationBlockNumber()
+        ErpFederationArgs args = new ErpFederationArgs(federation.getMembers(), federation.getCreationTime().plus(1, ChronoUnit.MILLIS),
+            federation.getCreationBlockNumber(), federation.getBtcParams(), federation.getErpPubKeys(), federation.getActivationDelay()
         );
-        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
-            args,
-            federation.getBtcParams(),
-            federation.getErpPubKeys(),
-            federation.getActivationDelay(),
-            activations
-        );
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(args, activations);
+
         assertEquals(federation, otherFederation);
     }
 
     @Test
     void testEquals_differentCreationBlockNumber() {
-        FederationArgs args = new FederationArgs(
-            federation.getMembers(),
-            federation.getCreationTime(),
-            federation.getCreationBlockNumber() + 1
+        ErpFederationArgs args = new ErpFederationArgs(federation.getMembers(), federation.getCreationTime(), federation.getCreationBlockNumber() + 1,
+            federation.getBtcParams(), federation.getErpPubKeys(), federation.getActivationDelay()
         );
-        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(
-            args,
-            federation.getBtcParams(),
-            federation.getErpPubKeys(),
-            federation.getActivationDelay(),
-            activations
-        );
+        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(args, activations);
+
         assertEquals(federation, otherFederation);
     }
 
@@ -703,6 +672,7 @@ class NonStandardErpFederationsTest {
         // prior to RSKIP293 enforces the CSV value to be encoded using 2 bytes.
         // The hardcoded script has a 3 byte long CSV value
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         List<BtcECKey> standardMultisigKeys = Arrays.stream(new String[]{
             "0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce",
@@ -722,21 +692,10 @@ class NonStandardErpFederationsTest {
 
         List<FederationMember> federationMembersWithBtcKeys = FederationTestUtils.getFederationMembersWithBtcKeys(standardMultisigKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
-        FederationArgs args = new FederationArgs(
-            federationMembersWithBtcKeys,
-            creationTime,
-            1
-        );
-        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+        ErpFederationArgs args = new ErpFederationArgs(federationMembersWithBtcKeys, creationTime, 1, btcParams,
+            emergencyMultisigKeys, activationDelay);
 
-        assertThrows(ErpFederationCreationException.class,
-            () -> FederationFactory.buildNonStandardErpFederation(
-            args,
-            btcParams,
-            emergencyMultisigKeys,
-            activationDelay,
-            activations
-        ));
+        assertThrows(ErpFederationCreationException.class, () -> FederationFactory.buildNonStandardErpFederation(args, activations));
     }
 
     @Test

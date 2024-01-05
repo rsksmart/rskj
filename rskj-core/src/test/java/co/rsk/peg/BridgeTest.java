@@ -241,14 +241,12 @@ class BridgeTest {
 
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(false).when(activations).isActive(eq(RSKIP199), anyLong());
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
-            0L);
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
+            0L, btcParams);
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(args);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);
@@ -283,6 +281,7 @@ class BridgeTest {
 
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(false).when(activations).isActive(eq(RSKIP199), anyLong());
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcECKey fed1Key = new BtcECKey();
         RskAddress fed1Address = new RskAddress(ECKey.fromPublicOnly(fed1Key.getPubKey()).getAddress());
@@ -291,11 +290,9 @@ class BridgeTest {
 
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithKeys(federationKeys),
             Instant.ofEpochMilli(1000),
-            0L);
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
+            0L,
+            btcParams);
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(args);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);

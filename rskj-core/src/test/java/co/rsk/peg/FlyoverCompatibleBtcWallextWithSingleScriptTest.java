@@ -44,11 +44,11 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
         FederationArgs args = new FederationArgs(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
-            0L
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            args
         );
 
         activations = mock(ActivationConfig.ForBlock.class);
@@ -56,11 +56,17 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        erpFederation = FederationFactory.buildNonStandardErpFederation(
-            args,
+
+        ErpFederationArgs erpArgs = new ErpFederationArgs(
+            FederationTestUtils.getFederationMembers(3),
+            Instant.ofEpochMilli(1000),
+            0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             erpFedKeys,
-            5063,
+            5063
+        );
+        erpFederation = FederationFactory.buildNonStandardErpFederation(
+            erpArgs,
             activations
         );
 

@@ -44,11 +44,11 @@ public class FederationTestUtils {
         FederationArgs args = new FederationArgs(
             getFederationMembersFromPks(federationMemberPks),
             ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
-            0L
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         return FederationFactory.buildStandardMultiSigFederation(
-            args,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            args
         );
     }
 

@@ -10,6 +10,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import java.io.IOException;
 import java.time.Instant;
@@ -603,38 +605,24 @@ class BridgeStorageProviderFederationTests {
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
         );
+        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
-        FederationArgs args = new FederationArgs(members,
-            Instant.now(),
-            1L);
-
+        FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 1L, btcParams);
         if (version == STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION) {
-            return FederationFactory.buildStandardMultiSigFederation(
-                args,
-                bridgeConstantsRegtest.getBtcParams()
-            );
+            return FederationFactory.buildStandardMultiSigFederation(federationArgs);
         }
+
+        List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getErpFedPubKeysList();
+        long activationDelay = bridgeConstantsRegtest.getErpFedActivationDelay();
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(members, Instant.now(), 1L, btcParams,
+            erpPubKeys, activationDelay);
         if (version == NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION) {
-            return FederationFactory.buildNonStandardErpFederation(
-                args,
-                bridgeConstantsRegtest.getBtcParams(),
-                bridgeConstantsRegtest.getErpFedPubKeysList(),
-                bridgeConstantsRegtest.getErpFedActivationDelay(),
-                activations
-            );
+            return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
         }
         if (version == P2SH_ERP_FEDERATION_FORMAT_VERSION) {
-            return FederationFactory.buildP2shErpFederation(
-                args,
-                bridgeConstantsRegtest.getBtcParams(),
-                bridgeConstantsRegtest.getErpFedPubKeysList(),
-                bridgeConstantsRegtest.getErpFedActivationDelay()
-                );
+            return FederationFactory.buildP2shErpFederation(erpFederationArgs);
         }
         // To keep backwards compatibility
-        return FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstantsRegtest.getBtcParams()
-        );
+        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 }

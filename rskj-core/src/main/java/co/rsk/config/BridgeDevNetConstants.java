@@ -49,6 +49,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
+        NetworkParameters btcParams = NetworkParameters.fromID(btcParamsString);
 
         List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federationPublicKeys);
 
@@ -58,11 +59,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
-        FederationArgs args = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L);
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            getBtcParams()
-        );
+        FederationArgs args = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, btcParams);
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(args);
 
         btc2RskMinimumAcceptableConfirmations = 1;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
