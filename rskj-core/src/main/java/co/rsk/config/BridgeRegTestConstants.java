@@ -57,8 +57,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
-        FederationArgs args = new FederationArgs(federationMembers, genesisFederationCreatedAt, 1L, btcParams);
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(args);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreatedAt, 1L, btcParams);
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         btc2RskMinimumAcceptableConfirmations = 3;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
