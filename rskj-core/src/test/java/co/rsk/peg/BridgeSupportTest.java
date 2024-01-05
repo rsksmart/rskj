@@ -6442,14 +6442,12 @@ class BridgeSupportTest {
             oldFedArgs
         );
 
-        List<FederationMember> members = Arrays.asList(
+        List<FederationMember> newFedMembers = Arrays.asList(
             FederationMember.getFederationMemberFromKey(new BtcECKey()),
             FederationMember.getFederationMemberFromKey(new BtcECKey()),
             FederationMember.getFederationMemberFromKey(new BtcECKey())
         );
-        FederationArgs newFedArgs = new FederationArgs(members, Instant.now(), 1,
-            btcRegTestParams
-        );
+        FederationArgs newFedArgs = new FederationArgs(newFedMembers, Instant.now(), 1, btcRegTestParams);
         Federation newFed = FederationFactory.buildStandardMultiSigFederation(
             newFedArgs
         );
