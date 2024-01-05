@@ -529,7 +529,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveNewFederation_postMultiKey_RSKIP_201_active_erp_and_p2sh_erp_feds() {
+    void saveNewFederation_postMultiKey_RSKIP_201_active_erp_fed() {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0);
         Federation newFederation = buildMockFederation(100, 200, 300);
 
@@ -563,7 +563,7 @@ class BridgeStorageProviderTest {
         ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, creationTime, creationBlockNumber, btcParams,
             erpPubKeys, activationDelay);
         ErpFederation p2shErpFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
-        
+
         testSaveNewFederationPostMultiKey(p2shErpFederation, P2SH_ERP_FEDERATION_FORMAT_VERSION, activationsAllForks);
     }
 

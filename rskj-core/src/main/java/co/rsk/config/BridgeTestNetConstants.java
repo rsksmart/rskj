@@ -67,10 +67,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // Currently set to: Monday, October 8, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1538967600l);
 
-        FederationArgs args = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, btcParams);
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(
-            args
-        );
+        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, btcParams);
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         btc2RskMinimumAcceptableConfirmations = 10;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
