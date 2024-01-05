@@ -102,11 +102,11 @@ class ReleaseTransactionBuilderTest {
         FederationArgs args = new FederationArgs(
             members,
             Instant.now(),
-            0
+            0,
+            networkParameters
         );
         Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            networkParameters
+            args
         );
 
         List<UTXO> utxos = Arrays.asList(
@@ -170,6 +170,9 @@ class ReleaseTransactionBuilderTest {
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
+        // Use mainnet constants to test a real situation
+        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             Arrays.asList(
                 new BtcECKey(),
@@ -177,19 +180,17 @@ class ReleaseTransactionBuilderTest {
                 new BtcECKey()
             )
         );
-        FederationArgs args = new FederationArgs(
+        ErpFederationArgs args = new ErpFederationArgs(
             members,
             Instant.now(),
-            0
+            0,
+            bridgeConstants.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay()
         );
-        // Use mainnet constants to test a real situation
-        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
         Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
             args,
-            bridgeConstants.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
             activations
         );
 

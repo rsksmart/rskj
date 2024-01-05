@@ -458,15 +458,12 @@ class BridgeUtilsLegacyTest {
     @Test
     void calculatePegoutTxSize_before_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs args = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstantsRegtest.getBtcParams()
-        );
+            Instant.now(), 0, btcParams);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(args);
 
         int pegoutTxSize = BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
 
@@ -481,16 +478,13 @@ class BridgeUtilsLegacyTest {
     @Test
     void calculatePegoutTxSize_after_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
 
         FederationArgs args = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstantsRegtest.getBtcParams()
-        );
+            Instant.now(), 0, btcParams);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(args);
 
         Assertions.assertThrows(DeprecatedMethodCallException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2));
     }
@@ -498,15 +492,12 @@ class BridgeUtilsLegacyTest {
     @Test
     void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs args = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            bridgeConstantsRegtest.getBtcParams()
-        );
+            Instant.now(), 0, btcParams);
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(args);
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0));
     }

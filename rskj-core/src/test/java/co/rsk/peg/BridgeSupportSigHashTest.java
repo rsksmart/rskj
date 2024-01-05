@@ -127,12 +127,8 @@ class BridgeSupportSigHashTest {
         long newFedCreationBlockNumber = 5L;
 
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
-            Instant.EPOCH,
-            newFedCreationBlockNumber);
-        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            btcMainnetParams
-        );
+            Instant.EPOCH, newFedCreationBlockNumber, btcMainnetParams);
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(args);
         when(provider.getOldFederation())
             .thenReturn(oldFederation);
         when(provider.getNewFederation())
@@ -197,12 +193,9 @@ class BridgeSupportSigHashTest {
 
         long newFedCreationBlockNumber = 5L;
         FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembers(1),
-            Instant.EPOCH,
-            newFedCreationBlockNumber);
+            Instant.EPOCH, newFedCreationBlockNumber, btcMainnetParams);
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            args,
-            btcMainnetParams
-        );
+            args);
         when(provider.getOldFederation())
             .thenReturn(oldFederation);
         when(provider.getNewFederation())

@@ -18,7 +18,6 @@
 
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.bitcoin.ScriptValidations;
@@ -32,11 +31,10 @@ import co.rsk.peg.bitcoin.ScriptValidations;
 public class StandardMultisigFederation extends Federation {
 
     protected StandardMultisigFederation(
-        FederationArgs args,
-        NetworkParameters btcParams,
+        FederationArgs federationArgs,
         int formatVersion) {
 
-        super(args, btcParams, formatVersion);
+        super(federationArgs, formatVersion);
 
         validateRedeemScriptSize();
     }
