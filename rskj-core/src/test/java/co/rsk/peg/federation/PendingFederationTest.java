@@ -247,8 +247,7 @@ class PendingFederationTest {
 
     @Test
     void getHash() {
-        byte[] pendingFederationData = pendingFederation.serializeOnlyBtcKeys();
-        Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(pendingFederationData));
+        Keccak256 expectedHash = new Keccak256("277f35b1c3b742f15eeabb243967794d90a3926d4a4a91cbf9d7d9eceac54a56");
         assertEquals(expectedHash, pendingFederation.getHash());
     }
 
