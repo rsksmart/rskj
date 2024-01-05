@@ -673,51 +673,7 @@ class BridgeStorageProviderTest {
         activations = ActivationConfigsForTest.hop400().forBlock(0);
         erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
         testGetOldFederation(erpFederation, activations);
-
     }
-/*
-    @Test
-    void getOldFederation_nonStandardWithUnsignedBE_fed() {
-        BridgeConstants bridgeConstants = bridgeTestnetInstance;
-        Federation oldFederation = buildMockFederation(100, 200, 300);
-        FederationArgs args = new FederationArgs(oldFederation.getMembers(),
-            oldFederation.getCreationTime(),
-            oldFederation.getCreationBlockNumber());
-
-        List<ConsensusRule> rulesToDisable = Arrays.asList(ConsensusRule.RSKIP293);
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400(rulesToDisable).forBlock(0);
-
-        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(
-            args,
-            oldFederation.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            activations
-        );
-
-        testGetOldFederation(erpFederation, activations);
-    }*/
-/*
-    @Test
-    void getOldFederation_nonStandard_fed() {
-        BridgeConstants bridgeConstants = bridgeTestnetInstance;
-        Federation oldFederation = buildMockFederation(100, 200, 300);
-        FederationArgs args = new FederationArgs(oldFederation.getMembers(),
-            oldFederation.getCreationTime(),
-            oldFederation.getCreationBlockNumber());
-
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
-
-        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(
-            args,
-            oldFederation.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            activations
-        );
-
-        testGetOldFederation(erpFederation, activations);
-    }*/
 
     @Test
     void getOldFederation_RSKIP_353_active_p2sh_erp_fed() {
