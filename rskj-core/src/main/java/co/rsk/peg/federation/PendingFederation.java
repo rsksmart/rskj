@@ -108,8 +108,8 @@ public final class PendingFederation {
         }
 
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        FederationArgs federationArgs = new FederationArgs(members, creationTime, blockNumber, btcParams);
         if (!activations.isActive(ConsensusRule.RSKIP201)){
+            FederationArgs federationArgs = new FederationArgs(members, creationTime, blockNumber, btcParams);
             return FederationFactory.buildStandardMultiSigFederation(federationArgs);
         }
 
