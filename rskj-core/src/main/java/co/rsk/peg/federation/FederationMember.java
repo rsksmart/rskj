@@ -39,8 +39,7 @@ import java.util.stream.Collectors;
  */
 public final class FederationMember {
     public static final FederationMemberPubKeysComparator BTC_RSK_MST_PUBKEYS_COMPARATOR = new FederationMemberPubKeysComparator();
-    private static final int FEDERATION_RLP_LIST_SIZE = 3;
-    private static final int LIST_SIZE = 3;
+    private static final int KEYS_QUANTITY = 3;
     private static final int BTC_KEY_INDEX = 0;
     private static final int RSK_KEY_INDEX = 1;
     private static final int MST_KEY_INDEX = 2;
@@ -163,7 +162,7 @@ public final class FederationMember {
     }
 
     public byte[] serialize() {
-        byte[][] rlpElements = new byte[LIST_SIZE][];
+        byte[][] rlpElements = new byte[KEYS_QUANTITY][];
         byte[] btcPublicKeyBytes = this.getBtcPublicKey().getPubKeyPoint().getEncoded(true);
         byte[] rskPublicKeyBytes = this.getRskPublicKey().getPubKey(true);
         byte[] mstPublicKeyBytes = this.getMstPublicKey().getPubKey(true);
@@ -176,15 +175,19 @@ public final class FederationMember {
 
     public static FederationMember deserialize(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-
-        if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
-            throw new RuntimeException(String.format("Invalid serialized FederationMember. Expected %d elements but got %d", LIST_SIZE, rlpList.size()));
+        if (rlpList.size() != KEYS_QUANTITY) {
+            throw new RuntimeException(String.format(
+                "Invalid serialized FederationMember. Expected %d elements but got %d", KEYS_QUANTITY, rlpList.size())
+            );
         }
 
-        BtcECKey btcKey = BtcECKey.fromPublicOnly(rlpList.get(BTC_KEY_INDEX).getRLPData());
-        ECKey rskKey = ECKey.fromPublicOnly(rlpList.get(RSK_KEY_INDEX).getRLPData());
-        ECKey mstKey = ECKey.fromPublicOnly(rlpList.get(MST_KEY_INDEX).getRLPData());
+        byte[] btcKeyData = rlpList.get(BTC_KEY_INDEX).getRLPData();
+        byte[] rskKeyData = rlpList.get(RSK_KEY_INDEX).getRLPData();
+        byte[] mstKeyData = rlpList.get(MST_KEY_INDEX).getRLPData();
 
+        BtcECKey btcKey = BtcECKey.fromPublicOnly(btcKeyData);
+        ECKey rskKey = ECKey.fromPublicOnly(rskKeyData);
+        ECKey mstKey = ECKey.fromPublicOnly(mstKeyData);
         return new FederationMember(btcKey, rskKey, mstKey);
     }
 }
