@@ -544,9 +544,26 @@ class BridgeStorageProviderTest {
         ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, creationTime, creationBlockNumber, btcParams,
             erpPubKeys, activationDelay);
         ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
-        ErpFederation p2shErpFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
 
         testSaveNewFederationPostMultiKey(erpFederation, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, activations);
+    }
+
+    @Test
+    void saveNewFederation_postMultiKey_RSKIP_353_active_p2sh_erp_fed() {
+        Federation newFederation = buildMockFederation(100, 200, 300);
+
+        List<FederationMember> fedMembers = newFederation.getMembers();
+        Instant creationTime = newFederation.getCreationTime();
+        long creationBlockNumber = newFederation.getCreationBlockNumber();
+        BridgeConstants bridgeConstants = bridgeTestnetInstance;
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, creationTime, creationBlockNumber, btcParams,
+            erpPubKeys, activationDelay);
+        ErpFederation p2shErpFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        
         testSaveNewFederationPostMultiKey(p2shErpFederation, P2SH_ERP_FEDERATION_FORMAT_VERSION, activationsAllForks);
     }
 
