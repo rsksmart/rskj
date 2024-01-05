@@ -665,7 +665,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void getOldFederation_nonStandardHardcoded_fed() {
+    void getOldFederation_nonStandard_feds() {
         Federation oldFederation = buildMockFederation(100, 200, 300);
         List<FederationMember> fedMembers = oldFederation.getMembers();
         Instant creationTime = oldFederation.getCreationTime();
@@ -678,15 +678,18 @@ class BridgeStorageProviderTest {
         ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, creationTime, creationBlockNumber, btcParams,
             erpPubKeys, activationDelay);
 
+        // this should get non-standard hardcoded fed
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0);
         ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
         testGetOldFederation(erpFederation, activations);
 
-        List<ConsensusRule> rulesToDisable = Arrays.asList(ConsensusRule.RSKIP293);
+        // this should get non-standard with csv unsigned BE fed
+        List<ConsensusRule> rulesToDisable = Collections.singletonList(ConsensusRule.RSKIP293);
         activations = ActivationConfigsForTest.hop400(rulesToDisable).forBlock(0);
         erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
         testGetOldFederation(erpFederation, activations);
 
+        // this should get non-standard fed
         activations = ActivationConfigsForTest.hop400().forBlock(0);
         erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
         testGetOldFederation(erpFederation, activations);
@@ -3855,10 +3858,10 @@ class BridgeStorageProviderTest {
     }
 
     private Federation buildMockFederation(Integer... pks) {
-        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersFromPks(pks),
+        FederationArgs federationArgs = new FederationArgs(FederationTestUtils.getFederationMembersFromPks(pks),
             Instant.ofEpochMilli(1000),
             1, networkParameters);
-        return FederationFactory.buildStandardMultiSigFederation(args);
+        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
     private PendingFederation buildMockPendingFederation(Integer... pks) {

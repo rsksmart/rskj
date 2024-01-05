@@ -79,10 +79,10 @@ class BridgeSupportAddSignatureTest {
         );
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        FederationArgs args = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+        FederationArgs activeFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
             Instant.ofEpochMilli(1000L),
             0L, btcRegTestParams);
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(args);
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFedArgs);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BridgeSupport bridgeSupport = new BridgeSupport(

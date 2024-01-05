@@ -131,14 +131,14 @@ class BridgeSupportProcessFundsMigrationTest {
             federationActivationAge +
             bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations) + 1;
 
-        FederationArgs args = new FederationArgs(
+        FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             federationCreationBlockNumber,
             bridgeConstants.getBtcParams()
         );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            args
+            newFederationArgs
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
