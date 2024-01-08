@@ -1198,6 +1198,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         closed = true;
 
+        final long startTime = System.currentTimeMillis();
+        logger.info("Closing RSK context");
+
         // as RskContext creates PeerExplorer and manages its lifecycle, dispose it here
         if (peerExplorer != null) {
             peerExplorer.dispose();
@@ -1246,6 +1249,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             wallet.close();
             logger.trace("wallet closed.");
         }
+
+        final long endTime = System.currentTimeMillis();
+        logger.info("RSK context closed (after {} ms)", endTime - startTime);
     }
 
     public synchronized DbKind getDbKind(String dbPath) {
