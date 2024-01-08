@@ -115,4 +115,12 @@ class FederationMemberTest {
             Assertions.fail();
         } catch (IllegalArgumentException e) {}
     }
+
+    @Test
+    void serializeAndDeserializeFederationMember() {
+        byte[] serializedMember = member.serialize();
+        FederationMember deserializedSerializedMember = FederationMember.deserialize(serializedMember);
+
+        Assertions.assertEquals(deserializedSerializedMember, member);
+    }
 }

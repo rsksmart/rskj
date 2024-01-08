@@ -26,8 +26,6 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.resources.TestConstants;
 import co.rsk.peg.utils.MerkleTreeUtils;
@@ -345,133 +343,9 @@ class BridgeSerializationUtilsTest {
             RLP.encodeList(RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0])))
         );
 
-
         NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         Exception ex = Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeStandardMultisigFederation(serialized, networkParameters));
         Assertions.assertTrue(ex.getMessage().contains("Invalid serialized FederationMember"));
-    }
-
-    @Test
-    void serializeAndDeserializePendingFederation() {
-        final int NUM_CASES = 20;
-
-        for (int i = 0; i < NUM_CASES; i++) {
-            int numMembers = randomInRange(2, 14);
-            List<FederationMember> members = new ArrayList<>();
-            for (int j = 0; j < numMembers; j++) {
-                members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
-            }
-            PendingFederation testPendingFederation = new PendingFederation(members);
-
-            byte[] serializedTestPendingFederation = BridgeSerializationUtils.serializePendingFederation(testPendingFederation);
-
-            PendingFederation deserializedTestPendingFederation = BridgeSerializationUtils.deserializePendingFederation(
-                serializedTestPendingFederation);
-
-            Assertions.assertEquals(testPendingFederation, deserializedTestPendingFederation);
-        }
-    }
-
-    @Test
-    void serializePendingFederation_serializedKeysAreCompressedAndThree() {
-        final int NUM_MEMBERS = 10;
-        final int EXPECTED_NUM_KEYS = 3;
-        final int EXPECTED_PUBLICKEY_SIZE = 33;
-
-        List<FederationMember> members = new ArrayList<>();
-        for (int j = 0; j < NUM_MEMBERS; j++) {
-            members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
-        }
-
-        PendingFederation testPendingFederation = new PendingFederation(members);
-
-        byte[] serializedPendingFederation = BridgeSerializationUtils.serializePendingFederation(testPendingFederation);
-
-        RLPList memberList = (RLPList) RLP.decode2(serializedPendingFederation).get(0);
-
-        Assertions.assertEquals(NUM_MEMBERS, memberList.size());
-
-        for (int i = 0; i < NUM_MEMBERS; i++) {
-            RLPList memberKeys = (RLPList) RLP.decode2(memberList.get(i).getRLPData()).get(0);
-            Assertions.assertEquals(EXPECTED_NUM_KEYS, memberKeys.size());
-            for (int j = 0; j < EXPECTED_NUM_KEYS; j++) {
-                Assertions.assertEquals(EXPECTED_PUBLICKEY_SIZE, memberKeys.get(j).getRLPData().length);
-            }
-
-        }
-    }
-
-    @Test
-    void deserializePendingFederation_invalidFederationMember() {
-        byte[] serialized = RLP.encodeList(
-            RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0]))
-        );
-
-        try {
-            BridgeSerializationUtils.deserializePendingFederation(serialized);
-            Assertions.fail();
-        } catch (RuntimeException e) {
-            Assertions.assertTrue(e.getMessage().contains("Invalid serialized FederationMember"));
-        }
-    }
-
-    @Test
-    void serializePendingFederationOnlyBtcKeys() throws Exception {
-        byte[][] publicKeyBytes = new byte[][]{
-            BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
-            BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
-            BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
-            BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
-            BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
-            BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
-        };
-
-        // Only actual keys serialized are BTC keys, so we don't really care about RSK or MST keys
-        PendingFederation pendingFederation = new PendingFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
-                BtcECKey.fromPublicOnly(publicKeyBytes[0]),
-                BtcECKey.fromPublicOnly(publicKeyBytes[1]),
-                BtcECKey.fromPublicOnly(publicKeyBytes[2]),
-                BtcECKey.fromPublicOnly(publicKeyBytes[3]),
-                BtcECKey.fromPublicOnly(publicKeyBytes[4]),
-                BtcECKey.fromPublicOnly(publicKeyBytes[5]),
-            }))
-        );
-
-        byte[] result = BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(pendingFederation);
-        StringBuilder expectedBuilder = new StringBuilder();
-        expectedBuilder.append("f8cc");
-        pendingFederation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
-            expectedBuilder.append("a1");
-            expectedBuilder.append(ByteUtil.toHexString(key.getPubKey()));
-        });
-
-        String expected = expectedBuilder.toString();
-        Assertions.assertEquals(expected, ByteUtil.toHexString(result));
-    }
-
-    @Test
-    void deserializePendingFederationOnlyBtcKeys() throws Exception {
-        byte[][] publicKeyBytes = Arrays.asList(100, 200, 300, 400, 500, 600).stream()
-            .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
-            .sorted(BtcECKey.PUBKEY_COMPARATOR)
-            .map(k -> k.getPubKey())
-            .toArray(byte[][]::new);
-
-        byte[][] rlpBytes = new byte[publicKeyBytes.length][];
-
-        for (int k = 0; k < publicKeyBytes.length; k++) {
-            rlpBytes[k] = RLP.encodeElement(publicKeyBytes[k]);
-        }
-
-        byte[] data = RLP.encodeList(rlpBytes);
-
-        PendingFederation deserializedPendingFederation = BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(data);
-
-        Assertions.assertEquals(6, deserializedPendingFederation.getBtcPublicKeys().size());
-        for (int i = 0; i < 6; i++) {
-            Assertions.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedPendingFederation.getBtcPublicKeys().get(i).getPubKey()));
-        }
     }
 
     @Test
@@ -1240,9 +1114,6 @@ class BridgeSerializationUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
         when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
-
-        ErpRedeemScriptBuilder erpRedeemScriptBuilder =
-            NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, bridgeConstants.getBtcParams());
 
         for (int i = 0; i < NUM_CASES; i++) {
             int numMembers = randomInRange(2, 14);
