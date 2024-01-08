@@ -665,7 +665,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void getOldFederation_nonStandard_feds() {
+    void getOldFederation_non_standard_erp_feds() {
         Federation oldFederation = buildMockFederation(100, 200, 300);
         List<FederationMember> fedMembers = oldFederation.getMembers();
         Instant creationTime = oldFederation.getCreationTime();

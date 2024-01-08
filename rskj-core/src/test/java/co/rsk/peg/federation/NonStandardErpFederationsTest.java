@@ -731,7 +731,7 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void spendFromNonStandardErpFed_before_RSKIP293_testnet_using_standard_multisig() {
+    void spendFromNonStandardErpFed_before_RSKIP293_testnet_using_standard_multisig_can_spend() {
         BridgeConstants constants = BridgeTestNetConstants.getInstance();
 
         // Should validate since it's not executing the path of the script with the CSV value
@@ -774,7 +774,7 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void spendFromNonStandardErpFed_before_RSKIP293_mainnet_using_standard_multisig() {
+    void spendFromNonStandardErpFed_before_RSKIP293_mainnet_using_standard_multisig_can_spend() {
         BridgeConstants constants = BridgeMainNetConstants.getInstance();
 
         // Should validate since it's not executing the path of the script with the CSV value
@@ -787,7 +787,7 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void spendFromNonStandardErpFed_after_RSKIP293_testnet_using_erp_multisig() {
+    void spendFromNonStandardErpFed_after_RSKIP293_testnet_using_erp_multisig_can_spend() {
         BridgeConstants constants = BridgeTestNetConstants.getInstance();
 
         // Post RSKIP293 activation it should encode the CSV value correctly
@@ -800,7 +800,7 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void spendFromNonStandardErpFed_after_RSKIP293_testnet_using_standard_multisig() {
+    void spendFromNonStandardErpFed_after_RSKIP293_testnet_using_standard_multisig_can_spend() {
         BridgeConstants constants = BridgeTestNetConstants.getInstance();
 
         assertDoesNotThrow(() -> spendFromNonStandardErpFed(
@@ -812,7 +812,7 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void spendFromNonStandardErpFed_after_RSKIP293_mainnet_using_erp_multisig() {
+    void spendFromNonStandardErpFed_after_RSKIP293_mainnet_using_erp_multisig_can_spend() {
         BridgeConstants constants = BridgeMainNetConstants.getInstance();
 
         // Post RSKIP293 activation it should encode the CSV value correctly
@@ -825,7 +825,7 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void spendFromNonStandardErpFed_after_RSKIP293_mainnet_using_standard_multisig() {
+    void spendFromNonStandardErpFed_after_RSKIP293_mainnet_using_standard_multisig_can_spend() {
         BridgeConstants constants = BridgeMainNetConstants.getInstance();
 
         assertDoesNotThrow(() -> spendFromNonStandardErpFed(
