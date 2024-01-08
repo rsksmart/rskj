@@ -156,6 +156,11 @@ public class PeerExplorer {
     }
 
     @VisibleForTesting
+    int getRetryCounter() {
+        return retryCounter;
+    }
+
+    @VisibleForTesting
     Set<String> startConversationWithNewNodes() {
         Set<String> sentAddresses = new HashSet<>();
 

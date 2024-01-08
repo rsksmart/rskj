@@ -663,6 +663,60 @@ class PeerExplorerTest {
         assertEquals(ExecState.FINISHED, peerExplorer.getState());
     }
 
+    @Test
+    void testUnlimitedRetriesWhenLimitIsNegativeOne() {
+        ECKey key = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        Node node = new Node(key.getNodeId(), HOST_2, PORT_2);
+        NodeDistanceTable distanceTable = new NodeDistanceTable(1, 1, node);
+
+        PeerExplorer peerExplorer = new PeerExplorer(Collections.emptyList(), node, distanceTable, key, 199, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class), true, -1);
+
+        peerExplorer.start();
+
+        for (int i = 0; i < 100; i++) {
+            peerExplorer.update();
+        }
+        Assertions.assertEquals(peerExplorer.getRetryCounter(), 100);
+    }
+
+    @Test
+    void testSpecificRetryLimit() {
+        ECKey key = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        Node node = new Node(key.getNodeId(), HOST_2, PORT_2);
+        NodeDistanceTable distanceTable = new NodeDistanceTable(1, 1, node);
+
+        int maxBootRetries = 5;
+
+        PeerExplorer peerExplorer = new PeerExplorer(Collections.emptyList(), node, distanceTable, key, 199, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class), true, maxBootRetries);
+
+        peerExplorer.start();
+
+        for (int i = 0; i < 10; i++) {
+            peerExplorer.update();
+        }
+
+        Assertions.assertEquals(maxBootRetries, peerExplorer.getRetryCounter(), "Retries should stop at the limit");
+    }
+
+    @Test
+    void testNoRetriesWhenLimitIsZero() {
+        ECKey key = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        Node node = new Node(key.getNodeId(), HOST_2, PORT_2);
+        NodeDistanceTable distanceTable = new NodeDistanceTable(1, 1, node);
+
+        int maxBootRetries = 0;
+
+        PeerExplorer peerExplorer = new PeerExplorer(Collections.emptyList(), node, distanceTable, key, 199, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class), true, maxBootRetries);
+
+        peerExplorer.start();
+
+        for (int i = 0; i < 10; i++) {
+            peerExplorer.update();
+        }
+
+        Assertions.assertEquals(0, peerExplorer.getRetryCounter(), "No retries should have occurred");
+    }
+
     private boolean containsNodeId(String nodeId, List<Node> nodes) {
         return nodes.stream().map(Node::getHexId).anyMatch(h -> StringUtils.equals(h, nodeId));
     }
