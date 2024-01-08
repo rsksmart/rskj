@@ -540,9 +540,9 @@ class PegUtilsLegacyTest {
 
         ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, Instant.ofEpochMilli(1000L), 0L, btcParams,
             erpPubKeys, activationDelay);
-        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
-        Script redeemScript = erpFederation.getRedeemScript();
+        Script redeemScript = nonStandardErpFederation.getRedeemScript();
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             redeemScript,
             Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
@@ -578,11 +578,11 @@ class PegUtilsLegacyTest {
 
         List<FederationMember> erpFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys);
         FederationArgs args = new FederationArgs(erpFedMembers, Instant.ofEpochMilli(1000L), 0L, networkParameters);
-        Federation erpFederation = FederationFactory.buildStandardMultiSigFederation(args);
+        Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(args);
 
         Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
             activeFederation.getRedeemScript(),
-            erpFederation.getRedeemScript(),
+            standardMultisigFederation.getRedeemScript(),
             500L
         );
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
@@ -623,13 +623,13 @@ class PegUtilsLegacyTest {
             0L,
             networkParameters
         );
-        Federation erpFederation = FederationFactory.buildStandardMultiSigFederation(
+        Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(
             args
         );
 
         Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
             activeFederation.getRedeemScript(),
-            erpFederation.getRedeemScript(),
+            standardMultisigFederation.getRedeemScript(),
             500L
         );
 
@@ -661,13 +661,13 @@ class PegUtilsLegacyTest {
             0L,
             networkParameters
         );
-        Federation erpFederation = FederationFactory.buildStandardMultiSigFederation(
+        Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(
             args
         );
 
         Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
             activeFederation.getRedeemScript(),
-            erpFederation.getRedeemScript(),
+            standardMultisigFederation.getRedeemScript(),
             500L
         );
 
@@ -816,7 +816,7 @@ class PegUtilsLegacyTest {
             erpFederationPublicKeys,
             500L
         );
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         // Create a tx from the retired fast bridge fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
@@ -830,10 +830,10 @@ class PegUtilsLegacyTest {
         tx.addInput(txInput);
 
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            erpFederation.getRedeemScript(),
+            nonStandardErpFederation.getRedeemScript(),
             PegTestUtils.createHash(2)
         );
-        signWithNecessaryKeys(erpFederation, flyoverErpRedeemScript, retiredFederationKeys, txInput, tx);
+        signWithNecessaryKeys(nonStandardErpFederation, flyoverErpRedeemScript, retiredFederationKeys, txInput, tx);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -882,7 +882,7 @@ class PegUtilsLegacyTest {
             erpFederationPublicKeys,
             500L
         );
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         // Create a tx from the retired fast bridge fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
@@ -896,10 +896,10 @@ class PegUtilsLegacyTest {
         tx.addInput(txInput);
 
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            erpFederation.getRedeemScript(),
+            nonStandardErpFederation.getRedeemScript(),
             PegTestUtils.createHash(2)
         );
-        signWithNecessaryKeys(erpFederation, flyoverErpRedeemScript, retiredFederationKeys, txInput, tx);
+        signWithNecessaryKeys(nonStandardErpFederation, flyoverErpRedeemScript, retiredFederationKeys, txInput, tx);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -947,7 +947,7 @@ class PegUtilsLegacyTest {
             erpFederationPublicKeys,
             500L
         );
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         // Create a tx from the retired erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
@@ -959,7 +959,7 @@ class PegUtilsLegacyTest {
             new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txInput);
-        signWithErpFederation(erpFederation, retiredFederationKeys, txInput, tx);
+        signWithErpFederation(nonStandardErpFederation, retiredFederationKeys, txInput, tx);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -1007,7 +1007,7 @@ class PegUtilsLegacyTest {
             erpFederationPublicKeys,
             500L
         );
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
             erpFedArgs,
             activations
         );
@@ -1022,7 +1022,7 @@ class PegUtilsLegacyTest {
             new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txInput);
-        signWithErpFederation(erpFederation, retiredFederationKeys, txInput, tx);
+        signWithErpFederation(nonStandardErpFederation, retiredFederationKeys, txInput, tx);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -2008,7 +2008,7 @@ class PegUtilsLegacyTest {
             erpFederationPublicKeys,
             500L
         );
-        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
             erpArgs,
             activations
         );
@@ -2026,7 +2026,7 @@ class PegUtilsLegacyTest {
             new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
         );
         pegOutTx1.addInput(pegOutInput1);
-        signWithErpFederation(erpFederation, defaultFederationKeys, pegOutInput1, pegOutTx1);
+        signWithErpFederation(nonStandardErpFederation, defaultFederationKeys, pegOutInput1, pegOutTx1);
 
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
@@ -2039,8 +2039,8 @@ class PegUtilsLegacyTest {
         assertFalse(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
         assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, activations, erpFederation.getDefaultP2SHScript()));
+        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(nonStandardErpFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, activations, nonStandardErpFederation.getDefaultP2SHScript()));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -2053,8 +2053,8 @@ class PegUtilsLegacyTest {
         assertTrue(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
         assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
-        assertTrue(isPegOutTx(pegOutTx1, activations, erpFederation.getDefaultP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(nonStandardErpFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, activations, nonStandardErpFederation.getDefaultP2SHScript()));
     }
 
     @Test
@@ -2088,7 +2088,7 @@ class PegUtilsLegacyTest {
             erpFederationPublicKeys,
             500L
         );
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
             erpArgs,
             activations
         );
@@ -2108,10 +2108,10 @@ class PegUtilsLegacyTest {
         pegOutTx1.addInput(pegOutInput1);
 
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            erpFederation.getRedeemScript(),
+            nonStandardErpFederation.getRedeemScript(),
             PegTestUtils.createHash(2)
         );
-        signWithNecessaryKeys(erpFederation, flyoverErpRedeemScript, defaultFederationKeys, pegOutInput1, pegOutTx1);
+        signWithNecessaryKeys(nonStandardErpFederation, flyoverErpRedeemScript, defaultFederationKeys, pegOutInput1, pegOutTx1);
 
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
@@ -2395,7 +2395,7 @@ class PegUtilsLegacyTest {
         assertFalse(scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
     }
 
-    private void signWithErpFederation(Federation erpFederation, List<BtcECKey> privateKeys, TransactionInput txIn, BtcTransaction tx) {
+    private void signWithErpFederation(ErpFederation erpFederation, List<BtcECKey> privateKeys, TransactionInput txIn, BtcTransaction tx) {
         signWithNecessaryKeys(erpFederation, privateKeys, txIn, tx);
         // Add OP_0 prefix to make it a valid erp federation script
         Script erpInputScript = new ScriptBuilder()

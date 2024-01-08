@@ -163,12 +163,12 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void hasEnoughSignatures_several_inputs_all_signed_erp_fed() {
+    void hasEnoughSignatures_several_inputs_all_signed_non_standard_erp_fed() {
         // Create 2 signatures
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        Federation erpFederation = createErpFederation();
+        Federation erpFederation = createNonStandardErpFederation();
         BtcTransaction btcTx = createPegOutTx(
             Arrays.asList(sign1, sign2),
             3,
@@ -195,12 +195,12 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void hasEnoughSignatures_several_inputs_all_signed_erp_fast_bridge() {
+    void hasEnoughSignatures_several_inputs_all_signed_non_standard_erp_fast_bridge() {
         // Create 2 signatures
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        Federation erpFederation = createErpFederation();
+        Federation erpFederation = createNonStandardErpFederation();
         BtcTransaction btcTx = createPegOutTxForFlyover(
             Arrays.asList(sign1, sign2),
             3,
@@ -256,12 +256,12 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void countMissingSignatures_several_inputs_all_signed_erp_fed() {
+    void countMissingSignatures_several_inputs_all_signed_non_standard_erp_fed() {
         // Create 2 signatures
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        Federation erpFederation = createErpFederation();
+        Federation erpFederation = createNonStandardErpFederation();
         BtcTransaction btcTx = createPegOutTx(
             Arrays.asList(sign1, sign2),
             3,
@@ -288,12 +288,12 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void countMissingSignatures_several_inputs_all_signed_erp_fast_bridge() {
+    void countMissingSignatures_several_inputs_all_signed_non_standard_erp_fast_bridge() {
         // Create 2 signatures
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        Federation erpFederation = createErpFederation();
+        Federation erpFederation = createNonStandardErpFederation();
         BtcTransaction btcTx = createPegOutTxForFlyover(
             Arrays.asList(sign1, sign2),
             3,
@@ -1053,7 +1053,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void testCalculatePegoutTxSize_50Inputs_200Outputs_erpFederation() {
+    void testCalculatePegoutTxSize_50Inputs_200Outputs_nonStandardErpFederation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
@@ -1079,7 +1079,7 @@ class BridgeUtilsTest {
             erpFederationPublicKeys,
             500L
         );
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
             erpFederationArgs,
             activations
         );
@@ -1087,9 +1087,9 @@ class BridgeUtilsTest {
         // Create a pegout tx with 50 inputs and 200 outputs
         int inputSize = 50;
         int outputSize = 200;
-        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, erpFederation, defaultFederationKeys);
+        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, erpFederation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
@@ -1100,7 +1100,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void testCalculatePegoutTxSize_100Inputs_50Outputs_erpFederation() {
+    void testCalculatePegoutTxSize_100Inputs_50Outputs_nonStandardErpFederation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
@@ -1126,7 +1126,7 @@ class BridgeUtilsTest {
             erpFederationPublicKeys,
             500L
         );
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
             erpFederationArgs,
             activations
         );
@@ -1134,9 +1134,9 @@ class BridgeUtilsTest {
         // Create a pegout tx with 100 inputs and 50 outputs
         int inputSize = 100;
         int outputSize = 50;
-        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, erpFederation, defaultFederationKeys);
+        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, erpFederation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
@@ -1472,7 +1472,7 @@ class BridgeUtilsTest {
         return new TestGenesisLoader(trieStore, "frontier.json", constants.getInitialNonce(), false, true, true).load();
     }
 
-    private ErpFederation createErpFederation() {
+    private ErpFederation createNonStandardErpFederation() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
         ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
             genesisFederation.getMembers(),
@@ -1618,7 +1618,7 @@ class BridgeUtilsTest {
         return privKey;
     }
 
-    private void signWithErpFederation(Federation erpFederation, List<BtcECKey> privateKeys, TransactionInput txIn, BtcTransaction tx) {
+    private void signWithErpFederation(ErpFederation erpFederation, List<BtcECKey> privateKeys, TransactionInput txIn, BtcTransaction tx) {
         signWithNecessaryKeys(erpFederation, privateKeys, txIn, tx);
         // Add OP_0 prefix to make it a valid erp federation script
         Script erpInputScript = new ScriptBuilder()

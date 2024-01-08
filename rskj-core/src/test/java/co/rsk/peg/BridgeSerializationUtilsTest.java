@@ -170,16 +170,16 @@ class BridgeSerializationUtilsTest {
             creationBlockNumber,
             btcParams
         );
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
-        byte[] result = BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
+        byte[] result = BridgeSerializationUtils.serializeFederationOnlyBtcKeys(standardMultisigFederation);
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("f8d3"); // Outer list
         expectedBuilder.append("83abcdef"); // Creation time
         expectedBuilder.append("2a"); // Creation block number
         expectedBuilder.append("f8cc"); // Inner list
 
-        federation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
+        standardMultisigFederation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
             expectedBuilder.append("a1");
             expectedBuilder.append(ByteUtil.toHexString(key.getPubKey()));
         });
@@ -315,8 +315,8 @@ class BridgeSerializationUtilsTest {
 
         FederationArgs federationArgs =
             new FederationArgs(members, creationTime, creationBlockNumber, btcParams);
-        Federation testFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
-        byte[] serializedFederation = BridgeSerializationUtils.serializeFederation(testFederation);
+        Federation testStandardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        byte[] serializedFederation = BridgeSerializationUtils.serializeFederation(testStandardMultisigFederation);
 
         RLPList serializedList = (RLPList) RLP.decode2(serializedFederation).get(0);
         Assertions.assertEquals(3, serializedList.size());
@@ -682,11 +682,11 @@ class BridgeSerializationUtilsTest {
         ));
         FederationArgs federationArgs = new FederationArgs(members, Instant.ofEpochMilli(0xabcdef), 42L,
             networkParams);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
-        byte[] result = BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
+        byte[] result = BridgeSerializationUtils.serializeFederationOnlyBtcKeys(standardMultisigFederation);
         Federation deserializedFederation = BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(result, networkParams);
-        MatcherAssert.assertThat(federation, is(deserializedFederation));
+        MatcherAssert.assertThat(standardMultisigFederation, is(deserializedFederation));
     }
 
     @Test
@@ -1135,8 +1135,8 @@ class BridgeSerializationUtilsTest {
 
             FederationArgs federationArgs =
                 new FederationArgs(members, creationTime, creationBlockNumber, btcParams);
-            Federation testFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
-            byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
+            Federation testStandardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+            byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testStandardMultisigFederation);
 
             Federation deserializedTestFederation = BridgeSerializationUtils.deserializeStandardMultisigFederation(
                 serializedTestFederation,
@@ -1148,25 +1148,25 @@ class BridgeSerializationUtilsTest {
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay()
             );
-            Federation testErpFederation = FederationFactory.buildNonStandardErpFederation(
+            ErpFederation testNonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
                 erpFederationArgs,
                 activations
             );
-            byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
+            byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testNonStandardErpFederation);
 
-            Federation deserializedTestErpFederation = BridgeSerializationUtils.deserializeLegacyErpFederation(
+            Federation deserializedTestErpFederation = BridgeSerializationUtils.deserializeNonStandardErpFederation(
                 serializedTestErpFederation,
                 bridgeConstants,
                 activations
             );
 
-            Assertions.assertEquals(testFederation, deserializedTestFederation);
-            Assertions.assertEquals(testErpFederation, deserializedTestErpFederation);
-            assertNotEquals(testFederation, deserializedTestErpFederation);
-            assertNotEquals(testErpFederation, deserializedTestFederation);
+            Assertions.assertEquals(testStandardMultisigFederation, deserializedTestFederation);
+            Assertions.assertEquals(testNonStandardErpFederation, deserializedTestErpFederation);
+            assertNotEquals(testStandardMultisigFederation, deserializedTestErpFederation);
+            assertNotEquals(testNonStandardErpFederation, deserializedTestFederation);
 
             if (!isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
-                Assertions.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, testErpFederation.getRedeemScript());
+                Assertions.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, testNonStandardErpFederation.getRedeemScript());
             }
 
             if (isRskip353Active) {
@@ -1179,8 +1179,8 @@ class BridgeSerializationUtilsTest {
                 );
 
                 assertEquals(testP2shErpFederation, deserializedTestP2shErpFederation);
-                assertNotEquals(testFederation, deserializedTestP2shErpFederation);
-                assertNotEquals(testErpFederation, deserializedTestP2shErpFederation);
+                assertNotEquals(testStandardMultisigFederation, deserializedTestP2shErpFederation);
+                assertNotEquals(testNonStandardErpFederation, deserializedTestP2shErpFederation);
             }
         }
     }
