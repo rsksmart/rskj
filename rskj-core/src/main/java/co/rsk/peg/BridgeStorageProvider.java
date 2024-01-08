@@ -1078,7 +1078,7 @@ public class BridgeStorageProvider {
             );
         }
         if (version == NON_STANDARD_ERP_FEDERATION.getFormatVersion()) {
-            return BridgeSerializationUtils.deserializeLegacyErpFederation(
+            return BridgeSerializationUtils.deserializeNonStandardErpFederation(
                 data,
                 bridgeConstants,
                 activations

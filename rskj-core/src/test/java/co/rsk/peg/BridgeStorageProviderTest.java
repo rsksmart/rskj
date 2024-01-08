@@ -402,7 +402,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void getNewFederation_erp_and_p2sh_erp_feds() {
+    void getNewFederation_non_standard_erp_and_p2sh_erp_feds() {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0);
         Federation newFederation = buildMockFederation(100, 200, 300);
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
@@ -412,10 +412,10 @@ class BridgeStorageProviderTest {
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
         ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
-        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
         ErpFederation p2shErpFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
 
-        testGetNewFederationPostMultiKey(erpFederation);
+        testGetNewFederationPostMultiKey(nonStandardErpFederation);
         testGetNewFederationPostMultiKey(p2shErpFederation);
     }
 
@@ -525,7 +525,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveNewFederation_postMultiKey_RSKIP_201_active_erp_fed() {
+    void saveNewFederation_postMultiKey_RSKIP_201_active_non_standard_erp_fed() {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0);
         Federation newFederation = buildMockFederation(100, 200, 300);
         BridgeConstants bridgeConstants = bridgeTestnetInstance;
@@ -535,9 +535,9 @@ class BridgeStorageProviderTest {
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
         ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
-        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
-        testSaveNewFederationPostMultiKey(erpFederation, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, activations);
+        testSaveNewFederationPostMultiKey(nonStandardErpFederation, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, activations);
     }
 
     @Test
@@ -665,17 +665,17 @@ class BridgeStorageProviderTest {
 
         // this should get non-standard hardcoded fed
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0);
-        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
-        testGetOldFederation(erpFederation, activations);
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        testGetOldFederation(nonStandardErpFederation, activations);
 
         // this should get non-standard with csv unsigned BE fed
-        erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
-        testGetOldFederation(erpFederation, activations);
+        nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        testGetOldFederation(nonStandardErpFederation, activations);
 
         // this should get non-standard fed
         activations = ActivationConfigsForTest.hop400().forBlock(0);
-        erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
-        testGetOldFederation(erpFederation, activations);
+        nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        testGetOldFederation(nonStandardErpFederation, activations);
     }
 
     @Test
@@ -797,7 +797,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveOldFederation_postMultikey_RSKIP_201_active_erp_fed() {
+    void saveOldFederation_postMultikey_RSKIP_201_active_non_standard_erp_fed() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -811,8 +811,8 @@ class BridgeStorageProviderTest {
 
         ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
 
-        ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
-        testSaveOldFederation(erpFederation, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, activations);
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        testSaveOldFederation(nonStandardErpFederation, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, activations);
     }
 
     @Test

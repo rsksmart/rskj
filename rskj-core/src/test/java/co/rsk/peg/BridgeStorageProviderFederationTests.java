@@ -36,7 +36,7 @@ class BridgeStorageProviderFederationTests {
     private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
     @Test
-    void getNewFederation_should_return_P2shErpFederation() {
+    void getNewFederation_should_return_p2sh_erp_federation() {
         Federation federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
 
         testGetNewFederation(
@@ -46,7 +46,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void getNewFederation_should_return_erp_federation() {
+    void getNewFederation_should_return_non_standard_erp_federation() {
         Federation federation = createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION);
         testGetNewFederation(
             NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
@@ -55,7 +55,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void getNewFederation_should_return_legacy_federation() {
+    void getNewFederation_should_return_standard_multisig_federation() {
         Federation federation = createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
         testGetNewFederation(
             STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
@@ -141,7 +141,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void getOldFederation_should_return_P2shErpFederation() {
+    void getOldFederation_should_return_p2sh_erp_federation() {
         Federation federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
 
         testGetOldFederation(
@@ -151,7 +151,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void getOldFederation_should_return_erp_federation() {
+    void getOldFederation_should_return_non_standard_erp_federation() {
         Federation federation = createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION);
         testGetOldFederation(
             NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
@@ -160,7 +160,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void getOldFederation_should_return_legacy_fed() {
+    void getOldFederation_should_return_standard_multisig_fed() {
         Federation federation = createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
         testGetOldFederation(
             STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
@@ -264,7 +264,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP123_should_save_legacy_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP123_should_save_standard_multisig_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveNewFederation(
             STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
@@ -273,7 +273,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP201_should_save_legacy_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP201_should_save_standard_multisig_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -285,7 +285,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP353_should_save_legacy_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP353_should_save_standard_multisig_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -298,7 +298,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP201_should_save_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP201_should_save_non_standard_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -310,7 +310,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP353_should_save_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP353_should_save_non_standard_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -437,7 +437,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP123_should_save_legacy_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP123_should_save_standard_multisig_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveOldFederation(
             STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
@@ -446,7 +446,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP201_should_save_legacy_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP201_should_save_standard_multisig_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -458,7 +458,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP353_should_save_legacy_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP353_should_save_standard_multisig_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -471,7 +471,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP201_should_save_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP201_should_save_non_standard_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -483,7 +483,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP353_should_save_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP353_should_save_non_standard_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
