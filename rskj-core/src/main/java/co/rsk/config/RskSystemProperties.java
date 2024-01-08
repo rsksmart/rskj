@@ -188,10 +188,10 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public BigInteger gasPriceBuffer() {
-        int gasPriceBuffer = getInt(MINER_GAS_PRICE_BUFFER_CONFIG, 10);
+        long gasPriceBuffer = getLong(MINER_GAS_PRICE_BUFFER_CONFIG, 10L);
 
         if(gasPriceBuffer > 0) {
-            return BigInteger.valueOf(gasPriceBuffer + 100);
+            return BigInteger.valueOf(gasPriceBuffer + 100L);
         } else {
             throw new RskConfigurationException(MINER_GAS_PRICE_BUFFER_CONFIG + " must be greater than 0");
         }
