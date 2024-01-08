@@ -312,7 +312,7 @@ public class BridgeSerializationUtils {
             FederationMember::deserialize
         );
     }
-    public static ErpFederation deserializeLegacyErpFederation(
+    public static ErpFederation deserializeNonStandardErpFederation(
         byte[] data,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations

@@ -165,7 +165,7 @@ class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    void build_pegout_tx_from_erp_federation() {
+    void build_pegout_tx_from_non_standard_erp_federation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
@@ -189,7 +189,7 @@ class ReleaseTransactionBuilderTest {
             bridgeConstants.getErpFedActivationDelay()
         );
 
-        Federation erpFederation = FederationFactory.buildNonStandardErpFederation(
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
             erpFederationArgs,
             activations
         );
@@ -201,7 +201,7 @@ class ReleaseTransactionBuilderTest {
                 Coin.COIN,
                 0,
                 false,
-                erpFederation.getP2SHScript()
+                nonStandardErpFederation.getP2SHScript()
             ),
             new UTXO(
                 Sha256Hash.of(new byte[]{1}),
@@ -209,13 +209,13 @@ class ReleaseTransactionBuilderTest {
                 Coin.COIN,
                 0,
                 false,
-                erpFederation.getP2SHScript()
+                nonStandardErpFederation.getP2SHScript()
             )
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(bridgeConstants.getBtcParams()),
-            erpFederation,
+            nonStandardErpFederation,
             utxos,
             false,
             mock(BridgeStorageProvider.class)
@@ -224,7 +224,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             bridgeConstants.getBtcParams(),
             thisWallet,
-            erpFederation.getAddress(),
+            nonStandardErpFederation.getAddress(),
             Coin.SATOSHI.multiply(1000),
             activations
         );
