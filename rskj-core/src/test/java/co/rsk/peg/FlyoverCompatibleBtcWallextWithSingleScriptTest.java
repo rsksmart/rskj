@@ -33,20 +33,22 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
     private Federation federation;
-    private ErpFederation erpFederation;
+    private ErpFederation nonStandardErpFederation;
     private List<Federation> federationList;
-    private List<Federation> erpFederationList;
+    private List<Federation> nonStandardErpFederationList;
     private ActivationConfig.ForBlock activations;
 
     @BeforeEach
     void setup() {
-
+        // set up standard multisig federation
         List<FederationMember> fedMembers = FederationTestUtils.getFederationMembers(3);
         Instant creationTime = Instant.ofEpochMilli(1000);
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
         federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        federationList = Collections.singletonList(federation);
 
+        // set up non-standard erp federation
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -54,10 +56,8 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpFedKeys, 5063);
-        erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
-
-        federationList = Collections.singletonList(federation);
-        erpFederationList = Collections.singletonList(erpFederation);
+        nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        nonStandardErpFederationList = Collections.singletonList(nonStandardErpFederation);
     }
 
     @Test
@@ -101,25 +101,25 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     }
 
     @Test
-    void findRedeemDataFromScriptHash_with_flyoverInformation_and_erp_federation() {
+    void findRedeemDataFromScriptHash_with_flyoverInformation_and_non_standard_erp_federation() {
         byte[] flyoverScriptHash = new byte[]{(byte)0x22};
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
                 PegTestUtils.createHash3(2),
-                erpFederation.getP2SHScript().getPubKeyHash(),
+                nonStandardErpFederation.getP2SHScript().getPubKeyHash(),
                 flyoverScriptHash);
 
         FlyoverCompatibleBtcWalletWithSingleScript flyoverCompatibleBtcWalletWithSingleScript =
             new FlyoverCompatibleBtcWalletWithSingleScript(
                 mock(Context.class),
-                erpFederationList,
+                nonStandardErpFederationList,
                 flyoverFederationInformation);
 
         RedeemData redeemData = flyoverCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
-            erpFederation.getP2SHScript().getPubKeyHash());
+            nonStandardErpFederation.getP2SHScript().getPubKeyHash());
 
         Script flyoverRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            erpFederation.getRedeemScript(),
+            nonStandardErpFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverFederationInformation.getDerivationHash().getBytes())
         );
 
