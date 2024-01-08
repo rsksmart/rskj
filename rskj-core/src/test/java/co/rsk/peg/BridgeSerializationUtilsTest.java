@@ -1136,30 +1136,30 @@ class BridgeSerializationUtilsTest {
             FederationArgs federationArgs =
                 new FederationArgs(members, creationTime, creationBlockNumber, btcParams);
             Federation testStandardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
-            byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testStandardMultisigFederation);
+            byte[] serializedTestStandardMultisigFederation = BridgeSerializationUtils.serializeFederation(testStandardMultisigFederation);
 
-            Federation deserializedTestFederation =
-                BridgeSerializationUtils.deserializeStandardMultisigFederation(serializedTestFederation, bridgeConstants.getBtcParams());
-            FederationArgs deserializedTestFederationArgs = deserializedTestFederation.getArgs();
+            Federation deserializedTestStandardMultisigFederation =
+                BridgeSerializationUtils.deserializeStandardMultisigFederation(serializedTestStandardMultisigFederation, bridgeConstants.getBtcParams());
+            FederationArgs deserializedTestStandardMultisigFederationArgs = deserializedTestStandardMultisigFederation.getArgs();
 
             ErpFederationArgs erpFederationArgs =
-                ErpFederationArgs.fromFederationArgs(deserializedTestFederationArgs, bridgeConstants.getErpFedPubKeysList(), bridgeConstants.getErpFedActivationDelay());
+                ErpFederationArgs.fromFederationArgs(deserializedTestStandardMultisigFederationArgs, bridgeConstants.getErpFedPubKeysList(), bridgeConstants.getErpFedActivationDelay());
             Federation testNonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
                 erpFederationArgs,
                 activations
             );
-            byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testNonStandardErpFederation);
+            byte[] serializedTestNonStandardErpFederation = BridgeSerializationUtils.serializeFederation(testNonStandardErpFederation);
 
-            Federation deserializedTestErpFederation = BridgeSerializationUtils.deserializeNonStandardErpFederation(
-                serializedTestErpFederation,
+            ErpFederation deserializedTestNonStandardErpFederation = BridgeSerializationUtils.deserializeNonStandardErpFederation(
+                serializedTestNonStandardErpFederation,
                 bridgeConstants,
                 activations
             );
 
-            Assertions.assertEquals(testStandardMultisigFederation, deserializedTestFederation);
-            Assertions.assertEquals(testNonStandardErpFederation, deserializedTestErpFederation);
-            assertNotEquals(testStandardMultisigFederation, deserializedTestErpFederation);
-            assertNotEquals(testNonStandardErpFederation, deserializedTestFederation);
+            Assertions.assertEquals(testStandardMultisigFederation, deserializedTestStandardMultisigFederation);
+            Assertions.assertEquals(testNonStandardErpFederation, deserializedTestNonStandardErpFederation);
+            assertNotEquals(testStandardMultisigFederation, deserializedTestNonStandardErpFederation);
+            assertNotEquals(testNonStandardErpFederation, deserializedTestStandardMultisigFederation);
 
             if (!isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
                 Assertions.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, testNonStandardErpFederation.getRedeemScript());

@@ -40,13 +40,15 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
 
     @BeforeEach
     void setup() {
-
+        // set up standard multisig federation
         List<FederationMember> fedMembers = FederationTestUtils.getFederationMembers(3);
         Instant creationTime = Instant.ofEpochMilli(1000);
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
         federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        federationList = Collections.singletonList(federation);
 
+        // set up non-standard erp federation
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -55,8 +57,6 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
 
         ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpFedKeys, 5063);
         nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
-
-        federationList = Collections.singletonList(federation);
         nonStandardErpFederationList = Collections.singletonList(nonStandardErpFederation);
     }
 
@@ -101,7 +101,7 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     }
 
     @Test
-    void findRedeemDataFromScriptHash_with_flyoverInformation_and_erp_federation() {
+    void findRedeemDataFromScriptHash_with_flyoverInformation_and_non_standard_erp_federation() {
         byte[] flyoverScriptHash = new byte[]{(byte)0x22};
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
