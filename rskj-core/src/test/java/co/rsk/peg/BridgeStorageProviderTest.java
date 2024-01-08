@@ -963,7 +963,7 @@ class BridgeStorageProviderTest {
         });
 
         try (MockedStatic<PendingFederation> pendingFederationMocked = mockStatic(PendingFederation.class)) {
-            pendingFederationMocked.when(() -> PendingFederation.deserializeOnlyBtcKeys(any(byte[].class))).then((InvocationOnMock invocation) -> {
+            pendingFederationMocked.when(() -> PendingFederation.deserializeFromBtcKeys(any(byte[].class))).then((InvocationOnMock invocation) -> {
                 deserializeCalls.add(0);
                 byte[] data = invocation.getArgument(0);
                 // Make sure we're deserializing what just came from the repo with the correct BTC context

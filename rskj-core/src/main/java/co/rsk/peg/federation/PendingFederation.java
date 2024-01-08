@@ -209,7 +209,7 @@ public final class PendingFederation {
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
-    public static PendingFederation deserializeOnlyBtcKeys(byte[] data) {
+    public static PendingFederation deserializeFromBtcKeys(byte[] data) {
         // BTC, RSK and MST keys are the same
         List<FederationMember> deserializedMembers = deserializeBtcPublicKeys(data).stream()
             .map(FederationMember::getFederationMemberFromKey)
