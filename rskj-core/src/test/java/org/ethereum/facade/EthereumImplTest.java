@@ -22,20 +22,13 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.GasPriceTracker;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class EthereumImplTest {
-
-    @AfterEach
-    void resetMocks() {
-        Mockito.reset();
-    }
 
     @Test
     void getGasPrice_returns_GasPriceTrackerValue_when_feeMarketWorking_is_true() {
