@@ -1474,14 +1474,11 @@ class BridgeUtilsTest {
 
     private ErpFederation createErpFederation() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
-            genesisFederation.getMembers(),
-            genesisFederation.getCreationTime(),
-            genesisFederation.getCreationBlockNumber(),
-            genesisFederation.getBtcParams(),
-            bridgeConstantsRegtest.getErpFedPubKeysList(),
-            bridgeConstantsRegtest.getErpFedActivationDelay()
-        );
+        FederationArgs genesisFederationArgs = genesisFederation.getArgs();
+        List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getErpFedPubKeysList();
+        long activationDelay = bridgeConstantsRegtest.getErpFedActivationDelay();
+
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(genesisFederationArgs, erpPubKeys, activationDelay);
         return FederationFactory.buildNonStandardErpFederation(
             erpFederationArgs,
             activations
