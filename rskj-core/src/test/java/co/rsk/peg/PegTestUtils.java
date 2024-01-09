@@ -300,19 +300,23 @@ public final class PegTestUtils {
     public static Federation createFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys);
+        Instant creationTime = Instant.ofEpochMilli(1000L);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.ofEpochMilli(1000L), 0L, btcParams);
+
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
     public static ErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys);
+        Instant creationTime = Instant.ofEpochMilli(1000L);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, Instant.ofEpochMilli(1000L), 0L, btcParams,
-                erpPubKeys, activationDelay);
+
+        ErpFederationArgs erpFederationArgs = new
+            ErpFederationArgs(fedMembers, creationTime, 0L, btcParams, erpPubKeys, activationDelay);
         return FederationFactory.buildP2shErpFederation(erpFederationArgs);
     }
 

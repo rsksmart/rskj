@@ -26,6 +26,11 @@ public class ErpFederationArgs extends FederationArgs{
         this.activationDelay = activationDelay;
     }
 
+    public static ErpFederationArgs fromFederationArgs(FederationArgs federationArgs, List<BtcECKey> erpPubKeys, long activationDelay){
+        return new ErpFederationArgs(federationArgs.members, federationArgs.creationTime,
+            federationArgs.creationBlockNumber, federationArgs.btcParams, erpPubKeys, activationDelay);
+    }
+
     private void validateEmergencyKeys(List<BtcECKey> erpPubKeys) {
         if (erpPubKeys == null || erpPubKeys.isEmpty()) {
             String message = "Emergency keys are not provided";

@@ -25,6 +25,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.MapSnapshot;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -354,10 +355,13 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         retiringFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
         List<FederationMember> retiringFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedSigners);
+        Instant creationTime = Instant.ofEpochMilli(1000L);
+        long retiringFedCreationBlockNumber = 1;
         List<BtcECKey> erpPubKeys = bridgeMainnetConstants.getErpFedPubKeysList();
         long activationDelay = bridgeMainnetConstants.getErpFedActivationDelay();
-        ErpFederationArgs retiringFedArgs = new ErpFederationArgs(retiringFedMembers, Instant.ofEpochMilli(1000L), 1, btcParams,
-            erpPubKeys, activationDelay);
+
+        ErpFederationArgs retiringFedArgs =
+            new ErpFederationArgs(retiringFedMembers, creationTime, retiringFedCreationBlockNumber, btcParams, erpPubKeys, activationDelay);
         retiringFederation = FederationFactory.buildP2shErpFederation(retiringFedArgs);
 
         activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
@@ -365,8 +369,9 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
         activeFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
         List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners);
-        ErpFederationArgs activeFedArgs = new ErpFederationArgs(activeFedMembers, Instant.ofEpochMilli(1000L), 2L, btcParams,
-            erpPubKeys, activationDelay);
+        long activeFedCreationBlockNumber = 2L;
+        ErpFederationArgs activeFedArgs =
+            new ErpFederationArgs(activeFedMembers, creationTime, activeFedCreationBlockNumber, btcParams, erpPubKeys, activationDelay);
         activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs);
 
         mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
