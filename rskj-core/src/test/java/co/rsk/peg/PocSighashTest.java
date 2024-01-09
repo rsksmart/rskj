@@ -16,7 +16,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.MapSnapshot;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -370,7 +369,9 @@ class PocSighashTest {
         NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
         int erpFedActivationDelay = 720;
 
-        List<FedSigner> fedMembers = FedSigner.listOf("federator1", "federator2", "federator6");
+        List<FedSigner> fedSigners = FedSigner.listOf("federator1", "federator2", "federator6");
+        List<FederationMember> fedMembers = fedSigners.stream().map(FedSigner::getFed).collect(Collectors.toList());
+        Instant creationTime = Instant.now();
         List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
         List<BtcECKey> erpPubKeys = erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
 
@@ -378,13 +379,8 @@ class PocSighashTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
-            Instant.now(),
-            0L,
-            networkParameters,
-            erpPubKeys,
-            erpFedActivationDelay
-        );
+        ErpFederationArgs erpFederationArgs =
+            new ErpFederationArgs(fedMembers, creationTime, 0L, networkParameters, erpPubKeys, erpFedActivationDelay);
         ErpFederation fed = FederationFactory.buildP2shErpFederation(
             erpFederationArgs
         );

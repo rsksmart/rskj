@@ -222,9 +222,8 @@ class P2shErpFederationTest {
 
     @Test
     void testEquals_same() {
-        ErpFederationArgs erpFederationArgs =new ErpFederationArgs(federation.getMembers(), federation.getCreationTime(), federation.getCreationBlockNumber(), federation.getBtcParams(),
-            federation.getErpPubKeys(), federation.getActivationDelay()
-        );
+        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(federation.getMembers(), federation.getCreationTime(),
+            federation.getCreationBlockNumber(), federation.getBtcParams(), federation.getErpPubKeys(), federation.getActivationDelay());
         ErpFederation otherFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
 
         assertEquals(federation, otherFederation);
