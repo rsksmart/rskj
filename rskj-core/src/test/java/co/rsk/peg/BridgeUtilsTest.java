@@ -1615,17 +1615,6 @@ class BridgeUtilsTest {
         return privKey;
     }
 
-    private void signWithErpFederation(Federation erpFederation, List<BtcECKey> privateKeys, TransactionInput txIn, BtcTransaction tx) {
-        signWithNecessaryKeys(erpFederation, privateKeys, txIn, tx);
-        // Add OP_0 prefix to make it a valid erp federation script
-        Script erpInputScript = new ScriptBuilder()
-            .number(ScriptOpCodes.OP_0)
-            .addChunks(txIn.getScriptSig().getChunks())
-            .build();
-
-        txIn.setScriptSig(erpInputScript);
-    }
-
     private void signWithNecessaryKeys(
         Federation federation,
         List<BtcECKey> privateKeys,
