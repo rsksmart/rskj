@@ -168,11 +168,11 @@ class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        Federation erpFederation = createNonStandardErpFederation();
+        ErpFederation nonStandardErpFederation = createNonStandardErpFederation();
         BtcTransaction btcTx = createPegOutTx(
             Arrays.asList(sign1, sign2),
             3,
-            erpFederation,
+            nonStandardErpFederation,
             false
         );
 
@@ -200,11 +200,11 @@ class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        Federation erpFederation = createNonStandardErpFederation();
+        ErpFederation nonStandardErpFederation = createNonStandardErpFederation();
         BtcTransaction btcTx = createPegOutTxForFlyover(
             Arrays.asList(sign1, sign2),
             3,
-            erpFederation
+            nonStandardErpFederation
         );
 
         Assertions.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
@@ -261,11 +261,11 @@ class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        Federation erpFederation = createNonStandardErpFederation();
+        ErpFederation nonStandardErpFederation = createNonStandardErpFederation();
         BtcTransaction btcTx = createPegOutTx(
             Arrays.asList(sign1, sign2),
             3,
-            erpFederation,
+            nonStandardErpFederation,
             false
         );
 
@@ -293,11 +293,11 @@ class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        Federation erpFederation = createNonStandardErpFederation();
+        ErpFederation nonStandardErpFederation = createNonStandardErpFederation();
         BtcTransaction btcTx = createPegOutTxForFlyover(
             Arrays.asList(sign1, sign2),
             3,
-            erpFederation
+            nonStandardErpFederation
         );
 
         Assertions.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
