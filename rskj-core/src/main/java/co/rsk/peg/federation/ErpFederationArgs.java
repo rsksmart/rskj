@@ -14,12 +14,12 @@ public class ErpFederationArgs extends FederationArgs{
     public ErpFederationArgs(
         List<FederationMember> members,
         Instant creationTime,
-        long blockNumber,
+        long creationBlockNumber,
         NetworkParameters btcParams,
         List<BtcECKey> erpPubKeys,
         long activationDelay
     ) {
-        super(members, creationTime, blockNumber, btcParams);
+        super(members, creationTime, creationBlockNumber, btcParams);
 
         validateEmergencyKeys(erpPubKeys);
         this.erpPubKeys = erpPubKeys;

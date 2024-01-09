@@ -37,7 +37,6 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
     BridgeTestNetConstants() {
         btcParamsString = NetworkParameters.ID_TESTNET;
-        NetworkParameters btcParams = NetworkParameters.fromID(btcParamsString);
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9")
@@ -67,7 +66,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // Currently set to: Monday, October 8, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1538967600l);
 
-        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, btcParams);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, getBtcParams());
         genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         btc2RskMinimumAcceptableConfirmations = 10;

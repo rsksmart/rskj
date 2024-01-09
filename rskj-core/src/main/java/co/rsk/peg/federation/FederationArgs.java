@@ -12,10 +12,10 @@ public class FederationArgs {
     protected final NetworkParameters btcParams;
 
     public FederationArgs(List<FederationMember> members, Instant creationTime,
-                          long blockNumber, NetworkParameters btcParams) {
+                          long creationBlockNumber, NetworkParameters btcParams) {
         this.members = members;
         this.creationTime = creationTime;
-        this.creationBlockNumber = blockNumber;
+        this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
     }
 }
