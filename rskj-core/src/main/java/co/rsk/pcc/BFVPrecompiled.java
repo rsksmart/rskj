@@ -42,11 +42,6 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
 
         return result;
     }
-
-//    public void addFhStore(FhContext fhStore) {
-//        this.fhStore = fhStore;
-//    }
-
     public enum Op {
         ADD // addition
         {
@@ -67,11 +62,8 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 byte[] op2 = FhContext.getInstance().getEncryptedData(op2Hash).getData();
 
                 byte[] result = bfv.add(op1, op1.length, op2, op2.length);
-                byte[] hash = Keccak256Helper.keccak256(result);
 
-                FhContext.getInstance().putEncryptedData(hash, result);
-
-                return hash;
+                return storeCiphertext(result);
             }
         },
         SUB // subtraction
@@ -96,7 +88,9 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 buffer.get(op1);
                 buffer.get(op2);
 
-                return bfv.sub(op1, op1Len, op2, op2Len);
+                byte[] result = bfv.sub(op1, op1Len, op2, op2Len);
+
+                return storeCiphertext(result);
             }
         },
         MUL // multiplication (with relinearization)
@@ -124,7 +118,9 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 buffer.get(op2);
                 buffer.get(rk);
 
-                return bfv.mul(op1, op1Len, op2, op2Len, rk, rkLen);
+                byte[] result = bfv.mul(op1, op1Len, op2, op2Len, rk, rkLen);
+
+                return storeCiphertext(result);
             }
         },
         // todo(fedejinich) remove this precompiled, we don't need it
@@ -149,11 +145,7 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
                 byte[] result = bfv.transcipher(parsedData, parsedData.length, pastaSK, pastaSK.length,
                 rks, rks.length, bfvSK, bfvSK.length);
 
-                byte[] hash = Keccak256Helper.keccak256(result);
-
-                FhContext.getInstance().putEncryptedData(hash, result);
-
-                return hash;
+                return storeCiphertext(result);
             }
 
             private ByteBuffer parseData(byte[] data) {
@@ -295,5 +287,17 @@ public class BFVPrecompiled extends PrecompiledContracts.PrecompiledContract {
 
         public abstract long gasForData(byte[] data);
         public abstract byte[] executeOperation(byte[] data, BFV bfv);
+    }
+
+    // stores a reference to a ciphertext in the FhContext and returns the id (hash)
+    private static byte[] storeCiphertext(byte[] ciphertext) {
+        // id is a ciphertext hash
+        byte[] hash = Keccak256Helper.keccak256(ciphertext);
+
+        // save ciphertext reference
+        FhContext.getInstance().putEncryptedData(hash, ciphertext);
+
+        // return a "ciphertext pointer"
+        return hash;
     }
 }
