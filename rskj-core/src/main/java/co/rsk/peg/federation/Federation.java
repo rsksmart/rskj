@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
  */
 
 public abstract class Federation {
+    protected final FederationArgs federationArgs;
     protected final List<FederationMember> members;
     protected final Instant creationTime;
     protected final long creationBlockNumber;
@@ -56,6 +57,7 @@ public abstract class Federation {
         // Sorting members ensures same order of federation members for same members
         // Immutability provides protection against unwanted modification, thus making the Federation instance
         // effectively immutable
+        this.federationArgs = federationArgs;
         this.members = Collections.unmodifiableList(federationArgs.members.stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
         this.creationTime = federationArgs.creationTime.truncatedTo(ChronoUnit.MILLIS);
         this.creationBlockNumber = federationArgs.creationBlockNumber;
@@ -67,6 +69,9 @@ public abstract class Federation {
         return formatVersion;
     }
 
+    public FederationArgs getArgs() {
+        return federationArgs;
+    }
     public List<FederationMember> getMembers() {
         // Safe to return members since
         // both list and instances are immutable

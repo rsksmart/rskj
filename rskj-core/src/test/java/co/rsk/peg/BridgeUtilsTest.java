@@ -1474,14 +1474,11 @@ class BridgeUtilsTest {
 
     private ErpFederation createErpFederation() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
-            genesisFederation.getMembers(),
-            genesisFederation.getCreationTime(),
-            genesisFederation.getCreationBlockNumber(),
-            genesisFederation.getBtcParams(),
-            bridgeConstantsRegtest.getErpFedPubKeysList(),
-            bridgeConstantsRegtest.getErpFedActivationDelay()
-        );
+        FederationArgs genesisFederationArgs = genesisFederation.getArgs();
+        List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getErpFedPubKeysList();
+        long activationDelay = bridgeConstantsRegtest.getErpFedActivationDelay();
+
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(genesisFederationArgs, erpPubKeys, activationDelay);
         return FederationFactory.buildNonStandardErpFederation(
             erpFederationArgs,
             activations
@@ -1616,17 +1613,6 @@ class BridgeUtilsTest {
         byte[] privKey = new byte[32];
         random.nextBytes(privKey);
         return privKey;
-    }
-
-    private void signWithErpFederation(Federation erpFederation, List<BtcECKey> privateKeys, TransactionInput txIn, BtcTransaction tx) {
-        signWithNecessaryKeys(erpFederation, privateKeys, txIn, tx);
-        // Add OP_0 prefix to make it a valid erp federation script
-        Script erpInputScript = new ScriptBuilder()
-            .number(ScriptOpCodes.OP_0)
-            .addChunks(txIn.getScriptSig().getChunks())
-            .build();
-
-        txIn.setScriptSig(erpInputScript);
     }
 
     private void signWithNecessaryKeys(

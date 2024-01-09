@@ -424,8 +424,7 @@ class PendingFederationTest {
 
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, creationTime, 0L, btcParams,
-            erpPubKeys, activationDelay);
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
 
         if (isRskip353Active) {
             expectedFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);

@@ -323,15 +323,11 @@ public class BridgeSerializationUtils {
             FederationMember::deserialize
         );
 
-        List<FederationMember> fedMembers = federation.getMembers();
-        Instant creationTime = federation.getCreationTime();
-        long creationBlockNumber = federation.getCreationBlockNumber();
-        NetworkParameters btcParams = federation.getBtcParams();
+        FederationArgs federationArgs = federation.getArgs();
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, creationTime, creationBlockNumber, btcParams,
-            erpPubKeys, activationDelay);
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
         return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
     }
 
@@ -345,15 +341,11 @@ public class BridgeSerializationUtils {
             FederationMember::deserialize
         );
 
-        List<FederationMember> fedMembers = federation.getMembers();
-        Instant creationTime = federation.getCreationTime();
-        long creationBlockNumber = federation.getCreationBlockNumber();
-        NetworkParameters btcParams = federation.getBtcParams();
+        FederationArgs federationArgs = federation.getArgs();
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers, creationTime, creationBlockNumber, btcParams,
-            erpPubKeys, activationDelay);
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
         return FederationFactory.buildP2shErpFederation(erpFederationArgs);
     }
 

@@ -41,15 +41,11 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     @BeforeEach
     void setup() {
 
-        FederationArgs federationArgs = new FederationArgs(
-            FederationTestUtils.getFederationMembers(3),
-            Instant.ofEpochMilli(1000),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
-        federation = FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembers(3);
+        Instant creationTime = Instant.ofEpochMilli(1000);
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
+        federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
@@ -57,18 +53,8 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
-            FederationTestUtils.getFederationMembers(3),
-            Instant.ofEpochMilli(1000),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            erpFedKeys,
-            5063
-        );
-        erpFederation = FederationFactory.buildNonStandardErpFederation(
-            erpFederationArgs,
-            activations
-        );
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpFedKeys, 5063);
+        erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         federationList = Collections.singletonList(federation);
         erpFederationList = Collections.singletonList(erpFederation);
