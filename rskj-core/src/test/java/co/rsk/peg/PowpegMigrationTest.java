@@ -134,8 +134,9 @@ class PowpegMigrationTest {
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
         Federation originalPowpeg;
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(originalPowpegMembers, Instant.now(), 0, btcParams,
-            erpPubKeys, activationDelay);
+        Instant creationTime = Instant.now();
+        ErpFederationArgs erpFederationArgs =
+            new ErpFederationArgs(originalPowpegMembers, creationTime, 0, btcParams, erpPubKeys, activationDelay);
         switch (oldPowPegFederationType) {
             case legacyErp:
                 originalPowpeg = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);

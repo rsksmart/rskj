@@ -1138,16 +1138,12 @@ class BridgeSerializationUtilsTest {
             Federation testFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
             byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
 
-            Federation deserializedTestFederation = BridgeSerializationUtils.deserializeStandardMultisigFederation(
-                serializedTestFederation,
-                bridgeConstants.getBtcParams()
-            );
+            Federation deserializedTestFederation =
+                BridgeSerializationUtils.deserializeStandardMultisigFederation(serializedTestFederation, bridgeConstants.getBtcParams());
+            FederationArgs deserializedTestFederationArgs = deserializedTestFederation.getArgs();
 
             ErpFederationArgs erpFederationArgs =
-                new ErpFederationArgs(members, creationTime, creationBlockNumber, btcParams,
-                bridgeConstants.getErpFedPubKeysList(),
-                bridgeConstants.getErpFedActivationDelay()
-            );
+                ErpFederationArgs.fromFederationArgs(deserializedTestFederationArgs, bridgeConstants.getErpFedPubKeysList(), bridgeConstants.getErpFedActivationDelay());
             Federation testErpFederation = FederationFactory.buildNonStandardErpFederation(
                 erpFederationArgs,
                 activations

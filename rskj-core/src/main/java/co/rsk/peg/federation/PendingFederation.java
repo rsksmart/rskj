@@ -108,16 +108,17 @@ public final class PendingFederation {
         }
 
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        FederationArgs federationArgs = new FederationArgs(members, creationTime, blockNumber, btcParams);
 
         if (shouldBuildStandardMultisigFederation(activations)){
-            FederationArgs federationArgs = new FederationArgs(members, creationTime, blockNumber, btcParams);
             return FederationFactory.buildStandardMultiSigFederation(federationArgs);
         }
 
         // should build and erp federation due to activations
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(members, creationTime, blockNumber, btcParams, erpPubKeys, activationDelay);
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
+
         if (shouldBuildNonStandardErpFederation(activations)) {
             logger.info("[buildFederation] Going to create an ERP Federation");
             return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
