@@ -51,13 +51,12 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
-        NetworkParameters btcParams = NetworkParameters.fromID(btcParamsString);
 
         List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federationPublicKeys);
 
         Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
-        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreatedAt, 1L, btcParams);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreatedAt, 1L, getBtcParams());
         genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         btc2RskMinimumAcceptableConfirmations = 3;

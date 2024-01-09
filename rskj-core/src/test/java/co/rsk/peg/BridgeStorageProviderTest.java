@@ -684,8 +684,6 @@ class BridgeStorageProviderTest {
         testGetOldFederation(erpFederation, activations);
 
         // this should get non-standard with csv unsigned BE fed
-        List<ConsensusRule> rulesToDisable = Collections.singletonList(ConsensusRule.RSKIP293);
-        activations = ActivationConfigsForTest.hop400(rulesToDisable).forBlock(0);
         erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
         testGetOldFederation(erpFederation, activations);
 
