@@ -530,6 +530,7 @@ class PegUtilsLegacyTest {
         Context btcContext = new Context(networkParameters);
 
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+        FederationArgs federationArgs = activeFederation.getArgs();
 
         List<BtcECKey> erpPubKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
@@ -538,7 +539,7 @@ class PegUtilsLegacyTest {
         erpPubKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         long activationDelay = 500L;
 
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(activeFederation.getArgs(), erpPubKeys, activationDelay);
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
         ErpFederation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         Script redeemScript = erpFederation.getRedeemScript();
@@ -794,15 +795,15 @@ class PegUtilsLegacyTest {
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         List<FederationMember> retiredFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys);
 
-        FederationArgs federationArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L, networkParameters);
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        FederationArgs retiredFederationArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L, networkParameters);
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(retiredFederationArgs);
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa03")),
             BtcECKey.fromPrivate(Hex.decode("fa04"))
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpFederationPublicKeys, 500L);
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(retiredFederationArgs, erpFederationPublicKeys, 500L);
         Federation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -847,8 +848,8 @@ class PegUtilsLegacyTest {
         retiredFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
         
         List<FederationMember> retiredFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys);
-        FederationArgs federationArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L, networkParameters);
-        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        FederationArgs retiredFederationArgs = new FederationArgs(retiredFederationMembers, creationTime, 0L, networkParameters);
+        Federation retiredFederation = FederationFactory.buildStandardMultiSigFederation(retiredFederationArgs);
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa03")),
@@ -856,7 +857,7 @@ class PegUtilsLegacyTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpFederationPublicKeys, 500L);
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(retiredFederationArgs, erpFederationPublicKeys, 500L);
         Federation erpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
 
         // Create a tx from the retired fast bridge fed to the active fed
