@@ -9,8 +9,9 @@ import java.util.List;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 
 public class ErpFederationArgs extends FederationArgs{
-    protected final List<BtcECKey> erpPubKeys;
-    protected final long activationDelay;
+    private final List<BtcECKey> erpPubKeys;
+    private final long activationDelay;
+
     public ErpFederationArgs(
         List<FederationMember> members,
         Instant creationTime,
@@ -26,9 +27,13 @@ public class ErpFederationArgs extends FederationArgs{
         this.activationDelay = activationDelay;
     }
 
+    public List<BtcECKey> getErpPubKeys() { return erpPubKeys; }
+
+    public long getActivationDelay() { return activationDelay; }
+
     public static ErpFederationArgs fromFederationArgs(FederationArgs federationArgs, List<BtcECKey> erpPubKeys, long activationDelay){
-        return new ErpFederationArgs(federationArgs.members, federationArgs.creationTime,
-            federationArgs.creationBlockNumber, federationArgs.btcParams, erpPubKeys, activationDelay);
+        return new ErpFederationArgs(federationArgs.getMembers(), federationArgs.getCreationTime(),
+            federationArgs.getCreationBlockNumber(), federationArgs.getBtcParams(), erpPubKeys, activationDelay);
     }
 
     private void validateEmergencyKeys(List<BtcECKey> erpPubKeys) {

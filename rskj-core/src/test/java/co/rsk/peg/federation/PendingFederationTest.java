@@ -374,7 +374,7 @@ class PendingFederationTest {
 
         byte[] data = RLP.encodeList(rlpBytes);
 
-        PendingFederation deserializedPendingFederation = PendingFederation.deserializeFromBtcKeys(data);
+        PendingFederation deserializedPendingFederation = PendingFederation.deserializeFromBtcKeysOnly(data);
 
         Assertions.assertEquals(6, deserializedPendingFederation.getBtcPublicKeys().size());
         for (int i = 0; i < 6; i++) {

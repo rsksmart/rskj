@@ -28,8 +28,8 @@ public class ErpFederation extends Federation {
     ) {
         super(erpFederationArgs, formatVersion);
 
-        this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpFederationArgs.erpPubKeys);
-        this.activationDelay = erpFederationArgs.activationDelay;
+        this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpFederationArgs.getErpPubKeys());
+        this.activationDelay = erpFederationArgs.getActivationDelay();
         this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
     }
 
