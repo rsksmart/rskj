@@ -963,36 +963,36 @@ class BridgeSupportTest {
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        //Creates federation 1
-        List<BtcECKey> federation1Keys = Arrays.asList(
+        // Creates active federation
+        List<BtcECKey> newFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
 
-        FederationArgs federation1Args = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+        FederationArgs newFederationArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             btcParams
         );
-        Federation federation1 = FederationFactory.buildStandardMultiSigFederation(
-            federation1Args
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
+            newFederationArgs
         );
 
-        //Creates federation 2
-        List<BtcECKey> federation2Keys = Arrays.asList(
+        // Creates retiring federation
+        List<BtcECKey> retiringFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fb01")),
             BtcECKey.fromPrivate(Hex.decode("fb02")),
             BtcECKey.fromPrivate(Hex.decode("fb03")));
 
-        FederationArgs federation2Args = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
+        FederationArgs retiringFederationArgs = new FederationArgs(
+            FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
             Instant.ofEpochMilli(2000L),
             0L,
             btcParams
         );
-        Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
-            federation2Args
+        Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(
+            retiringFederationArgs
         );
 
         Repository repository = createRepository();
@@ -1002,29 +1002,29 @@ class BridgeSupportTest {
 
         // First transaction goes only to the first federation
         BtcTransaction tx1 = new BtcTransaction(btcRegTestParams);
-        tx1.addOutput(Coin.COIN.multiply(5), federation1.getAddress());
+        tx1.addOutput(Coin.COIN.multiply(5), newFederation.getAddress());
         BtcECKey srcKey1 = new BtcECKey();
         tx1.addInput(BitcoinTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey1));
 
         // Second transaction goes only to the second federation
         BtcTransaction tx2 = new BtcTransaction(btcRegTestParams);
-        tx2.addOutput(Coin.COIN.multiply(10), federation2.getAddress());
+        tx2.addOutput(Coin.COIN.multiply(10), retiringFederation.getAddress());
         BtcECKey srcKey2 = new BtcECKey();
         tx2.addInput(BitcoinTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey2));
 
         // Third transaction has one output to each federation
         // Lock is expected to be done accordingly and utxos assigned accordingly as well
         BtcTransaction tx3 = new BtcTransaction(btcRegTestParams);
-        tx3.addOutput(Coin.COIN.multiply(3), federation1.getAddress());
-        tx3.addOutput(Coin.COIN.multiply(4), federation2.getAddress());
+        tx3.addOutput(Coin.COIN.multiply(3), newFederation.getAddress());
+        tx3.addOutput(Coin.COIN.multiply(4), retiringFederation.getAddress());
         BtcECKey srcKey3 = new BtcECKey();
         tx3.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey3));
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest, activations);
-        provider.setNewFederation(federation1);
-        provider.setOldFederation(federation2);
+        provider.setNewFederation(newFederation);
+        provider.setOldFederation(retiringFederation);
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository, bridgeConstantsRegtest, provider, activations)).thenReturn(btcBlockStore);

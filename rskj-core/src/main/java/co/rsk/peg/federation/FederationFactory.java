@@ -21,7 +21,7 @@ public class FederationFactory {
 
     public static ErpFederation buildNonStandardErpFederation(ErpFederationArgs erpFederationArgs,
                                                               ActivationConfig.ForBlock activations) {
-        NetworkParameters btcParams = erpFederationArgs.btcParams;
+        NetworkParameters btcParams = erpFederationArgs.getBtcParams();
         ErpRedeemScriptBuilder erpRedeemScriptBuilder =
             NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, btcParams);
 

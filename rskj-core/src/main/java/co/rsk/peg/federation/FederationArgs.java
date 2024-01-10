@@ -6,10 +6,10 @@ import java.time.Instant;
 import java.util.List;
 
 public class FederationArgs {
-    protected final List<FederationMember> members;
-    protected final Instant creationTime;
-    protected final long creationBlockNumber;
-    protected final NetworkParameters btcParams;
+    private final List<FederationMember> members;
+    private final Instant creationTime;
+    private final long creationBlockNumber;
+    private final NetworkParameters btcParams;
 
     public FederationArgs(List<FederationMember> members, Instant creationTime,
                           long creationBlockNumber, NetworkParameters btcParams) {
@@ -18,4 +18,16 @@ public class FederationArgs {
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
     }
+
+    public List<FederationMember> getMembers() {
+        return members;
+    }
+
+    public Instant getCreationTime() {
+        return creationTime;
+    }
+
+    public long getCreationBlockNumber() { return creationBlockNumber; }
+    public NetworkParameters getBtcParams() { return btcParams; }
+
 }
