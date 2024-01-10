@@ -446,7 +446,7 @@ public class BridgeStorageProvider {
                     return PendingFederation.deserialize(data); // Assume this is the multi-key version
                 }
 
-                return PendingFederation.deserializeFromBtcKeys(data);
+                return PendingFederation.deserializeFromBtcKeysOnly(data);
             }
         );
 
