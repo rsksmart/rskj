@@ -45,6 +45,8 @@ public class PrecompiledContractArgs {
     @Nullable
     private ProgramInvoke programInvoke;
 
+    private MessageCall.MsgType msgType;
+
     public PrecompiledContractArgs() {
     }
 
@@ -76,6 +78,10 @@ public class PrecompiledContractArgs {
         this.programInvoke = programInvoke;
     }
 
+    public void setMsgType(MessageCall.MsgType msgType) {
+        this.msgType = msgType;
+    }
+
     public Transaction getTransaction() {
         return transaction;
     }
@@ -102,5 +108,9 @@ public class PrecompiledContractArgs {
 
     public ProgramInvoke getProgramInvoke() {
         return programInvoke;
+    }
+
+    public MessageCall.MsgType getMsgType() {
+        return msgType;
     }
 }
