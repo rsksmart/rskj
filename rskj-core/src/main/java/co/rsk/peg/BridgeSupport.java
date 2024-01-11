@@ -152,7 +152,7 @@ public class BridgeSupport {
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
 
-    private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
+    private static final Logger logger = LoggerFactory.getLogger(BridgeSupport.class);
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
@@ -2551,50 +2551,66 @@ public class BridgeSupport {
      * FEE_PER_KB_GENERIC_ERROR_CODE when there was an un expected error.
      */
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb) {
+        logger.debug("[voteFeePerKbChange] Voting {}", feePerKb);
         AddressBasedAuthorizer authorizer = bridgeConstants.getFeePerKbChangeAuthorizer();
         if (!authorizer.isAuthorized(tx, signatureCache)) {
+            logger.debug("[voteFeePerKbChange] Caller not authorized");
             return FEE_PER_KB_GENERIC_ERROR_CODE;
         }
 
-        if(!feePerKb.isPositive()){
+        if (!feePerKb.isPositive()) {
+            logger.debug("[voteFeePerKbChange] Invalid value voted {}, should be above zero", feePerKb);
             return NEGATIVE_FEE_PER_KB_ERROR_CODE;
         }
 
-        if(feePerKb.isGreaterThan(bridgeConstants.getMaxFeePerKb())) {
+        Coin maxFeePerKb = bridgeConstants.getMaxFeePerKb();
+        if (feePerKb.isGreaterThan(maxFeePerKb)) {
+            logger.debug(
+                "[voteFeePerKbChange] Invalid value voted {}, above the max fee per kb authorized {}",
+                feePerKb,
+                maxFeePerKb
+            );
             return EXCESSIVE_FEE_PER_KB_ERROR_CODE;
         }
 
         ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
-        ABICallSpec feeVote = new ABICallSpec("setFeePerKb", new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
+        byte[] serializedFeePerKbVoted = BridgeSerializationUtils.serializeCoin(feePerKb);
+        ABICallSpec feeVote = new ABICallSpec("setFeePerKb", new byte[][]{serializedFeePerKbVoted});
         boolean successfulVote = feePerKbElection.vote(feeVote, tx.getSender(signatureCache));
         if (!successfulVote) {
+            logger.debug("[voteFeePerKbChange] Unsuccessful vote");
             return -1;
         }
 
         ABICallSpec winner = feePerKbElection.getWinner();
         if (winner == null) {
-            logger.info("Successful fee per kb vote for {}", feePerKb);
+            logger.info("[voteFeePerKbChange] Successful fee per kb vote for {}", feePerKb);
             return 1;
         }
 
         Coin winnerFee;
         try {
             winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);
+            logger.warn("[voteFeePerKbChange] Winner feePerKb {}", winnerFee);
         } catch (Exception e) {
-            logger.warn("Exception deserializing winner feePerKb", e);
+            logger.warn("[voteFeePerKbChange] Exception deserializing winner feePerKb", e);
             return FEE_PER_KB_GENERIC_ERROR_CODE;
         }
 
         if (winnerFee == null) {
-            logger.warn("Invalid winner feePerKb: feePerKb can't be null");
+            logger.warn("[voteFeePerKbChange] Invalid winner feePerKb: feePerKb can't be null");
             return FEE_PER_KB_GENERIC_ERROR_CODE;
         }
 
         if (!winnerFee.equals(feePerKb)) {
-            logger.debug("Winner fee is different than the last vote: maybe you forgot to clear winners");
+            logger.debug(
+                "[voteFeePerKbChange] Winner fee {} is different than the last vote {}: maybe you forgot to clear winners",
+                winnerFee,
+                feePerKb
+            );
         }
 
-        logger.info("Fee per kb changed to {}", winnerFee);
+        logger.info("[voteFeePerKbChange] Fee per kb changed to {}", winnerFee);
         provider.setFeePerKb(winnerFee);
         feePerKbElection.clear();
         return 1;

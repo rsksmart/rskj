@@ -1042,13 +1042,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     public Integer voteFeePerKbChange(Object[] args) {
-        logger.trace("voteFeePerKbChange");
+        logger.trace("[voteFeePerKbChange] voteFeePerKbChange");
 
         Coin feePerKb;
         try {
             feePerKb = Coin.valueOf(((BigInteger) args[0]).longValueExact());
+            logger.debug("[voteFeePerKbChange] Voted {}", feePerKb);
         } catch (Exception e) {
-            logger.warn("Exception in voteFeePerKbChange", e);
+            logger.warn("[voteFeePerKbChange] Error when parsing the provided value", e);
             return -10;
         }
 
