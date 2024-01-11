@@ -137,21 +137,14 @@ class StandardMultisigFederationTest {
 
     @Test
     void values_from_federationArgs_equal_values_from_federation() {
-        FederationArgs actualFederationArgs = federation.getArgs();
-        List<FederationMember> federationMembersFromArgs = actualFederationArgs.getMembers();
-        Instant creationTimeFromArgs = actualFederationArgs.getCreationTime();
-        long creationBlockNumberFromArgs = actualFederationArgs.getCreationBlockNumber();
-        NetworkParameters btcParamsFromArgs = actualFederationArgs.getBtcParams();
-
         List<FederationMember> federationMembers = federation.getMembers();
         Instant creationTime = federation.getCreationTime();
         long creationBlockNumber = federation.getCreationBlockNumber();
         NetworkParameters btcParams = federation.getBtcParams();
+        FederationArgs federationArgsFromValues = new FederationArgs(federationMembers, creationTime, creationBlockNumber, btcParams);
 
-        assertEquals(federationMembers, federationMembersFromArgs);
-        assertEquals(creationTime, creationTimeFromArgs);
-        assertEquals(creationBlockNumber, creationBlockNumberFromArgs);
-        assertEquals(btcParams, btcParamsFromArgs);
+        FederationArgs federationArgs = federation.getArgs();
+        assertEquals(federationArgs, federationArgsFromValues);
     }
 
     @Test

@@ -315,9 +315,8 @@ public final class PegTestUtils {
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
-        ErpFederationArgs erpFederationArgs = new
-            ErpFederationArgs(fedMembers, creationTime, 0L, btcParams, erpPubKeys, activationDelay);
-        return FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
+        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
     public static BtcTransaction createBtcTransactionWithOutputToAddress(NetworkParameters networkParameters, Coin amount, Address btcAddress) {

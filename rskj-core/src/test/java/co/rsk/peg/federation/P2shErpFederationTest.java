@@ -81,10 +81,10 @@ class P2shErpFederationTest {
         List<FederationMember> standardMembers = FederationTestUtils.getFederationMembersWithBtcKeys(defaultKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
-        ErpFederationArgs erpFederationArgs =
-            new ErpFederationArgs(standardMembers, creationTime, creationBlockNumber, networkParameters, emergencyKeys, activationDelayValue);
+        FederationArgs federationArgs =
+            new FederationArgs(standardMembers, creationTime, creationBlockNumber, networkParameters);
 
-        return FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        return FederationFactory.buildP2shErpFederation(federationArgs, emergencyKeys, activationDelayValue);
     }
 
     private void createAndValidateFederation() {
@@ -222,49 +222,33 @@ class P2shErpFederationTest {
 
     @Test
     void testEquals_same() {
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(federation.getMembers(), federation.getCreationTime(),
-            federation.getCreationBlockNumber(), federation.getBtcParams(), federation.getErpPubKeys(), federation.getActivationDelay());
-        ErpFederation otherFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        FederationArgs federationArgs = new FederationArgs(federation.getMembers(), federation.getCreationTime(),
+            federation.getCreationBlockNumber(), federation.getBtcParams());
+        ErpFederation otherFederation =
+            FederationFactory.buildP2shErpFederation(federationArgs, federation.getErpPubKeys(), federation.getActivationDelay());
 
         assertEquals(federation, otherFederation);
     }
 
     @Test
-    void values_from_erpFederationArgs_equal_values_from_p2shErpFederation() {
-        ErpFederationArgs erpFederationArgs = federation.getErpArgs();
-        List<FederationMember> federationMembersFromErpArgs = erpFederationArgs.getMembers();
-        Instant creationTimeFromErpArgs = erpFederationArgs.getCreationTime();
-        long creationBlockNumberFromErpArgs = erpFederationArgs.getCreationBlockNumber();
-        NetworkParameters btcParamsFromErpArgs = erpFederationArgs.getBtcParams();
-        List<BtcECKey> emergencyKeysFromErpArgs = erpFederationArgs.getErpPubKeys();
-        long activationDelayFromErpArgs = erpFederationArgs.getActivationDelay();
-
-        List<FederationMember> members = federation.getMembers();
+    void federationArgs_from_values_equals_federationArgs_from_p2shErpFederation() {
+        List<FederationMember> federationMembers = federation.getMembers();
         Instant creationTime = federation.getCreationTime();
         long creationBlockNumber = federation.getCreationBlockNumber();
+        NetworkParameters btcParams = federation.getBtcParams();
 
-        assertEquals(members, federationMembersFromErpArgs);
-        assertEquals(creationTime, creationTimeFromErpArgs);
-        assertEquals(creationBlockNumber, creationBlockNumberFromErpArgs);
-        assertEquals(networkParameters, btcParamsFromErpArgs);
-        assertEquals(emergencyKeys, emergencyKeysFromErpArgs);
-        assertEquals(activationDelayValue, activationDelayFromErpArgs);
+        FederationArgs federationArgsFromValues =
+            new FederationArgs(federationMembers, creationTime, creationBlockNumber, btcParams);
+        FederationArgs federationArgs = federation.getArgs();
+
+        assertEquals(federationArgs, federationArgsFromValues);
     }
 
     @Test
     void p2shErpFederation_from_federationArgs_and_erp_values_equals_p2shErpFederation() {
         FederationArgs federationArgs = federation.getArgs();
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, emergencyKeys, activationDelayValue);
-
-        ErpFederation federationFromFederationArgs = FederationFactory.buildP2shErpFederation(erpFederationArgs);
-
-        assertEquals(federation, federationFromFederationArgs);
-    }
-
-    @Test
-    void p2shErpFederation_from_erpFederationArgs_equals_p2shErpFederation() {
-        ErpFederationArgs erpFederationArgs = federation.getErpArgs();
-        ErpFederation federationFromFederationArgs = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        ErpFederation federationFromFederationArgs =
+            FederationFactory.buildP2shErpFederation(federationArgs, emergencyKeys, activationDelayValue);
 
         assertEquals(federation, federationFromFederationArgs);
     }
@@ -380,8 +364,7 @@ class P2shErpFederationTest {
         StandardMultisigFederation standardMultisigFed = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         List<BtcECKey> erpPubKeys = Arrays.asList(new BtcECKey(), new BtcECKey());
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, 10_000);
-        ErpFederation p2shFed = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        ErpFederation p2shFed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, 10_000);
 
         assertEquals(standardMultisigFed.getRedeemScript(), p2shFed.getDefaultRedeemScript());
         Assertions.assertNotEquals(p2shFed.getRedeemScript(), p2shFed.getDefaultRedeemScript());
@@ -485,12 +468,11 @@ class P2shErpFederationTest {
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
             // Skip test cases with invalid redeem script that exceed the maximum size
             if (generatedScript.script.getProgram().length <= MAX_SCRIPT_ELEMENT_SIZE) {
-                ErpFederationArgs erpFederationArgs = new ErpFederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
+                FederationArgs federationArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                     ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(), 1,
-                    NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
-                    generatedScript.emergencyFed,
-                    generatedScript.timelock);
-                Federation erpFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+                    NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
+                Federation erpFederation =
+                    FederationFactory.buildP2shErpFederation(federationArgs, generatedScript.emergencyFed, generatedScript.timelock);
 
                 Script rskjScript = erpFederation.getRedeemScript();
                 Script alternativeScript = generatedScript.script;
@@ -518,9 +500,9 @@ class P2shErpFederationTest {
             true
         );
 
-        ErpFederationArgs erpFederationArgs =
-            new ErpFederationArgs(federationMembers, creationTime, 0L, networkParameters, emergencyKeys, activationDelay);
-        ErpFederation p2shErpFed = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        FederationArgs federationArgs =
+            new FederationArgs(federationMembers, creationTime, 0L, networkParameters);
+        ErpFederation p2shErpFed = FederationFactory.buildP2shErpFederation(federationArgs, emergencyKeys, activationDelay);
 
         Coin value = Coin.valueOf(1_000_000);
         Coin fee = Coin.valueOf(10_000);

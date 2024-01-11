@@ -8,10 +8,10 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.RedeemScriptCreationException;
-import co.rsk.peg.utils.EcKeyUtils;
 import java.util.Collections;
 import java.util.List;
 
+import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 
 public class ErpFederation extends Federation {
@@ -22,19 +22,19 @@ public class ErpFederation extends Federation {
     private final ErpRedeemScriptBuilder erpRedeemScriptBuilder;
 
     protected ErpFederation(
-        ErpFederationArgs erpFederationArgs,
+        FederationArgs federationArgs,
+        List<BtcECKey> erpPubKeys,
+        long activationDelay,
         ErpRedeemScriptBuilder erpRedeemScriptBuilder,
         int formatVersion
     ) {
-        super(erpFederationArgs, formatVersion);
+        super(federationArgs, formatVersion);
 
-        this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpFederationArgs.getErpPubKeys());
-        this.activationDelay = erpFederationArgs.getActivationDelay();
+        validateEmergencyKeys(erpPubKeys);
+
+        this.erpPubKeys = erpPubKeys;
+        this.activationDelay = activationDelay;
         this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
-    }
-
-    public ErpFederationArgs getErpArgs() {
-        return new ErpFederationArgs(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay);
     }
 
     public ErpRedeemScriptBuilder getErpRedeemScriptBuilder() { return erpRedeemScriptBuilder; }
@@ -90,6 +90,13 @@ public class ErpFederation extends Federation {
         }
 
         return defaultP2SHScript;
+    }
+
+    private void validateEmergencyKeys(List<BtcECKey> erpPubKeys) {
+        if (erpPubKeys == null || erpPubKeys.isEmpty()) {
+            String message = "Emergency keys are not provided";
+            throw new ErpFederationCreationException(message, NULL_OR_EMPTY_EMERGENCY_KEYS);
+        }
     }
 
 }

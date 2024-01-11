@@ -615,13 +615,12 @@ class BridgeStorageProviderFederationTests {
         // version should be erp
         List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getErpFedPubKeysList();
         long activationDelay = bridgeConstantsRegtest.getErpFedActivationDelay();
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
 
         if (version == NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION) {
-            return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+            return FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
         }
         if (version == P2SH_ERP_FEDERATION_FORMAT_VERSION) {
-            return FederationFactory.buildP2shErpFederation(erpFederationArgs);
+            return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
         }
         // To keep backwards compatibility
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);

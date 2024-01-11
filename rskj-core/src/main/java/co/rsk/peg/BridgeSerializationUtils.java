@@ -327,8 +327,7 @@ public class BridgeSerializationUtils {
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
-        return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        return FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
     }
 
     public static ErpFederation deserializeP2shErpFederation(
@@ -345,8 +344,7 @@ public class BridgeSerializationUtils {
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
-        return FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
     // An ABI call election is serialized as a list of the votes, like so:

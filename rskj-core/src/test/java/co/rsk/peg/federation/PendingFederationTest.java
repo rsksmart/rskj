@@ -424,20 +424,29 @@ class PendingFederationTest {
 
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
 
-        if (isRskip353Active) {
-            expectedFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
-        } else if (isRskip201Active) {
-            expectedFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
-        } else {
+        if (expectedFederationShouldBeStandardMultisig(isRskip201Active)) {
             expectedFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        }
+        else if (expectedFederationShouldBeNonStandardErp(isRskip353Active)) {
+            expectedFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
+        }
+        else {
+            expectedFederation = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
         }
 
         assertEquals(expectedFederation, builtFederation);
         if (isRskip201Active && !isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
             assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, builtFederation.getRedeemScript());
         }
+    }
+
+    private boolean expectedFederationShouldBeStandardMultisig(boolean isRskip201Active) {
+        return !isRskip201Active;
+    }
+
+    private boolean expectedFederationShouldBeNonStandardErp(boolean isRskip353Active) {
+        return !isRskip353Active;
     }
 
     private int randomInRange(int min, int max) {

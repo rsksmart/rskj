@@ -95,9 +95,8 @@ class NonStandardErpFederationsTest {
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         long creationBlockNumber = 0L;
 
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(standardMembers, creationTime, creationBlockNumber, networkParameters,
-            emergencyKeys, activationDelayValue);
-        return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        FederationArgs federationArgs = new FederationArgs(standardMembers, creationTime, creationBlockNumber, networkParameters);
+        return FederationFactory.buildNonStandardErpFederation(federationArgs, emergencyKeys, activationDelayValue, activations);
     }
 
     @Test
@@ -251,68 +250,55 @@ class NonStandardErpFederationsTest {
 
     @Test
     void testEquals_same() {
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(nonStandardErpFederation.getMembers(), nonStandardErpFederation.getCreationTime(), nonStandardErpFederation.getCreationBlockNumber(),
-            nonStandardErpFederation.getBtcParams(), nonStandardErpFederation.getErpPubKeys(), nonStandardErpFederation.getActivationDelay()
-        );
-        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        FederationArgs federationArgs =
+            new FederationArgs(nonStandardErpFederation.getMembers(), nonStandardErpFederation.getCreationTime(),
+                nonStandardErpFederation.getCreationBlockNumber(), nonStandardErpFederation.getBtcParams());
+        ErpFederation otherFederation =
+            FederationFactory.buildNonStandardErpFederation(federationArgs, nonStandardErpFederation.getErpPubKeys(), nonStandardErpFederation.getActivationDelay(), activations);
+
         assertEquals(nonStandardErpFederation, otherFederation);
     }
 
     @Test
-    void values_from_erpFederationArgs_equal_values_from_nonStandardErpFederation() {
-        ErpFederationArgs erpFederationArgs = nonStandardErpFederation.getErpArgs();
-        List<FederationMember> federationMembersFromErpArgs = erpFederationArgs.getMembers();
-        Instant creationTimeFromErpArgs = erpFederationArgs.getCreationTime();
-        long creationBlockNumberFromErpArgs = erpFederationArgs.getCreationBlockNumber();
-        NetworkParameters btcParamsFromErpArgs = erpFederationArgs.getBtcParams();
-        List<BtcECKey> emergencyKeysFromErpArgs = erpFederationArgs.getErpPubKeys();
-        long activationDelayFromErpArgs = erpFederationArgs.getActivationDelay();
-
-        List<FederationMember> members = nonStandardErpFederation.getMembers();
+    void federationArgs_from_values_equals_federationArgs_from_nonStandardErpFederation() {
+        List<FederationMember> federationMembers = nonStandardErpFederation.getMembers();
         Instant creationTime = nonStandardErpFederation.getCreationTime();
         long creationBlockNumber = nonStandardErpFederation.getCreationBlockNumber();
+        NetworkParameters btcParams = nonStandardErpFederation.getBtcParams();
 
-        assertEquals(members, federationMembersFromErpArgs);
-        assertEquals(creationTime, creationTimeFromErpArgs);
-        assertEquals(creationBlockNumber, creationBlockNumberFromErpArgs);
-        assertEquals(networkParameters, btcParamsFromErpArgs);
-        assertEquals(emergencyKeys, emergencyKeysFromErpArgs);
-        assertEquals(activationDelayValue, activationDelayFromErpArgs);
+        FederationArgs federationArgsFromValues = new FederationArgs(federationMembers, creationTime, creationBlockNumber, btcParams);
+        FederationArgs federationArgs = nonStandardErpFederation.getArgs();
+
+        assertEquals(federationArgs, federationArgsFromValues);
     }
 
     @Test
     void nonStandardErpFederation_from_federationArgs_and_erp_values_equals_nonStandardErpFederation() {
         FederationArgs federationArgs = nonStandardErpFederation.getArgs();
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, emergencyKeys, activationDelayValue);
-        ErpFederation nonStandardErpFederationFromFederationArgs = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        ErpFederation nonStandardErpFederationFromFederationArgs =
+            FederationFactory.buildNonStandardErpFederation(federationArgs, emergencyKeys, activationDelayValue, activations);
 
         assertEquals(nonStandardErpFederation, nonStandardErpFederationFromFederationArgs);
     }
 
     @Test
-    void nonStandardErpFederation_from_erpFederationArgs_equals_nonStandardErpFederation() {
-        ErpFederationArgs erpFederationArgs = nonStandardErpFederation.getErpArgs();
-        ErpFederation federationFromFederationArgs = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
-
-        assertEquals(nonStandardErpFederation, federationFromFederationArgs);
-    }
-
-    @Test
     void testEquals_differentCreationTime() {
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(nonStandardErpFederation.getMembers(), nonStandardErpFederation.getCreationTime().plus(1, ChronoUnit.MILLIS),
-            nonStandardErpFederation.getCreationBlockNumber(), nonStandardErpFederation.getBtcParams(), nonStandardErpFederation.getErpPubKeys(), nonStandardErpFederation.getActivationDelay()
+        FederationArgs federationArgs = new FederationArgs(nonStandardErpFederation.getMembers(), nonStandardErpFederation.getCreationTime().plus(1, ChronoUnit.MILLIS),
+            nonStandardErpFederation.getCreationBlockNumber(), nonStandardErpFederation.getBtcParams()
         );
-        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        ErpFederation otherFederation =
+            FederationFactory.buildNonStandardErpFederation(federationArgs, nonStandardErpFederation.getErpPubKeys(), nonStandardErpFederation.getActivationDelay(), activations);
 
         assertEquals(nonStandardErpFederation, otherFederation);
     }
 
     @Test
     void testEquals_differentCreationBlockNumber() {
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(nonStandardErpFederation.getMembers(), nonStandardErpFederation.getCreationTime(), nonStandardErpFederation.getCreationBlockNumber() + 1,
-            nonStandardErpFederation.getBtcParams(), nonStandardErpFederation.getErpPubKeys(), nonStandardErpFederation.getActivationDelay()
-        );
-        ErpFederation otherFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        FederationArgs federationArgs = new FederationArgs(nonStandardErpFederation.getMembers(),
+            nonStandardErpFederation.getCreationTime(), nonStandardErpFederation.getCreationBlockNumber() + 1,
+            nonStandardErpFederation.getBtcParams());
+        ErpFederation otherFederation =
+            FederationFactory.buildNonStandardErpFederation(federationArgs, nonStandardErpFederation.getErpPubKeys(), nonStandardErpFederation.getActivationDelay(), activations);
 
         assertEquals(nonStandardErpFederation, otherFederation);
     }
@@ -731,10 +717,9 @@ class NonStandardErpFederationsTest {
 
         List<FederationMember> federationMembersWithBtcKeys = FederationTestUtils.getFederationMembersWithBtcKeys(standardMultisigKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(federationMembersWithBtcKeys, creationTime, 1, btcParams,
-            emergencyMultisigKeys, activationDelay);
+        FederationArgs federationArgs = new FederationArgs(federationMembersWithBtcKeys, creationTime, 1, btcParams);
 
-        assertThrows(ErpFederationCreationException.class, () -> FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations));
+        assertThrows(ErpFederationCreationException.class, () -> FederationFactory.buildNonStandardErpFederation(federationArgs, emergencyMultisigKeys, activationDelay, activations));
     }
 
     @Test

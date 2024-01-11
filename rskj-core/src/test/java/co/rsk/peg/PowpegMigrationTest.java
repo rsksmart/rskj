@@ -135,14 +135,14 @@ class PowpegMigrationTest {
 
         Federation originalPowpeg;
         Instant creationTime = Instant.now();
-        ErpFederationArgs erpFederationArgs =
-            new ErpFederationArgs(originalPowpegMembers, creationTime, 0, btcParams, erpPubKeys, activationDelay);
+        FederationArgs federationArgs =
+            new FederationArgs(originalPowpegMembers, creationTime, 0, btcParams);
         switch (oldPowPegFederationType) {
             case nonStandardErp:
-                originalPowpeg = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+                originalPowpeg = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
                 break;
             case p2shErp:
-                originalPowpeg = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+                originalPowpeg = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
                 // TODO: CHECK REDEEMSCRIPT
                 break;
             default:
