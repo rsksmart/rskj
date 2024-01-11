@@ -9,6 +9,9 @@ import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
 
 public class RLPTestUtil {
 
+    private static final int OFFSET_SHORT_ITEM = 0x80;
+    private static final int OFFSET_LONG_ITEM = 0xb7;
+
     public static byte[] encode(Object input) {
         Value val = new Value(input);
         if (val.isList()) {
@@ -45,9 +48,6 @@ public class RLPTestUtil {
         }
         throw new RuntimeException("Unsupported type: Only accepting String, Integer and BigInteger for now");
     }
-
-    private static final int OFFSET_SHORT_ITEM = 0x80;
-    private static final int OFFSET_LONG_ITEM = 0xb7;
 
     public static int decodeInt(byte[] data, int index) {
         int b0 = data[index] & 0xFF;
