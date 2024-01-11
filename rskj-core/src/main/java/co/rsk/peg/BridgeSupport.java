@@ -582,12 +582,12 @@ public class BridgeSupport {
                 btcTx.getHash(),
                 e.getMessage()
             );
-            logger.warn("[processPegIn] {}", message);
+            logger.warn("[legacyProcessPegin] {}", message);
             throw new RegisterBtcTransactionException(message);
         }
 
         int protocolVersion = peginInformation.getProtocolVersion();
-        logger.debug("[processPegIn] Protocol version: {}", protocolVersion);
+        logger.debug("[legacyProcessPegin] Protocol version: {}", protocolVersion);
         switch (protocolVersion) {
             case 0:
                 processPegInVersionLegacy(btcTx, rskTxHash, height, peginInformation, totalAmount);
@@ -598,7 +598,7 @@ public class BridgeSupport {
             default:
                 markTxAsProcessed(btcTx);
                 String message = String.format("Invalid peg-in protocol version: %d", protocolVersion);
-                logger.warn("[processPegIn] {}", message);
+                logger.warn("[legacyProcessPegin] {}", message);
                 throw new RegisterBtcTransactionException(message);
         }
 
