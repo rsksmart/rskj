@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 public class FederationArgs {
     private final List<FederationMember> members;
@@ -29,5 +30,34 @@ public class FederationArgs {
 
     public long getCreationBlockNumber() { return creationBlockNumber; }
     public NetworkParameters getBtcParams() { return btcParams; }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        }
+
+        FederationArgs otherFederationArgs = (FederationArgs) other;
+        return allValuesAreEqual(otherFederationArgs);
+    }
+
+    @Override
+    public int hashCode() {
+        return
+            Objects.hash(getMembers(), getCreationTime(), getCreationBlockNumber(), getBtcParams());
+    }
+
+    private boolean allValuesAreEqual(FederationArgs otherFederationArgs) {
+        return
+            otherFederationArgs.getMembers().equals(this.getMembers())
+            && otherFederationArgs.getCreationTime().equals(this.getCreationTime())
+            && otherFederationArgs.getCreationBlockNumber() == this.getCreationBlockNumber()
+            && otherFederationArgs.getBtcParams().equals(this.getBtcParams());
+
+    }
 
 }

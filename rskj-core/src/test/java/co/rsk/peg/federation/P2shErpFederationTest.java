@@ -230,35 +230,27 @@ class P2shErpFederationTest {
     }
 
     @Test
-    void values_from_erpFederationArgs_equal_values_from_p2shErpFederation() {
-        ErpFederationArgs erpFederationArgs = federation.getErpArgs();
-        List<FederationMember> federationMembersFromErpArgs = erpFederationArgs.getMembers();
-        Instant creationTimeFromErpArgs = erpFederationArgs.getCreationTime();
-        long creationBlockNumberFromErpArgs = erpFederationArgs.getCreationBlockNumber();
-        NetworkParameters btcParamsFromErpArgs = erpFederationArgs.getBtcParams();
-        List<BtcECKey> emergencyKeysFromErpArgs = erpFederationArgs.getErpPubKeys();
-        long activationDelayFromErpArgs = erpFederationArgs.getActivationDelay();
-
-        List<FederationMember> members = federation.getMembers();
+    void erpFederationArgs_from_values_equals_erpFederationArgs_from_p2shErpFederation() {
+        List<FederationMember> federationMembers = federation.getMembers();
         Instant creationTime = federation.getCreationTime();
         long creationBlockNumber = federation.getCreationBlockNumber();
+        NetworkParameters btcParams = federation.getBtcParams();
+        List<BtcECKey> emergencyKeys = federation.getErpPubKeys();
+        long activationDelay = federation.getActivationDelay();
+        ErpFederationArgs erpFederationArgsFromValues =
+            new ErpFederationArgs(federationMembers, creationTime, creationBlockNumber, btcParams, emergencyKeys, activationDelay);
 
-        assertEquals(members, federationMembersFromErpArgs);
-        assertEquals(creationTime, creationTimeFromErpArgs);
-        assertEquals(creationBlockNumber, creationBlockNumberFromErpArgs);
-        assertEquals(networkParameters, btcParamsFromErpArgs);
-        assertEquals(emergencyKeys, emergencyKeysFromErpArgs);
-        assertEquals(activationDelayValue, activationDelayFromErpArgs);
+        ErpFederationArgs erpFederationArgs = federation.getErpArgs();
+        assertEquals(erpFederationArgs, erpFederationArgsFromValues);
     }
 
     @Test
     void p2shErpFederation_from_federationArgs_and_erp_values_equals_p2shErpFederation() {
         FederationArgs federationArgs = federation.getArgs();
         ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, emergencyKeys, activationDelayValue);
+        ErpFederation federationFromErpFederationArgs = FederationFactory.buildP2shErpFederation(erpFederationArgs);
 
-        ErpFederation federationFromFederationArgs = FederationFactory.buildP2shErpFederation(erpFederationArgs);
-
-        assertEquals(federation, federationFromFederationArgs);
+        assertEquals(federation, federationFromErpFederationArgs);
     }
 
     @Test

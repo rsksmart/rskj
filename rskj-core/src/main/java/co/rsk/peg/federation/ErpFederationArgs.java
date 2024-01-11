@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 
@@ -30,6 +31,36 @@ public class ErpFederationArgs extends FederationArgs{
     public List<BtcECKey> getErpPubKeys() { return erpPubKeys; }
 
     public long getActivationDelay() { return activationDelay; }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        }
+
+        ErpFederationArgs otherErpFederationArgs = (ErpFederationArgs) other;
+        return allValuesAreEqual(otherErpFederationArgs);
+    }
+
+    @Override
+    public int hashCode() {
+        return
+            Objects.hash(getMembers(), getCreationTime(), getCreationBlockNumber(), getBtcParams(), getErpPubKeys(), getActivationDelay());
+    }
+
+    private boolean allValuesAreEqual(ErpFederationArgs otherErpFederationArgs) {
+        return
+            otherErpFederationArgs.getMembers().equals(this.getMembers())
+            && otherErpFederationArgs.getCreationTime().equals(this.getCreationTime())
+            && otherErpFederationArgs.getCreationBlockNumber() == this.getCreationBlockNumber()
+            && otherErpFederationArgs.getBtcParams().equals(this.getBtcParams())
+            && otherErpFederationArgs.getErpPubKeys().equals(this.getErpPubKeys())
+            && otherErpFederationArgs.getActivationDelay() == this.getActivationDelay();
+    }
 
     public static ErpFederationArgs fromFederationArgs(FederationArgs federationArgs, List<BtcECKey> erpPubKeys, long activationDelay){
         return new ErpFederationArgs(federationArgs.getMembers(), federationArgs.getCreationTime(),

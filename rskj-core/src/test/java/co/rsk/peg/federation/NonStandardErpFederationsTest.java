@@ -259,25 +259,18 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
-    void values_from_erpFederationArgs_equal_values_from_nonStandardErpFederation() {
-        ErpFederationArgs erpFederationArgs = nonStandardErpFederation.getErpArgs();
-        List<FederationMember> federationMembersFromErpArgs = erpFederationArgs.getMembers();
-        Instant creationTimeFromErpArgs = erpFederationArgs.getCreationTime();
-        long creationBlockNumberFromErpArgs = erpFederationArgs.getCreationBlockNumber();
-        NetworkParameters btcParamsFromErpArgs = erpFederationArgs.getBtcParams();
-        List<BtcECKey> emergencyKeysFromErpArgs = erpFederationArgs.getErpPubKeys();
-        long activationDelayFromErpArgs = erpFederationArgs.getActivationDelay();
-
-        List<FederationMember> members = nonStandardErpFederation.getMembers();
+    void erpFederationArgs_from_values_equals_erpFederationArgs_from_nonStandardErpFederation() {
+        List<FederationMember> federationMembers = nonStandardErpFederation.getMembers();
         Instant creationTime = nonStandardErpFederation.getCreationTime();
         long creationBlockNumber = nonStandardErpFederation.getCreationBlockNumber();
+        NetworkParameters btcParams = nonStandardErpFederation.getBtcParams();
+        List<BtcECKey> emergencyKeys = nonStandardErpFederation.getErpPubKeys();
+        long activationDelay = nonStandardErpFederation.getActivationDelay();
+        ErpFederationArgs erpFederationArgsFromValues =
+            new ErpFederationArgs(federationMembers, creationTime, creationBlockNumber, btcParams, emergencyKeys, activationDelay);
 
-        assertEquals(members, federationMembersFromErpArgs);
-        assertEquals(creationTime, creationTimeFromErpArgs);
-        assertEquals(creationBlockNumber, creationBlockNumberFromErpArgs);
-        assertEquals(networkParameters, btcParamsFromErpArgs);
-        assertEquals(emergencyKeys, emergencyKeysFromErpArgs);
-        assertEquals(activationDelayValue, activationDelayFromErpArgs);
+        ErpFederationArgs erpFederationArgs = nonStandardErpFederation.getErpArgs();
+        assertEquals(erpFederationArgs, erpFederationArgsFromValues);
     }
 
     @Test
