@@ -40,8 +40,10 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
+import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.scoring.*;
 import co.rsk.util.HexUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -850,6 +852,20 @@ public class Web3Impl implements Web3 {
         txInfo.setTransaction(tx);
 
         return new TransactionReceiptDTO(block, txInfo, signatureCache);
+    }
+
+    @Override
+    public TransactionResultDTO[] eth_pendingTransactions() {
+        JsonNode content = txPoolModule.content();
+        JsonNode pendingTransactionsNode = content.get(TxPoolModuleImpl.PENDING);
+
+        if (pendingTransactionsNode == null || pendingTransactionsNode.isEmpty()) {
+            return new TransactionResultDTO[0];
+        }
+
+        List<TransactionResultDTO> transactionDTOs = new ArrayList<>();
+
+        return transactionDTOs.toArray(new TransactionResultDTO[0]);
     }
 
     @Override
