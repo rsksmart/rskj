@@ -259,6 +259,45 @@ class NonStandardErpFederationsTest {
     }
 
     @Test
+    void values_from_erpFederationArgs_equal_values_from_nonStandardErpFederation() {
+        ErpFederationArgs erpFederationArgs = nonStandardErpFederation.getErpArgs();
+        List<FederationMember> federationMembersFromErpArgs = erpFederationArgs.getMembers();
+        Instant creationTimeFromErpArgs = erpFederationArgs.getCreationTime();
+        long creationBlockNumberFromErpArgs = erpFederationArgs.getCreationBlockNumber();
+        NetworkParameters btcParamsFromErpArgs = erpFederationArgs.getBtcParams();
+        List<BtcECKey> emergencyKeysFromErpArgs = erpFederationArgs.getErpPubKeys();
+        long activationDelayFromErpArgs = erpFederationArgs.getActivationDelay();
+
+        List<FederationMember> members = nonStandardErpFederation.getMembers();
+        Instant creationTime = nonStandardErpFederation.getCreationTime();
+        long creationBlockNumber = nonStandardErpFederation.getCreationBlockNumber();
+
+        assertEquals(members, federationMembersFromErpArgs);
+        assertEquals(creationTime, creationTimeFromErpArgs);
+        assertEquals(creationBlockNumber, creationBlockNumberFromErpArgs);
+        assertEquals(networkParameters, btcParamsFromErpArgs);
+        assertEquals(emergencyKeys, emergencyKeysFromErpArgs);
+        assertEquals(activationDelayValue, activationDelayFromErpArgs);
+    }
+
+    @Test
+    void nonStandardErpFederation_from_federationArgs_and_erp_values_equals_nonStandardErpFederation() {
+        FederationArgs federationArgs = nonStandardErpFederation.getArgs();
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, emergencyKeys, activationDelayValue);
+        ErpFederation nonStandardErpFederationFromFederationArgs = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+
+        assertEquals(nonStandardErpFederation, nonStandardErpFederationFromFederationArgs);
+    }
+
+    @Test
+    void nonStandardErpFederation_from_erpFederationArgs_equals_nonStandardErpFederation() {
+        ErpFederationArgs erpFederationArgs = nonStandardErpFederation.getErpArgs();
+        ErpFederation federationFromFederationArgs = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+
+        assertEquals(nonStandardErpFederation, federationFromFederationArgs);
+    }
+
+    @Test
     void testEquals_differentCreationTime() {
         ErpFederationArgs erpFederationArgs = new ErpFederationArgs(nonStandardErpFederation.getMembers(), nonStandardErpFederation.getCreationTime().plus(1, ChronoUnit.MILLIS),
             nonStandardErpFederation.getCreationBlockNumber(), nonStandardErpFederation.getBtcParams(), nonStandardErpFederation.getErpPubKeys(), nonStandardErpFederation.getActivationDelay()

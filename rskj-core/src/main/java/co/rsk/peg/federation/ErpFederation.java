@@ -33,6 +33,9 @@ public class ErpFederation extends Federation {
         this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
     }
 
+    public ErpFederationArgs getErpArgs() {
+        return new ErpFederationArgs(members, creationTime, creationBlockNumber, btcParams, erpPubKeys, activationDelay);
+    }
 
     public ErpRedeemScriptBuilder getErpRedeemScriptBuilder() { return erpRedeemScriptBuilder; }
 

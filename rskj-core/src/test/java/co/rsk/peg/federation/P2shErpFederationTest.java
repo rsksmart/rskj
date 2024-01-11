@@ -230,6 +230,46 @@ class P2shErpFederationTest {
     }
 
     @Test
+    void values_from_erpFederationArgs_equal_values_from_p2shErpFederation() {
+        ErpFederationArgs erpFederationArgs = federation.getErpArgs();
+        List<FederationMember> federationMembersFromErpArgs = erpFederationArgs.getMembers();
+        Instant creationTimeFromErpArgs = erpFederationArgs.getCreationTime();
+        long creationBlockNumberFromErpArgs = erpFederationArgs.getCreationBlockNumber();
+        NetworkParameters btcParamsFromErpArgs = erpFederationArgs.getBtcParams();
+        List<BtcECKey> emergencyKeysFromErpArgs = erpFederationArgs.getErpPubKeys();
+        long activationDelayFromErpArgs = erpFederationArgs.getActivationDelay();
+
+        List<FederationMember> members = federation.getMembers();
+        Instant creationTime = federation.getCreationTime();
+        long creationBlockNumber = federation.getCreationBlockNumber();
+
+        assertEquals(members, federationMembersFromErpArgs);
+        assertEquals(creationTime, creationTimeFromErpArgs);
+        assertEquals(creationBlockNumber, creationBlockNumberFromErpArgs);
+        assertEquals(networkParameters, btcParamsFromErpArgs);
+        assertEquals(emergencyKeys, emergencyKeysFromErpArgs);
+        assertEquals(activationDelayValue, activationDelayFromErpArgs);
+    }
+
+    @Test
+    void p2shErpFederation_from_federationArgs_and_erp_values_equals_p2shErpFederation() {
+        FederationArgs federationArgs = federation.getArgs();
+        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, emergencyKeys, activationDelayValue);
+
+        ErpFederation federationFromFederationArgs = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+
+        assertEquals(federation, federationFromFederationArgs);
+    }
+
+    @Test
+    void p2shErpFederation_from_erpFederationArgs_equals_p2shErpFederation() {
+        ErpFederationArgs erpFederationArgs = federation.getErpArgs();
+        ErpFederation federationFromFederationArgs = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+
+        assertEquals(federation, federationFromFederationArgs);
+    }
+
+    @Test
     void testEquals_differentNumberOfMembers() {
         // remove federator9
         List<BtcECKey> newDefaultKeys = federation.getBtcPublicKeys();
