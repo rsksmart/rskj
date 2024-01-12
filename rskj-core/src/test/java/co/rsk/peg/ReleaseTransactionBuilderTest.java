@@ -180,19 +180,11 @@ class ReleaseTransactionBuilderTest {
                 new BtcECKey()
             )
         );
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
-            members,
-            Instant.now(),
-            0,
-            bridgeConstants.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
-        );
+        FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 0, bridgeConstants.getBtcParams());
 
-        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
-            erpFederationArgs,
-            activations
-        );
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs,
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(), activations);
 
         List<UTXO> utxos = Arrays.asList(
             new UTXO(

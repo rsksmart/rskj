@@ -424,12 +424,11 @@ class PendingFederationTest {
 
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
 
         if (isRskip353Active) {
-            expectedFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+            expectedFederation = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
         } else if (isRskip201Active) {
-            expectedFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+            expectedFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
         } else {
             expectedFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
         }
@@ -439,6 +438,8 @@ class PendingFederationTest {
             assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, builtFederation.getRedeemScript());
         }
     }
+
+    //private boolean shouldExpectStandardMultisigFederation()
 
     private int randomInRange(int min, int max) {
         return TestUtils.generateInt(PendingFederationTest.class.toString(),max - min + 1) + min;

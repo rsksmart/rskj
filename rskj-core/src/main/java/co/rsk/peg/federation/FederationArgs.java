@@ -20,14 +20,8 @@ public class FederationArgs {
         this.btcParams = btcParams;
     }
 
-    public List<FederationMember> getMembers() {
-        return members;
-    }
-
-    public Instant getCreationTime() {
-        return creationTime;
-    }
-
+    public List<FederationMember> getMembers() { return members; }
+    public Instant getCreationTime() { return creationTime; }
     public long getCreationBlockNumber() { return creationBlockNumber; }
     public NetworkParameters getBtcParams() { return btcParams; }
 
@@ -64,7 +58,6 @@ public class FederationArgs {
             && otherFederationArgs.getCreationTime().equals(this.getCreationTime())
             && otherFederationArgs.getCreationBlockNumber() == this.getCreationBlockNumber()
             && otherFederationArgs.getBtcParams().equals(this.getBtcParams());
-
     }
 
 }

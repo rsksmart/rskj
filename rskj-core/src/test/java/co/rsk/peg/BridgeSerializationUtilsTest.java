@@ -1142,12 +1142,10 @@ class BridgeSerializationUtilsTest {
                 BridgeSerializationUtils.deserializeStandardMultisigFederation(serializedTestStandardMultisigFederation, bridgeConstants.getBtcParams());
             FederationArgs deserializedTestStandardMultisigFederationArgs = deserializedTestStandardMultisigFederation.getArgs();
 
-            ErpFederationArgs erpFederationArgs =
-                ErpFederationArgs.fromFederationArgs(deserializedTestStandardMultisigFederationArgs, bridgeConstants.getErpFedPubKeysList(), bridgeConstants.getErpFedActivationDelay());
-            Federation testNonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
-                erpFederationArgs,
-                activations
-            );
+            List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+            long activationDelay = bridgeConstants.getErpFedActivationDelay();
+            Federation testNonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(deserializedTestStandardMultisigFederationArgs,
+                erpPubKeys, activationDelay, activations);
             byte[] serializedTestNonStandardErpFederation = BridgeSerializationUtils.serializeFederation(testNonStandardErpFederation);
 
             ErpFederation deserializedTestNonStandardErpFederation = BridgeSerializationUtils.deserializeNonStandardErpFederation(
@@ -1166,7 +1164,8 @@ class BridgeSerializationUtilsTest {
             }
 
             if (isRskip353Active) {
-                Federation testP2shErpFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+                Federation testP2shErpFederation = FederationFactory.buildP2shErpFederation(deserializedTestStandardMultisigFederationArgs,
+                    erpPubKeys, activationDelay);
                 byte[] serializedTestP2shErpFederation = BridgeSerializationUtils.serializeFederation(testP2shErpFederation);
 
                 Federation deserializedTestP2shErpFederation = BridgeSerializationUtils.deserializeP2shErpFederation(

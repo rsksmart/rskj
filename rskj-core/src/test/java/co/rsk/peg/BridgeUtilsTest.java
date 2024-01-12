@@ -1071,18 +1071,14 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
+        FederationArgs federationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters,
-            erpFederationPublicKeys,
-            500L
+            networkParameters
         );
-        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
-            erpFederationArgs,
-            activations
-        );
+        ErpFederation nonStandardErpFederation =
+            FederationFactory.buildNonStandardErpFederation(federationArgs, erpFederationPublicKeys, 500L, activations);
 
         // Create a pegout tx with 50 inputs and 200 outputs
         int inputSize = 50;
@@ -1118,18 +1114,14 @@ class BridgeUtilsTest {
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(
+        FederationArgs federationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters,
-            erpFederationPublicKeys,
-            500L
+            networkParameters
         );
-        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
-            erpFederationArgs,
-            activations
-        );
+        ErpFederation nonStandardErpFederation =
+            FederationFactory.buildNonStandardErpFederation(federationArgs, erpFederationPublicKeys, 500L, activations);
 
         // Create a pegout tx with 100 inputs and 50 outputs
         int inputSize = 100;
@@ -1478,11 +1470,7 @@ class BridgeUtilsTest {
         List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getErpFedPubKeysList();
         long activationDelay = bridgeConstantsRegtest.getErpFedActivationDelay();
 
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(genesisFederationArgs, erpPubKeys, activationDelay);
-        return FederationFactory.buildNonStandardErpFederation(
-            erpFederationArgs,
-            activations
-        );
+        return FederationFactory.buildNonStandardErpFederation(genesisFederationArgs, erpPubKeys, activationDelay, activations);
     }
 
     private BtcTransaction createPegOutTx(

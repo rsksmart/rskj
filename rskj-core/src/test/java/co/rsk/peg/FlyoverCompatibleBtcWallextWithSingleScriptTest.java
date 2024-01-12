@@ -55,8 +55,7 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpFedKeys, 5063);
-        nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpFedKeys, 5063, activations);
         nonStandardErpFederationList = Collections.singletonList(nonStandardErpFederation);
     }
 

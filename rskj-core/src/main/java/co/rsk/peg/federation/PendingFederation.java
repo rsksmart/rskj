@@ -117,15 +117,14 @@ public final class PendingFederation {
         // should build an erp federation due to activations
         List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
         long activationDelay = bridgeConstants.getErpFedActivationDelay();
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpPubKeys, activationDelay);
 
         if (shouldBuildNonStandardErpFederation(activations)) {
             logger.info("[buildFederation] Going to create a Non-Standard ERP Federation");
-            return FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+            return FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
         }
 
         logger.info("[buildFederation] Going to create a P2SH ERP Federation");
-        return FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
     private boolean shouldBuildStandardMultisigFederation(ActivationConfig.ForBlock activations) {

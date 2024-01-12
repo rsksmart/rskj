@@ -50,9 +50,8 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
         federationList = Collections.singletonList(federation);
 
         long activationDelay = 5063;
-        ErpFederationArgs erpFederationArgs = ErpFederationArgs.fromFederationArgs(federationArgs, erpFedKeys, activationDelay);
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(erpFederationArgs, activations);
+        nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpFedKeys, activationDelay, activations);
         nonStandardErpFederationList = Collections.singletonList(nonStandardErpFederation);
     }
 

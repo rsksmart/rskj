@@ -356,9 +356,9 @@ class BridgeSupportRegisterBtcTransactionTest {
         List<BtcECKey> erpPubKeys = bridgeMainnetConstants.getErpFedPubKeysList();
         long activationDelay = bridgeMainnetConstants.getErpFedActivationDelay();
 
-        ErpFederationArgs retiringFedArgs =
-            new ErpFederationArgs(retiringFedMembers, creationTime, retiringFedCreationBlockNumber, btcParams, erpPubKeys, activationDelay);
-        retiringFederation = FederationFactory.buildP2shErpFederation(retiringFedArgs);
+        FederationArgs retiringFedArgs =
+            new FederationArgs(retiringFedMembers, creationTime, retiringFedCreationBlockNumber, btcParams);
+        retiringFederation = FederationFactory.buildP2shErpFederation(retiringFedArgs, erpPubKeys, activationDelay);
 
         activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa07", "fa08", "fa09", "fa10", "fa11"}, true
@@ -366,9 +366,9 @@ class BridgeSupportRegisterBtcTransactionTest {
         activeFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
         List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners);
         long activeFedCreationBlockNumber = 2L;
-        ErpFederationArgs activeFedArgs =
-            new ErpFederationArgs(activeFedMembers, creationTime, activeFedCreationBlockNumber, btcParams, erpPubKeys, activationDelay);
-        activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs);
+        FederationArgs activeFedArgs =
+            new FederationArgs(activeFedMembers, creationTime, activeFedCreationBlockNumber, btcParams);
+        activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs, erpPubKeys, activationDelay);
 
         mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
 

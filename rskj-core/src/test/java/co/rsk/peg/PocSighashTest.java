@@ -66,11 +66,8 @@ class PocSighashTest {
         Instant creationTime = Instant.now();
         List<BtcECKey> erpFedPubKeys = erpFedSigners.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
 
-        ErpFederationArgs erpFederationArgs =
-            new ErpFederationArgs(fedMembers, creationTime, 0L, networkParameters, erpFedPubKeys, erpFedActivationDelay);
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(
-            erpFederationArgs
-        );
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, networkParameters);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpFedPubKeys, erpFedActivationDelay);
 
         List<FedUtxo> utxos = new ArrayList<>();
         for (int i = 0; i < 7; i++) {
@@ -139,9 +136,8 @@ class PocSighashTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederationArgs erpFederationArgs =
-            new ErpFederationArgs(fedMembers, creationTime, 0L, networkParameters, erpPubKeys, erpFedActivationDelay);
-        ErpFederation p2shErpFederation = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, networkParameters);
+        ErpFederation p2shErpFederation = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
         List<FedUtxo> utxos = new ArrayList<>();
         BtcTransaction peginTx = new BtcTransaction(networkParameters);
@@ -233,9 +229,8 @@ class PocSighashTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederationArgs erpFederationArgs =
-            new ErpFederationArgs(fedMembers, creationTime, 0L, networkParameters, erpPubKeys, erpFedActivationDelay);
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(erpFederationArgs);
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, networkParameters);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
         List<FedUtxo> utxos = new ArrayList<>();
         for (int i = 0; i < 7; i++) {
@@ -282,23 +277,17 @@ class PocSighashTest {
         NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
         int erpFedActivationDelay = 720;
 
-        List<FedSigner> fedMembers = FedSigner.listOf("federator1", "federator2", "federator6");
+        List<FedSigner> fedSigners = FedSigner.listOf("federator1", "federator2", "federator6");
+        List<FederationMember> fedMembers = fedSigners.stream().map(FedSigner::getFed).collect(Collectors.toList());
         List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+        List<BtcECKey> erpPubKeys = erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
-            Instant.now(),
-            0L,
-            networkParameters,
-            erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
-            erpFedActivationDelay
-        );
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(
-            erpFederationArgs
-        );
+        FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.now(), 0L, networkParameters);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
         Address expectedAddress = Address.fromBase58(
             networkParameters,
@@ -328,7 +317,7 @@ class PocSighashTest {
             networkParameters,
             erpFedActivationDelay,
             fed,
-            fedMembers,
+            fedSigners,
             false,
             utxos,
             Coin.valueOf(1_107_748L),
@@ -379,11 +368,8 @@ class PocSighashTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        ErpFederationArgs erpFederationArgs =
-            new ErpFederationArgs(fedMembers, creationTime, 0L, networkParameters, erpPubKeys, erpFedActivationDelay);
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(
-            erpFederationArgs
-        );
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, networkParameters);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
         Address expectedAddress = Address.fromBase58(
             networkParameters,
@@ -466,16 +452,8 @@ class PocSighashTest {
             FedSigner::getFed
         ).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
 
-        ErpFederationArgs erpFederationArgs = new ErpFederationArgs(fedMembers,
-            Instant.now(),
-            0L,
-            networkParameters,
-            erpPubKeys,
-            erpFedActivationDelay
-        );
-        ErpFederation fed = FederationFactory.buildP2shErpFederation(
-            erpFederationArgs
-        );
+        FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.now(), 0L, networkParameters);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
         Address expectedAddress = Address.fromBase58(
             networkParameters,

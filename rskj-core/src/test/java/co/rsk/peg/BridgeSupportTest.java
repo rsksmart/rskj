@@ -6593,16 +6593,9 @@ class BridgeSupportTest {
         when(preRSKIP271_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
         when(preRSKIP271_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(false);
 
-        ErpFederationArgs p2shFedArgs = new ErpFederationArgs(members,
-            Instant.now(),
-            1L,
-            bridgeConstants.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
-        );
-        Federation p2shFed = FederationFactory.buildP2shErpFederation(
-            p2shFedArgs
-        );
+        FederationArgs p2shFedArgs = new FederationArgs(members, Instant.now(), 1L, bridgeConstants.getBtcParams());
+        Federation p2shFed =
+            FederationFactory.buildP2shErpFederation(p2shFedArgs, bridgeConstants.getErpFedPubKeysList(), bridgeConstants.getErpFedActivationDelay());
 
         Stream<Arguments> preRskip271 = Stream.of(
             // active fed is standard and pegoutRequestsCount is equal to zero
@@ -6662,16 +6655,13 @@ class BridgeSupportTest {
         when(preRSKIP385_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
         when(preRSKIP385_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(false);
 
-        ErpFederationArgs p2shFedArgs = new ErpFederationArgs(members,
+        FederationArgs p2shFedArgs = new FederationArgs(members,
             Instant.now(),
             1L,
-            bridgeConstants.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
+            bridgeConstants.getBtcParams()
         );
-        Federation p2shFed = FederationFactory.buildP2shErpFederation(
-            p2shFedArgs
-        );
+        Federation p2shFed =
+            FederationFactory.buildP2shErpFederation(p2shFedArgs, bridgeConstants.getErpFedPubKeysList(), bridgeConstants.getErpFedActivationDelay());
 
         Stream<Arguments> preRskip385 = Stream.of(
             // active fed is standard and pegoutRequestsCount is equal to zero
@@ -6730,16 +6720,13 @@ class BridgeSupportTest {
             PegTestUtils.createRandomBtcECKeys(7)
         );
 
-        ErpFederationArgs p2shFedArgs = new ErpFederationArgs(members,
+        FederationArgs p2shFedArgs = new FederationArgs(members,
             Instant.now(),
             1L,
-            bridgeConstants.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
+            bridgeConstants.getBtcParams()
         );
-        ErpFederation p2shFed = FederationFactory.buildP2shErpFederation(
-            p2shFedArgs
-        );
+        ErpFederation p2shFed =
+            FederationFactory.buildP2shErpFederation(p2shFedArgs, bridgeConstants.getErpFedPubKeysList(), bridgeConstants.getErpFedActivationDelay());
 
         Stream<Arguments> postRskip385 = Stream.of(
             // active fed is standard and pegoutRequestsCount is equal to zero
