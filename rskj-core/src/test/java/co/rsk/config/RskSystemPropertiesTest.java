@@ -228,7 +228,7 @@ class RskSystemPropertiesTest {
 
     @Test
     void testGasPriceMultiplier() {
-        assertEquals(Double.valueOf(105), config.gasPriceMultiplier());
+        assertEquals(1.05, config.gasPriceMultiplier());
     }
 
     @Test
@@ -239,7 +239,7 @@ class RskSystemPropertiesTest {
                         "rpc.gasPriceMultiplier = null" +
                         " }").withFallback(rawConfig));
 
-        assertEquals(Double.valueOf(110), testSystemProperties.gasPriceMultiplier());
+        assertEquals(1.1, testSystemProperties.gasPriceMultiplier());
     }
 
     @Test

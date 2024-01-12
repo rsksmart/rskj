@@ -152,7 +152,7 @@ class GasPriceTrackerTest {
 
     @Test
     void getGasPrice_PriceWindowFilled_BestBlockReceivedWithGreaterPrice_GasPriceMultiplierOverWritten_ReturnsBestBlockAdjustedPriceWithNewBuffer() {
-        GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore, 105.0);
+        GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore, 1.05);
 
         Block bestBlock = makeBlock(Coin.valueOf(50_000_000_000L), 0, i -> null);
         Block block = makeBlock(Coin.valueOf(30_000_000_000L), TOTAL_SLOTS, i -> makeTx(Coin.valueOf(40_000_000_000L)));
