@@ -236,12 +236,11 @@ class P2shErpFederationTest {
         Instant creationTime = federation.getCreationTime();
         long creationBlockNumber = federation.getCreationBlockNumber();
         NetworkParameters btcParams = federation.getBtcParams();
-        List<BtcECKey> emergencyKeys = federation.getErpPubKeys();
-        long activationDelay = federation.getActivationDelay();
+
         FederationArgs federationArgsFromValues =
             new FederationArgs(federationMembers, creationTime, creationBlockNumber, btcParams);
-
         FederationArgs federationArgs = federation.getArgs();
+
         assertEquals(federationArgs, federationArgsFromValues);
     }
 

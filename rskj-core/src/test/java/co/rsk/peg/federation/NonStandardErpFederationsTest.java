@@ -265,9 +265,10 @@ class NonStandardErpFederationsTest {
         Instant creationTime = nonStandardErpFederation.getCreationTime();
         long creationBlockNumber = nonStandardErpFederation.getCreationBlockNumber();
         NetworkParameters btcParams = nonStandardErpFederation.getBtcParams();
-        FederationArgs federationArgsFromValues = new FederationArgs(federationMembers, creationTime, creationBlockNumber, btcParams);
 
+        FederationArgs federationArgsFromValues = new FederationArgs(federationMembers, creationTime, creationBlockNumber, btcParams);
         FederationArgs federationArgs = nonStandardErpFederation.getArgs();
+
         assertEquals(federationArgs, federationArgsFromValues);
     }
 
