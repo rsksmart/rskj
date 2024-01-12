@@ -32,6 +32,13 @@ public class FederationArgs {
     public NetworkParameters getBtcParams() { return btcParams; }
 
     @Override
+    public String toString() {
+        return String.format("Got federation args with values %s, %s, %d, %s",
+            getMembers(), getCreationTime(), getCreationBlockNumber(), getBtcParams()
+        );
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;

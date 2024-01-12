@@ -33,6 +33,13 @@ public class ErpFederationArgs extends FederationArgs{
     public long getActivationDelay() { return activationDelay; }
 
     @Override
+    public String toString() {
+        return String.format("Got erp federation args with values %s, %s, %d, %s, %s, %d",
+            getMembers(), getCreationTime(), getCreationBlockNumber(), getBtcParams(), getErpPubKeys(), getActivationDelay()
+        );
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (this == other) {
             return true;
