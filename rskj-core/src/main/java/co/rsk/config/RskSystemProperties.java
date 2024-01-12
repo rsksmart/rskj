@@ -31,7 +31,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 
 import javax.annotation.Nullable;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -52,10 +51,10 @@ public class RskSystemProperties extends SystemProperties {
 
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
-    private static final String MINER_GAS_PRICE_BUFFER_CONFIG = "miner.gasPriceBuffer";
     private static final String RPC_MODULES_PATH = "rpc.modules";
     private static final String RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY = "rpc.logs.maxBlocksToQuery";
     private static final String RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN = "rpc.logs.maxLogsToReturn";
+    private static final String RPC_GAS_PRICE_MULTIPLIER_CONFIG = "rpc.gasPriceMultiplier";
 
     private static final int CHUNK_SIZE = 192;
 
@@ -187,13 +186,13 @@ public class RskSystemProperties extends SystemProperties {
         return getBoolean("wallet.enabled", false);
     }
 
-    public BigInteger gasPriceBuffer() {
-        long gasPriceBuffer = getLong(MINER_GAS_PRICE_BUFFER_CONFIG, 10L);
+    public double gasPriceMultiplier() {
+        double gasPriceMultiplier = getDouble(RPC_GAS_PRICE_MULTIPLIER_CONFIG, 10);
 
-        if(gasPriceBuffer > 0) {
-            return BigInteger.valueOf(gasPriceBuffer + 100L);
+        if(gasPriceMultiplier > 0) {
+            return gasPriceMultiplier + 100;
         } else {
-            throw new RskConfigurationException(MINER_GAS_PRICE_BUFFER_CONFIG + " must be greater than 0");
+            throw new RskConfigurationException(RPC_GAS_PRICE_MULTIPLIER_CONFIG + " must be greater than 0");
         }
     }
 

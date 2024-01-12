@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
-import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -228,28 +227,28 @@ class RskSystemPropertiesTest {
     }
 
     @Test
-    void testGasPriceBuffer() {
-        assertEquals(BigInteger.valueOf(105), config.gasPriceBuffer());
+    void testGasPriceMultiplier() {
+        assertEquals(Double.valueOf(105), config.gasPriceMultiplier());
     }
 
     @Test
-    void testGasPriceBufferWithNull() {
-        // Set miner.gasPriceBuffer to null which yields the same result as not finding the path
+    void testGasPriceMultiplierWithNull() {
+        // Set miner.gasPriceMultiplier to null which yields the same result as not finding the path
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
                 ConfigFactory.parseString("{" +
-                        "miner.gasPriceBuffer = null" +
+                        "rpc.gasPriceMultiplier = null" +
                         " }").withFallback(rawConfig));
 
-        assertEquals(BigInteger.valueOf(110), testSystemProperties.gasPriceBuffer());
+        assertEquals(Double.valueOf(110), testSystemProperties.gasPriceMultiplier());
     }
 
     @Test
-    void testGasPriceBufferThrowsError() {
+    void testGasPriceMultiplierThrowsError() {
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
                 ConfigFactory.parseString("{" +
-                        "miner.gasPriceBuffer = invalid" +
+                        "rpc.gasPriceMultiplier = invalid" +
                         " }").withFallback(rawConfig));
 
-        Assertions.assertThrows(ConfigException.WrongType.class, testSystemProperties::gasPriceBuffer);
+        Assertions.assertThrows(ConfigException.WrongType.class, testSystemProperties::gasPriceMultiplier);
     }
 }

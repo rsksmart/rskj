@@ -131,7 +131,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
-import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -556,10 +555,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     public GasPriceTracker getGasPriceTracker() {
         checkIfNotClosed();
 
-        BigInteger gasPriceBuffer = getRskSystemProperties().gasPriceBuffer();
+        double gasPriceMultiplier = getRskSystemProperties().gasPriceMultiplier();
 
         if (this.gasPriceTracker == null) {
-            this.gasPriceTracker = GasPriceTracker.create(getBlockStore(), gasPriceBuffer);
+            this.gasPriceTracker = GasPriceTracker.create(getBlockStore(), gasPriceMultiplier);
         }
         return this.gasPriceTracker;
     }

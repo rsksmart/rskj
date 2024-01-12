@@ -29,6 +29,7 @@ import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -52,7 +53,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
     private static final double BLOCK_COMPLETION_PERCENT_FOR_FEE_MARKET_WORKING = 0.9;
 
     private static final BigInteger BI_100 = BigInteger.valueOf(100);
-    private static final BigInteger DEFAULT_BI_110 = BigInteger.valueOf(110);
+    private static final double DEFAULT_GAS_PRICE_MULTIPLIER = 110.0;
 
     private final Coin[] txWindow = new Coin[TX_WINDOW_SIZE];
 
@@ -60,7 +61,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private final AtomicReference<Coin> bestBlockPriceRef = new AtomicReference<>();
     private final BlockStore blockStore;
-    private final BigInteger gasPriceBuffer;
+    private final BigInteger gasPriceMultiplier;
 
     private Coin defaultPrice = Coin.valueOf(20_000_000_000L);
     private int txIdx = TX_WINDOW_SIZE - 1;
@@ -69,17 +70,17 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private Coin lastVal;
 
-    private GasPriceTracker(BlockStore blockStore, BigInteger configBuffer) {
+    private GasPriceTracker(BlockStore blockStore, Double configMultiplier) {
         this.blockStore = blockStore;
-        this.gasPriceBuffer = configBuffer;
+        this.gasPriceMultiplier = BigDecimal.valueOf(configMultiplier).toBigInteger();
     }
 
     public static GasPriceTracker create(BlockStore blockStore) {
-        return create(blockStore, DEFAULT_BI_110);
+        return create(blockStore, DEFAULT_GAS_PRICE_MULTIPLIER);
     }
 
-    public static GasPriceTracker create(BlockStore blockStore, BigInteger configBuffer) {
-        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore, configBuffer);
+    public static GasPriceTracker create(BlockStore blockStore, Double configMultiplier) {
+        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore, configMultiplier);
         gasPriceTracker.initializeWindowsFromDB();
         return gasPriceTracker;
     }
@@ -128,7 +129,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
             return lastVal;
         }
 
-        return Coin.max(lastVal, bestBlockPrice.multiply(gasPriceBuffer)
+        return Coin.max(lastVal, bestBlockPrice.multiply(gasPriceMultiplier)
                 .divide(BI_100));
     }
 
