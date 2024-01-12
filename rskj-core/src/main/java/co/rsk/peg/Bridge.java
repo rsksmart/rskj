@@ -17,6 +17,8 @@
  */
 package co.rsk.peg;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP_ARROWHEAD;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -37,6 +39,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
@@ -223,6 +226,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private final BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory;
 
     private final SignatureCache signatureCache;
+    private MsgType msgType;
 
     public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
                   BridgeSupportFactory bridgeSupportFactory, SignatureCache signatureCache) {
@@ -316,6 +320,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Block rskExecutionBlock = args.getExecutionBlock();
         this.activations = activationConfig.forBlock(rskExecutionBlock.getNumber());
         this.rskTx = args.getTransaction();
+        this.msgType = args.getMsgType();
 
         this.bridgeSupport = bridgeSupportFactory.newInstance(
                 args.getRepository(),
@@ -358,6 +363,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
                 String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
                 logger.info(errorMessage);
+                throw new BridgeIllegalArgumentException(errorMessage);
+            }
+
+            if (activations.isActive(RSKIP_ARROWHEAD) &&
+                !bridgeParsedData.bridgeMethod.acceptsThisTypeOfCall(this.activations, this.msgType)) {
+                String errorMessage = String.format("Call type (%s) not accepted by %s. Returning without execution.", this.msgType.name(),  bridgeParsedData.bridgeMethod.getFunction().name);
+                logger.info(errorMessage);
+                // TODO: determine which type of exception makes sense for this case
                 throw new BridgeIllegalArgumentException(errorMessage);
             }
 

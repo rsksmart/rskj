@@ -92,6 +92,7 @@ public enum ConsensusRule {
     RSKIP400("rskip400"), // From EIP-2028 calldata gas cost reduction
     RSKIP412("rskip412"), // From EIP-3198 BASEFEE opcode
     RSKIP415("rskip415"),
+    RSKIP_ARROWHEAD("RSKIP_ARROWHEAD"), // TODO: define what activation we will be using for the bridge patch
     ;
 
     private String configKey;
