@@ -51,6 +51,11 @@ public class HexNumberParam implements Serializable {
         return this.hexNumber;
     }
 
+    @Override
+    public String toString() {
+        return this.hexNumber;
+    }
+
     public static class Deserializer extends StdDeserializer<HexNumberParam> {
         private static final long serialVersionUID = 1L;
 
