@@ -41,6 +41,7 @@ import co.rsk.metrics.HashRateCalculatorMining;
 import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.mine.*;
 import co.rsk.net.*;
+import co.rsk.net.discovery.KnownPeersSaver;
 import co.rsk.net.discovery.PeerExplorer;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
@@ -252,7 +253,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
-
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
 
     private volatile boolean closed;
@@ -1584,17 +1584,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getPublicIp(),
                     rskSystemProperties.getPeerPort()
             );
-            List<String> initialBootNodes = rskSystemProperties.peerDiscoveryIPList();
-            List<Node> activePeers = rskSystemProperties.peerActive();
-            if (activePeers != null) {
-                for (Node n : activePeers) {
-                    InetSocketAddress address = n.getAddress();
-                    initialBootNodes.add(address.getHostName() + ":" + address.getPort());
-                }
+
+            KnownPeersSaver knownPeersSaver = null;
+            if(rskSystemProperties.usePeersFromLastSession()) {
+                knownPeersSaver = new KnownPeersSaver(getRskSystemProperties().getLastKnewPeersFilePath());
+
             }
+
             int bucketSize = rskSystemProperties.discoveryBucketSize();
             peerExplorer = new PeerExplorer(
-                    initialBootNodes,
+                    getInitialBootNodes(),
                     localNode,
                     new NodeDistanceTable(KademliaOptions.BINS, bucketSize, localNode),
                     key,
@@ -1604,11 +1603,39 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.networkId(),
                     getPeerScoringManager(),
                     rskSystemProperties.allowMultipleConnectionsPerHostPort(),
-                    rskSystemProperties.peerDiscoveryMaxBootRetries()
+                    rskSystemProperties.peerDiscoveryMaxBootRetries(),
+                    knownPeersSaver
             );
         }
 
         return peerExplorer;
+    }
+
+    List<String> getInitialBootNodes() {
+        List<String> initialBootNodes = new ArrayList<>();
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        List<String> peerDiscoveryIPList = rskSystemProperties.peerDiscoveryIPList();
+        if (peerDiscoveryIPList != null) {
+            initialBootNodes.addAll(peerDiscoveryIPList);
+        }
+        List<Node> activePeers = rskSystemProperties.peerActive();
+        if (activePeers != null) {
+            for (Node n : activePeers) {
+                InetSocketAddress address = n.getAddress();
+                initialBootNodes.add(address.getHostName() + ":" + address.getPort());
+            }
+        }
+
+        if (rskSystemProperties.usePeersFromLastSession()) {
+            List<String> peerLastSession = rskSystemProperties.peerLastSession();
+            logger.debug("Loading peers from previous session: {}",peerLastSession);
+            for(String peer: peerLastSession) {
+                if (!initialBootNodes.contains(peer)) {
+                    initialBootNodes.add(peer);
+                }
+            }
+        }
+        return initialBootNodes;
     }
 
     private BlockChainLoader getBlockChainLoader() {

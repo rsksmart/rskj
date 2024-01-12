@@ -145,7 +145,7 @@ public class NodeRunnerImpl implements NodeRunner {
         logger.info("Shutting down RSK node");
 
         for (int i = internalServices.size() - 1; i >= 0; i--) {
-            internalServices.get(i).stop();
+                internalServices.get(i).stop();
         }
 
         logger.info("RSK node Shut down");

@@ -44,15 +44,12 @@ import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class RskContextTest {
@@ -89,10 +86,10 @@ class RskContextTest {
 
         Path resolvedPath = rskContext.resolveCacheSnapshotPath(baseStorePath);
 
-        Assertions.assertNotNull(resolvedPath);
+        assertNotNull(resolvedPath);
 
         String pathSuffix = resolvedPath.toString().replace(baseStorePath.toString(), "");
-        Assertions.assertEquals("/rskcache", pathSuffix);
+        assertEquals("/rskcache", pathSuffix);
     }
 
     @Test
@@ -186,7 +183,7 @@ class RskContextTest {
 
         rskContext.buildInternalServices();
 
-        Assertions.assertNotNull(rskContext.getPeerScoringReporterService());
+        assertNotNull(rskContext.getPeerScoringReporterService());
         Assertions.assertTrue(rskContext.getPeerScoringReporterService().initialized());
     }
 
@@ -253,7 +250,7 @@ class RskContextTest {
                     method.invoke(rskContext, new Object[method.getParameterCount()]);
                     Assertions.fail(method.getName() + " should throw an exception when called on closed context");
                 } catch (InvocationTargetException e) {
-                    Assertions.assertEquals("RSK Context is closed and cannot be in use anymore", e.getTargetException().getMessage());
+                    assertEquals("RSK Context is closed and cannot be in use anymore", e.getTargetException().getMessage());
                 }
             }
         }
@@ -277,6 +274,19 @@ class RskContextTest {
         Assertions.assertTrue(rskContext.isClosed());
     }
 
+    @Test
+    void initialNodesAreLoadedWithoutDuplications(){
+        List<String> peerDiscoveryIPList = Arrays.asList("1.1.1.1:1234","1.2.3.4:4444");
+        doReturn(peerDiscoveryIPList).when(testProperties).peerDiscoveryIPList();
+        List<String> peersFromLastSession = Arrays.asList("4.3.2.1:4444","1.1.1.1:1234");
+        doReturn(peersFromLastSession).when(testProperties).peerLastSession();
+        doReturn(true).when(testProperties).usePeersFromLastSession();
+        List<String> initialBootNodes = rskContext.getInitialBootNodes();
+        assertNotNull(initialBootNodes);
+        assertEquals(3, initialBootNodes.size(), "Initial nodes should be 3");
+        assertEquals(initialBootNodes.stream().distinct().count(), initialBootNodes.size(), "Initial nodes should not have duplicates");
+    }
+
     private RskContext makeRskContext() {
         return new RskContext(new String[0]) {
             @Override
@@ -292,12 +302,12 @@ class RskContextTest {
             @Override
             public synchronized List<InternalService> buildInternalServices() {
                 // instantiate LevelDB instances which should be closed when the context is being closed
-                Assertions.assertNotNull(getBlockStore());
-                Assertions.assertNotNull(getTrieStore());
-                Assertions.assertNotNull(getReceiptStore());
-                Assertions.assertNotNull(getStateRootsStore());
-                Assertions.assertNotNull(getBlockStore());
-                Assertions.assertNotNull(getWallet());
+                assertNotNull(getBlockStore());
+                assertNotNull(getTrieStore());
+                assertNotNull(getReceiptStore());
+                assertNotNull(getStateRootsStore());
+                assertNotNull(getBlockStore());
+                assertNotNull(getWallet());
 
                 return Collections.singletonList(internalService);
             }

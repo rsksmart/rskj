@@ -40,10 +40,8 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by mario on 15/02/17.
@@ -264,7 +262,7 @@ class PeerExplorerTest {
         channel.clearEvents();
         channel.channelRead0(ctx, incomingPongEvent);
         assertEquals(1, peerExplorer.getNodes().size());
-
+        assertEquals(1,peerExplorer.getKnownHosts().size());
         peerExplorer.dispose();
     }
 
@@ -716,6 +714,27 @@ class PeerExplorerTest {
 
         Assertions.assertEquals(0, peerExplorer.getRetryCounter(), "No retries should have occurred");
     }
+
+    @Test
+    void disposeShouldSaveKnownPeers() {
+        KnownPeersSaver knownPeersSaver = mock(KnownPeersSaver.class);
+        PeerExplorer peerExplorer = new PeerExplorer(Collections.emptyList(), mock(Node.class), mock(NodeDistanceTable.class), mock(ECKey.class), 199, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class), true, 0, knownPeersSaver);
+
+        peerExplorer.dispose();
+
+        verify(knownPeersSaver, times(1)).savePeers(any());
+
+    }
+
+    @Test
+    void disposeWithNowKnownPeersServiceWorks() {
+        PeerExplorer peerExplorer = new PeerExplorer(Collections.emptyList(), mock(Node.class), mock(NodeDistanceTable.class), mock(ECKey.class), 199, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class), true, 0);
+
+        assertNotEquals(ExecState.FINISHED, peerExplorer.getState());
+        peerExplorer.dispose();
+        assertEquals(ExecState.FINISHED, peerExplorer.getState());
+    }
+
 
     private boolean containsNodeId(String nodeId, List<Node> nodes) {
         return nodes.stream().map(Node::getHexId).anyMatch(h -> StringUtils.equals(h, nodeId));
