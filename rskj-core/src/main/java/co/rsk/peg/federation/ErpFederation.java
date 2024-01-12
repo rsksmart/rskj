@@ -8,6 +8,8 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.RedeemScriptCreationException;
+import co.rsk.peg.utils.EcKeyUtils;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -29,10 +31,9 @@ public class ErpFederation extends Federation {
         int formatVersion
     ) {
         super(federationArgs, formatVersion);
-
         validateEmergencyKeys(erpPubKeys);
 
-        this.erpPubKeys = erpPubKeys;
+        this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
         this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
     }
