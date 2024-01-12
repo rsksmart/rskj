@@ -20,8 +20,8 @@
 package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.InetAddressUtils;
@@ -175,6 +175,7 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private void addToActives(Channel peer) {
+
         if (peer.isUsingNewProtocol() || peer.hasEthStatusSucceeded()) {
             syncPool.add(peer);
             synchronized (activePeersLock) {

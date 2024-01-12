@@ -93,10 +93,20 @@ public class PeerExplorer {
 
     private UDPChannel udpChannel;
 
+    private KnownPeersSaver knownPeersSaver;
+
     public PeerExplorer(List<String> initialBootNodes,
                         Node localNode, NodeDistanceTable distanceTable, ECKey key,
                         long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
                         PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHostPort, long maxBootRetries) {
+        this(initialBootNodes, localNode, distanceTable, key, reqTimeOut, updatePeriod, cleanPeriod, networkId, peerScoringManager, allowMultipleConnectionsPerHostPort, maxBootRetries, null);
+    }
+
+    public PeerExplorer(List<String> initialBootNodes,
+                        Node localNode, NodeDistanceTable distanceTable, ECKey key,
+                        long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
+                        PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHostPort,
+                        long maxBootRetries, KnownPeersSaver knownPeersSaver) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
@@ -108,13 +118,13 @@ public class PeerExplorer {
         this.cleaner = new PeerExplorerCleaner(updatePeriod, cleanPeriod, this);
         this.challengeManager = new NodeChallengeManager();
         this.requestTimeout = reqTimeOut;
-
         this.peerScoringManager = peerScoringManager;
 
         this.knownHosts = new ConcurrentHashMap<>();
         this.allowMultipleConnectionsPerHostPort = allowMultipleConnectionsPerHostPort;
 
         this.maxBootRetries = maxBootRetries;
+        this.knownPeersSaver = knownPeersSaver;
     }
 
     void start() {
@@ -136,6 +146,10 @@ public class PeerExplorer {
     }
 
     public synchronized void dispose() {
+        if(knownPeersSaver != null) {
+            knownPeersSaver.savePeers(getKnownHosts());
+        }
+
         if (state == ExecState.FINISHED) {
             logger.warn("Cannot dispose peer explorer as current state is {}", state);
             return;
@@ -600,5 +614,9 @@ public class PeerExplorer {
         }
 
         return address != null && this.peerScoringManager.isAddressBanned(address) || this.peerScoringManager.isNodeIDBanned(node.getId());
+    }
+
+    List<String> getKnownHosts(){
+        return new ArrayList<>(knownHosts.keySet());
     }
 }
