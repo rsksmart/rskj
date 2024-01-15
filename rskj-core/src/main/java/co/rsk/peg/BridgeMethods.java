@@ -45,7 +45,7 @@ public enum BridgeMethods {
         (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKey,
         activations -> !activations.isActive(RSKIP123),
         fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+        CallTypeHelper.RESTRICTED_TO_CALL
     ),
     ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY(
         CallTransaction.Function.fromSignature(
@@ -57,7 +57,7 @@ public enum BridgeMethods {
         (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKeyMultikey,
         activations -> activations.isActive(RSKIP123),
         fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+        CallTypeHelper.RESTRICTED_TO_CALL
     ),
     ADD_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -69,7 +69,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
             activations -> !activations.isActive(RSKIP87),
             fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+        CallTypeHelper.RESTRICTED_TO_CALL
     ),
     ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -81,7 +81,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
             activations -> activations.isActive(RSKIP87),
             fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+        CallTypeHelper.RESTRICTED_TO_CALL
     ),
     ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -93,7 +93,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
             activations -> activations.isActive(RSKIP87),
             fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+        CallTypeHelper.RESTRICTED_TO_CALL
     ),
     ADD_SIGNATURE(
         CallTransaction.Function.fromSignature(
@@ -104,7 +104,7 @@ public enum BridgeMethods {
         fixedCost(70000L),
         Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::addSignature, "addSignature"),
         fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+        CallTypeHelper.RESTRICTED_TO_CALL
     ),
     COMMIT_FEDERATION(
             CallTransaction.Function.fromSignature(
@@ -115,7 +115,7 @@ public enum BridgeMethods {
             fixedCost(38000L),
             (BridgeMethodExecutorTyped) Bridge::commitFederation,
             fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+        CallTypeHelper.RESTRICTED_TO_CALL
     ),
     CREATE_FEDERATION(
             CallTransaction.Function.fromSignature(
@@ -126,7 +126,7 @@ public enum BridgeMethods {
             fixedCost(11000L),
             (BridgeMethodExecutorTyped) Bridge::createFederation,
             fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+        CallTypeHelper.RESTRICTED_TO_CALL
     ),
     GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT(
             CallTransaction.Function.fromSignature(
@@ -148,7 +148,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight,
             activations -> activations.isActive(RSKIP89),
             fixedPermission(true),
-        CallTypeHelper.UNRESTRICTED_METHOD
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR(
             CallTransaction.Function.fromSignature(
@@ -160,7 +160,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockLocator,
             activations -> !activations.isActive(RSKIP89),
             fixedPermission(true),
-        CallTypeHelper.UNRESTRICTED_METHOD
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH(
             CallTransaction.Function.fromSignature(
@@ -172,7 +172,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth,
             activations -> activations.isActive(RSKIP89),
             fixedPermission(true),
-        CallTypeHelper.UNRESTRICTED_METHOD
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_TRANSACTION_CONFIRMATIONS(
             CallTransaction.Function.fromSignature(
@@ -184,7 +184,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
             activations -> activations.isActive(RSKIP122),
             fixedPermission(false),
-        CallTypeHelper.UNRESTRICTED_METHOD
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
             CallTransaction.Function.fromSignature(
@@ -195,7 +195,7 @@ public enum BridgeMethods {
             fixedCost(22000L),
             (BridgeMethodExecutorTyped) Bridge::getBtcTxHashProcessedHeight,
             fixedPermission(true),
-        CallTypeHelper.UNRESTRICTED_METHOD
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -716,13 +716,13 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getEstimatedFeesForNextPegOutEvent,
             activations -> activations.isActive(RSKIP271),
             fixedPermission(false),
-        CallTypeHelper.UNRESTRICTED_METHOD
+        CallTypeHelper.ALLOW_STATIC_CALL
     );
 
     private static class CallTypeHelper {
-        private static final Predicate<MsgType> UNRESTRICTED_METHOD = callType ->
+        private static final Predicate<MsgType> ALLOW_STATIC_CALL = callType ->
             callType == MsgType.CALL || callType == MsgType.STATICCALL;
-        private static final Predicate<MsgType> RESTRICTED_TO_CALL_METHOD =  callType -> callType == MsgType.CALL;
+        private static final Predicate<MsgType> RESTRICTED_TO_CALL =  callType -> callType == MsgType.CALL;
     }
 
     private final CallTransaction.Function function;
@@ -744,7 +744,7 @@ public enum BridgeMethods {
             executor,
             activations -> Boolean.TRUE,
             callPermissionProvider,
-            CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+            CallTypeHelper.RESTRICTED_TO_CALL
         );
     }
 
@@ -794,7 +794,7 @@ public enum BridgeMethods {
             executor,
             isEnabled,
             callPermissionProvider,
-            CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+            CallTypeHelper.RESTRICTED_TO_CALL
         );
     }
 
