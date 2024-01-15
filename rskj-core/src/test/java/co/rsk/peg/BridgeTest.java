@@ -60,7 +60,7 @@ class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);
 
-        byte[] data = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode(new Object[]{});
+        byte[] data = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode();
 
         assertNull(bridge.execute(data));
     }
@@ -71,12 +71,12 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getActivePowpegRedeemScript()).thenReturn(
-                Optional.of(BridgeRegTestConstants.getInstance().getGenesisFederation().getRedeemScript())
+            Optional.of(BridgeRegTestConstants.getInstance().getGenesisFederation().getRedeemScript())
         );
 
         Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);
 
-        byte[] data = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode(new Object[]{});
+        byte[] data = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode();
         byte[] result = (byte[]) BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().decodeResult(bridge.execute(data))[0];
 
         assertArrayEquals(constants.bridgeConstants.getGenesisFederation().getRedeemScript().getProgram(), result);
@@ -89,7 +89,7 @@ class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
-        byte[] data = BridgeMethods.GET_LOCKING_CAP.getFunction().encode(new Object[]{});
+        byte[] data = BridgeMethods.GET_LOCKING_CAP.getFunction().encode();
 
         assertNull(bridge.execute(data));
     }
@@ -104,7 +104,7 @@ class BridgeTest {
         // Don't really care about the internal logic, just checking if the method is active
         when(bridgeSupportMock.getLockingCap()).thenReturn(Coin.COIN);
 
-        byte[] data = Bridge.GET_LOCKING_CAP.encode(new Object[]{});
+        byte[] data = Bridge.GET_LOCKING_CAP.encode();
         byte[] result = bridge.execute(data);
         assertEquals(Coin.COIN.getValue(), ((BigInteger) Bridge.GET_LOCKING_CAP.decodeResult(result)[0]).longValue());
         // Also test the method itself
@@ -118,7 +118,7 @@ class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
-        byte[] data = BridgeMethods.INCREASE_LOCKING_CAP.getFunction().encode(new Object[]{});
+        byte[] data = BridgeMethods.INCREASE_LOCKING_CAP.getFunction().encode();
 
         assertNull(bridge.execute(data));
     }
@@ -133,17 +133,17 @@ class BridgeTest {
         // Don't really care about the internal logic, just checking if the method is active
         when(bridgeSupportMock.increaseLockingCap(any(), any())).thenReturn(true);
 
-        byte[] data = Bridge.INCREASE_LOCKING_CAP.encode(new Object[]{1});
+        byte[] data = Bridge.INCREASE_LOCKING_CAP.encode(1);
         byte[] result = bridge.execute(data);
         assertTrue((boolean) Bridge.INCREASE_LOCKING_CAP.decodeResult(result)[0]);
         // Also test the method itself
-        assertEquals(true, bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(1)}));
+        assertTrue(bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(1)}));
 
-        data = Bridge.INCREASE_LOCKING_CAP.encode(new Object[]{21_000_000});
+        data = Bridge.INCREASE_LOCKING_CAP.encode(21_000_000);
         result = bridge.execute(data);
         assertTrue((boolean) Bridge.INCREASE_LOCKING_CAP.decodeResult(result)[0]);
         // Also test the method itself
-        assertEquals(true, bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(21_000_000)}));
+        assertTrue(bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(21_000_000)}));
     }
 
     @Test
@@ -186,9 +186,9 @@ class BridgeTest {
         Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
-        Integer zero = new Integer(0);
+        Integer zero = 0;
 
-        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(new Object[]{value, zero, value, zero, zero});
+        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(value, zero, value, zero, zero);
 
         assertNull(bridge.execute(data));
     }
@@ -202,9 +202,9 @@ class BridgeTest {
         Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
-        Integer zero = new Integer(0);
+        Integer zero = 0;
 
-        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(new Object[]{value, zero, value, zero, zero});
+        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(value, zero, value, zero, zero);
 
         bridge.execute(data);
         verify(bridgeSupportMock, times(1)).registerBtcCoinbaseTransaction(value, Sha256Hash.wrap(value), value, Sha256Hash.wrap(value), value);
@@ -325,7 +325,7 @@ class BridgeTest {
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         int zero = 0;
-        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{ value, zero, value });
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(value, zero, value);
 
         bridge.execute(data);
 
@@ -344,7 +344,7 @@ class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
-        byte[] data = BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT.getFunction().encode(new Object[]{});
+        byte[] data = BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT.getFunction().encode();
 
         assertNull(bridge.execute(data));
     }
@@ -360,7 +360,7 @@ class BridgeTest {
         when(bridgeSupportMock.getActiveFederationCreationBlockHeight()).thenReturn(1L);
 
         CallTransaction.Function function = BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT.getFunction();
-        byte[] data = function.encode(new Object[]{ });
+        byte[] data = function.encode();
         byte[] result = bridge.execute(data);
         assertEquals(1L, ((BigInteger)function.decodeResult(result)[0]).longValue());
         // Also test the method itself
@@ -624,7 +624,7 @@ class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = spy(getBridgeInstance(bridgeSupportMock, activations));
 
-        byte[] data = Bridge.RECEIVE_HEADER.encode(new Object[]{});
+        byte[] data = Bridge.RECEIVE_HEADER.encode();
 
         assertNull(bridge.execute(data));
         verify(bridge, never()).receiveHeader(any(Object[].class));
@@ -859,7 +859,7 @@ class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
-        byte[] data = BridgeMethods.GET_NEXT_PEGOUT_CREATION_BLOCK_NUMBER.getFunction().encode(new Object[]{});
+        byte[] data = BridgeMethods.GET_NEXT_PEGOUT_CREATION_BLOCK_NUMBER.getFunction().encode();
 
         assertNull(bridge.execute(data));
     }
@@ -874,7 +874,7 @@ class BridgeTest {
         when(bridgeSupportMock.getNextPegoutCreationBlockNumber()).thenReturn(1L);
 
         CallTransaction.Function function = BridgeMethods.GET_NEXT_PEGOUT_CREATION_BLOCK_NUMBER.getFunction();
-        byte[] data = function.encode(new Object[]{ });
+        byte[] data = function.encode();
         byte[] result = bridge.execute(data);
 
         assertEquals(1L, ((BigInteger)function.decodeResult(result)[0]).longValue());
@@ -889,7 +889,7 @@ class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
-        byte[] data = BridgeMethods.GET_QUEUED_PEGOUTS_COUNT.getFunction().encode(new Object[]{});
+        byte[] data = BridgeMethods.GET_QUEUED_PEGOUTS_COUNT.getFunction().encode();
 
         assertNull(bridge.execute(data));
     }
@@ -904,7 +904,7 @@ class BridgeTest {
         when(bridgeSupportMock.getQueuedPegoutsCount()).thenReturn(1);
 
         CallTransaction.Function function = BridgeMethods.GET_QUEUED_PEGOUTS_COUNT.getFunction();
-        byte[] data = function.encode(new Object[]{ });
+        byte[] data = function.encode();
         byte[] result = bridge.execute(data);
 
         assertEquals(1, ((BigInteger)function.decodeResult(result)[0]).intValue());
@@ -919,7 +919,7 @@ class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
-        byte[] data = BridgeMethods.GET_ESTIMATED_FEES_FOR_NEXT_PEGOUT_EVENT.getFunction().encode(new Object[]{});
+        byte[] data = BridgeMethods.GET_ESTIMATED_FEES_FOR_NEXT_PEGOUT_EVENT.getFunction().encode();
 
         assertNull(bridge.execute(data));
     }
@@ -934,7 +934,7 @@ class BridgeTest {
         when(bridgeSupportMock.getEstimatedFeesForNextPegOutEvent()).thenReturn(Coin.SATOSHI);
 
         CallTransaction.Function function = BridgeMethods.GET_ESTIMATED_FEES_FOR_NEXT_PEGOUT_EVENT.getFunction();
-        byte[] data = function.encode(new Object[]{ });
+        byte[] data = function.encode();
         byte[] result = bridge.execute(data);
 
         assertEquals(Coin.SATOSHI.value, ((BigInteger)function.decodeResult(result)[0]).intValue());
