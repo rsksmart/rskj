@@ -17,19 +17,18 @@
  */
 package co.rsk.peg;
 
-import java.util.function.Predicate;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.db.ByteArrayWrapper;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.MessageCall.MsgType;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * This enum holds the basic information of the Bridge contract methods: the ABI, the cost and the implementation.
@@ -44,8 +43,7 @@ public enum BridgeMethods {
         fixedCost(13000L),
         (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKey,
         activations -> !activations.isActive(RSKIP123),
-        fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL
+        fixedPermission(false)
     ),
     ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY(
         CallTransaction.Function.fromSignature(
@@ -56,8 +54,7 @@ public enum BridgeMethods {
         fixedCost(13000L),
         (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKeyMultikey,
         activations -> activations.isActive(RSKIP123),
-        fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL
+        fixedPermission(false)
     ),
     ADD_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -68,8 +65,7 @@ public enum BridgeMethods {
             fixedCost(25000L),
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
             activations -> !activations.isActive(RSKIP87),
-            fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL
+            fixedPermission(false)
     ),
     ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -80,8 +76,7 @@ public enum BridgeMethods {
             fixedCost(25000L), // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
             activations -> activations.isActive(RSKIP87),
-            fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL
+            fixedPermission(false)
     ),
     ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -92,8 +87,7 @@ public enum BridgeMethods {
             fixedCost(25000L), // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
             (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
             activations -> activations.isActive(RSKIP87),
-            fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL
+            fixedPermission(false)
     ),
     ADD_SIGNATURE(
         CallTransaction.Function.fromSignature(
@@ -103,8 +97,7 @@ public enum BridgeMethods {
         ),
         fixedCost(70000L),
         Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::addSignature, "addSignature"),
-        fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL
+        fixedPermission(false)
     ),
     COMMIT_FEDERATION(
             CallTransaction.Function.fromSignature(
@@ -114,8 +107,7 @@ public enum BridgeMethods {
             ),
             fixedCost(38000L),
             (BridgeMethodExecutorTyped) Bridge::commitFederation,
-            fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL
+            fixedPermission(false)
     ),
     CREATE_FEDERATION(
             CallTransaction.Function.fromSignature(
@@ -125,8 +117,7 @@ public enum BridgeMethods {
             ),
             fixedCost(11000L),
             (BridgeMethodExecutorTyped) Bridge::createFederation,
-            fixedPermission(false),
-        CallTypeHelper.RESTRICTED_TO_CALL
+            fixedPermission(false)
     ),
     GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT(
             CallTransaction.Function.fromSignature(
@@ -136,7 +127,8 @@ public enum BridgeMethods {
             ),
             fixedCost(19000L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestChainHeight,
-            fromMethod(Bridge::getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls)
+            fromMethod(Bridge::getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT(
             CallTransaction.Function.fromSignature(
@@ -148,7 +140,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight,
             activations -> activations.isActive(RSKIP89),
             fixedPermission(true),
-        CallTypeHelper.ALLOW_STATIC_CALL
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR(
             CallTransaction.Function.fromSignature(
@@ -160,7 +152,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockLocator,
             activations -> !activations.isActive(RSKIP89),
             fixedPermission(true),
-        CallTypeHelper.ALLOW_STATIC_CALL
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH(
             CallTransaction.Function.fromSignature(
@@ -172,7 +164,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth,
             activations -> activations.isActive(RSKIP89),
             fixedPermission(true),
-        CallTypeHelper.ALLOW_STATIC_CALL
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_TRANSACTION_CONFIRMATIONS(
             CallTransaction.Function.fromSignature(
@@ -184,7 +176,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
             activations -> activations.isActive(RSKIP122),
             fixedPermission(false),
-        CallTypeHelper.ALLOW_STATIC_CALL
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
             CallTransaction.Function.fromSignature(
@@ -195,7 +187,7 @@ public enum BridgeMethods {
             fixedCost(22000L),
             (BridgeMethodExecutorTyped) Bridge::getBtcTxHashProcessedHeight,
             fixedPermission(true),
-        CallTypeHelper.ALLOW_STATIC_CALL
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -205,7 +197,8 @@ public enum BridgeMethods {
             ),
             fixedCost(11000L),
             (BridgeMethodExecutorTyped) Bridge::getFederationAddress,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_CREATION_BLOCK_NUMBER(
             CallTransaction.Function.fromSignature(
@@ -215,7 +208,8 @@ public enum BridgeMethods {
             ),
             fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::getFederationCreationBlockNumber,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_CREATION_TIME(
             CallTransaction.Function.fromSignature(
@@ -225,7 +219,8 @@ public enum BridgeMethods {
             ),
             fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::getFederationCreationTime,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_SIZE(
             CallTransaction.Function.fromSignature(
@@ -235,7 +230,8 @@ public enum BridgeMethods {
             ),
             fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::getFederationSize,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_THRESHOLD(
             CallTransaction.Function.fromSignature(
@@ -245,7 +241,8 @@ public enum BridgeMethods {
             ),
             fixedCost(11000L),
             (BridgeMethodExecutorTyped) Bridge::getFederationThreshold,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATOR_PUBLIC_KEY(
             CallTransaction.Function.fromSignature(
@@ -256,7 +253,8 @@ public enum BridgeMethods {
             fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKey,
             activations -> !activations.isActive(RSKIP123),
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATOR_PUBLIC_KEY_OF_TYPE(
             CallTransaction.Function.fromSignature(
@@ -267,7 +265,8 @@ public enum BridgeMethods {
             fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyOfType,
             activations -> activations.isActive(RSKIP123),
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEE_PER_KB(
             CallTransaction.Function.fromSignature(
@@ -277,7 +276,8 @@ public enum BridgeMethods {
             ),
             fixedCost(2000L),
             (BridgeMethodExecutorTyped) Bridge::getFeePerKb,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -287,7 +287,8 @@ public enum BridgeMethods {
             ),
             fixedCost(16000L),
             (BridgeMethodExecutorTyped) Bridge::getLockWhitelistAddress,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -298,7 +299,8 @@ public enum BridgeMethods {
             fixedCost(16000L),
             (BridgeMethodExecutorTyped) Bridge::getLockWhitelistEntryByAddress,
             activations -> activations.isActive(RSKIP87),
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_LOCK_WHITELIST_SIZE(
             CallTransaction.Function.fromSignature(
@@ -308,7 +310,8 @@ public enum BridgeMethods {
             ),
             fixedCost(16000L),
             (BridgeMethodExecutorTyped) Bridge::getLockWhitelistSize,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_MINIMUM_LOCK_TX_VALUE(
             CallTransaction.Function.fromSignature(
@@ -318,7 +321,8 @@ public enum BridgeMethods {
             ),
             fixedCost(2000L),
             (BridgeMethodExecutorTyped) Bridge::getMinimumLockTxValue,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_PENDING_FEDERATION_HASH(
             CallTransaction.Function.fromSignature(
@@ -328,7 +332,8 @@ public enum BridgeMethods {
             ),
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getPendingFederationHash,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_PENDING_FEDERATION_SIZE(
             CallTransaction.Function.fromSignature(
@@ -338,7 +343,8 @@ public enum BridgeMethods {
             ),
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getPendingFederationSize,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_PENDING_FEDERATOR_PUBLIC_KEY(
             CallTransaction.Function.fromSignature(
@@ -349,7 +355,8 @@ public enum BridgeMethods {
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKey,
             activations -> !activations.isActive(RSKIP123),
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
             CallTransaction.Function.fromSignature(
@@ -360,7 +367,8 @@ public enum BridgeMethods {
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKeyOfType,
             activations -> activations.isActive(RSKIP123),
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_RETIRING_FEDERATION_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -370,7 +378,8 @@ public enum BridgeMethods {
             ),
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederationAddress,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER(
             CallTransaction.Function.fromSignature(
@@ -380,7 +389,8 @@ public enum BridgeMethods {
             ),
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederationCreationBlockNumber,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_RETIRING_FEDERATION_CREATION_TIME(
             CallTransaction.Function.fromSignature(
@@ -390,7 +400,8 @@ public enum BridgeMethods {
             ),
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederationCreationTime,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_RETIRING_FEDERATION_SIZE(
             CallTransaction.Function.fromSignature(
@@ -400,7 +411,8 @@ public enum BridgeMethods {
             ),
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederationSize,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_RETIRING_FEDERATION_THRESHOLD(
             CallTransaction.Function.fromSignature(
@@ -410,7 +422,8 @@ public enum BridgeMethods {
             ),
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederationThreshold,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_RETIRING_FEDERATOR_PUBLIC_KEY(
             CallTransaction.Function.fromSignature(
@@ -421,7 +434,8 @@ public enum BridgeMethods {
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKey,
             activations -> !activations.isActive(RSKIP123),
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
             CallTransaction.Function.fromSignature(
@@ -432,7 +446,8 @@ public enum BridgeMethods {
             fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKeyOfType,
             activations -> activations.isActive(RSKIP123),
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_STATE_FOR_BTC_RELEASE_CLIENT(
             CallTransaction.Function.fromSignature(
@@ -442,7 +457,8 @@ public enum BridgeMethods {
             ),
             fixedCost(4000L),
             (BridgeMethodExecutorTyped) Bridge::getStateForBtcReleaseClient,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_STATE_FOR_DEBUGGING(
             CallTransaction.Function.fromSignature(
@@ -452,7 +468,8 @@ public enum BridgeMethods {
             ),
             fixedCost(3_000_000L),
             (BridgeMethodExecutorTyped) Bridge::getStateForDebugging,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_LOCKING_CAP(
             CallTransaction.Function.fromSignature(
@@ -463,7 +480,8 @@ public enum BridgeMethods {
             fixedCost(3_000L),
             (BridgeMethodExecutorTyped) Bridge::getLockingCap,
             activations -> activations.isActive(RSKIP134),
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_ACTIVE_POWPEG_REDEEM_SCRIPT(
             CallTransaction.Function.fromSignature(
@@ -474,7 +492,8 @@ public enum BridgeMethods {
             fixedCost(30_000L),
             (BridgeMethodExecutorTyped) Bridge::getActivePowpegRedeemScript,
             activations -> activations.isActive(RSKIP293),
-            fixedPermission(false)
+            fixedPermission(false),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT(
             CallTransaction.Function.fromSignature(
@@ -485,7 +504,8 @@ public enum BridgeMethods {
             fixedCost(3_000L),
             (BridgeMethodExecutorTyped) Bridge::getActiveFederationCreationBlockHeight,
             activations -> activations.isActive(RSKIP186),
-            fixedPermission(false)
+            fixedPermission(false),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     INCREASE_LOCKING_CAP(
             CallTransaction.Function.fromSignature(
@@ -506,7 +526,8 @@ public enum BridgeMethods {
             ),
             fixedCost(23000L),
             (BridgeMethodExecutorTyped) Bridge::isBtcTxHashAlreadyProcessed,
-            fixedPermission(true)
+            fixedPermission(true),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     RECEIVE_HEADERS(
             CallTransaction.Function.fromSignature(
@@ -627,7 +648,8 @@ public enum BridgeMethods {
             fixedCost(5000L),
             (BridgeMethodExecutorTyped) Bridge::hasBtcBlockCoinbaseTransactionInformation,
             activations -> activations.isActive(RSKIP143),
-            fixedPermission(false)
+            fixedPermission(false),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     REGISTER_FAST_BRIDGE_BTC_TRANSACTION(
             CallTransaction.Function.fromSignature(
@@ -649,7 +671,8 @@ public enum BridgeMethods {
             fixedCost(3_800L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestBlockHeader,
             activations -> activations.isActive(RSKIP220),
-            fixedPermission(false)
+            fixedPermission(false),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HASH(
             CallTransaction.Function.fromSignature(
@@ -660,7 +683,8 @@ public enum BridgeMethods {
             fixedCost(4_600L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHeaderByHash,
             activations -> activations.isActive(RSKIP220),
-            fixedPermission(false)
+            fixedPermission(false),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HEIGHT(
         CallTransaction.Function.fromSignature(
@@ -671,7 +695,8 @@ public enum BridgeMethods {
         fixedCost(5_000L),
         (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHeaderByHeight,
         activations -> activations.isActive(RSKIP220),
-        fixedPermission(false)
+        fixedPermission(false),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH(
             CallTransaction.Function.fromSignature(
@@ -682,7 +707,8 @@ public enum BridgeMethods {
             fixedCost(4_900L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainParentBlockHeaderByHash,
             activations -> activations.isActive(RSKIP220),
-            fixedPermission(false)
+            fixedPermission(false),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_NEXT_PEGOUT_CREATION_BLOCK_NUMBER(
             CallTransaction.Function.fromSignature(
@@ -693,7 +719,8 @@ public enum BridgeMethods {
             fixedCost(3_000L),
             (BridgeMethodExecutorTyped) Bridge::getNextPegoutCreationBlockNumber,
             activations -> activations.isActive(RSKIP271),
-            fixedPermission(false)
+            fixedPermission(false),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_QUEUED_PEGOUTS_COUNT(
             CallTransaction.Function.fromSignature(
@@ -704,7 +731,8 @@ public enum BridgeMethods {
             fixedCost(3_000L),
             (BridgeMethodExecutorTyped) Bridge::getQueuedPegoutsCount,
             activations -> activations.isActive(RSKIP271),
-            fixedPermission(false)
+            fixedPermission(false),
+            CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_ESTIMATED_FEES_FOR_NEXT_PEGOUT_EVENT(
             CallTransaction.Function.fromSignature(
@@ -716,7 +744,7 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getEstimatedFeesForNextPegOutEvent,
             activations -> activations.isActive(RSKIP271),
             fixedPermission(false),
-        CallTypeHelper.ALLOW_STATIC_CALL
+            CallTypeHelper.ALLOW_STATIC_CALL
     );
 
     private static class CallTypeHelper {
