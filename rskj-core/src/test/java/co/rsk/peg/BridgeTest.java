@@ -8,16 +8,18 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.test.builders.BridgeBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -25,172 +27,208 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeTest {
 
     private Constants constants;
     private ActivationConfig activationConfig;
-    private SignatureCache signatureCache;
+    private BridgeBuilder bridgeBuilder;
 
     @BeforeEach
     void resetConfigToRegTest() {
         constants = Constants.regtest();
         activationConfig = spy(ActivationConfigsForTest.genesis());
-        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        bridgeBuilder = new BridgeBuilder();
     }
 
     @Test
-    void getActivePowpegRedeemScript_before_RSKIP293_activation() throws VMException {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP293), anyLong());
+    void getActivePowpegRedeemScript_before_RSKIP293_activation() {
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         byte[] data = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode();
 
-        assertNull(bridge.execute(data));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
     void getActivePowpegRedeemScript_after_RSKIP293_activation() throws VMException {
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP293), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.hop400();
+        CallTransaction.Function getActivePowpegRedeemScriptFunction = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Script activePowpegRedeemScript = BridgeRegTestConstants.getInstance().getGenesisFederation().getRedeemScript();
         when(bridgeSupportMock.getActivePowpegRedeemScript()).thenReturn(
-            Optional.of(BridgeRegTestConstants.getInstance().getGenesisFederation().getRedeemScript())
+            Optional.of(activePowpegRedeemScript)
         );
 
-        Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
-        byte[] data = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode();
-        byte[] result = (byte[]) BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().decodeResult(bridge.execute(data))[0];
+        byte[] data = getActivePowpegRedeemScriptFunction.encode();
+        byte[] result = bridge.execute(data);
+        byte[] decodedResult = (byte[]) getActivePowpegRedeemScriptFunction.decodeResult(result)[0];
+        Script obtainedRedeemScript = new Script(decodedResult);
 
-        assertArrayEquals(constants.bridgeConstants.getGenesisFederation().getRedeemScript().getProgram(), result);
+        assertEquals(activePowpegRedeemScript, obtainedRedeemScript);
     }
 
     @Test
-    void getLockingCap_before_RSKIP134_activation() throws VMException {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP134), anyLong());
+    void getLockingCap_before_RSKIP134_activation() {
+        ActivationConfig activationConfig = ActivationConfigsForTest.wasabi100();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         byte[] data = BridgeMethods.GET_LOCKING_CAP.getFunction().encode();
 
-        assertNull(bridge.execute(data));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
     void getLockingCap_after_RSKIP134_activation() throws VMException {
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP134), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        CallTransaction.Function getLockingCapFunction = Bridge.GET_LOCKING_CAP;
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        Coin lockingCap = Coin.COIN;
+        when(bridgeSupportMock.getLockingCap()).thenReturn(lockingCap);
 
-        // Don't really care about the internal logic, just checking if the method is active
-        when(bridgeSupportMock.getLockingCap()).thenReturn(Coin.COIN);
+        Transaction tx = mock(Transaction.class);
+        when(tx.isLocalCallTransaction()).thenReturn(true);
 
-        byte[] data = Bridge.GET_LOCKING_CAP.encode();
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .transaction(tx)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        byte[] data = getLockingCapFunction.encode();
         byte[] result = bridge.execute(data);
-        assertEquals(Coin.COIN.getValue(), ((BigInteger) Bridge.GET_LOCKING_CAP.decodeResult(result)[0]).longValue());
+        BigInteger decodedResult = (BigInteger) getLockingCapFunction.decodeResult(result)[0];
+        Coin obtainedLockingCap = Coin.valueOf(decodedResult.longValue());
+
+        assertEquals(lockingCap, obtainedLockingCap);
+
         // Also test the method itself
-        assertEquals(Coin.COIN.getValue(), bridge.getLockingCap(new Object[]{}));
+        long lockingCapFromTheBridge = bridge.getLockingCap(new Object[]{});
+        assertEquals(lockingCap.getValue(), lockingCapFromTheBridge);
     }
 
     @Test
-    void increaseLockingCap_before_RSKIP134_activation() throws VMException {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP134), anyLong());
+    void increaseLockingCap_before_RSKIP134_activation() {
+        ActivationConfig activationConfig = ActivationConfigsForTest.wasabi100();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         byte[] data = BridgeMethods.INCREASE_LOCKING_CAP.getFunction().encode();
-
-        assertNull(bridge.execute(data));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
-    @Test
-    void increaseLockingCap_after_RSKIP134_activation() throws VMException {
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP134), anyLong());
+    @ParameterizedTest()
+    @MethodSource("lockingCapValues")
+    void increaseLockingCap_after_RSKIP134_activation(long newLockingCapValue) throws VMException {
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
-
-        // Don't really care about the internal logic, just checking if the method is active
         when(bridgeSupportMock.increaseLockingCap(any(), any())).thenReturn(true);
 
-        byte[] data = Bridge.INCREASE_LOCKING_CAP.encode(1);
-        byte[] result = bridge.execute(data);
-        assertTrue((boolean) Bridge.INCREASE_LOCKING_CAP.decodeResult(result)[0]);
-        // Also test the method itself
-        assertTrue(bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(1)}));
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
-        data = Bridge.INCREASE_LOCKING_CAP.encode(21_000_000);
-        result = bridge.execute(data);
-        assertTrue((boolean) Bridge.INCREASE_LOCKING_CAP.decodeResult(result)[0]);
+        byte[] data = increaseLockingCapFunction.encode(newLockingCapValue);
+        byte[] result = bridge.execute(data);
+        boolean decodedResult = (boolean) increaseLockingCapFunction.decodeResult(result)[0];
+
+        assertTrue(decodedResult);
+
         // Also test the method itself
-        assertTrue(bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(21_000_000)}));
+        boolean resultFromTheBridge = bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(newLockingCapValue)});
+        assertTrue(resultFromTheBridge);
+    }
+
+    private static Stream<Arguments> lockingCapValues() {
+        return Stream.of(
+            Arguments.of(1),
+            Arguments.of(21_000_0000)
+        );
     }
 
     @Test
-    void increaseLockingCap_invalidParameter() throws VMException {
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP134), anyLong());
+    void increaseLockingCap_invalidParameter() {
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        CallTransaction.Function increaseLockingCapFunction = BridgeMethods.INCREASE_LOCKING_CAP.getFunction();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         // Uses the proper signature but with no argument
-        // The solidity decoder in the Bridge will convert the undefined argument as 0, but the initial validation in the method will reject said value
-        byte[] data = Bridge.INCREASE_LOCKING_CAP.encodeSignature();
-        byte[] result = bridge.execute(data);
-        assertNull(result);
+        // The solidity decoder in the Bridge will convert the undefined argument as 0,
+        // but the initial validation in the method will reject said value
+        final byte[] noArgumentData = increaseLockingCapFunction.encodeSignature();
+        assertThrows(VMException.class, () -> bridge.execute(noArgumentData));
 
         // Uses the proper signature but appends invalid data type
         // This will be rejected by the solidity decoder in the Bridge directly
-        data = ByteUtil.merge(Bridge.INCREASE_LOCKING_CAP.encodeSignature(), Hex.decode("ab"));
-        result = bridge.execute(data);
-        assertNull(result);
+        final byte[] invalidTypeData = ByteUtil.merge(increaseLockingCapFunction.encodeSignature(), Hex.decode("ab"));
+        assertThrows(VMException.class, () -> bridge.execute(invalidTypeData));
 
         // Uses the proper signature and data type, but with an invalid value
         // This will be rejected by the initial validation in the method
-        data = Bridge.INCREASE_LOCKING_CAP.encode(new Object[]{-1});
-        result = bridge.execute(data);
-        assertNull(result);
+        final byte[] invalidValueData = increaseLockingCapFunction.encode(-1);
+        assertThrows(VMException.class, () -> bridge.execute(invalidValueData));
 
         // Uses the proper signature and data type, but with a value that exceeds the long max value
-        data = ByteUtil.merge(Bridge.INCREASE_LOCKING_CAP.encodeSignature(), Hex.decode("0000000000000000000000000000000000000000000000080000000000000000"));
-        result = bridge.execute(data);
-        assertNull(result);
+        final byte[] aboveMaxLengthData = ByteUtil.merge(
+            increaseLockingCapFunction.encodeSignature(),
+            Hex.decode("0000000000000000000000000000000000000000000000080000000000000000")
+        );
+        assertThrows(VMException.class, () -> bridge.execute(aboveMaxLengthData));
     }
 
     @Test
-    void registerBtcCoinbaseTransaction_before_RSKIP143_activation() throws VMException {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(false).when(activations).isActive(eq(RSKIP143), anyLong());
+    void registerBtcCoinbaseTransaction_before_RSKIP143_activation() {
+        ActivationConfig activationConfig = ActivationConfigsForTest.wasabi100();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         Integer zero = 0;
-
         byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(value, zero, value, zero, zero);
 
-        assertNull(bridge.execute(data));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
     void registerBtcCoinbaseTransaction_after_RSKIP143_activation() throws VMException {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         Integer zero = 0;
@@ -198,36 +236,37 @@ class BridgeTest {
         byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(value, zero, value, zero, zero);
 
         bridge.execute(data);
-        verify(bridgeSupportMock, times(1)).registerBtcCoinbaseTransaction(value, Sha256Hash.wrap(value), value, Sha256Hash.wrap(value), value);
+        verify(bridgeSupportMock, times(1)).registerBtcCoinbaseTransaction(
+            value,
+            Sha256Hash.wrap(value),
+            value,
+            Sha256Hash.wrap(value),
+            value
+        );
     }
 
     @Test
-    void registerBtcCoinbaseTransaction_after_RSKIP143_activation_null_data() throws VMException {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
+    void registerBtcCoinbaseTransaction_after_RSKIP143_activation_null_data() {
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        CallTransaction.Function registerBtcCoinbaseTransactionFunction = Bridge.REGISTER_BTC_COINBASE_TRANSACTION;
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
-        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature();
-        byte[] result = bridge.execute(data);
-        assertNull(result);
+        final byte[] emptyData = registerBtcCoinbaseTransactionFunction.encodeSignature();
+        assertThrows(VMException.class, () -> bridge.execute(emptyData));
 
-        data = ByteUtil.merge(Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature(), Hex.decode("ab"));
-        result = bridge.execute(data);
-        assertNull(result);
+        final byte[] invalidStringData = ByteUtil.merge(registerBtcCoinbaseTransactionFunction.encodeSignature(), Hex.decode("ab"));
+        assertThrows(VMException.class, () -> bridge.execute(invalidStringData));
 
-        data = ByteUtil.merge(Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature(), Hex.decode("0000000000000000000000000000000000000000000000080000000000000000"));
-        result = bridge.execute(data);
-        assertNull(result);
+        final byte[] invalidHexData = ByteUtil.merge(registerBtcCoinbaseTransactionFunction.encodeSignature(), Hex.decode("0000000000000000000000000000000000000000000000080000000000000000"));
+        assertThrows(VMException.class, () -> bridge.execute(invalidHexData));
     }
 
     @Test
-    void registerBtcTransaction_beforeRskip199_rejectsExternalCalls()
-        throws VMException, IOException, BlockStoreException {
-
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(false).when(activations).isActive(eq(RSKIP199), anyLong());
+    void registerBtcTransaction_beforeRskip199_rejectsExternalCalls() throws VMException, IOException, BlockStoreException {
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
         Federation activeFederation = new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(3),
@@ -240,13 +279,18 @@ class BridgeTest {
         when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);
 
         Transaction rskTx = mock(Transaction.class);
-        when(rskTx.getSender(any(SignatureCache.class))).thenReturn(new RskAddress("0000000000000000000000000000000000000001"));
+        RskAddress senderAddress = new RskAddress("0000000000000000000000000000000000000001");
+        when(rskTx.getSender(any(SignatureCache.class))).thenReturn(senderAddress);
 
-        Bridge bridge = getBridgeInstance(rskTx, bridgeSupportMock, activations, signatureCache);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .transaction(rskTx)
+            .build();
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         int zero = 0;
-        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{ value, zero, value });
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(value, zero, value);
 
         try {
             bridge.execute(data);
@@ -264,11 +308,8 @@ class BridgeTest {
     }
 
     @Test
-    void registerBtcTransaction_beforeRskip199_acceptsCallFromFederationMember()
-        throws VMException, IOException, BlockStoreException {
-
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(false).when(activations).isActive(eq(RSKIP199), anyLong());
+    void registerBtcTransaction_beforeRskip199_acceptsCallFromFederationMember() throws VMException, IOException, BlockStoreException {
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
         BtcECKey fed1Key = new BtcECKey();
         RskAddress fed1Address = new RskAddress(ECKey.fromPublicOnly(fed1Key.getPubKey()).getAddress());
@@ -288,31 +329,11 @@ class BridgeTest {
         Transaction rskTx = mock(Transaction.class);
         when(rskTx.getSender(any(SignatureCache.class))).thenReturn(fed1Address);
 
-        Bridge bridge = getBridgeInstance(rskTx, bridgeSupportMock, activations, signatureCache);
-
-        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
-        int zero = 0;
-        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{ value, zero, value });
-
-        bridge.execute(data);
-
-        verify(bridgeSupportMock, times(1)).registerBtcTransaction(
-            any(Transaction.class),
-            any(byte[].class),
-            anyInt(),
-            any(byte[].class)
-        );
-    }
-
-    @Test
-    void registerBtcTransaction_afterRskip199_acceptsExternalCalls()
-        throws VMException, IOException, BlockStoreException {
-
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP199), anyLong());
-
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .transaction(rskTx)
+            .build();
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         int zero = 0;
@@ -329,41 +350,74 @@ class BridgeTest {
     }
 
     @Test
-    void getActiveFederationCreationBlockHeight_before_RSKIP186_activation() throws VMException {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP186), anyLong());
-
+    void registerBtcTransaction_afterRskip199_acceptsExternalCalls() throws VMException, IOException, BlockStoreException {
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+        int zero = 0;
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(value, zero, value);
+
+        bridge.execute(data);
+
+        verify(bridgeSupportMock, times(1)).registerBtcTransaction(
+            any(Transaction.class),
+            any(byte[].class),
+            anyInt(),
+            any(byte[].class)
+        );
+    }
+
+    @Test
+    void getActiveFederationCreationBlockHeight_before_RSKIP186_activation() {
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         byte[] data = BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT.getFunction().encode();
 
-        assertNull(bridge.execute(data));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
     void getActiveFederationCreationBlockHeight_after_RSKIP186_activation() throws VMException {
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP186), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
+        long activeFederationCreationBlockHeight = 1L;
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        when(bridgeSupportMock.getActiveFederationCreationBlockHeight()).thenReturn(activeFederationCreationBlockHeight);
 
-        // Don't really care about the internal logic, just checking if the method is active
-        when(bridgeSupportMock.getActiveFederationCreationBlockHeight()).thenReturn(1L);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
         CallTransaction.Function function = BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT.getFunction();
         byte[] data = function.encode();
         byte[] result = bridge.execute(data);
-        assertEquals(1L, ((BigInteger)function.decodeResult(result)[0]).longValue());
+        BigInteger decodedResult = (BigInteger)function.decodeResult(result)[0];
+
+        assertEquals(activeFederationCreationBlockHeight, decodedResult.longValue());
+
         // Also test the method itself
-        assertEquals(1L, bridge.getActiveFederationCreationBlockHeight(new Object[]{ }));
+        long resultFromTheBridge = bridge.getActiveFederationCreationBlockHeight(new Object[]{});
+        assertEquals(activeFederationCreationBlockHeight, resultFromTheBridge);
     }
 
     @Test
-    void registerFlyoverBtcTransaction_before_RSKIP176_activation() throws VMException {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+    void registerFlyoverBtcTransaction_before_RSKIP176_activation() {
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         byte[] pubKeyHash = new BtcECKey().getPubKeyHash();
@@ -380,19 +434,16 @@ class BridgeTest {
         );
 
         //Assert
-        assertNull(bridge.execute(data));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
     void registerFlyoverBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_before_RSKIP284_activation_fails()
         throws VMException, IOException, BlockStoreException {
         NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP284), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
-
         when(bridgeSupportMock.registerFlyoverBtcTransaction(
             any(Transaction.class),
             any(byte[].class),
@@ -405,18 +456,23 @@ class BridgeTest {
             anyBoolean()
         )).thenReturn(BigInteger.valueOf(2));
 
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
         Address refundBtcAddress = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
         byte[] refundBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
-            activationConfig.forBlock(anyLong()),
+            activationConfig.forBlock(0),
             refundBtcAddress
         );
 
         BtcECKey btcECKeyLp = new BtcECKey();
         Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
         byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
-            activationConfig.forBlock(anyLong()),
+            activationConfig.forBlock(0),
             lpBtcAddress
         );
 
@@ -435,9 +491,10 @@ class BridgeTest {
         );
 
         byte[] result = bridge.execute(data);
+        BigInteger decodedResult = (BigInteger) Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0];
 
         //Assert
-        assertEquals(BigInteger.valueOf(-900), Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]);
+        assertEquals(FlyoverTxResponseCodes.GENERIC_ERROR.value(), decodedResult.longValue());
         verify(bridgeSupportMock, times(0)).registerFlyoverBtcTransaction(
             any(Transaction.class),
             eq(value),
@@ -455,12 +512,9 @@ class BridgeTest {
     void registerFlyoverBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_after_RSKIP284_activation_ok()
         throws VMException, IOException, BlockStoreException {
         NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP284), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.hop400();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
-
         when(bridgeSupportMock.registerFlyoverBtcTransaction(
             any(Transaction.class),
             any(byte[].class),
@@ -473,18 +527,23 @@ class BridgeTest {
             anyBoolean()
         )).thenReturn(BigInteger.valueOf(2));
 
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
         Address refundBtcAddress = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
         byte[] refundBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
-            activationConfig.forBlock(anyLong()),
+            activationConfig.forBlock(0),
             refundBtcAddress
         );
 
         BtcECKey btcECKeyLp = new BtcECKey();
         Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
         byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
-            activationConfig.forBlock(anyLong()),
+            activationConfig.forBlock(0),
             lpBtcAddress
         );
 
@@ -520,13 +579,10 @@ class BridgeTest {
     }
 
     @Test
-    void registerFlyoverBtcTransaction_after_RSKIP176_activation_generic_error()
-        throws VMException, IOException, BlockStoreException {
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+    void registerFlyoverBtcTransaction_after_RSKIP176_activation_generic_error() throws VMException, IOException, BlockStoreException {
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
-
         when(bridgeSupportMock.registerFlyoverBtcTransaction(
             any(Transaction.class),
             any(byte[].class),
@@ -538,6 +594,11 @@ class BridgeTest {
             any(Address.class),
             anyBoolean()
         )).thenReturn(BigInteger.valueOf(FlyoverTxResponseCodes.GENERIC_ERROR.value()));
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         BtcECKey btcECKeyRefund = new BtcECKey();
@@ -558,174 +619,183 @@ class BridgeTest {
             true
         );
         byte[] result = bridge.execute(data);
+        BigInteger decodedResult = (BigInteger)Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0];
 
-        assertEquals(FlyoverTxResponseCodes.GENERIC_ERROR.value(),
-            ((BigInteger)Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]).longValue());
+        assertEquals(FlyoverTxResponseCodes.GENERIC_ERROR.value(), decodedResult.longValue());
     }
 
     @Test
     void registerFlyoverBtcTransaction_after_RSKIP176_null_parameter() throws VMException {
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
+
+        byte[] noArgumentData = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encodeSignature();
+        assertThrows(VMException.class, () -> bridge.execute(noArgumentData));
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
-
-        byte[] data = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encodeSignature();
-        byte[] result = bridge.execute(data);
-        assertNull(result);
-
-        data = ByteUtil.merge(Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encodeSignature(), value);
-        result = bridge.execute(data);
-        assertNull(result);
+        byte[] zeroValueData = ByteUtil.merge(Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encodeSignature(), value);
+        assertThrows(VMException.class, () -> bridge.execute(zeroValueData));
     }
 
     @Test
     void receiveHeader_before_RSKIP200() throws VMException {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(false).when(activations).isActive(eq(RSKIP200), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = spy(getBridgeInstance(bridgeSupportMock, activations));
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         NetworkParameters networkParameters = constants.bridgeConstants.getBtcParams();
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
-                networkParameters,
-                1,
-                PegTestUtils.createHash(1),
-                PegTestUtils.createHash(1),
-                1,
-                Utils.encodeCompactBits(networkParameters.getMaxTarget()
-                ), 1, new ArrayList<>()).cloneAsHeader();
+            networkParameters,
+            1,
+            PegTestUtils.createHash(1),
+            PegTestUtils.createHash(1),
+            1,
+            Utils.encodeCompactBits(networkParameters.getMaxTarget()),
+            1,
+            new ArrayList<>()
+        ).cloneAsHeader();
 
         Object[] parameters = new Object[]{block.bitcoinSerialize()};
         byte[] data = Bridge.RECEIVE_HEADER.encode(parameters);
 
-        bridge.execute(data);
-        assertNull(bridge.execute(data));
-        verify(bridge, never()).receiveHeader(any(Object[].class));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
     void receiveHeader_empty_parameter() throws VMException {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
-
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = spy(getBridgeInstance(bridgeSupportMock, activations));
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
         byte[] data = Bridge.RECEIVE_HEADER.encode();
 
-        assertNull(bridge.execute(data));
-        verify(bridge, never()).receiveHeader(any(Object[].class));
+        assertThrows(VMException.class, () -> bridge.execute(data));
         verifyNoInteractions(bridgeSupportMock);
     }
 
     @Test
     void receiveHeader_after_RSKIP200_Ok() throws VMException {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
-        Bridge bridge = spy(getBridgeInstance(mock(BridgeSupport.class), activations));
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         NetworkParameters networkParameters = constants.bridgeConstants.getBtcParams();
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
-                networkParameters,
-                1,
-                PegTestUtils.createHash(1),
-                PegTestUtils.createHash(1),
-                1,
-                Utils.encodeCompactBits(networkParameters.getMaxTarget()
-                ), 1, new ArrayList<>()).cloneAsHeader();
+            networkParameters,
+            1,
+            PegTestUtils.createHash(1),
+            PegTestUtils.createHash(1),
+            1,
+            Utils.encodeCompactBits(networkParameters.getMaxTarget()),
+            1,
+            new ArrayList<>()
+        ).cloneAsHeader();
 
         Object[] parameters = new Object[]{block.bitcoinSerialize()};
         byte[] data = Bridge.RECEIVE_HEADER.encode(parameters);
-
         byte[] result = bridge.execute(data);
-        verify(bridge, times(1)).receiveHeader(eq(parameters)); // NOSONAR: eq is needed
-        assertEquals(BigInteger.valueOf(0), Bridge.RECEIVE_HEADER.decodeResult(result)[0]);
+        BigInteger decodedResult = (BigInteger) Bridge.RECEIVE_HEADER.decodeResult(result)[0];
+
+        assertEquals(BigInteger.valueOf(0), decodedResult);
     }
 
     @Test
     void receiveHeader_bridgeSupport_Exception() throws IOException, BlockStoreException {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
-
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        doThrow(new IOException()).when(bridgeSupportMock).receiveHeader(any());
-        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
+        doThrow(new IOException()).when(bridgeSupportMock).receiveHeader(any())
+        ;
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
         NetworkParameters networkParameters = constants.bridgeConstants.getBtcParams();
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
-                networkParameters,
-                1,
-                PegTestUtils.createHash(1),
-                PegTestUtils.createHash(1),
-                1,
-                Utils.encodeCompactBits(networkParameters.getMaxTarget()
-                ), 1, new ArrayList<>()).cloneAsHeader();
+            networkParameters,
+            1,
+            PegTestUtils.createHash(1),
+            PegTestUtils.createHash(1),
+            1,
+            Utils.encodeCompactBits(networkParameters.getMaxTarget()),
+            1,
+            new ArrayList<>()
+        ).cloneAsHeader();
 
         Object[] parameters = new Object[]{block.bitcoinSerialize()};
         byte[] data = Bridge.RECEIVE_HEADER.encode(parameters);
 
-        Assertions.assertThrows(VMException.class, () -> bridge.execute(data));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
     void receiveHeaders_after_RSKIP200_notFederation() {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
 
         Transaction txMock = mock(Transaction.class);
-        when(txMock.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(new ECKey().getAddress()));  //acces for anyone
+        RskAddress txSender = new RskAddress(new ECKey().getAddress());
+        when(txMock.getSender(any(SignatureCache.class))).thenReturn(txSender);  //access for anyone
 
-        Bridge bridge = getBridgeInstance(txMock, bridgeSupportMock, activations, signatureCache);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .transaction(txMock)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
-        try {
-            bridge.execute(Bridge.RECEIVE_HEADERS.encode());
-            fail();
-        } catch (Exception ex) {
-            assertTrue(ex.getMessage().contains("Sender is not part of the active or retiring federation"));
-        }
+        byte[] data = Bridge.RECEIVE_HEADERS.encode();
+
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
-    void receiveHeaders_after_RSKIP200_header_wrong_size() throws VMException, IOException {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
-        // It is used to check the size of the header
-        doReturn(true).when(activations).isActive(eq(RSKIP124), anyLong());
+    void receiveHeaders_after_RSKIP200_header_wrong_size() throws VMException {
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
-        Bridge bridge = getBridgeInstance(mock(BridgeSupport.class), activations);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         Object[] parameters = new Object[]{Sha256Hash.ZERO_HASH.getBytes()};
         byte[] data = Bridge.RECEIVE_HEADER.encode(parameters);
 
         byte[] result = bridge.execute(data);
-        assertEquals(BigInteger.valueOf(-20), Bridge.RECEIVE_HEADER.decodeResult(result)[0]);
+        BigInteger decodedResult = (BigInteger) Bridge.RECEIVE_HEADER.decodeResult(result)[0];
+        assertEquals(BigInteger.valueOf(-20), decodedResult);
     }
 
     @Test
     void getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls_afterRskip220() {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP220), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
-        Bridge bridge = getBridgeInstance(mock(BridgeSupport.class), activations);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         assertFalse(bridge.getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls(new Object[0]));
     }
 
     @Test
     void getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls_beforeRskip220() {
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(false).when(activations).isActive(eq(RSKIP220), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
-        Bridge bridge = getBridgeInstance(mock(BridgeSupport.class), activations);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         assertTrue(bridge.getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls(new Object[0]));
     }
@@ -734,8 +804,8 @@ class BridgeTest {
     void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNull_throwsVMException() throws Exception {
         // Given
         BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
-                null,
-                null
+            null,
+            null
         );
 
         int senderPK = 999; // Sender PK does not belong to Member PKs
@@ -942,10 +1012,13 @@ class BridgeTest {
         Transaction rskTxMock = mock(Transaction.class);
         doReturn(new RskAddress(key.getAddress())).when(rskTxMock).getSender(any(SignatureCache.class));
 
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
-        return getBridgeInstance(rskTxMock, bridgeSupportMock, activations, signatureCache);
+        return bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
     }
 
     private Bridge getBridgeInstance(Federation activeFederation, Federation retiringFederation, int senderPK, BridgeSupport bridgeSupportMock) {
@@ -956,39 +1029,20 @@ class BridgeTest {
         Transaction rskTxMock = mock(Transaction.class);
         doReturn(new RskAddress(key.getAddress())).when(rskTxMock).getSender(any(SignatureCache.class));
 
-        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
-        doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
-        return getBridgeInstance(rskTxMock, bridgeSupportMock, activations, signatureCache);
-    }
-
-    /**
-     * Gets a bridge instance mocking the transaction and BridgeSupportFactory
-     *
-     * @param txMock                Provide the transaction to be used
-     * @param bridgeSupportInstance Provide the bridgeSupport to be used
-     * @param activationConfig      Provide the activationConfig to be used
-     * @return Bridge instance
-     */
-    private Bridge getBridgeInstance(Transaction txMock, BridgeSupport bridgeSupportInstance, ActivationConfig activationConfig, SignatureCache signatureCache) {
-        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportInstance);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock, signatureCache);
-        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
-        return bridge;
-    }
-
-    private Bridge getBridgeInstance(BridgeSupport bridgeSupportInstance, ActivationConfig activationConfig) {
-        return getBridgeInstance(mock(Transaction.class), bridgeSupportInstance, activationConfig, signatureCache);
+        return bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
     }
 
     @Deprecated
     private Bridge getBridgeInstance(BridgeSupport bridgeSupportInstance) {
-        return getBridgeInstance(bridgeSupportInstance, activationConfig);
-    }
-
-    private Block getGenesisBlock() {
-        return new BlockGenerator().getGenesisBlock();
+        return bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportInstance)
+            .build();
     }
 }
