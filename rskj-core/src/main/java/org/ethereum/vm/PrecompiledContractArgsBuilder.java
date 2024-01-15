@@ -37,10 +37,11 @@ public class PrecompiledContractArgsBuilder {
     private ReceiptStore receiptStore;
     private List<LogInfo> logs;
     private ProgramInvoke programInvoke;
+    private MessageCall.MsgType msgType;
 
-    private MessageCall.MsgType msgType = MessageCall.MsgType.CALL;
-
-    private PrecompiledContractArgsBuilder() {}
+    private PrecompiledContractArgsBuilder() {
+        msgType = MessageCall.MsgType.CALL;
+    }
 
     public static PrecompiledContractArgsBuilder builder() {
         return new PrecompiledContractArgsBuilder();
