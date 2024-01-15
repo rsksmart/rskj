@@ -228,14 +228,32 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private final SignatureCache signatureCache;
     private MsgType msgType;
 
-    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
-                  BridgeSupportFactory bridgeSupportFactory, SignatureCache signatureCache) {
-        this(contractAddress, constants, activationConfig, bridgeSupportFactory, MerkleBranch::new, signatureCache);
+    public Bridge(
+        RskAddress contractAddress,
+        Constants constants,
+        ActivationConfig activationConfig,
+        BridgeSupportFactory bridgeSupportFactory,
+        SignatureCache signatureCache) {
+
+        this(
+            contractAddress,
+            constants,
+            activationConfig,
+            bridgeSupportFactory,
+            MerkleBranch::new,
+            signatureCache
+        );
     }
 
     @VisibleForTesting
-    Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
-           BridgeSupportFactory bridgeSupportFactory, BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory, SignatureCache signatureCache) {
+    Bridge(
+        RskAddress contractAddress,
+        Constants constants,
+        ActivationConfig activationConfig,
+        BridgeSupportFactory bridgeSupportFactory,
+        BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory,
+        SignatureCache signatureCache) {
+
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.contractAddress = contractAddress;
         this.constants = constants;
@@ -323,10 +341,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.msgType = args.getMsgType();
 
         this.bridgeSupport = bridgeSupportFactory.newInstance(
-                args.getRepository(),
-                rskExecutionBlock,
-                contractAddress,
-                args.getLogs());
+            args.getRepository(),
+            rskExecutionBlock,
+            contractAddress,
+            args.getLogs()
+        );
     }
 
     @Override
@@ -347,7 +366,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             // Function parsing from data returned null => invalid function selected, halt!
             if (bridgeParsedData == null) {
                 String errorMessage = String.format("Invalid data given: %s.", ByteUtil.toHexString(data));
-                logger.info(errorMessage);
+                logger.info("[execute] {}", errorMessage);
                 if (activations.isActive(ConsensusRule.RSKIP88)) {
                     throw new BridgeIllegalArgumentException(errorMessage);
                 }
@@ -355,24 +374,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 return null;
             }
 
-            // If this is not a local call, then first check whether the function
-            // allows for non-local calls
-            if (activations.isActive(ConsensusRule.RSKIP88) &&
-                !isLocalCall() &&
-                bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls(this, bridgeParsedData.args)) {
-
-                String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
-                logger.info(errorMessage);
-                throw new BridgeIllegalArgumentException(errorMessage);
-            }
-
-            if (activations.isActive(RSKIP_ARROWHEAD) &&
-                !bridgeParsedData.bridgeMethod.acceptsThisTypeOfCall(this.activations, this.msgType)) {
-                String errorMessage = String.format("Call type (%s) not accepted by %s. Returning without execution.", this.msgType.name(),  bridgeParsedData.bridgeMethod.getFunction().name);
-                logger.info(errorMessage);
-                // TODO: determine which type of exception makes sense for this case
-                throw new BridgeIllegalArgumentException(errorMessage);
-            }
+            validateCall(bridgeParsedData);
 
             Optional<?> result;
             try {
@@ -396,6 +398,40 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("bridgeexecute", ex.getMessage());
             throw new VMException(String.format("Exception executing bridge: %s", ex.getMessage()), ex);
+        }
+    }
+
+    private void validateCall(BridgeParsedData bridgeParsedData) throws BridgeIllegalArgumentException {
+        validateLocalCall(bridgeParsedData);
+        validateCallMessageType(bridgeParsedData);
+    }
+
+    private void validateLocalCall(BridgeParsedData bridgeParsedData) throws BridgeIllegalArgumentException {
+        // If this is not a local call, then check whether the function allows for non-local calls
+        if (activations.isActive(ConsensusRule.RSKIP88) &&
+            !isLocalCall() &&
+            bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls(this, bridgeParsedData.args)) {
+
+            String errorMessage = String.format(
+                "Non-local-call to %s. Returning without execution.",
+                bridgeParsedData.bridgeMethod.getFunction().name
+            );
+            logger.info("[validateLocalCall] {}", errorMessage);
+            throw new BridgeIllegalArgumentException(errorMessage);
+        }
+    }
+
+    private void validateCallMessageType(BridgeParsedData bridgeParsedData) throws BridgeIllegalArgumentException {
+        if (activations.isActive(RSKIP_ARROWHEAD) &&
+            !bridgeParsedData.bridgeMethod.acceptsThisTypeOfCall(this.msgType)) {
+            String errorMessage = String.format(
+                "Call type (%s) not accepted by %s. Returning without execution.",
+                this.msgType.name(),
+                bridgeParsedData.bridgeMethod.getFunction().name
+            );
+            logger.info("[validateCallMessageType] {}", errorMessage);
+            // TODO: determine which type of exception makes sense for this case
+            throw new BridgeIllegalArgumentException(errorMessage);
         }
     }
 
