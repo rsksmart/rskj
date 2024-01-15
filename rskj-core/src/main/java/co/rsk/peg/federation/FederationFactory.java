@@ -6,7 +6,6 @@ import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
 import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-
 import java.util.List;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
