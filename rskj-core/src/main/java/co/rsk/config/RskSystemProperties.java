@@ -189,10 +189,10 @@ public class RskSystemProperties extends SystemProperties {
     public double gasPriceMultiplier() {
         double gasPriceMultiplier = getDouble(RPC_GAS_PRICE_MULTIPLIER_CONFIG, 1.1);
 
-        if(gasPriceMultiplier > 1.0) {
+        if(gasPriceMultiplier >= 0) {
             return gasPriceMultiplier;
         } else {
-            throw new RskConfigurationException(RPC_GAS_PRICE_MULTIPLIER_CONFIG + " must be greater than 1.0");
+            throw new RskConfigurationException(RPC_GAS_PRICE_MULTIPLIER_CONFIG + " cannot be a negative number");
         }
     }
 

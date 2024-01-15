@@ -243,12 +243,22 @@ class RskSystemPropertiesTest {
     }
 
     @Test
-    void testGasPriceMultiplierThrowsError() {
+    void testGasPriceMultiplierThrowsErrorForInvalidType() {
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
                 ConfigFactory.parseString("{" +
                         "rpc.gasPriceMultiplier = invalid" +
                         " }").withFallback(rawConfig));
 
         Assertions.assertThrows(ConfigException.WrongType.class, testSystemProperties::gasPriceMultiplier);
+    }
+
+    @Test
+    void testGasPriceMultiplierThrowsErrorForNegativeValue() {
+        TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "rpc.gasPriceMultiplier = -1" +
+                        " }").withFallback(rawConfig));
+
+        Assertions.assertThrows(RskConfigurationException.class, testSystemProperties::gasPriceMultiplier);
     }
 }
