@@ -1,13 +1,23 @@
 package co.rsk.peg;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -17,39 +27,20 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.*;
 
 class BridgeTest {
 
-    private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
     private ActivationConfig activationConfig;
     private SignatureCache signatureCache;
 
     @BeforeEach
     void resetConfigToRegTest() {
-        config = spy(new TestSystemProperties());
         constants = Constants.regtest();
-        when(config.getNetworkConstants()).thenReturn(constants);
         activationConfig = spy(ActivationConfigsForTest.genesis());
-        when(config.getActivationConfig()).thenReturn(activationConfig);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     }
 
