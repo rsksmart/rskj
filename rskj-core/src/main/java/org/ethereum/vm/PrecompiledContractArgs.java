@@ -44,11 +44,7 @@ public class PrecompiledContractArgs {
      */
     @Nullable
     private ProgramInvoke programInvoke;
-
     private MessageCall.MsgType msgType;
-
-    public PrecompiledContractArgs() {
-    }
 
     void setTransaction(Transaction transaction) {
         this.transaction = transaction;
