@@ -17,10 +17,8 @@
  */
 package co.rsk.peg;
 
-import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -39,9 +37,9 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 public enum BridgeMethods {
     ADD_FEDERATOR_PUBLIC_KEY(
         CallTransaction.Function.fromSignature(
-                "addFederatorPublicKey",
-                new String[]{"bytes"},
-                new String[]{"int256"}
+            "addFederatorPublicKey",
+            new String[]{"bytes"},
+            new String[]{"int256"}
         ),
         fixedCost(13000L),
         (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKey,
@@ -98,14 +96,14 @@ public enum BridgeMethods {
         CallTypeHelper.RESTRICTED_TO_CALL_METHOD
     ),
     ADD_SIGNATURE(
-            CallTransaction.Function.fromSignature(
-                    "addSignature",
-                    new String[]{"bytes", "bytes[]", "bytes"},
-                    new String[]{}
-            ),
-            fixedCost(70000L),
-            Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::addSignature, "addSignature"),
-            fixedPermission(false),
+        CallTransaction.Function.fromSignature(
+            "addSignature",
+            new String[]{"bytes", "bytes[]", "bytes"},
+            new String[]{}
+        ),
+        fixedCost(70000L),
+        Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::addSignature, "addSignature"),
+        fixedPermission(false),
         CallTypeHelper.RESTRICTED_TO_CALL_METHOD
     ),
     COMMIT_FEDERATION(
@@ -722,19 +720,17 @@ public enum BridgeMethods {
     );
 
     private static class CallTypeHelper {
-        private static final Function<MsgType, Boolean> UNRESTRICTED_METHOD =
-                (callType) -> callType == MsgType.CALL || callType == MsgType.STATICCALL;
-        private static final Function<MsgType, Boolean> RESTRICTED_TO_CALL_METHOD =  (callType) -> callType == MsgType.CALL;
+        private static final Predicate<MsgType> UNRESTRICTED_METHOD = callType ->
+            callType == MsgType.CALL || callType == MsgType.STATICCALL;
+        private static final Predicate<MsgType> RESTRICTED_TO_CALL_METHOD =  callType -> callType == MsgType.CALL;
     }
-
-
 
     private final CallTransaction.Function function;
     private final CostProvider costProvider;
     private final Function<ActivationConfig.ForBlock, Boolean> isEnabledFunction;
     private final BridgeMethodExecutor executor;
     private final BridgeCallPermissionProvider callPermissionProvider;
-    private final Function<MsgType, Boolean> callTypeVerifier;
+    private final Predicate<MsgType> callTypeVerifier;
 
     BridgeMethods(
         CallTransaction.Function function,
@@ -742,7 +738,14 @@ public enum BridgeMethods {
         BridgeMethodExecutor executor,
         BridgeCallPermissionProvider callPermissionProvider) {
 
-        this(function, costProvider, executor, activations -> Boolean.TRUE, callPermissionProvider, CallTypeHelper.RESTRICTED_TO_CALL_METHOD);
+        this(
+            function,
+            costProvider,
+            executor,
+            activations -> Boolean.TRUE,
+            callPermissionProvider,
+            CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+        );
     }
 
     BridgeMethods(
@@ -750,9 +753,16 @@ public enum BridgeMethods {
         CostProvider costProvider,
         BridgeMethodExecutor executor,
         BridgeCallPermissionProvider callPermissionProvider,
-        Function<MsgType, Boolean> callTypeVerifier) {
+        Predicate<MsgType> callTypeVerifier) {
 
-        this(function, costProvider, executor, activations -> Boolean.TRUE, callPermissionProvider, callTypeVerifier);
+        this(
+            function,
+            costProvider,
+            executor,
+            activations -> Boolean.TRUE,
+            callPermissionProvider,
+            callTypeVerifier
+        );
     }
 
     BridgeMethods(
@@ -761,7 +771,7 @@ public enum BridgeMethods {
         BridgeMethodExecutor executor,
         Function<ActivationConfig.ForBlock, Boolean> isEnabled,
         BridgeCallPermissionProvider callPermissionProvider,
-        Function<MsgType, Boolean> callTypeVerifier) {
+        Predicate<MsgType> callTypeVerifier) {
 
         this.function = function;
         this.costProvider = costProvider;
@@ -778,7 +788,14 @@ public enum BridgeMethods {
         Function<ActivationConfig.ForBlock, Boolean> isEnabled,
         BridgeCallPermissionProvider callPermissionProvider) {
 
-        this(function, costProvider, executor, isEnabled, callPermissionProvider, CallTypeHelper.RESTRICTED_TO_CALL_METHOD);
+        this(
+            function,
+            costProvider,
+            executor,
+            isEnabled,
+            callPermissionProvider,
+            CallTypeHelper.RESTRICTED_TO_CALL_METHOD
+        );
     }
 
     public static Optional<BridgeMethods> findBySignature(byte[] encoding) {
@@ -806,7 +823,7 @@ public enum BridgeMethods {
     }
 
     public boolean acceptsThisTypeOfCall(MsgType callType) {
-        return callTypeVerifier.apply(callType);
+        return callTypeVerifier.test(callType);
     }
 
     public interface BridgeCondition {
@@ -865,9 +882,8 @@ public enum BridgeMethods {
     }
 
     private static final Map<ByteArrayWrapper, BridgeMethods> SIGNATURES = Stream.of(BridgeMethods.values())
-            .collect(Collectors.toMap(
-                    m -> new ByteArrayWrapper(m.getFunction().encodeSignature()),
-                    Function.identity()
-            ));
-
+        .collect(Collectors.toMap(
+            m -> new ByteArrayWrapper(m.getFunction().encodeSignature()),
+            Function.identity()
+        ));
 }
