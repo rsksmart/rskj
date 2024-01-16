@@ -8,7 +8,9 @@ import static org.mockito.Mockito.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
@@ -34,12 +36,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeTest {
 
-    private Constants constants;
+    private NetworkParameters networkParameters;
     private BridgeBuilder bridgeBuilder;
 
     @BeforeEach
-    void resetConfigToRegTest() {
-        constants = Constants.regtest();
+    void resetConfigToMainnet() {
+        networkParameters = BridgeMainNetConstants.getInstance().getBtcParams();
         bridgeBuilder = new BridgeBuilder();
     }
 
@@ -433,9 +435,9 @@ class BridgeTest {
     }
 
     @Test
-    void registerFlyoverBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_before_RSKIP284_activation_fails()
+    void registerFlyoverBtcTransaction_after_RSKIP176_activation_testnet_p2sh_refund_address_before_RSKIP284_activation_fails()
         throws VMException, IOException, BlockStoreException {
-        NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
+        NetworkParameters testnetNetworkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -454,18 +456,22 @@ class BridgeTest {
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
             .bridgeSupport(bridgeSupportMock)
+            .constants(Constants.regtest())
             .build();
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
-        Address refundBtcAddress = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
+        Address refundBtcAddress = Address.fromBase58(
+            testnetNetworkParameters,
+            "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP"
+        );
         byte[] refundBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
             activationConfig.forBlock(0),
             refundBtcAddress
         );
 
         BtcECKey btcECKeyLp = new BtcECKey();
-        Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
+        Address lpBtcAddress = btcECKeyLp.toAddress(testnetNetworkParameters);
         byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
             activationConfig.forBlock(0),
             lpBtcAddress
@@ -504,9 +510,9 @@ class BridgeTest {
     }
 
     @Test
-    void registerFlyoverBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_after_RSKIP284_activation_ok()
+    void registerFlyoverBtcTransaction_after_RSKIP176_activation_testnet_p2sh_refund_address_after_RSKIP284_activation_ok()
         throws VMException, IOException, BlockStoreException {
-        NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
+        NetworkParameters testnetNetworkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
         ActivationConfig activationConfig = ActivationConfigsForTest.hop400();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -525,18 +531,22 @@ class BridgeTest {
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
             .bridgeSupport(bridgeSupportMock)
+            .constants(Constants.regtest())
             .build();
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
-        Address refundBtcAddress = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
+        Address refundBtcAddress = Address.fromBase58(
+            testnetNetworkParameters,
+            "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP"
+        );
         byte[] refundBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
             activationConfig.forBlock(0),
             refundBtcAddress
         );
 
         BtcECKey btcECKeyLp = new BtcECKey();
-        Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
+        Address lpBtcAddress = btcECKeyLp.toAddress(testnetNetworkParameters);
         byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
             activationConfig.forBlock(0),
             lpBtcAddress
@@ -643,7 +653,6 @@ class BridgeTest {
             .activationConfig(activationConfig)
             .build();
 
-        NetworkParameters networkParameters = constants.bridgeConstants.getBtcParams();
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
             networkParameters,
             1,
@@ -685,7 +694,6 @@ class BridgeTest {
             .activationConfig(activationConfig)
             .build();
 
-        NetworkParameters networkParameters = constants.bridgeConstants.getBtcParams();
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
             networkParameters,
             1,
@@ -716,7 +724,6 @@ class BridgeTest {
             .bridgeSupport(bridgeSupportMock)
             .build();
 
-        NetworkParameters networkParameters = constants.bridgeConstants.getBtcParams();
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
             networkParameters,
             1,

@@ -39,7 +39,7 @@ public class BridgeBuilder {
             any())
         ).thenReturn(mock(BridgeSupport.class));
 
-        constants = Constants.regtest();
+        constants = Constants.mainnet();
         contractAddress = PrecompiledContracts.BRIDGE_ADDR;
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
