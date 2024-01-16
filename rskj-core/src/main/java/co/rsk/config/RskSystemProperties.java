@@ -19,6 +19,7 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
+import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
@@ -54,6 +55,7 @@ public class RskSystemProperties extends SystemProperties {
     private static final String RPC_MODULES_PATH = "rpc.modules";
     private static final String RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY = "rpc.logs.maxBlocksToQuery";
     private static final String RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN = "rpc.logs.maxLogsToReturn";
+    private static final String DISCOVERY_BUCKET_SIZE = "peer.discovery.bucketSize";
 
     private static final int CHUNK_SIZE = 192;
 
@@ -247,6 +249,10 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean allowMultipleConnectionsPerHostPort() {
         return getBoolean("peer.discovery.allowMultipleConnectionsPerHostPort", true);
+    }
+
+    public int discoveryBucketSize() {
+        return getInt(DISCOVERY_BUCKET_SIZE, KademliaOptions.BUCKET_SIZE);
     }
 
     public List<ModuleDescription> getRpcModules() {
