@@ -1,9 +1,7 @@
 package co.rsk.peg;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -28,7 +26,6 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,13 +35,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 class BridgeTest {
 
     private Constants constants;
-    private ActivationConfig activationConfig;
     private BridgeBuilder bridgeBuilder;
 
     @BeforeEach
     void resetConfigToRegTest() {
         constants = Constants.regtest();
-        activationConfig = spy(ActivationConfigsForTest.genesis());
         bridgeBuilder = new BridgeBuilder();
     }
 
@@ -809,70 +804,95 @@ class BridgeTest {
         );
 
         int senderPK = 999; // Sender PK does not belong to Member PKs
-        Integer[] memberPKs = new Integer[]{100, 200, 300, 400, 500, 600};
+        Integer[] memberPKs = new Integer[]{ 100, 200, 300, 400, 500, 600 };
         Federation activeFederation = FederationTestUtils.getFederation(memberPKs);
 
-        Bridge bridge = getBridgeInstance(activeFederation, null, senderPK);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
+        doReturn(null).when(bridgeSupportMock).getRetiringFederation();
 
-        // Then
-        try {
-            executor.execute(bridge, null);
-            fail("VMException should be thrown!");
-        } catch (VMException vme) {
-            assertEquals(
-                    "Sender is not part of the active or retiring federations, so he is not enabled to call the function 'null'",
-                    vme.getMessage()
-            );
-        }
+        ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
+        RskAddress txSender = new RskAddress(key.getAddress());
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(txSender).when(rskTxMock).getSender(any(SignatureCache.class));
+
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        assertThrows(VMException.class, () -> executor.execute(bridge, null));
     }
 
     @Test
     void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsNotFromFederateMember_throwsVMException() throws Exception {
         // Given
         BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
-                null,
-                null
+            null,
+            null
         );
 
         int senderPK = 999; // Sender PK does not belong to Member PKs of active nor retiring fed
-        Integer[] activeMemberPKs = new Integer[]{100, 200, 300, 400, 500, 600};
-        Integer[] retiringMemberPKs = new Integer[]{101, 202, 303, 404, 505, 606};
+        Integer[] activeMemberPKs = new Integer[]{ 100, 200, 300, 400, 500, 600 };
+        Integer[] retiringMemberPKs = new Integer[]{ 101, 202, 303, 404, 505, 606 };
 
         Federation activeFederation = FederationTestUtils.getFederation(activeMemberPKs);
         Federation retiringFederation = FederationTestUtils.getFederation(retiringMemberPKs);
 
-        Bridge bridge = getBridgeInstance(activeFederation, retiringFederation, senderPK);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
+        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
 
-        // Then
-        try {
-            executor.execute(bridge, null);
-            fail("VMException should be thrown!");
-        } catch (VMException vme) {
-            assertEquals(
-                    "Sender is not part of the active or retiring federations, so he is not enabled to call the function 'null'",
-                    vme.getMessage()
-            );
-        }
+        ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
+        RskAddress txSender = new RskAddress(key.getAddress());
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(txSender).when(rskTxMock).getSender(any(SignatureCache.class));
+
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        assertThrows(VMException.class, () -> executor.execute(bridge, null));
     }
 
     @Test
     void activeAndRetiringFederationOnly_activeFederationIsFromFederateMember_OK() throws Exception {
         // Given
         BridgeMethods.BridgeMethodExecutor decorate = mock(
-                BridgeMethods.BridgeMethodExecutor.class
+            BridgeMethods.BridgeMethodExecutor.class
         );
         BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
-                decorate,
-                null
+            decorate,
+            null
         );
 
         int senderPK = 101; // Sender PK belongs to active federation member PKs
-        Integer[] memberPKs = new Integer[]{100, 200, 300, 400, 500, 600};
-
+        Integer[] memberPKs = new Integer[]{ 100, 200, 300, 400, 500, 600 };
         Federation activeFederation = FederationTestUtils.getFederation(memberPKs);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(activeFederation, null, senderPK, bridgeSupportMock);
+        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
+        doReturn(null).when(bridgeSupportMock).getRetiringFederation();
+
+        ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
+        RskAddress txSender = new RskAddress(key.getAddress());
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(txSender).when(rskTxMock).getSender(any(SignatureCache.class));
+
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
         // When
         executor.execute(bridge, null);
@@ -887,22 +907,36 @@ class BridgeTest {
     void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsFromFederateMember_OK() throws Exception {
         // Given
         BridgeMethods.BridgeMethodExecutor decorate = mock(
-                BridgeMethods.BridgeMethodExecutor.class
+            BridgeMethods.BridgeMethodExecutor.class
         );
         BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
-                decorate,
-                null
+            decorate,
+            null
         );
 
         int senderPK = 405; // Sender PK belongs to retiring federation member PKs
-        Integer[] activeMemberPKs = new Integer[]{100, 200, 300, 400, 500, 600};
-        Integer[] retiringMemberPKs = new Integer[]{101, 202, 303, 404, 505, 606};
+        Integer[] activeMemberPKs = new Integer[]{ 100, 200, 300, 400, 500, 600 };
+        Integer[] retiringMemberPKs = new Integer[]{ 101, 202, 303, 404, 505, 606 };
 
         Federation activeFederation = FederationTestUtils.getFederation(activeMemberPKs);
         Federation retiringFederation = FederationTestUtils.getFederation(retiringMemberPKs);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(activeFederation, retiringFederation, senderPK, bridgeSupportMock);
+        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
+        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
+
+        ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
+        RskAddress txSender = new RskAddress(key.getAddress());
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(txSender).when(rskTxMock).getSender(any(SignatureCache.class));
+
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
         // When
         executor.execute(bridge, null);
@@ -915,134 +949,114 @@ class BridgeTest {
 
     @Test
     void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() throws VMException {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         byte[] data = BridgeMethods.GET_NEXT_PEGOUT_CREATION_BLOCK_NUMBER.getFunction().encode();
 
-        assertNull(bridge.execute(data));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
     void getNextPegoutCreationBlockNumber_after_RSKIP271_activation() throws VMException {
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.hop400();
 
+        long nextPegoutCreationHeight = 1L;
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        when(bridgeSupportMock.getNextPegoutCreationBlockNumber()).thenReturn(nextPegoutCreationHeight);
 
-        when(bridgeSupportMock.getNextPegoutCreationBlockNumber()).thenReturn(1L);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
         CallTransaction.Function function = BridgeMethods.GET_NEXT_PEGOUT_CREATION_BLOCK_NUMBER.getFunction();
         byte[] data = function.encode();
         byte[] result = bridge.execute(data);
+        BigInteger decodedResult = (BigInteger) function.decodeResult(result)[0];
 
-        assertEquals(1L, ((BigInteger)function.decodeResult(result)[0]).longValue());
+        assertEquals(nextPegoutCreationHeight, decodedResult.longValue());
+
         // Also test the method itself
-        assertEquals(1L, bridge.getNextPegoutCreationBlockNumber(new Object[]{ }));
+        long resultFromTheBridge = bridge.getNextPegoutCreationBlockNumber(new Object[]{});
+        assertEquals(nextPegoutCreationHeight, resultFromTheBridge);
     }
 
     @Test
     void getQueuedPegoutsCount_before_RSKIP271_activation() throws VMException {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         byte[] data = BridgeMethods.GET_QUEUED_PEGOUTS_COUNT.getFunction().encode();
 
-        assertNull(bridge.execute(data));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
     void getQueuedPegoutsCount_after_RSKIP271_activation() throws VMException, IOException {
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.hop400();
 
+        int queuedPegoutsCount = 1;
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
-
-        when(bridgeSupportMock.getQueuedPegoutsCount()).thenReturn(1);
+        when(bridgeSupportMock.getQueuedPegoutsCount()).thenReturn(queuedPegoutsCount);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
         CallTransaction.Function function = BridgeMethods.GET_QUEUED_PEGOUTS_COUNT.getFunction();
         byte[] data = function.encode();
         byte[] result = bridge.execute(data);
+        BigInteger decodedResult = (BigInteger) function.decodeResult(result)[0];
 
-        assertEquals(1, ((BigInteger)function.decodeResult(result)[0]).intValue());
+        assertEquals(queuedPegoutsCount, decodedResult.intValue());
+
         // Also test the method itself
-        assertEquals(1, bridge.getQueuedPegoutsCount(new Object[]{ }));
+        int resultFromTheBridge = bridge.getQueuedPegoutsCount(new Object[]{});
+        assertEquals(queuedPegoutsCount, resultFromTheBridge);
     }
 
     @Test
     void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() throws VMException {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
 
         byte[] data = BridgeMethods.GET_ESTIMATED_FEES_FOR_NEXT_PEGOUT_EVENT.getFunction().encode();
 
-        assertNull(bridge.execute(data));
+        assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
     void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation() throws VMException, IOException {
-        doReturn(true).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+        ActivationConfig activationConfig = ActivationConfigsForTest.hop400();
 
+        Coin estimatedFeesForNextPegout = Coin.SATOSHI;
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+        when(bridgeSupportMock.getEstimatedFeesForNextPegOutEvent()).thenReturn(estimatedFeesForNextPegout);
 
-        when(bridgeSupportMock.getEstimatedFeesForNextPegOutEvent()).thenReturn(Coin.SATOSHI);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
 
         CallTransaction.Function function = BridgeMethods.GET_ESTIMATED_FEES_FOR_NEXT_PEGOUT_EVENT.getFunction();
         byte[] data = function.encode();
         byte[] result = bridge.execute(data);
+        BigInteger decodedResult = (BigInteger) function.decodeResult(result)[0];
 
-        assertEquals(Coin.SATOSHI.value, ((BigInteger)function.decodeResult(result)[0]).intValue());
+        assertEquals(estimatedFeesForNextPegout.getValue(), decodedResult.longValue());
+
         // Also test the method itself
-        assertEquals(Coin.SATOSHI.value, bridge.getEstimatedFeesForNextPegOutEvent(new Object[]{ }));
-    }
-
-    private Bridge getBridgeInstance(Federation activeFederation, Federation retiringFederation, int senderPK) {
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
-
-        ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
-        Transaction rskTxMock = mock(Transaction.class);
-        doReturn(new RskAddress(key.getAddress())).when(rskTxMock).getSender(any(SignatureCache.class));
-
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
-
-        return bridgeBuilder
-            .transaction(rskTxMock)
-            .activationConfig(activationConfig)
-            .bridgeSupport(bridgeSupportMock)
-            .build();
-    }
-
-    private Bridge getBridgeInstance(Federation activeFederation, Federation retiringFederation, int senderPK, BridgeSupport bridgeSupportMock) {
-        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
-        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
-
-        ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
-        Transaction rskTxMock = mock(Transaction.class);
-        doReturn(new RskAddress(key.getAddress())).when(rskTxMock).getSender(any(SignatureCache.class));
-
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
-
-        return bridgeBuilder
-            .transaction(rskTxMock)
-            .activationConfig(activationConfig)
-            .bridgeSupport(bridgeSupportMock)
-            .build();
-    }
-
-    @Deprecated
-    private Bridge getBridgeInstance(BridgeSupport bridgeSupportInstance) {
-        return bridgeBuilder
-            .activationConfig(activationConfig)
-            .bridgeSupport(bridgeSupportInstance)
-            .build();
+        long resultFromTheBridge = bridge.getEstimatedFeesForNextPegOutEvent(new Object[]{});
+        assertEquals(estimatedFeesForNextPegout.getValue(), resultFromTheBridge);
     }
 }
