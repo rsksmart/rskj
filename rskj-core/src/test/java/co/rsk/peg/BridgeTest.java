@@ -1120,6 +1120,30 @@ class BridgeTest {
         }
     }
 
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void addLockWhitelistAddress(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        String addressBase58 = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa";
+        long maxTransferValue = 100_000L;
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.ADD_LOCK_WHITELIST_ADDRESS;
+        byte[] data = function.encode(addressBase58, maxTransferValue);
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP87, 0)) {
+            // Post RSKIP87 this method is no longer enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).addOneOffLockWhitelistAddress(any(), any(), any());
+        }
+    }
+
     private static Stream<Arguments> msgTypesAndActivations() {
         List<Arguments> argumentsList = new ArrayList<>();
         List<ActivationConfig> activationConfigs = Arrays.asList(

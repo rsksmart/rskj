@@ -57,15 +57,15 @@ public enum BridgeMethods {
         fixedPermission(false)
     ),
     ADD_LOCK_WHITELIST_ADDRESS(
-            CallTransaction.Function.fromSignature(
-                    "addLockWhitelistAddress",
-                    new String[]{"string", "int256"},
-                    new String[]{"int256"}
-            ),
-            fixedCost(25000L),
-            (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
-            activations -> !activations.isActive(RSKIP87),
-            fixedPermission(false)
+        CallTransaction.Function.fromSignature(
+            "addLockWhitelistAddress",
+            new String[]{"string", "int256"},
+            new String[]{"int256"}
+        ),
+        fixedCost(25000L),
+        (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
+        activations -> !activations.isActive(RSKIP87),
+        fixedPermission(false)
     ),
     ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
