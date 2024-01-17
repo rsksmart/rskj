@@ -68,14 +68,14 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private Coin lastVal;
 
+    private GasPriceTracker(BlockStore blockStore) {
+        this.blockStore = blockStore;
+    }
+
     public static GasPriceTracker create(BlockStore blockStore) {
         GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore);
         gasPriceTracker.initializeWindowsFromDB();
         return gasPriceTracker;
-    }
-
-    private GasPriceTracker(BlockStore blockStore) {
-        this.blockStore = blockStore;
     }
 
     @Override
@@ -109,20 +109,20 @@ public class GasPriceTracker extends EthereumListenerAdapter {
     public synchronized Coin getGasPrice() {
         if (txWindow[0] == null) { // for some reason, not filled yet (i.e. not enough blocks on DB)
             return defaultPrice;
-        } else {
-            if (lastVal == null) {
-                Coin[] values = Arrays.copyOf(txWindow, TX_WINDOW_SIZE);
-                Arrays.sort(values);
-                lastVal = values[values.length / 4];  // 25% percentile
-            }
-
-            Coin bestBlockPrice = bestBlockPriceRef.get();
-            if (bestBlockPrice == null) {
-                return lastVal;
-            } else {
-                return Coin.max(lastVal, bestBlockPrice.multiply(BI_11).divide(BI_10));
-            }
         }
+
+        if (lastVal == null) {
+            Coin[] values = Arrays.copyOf(txWindow, TX_WINDOW_SIZE);
+            Arrays.sort(values);
+            lastVal = values[values.length / 4];  // 25% percentile
+        }
+
+        Coin bestBlockPrice = bestBlockPriceRef.get();
+        if (bestBlockPrice == null) {
+            return lastVal;
+        }
+
+        return Coin.max(lastVal, bestBlockPrice.multiply(BI_11).divide(BI_10));
     }
 
     public synchronized boolean isFeeMarketWorking() {

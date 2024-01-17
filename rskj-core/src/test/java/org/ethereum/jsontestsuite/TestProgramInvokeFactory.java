@@ -47,7 +47,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
     @Override
     public ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block, Repository repository, BlockStore blockStore, SignatureCache signatureCache) {
-        return generalInvoke(tx, txindex, repository, blockStore, signatureCache);
+        return generalInvoke(tx, txindex, block, repository, blockStore, signatureCache);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         return null;
     }
 
-    private ProgramInvoke generalInvoke(Transaction tx, int txindex, Repository repository, BlockStore blockStore, SignatureCache signatureCache) {
+    private ProgramInvoke generalInvoke(Transaction tx, int txindex, Block block, Repository repository, BlockStore blockStore, SignatureCache signatureCache) {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
@@ -77,7 +77,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         Coin balance = repository.getBalance(addr);
 
         /***         GASPRICE op       ***/
-        Coin gasPrice = tx.getGasPrice();
+        Coin txGasPrice = tx.getGasPrice();
 
         /*** GAS op ***/
         byte[] gas = tx.getGasLimit();
@@ -109,9 +109,12 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         /*** GASLIMIT op ***/
         byte[] gaslimit = env.getCurrentGasLimit();
 
+        /*** BASEFEE op ***/
+        Coin minimumGasPrice = block.getMinimumGasPrice();
+
         return new ProgramInvokeImpl(addr.getBytes(), origin.getBytes(), caller.getBytes(), balance.getBytes(),
-                gasPrice.getBytes(), gas, callValue.getBytes(), data, lastHash, coinbase,
-                timestamp, number, txindex, difficulty, gaslimit, repository, blockStore);
+                txGasPrice.getBytes(), gas, callValue.getBytes(), data, lastHash, coinbase,
+                timestamp, number, txindex, difficulty, gaslimit, minimumGasPrice.getBytes(), repository, blockStore);
     }
 
 }

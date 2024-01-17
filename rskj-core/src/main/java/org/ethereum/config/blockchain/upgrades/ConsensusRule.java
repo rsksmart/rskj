@@ -67,6 +67,7 @@ public enum ConsensusRule {
     RSKIP199("rskip199"),
     RSKIP200("rskip200"),
     RSKIP201("rskip201"),
+    RSKIP203("rskip203"), // From RSKIP-203 get call stack depth
     RSKIP218("rskip218"), // New rewards fee adddress
     RSKIP219("rskip219"),
     RSKIP220("rskip220"),
@@ -84,10 +85,12 @@ public enum ConsensusRule {
     RSKIP375("rskip375"),
     RSKIP376("rskip376"),
     RSKIP377("rskip377"),
+    RSKIP379("rskip379"),
     RSKIP383("rskip383"),
     RSKIP385("rskip385"),
     RSKIP398("rskip398"),
     RSKIP400("rskip400"), // From EIP-2028 calldata gas cost reduction
+    RSKIP412("rskip412"), // From EIP-3198 BASEFEE opcode
     ;
 
     private String configKey;

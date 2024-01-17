@@ -953,7 +953,7 @@ public class VM {
     protected void doGASPRICE(){
         spendOpCodeGas();
         // EXECUTION PHASE
-        DataWord gasPrice = program.getGasPrice();
+        DataWord gasPrice = program.getTxGasPrice();
 
         if (isLogEnabled) {
             hint = "price: " + gasPrice.toString();
@@ -1055,6 +1055,19 @@ public class VM {
         }
 
         program.stackPush(gaslimit);
+        program.step();
+    }
+
+    protected void doBASEFEE() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord minimumGasPrice = program.getMinimumGasPrice();
+
+        if (isLogEnabled) {
+            hint = "baseFee: " + minimumGasPrice;
+        }
+
+        program.stackPush(minimumGasPrice);
         program.step();
     }
 
@@ -1833,6 +1846,12 @@ public class VM {
             case OpCodes.OP_DIFFICULTY: doDIFFICULTY();
             break;
             case OpCodes.OP_GASLIMIT: doGASLIMIT();
+            break;
+            case OpCodes.OP_BASEFEE:
+                if (!activations.isActive(RSKIP412)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doBASEFEE();
             break;
             case OpCodes.OP_CHAINID:
                 if (!activations.isActive(RSKIP152)) {

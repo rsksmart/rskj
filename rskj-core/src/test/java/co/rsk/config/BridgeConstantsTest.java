@@ -1,17 +1,16 @@
 package co.rsk.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.Coin;
+import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class BridgeConstantsTest {
     private static Stream<Arguments> fundsMigrationAgeSinceActivationEndArgsProvider() {
@@ -121,5 +120,41 @@ class BridgeConstantsTest {
         } else {
             assertEquals(bridgeConstants.legacyMinimumPeginTxValue, minimumPeginTxValue);
         }
+    }
+
+    private static Stream<Arguments> getBtcHeightWhenPegoutTxIndexActivatesArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), 100),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 150),
+            Arguments.of(BridgeRegTestConstants.getInstance(), 250)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getBtcHeightWhenPegoutTxIndexActivatesArgProvider")
+    void test_getBtcHeightWhenPegoutTxIndexActivates(BridgeConstants bridgeConstants, int expectedValue){
+        // Act
+        int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
+
+        // assert
+        assertEquals(expectedValue, btcHeightWhenPegoutTxIndexActivates);
+    }
+
+    private static Stream<Arguments> getPegoutTxIndexGracePeriodInBtcBlocksArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), 4_320),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 4_320),
+            Arguments.of(BridgeRegTestConstants.getInstance(), 100)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getPegoutTxIndexGracePeriodInBtcBlocksArgProvider")
+    void getPegoutTxIndexGracePeriodInBtcBlocks(BridgeConstants bridgeConstants, int expectedValue){
+        // Act
+        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+
+        // assert
+        assertEquals(expectedValue, pegoutTxIndexGracePeriodInBtcBlocks);
     }
 }

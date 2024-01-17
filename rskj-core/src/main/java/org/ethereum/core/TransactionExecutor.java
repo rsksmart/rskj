@@ -307,7 +307,17 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
+            PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
+                    .transaction(tx)
+                    .executionBlock(executionBlock)
+                    .repository(cacheTrack)
+                    .blockStore(blockStore)
+                    .receiptStore(receiptStore)
+                    .logs(result.getLogInfoList())
+                    .build();
+
+            precompiledContract.init(args);
+
             profiler.stop(metric);
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
 
@@ -351,8 +361,8 @@ public class TransactionExecutor {
                 gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
             } else {
-                ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
+                ProgramInvoke programInvoke =  programInvokeFactory
+                        .createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore, signatureCache);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts, signatureCache);

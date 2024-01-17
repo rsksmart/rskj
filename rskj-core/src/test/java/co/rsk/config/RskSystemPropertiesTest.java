@@ -53,6 +53,7 @@ class RskSystemPropertiesTest {
         assertEquals(0, config.minerMinGasPrice());
         assertEquals(0, config.minerGasUnitInDollars(), 0.001);
         assertEquals(0, config.minerMinFeesNotifyInDollars(), 0.001);
+        assertEquals(1.1, config.getMinGasPriceMultiplier());
 
         assertFalse(config.getIsHeartBeatEnabled());
     }

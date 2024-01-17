@@ -39,9 +39,11 @@ public enum BridgeStorageIndexKey {
     BTC_BLOCK_HEIGHT("btcBlockHeight"),
     FAST_BRIDGE_HASH_USED_IN_BTC_TX("fastBridgeHashUsedInBtcTx"),
     FAST_BRIDGE_FEDERATION_INFORMATION("fastBridgeFederationInformation"),
+
+    PEGOUT_TX_SIG_HASH("pegoutTxSigHash"),
     ;
 
-    private String key;
+    private final String key;
 
     BridgeStorageIndexKey(String key) {
         this.key = key;

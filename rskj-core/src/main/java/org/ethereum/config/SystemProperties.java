@@ -92,6 +92,7 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_GAS_ESTIMATION_CAP = "rpc.gasEstimationCap";
     private static final String PROPERTY_RPC_CALL_GAS_CAP = "rpc.callGasCap";
     private static final String PROPERTY_RPC_MAX_RESPONSE_SIZE = "rpc.maxResponseSize";
+    private static final String PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER = "rpc.minGasPriceMultiplier";
     private static final String PROPERTY_RPC_TIMEOUT = "rpc.timeout";
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
@@ -736,6 +737,14 @@ public abstract class SystemProperties {
         }
 
         return configFromFiles.getLong(PROPERTY_RPC_CALL_GAS_CAP);
+    }
+
+    public double getMinGasPriceMultiplier() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER)) {
+            return 1.1;
+        }
+
+        return configFromFiles.getDouble(PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER);
     }
 
     public long getRpcTimeout() {

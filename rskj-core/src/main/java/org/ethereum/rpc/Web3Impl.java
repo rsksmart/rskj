@@ -465,9 +465,8 @@ public class Web3Impl implements Web3 {
     public String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam) {
         if (blockRefParam.getIdentifier() != null) {
             return this.eth_getStorageAt(address, storageIdx, blockRefParam.getIdentifier());
-        } else {
-            return this.eth_getStorageAt(address, storageIdx, blockRefParam.getInputs());
         }
+        return this.eth_getStorageAt(address, storageIdx, blockRefParam.getInputs());
     }
 
     private String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, Map<String, String> blockRef) {
@@ -475,29 +474,50 @@ public class Web3Impl implements Web3 {
     }
 
     private String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, String blockId) {
-        String s = null;
+        String response = null;
 
         try {
-            RskAddress addr = address.getAddress();
-
             AccountInformationProvider accountInformationProvider =
                     web3InformationRetriever.getInformationProvider(blockId);
+            DataWord key = DataWord.valueOf(HexUtils.strHexOrStrNumberToByteArray(storageIdx.getHexNumber()));
 
-            DataWord sv = accountInformationProvider
-                    .getStorageValue(addr, DataWord.valueOf(HexUtils.strHexOrStrNumberToByteArray(storageIdx.getHexNumber())));
-
-            if (sv == null) {
-                s = "0x0";
-            } else {
-                s = HexUtils.toUnformattedJsonHex(sv.getData());
-            }
-
-            return s;
+            response = Optional.ofNullable(accountInformationProvider.getStorageValue(address.getAddress(), key))
+                    .map(DataWord::getData)
+                    .map(HexUtils::toUnformattedJsonHex)
+                    .orElse("0x0");
+            return response;
         } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("eth_getStorageAt({}, {}, {}): {}", address, storageIdx, blockId, s);
-            }
+            logger.debug("eth_getStorageAt({}, {}, {}): {}", address, storageIdx, blockId, response);
         }
+    }
+
+    @Override
+    public String rsk_getStorageBytesAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam) {
+        if (blockRefParam.getIdentifier() != null) {
+            return this.rsk_getStorageBytesAt(address, storageIdx, blockRefParam.getIdentifier());
+        }
+        return this.rsk_getStorageBytesAt(address, storageIdx, blockRefParam.getInputs());
+    }
+
+    private String rsk_getStorageBytesAt(HexAddressParam address, HexNumberParam storageIdx, String blockId) {
+        String response = null;
+
+        try {
+            AccountInformationProvider accountInformationProvider =
+                    web3InformationRetriever.getInformationProvider(blockId);
+            DataWord key = DataWord.valueOf(HexUtils.strHexOrStrNumberToByteArray(storageIdx.getHexNumber()));
+
+            response = Optional.ofNullable(accountInformationProvider.getStorageBytes(address.getAddress(), key))
+                    .map(HexUtils::toUnformattedJsonHex)
+                    .orElse("0x0");
+            return response;
+        } finally {
+            logger.debug("rsk_getStorageAt({}, {}, {}): {}", address, storageIdx, blockId, response);
+        }
+    }
+
+    private String rsk_getStorageBytesAt(HexAddressParam address, HexNumberParam storageIdx, Map<String, String> blockRef) {
+        return invokeByBlockRef(blockRef, blockNumber -> this.rsk_getStorageBytesAt(address, storageIdx, blockNumber));
     }
 
     @Override

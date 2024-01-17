@@ -191,35 +191,35 @@ public abstract class MinerServerTest {
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
-        byte[] extraData = ByteBuffer.allocate(4).putInt(1).array();
-        minerServer.setExtraData(extraData);
-        minerServer.start();
-        MinerWork work = minerServer.getWork();
+            byte[] extraData = ByteBuffer.allocate(4).putInt(1).array();
+            minerServer.setExtraData(extraData);
+            minerServer.start();
+            MinerWork work = minerServer.getWork();
 
-        extraData = ByteBuffer.allocate(4).putInt(2).array();
-        minerServer.setExtraData(extraData);
-        minerServer.buildBlockToMine(false);
-        MinerWork work2 = minerServer.getWork(); // only the tag is used
-        Assertions.assertNotEquals(work2.getBlockHashForMergedMining(),work.getBlockHashForMergedMining());
+            extraData = ByteBuffer.allocate(4).putInt(2).array();
+            minerServer.setExtraData(extraData);
+            minerServer.buildBlockToMine(false);
+            MinerWork work2 = minerServer.getWork(); // only the tag is used
+            Assertions.assertNotEquals(work2.getBlockHashForMergedMining(), work.getBlockHashForMergedMining());
 
-        BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithTwoTags(work,work2);
+            BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithTwoTags(work, work2);
 
-        findNonce(work, bitcoinMergedMiningBlock);
-        SubmitBlockResult result;
-        result = minerServer.submitBitcoinBlock(work2.getBlockHashForMergedMining(), bitcoinMergedMiningBlock,true);
+            findNonce(work, bitcoinMergedMiningBlock);
+            SubmitBlockResult result;
+            result = minerServer.submitBitcoinBlock(work2.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, true);
 
 
-        Assertions.assertEquals("OK", result.getStatus());
-        Assertions.assertNotNull(result.getBlockInfo());
-        Assertions.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
-        Assertions.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+            Assertions.assertEquals("OK", result.getStatus());
+            Assertions.assertNotNull(result.getBlockInfo());
+            Assertions.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assertions.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-        // Submit again the save PoW for a different header
-        result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock,false);
+            // Submit again the save PoW for a different header
+            result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, false);
 
-        Assertions.assertEquals("ERROR", result.getStatus());
+            Assertions.assertEquals("ERROR", result.getStatus());
 
-        verify(ethereumImpl, times(1)).addNewMinedBlock(any());
+            verify(ethereumImpl, times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -409,9 +409,8 @@ public abstract class MinerServerTest {
 
         minerServer.start();
         try {
-        MinerWork work = minerServer.getWork();
-
-        assertEquals("0", work.getFeesPaidToMiner());
+            MinerWork work = minerServer.getWork();
+            assertEquals("0", work.getFeesPaidToMiner());
         } finally {
             minerServer.stop();
         }
@@ -730,7 +729,14 @@ public abstract class MinerServerTest {
     void onNewTxBuildBlockToMine() throws InterruptedException {
 
         // prepare for miner server
-        Ethereum ethereum = spy(new EthereumImpl(null, null, compositeEthereumListener, standardBlockchain, mock(GasPriceTracker.class)) );
+        Ethereum ethereum = spy(new EthereumImpl(
+                null,
+                null,
+                compositeEthereumListener,
+                standardBlockchain,
+                mock(GasPriceTracker.class),
+                rskTestContext.getRskSystemProperties().getMinGasPriceMultiplier())
+        );
         doReturn(ImportResult.IMPORTED_BEST).when(ethereum).addNewMinedBlock(any());
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
@@ -742,7 +748,7 @@ public abstract class MinerServerTest {
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         // create the transaction
-        World world = new World((BlockChainImpl) standardBlockchain, blockStore, rskTestContext.getReceiptStore(), rskTestContext.getTrieStore(), repository, transactionPool, (Genesis)null);
+        World world = new World((BlockChainImpl) standardBlockchain, blockStore, rskTestContext.getReceiptStore(), rskTestContext.getTrieStore(), repository, transactionPool, (Genesis) null);
 
         Account sender = new AccountBuilder(world).name("sender").balance(new Coin(BigInteger.valueOf(2000))).build();
         Account receiver = new AccountBuilder(world).name("receiver").build();

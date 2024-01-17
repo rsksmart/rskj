@@ -195,7 +195,7 @@ public class Program {
                 transaction,
                 getCallDeep(),
                 senderNonce,
-                getGasPrice(),
+                getTxGasPrice(),
                 gasLimit,
                 senderAddress.getBytes(),
                 receiveAddress.getBytes(),
@@ -1022,8 +1022,12 @@ public class Program {
         return invoke.getCallerAddress();
     }
 
-    public DataWord getGasPrice() {
-        return invoke.getMinGasPrice();
+    public DataWord getTxGasPrice() {
+        return invoke.getTxGasPrice();
+    }
+
+    public DataWord getMinimumGasPrice() {
+        return invoke.getMinimumGasPrice();
     }
 
     public long getRemainingGas() {
@@ -1084,6 +1088,10 @@ public class Program {
 
     public ProgramResult getResult() {
         return result;
+    }
+
+    public ProgramInvoke getInvoke() {
+        return this.invoke;
     }
 
     public void setRuntimeFailure(RuntimeException e) {
@@ -1407,7 +1415,16 @@ public class Program {
                     Collections.emptyList()
             );
 
-            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList());
+            PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
+                    .transaction(internalTx)
+                    .executionBlock(executionBlock)
+                    .repository(track)
+                    .blockStore(this.invoke.getBlockStore())
+                    .logs(result.getLogInfoList())
+                    .programInvoke(this.invoke)
+                    .build();
+
+            contract.init(args);
         }
 
         long requiredGas = contract.getGasForData(data);

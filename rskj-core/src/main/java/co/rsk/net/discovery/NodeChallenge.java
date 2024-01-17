@@ -18,6 +18,7 @@
 
 package co.rsk.net.discovery;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.net.rlpx.Node;
 
 /**
@@ -44,5 +45,14 @@ public class NodeChallenge {
 
     public String getChallengeId() {
         return challengeId;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("challengedNode", this.challengedNode)
+                .append("challenger", this.challenger)
+                .append("challengeId", this.challengeId)
+                .toString();
     }
 }

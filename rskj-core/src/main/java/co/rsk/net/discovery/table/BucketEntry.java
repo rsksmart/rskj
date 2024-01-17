@@ -18,6 +18,7 @@
 
 package co.rsk.net.discovery.table;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.net.rlpx.Node;
 
 /**
@@ -42,5 +43,13 @@ public class BucketEntry {
 
     public void updateTime() {
         this.lastSeenTime = System.currentTimeMillis();
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("node", node)
+                .append("lastSeenTime", lastSeenTime)
+                .toString();
     }
 }
