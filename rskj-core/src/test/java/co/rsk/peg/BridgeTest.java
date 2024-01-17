@@ -1144,6 +1144,35 @@ class BridgeTest {
         }
     }
 
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void addOneOffLockWhitelistAddress(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        String addressBase58 = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa";
+        long maxTransferValue = 100_000L;
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS;
+        byte[] data = function.encode(addressBase58, maxTransferValue);
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP87, 0)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MsgType.CALL)) {
+                // Post arrowhead should fail for any msg type != CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock, times(1)).addOneOffLockWhitelistAddress(any(), any(), any());
+            }
+        } else {
+            // Pre RSKIP87 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
     private static Stream<Arguments> msgTypesAndActivations() {
         List<Arguments> argumentsList = new ArrayList<>();
         List<ActivationConfig> activationConfigs = Arrays.asList(
