@@ -1092,6 +1092,34 @@ class BridgeTest {
         }
     }
 
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void addFederatorPublicKeyMultikey(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        String publicKey = "039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9";
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY;
+        byte[] data = function.encode(Hex.decode(publicKey), Hex.decode(publicKey), Hex.decode(publicKey));
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP123, 0)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MsgType.CALL)) {
+                // Post arrowhead should fail for any msg type != CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock, times(1)).voteFederationChange(any(), any());
+            }
+        } else {
+            // Pre RSKIP123 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
     private static Stream<Arguments> msgTypesAndActivations() {
         List<Arguments> argumentsList = new ArrayList<>();
         List<ActivationConfig> activationConfigs = Arrays.asList(

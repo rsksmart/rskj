@@ -47,9 +47,9 @@ public enum BridgeMethods {
     ),
     ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY(
         CallTransaction.Function.fromSignature(
-                "addFederatorPublicKeyMultikey",
-                new String[]{"bytes", "bytes", "bytes"},
-                new String[]{"int256"}
+            "addFederatorPublicKeyMultikey",
+            new String[]{"bytes", "bytes", "bytes"},
+            new String[]{"int256"}
         ),
         fixedCost(13000L),
         (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKeyMultikey,

@@ -910,8 +910,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         byte[] mstPublicKeyBytes = (byte[]) args[2];
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("add-multi", new byte[][]{ btcPublicKeyBytes, rskPublicKeyBytes, mstPublicKeyBytes })
+            rskTx,
+            new ABICallSpec(
+                "add-multi",
+                new byte[][]{ btcPublicKeyBytes, rskPublicKeyBytes, mstPublicKeyBytes }
+            )
         );
     }
 
