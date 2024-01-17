@@ -86,6 +86,7 @@ public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
     private static final String CLIENT_VERSION_PREFIX = "RskJ";
+    private static final String NON_EXISTING_KEY_RESPONSE = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
     private final MinerClient minerClient;
     private final MinerServer minerServer;
@@ -487,7 +488,7 @@ public class Web3Impl implements Web3 {
                     .getStorageValue(addr, DataWord.valueOf(HexUtils.strHexOrStrNumberToByteArray(storageIdx.getHexNumber())));
 
             if (sv == null) {
-                s = "0x0";
+                s = NON_EXISTING_KEY_RESPONSE;
             } else {
                 s = HexUtils.toUnformattedJsonHex(sv.getData());
             }
