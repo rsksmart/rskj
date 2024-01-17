@@ -41,12 +41,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -107,7 +102,7 @@ public class PeerExplorer {
         this.distanceTable = distanceTable;
         this.updateEntryLock = new ReentrantLock();
         this.networkId = networkId;
-        this.initialBootNodes = initialBootNodes;
+        this.initialBootNodes = Collections.unmodifiableList(new ArrayList<>(initialBootNodes));
         loadInitialBootNodes(initialBootNodes);
 
         this.cleaner = new PeerExplorerCleaner(updatePeriod, cleanPeriod, this);
