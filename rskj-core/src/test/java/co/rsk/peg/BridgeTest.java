@@ -1140,7 +1140,11 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).addOneOffLockWhitelistAddress(any(), any(), any());
+            verify(bridgeSupportMock, times(1)).addOneOffLockWhitelistAddress(
+                any(),
+                any(),
+                any()
+            );
         }
     }
 
@@ -1165,7 +1169,42 @@ class BridgeTest {
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
                 bridge.execute(data);
-                verify(bridgeSupportMock, times(1)).addOneOffLockWhitelistAddress(any(), any(), any());
+                verify(bridgeSupportMock, times(1)).addOneOffLockWhitelistAddress(
+                    any(),
+                    any(),
+                    any()
+                );
+            }
+        } else {
+            // Pre RSKIP87 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void addUnlimitedLockWhitelistAddress(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        String addressBase58 = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa";
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS;
+        byte[] data = function.encode(addressBase58);
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP87, 0)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MsgType.CALL)) {
+                // Post arrowhead should fail for any msg type != CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock, times(1)).addUnlimitedLockWhitelistAddress(
+                    any(),
+                    any()
+                );
             }
         } else {
             // Pre RSKIP87 this method is not enabled, should fail for all message types

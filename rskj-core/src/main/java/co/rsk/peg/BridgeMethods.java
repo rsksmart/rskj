@@ -79,15 +79,15 @@ public enum BridgeMethods {
         fixedPermission(false)
     ),
     ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS(
-            CallTransaction.Function.fromSignature(
-                    "addUnlimitedLockWhitelistAddress",
-                    new String[]{"string"},
-                    new String[]{"int256"}
-            ),
-            fixedCost(25000L), // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
-            (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
-            activations -> activations.isActive(RSKIP87),
-            fixedPermission(false)
+        CallTransaction.Function.fromSignature(
+            "addUnlimitedLockWhitelistAddress",
+            new String[]{"string"},
+            new String[]{"int256"}
+        ),
+        fixedCost(25000L), // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
+        (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
+        activations -> activations.isActive(RSKIP87),
+        fixedPermission(false)
     ),
     ADD_SIGNATURE(
         CallTransaction.Function.fromSignature(
