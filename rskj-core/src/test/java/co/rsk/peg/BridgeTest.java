@@ -24,9 +24,11 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -646,7 +648,7 @@ class BridgeTest {
     }
 
     @Test
-    void receiveHeader_before_RSKIP200() throws VMException {
+    void receiveHeader_before_RSKIP200() {
         ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
 
         Bridge bridge = bridgeBuilder
@@ -671,7 +673,7 @@ class BridgeTest {
     }
 
     @Test
-    void receiveHeader_empty_parameter() throws VMException {
+    void receiveHeader_empty_parameter() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
@@ -1065,5 +1067,49 @@ class BridgeTest {
         // Also test the method itself
         long resultFromTheBridge = bridge.getEstimatedFeesForNextPegOutEvent(new Object[]{});
         assertEquals(estimatedFeesForNextPegout.getValue(), resultFromTheBridge);
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void addFederatorPublicKey(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        String publicKey = "039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9";
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.ADD_FEDERATOR_PUBLIC_KEY;
+        byte[] data = function.encode(Hex.decode(publicKey));
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP123, 0)) {
+            // Post RSKIP123 this method is no longer enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).voteFederationChange(any(), any());
+        }
+    }
+
+    private static Stream<Arguments> msgTypesAndActivations() {
+        List<Arguments> argumentsList = new ArrayList<>();
+        List<ActivationConfig> activationConfigs = Arrays.asList(
+            ActivationConfigsForTest.orchid(),
+            ActivationConfigsForTest.wasabi100(),
+            ActivationConfigsForTest.papyrus200(),
+            ActivationConfigsForTest.iris300(),
+            ActivationConfigsForTest.hop400(),
+            ActivationConfigsForTest.fingerroot500(),
+            ActivationConfigsForTest.arrowhead600()
+        );
+
+        for(MsgType msgType : MsgType.values()) {
+            for(ActivationConfig activationConfig : activationConfigs) {
+                argumentsList.add(Arguments.of(msgType, activationConfig));
+            }
+        }
+
+        return argumentsList.stream();
     }
 }
