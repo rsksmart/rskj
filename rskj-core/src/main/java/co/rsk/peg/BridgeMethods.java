@@ -100,14 +100,14 @@ public enum BridgeMethods {
         fixedPermission(false)
     ),
     COMMIT_FEDERATION(
-            CallTransaction.Function.fromSignature(
-                    "commitFederation",
-                    new String[]{"bytes"},
-                    new String[]{"int256"}
-            ),
-            fixedCost(38000L),
-            (BridgeMethodExecutorTyped) Bridge::commitFederation,
-            fixedPermission(false)
+        CallTransaction.Function.fromSignature(
+            "commitFederation",
+            new String[]{"bytes"},
+            new String[]{"int256"}
+        ),
+        fixedCost(38000L),
+        (BridgeMethodExecutorTyped) Bridge::commitFederation,
+        fixedPermission(false)
     ),
     CREATE_FEDERATION(
             CallTransaction.Function.fromSignature(

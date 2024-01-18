@@ -1255,6 +1255,32 @@ class BridgeTest {
         }
     }
 
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void commitFederation(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Keccak256 commitTransactionHash = createHash3(2);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.COMMIT_FEDERATION;
+        byte[] data = function.encode(commitTransactionHash.getBytes());
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MsgType.CALL)) {
+            // Post arrowhead should fail for any msg type != CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).voteFederationChange(
+                any(),
+                any()
+            );
+        }
+    }
+
     private static Stream<Arguments> msgTypesAndActivations() {
         List<Arguments> argumentsList = new ArrayList<>();
         List<ActivationConfig> activationConfigs = Arrays.asList(

@@ -930,8 +930,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("commit", new byte[][]{ hash })
+            rskTx,
+            new ABICallSpec("commit", new byte[][]{ hash })
         );
     }
 
