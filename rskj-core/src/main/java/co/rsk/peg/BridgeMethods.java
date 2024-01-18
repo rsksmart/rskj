@@ -120,15 +120,15 @@ public enum BridgeMethods {
             fixedPermission(false)
     ),
     GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT(
-            CallTransaction.Function.fromSignature(
-                    "getBtcBlockchainBestChainHeight",
-                    new String[]{},
-                    new String[]{"int"}
-            ),
-            fixedCost(19000L),
-            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestChainHeight,
-            fromMethod(Bridge::getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getBtcBlockchainBestChainHeight",
+            new String[]{},
+            new String[]{"int"}
+        ),
+        fixedCost(19000L),
+        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestChainHeight,
+        fromMethod(Bridge::getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT(
             CallTransaction.Function.fromSignature(

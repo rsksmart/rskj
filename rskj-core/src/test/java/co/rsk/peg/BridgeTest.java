@@ -1281,6 +1281,34 @@ class BridgeTest {
         }
     }
 
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getBtcBlockchainBestChainHeight(MsgType msgType, ActivationConfig activationConfig)
+        throws VMException, BlockStoreException, IOException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getBtcBlockchainBestChainHeight();
+        }
+    }
+
     private static Stream<Arguments> msgTypesAndActivations() {
         List<Arguments> argumentsList = new ArrayList<>();
         List<ActivationConfig> activationConfigs = Arrays.asList(
