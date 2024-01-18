@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.PegTestUtils.createHash3;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -1209,6 +1210,48 @@ class BridgeTest {
         } else {
             // Pre RSKIP87 this method is not enabled, should fail for all message types
             assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void addSignatures(MsgType msgType, ActivationConfig activationConfig) throws Exception {
+        String pegnatoryPublicKey = "039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9";
+        String signature = "3045022100a0963cea7551eb3174a3470c6ed25cda901c4b1093818d4d54792b87508820220220325f93b5aecc98385a664328e68d1cec7a2a2fe81810a7692358bd870aeecb74";
+        List<byte[]> derEncodedSigs = Collections.singletonList(Hex.decode(signature));
+        Keccak256 rskTxHash = createHash3(1);
+
+        int senderPK = 101; // Sender PK belongs to active federation member PKs
+        Integer[] activeMemberPKs = new Integer[]{ 100, 200, 300, 400, 500, 600 };
+        Federation activeFederation = FederationTestUtils.getFederation(activeMemberPKs);
+
+        ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
+        RskAddress txSender = new RskAddress(key.getAddress());
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(txSender).when(rskTxMock).getSender(any(SignatureCache.class));
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.ADD_SIGNATURE;
+        byte[] data = function.encode(Hex.decode(pegnatoryPublicKey), derEncodedSigs, rskTxHash.getBytes());
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MsgType.CALL)) {
+            // Post arrowhead should fail for any msg type != CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).addSignature(
+                any(),
+                any(),
+                any()
+            );
         }
     }
 
