@@ -110,14 +110,14 @@ public enum BridgeMethods {
         fixedPermission(false)
     ),
     CREATE_FEDERATION(
-            CallTransaction.Function.fromSignature(
-                    "createFederation",
-                    new String[]{},
-                    new String[]{"int256"}
-            ),
-            fixedCost(11000L),
-            (BridgeMethodExecutorTyped) Bridge::createFederation,
-            fixedPermission(false)
+        CallTransaction.Function.fromSignature(
+            "createFederation",
+            new String[]{},
+            new String[]{"int256"}
+        ),
+        fixedCost(11000L),
+        (BridgeMethodExecutorTyped) Bridge::createFederation,
+        fixedPermission(false)
     ),
     GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT(
         CallTransaction.Function.fromSignature(
@@ -131,220 +131,220 @@ public enum BridgeMethods {
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT(
-            CallTransaction.Function.fromSignature(
-                    "getBtcBlockchainInitialBlockHeight",
-                    new String[]{},
-                    new String[]{"int"}
-            ),
-            fixedCost(20000L),
-            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight,
-            activations -> activations.isActive(RSKIP89),
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getBtcBlockchainInitialBlockHeight",
+            new String[]{},
+            new String[]{"int"}
+        ),
+        fixedCost(20000L),
+        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight,
+        activations -> activations.isActive(RSKIP89),
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR(
-            CallTransaction.Function.fromSignature(
-                    "getBtcBlockchainBlockLocator",
-                    new String[]{},
-                    new String[]{"string[]"}
-            ),
-            fixedCost(76000L),
-            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockLocator,
-            activations -> !activations.isActive(RSKIP89),
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getBtcBlockchainBlockLocator",
+            new String[]{},
+            new String[]{"string[]"}
+        ),
+        fixedCost(76000L),
+        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockLocator,
+        activations -> !activations.isActive(RSKIP89),
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH(
-            CallTransaction.Function.fromSignature(
-                    "getBtcBlockchainBlockHashAtDepth",
-                    new String[]{"int256"},
-                    new String[]{"bytes"}
-            ),
-            fixedCost(20000L),
-            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth,
-            activations -> activations.isActive(RSKIP89),
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getBtcBlockchainBlockHashAtDepth",
+            new String[]{"int256"},
+            new String[]{"bytes"}
+        ),
+        fixedCost(20000L),
+        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth,
+        activations -> activations.isActive(RSKIP89),
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_TRANSACTION_CONFIRMATIONS(
-            CallTransaction.Function.fromSignature(
-                    "getBtcTransactionConfirmations",
-                    new String[]{"bytes32", "bytes32", "uint256", "bytes32[]"},
-                    new String[]{"int256"}
-            ),
-            fromMethod(Bridge::getBtcTransactionConfirmationsGetCost),
-            (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
-            activations -> activations.isActive(RSKIP122),
-            fixedPermission(false),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getBtcTransactionConfirmations",
+            new String[]{"bytes32", "bytes32", "uint256", "bytes32[]"},
+            new String[]{"int256"}
+        ),
+        fromMethod(Bridge::getBtcTransactionConfirmationsGetCost),
+        (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
+        activations -> activations.isActive(RSKIP122),
+        fixedPermission(false),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
-            CallTransaction.Function.fromSignature(
-                    "getBtcTxHashProcessedHeight",
-                    new String[]{"string"},
-                    new String[]{"int64"}
-            ),
-            fixedCost(22000L),
-            (BridgeMethodExecutorTyped) Bridge::getBtcTxHashProcessedHeight,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getBtcTxHashProcessedHeight",
+            new String[]{"string"},
+            new String[]{"int64"}
+        ),
+        fixedCost(22000L),
+        (BridgeMethodExecutorTyped) Bridge::getBtcTxHashProcessedHeight,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_ADDRESS(
-            CallTransaction.Function.fromSignature(
-                    "getFederationAddress",
-                    new String[]{},
-                    new String[]{"string"}
-            ),
-            fixedCost(11000L),
-            (BridgeMethodExecutorTyped) Bridge::getFederationAddress,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getFederationAddress",
+            new String[]{},
+            new String[]{"string"}
+        ),
+        fixedCost(11000L),
+        (BridgeMethodExecutorTyped) Bridge::getFederationAddress,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_CREATION_BLOCK_NUMBER(
-            CallTransaction.Function.fromSignature(
-                    "getFederationCreationBlockNumber",
-                    new String[]{},
-                    new String[]{"int256"}
-            ),
-            fixedCost(10000L),
-            (BridgeMethodExecutorTyped) Bridge::getFederationCreationBlockNumber,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getFederationCreationBlockNumber",
+            new String[]{},
+            new String[]{"int256"}
+        ),
+        fixedCost(10000L),
+        (BridgeMethodExecutorTyped) Bridge::getFederationCreationBlockNumber,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_CREATION_TIME(
-            CallTransaction.Function.fromSignature(
-                    "getFederationCreationTime",
-                    new String[]{},
-                    new String[]{"int256"}
-            ),
-            fixedCost(10000L),
-            (BridgeMethodExecutorTyped) Bridge::getFederationCreationTime,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getFederationCreationTime",
+            new String[]{},
+            new String[]{"int256"}
+        ),
+        fixedCost(10000L),
+        (BridgeMethodExecutorTyped) Bridge::getFederationCreationTime,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_SIZE(
-            CallTransaction.Function.fromSignature(
-                    "getFederationSize",
-                    new String[]{},
-                    new String[]{"int256"}
-            ),
-            fixedCost(10000L),
-            (BridgeMethodExecutorTyped) Bridge::getFederationSize,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getFederationSize",
+            new String[]{},
+            new String[]{"int256"}
+        ),
+        fixedCost(10000L),
+        (BridgeMethodExecutorTyped) Bridge::getFederationSize,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATION_THRESHOLD(
-            CallTransaction.Function.fromSignature(
-                    "getFederationThreshold",
-                    new String[]{},
-                    new String[]{"int256"}
-            ),
-            fixedCost(11000L),
-            (BridgeMethodExecutorTyped) Bridge::getFederationThreshold,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getFederationThreshold",
+            new String[]{},
+            new String[]{"int256"}
+        ),
+        fixedCost(11000L),
+        (BridgeMethodExecutorTyped) Bridge::getFederationThreshold,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATOR_PUBLIC_KEY(
-            CallTransaction.Function.fromSignature(
-                    "getFederatorPublicKey",
-                    new String[]{"int256"},
-                    new String[]{"bytes"}
-            ),
-            fixedCost(10000L),
-            (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKey,
-            activations -> !activations.isActive(RSKIP123),
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getFederatorPublicKey",
+            new String[]{"int256"},
+            new String[]{"bytes"}
+        ),
+        fixedCost(10000L),
+        (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKey,
+        activations -> !activations.isActive(RSKIP123),
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEDERATOR_PUBLIC_KEY_OF_TYPE(
-            CallTransaction.Function.fromSignature(
-                    "getFederatorPublicKeyOfType",
-                    new String[]{"int256", "string"},
-                    new String[]{"bytes"}
-            ),
-            fixedCost(10000L),
-            (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyOfType,
-            activations -> activations.isActive(RSKIP123),
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getFederatorPublicKeyOfType",
+            new String[]{"int256", "string"},
+            new String[]{"bytes"}
+        ),
+        fixedCost(10000L),
+        (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyOfType,
+        activations -> activations.isActive(RSKIP123),
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_FEE_PER_KB(
-            CallTransaction.Function.fromSignature(
-                    "getFeePerKb",
-                    new String[]{},
-                    new String[]{"int256"}
-            ),
-            fixedCost(2000L),
-            (BridgeMethodExecutorTyped) Bridge::getFeePerKb,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getFeePerKb",
+            new String[]{},
+            new String[]{"int256"}
+        ),
+        fixedCost(2000L),
+        (BridgeMethodExecutorTyped) Bridge::getFeePerKb,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_LOCK_WHITELIST_ADDRESS(
-            CallTransaction.Function.fromSignature(
-                    "getLockWhitelistAddress",
-                    new String[]{"int256"},
-                    new String[]{"string"}
-            ),
-            fixedCost(16000L),
-            (BridgeMethodExecutorTyped) Bridge::getLockWhitelistAddress,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getLockWhitelistAddress",
+            new String[]{"int256"},
+            new String[]{"string"}
+        ),
+        fixedCost(16000L),
+        (BridgeMethodExecutorTyped) Bridge::getLockWhitelistAddress,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS(
-            CallTransaction.Function.fromSignature(
-                    "getLockWhitelistEntryByAddress",
-                    new String[]{"string"},
-                    new String[]{"int256"}
-            ),
-            fixedCost(16000L),
-            (BridgeMethodExecutorTyped) Bridge::getLockWhitelistEntryByAddress,
-            activations -> activations.isActive(RSKIP87),
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getLockWhitelistEntryByAddress",
+            new String[]{"string"},
+            new String[]{"int256"}
+        ),
+        fixedCost(16000L),
+        (BridgeMethodExecutorTyped) Bridge::getLockWhitelistEntryByAddress,
+        activations -> activations.isActive(RSKIP87),
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_LOCK_WHITELIST_SIZE(
-            CallTransaction.Function.fromSignature(
-                    "getLockWhitelistSize",
-                    new String[]{},
-                    new String[]{"int256"}
-            ),
-            fixedCost(16000L),
-            (BridgeMethodExecutorTyped) Bridge::getLockWhitelistSize,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getLockWhitelistSize",
+            new String[]{},
+            new String[]{"int256"}
+        ),
+        fixedCost(16000L),
+        (BridgeMethodExecutorTyped) Bridge::getLockWhitelistSize,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_MINIMUM_LOCK_TX_VALUE(
-            CallTransaction.Function.fromSignature(
-                    "getMinimumLockTxValue",
-                    new String[]{},
-                    new String[]{"int"}
-            ),
-            fixedCost(2000L),
-            (BridgeMethodExecutorTyped) Bridge::getMinimumLockTxValue,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getMinimumLockTxValue",
+            new String[]{},
+            new String[]{"int"}
+        ),
+        fixedCost(2000L),
+        (BridgeMethodExecutorTyped) Bridge::getMinimumLockTxValue,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_PENDING_FEDERATION_HASH(
-            CallTransaction.Function.fromSignature(
-                    "getPendingFederationHash",
-                    new String[]{},
-                    new String[]{"bytes"}
-            ),
-            fixedCost(3000L),
-            (BridgeMethodExecutorTyped) Bridge::getPendingFederationHash,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getPendingFederationHash",
+            new String[]{},
+            new String[]{"bytes"}
+        ),
+        fixedCost(3000L),
+        (BridgeMethodExecutorTyped) Bridge::getPendingFederationHash,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_PENDING_FEDERATION_SIZE(
-            CallTransaction.Function.fromSignature(
-                    "getPendingFederationSize",
-                    new String[]{},
-                    new String[]{"int256"}
-            ),
-            fixedCost(3000L),
-            (BridgeMethodExecutorTyped) Bridge::getPendingFederationSize,
-            fixedPermission(true),
-            CallTypeHelper.ALLOW_STATIC_CALL
+        CallTransaction.Function.fromSignature(
+            "getPendingFederationSize",
+            new String[]{},
+            new String[]{"int256"}
+        ),
+        fixedCost(3000L),
+        (BridgeMethodExecutorTyped) Bridge::getPendingFederationSize,
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_PENDING_FEDERATOR_PUBLIC_KEY(
             CallTransaction.Function.fromSignature(

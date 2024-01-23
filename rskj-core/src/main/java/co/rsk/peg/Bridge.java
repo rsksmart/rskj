@@ -677,7 +677,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getBtcBlockchainBlockHashAtDepth");
 
         int depth = ((BigInteger) args[0]).intValue();
-        Sha256Hash blockHash = null;
+        Sha256Hash blockHash;
         try {
             blockHash = bridgeSupport.getBtcBlockchainBlockHashAtDepth(depth);
         } catch (Exception e) {
@@ -880,8 +880,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("createFederation");
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("create", new byte[][]{})
+            rskTx,
+            new ABICallSpec("create", new byte[][]{})
         );
     }
 

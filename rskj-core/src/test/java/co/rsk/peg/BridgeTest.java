@@ -9,11 +9,14 @@ import static org.mockito.Mockito.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.FederationMember.KeyType;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.test.builders.BridgeBuilder;
 import java.io.IOException;
@@ -1283,6 +1286,31 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
+    void createFederation(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.CREATE_FEDERATION;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MsgType.CALL)) {
+            // Post arrowhead should fail for any msg type != CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).voteFederationChange(
+                any(),
+                any()
+            );
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
     void getBtcBlockchainBestChainHeight(MsgType msgType, ActivationConfig activationConfig)
         throws VMException, BlockStoreException, IOException {
         Transaction rskTxMock = mock(Transaction.class);
@@ -1309,6 +1337,580 @@ class BridgeTest {
         }
     }
 
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getBtcBlockchainInitialBlockHeight(MsgType msgType, ActivationConfig activationConfig)
+        throws VMException, IOException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getBtcBlockchainInitialBlockHeight();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getBtcBlockchainBlockLocator(MsgType msgType, ActivationConfig activationConfig)
+        throws VMException, IOException, BlockStoreException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP89, 0)) {
+            // Post RSKIP89 this method is no longer enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getBtcBlockchainBlockLocator();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getBtcBlockchainBlockHashAtDepth(MsgType msgType, ActivationConfig activationConfig)
+        throws VMException, IOException, BlockStoreException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        int depth = 1000;
+        Sha256Hash blockHashAtDepth = BitcoinTestUtils.createHash(1);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getBtcBlockchainBlockHashAtDepth(depth)).thenReturn(blockHashAtDepth);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH;
+        byte[] data = function.encode(depth);
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP89, 0)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+                !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock, times(1)).getBtcBlockchainBlockHashAtDepth(depth);
+            }
+        } else {
+            // Pre RSKIP89 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getBtcTransactionConfirmations(MsgType msgType, ActivationConfig activationConfig)
+        throws VMException, IOException, BlockStoreException {
+
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+        Sha256Hash btcBlockHash = BitcoinTestUtils.createHash(2);
+        int merkleBranchPath = 1;
+        List<Sha256Hash> merkleBranchHashes = Arrays.asList(
+            BitcoinTestUtils.createHash(10),
+            BitcoinTestUtils.createHash(11),
+            BitcoinTestUtils.createHash(12)
+        );
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_BTC_TRANSACTION_CONFIRMATIONS;
+        byte[] data = function.encode(
+            btcTxHash.getBytes(),
+            btcBlockHash.getBytes(),
+            merkleBranchPath,
+            merkleBranchHashes.stream().map(Sha256Hash::getBytes).toArray()
+        );
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP122, 0)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+                !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock, times(1)).getBtcTransactionConfirmations(
+                    any(),
+                    any(),
+                    any()
+                );
+            }
+        } else {
+            // Pre RSKIP122 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getBtcTxHashProcessedHeight(MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT;
+        byte[] data = function.encode(btcTxHash.toString());
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getBtcTxHashProcessedHeight(btcTxHash);
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getFederationAddress(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        Address federationAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getFederationAddress()).thenReturn(federationAddress);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_FEDERATION_ADDRESS;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getFederationAddress();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getFederationCreationBlockNumber(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_FEDERATION_CREATION_BLOCK_NUMBER;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getFederationCreationBlockNumber();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getFederationCreationTime(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getFederationCreationTime()).thenReturn(Instant.ofEpochSecond(100_000L));
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_FEDERATION_CREATION_TIME;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getFederationCreationTime();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getFederationSize(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_FEDERATION_SIZE;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getFederationSize();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getFederationThreshold(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_FEDERATION_THRESHOLD;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getFederationThreshold();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getFederatorPublicKey(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        int federatorIndex = 1;
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_FEDERATOR_PUBLIC_KEY;
+        byte[] data = function.encode(federatorIndex);
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP123, 0)) {
+            // Post RSKIP123 this method is no longer enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getFederatorPublicKey(federatorIndex);
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getFederatorPublicKeyOfType(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        int federatorIndex = 1;
+        KeyType keyType = KeyType.BTC;
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_FEDERATOR_PUBLIC_KEY_OF_TYPE;
+        byte[] data = function.encode(federatorIndex, keyType.getValue());
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP123, 0)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+                !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock, times(1)).getFederatorPublicKeyOfType(
+                    federatorIndex,
+                    keyType
+                );
+            }
+        } else {
+            // Pre RSKIP123 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getFeePerKb(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        Coin feePerKb = Coin.COIN;
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getFeePerKb()).thenReturn(feePerKb);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_FEE_PER_KB;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getFeePerKb();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getLockWhitelistAddress(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        int index = 1;
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_LOCK_WHITELIST_ADDRESS;
+        byte[] data = function.encode(index);
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getLockWhitelistEntryByIndex(index);
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getLockWhitelistEntryByAddress(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        String addressBase58 = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa";
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS;
+        byte[] data = function.encode(addressBase58);
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP87, 0)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+                !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock, times(1)).getLockWhitelistEntryByAddress(addressBase58);
+            }
+        } else {
+            // Pre RSKIP87 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getLockWhitelistSize(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_LOCK_WHITELIST_SIZE;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getLockWhitelistSize();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getMinimumLockTxValue(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        Coin minimumPeginTxValue = Coin.COIN;
+        BridgeConstants bridgeConstants = mock(BridgeConstants.class);
+        when(bridgeConstants.getMinimumPeginTxValue(any())).thenReturn(minimumPeginTxValue);
+        Constants constants = mock(Constants.class);
+        when(constants.getBridgeConstants()).thenReturn(bridgeConstants);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .constants(constants)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_MINIMUM_LOCK_TX_VALUE;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeConstants, times(1)).getMinimumPeginTxValue(any());
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getPendingFederationHash(MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_PENDING_FEDERATION_HASH;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getPendingFederationHash();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getPendingFederationSize(MsgType msgType, ActivationConfig activationConfig) throws VMException
+    {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = Bridge.GET_PENDING_FEDERATION_SIZE;
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !(msgType.equals(MsgType.CALL) || msgType.equals(MsgType.STATICCALL))) {
+            // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        } else {
+            bridge.execute(data);
+            verify(bridgeSupportMock, times(1)).getPendingFederationSize();
+        }
+    }
+
     private static Stream<Arguments> msgTypesAndActivations() {
         List<Arguments> argumentsList = new ArrayList<>();
         List<ActivationConfig> activationConfigs = Arrays.asList(
@@ -1321,7 +1923,7 @@ class BridgeTest {
             ActivationConfigsForTest.arrowhead600()
         );
 
-        for(MsgType msgType : MsgType.values()) {
+        for (MsgType msgType : MsgType.values()) {
             for(ActivationConfig activationConfig : activationConfigs) {
                 argumentsList.add(Arguments.of(msgType, activationConfig));
             }
