@@ -95,9 +95,8 @@ public class ModuleDescription {
             throw new IllegalArgumentException("methodName cannot be null.");
         }
 
-        Optional<Long> optMethodTimeout = Optional.ofNullable(getMethodTimeout(methodName));
-
-        return optMethodTimeout.orElseGet(this::getTimeout);
+        return Optional.ofNullable(getMethodTimeout(methodName))
+                .orElseGet(this::getTimeout);
     }
 
     public Long getMethodTimeout(String methodName) {

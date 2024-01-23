@@ -17,8 +17,7 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.exceptions.PicocliBadResultException;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
 import org.ethereum.core.Block;
@@ -30,7 +29,7 @@ import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.concurrent.Callable;
+import java.lang.invoke.MethodHandles;
 
 /**
  * The entry point for indexing block blooms
@@ -38,8 +37,7 @@ import java.util.concurrent.Callable;
  */
 @CommandLine.Command(name = "index-blooms", mixinStandardHelpOptions = true, version = "index-blooms 1.0",
         description = "Indexes blooms for a specific block range")
-public class IndexBlooms implements Callable<Integer> {
-
+public class IndexBlooms extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-fb", "--fromBlock"}, description = "From block number", required = true)
     private String fromBlockNumber;
 
@@ -51,20 +49,8 @@ public class IndexBlooms implements Callable<Integer> {
     private static final String EARLIEST = "earliest";
     private static final String LATEST = "latest";
 
-    private final RskContext ctx;
-
-    public IndexBlooms(RskContext ctx) {
-        this.ctx = ctx;
-    }
-
     public static void main(String[] args) {
-        try (RskContext ctx = new RskContext(args, true)) {
-            int result = new CommandLine(new IndexBlooms(ctx)).setUnmatchedArgumentsAllowed(true).execute(args);
-
-            if (result != 0) {
-                throw new PicocliBadResultException(result);
-            }
-        }
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override

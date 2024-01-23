@@ -37,6 +37,7 @@ import co.rsk.trie.Trie;
 import co.rsk.util.NodeStopper;
 import co.rsk.util.PreflightCheckException;
 import co.rsk.util.PreflightChecksUtils;
+import co.rsk.util.SystemUtils;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -61,6 +62,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import picocli.CommandLine;
 
 import java.io.*;
@@ -78,6 +80,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -293,7 +296,7 @@ class CliToolsTest {
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ConnectBlocks connectBlocksCliTool = new ConnectBlocks();
@@ -346,7 +349,7 @@ class CliToolsTest {
         doReturn(new BlockFactory(ActivationConfigsForTest.all())).when(rskContext).getBlockFactory();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ImportBlocks importBlocksCliTool = new ImportBlocks();
@@ -374,12 +377,14 @@ class CliToolsTest {
 
         String databaseDir = tempDir.resolve("db").toAbsolutePath().toString();
         String[] args = new String[]{"--file", stateFile.getAbsolutePath()};
+        Path unitrieDbPath = Paths.get(databaseDir, "unitrie");
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(databaseDir).when(rskSystemProperties).databaseDir();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(DbKind.ROCKS_DB).when(rskContext).getDbKind(databaseDir);
+        doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ImportState importStateCliTool = new ImportState();
@@ -505,6 +510,8 @@ class CliToolsTest {
 
     @Test
     void dbMigrate() throws IOException {
+        assumeTrue(!SystemUtils.isArm()); // db migration assumes that one of the data sources is leveldb, which doesn't support ARM cpu
+
         File nodeIdPropsFile = tempDir.resolve("nodeId.properties").toFile();
         File dbKindPropsFile = tempDir.resolve(KeyValueDataSourceUtils.DB_KIND_PROPERTIES_FILE).toFile();
 
@@ -519,15 +526,16 @@ class CliToolsTest {
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
 
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
         doReturn(true).when(rskSystemProperties).databaseReset();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(DbKind.ROCKS_DB).when(rskContext).getDbKind(Mockito.anyString());
 
         NodeStopper stopper = mock(NodeStopper.class);
 
         DbMigrate dbMigrateCliTool = new DbMigrate();
-        dbMigrateCliTool.execute(new String[]{"-t", "rocksdb"}, () -> rskContext, stopper);
+        dbMigrateCliTool.execute(new String[]{"-t", "leveldb"}, () -> rskContext, stopper);
 
         String nodeIdPropsFileLine = null;
 
@@ -548,9 +556,7 @@ class CliToolsTest {
         }
 
         Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
-        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
-        Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
-        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
+        Assertions.assertEquals("keyvalue.datasource=LEVEL_DB", dbKindPropsFileLine);
     }
 
     @Test

@@ -11,10 +11,9 @@ class CliArgsTest {
     void parseArgsCorrectly() {
         String[] args = new String[]{"--regtest", "-Xdatabase.dir=/home/rsk/data"};
 
-        CliArgs<NodeCliOptions, NodeCliFlags> cliArgs = new CliArgs.Parser<>(
-                NodeCliOptions.class,
-                NodeCliFlags.class
-        ).parse(args);
+        RskCli rskCli = new RskCli();
+        rskCli.load(args);
+        CliArgs<NodeCliOptions, NodeCliFlags> cliArgs = rskCli.getCliArgs();
 
         Assertions.assertEquals(1, cliArgs.getFlags().size());
         Assertions.assertEquals(1, cliArgs.getParamValueMap().size());
@@ -25,11 +24,7 @@ class CliArgsTest {
     @Test
     void parseArgsIncorrectlyWithBadXArg() {
         String[] args = new String[]{"--regtest", "-Xdatabase.dir"};
-        CliArgs.Parser<NodeCliOptions, NodeCliFlags> parser = new CliArgs.Parser<>(
-                NodeCliOptions.class,
-                NodeCliFlags.class
-        );
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> parser.parse(args));
+        RskCli rskCli = new RskCli();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> rskCli.load(args));
     }
 }

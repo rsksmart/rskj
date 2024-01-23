@@ -3,9 +3,10 @@ package co.rsk.rpc.modules.personal;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
-import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.HexKeyParam;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,7 @@ class PersonalModuleWalletEnabledTest {
     @Test
     void importRawKey_KeyIsNull_ThrowsNullPointerException() {
         PersonalModuleWalletEnabled personalModuleWalletEnabled = createPersonalModuleWalletEnabled(null);
-        Assertions.assertThrows(DecoderException.class, () -> personalModuleWalletEnabled.importRawKey(null, "passphrase1"));
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> personalModuleWalletEnabled.importRawKey(null, "passphrase1"));
     }
 
     @Test
@@ -43,7 +44,8 @@ class PersonalModuleWalletEnabledTest {
         doReturn(true).when(walletMock).unlockAccount(eq(addressMock), eq(passphrase), any(Long.class));
 
         PersonalModuleWalletEnabled personalModuleWalletEnabled = createPersonalModuleWalletEnabled(walletMock);
-        String result = personalModuleWalletEnabled.importRawKey(String.format("0x%s", rawKey), passphrase);
+        HexKeyParam hexKeyParam = new HexKeyParam(String.format("0x%s", rawKey));
+        String result = personalModuleWalletEnabled.importRawKey(hexKeyParam, passphrase);
 
         verify(walletMock, times(1)).addAccountWithPrivateKey(hexDecodedKey, passphrase);
         verify(walletMock, times(1)).unlockAccount(addressMock, passphrase, 1800000L);
@@ -67,7 +69,8 @@ class PersonalModuleWalletEnabledTest {
         doReturn(true).when(walletMock).unlockAccount(eq(addressMock), eq(passphrase), any(Long.class));
 
         PersonalModuleWalletEnabled personalModuleWalletEnabled = createPersonalModuleWalletEnabled(walletMock);
-        String result = personalModuleWalletEnabled.importRawKey(rawKey, passphrase);
+        HexKeyParam hexKeyParam = new HexKeyParam(rawKey);
+        String result = personalModuleWalletEnabled.importRawKey(hexKeyParam, passphrase);
 
         verify(walletMock, times(1)).addAccountWithPrivateKey(hexDecodedKey, passphrase);
         verify(walletMock, times(1)).unlockAccount(addressMock, passphrase, 1800000L);

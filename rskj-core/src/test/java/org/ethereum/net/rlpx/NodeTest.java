@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -128,16 +129,20 @@ class NodeTest {
     @Test
     void equalsMethodWorksAsExpected() {
         Node node1 = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
-        Node node2 = new Node(NODE_ID_1, "www.google.es", NODE_PORT_1);
+        Node node2 = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
+        Node node3 = new Node(NODE_ID_1, "google.com", NODE_PORT_1);
+        Node node4 = new Node(NODE_ID_1, NODE_HOST_1, 6667);
 
         assertEquals(node1, node2);
         assertNotEquals(node1, new Object());
         assertNotEquals(node1, null);
+        assertNotEquals(node1, node3);
+        assertNotEquals(node1, node4);
     }
 
     @Test
     void hashCodeIsUsingHostPortAndIdToBeCalculated() {
-        int expectedHash = Objects.hash(NODE_HOST_1, NODE_PORT_1, NODE_ID_1);
+        int expectedHash = Objects.hash(NODE_HOST_1, NODE_PORT_1, Arrays.hashCode(NODE_ID_1));
         Node node = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
         assertEquals(expectedHash, node.hashCode());
     }

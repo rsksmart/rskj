@@ -10,6 +10,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
@@ -134,8 +135,8 @@ class PowpegMigrationTest {
 
         Federation originalPowpeg;
         switch (oldPowPegFederationType) {
-            case erp:
-                originalPowpeg = new ErpFederation(
+            case legacyErp:
+                originalPowpeg = new LegacyErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
                     0,
@@ -145,7 +146,7 @@ class PowpegMigrationTest {
                     activations
                 );
                 break;
-            case p2sh:
+            case p2shErp:
                 originalPowpeg = new P2shErpFederation(
                     originalPowpegMembers,
                     Instant.now(),
@@ -204,10 +205,10 @@ class PowpegMigrationTest {
         Federation newPowPeg = argumentCaptor.getValue();
         assertEquals(newPowPegAddress, newPowPeg.getAddress());
         switch (newPowPegFederationType) {
-            case erp:
-                assertSame(ErpFederation.class, newPowPeg.getClass());
+            case legacyErp:
+                assertSame(LegacyErpFederation.class, newPowPeg.getClass());
                 break;
-            case p2sh:
+            case p2shErp:
                 assertSame(P2shErpFederation.class, newPowPeg.getClass());
                 // TODO: CHECK REDEEMSCRIPT
                 break;
@@ -242,6 +243,7 @@ class PowpegMigrationTest {
 
         // peg-in after committing new fed
         testPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
@@ -343,6 +345,7 @@ class PowpegMigrationTest {
 
         // peg-in after new fed activates
         testPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
@@ -437,6 +440,7 @@ class PowpegMigrationTest {
 
         // peg-in during migration
         testPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
@@ -473,6 +477,12 @@ class PowpegMigrationTest {
             expectedMigrations + newlyAddedUtxos,
             bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size()
         );
+
+        // Assert sigHashes were added for each new migration tx created
+        bridgeSupport.save();
+        bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().stream()
+            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
+            .forEach(pegoutTx -> verifyPegoutTxSigHashIndex(activations, bridgeStorageProvider, pegoutTx));
 
         verifyPegouts(bridgeStorageProvider);
 
@@ -562,6 +572,7 @@ class PowpegMigrationTest {
 
         // peg-in after migration
         testPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
@@ -588,18 +599,28 @@ class PowpegMigrationTest {
         Script lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScriptOptional.get();
 
         if (activations.isActive(ConsensusRule.RSKIP377)){
-            if (oldPowPegFederationType == FederationType.erp || oldPowPegFederationType == FederationType.p2sh){
+            if (oldPowPegFederationType == FederationType.legacyErp || oldPowPegFederationType == FederationType.p2shErp){
                 assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
             }
-            assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+            assertEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
         } else {
-            if (oldPowPegFederationType == FederationType.erp || oldPowPegFederationType == FederationType.p2sh){
+            if (oldPowPegFederationType == FederationType.legacyErp || oldPowPegFederationType == FederationType.p2shErp){
                 assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
-                assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+                assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
             } else {
                 assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
-                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getStandardP2SHScript());
+                assertEquals(lastRetiredFederationP2SHScript, originalPowpeg instanceof ErpFederation ? ((ErpFederation) originalPowpeg).getStandardP2SHScript() : originalPowpeg.getP2SHScript());
             }
+        }
+    }
+
+    private void verifyPegoutTxSigHashIndex(ActivationConfig.ForBlock activations, BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTx) {
+        Optional<Sha256Hash> lastPegoutSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
+        assertTrue(lastPegoutSigHash.isPresent());
+        if (activations.isActive(ConsensusRule.RSKIP379)){
+            assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
+        } else {
+            assertFalse(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
         }
     }
 
@@ -620,10 +641,10 @@ class PowpegMigrationTest {
                 Script inputStandardRedeemScript = RedeemScriptParserFactory.get(result.getChunks()).extractStandardRedeemScript();
 
                 Optional<Federation> spendingFederationOptional = Optional.empty();
-                if (inputStandardRedeemScript.equals(activeFederation.getStandardRedeemScript())) {
+                if (inputStandardRedeemScript.equals(activeFederation instanceof ErpFederation ? ((ErpFederation) activeFederation).getStandardRedeemScript() : activeFederation.getRedeemScript())) {
                     spendingFederationOptional = Optional.of(activeFederation);
                 } else if (retiringFederation != null &&
-                    inputStandardRedeemScript.equals(retiringFederation.getStandardRedeemScript())) {
+                    inputStandardRedeemScript.equals(retiringFederation instanceof ErpFederation ? ((ErpFederation) retiringFederation).getStandardRedeemScript() : retiringFederation.getRedeemScript()) ) {
                     spendingFederationOptional = Optional.of(retiringFederation);
                 } else {
                     fail("pegout scriptsig does not match any Federation");
@@ -702,6 +723,7 @@ class PowpegMigrationTest {
 
         Transaction pegoutCreationTx = Transaction.builder().nonce(new BtcECKey().getPrivKey()).build();
         bridgeSupport.updateCollections(pegoutCreationTx);
+        bridgeSupport.save();
 
         // Verify there is one more pegout request
         assertEquals(
@@ -745,6 +767,8 @@ class PowpegMigrationTest {
         }
 
         verifyPegouts(bridgeStorageProvider);
+        // Assert sigHash was added
+        verifyPegoutTxSigHashIndex(activations, bridgeStorageProvider, lastPegout.getBtcTransaction());
 
         // Confirm the peg-outs
         blockNumber = blockNumber + bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
@@ -780,6 +804,7 @@ class PowpegMigrationTest {
     }
 
     private void testPegins(
+        ActivationConfig.ForBlock activations,
         BridgeSupport bridgeSupport,
         BridgeConstants bridgeConstants,
         BridgeStorageProvider bridgeStorageProvider,
@@ -810,7 +835,12 @@ class PowpegMigrationTest {
             .stream()
             .anyMatch(utxo -> utxo.getHash().equals(peginToRetiringPowPegHash));
 
-        assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToRetiringPowPegHash));
+        if (activations.isActive(ConsensusRule.RSKIP379) && !shouldPeginToOldPowpegWork){
+            assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToRetiringPowPegHash));
+        } else {
+            assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToRetiringPowPegHash));
+        }
+
         assertEquals(shouldPeginToOldPowpegWork, isPeginToRetiringPowPegRegistered);
         assertFalse(bridgeStorageProvider.getNewFederationBtcUTXOs().stream().anyMatch(utxo ->
             utxo.getHash().equals(peginToRetiringPowPegHash))
@@ -838,7 +868,12 @@ class PowpegMigrationTest {
                 .anyMatch(utxo -> utxo.getHash().equals(peginToFuturePowPegHash));
 
             // This assertion should change when we change peg-in verification
-            assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFuturePowPegHash));
+            if (activations.isActive(ConsensusRule.RSKIP379) && !shouldPeginToNewPowpegWork){
+                assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFuturePowPegHash));
+            } else {
+                assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFuturePowPegHash));
+            }
+
             assertFalse(bridgeStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo ->
                 utxo.getHash().equals(peginToFuturePowPegHash))
             );
@@ -1321,11 +1356,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.erp,
+            FederationType.legacyErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.erp,
+            FederationType.legacyErp,
             newPowpegKeys,
             newPowpegAddress,
             bridgeConstants,
@@ -1347,11 +1382,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.erp,
+            FederationType.legacyErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2sh,
+            FederationType.p2shErp,
             getMainnetPowpegKeys(), // Using same keys as the original powpeg, should result in a different address since it will create a p2sh erp federation
             newPowpegAddress,
             bridgeConstants,
@@ -1393,11 +1428,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2sh,
+            FederationType.p2shErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2sh,
+            FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
             bridgeConstants,
@@ -1416,7 +1451,7 @@ class PowpegMigrationTest {
             .forBlock(0);
 
         ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest
-            .tbd600()
+            .arrowhead600()
             .forBlock(0);
 
         return Stream.of(
@@ -1458,11 +1493,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2sh,
+            FederationType.p2shErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2sh,
+            FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
             bridgeConstants,
@@ -1506,11 +1541,59 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2sh,
+            FederationType.p2shErp,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2sh,
+            FederationType.p2shErp,
+            newPowPegKeys,
+            newPowPegAddress,
+            bridgeConstants,
+            activations,
+            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations)
+        );
+    }
+
+    @Test
+    void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg_post_RSKIP_379_pegout_tx_index() throws Exception {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest
+            .arrowhead600()
+            .forBlock(0);
+
+        Address originalPowpegAddress = Address.fromBase58(
+            bridgeConstants.getBtcParams(),
+            "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
+        );
+        List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
+
+        List<Triple<BtcECKey, ECKey, ECKey>> newPowPegKeys = new ArrayList<>();
+        newPowPegKeys.add(Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
+            ECKey.fromPublicOnly(Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2")),
+            ECKey.fromPublicOnly(Hex.decode("02be1c54e8582e744d0d5d6a9b8e4a6d810029bcefc30e39b54688c4f1b718c0ee"))
+        ));
+        newPowPegKeys.add(Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("0231a395e332dde8688800a0025cccc5771ea1aa874a633b8ab6e5c89d300c7c36")),
+            ECKey.fromPublicOnly(Hex.decode("02e3f03aa985357dc356c2a763b44310b22be3b960303a67cde948fcfba97f5309")),
+            ECKey.fromPublicOnly(Hex.decode("029963d972f8a4ccac4bad60ed8b20ec83f6a15ca7076e057cccb4a34eed1a14d0"))
+        ));
+        newPowPegKeys.add(Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
+            ECKey.fromPublicOnly(Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
+            ECKey.fromPublicOnly(Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
+        ));
+
+        Address newPowPegAddress = Address.fromBase58(
+            bridgeConstants.getBtcParams(),
+            "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
+        );
+
+        testChangePowpeg(
+            FederationType.p2shErp,
+            getMainnetPowpegKeys(),
+            originalPowpegAddress,
+            utxos,
+            FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
             bridgeConstants,
@@ -1520,8 +1603,8 @@ class PowpegMigrationTest {
     }
 
     private enum FederationType {
-        erp,
-        p2sh,
-        standard
+        legacyErp,
+        p2shErp,
+        standardMultisig
     }
 }

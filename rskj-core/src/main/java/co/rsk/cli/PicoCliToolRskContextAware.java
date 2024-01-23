@@ -22,6 +22,7 @@ import co.rsk.cli.exceptions.PicocliBadResultException;
 import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
+
 import java.util.concurrent.Callable;
 
 public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware implements Callable<Integer> {

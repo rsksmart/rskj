@@ -1,5 +1,6 @@
 package co.rsk.db;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.db.IndexedBlockStore;
 
 import java.util.*;
@@ -71,5 +72,31 @@ public class HashMapBlocksIndex implements BlocksIndex {
     @Override
     public void remove(long number) {
         index.remove(number);
+    }
+
+    @Override
+    public void removeBlock(long blockNumber, Keccak256 blockHash) {
+        if (!index.containsKey(blockNumber)) {
+            return;
+        }
+
+        List<IndexedBlockStore.BlockInfo> blockInfoList = index.get(blockNumber);
+
+        if (blockInfoList == null) {
+            return;
+        }
+
+        List<IndexedBlockStore.BlockInfo> toRemove = new ArrayList<>();
+
+        for (IndexedBlockStore.BlockInfo bInfo : blockInfoList) {
+            if (bInfo.getHash().equals(blockHash)) {
+                toRemove.add(bInfo);
+            }
+        }
+        //Here no any other update is needed as we are modifying the list stored in the map.
+        blockInfoList.removeAll(toRemove);
+        if (blockInfoList.isEmpty()) {
+            index.remove(blockNumber);
+        }
     }
 }

@@ -48,12 +48,12 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
-    private static final int FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
-    private static final int ERP_FEDERATION_FORMAT_VERSION = 2000;
-    private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
+    protected static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = 1000;
+    protected static final int LEGACY_ERP_FEDERATION_FORMAT_VERSION = 2000;
+    protected static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
 
-    // Dummy value to use when saved Fast Bridge Derivation Argument Hash
-    private static final byte FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE = (byte) 1;
+    // Dummy value to use when saving key only indexes
+    private static final byte TRUE_VALUE = (byte) 1;
 
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -109,6 +109,8 @@ public class BridgeStorageProvider {
     private long receiveHeadersLastTimestamp = 0;
 
     private Long nextPegoutHeight;
+
+    private Set<Sha256Hash> pegoutTxSigHashes;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -336,7 +338,7 @@ public class BridgeStorageProvider {
                     return deserializeFederationAccordingToVersion(data, storageVersion.get(), bridgeConstants);
                 }
 
-                return BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters);
+                return BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(data, networkParameters);
             }
         );
 
@@ -364,15 +366,15 @@ public class BridgeStorageProvider {
                     NEW_FEDERATION_FORMAT_VERSION.getKey(),
                     P2SH_ERP_FEDERATION_FORMAT_VERSION
                 );
-            } else if (activations.isActive(RSKIP201) && newFederation instanceof ErpFederation) {
+            } else if (activations.isActive(RSKIP201) && newFederation instanceof LegacyErpFederation) {
                 saveStorageVersion(
                     NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                    ERP_FEDERATION_FORMAT_VERSION
+                    LEGACY_ERP_FEDERATION_FORMAT_VERSION
                 );
             } else {
                 saveStorageVersion(
                     NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                    FEDERATION_FORMAT_VERSION_MULTIKEY
+                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
                 );
             }
             serializer = BridgeSerializationUtils::serializeFederation;
@@ -398,7 +400,7 @@ public class BridgeStorageProvider {
                     return deserializeFederationAccordingToVersion(data, storageVersion.get(), bridgeConstants);
                 }
 
-                return BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters);
+                return BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(data, networkParameters);
             }
         );
 
@@ -428,12 +430,12 @@ public class BridgeStorageProvider {
             } else if (activations.isActive(RSKIP201) && oldFederation instanceof ErpFederation) {
                 saveStorageVersion(
                     OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    ERP_FEDERATION_FORMAT_VERSION
+                    LEGACY_ERP_FEDERATION_FORMAT_VERSION
                 );
             } else {
                 saveStorageVersion(
                     OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    FEDERATION_FORMAT_VERSION_MULTIKEY
+                    STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION
                 );
             }
 
@@ -480,7 +482,7 @@ public class BridgeStorageProvider {
             RepositorySerializer<PendingFederation> serializer = BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys;
 
             if (activations.isActive(RSKIP123)) {
-                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), FEDERATION_FORMAT_VERSION_MULTIKEY);
+                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
                 serializer = BridgeSerializationUtils::serializePendingFederation;
             }
 
@@ -787,7 +789,7 @@ public class BridgeStorageProvider {
 
         return data != null &&
             data.length == 1 &&
-            data[0] == FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE;
+            data[0] == TRUE_VALUE;
     }
 
     public void markFlyoverDerivationHashAsUsed(Sha256Hash btcTxHash, Keccak256 flyoverDerivationHash) {
@@ -808,7 +810,7 @@ public class BridgeStorageProvider {
                 flyoverBtcTxHash,
                 flyoverDerivationHash
             ),
-            new byte[]{FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE}
+            new byte[]{TRUE_VALUE}
         );
     }
 
@@ -923,6 +925,51 @@ public class BridgeStorageProvider {
         return getReleaseRequestQueue().getEntries().size();
     }
 
+    public boolean hasPegoutTxSigHash(Sha256Hash sigHash) {
+        if (!activations.isActive(RSKIP379) || sigHash == null){
+            return false;
+        }
+
+        byte[] data = repository.getStorageBytes(
+            contractAddress,
+            getStorageKeyForPegoutTxSigHash(sigHash)
+        );
+
+        return data != null &&
+           data.length == 1 &&
+           data[0] == TRUE_VALUE;
+    }
+
+    public void setPegoutTxSigHash(Sha256Hash sigHash) {
+        if (!activations.isActive(RSKIP379) || sigHash == null) {
+            return;
+        }
+
+        if (hasPegoutTxSigHash(sigHash)){
+            throw new IllegalStateException(String.format("Given pegout tx sigHash %s already exists in the index. Index entries are considered unique.", sigHash));
+        }
+
+        if (pegoutTxSigHashes == null){
+            pegoutTxSigHashes = new HashSet<>();
+        }
+
+        pegoutTxSigHashes.add(sigHash);
+    }
+
+    private void savePegoutTxSigHashes() {
+        if (!activations.isActive(RSKIP379) || pegoutTxSigHashes == null) {
+            return;
+        }
+
+        pegoutTxSigHashes.forEach(pegoutTxSigHash -> repository.addStorageBytes(
+            contractAddress,
+            getStorageKeyForPegoutTxSigHash(
+                pegoutTxSigHash
+            ),
+            new byte[]{TRUE_VALUE}
+        ));
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -964,6 +1011,8 @@ public class BridgeStorageProvider {
         saveReceiveHeadersLastTimestamp();
 
         saveNextPegoutHeight();
+
+        savePegoutTxSigHashes();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
@@ -1000,6 +1049,10 @@ public class BridgeStorageProvider {
         return key;
     }
 
+    private DataWord getStorageKeyForPegoutTxSigHash(Sha256Hash sigHash) {
+        return PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
+    }
+
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
         if (!storageVersionEntries.containsKey(versionKey)) {
             Optional<Integer> version = safeGetFromRepository(versionKey, data -> {
@@ -1028,8 +1081,8 @@ public class BridgeStorageProvider {
         BridgeConstants bridgeConstants
     ) {
         switch (version) {
-            case ERP_FEDERATION_FORMAT_VERSION:
-                return BridgeSerializationUtils.deserializeErpFederation(
+            case LEGACY_ERP_FEDERATION_FORMAT_VERSION:
+                return BridgeSerializationUtils.deserializeLegacyErpFederation(
                     data,
                     bridgeConstants,
                     activations
@@ -1040,9 +1093,17 @@ public class BridgeStorageProvider {
                     bridgeConstants,
                     activations
                 );
+            case STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION:
+                return BridgeSerializationUtils.deserializeStandardMultisigFederation(
+                    data,
+                    networkParameters
+                );
             default:
-                // Assume this is the multi-key version
-                return BridgeSerializationUtils.deserializeFederation(data, networkParameters);
+                // To keep backwards compatibility
+                return BridgeSerializationUtils.deserializeStandardMultisigFederation(
+                    data,
+                    networkParameters
+                );
         }
     }
 

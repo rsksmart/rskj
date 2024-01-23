@@ -22,15 +22,14 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
-
+import co.rsk.peg.StandardMultisigFederation;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 
 public class BridgeDevNetConstants extends BridgeConstants {
     // IMPORTANT: BTC, RSK and MST keys are the same.
@@ -58,7 +57,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
-        genesisFederation = new Federation(
+        genesisFederation = new StandardMultisigFederation(
             federationMembers,
             genesisFederationAddressCreatedAt,
             1L,
@@ -73,9 +72,9 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        legacyMinimumPeginTxValueInSatoshis = Coin.valueOf(1_000_000);
+        legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         legacyMinimumPegoutTxValueInSatoshis = Coin.valueOf(500_000);
-        minimumPeginTxValueInSatoshis = Coin.valueOf(500_000);
+        minimumPeginTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValueInSatoshis = Coin.valueOf(250_000);
 
         // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
@@ -139,7 +138,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         lockingCapIncrementsMultiplier = 2;
 
-        btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
+        btcHeightWhenBlockIndexActivates = 700_000;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
 
         erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
@@ -159,7 +158,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
         // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes
 
         maxDepthBlockchainAccepted = 25;
 
@@ -168,5 +167,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
         maxInputsPerPegoutTransaction = 10;
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
+
+        btcHeightWhenPegoutTxIndexActivates = 1_000_000;
+        pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
     }
 }

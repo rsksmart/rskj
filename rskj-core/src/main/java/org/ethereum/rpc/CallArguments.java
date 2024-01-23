@@ -86,7 +86,7 @@ public class CallArguments {
     }
 
     public String getData() {
-        return data;
+        return this.data;
     }
 
     public void setData(String data) {
@@ -115,6 +115,14 @@ public class CallArguments {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getInput() {
+        return this.data;
+    }
+
+    public void setInput(String input) {
+        this.data = input;
     }
 
     @Override

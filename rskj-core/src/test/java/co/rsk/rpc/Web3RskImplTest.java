@@ -116,4 +116,13 @@ class Web3RskImplTest {
 
         assertEquals("FilterRequest{fromBlock='1', toBlock='2', address=0x0000000001, topics=[2], blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2'}", filterRequest.toString());
     }
+
+    @Test
+    void whenSetInput_DataAndInputAreEquals() {
+        CallArguments callArguments = new CallArguments();
+
+        callArguments.setInput("data");
+
+        assertEquals(callArguments.getData(), callArguments.getInput());
+    }
 }

@@ -421,7 +421,7 @@ class CliToolsIntegrationTest {
     }
 
     @Test
-    void whenDbMigrateRuns_shouldMigrateLevelDbToRocksDbAndShouldNotStartNodeWithPrevDbKind() throws Exception {
+    void whenDbMigrateRuns_shouldMigrateLevelDbToRocksDbAndShouldStartNodeWithPrevDbKind() throws Exception {
         String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         TestUtils.runCommand(cmd, 1, TimeUnit.MINUTES, false);
 
@@ -434,7 +434,8 @@ class CliToolsIntegrationTest {
         List<String> logLines = Arrays.asList(proc.getOutput().split("\\n"));
 
         Assertions.assertTrue(dbMigrateProc.getOutput().contains("DbMigrate finished"));
-        Assertions.assertTrue(logLines.stream().anyMatch(l -> l.equals("java.lang.IllegalStateException: DbKind mismatch. You have selected LEVEL_DB when the previous detected DbKind was ROCKS_DB.")));
+        Assertions.assertTrue(logLines.stream().anyMatch(l -> l.contains("[minerserver] [miner client]  Mined block import result is IMPORTED_BEST")));
+        Assertions.assertTrue(logLines.stream().noneMatch(l -> l.contains("Exception:")));
     }
 
     @Test

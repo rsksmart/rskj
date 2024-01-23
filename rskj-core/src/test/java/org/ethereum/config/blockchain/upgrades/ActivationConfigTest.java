@@ -42,7 +42,7 @@ class ActivationConfigTest {
             "    hop400: 0",
             "    hop401: 0",
             "    fingerroot500: 0",
-            "    tbd600: 0",
+            "    arrowhead600: 0",
             "},",
             "consensusRules: {",
             "    areBridgeTxsPaid: afterBridgeSync,",
@@ -93,6 +93,7 @@ class ActivationConfigTest {
             "    rskip199: iris300",
             "    rskip200: iris300",
             "    rskip201: iris300",
+            "    rskip203: arrowhead600",
             "    rskip218: iris300",
             "    rskip219: iris300",
             "    rskip220: iris300",
@@ -108,10 +109,14 @@ class ActivationConfigTest {
             "    rskip357: hop401",
             "    rskip374: fingerroot500",
             "    rskip375: fingerroot500",
-            "    rskip376: tbd600",
+            "    rskip376: arrowhead600",
             "    rskip377: fingerroot500",
+            "    rskip379: arrowhead600",
             "    rskip383: fingerroot500",
             "    rskip385: fingerroot500",
+            "    rskip398: arrowhead600",
+            "    rskip400: arrowhead600",
+            "    rskip412: arrowhead600",
             "}"
     ));
 

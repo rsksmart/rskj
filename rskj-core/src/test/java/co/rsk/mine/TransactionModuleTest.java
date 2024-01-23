@@ -67,9 +67,11 @@ import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -281,17 +283,17 @@ class TransactionModuleTest {
         BigInteger nonce = repository.getAccountState(srcAddr).getNonce();
         RskAddress contractAddress = new RskAddress(HashUtil.calcNewAddr(srcAddr.getBytes(), nonce.toByteArray()));
         int gasLimit = 5000000; // start with 5M
-        int consumed = checkEstimateGas(callCallWithValue, 33472 + GasCost.STIPEND_CALL, gasLimit, srcAddr, contractAddress, web3, repository);
+        int consumed = checkEstimateGas(callCallWithValue, 33264 + GasCost.STIPEND_CALL, gasLimit, srcAddr, contractAddress, web3, repository);
 
         // Now that I know the estimation, call again using the estimated value
         // it should not fail. We set the gasLimit to the expected value plus 1 to
         // differentiate between OOG and success.
-        int consumed2 = checkEstimateGas(callCallWithValue, 33472 + GasCost.STIPEND_CALL, consumed + 1, srcAddr, contractAddress, web3, repository);
+        int consumed2 = checkEstimateGas(callCallWithValue, 33264 + GasCost.STIPEND_CALL, consumed + 1, srcAddr, contractAddress, web3, repository);
 
         Assertions.assertEquals(consumed, consumed2);
 
-        consumed = checkEstimateGas(callUnfill, 46942, gasLimit, srcAddr, contractAddress, web3, repository);
-        consumed2 = checkEstimateGas(callUnfill, 46942, consumed + 1, srcAddr, contractAddress, web3, repository);
+        consumed = checkEstimateGas(callUnfill, 46734, gasLimit, srcAddr, contractAddress, web3, repository);
+        consumed2 = checkEstimateGas(callUnfill, 46734, consumed + 1, srcAddr, contractAddress, web3, repository);
 
         Assertions.assertEquals(consumed, consumed2);
     }
@@ -306,7 +308,7 @@ class TransactionModuleTest {
         Assertions.assertNotEquals(expectedValue, gasLimit);
 
         CallArguments args = getContractCallTransactionParameters(method, gasLimit, srcAddr, contractAddress, repository);
-        String gas = web3.eth_estimateGas(args);
+        String gas = web3.eth_estimateGas(TransactionFactoryHelper.toCallArgumentsParam(args), null);
         byte[] gasReturnedBytes = Hex.decode(gas.substring("0x".length()));
         BigInteger gasReturned = BigIntegers.fromUnsignedByteArray(gasReturnedBytes);
         int gasReturnedInt = gasReturned.intValueExact();
@@ -332,7 +334,7 @@ class TransactionModuleTest {
 
         String rawData = ByteUtil.toHexString(tx.getEncoded());
 
-        return web3.eth_sendRawTransaction(rawData);
+        return web3.eth_sendRawTransaction(new HexDataParam(rawData));
     }
 
     private Transaction getTransactionFromBlockWhichWasSend(BlockChainImpl blockchain, String tx) {
@@ -350,13 +352,13 @@ class TransactionModuleTest {
     private String sendContractCreationTransaction(RskAddress srcaddr, Web3Impl web3, RepositorySnapshot repository) {
         CallArguments args = getContractCreationTransactionParameters(srcaddr, web3, repository);
 
-        return web3.eth_sendTransaction(args);
+        return web3.eth_sendTransaction(TransactionFactoryHelper.toCallArgumentsParam(args));
     }
 
     private String sendTransaction(Web3Impl web3, RepositorySnapshot repository) {
         CallArguments args = getTransactionParameters(web3, repository);
 
-        return web3.eth_sendTransaction(args);
+        return web3.eth_sendTransaction(TransactionFactoryHelper.toCallArgumentsParam(args));
     }
 
     ////////////////////////////////////////////////
@@ -578,7 +580,8 @@ class TransactionModuleTest {
                 transactionGateway,
                 compositeEthereumListener,
                 blockchain,
-                GasPriceTracker.create(blockStore)
+                GasPriceTracker.create(blockStore),
+                config.getMinGasPriceMultiplier()
         );
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
         this.transactionExecutorFactory = transactionExecutorFactory;

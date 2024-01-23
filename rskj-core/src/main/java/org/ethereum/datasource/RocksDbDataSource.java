@@ -67,7 +67,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     public RocksDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
         this.name = name;
-        logger.debug("New RocksDbDataSource: {}", name);
+        logger.info("New RocksDbDataSource: {}", name);
     }
 
     public static KeyValueDataSource makeDataSource(Path datasourcePath) {
@@ -75,8 +75,6 @@ public class RocksDbDataSource implements KeyValueDataSource {
         ds.init();
         return ds;
     }
-
-
 
     @Override
     public void init() {

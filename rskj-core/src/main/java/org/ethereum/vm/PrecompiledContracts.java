@@ -28,6 +28,7 @@ import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
+import co.rsk.pcc.environment.Environment;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.remasc.RemascContract;
@@ -77,6 +78,7 @@ public class PrecompiledContracts {
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
+    public static final String ENVIRONMENT_ADDR_STR = "0000000000000000000000000000000001000011";
 
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
@@ -91,6 +93,7 @@ public class PrecompiledContracts {
     public static final DataWord REMASC_ADDR_DW = DataWord.valueFromHex(REMASC_ADDR_STR);
     public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
     public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueFromHex(BLOCK_HEADER_ADDR_STR);
+    public static final DataWord ENVIRONMENT_ADDR_DW = DataWord.valueFromHex(ENVIRONMENT_ADDR_STR);
 
     public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
     public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
@@ -105,6 +108,7 @@ public class PrecompiledContracts {
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_DW);
     public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
     public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
+    public static final RskAddress ENVIRONMENT_ADDR = new RskAddress(ENVIRONMENT_ADDR_STR);
 
     public static final List<RskAddress> GENESIS_ADDRESSES = Collections.unmodifiableList(Arrays.asList(
             ECRECOVER_ADDR,
@@ -118,14 +122,15 @@ public class PrecompiledContracts {
 
     // this maps needs to be updated by hand any time a new pcc is added
     public static final Map<RskAddress, ConsensusRule> CONSENSUS_ENABLED_ADDRESSES = Collections.unmodifiableMap(
-        Stream.of(
-            new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
-            new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
-            new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153)
-        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+            Stream.of(
+                    new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
+                    new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
+                    new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
+                    new AbstractMap.SimpleEntry<>(ENVIRONMENT_ADDR, ConsensusRule.RSKIP203)
+            ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
     private static ECRecover ecRecover = new ECRecover();
@@ -136,6 +141,7 @@ public class PrecompiledContracts {
     private final RskSystemProperties config;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final SignatureCache signatureCache;
+    private final RemascConfig remascConfig;
 
     public PrecompiledContracts(RskSystemProperties config,
                                 BridgeSupportFactory bridgeSupportFactory,
@@ -143,6 +149,7 @@ public class PrecompiledContracts {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.signatureCache = signatureCache;
+        this.remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
     }
 
 
@@ -174,7 +181,6 @@ public class PrecompiledContracts {
             return bigIntegerModexp;
         }
         if (address.equals(REMASC_ADDR_DW)) {
-            RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
             return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig());
         }
 
@@ -203,6 +209,10 @@ public class PrecompiledContracts {
             return new Blake2F();
         }
 
+        if (activations.isActive(ConsensusRule.RSKIP203) && address.equals(ENVIRONMENT_ADDR_DW)) {
+            return new Environment(config.getActivationConfig(), ENVIRONMENT_ADDR);
+        }
+
         return null;
     }
 
@@ -211,9 +221,29 @@ public class PrecompiledContracts {
 
         public abstract long getGasForData(byte[] data);
 
-        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {}
+        /**
+         * @deprecated( in favor of {@link #init(org.ethereum.vm.PrecompiledContractArgs)})
+         */
+        @Deprecated
+        public final void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+            PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
+                    .transaction(tx)
+                    .executionBlock(executionBlock)
+                    .repository(repository)
+                    .blockStore(blockStore)
+                    .receiptStore(receiptStore)
+                    .logs(logs)
+                    .build();
 
-        public List<ProgramSubtrace> getSubtraces() { return Collections.emptyList(); }
+            init(args);
+        }
+
+        public void init(PrecompiledContractArgs args) {
+        }
+
+        public List<ProgramSubtrace> getSubtraces() {
+            return Collections.emptyList();
+        }
 
         public abstract byte[] execute(byte[] data) throws VMException;
     }
@@ -289,8 +319,7 @@ public class PrecompiledContracts {
             byte[] result = null;
             if (data == null) {
                 result = HashUtil.ripemd160(ByteUtil.EMPTY_BYTE_ARRAY);
-            }
-            else {
+            } else {
                 result = HashUtil.ripemd160(data);
             }
 
@@ -352,12 +381,12 @@ public class PrecompiledContracts {
 
     /**
      * Computes modular exponentiation on big numbers
-     *
+     * <p>
      * format of data[] array:
      * [length_of_BASE] [length_of_EXPONENT] [length_of_MODULUS] [BASE] [EXPONENT] [MODULUS]
      * where every length is a 32-byte left-padded integer representing the number of bytes.
      * Call data is assumed to be infinitely right-padded with zero bytes.
-     *
+     * <p>
      * Returns an output as a byte array with the same length as the modulus
      */
     public static class BigIntegerModexp extends PrecompiledContract {
@@ -372,7 +401,7 @@ public class PrecompiledContracts {
 
         @Override
         public long getGasForData(byte[] data) {
-            byte[] safeData = data==null?EMPTY_BYTE_ARRAY:data;
+            byte[] safeData = data == null ? EMPTY_BYTE_ARRAY : data;
 
             int baseLen = parseLen(safeData, BASE);
             int expLen = parseLen(safeData, EXPONENT);
@@ -533,5 +562,4 @@ public class PrecompiledContracts {
             return output.array();
         }
     }
-
 }

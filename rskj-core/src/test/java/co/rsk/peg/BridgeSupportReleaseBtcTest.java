@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.RejectedPegoutReason;
@@ -965,7 +966,7 @@ class BridgeSupportReleaseBtcTest {
         for (int i = 0; i < entriesSizeAboveMaxIterations; i++) {
             entries.add(
                 new ReleaseRequestQueue.Entry(
-                    PegTestUtils.createP2PKHBtcAddress(bridgeConstants.getBtcParams(), i+2),
+                    BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), String.valueOf(i)),
                     Coin.COIN.multiply(5)
                 )
             );
@@ -1249,7 +1250,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private static Federation getFederation() {
-        return new Federation(
+        return new StandardMultisigFederation(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,

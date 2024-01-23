@@ -37,7 +37,7 @@ public class PeginInformation {
         this.btcLockSenderProvider = btcLockSenderProvider;
         this.peginInstructionsProvider = peginInstructionsProvider;
         this.activations = activations;
-        this.protocolVersion = -1; // Set an invalid value by default
+        this.protocolVersion = 0; // Set legacy version value by default
         this.senderBtcAddressType = TxSenderAddressType.UNKNOWN;
     }
 
@@ -82,7 +82,7 @@ public class PeginInformation {
         }
 
         // If BtcLockSender could not be parsed and peg-in instructions were not provided, then this tx can't be processed
-        if(!btcLockSenderOptional.isPresent() && !peginInstructionsOptional.isPresent()) {
+        if(!activations.isActive(ConsensusRule.RSKIP379) && !btcLockSenderOptional.isPresent() && !peginInstructionsOptional.isPresent()) {
             String message = String.format("Could not get peg-in information for tx %s", btcTx.getHash());
             logger.warn("[parse] {}", message);
             throw new PeginInstructionsException(message);

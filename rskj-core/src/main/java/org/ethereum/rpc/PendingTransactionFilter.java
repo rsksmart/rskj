@@ -25,7 +25,7 @@ import org.ethereum.core.Transaction;
  */
 
 public class PendingTransactionFilter extends Filter {
-    class PendingTransactionFilterEvent extends FilterEvent {
+    static class PendingTransactionFilterEvent implements FilterEvent {
         private final Transaction tx;
 
         PendingTransactionFilterEvent(Transaction tx) {

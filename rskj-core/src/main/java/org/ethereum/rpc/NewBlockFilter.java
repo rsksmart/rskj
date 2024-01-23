@@ -27,7 +27,7 @@ import co.rsk.util.HexUtils;
  */
 
 public class NewBlockFilter extends Filter {
-    class NewBlockFilterEvent extends FilterEvent {
+    static class NewBlockFilterEvent implements FilterEvent {
         public final Block b;
 
         NewBlockFilterEvent(Block b) {

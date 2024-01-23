@@ -953,7 +953,7 @@ public class VM {
     protected void doGASPRICE(){
         spendOpCodeGas();
         // EXECUTION PHASE
-        DataWord gasPrice = program.getGasPrice();
+        DataWord gasPrice = program.getTxGasPrice();
 
         if (isLogEnabled) {
             hint = "price: " + gasPrice.toString();
@@ -1055,6 +1055,19 @@ public class VM {
         }
 
         program.stackPush(gaslimit);
+        program.step();
+    }
+
+    protected void doBASEFEE() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord minimumGasPrice = program.getMinimumGasPrice();
+
+        if (isLogEnabled) {
+            hint = "baseFee: " + minimumGasPrice;
+        }
+
+        program.stackPush(minimumGasPrice);
         program.step();
     }
 
@@ -1397,6 +1410,20 @@ public class VM {
         }
 
         program.stackPush(data);
+    }
+
+    protected void doPUSH0(){
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        program.step();
+
+        DataWord zero = DataWord.ZERO;
+
+        if (isLogEnabled) {
+            hint = "" + ByteUtil.toHexString(zero.getData());
+        }
+
+        program.stackPush(zero);
     }
 
     protected void doJUMPDEST()
@@ -1820,6 +1847,12 @@ public class VM {
             break;
             case OpCodes.OP_GASLIMIT: doGASLIMIT();
             break;
+            case OpCodes.OP_BASEFEE:
+                if (!activations.isActive(RSKIP412)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doBASEFEE();
+            break;
             case OpCodes.OP_CHAINID:
                 if (!activations.isActive(RSKIP152)) {
                     throw Program.ExceptionHelper.invalidOpCode(program);
@@ -1911,6 +1944,13 @@ public class VM {
             case OpCodes.OP_MSIZE: doMSIZE();
             break;
             case OpCodes.OP_GAS: doGAS();
+            break;
+
+            case OpCodes.OP_PUSH_0:
+                if (!activations.isActive(RSKIP398)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doPUSH0();
             break;
 
             case OpCodes.OP_PUSH_1:

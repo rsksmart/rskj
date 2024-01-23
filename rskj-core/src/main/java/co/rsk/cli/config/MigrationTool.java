@@ -17,29 +17,44 @@
  */
 package co.rsk.cli.config;
 
-import co.rsk.cli.CliArgs;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.concurrent.Callable;
 
-public class MigrationTool {
+@Command(name = "migrate-config", mixinStandardHelpOptions = true, version = "migrate-config 1.0",
+        description = "Migrates configuration using a mapping properties file")
+public class MigrationTool implements Callable<Integer> {
+    @Option(names = {"-i", "--input"}, description = "Input file", required = true)
+    private String inputFile;
 
-    public static void main(String[] commandLineArgs) throws IOException {
-        CliArgs.Parser<Migrator.MigratorOptions, Migrator.MigratorFlags> parser = new CliArgs.Parser<>(
-                Migrator.MigratorOptions.class,
-                Migrator.MigratorFlags.class
-        );
+    @Option(names = {"-m", "--migration"}, description = "Migration file", required = true)
+    private String migrationFile;
 
-        CliArgs<Migrator.MigratorOptions, Migrator.MigratorFlags> cliArgs = parser.parse(commandLineArgs);
+    @Option(names = {"-o", "--output"}, description = "Output file", required = true)
+    private String outputFile;
 
+    @Option(names = {"-r", "--replace"}, description = "Replace")
+    private boolean replaceInPlace = false;
+
+    public static void main(String[] args) {
+        int exitCode = new CommandLine(new MigrationTool()).execute(args);
+        System.exit(exitCode);
+    }
+
+    @Override
+    public Integer call() throws IOException {
         MigratorConfiguration configuration = new MigratorConfiguration(
-                cliArgs.getOptions().get(Migrator.MigratorOptions.INPUT_FILE),
-                cliArgs.getOptions().get(Migrator.MigratorOptions.MIGRATION_FILE),
-                cliArgs.getOptions().get(Migrator.MigratorOptions.OUTPUT_FILE),
-                cliArgs.getFlags().contains(Migrator.MigratorFlags.REPLACE_IN_PLACE)
+                inputFile,
+                migrationFile,
+                outputFile,
+                replaceInPlace
         );
 
         Migrator migrator = new Migrator(configuration);
@@ -49,5 +64,8 @@ public class MigrationTool {
 
         System.out.println("Configuration successfully migrated.");
         System.out.printf("Source: %s\nDestination: %s\n", configuration.getSourceConfiguration(), destination);
+
+        return 0;
     }
 }
+

@@ -64,7 +64,6 @@ import java.util.stream.Collectors;
  * @since 22.05.2014
  */
 public abstract class SystemProperties {
-
     private static final Logger logger = LoggerFactory.getLogger("general");
 
     public static final String PROPERTY_BLOCKCHAIN_CONFIG = "blockchain.config";
@@ -92,6 +91,8 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_WEBSOCKET_SERVER_MAX_AGGREGATED_FRAME_SIZE = "rpc.providers.web.ws.max_aggregated_frame_size";
     private static final String PROPERTY_RPC_GAS_ESTIMATION_CAP = "rpc.gasEstimationCap";
     private static final String PROPERTY_RPC_CALL_GAS_CAP = "rpc.callGasCap";
+    private static final String PROPERTY_RPC_MAX_RESPONSE_SIZE = "rpc.maxResponseSize";
+    private static final String PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER = "rpc.minGasPriceMultiplier";
     private static final String PROPERTY_RPC_TIMEOUT = "rpc.timeout";
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
@@ -738,11 +739,27 @@ public abstract class SystemProperties {
         return configFromFiles.getLong(PROPERTY_RPC_CALL_GAS_CAP);
     }
 
+    public double getMinGasPriceMultiplier() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER)) {
+            return 1.1;
+        }
+
+        return configFromFiles.getDouble(PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER);
+    }
+
     public long getRpcTimeout() {
         if (!configFromFiles.hasPath(PROPERTY_RPC_TIMEOUT)) {
             return 0L;
         }
 
         return configFromFiles.getLong(PROPERTY_RPC_TIMEOUT);
+    }
+
+    public int getRpcMaxResponseSize() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_MAX_RESPONSE_SIZE)) {
+            return -1;
+        }
+
+        return configFromFiles.getInt(PROPERTY_RPC_MAX_RESPONSE_SIZE);
     }
 }

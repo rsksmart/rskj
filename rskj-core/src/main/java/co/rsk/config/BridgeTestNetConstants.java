@@ -22,18 +22,17 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
-
+import co.rsk.peg.StandardMultisigFederation;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 
 public class BridgeTestNetConstants extends BridgeConstants {
-    private static BridgeTestNetConstants instance = new BridgeTestNetConstants();
+    private static final BridgeTestNetConstants instance = new BridgeTestNetConstants();
 
     BridgeTestNetConstants() {
         btcParamsString = NetworkParameters.ID_TESTNET;
@@ -51,7 +50,12 @@ public class BridgeTestNetConstants extends BridgeConstants {
             Hex.decode("034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85")
         );
 
-        List<BtcECKey> genesisFederationPublicKeys = Arrays.asList(federator0PublicKey, federator1PublicKey, federator2PublicKey, federator3PublicKey);
+        List<BtcECKey> genesisFederationPublicKeys = Arrays.asList(
+            federator0PublicKey,
+            federator1PublicKey,
+            federator2PublicKey,
+            federator3PublicKey
+        );
 
         // IMPORTANT: BTC, RSK and MST keys are the same.
         // Change upon implementation of the <INSERT FORK NAME HERE> fork.
@@ -61,7 +65,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // Currently set to: Monday, October 8, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1538967600l);
 
-        genesisFederation = new Federation(
+        genesisFederation = new StandardMultisigFederation(
             federationMembers,
             genesisFederationAddressCreatedAt,
             1L,
@@ -76,8 +80,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        legacyMinimumPeginTxValueInSatoshis = Coin.valueOf(1_000_000);
-        minimumPeginTxValueInSatoshis = Coin.valueOf(500_000);
+        legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
+        minimumPeginTxValue = Coin.valueOf(500_000);
         legacyMinimumPegoutTxValueInSatoshis = Coin.valueOf(500_000);
         minimumPegoutTxValueInSatoshis = Coin.valueOf(250_000);
 
@@ -156,7 +160,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
@@ -164,6 +168,9 @@ public class BridgeTestNetConstants extends BridgeConstants {
         maxInputsPerPegoutTransaction = 50;
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
+
+        btcHeightWhenPegoutTxIndexActivates = 150; // TODO: TBD and change current mock value. This is an estimation of the btc block number once RSKIP379 is activated.
+        pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
     }
 
     public static BridgeTestNetConstants getInstance() {

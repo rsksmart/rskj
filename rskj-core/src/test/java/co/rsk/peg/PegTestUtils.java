@@ -30,24 +30,22 @@ import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-
-import java.math.BigInteger;
+import co.rsk.peg.simples.SimpleRskTransaction;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.mockito.Mockito;
 
 /**
  * Created by oscar on 05/08/2016.
@@ -80,6 +78,9 @@ public final class PegTestUtils {
         return createHash(nhash++);
     }
 
+    /**
+     * @deprecated Use co.rsk.peg.bitcoin.BitcoinTestUtils#createHash(int) instead.
+     */
     public static Sha256Hash createHash(int nHash) {
         byte[] bytes = new byte[32];
         bytes[0] = (byte) (0xFF & nHash);
@@ -92,15 +93,7 @@ public final class PegTestUtils {
 
     public static Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation) {
         Script scriptPubKey = federation.getP2SHScript();
-        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
-        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), redeemScript);
-        Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
-        return inputScript;
-    }
-
-    public static Script createBaseRedeemScriptThatSpendsFromTheFederation(Federation federation) {
-        Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
-        return redeemScript;
+        return scriptPubKey.createEmptyInputScript(null, federation.getRedeemScript());
     }
 
     public static Script createOpReturnScriptForRsk(
@@ -118,6 +111,57 @@ public final class PegTestUtils {
         byte[] payloadBytes = new byte[payloadLength];
 
         byte[] prefix = Hex.decode("52534b54"); // 'RSKT' in hexa
+        System.arraycopy(prefix, 0, payloadBytes, index, prefix.length);
+        index += prefix.length;
+
+        payloadBytes[index] = (byte) protocolVersion;
+        index++;
+
+        System.arraycopy(
+            rskDestinationAddress.getBytes(),
+            0,
+            payloadBytes,
+            index,
+            rskDestinationAddress.getBytes().length
+        );
+        index += rskDestinationAddress.getBytes().length;
+
+        if (btcRefundAddressOptional.isPresent()) {
+            Address btcRefundAddress = btcRefundAddressOptional.get();
+            if (btcRefundAddress.isP2SHAddress()) {
+                payloadBytes[index] = 2; // P2SH address type
+            } else {
+                payloadBytes[index] = 1; // P2PKH address type
+            }
+            index++;
+
+            System.arraycopy(
+                btcRefundAddress.getHash160(),
+                0,
+                payloadBytes,
+                index,
+                btcRefundAddress.getHash160().length
+            );
+        }
+
+        return ScriptBuilder.createOpReturnScript(payloadBytes);
+    }
+
+    public static Script createOpReturnScriptWithInvalidPrefix(
+        int protocolVersion,
+        RskAddress rskDestinationAddress,
+        Optional<Address> btcRefundAddressOptional
+    ) {
+        int index = 0;
+        int payloadLength;
+        if (btcRefundAddressOptional.isPresent()) {
+            payloadLength = 46;
+        } else {
+            payloadLength = 25;
+        }
+        byte[] payloadBytes = new byte[payloadLength];
+
+        byte[] prefix = Hex.decode("544B5352"); // 'TKSR' in hexa
         System.arraycopy(prefix, 0, payloadBytes, index, prefix.length);
         index += prefix.length;
 
@@ -172,21 +216,14 @@ public final class PegTestUtils {
         return ScriptBuilder.createOpReturnScript(payloadBytes);
     }
 
-    public static Address createP2PKHBtcAddress(NetworkParameters networkParameters, int pk) {
-        return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(networkParameters);
-    }
-
+    /**
+     * @deprecated Use co.rsk.peg.bitcoin.BitcoinTestUtils#createP2PKHAddress(co.rsk.bitcoinj.core.NetworkParameters, java.lang.String) instead.
+     * Avoid using random values in tests
+     */
+    @Deprecated
     public static Address createRandomP2PKHBtcAddress(NetworkParameters networkParameters) {
         BtcECKey key = new BtcECKey();
         return key.toAddress(networkParameters);
-    }
-
-    public static Address createRandomP2SHMultisigAddress(NetworkParameters networkParameters, int keysCount) {
-        List<BtcECKey> keys = createRandomBtcECKeys(keysCount);
-        Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-
-        return Address.fromP2SHScript(networkParameters, outputScript);
     }
 
     public static List<BtcECKey> createRandomBtcECKeys(int keysCount) {
@@ -262,10 +299,6 @@ public final class PegTestUtils {
         return createFederation(bridgeConstants, "fa01", "fa02");
     }
 
-    public static Federation createSimpleRetiringFederation(BridgeConstants bridgeConstants) {
-        return createFederation(bridgeConstants, "fa03", "fa04");
-    }
-
     public static Federation createFederation(BridgeConstants bridgeConstants, String... fedKeys) {
         List<BtcECKey> federationKeys = Arrays.stream(fedKeys).map(s -> BtcECKey.fromPrivate(Hex.decode(s))).collect(Collectors.toList());
         return createFederation(bridgeConstants, federationKeys);
@@ -273,11 +306,24 @@ public final class PegTestUtils {
 
     public static Federation createFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        return new Federation(
+        return new StandardMultisigFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             bridgeConstants.getBtcParams()
+        );
+    }
+
+    public static P2shErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
+        federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        return new P2shErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            bridgeConstants.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(),
+            Mockito.mock(ActivationConfig.ForBlock.class)
         );
     }
 

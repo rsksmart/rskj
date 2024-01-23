@@ -1314,7 +1314,7 @@ class BridgeSupportFlyoverTest {
 
     @Test
     void registerFlyoverBtcTransaction_amount_sent_is_below_minimum_before_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        Coin valueToSend = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest).minus(Coin.CENT);
+        Coin valueToSend = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).minus(Coin.CENT);
         BigInteger result = sendFundsToActiveFederation(
             false,
             valueToSend
@@ -1326,7 +1326,7 @@ class BridgeSupportFlyoverTest {
     @Test
     void registerFlyoverBtcTransaction_amount_sent_is_below_minimum_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        Coin valueBelowMinimum = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest).minus(Coin.CENT);
+        Coin valueBelowMinimum = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).minus(Coin.CENT);
         BigInteger result = sendFundsToActiveFederation(
             true,
             valueBelowMinimum
@@ -1343,7 +1343,7 @@ class BridgeSupportFlyoverTest {
             bridgeConstantsMainnet,
             true,
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants);
+                Coin minimumPegInTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
 
                 tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), minimumPegInTxValue));
@@ -1372,7 +1372,7 @@ class BridgeSupportFlyoverTest {
             bridgeConstantsRegtest,
             true,
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants);
+                Coin minimumPegInTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
 
                 tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), minimumPegInTxValue));
@@ -1399,7 +1399,7 @@ class BridgeSupportFlyoverTest {
     void registerFlyoverBtcTransaction_amount_sent_is_equal_to_minimum()
         throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
+        Coin minimumPegInTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations);
         BigInteger result = sendFundsToActiveFederation(
             true,
             minimumPegInTxValue
@@ -1414,7 +1414,7 @@ class BridgeSupportFlyoverTest {
     void registerFlyoverBtcTransaction_amount_sent_is_over_minimum()
         throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        Coin valueOverMinimum = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest).add(Coin.CENT);
+        Coin valueOverMinimum = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).add(Coin.CENT);
         BigInteger result = sendFundsToActiveFederation(
             true,
             valueOverMinimum

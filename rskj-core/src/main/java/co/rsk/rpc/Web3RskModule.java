@@ -19,6 +19,9 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.rsk.RskModule;
+import org.ethereum.rpc.parameters.BlockRefParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
 
 public interface Web3RskModule {
 
@@ -51,4 +54,7 @@ public interface Web3RskModule {
     }
 
     RskModule getRskModule();
+
+    String rsk_getStorageBytesAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam);
+
 }

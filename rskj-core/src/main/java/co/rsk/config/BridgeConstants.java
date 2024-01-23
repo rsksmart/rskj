@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import java.util.List;
+
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
@@ -40,8 +41,8 @@ public abstract class BridgeConstants {
 
     protected int maxBtcHeadersPerRskBlock;
 
-    protected Coin legacyMinimumPeginTxValueInSatoshis;
-    protected Coin minimumPeginTxValueInSatoshis;
+    protected Coin legacyMinimumPeginTxValue;
+    protected Coin minimumPeginTxValue;
     protected Coin legacyMinimumPegoutTxValueInSatoshis;
     protected Coin minimumPegoutTxValueInSatoshis;
 
@@ -70,7 +71,7 @@ public abstract class BridgeConstants {
 
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
-    protected long minSecondsBetweenCallsReceiveHeader;  // (seconds)
+    protected long minSecondsBetweenCallsReceiveHeader;
 
     protected int maxDepthBlockchainAccepted;
 
@@ -85,6 +86,9 @@ public abstract class BridgeConstants {
     protected int maxInputsPerPegoutTransaction;
 
     protected int numberOfBlocksBetweenPegouts;
+
+    protected int btcHeightWhenPegoutTxIndexActivates;
+    protected int pegoutTxIndexGracePeriodInBtcBlocks;
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
@@ -112,9 +116,9 @@ public abstract class BridgeConstants {
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
 
-    public Coin getLegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValueInSatoshis; }
-
-    public Coin getMinimumPeginTxValueInSatoshis() { return minimumPeginTxValueInSatoshis; }
+    public Coin getMinimumPeginTxValue(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIP219) ? minimumPeginTxValue : legacyMinimumPeginTxValue;
+    }
 
     public Coin getLegacyMinimumPegoutTxValueInSatoshis() { return legacyMinimumPegoutTxValueInSatoshis; }
 
@@ -184,5 +188,13 @@ public abstract class BridgeConstants {
 
     public int getNumberOfBlocksBetweenPegouts() {
         return numberOfBlocksBetweenPegouts;
+    }
+
+    public int getBtcHeightWhenPegoutTxIndexActivates() {
+        return btcHeightWhenPegoutTxIndexActivates;
+    }
+
+    public int getPegoutTxIndexGracePeriodInBtcBlocks() {
+        return pegoutTxIndexGracePeriodInBtcBlocks;
     }
 }

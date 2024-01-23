@@ -18,6 +18,7 @@
 
 package co.rsk.db;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.db.IndexedBlockStore;
 
 import java.util.List;
@@ -88,4 +89,11 @@ public interface BlocksIndex {
     void close();
 
     void remove(long number);
+    /**
+     * Removes the block with the given number and hash from the storage.
+     *
+     * @param blockNumber The block number.
+     * @param blockHash The block hash.
+     */
+    void removeBlock(long blockNumber, Keccak256 blockHash);
 }

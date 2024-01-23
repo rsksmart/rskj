@@ -10,7 +10,7 @@ executors:
     resource_class: medium+
   sonarqube-executor:
     docker:
-      - image: openjdk:11-jdk
+      - image: eclipse-temurin:17-jdk
     working_directory: /app
   mit-executor:
     docker:
@@ -47,6 +47,7 @@ jobs:
       - run:
           name: Run SonarQube analysis
           command: |
+            apt-get update && apt-get install -yqq git
             extra_flags=""
             if [ -n "$CIRCLE_PULL_REQUEST" ]; then
               # https://community.sonarsource.com/t/no-code-or-issue-found-in-pull-request-decorations-github-circleci/8496
@@ -65,7 +66,7 @@ jobs:
                 -Dsonar.organization=rsksmart \
                 -Dsonar.host.url="$SONAR_URL" \
                 -Dsonar.login="$SONAR_TOKEN"
-  rskj-tests:
+  rskj-unit-tests:
     executor: rskj-executor
     steps:
       - attach_workspace:
@@ -73,6 +74,26 @@ jobs:
       - run:
           name: rskj tests
           command: ./gradlew --no-daemon --stacktrace test
+      - run:
+          name: Save test results
+          command: |
+            mkdir -p ~/junit/
+            find rskj-core/build/test-results -type f -name "*.xml" \
+                -exec cp {} ~/junit/ \;
+          when: always
+      - store_test_results:
+          path: ~/junit
+      - store_artifacts:
+          path: ~/junit
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  rskj-int-tests:
+    executor: rskj-executor
+    steps:
+      - attach_workspace:
+          at: /app
       - run:
           name: rskj integration tests
           command: ./gradlew --no-daemon --stacktrace integrationTest
@@ -165,12 +186,15 @@ workflows:
   build-and-test:
     jobs:
       - build
-      - rskj-tests:
+      - rskj-unit-tests:
+          requires:
+            - build
+      - rskj-int-tests:
           requires:
             - build
       - sonarqube:
           requires:
-            - rskj-tests
+            - rskj-unit-tests
       - mining-tests:
           requires:
-            - rskj-tests
+            - rskj-unit-tests

@@ -972,5 +972,109 @@ class NodeMessageHandlerTest {
 
     }
 
+    @Test
+    void whenPostMsgFromDiffSenders_shouldNotCountRepeatedMsgs() {
+        final SimplePeer sender1 = new SimplePeer(new NodeID(new byte[] {1}));
+        final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
+                mock(StatusResolver.class));
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
+        Message message = new BlockMessage(block);
+
+        processor.postMessage(sender1, message, null);
+        processor.postMessage(sender2, message, null);
+
+        PeerScoring pscoring1 = scoring.getPeerScoring(sender1.getPeerNodeID());
+        PeerScoring pscoring2 = scoring.getPeerScoring(sender2.getPeerNodeID());
+
+        Assertions.assertEquals(0, pscoring1.getEventCounter(EventType.REPEATED_MESSAGE));
+        Assertions.assertEquals(0, pscoring2.getEventCounter(EventType.REPEATED_MESSAGE));
+    }
+
+    @Test
+    void whenPostMsgFromSameSenders_shouldCountRepeatedMsgs() {
+        final SimplePeer sender1 = new SimplePeer(new NodeID(new byte[] {1}));
+        final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
+                mock(StatusResolver.class));
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
+        Message message = new BlockMessage(block);
+
+        processor.postMessage(sender1, message, null);
+        processor.postMessage(sender2, message, null);
+        processor.postMessage(sender2, message, null);
+
+        PeerScoring pscoring1 = scoring.getPeerScoring(sender1.getPeerNodeID());
+        PeerScoring pscoring2 = scoring.getPeerScoring(sender2.getPeerNodeID());
+
+        Assertions.assertEquals(0, pscoring1.getEventCounter(EventType.REPEATED_MESSAGE));
+        Assertions.assertEquals(1, pscoring2.getEventCounter(EventType.REPEATED_MESSAGE));
+    }
+
+    @Test
+    void whenPostMsg_shouldClearRcvMsgsCache() {
+        final SimplePeer sender1 = new SimplePeer(new NodeID(new byte[] {1}));
+        final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
+                mock(StatusResolver.class));
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
+        Message message = new BlockMessage(block);
+
+        processor.postMessage(sender1, message, null);
+        processor.postMessage(sender2, message, null);
+        processor.postMessage(sender2, message, null);
+
+        PeerScoring pscoring1 = scoring.getPeerScoring(sender1.getPeerNodeID());
+        PeerScoring pscoring2 = scoring.getPeerScoring(sender2.getPeerNodeID());
+
+        Assertions.assertEquals(0, pscoring1.getEventCounter(EventType.REPEATED_MESSAGE));
+        Assertions.assertEquals(1, pscoring2.getEventCounter(EventType.REPEATED_MESSAGE));
+    }
+
+    @Test
+    void whenAllowByMessageUniqueness_shouldReturnTrueForUniqueMsgs() {
+        final SimplePeer sender1 = new SimplePeer(new NodeID(new byte[] {1}));
+        final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
+        PeerScoringManager scoring = mock(PeerScoringManager.class);
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
+                mock(StatusResolver.class), 1);
+
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
+        Message message = new BlockMessage(block);
+
+        Assertions.assertTrue(processor.allowByMessageUniqueness(sender1, message));
+        verify(scoring, times(0)).recordEvent(any(), any(), any(), any(), any());
+        Assertions.assertFalse(processor.allowByMessageUniqueness(sender2, message));
+        verify(scoring, times(0)).recordEvent(any(), any(), any(), any(), any());
+        Assertions.assertFalse(processor.allowByMessageUniqueness(sender2, message));
+        verify(scoring, times(1)).recordEvent(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void whenAllowByMessageUniqueness_shouldReturnTrueAfterCachedCleared() {
+        final SimplePeer sender1 = new SimplePeer(new NodeID(new byte[] {1}));
+        final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
+        PeerScoringManager scoring = mock(PeerScoringManager.class);
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
+                mock(StatusResolver.class), 0);
+
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
+        Message message = new BlockMessage(block);
+
+        Assertions.assertTrue(processor.allowByMessageUniqueness(sender1, message));
+        verify(scoring, times(0)).recordEvent(any(), any(), any(), any(), any());
+        Assertions.assertTrue(processor.allowByMessageUniqueness(sender2, message));
+        verify(scoring, times(0)).recordEvent(any(), any(), any(), any(), any());
+        Assertions.assertTrue(processor.allowByMessageUniqueness(sender2, message));
+        verify(scoring, times(0)).recordEvent(any(), any(), any(), any(), any());
+    }
 }
 

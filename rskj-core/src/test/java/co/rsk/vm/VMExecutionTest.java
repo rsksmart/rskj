@@ -893,4 +893,58 @@ class VMExecutionTest {
 
         return program;
     }
+
+    private void executePush0(ActivationConfig.ForBlock activations){
+        Program program = executeCodeWithActivationConfig("PUSH0", 1, activations);
+        Stack stack = program.getStack();
+
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000000"), stack.peek());
+    }
+
+    @Test
+    void testPUSH0Activation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP398)).thenReturn(true);
+
+        executePush0(activations);
+    }
+
+    @Test
+    void testPUSH0NoActivation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP398)).thenReturn(false);
+
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> {
+            executePush0(activations);
+        });
+    }
+
+    @Test
+    void testBASEFFEActivation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP412)).thenReturn(true);
+
+        executeBASEFEE(activations);
+    }
+
+    @Test
+    void testBASEFEENoActivation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP412)).thenReturn(false);
+
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> {
+            executeBASEFEE(activations);
+        });
+    }
+
+    private void executeBASEFEE(ActivationConfig.ForBlock activations) {
+        Program program = executeCodeWithActivationConfig("BASEFEE", 1, activations);
+        Stack stack = program.getStack();
+
+        Assertions.assertEquals(1, stack.size());
+
+        // See ProgramInvokeMockImpl.getMinimumGasPrice()
+        Assertions.assertEquals(DataWord.valueFromHex("000000000000000000000000000000000000000000000000000003104e60a000"), stack.peek());
+    }
 }

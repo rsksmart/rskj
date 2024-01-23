@@ -22,18 +22,17 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-
+import co.rsk.peg.StandardMultisigFederation;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 
 public class BridgeRegTestConstants extends BridgeConstants {
     // IMPORTANT: BTC, RSK and MST keys are the same.
@@ -56,7 +55,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
-        genesisFederation = new Federation(
+        genesisFederation = new StandardMultisigFederation(
             federationMembers,
             genesisFederationCreatedAt,
             1L,
@@ -67,13 +66,13 @@ public class BridgeRegTestConstants extends BridgeConstants {
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
         rsk2BtcMinimumAcceptableConfirmations = 3;
 
-        updateBridgeExecutionPeriod = 1 * 15 * 1000; //15 seconds in millis
+        updateBridgeExecutionPeriod = 15_000; //15 seconds in millis
 
         maxBtcHeadersPerRskBlock = 500;
 
-        legacyMinimumPeginTxValueInSatoshis = Coin.COIN;
+        legacyMinimumPeginTxValue = Coin.COIN;
         legacyMinimumPegoutTxValueInSatoshis = Coin.valueOf(500_000);
-        minimumPeginTxValueInSatoshis = Coin.COIN.div(2);
+        minimumPeginTxValue = Coin.COIN.div(2);
         minimumPegoutTxValueInSatoshis = Coin.valueOf(250_000);
 
         // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
@@ -164,6 +163,9 @@ public class BridgeRegTestConstants extends BridgeConstants {
         maxInputsPerPegoutTransaction = 10;
 
         numberOfBlocksBetweenPegouts = 50; // 25 Minutes of RSK blocks (considering 1 block every 30 seconds)
+
+        btcHeightWhenPegoutTxIndexActivates = 250;
+        pegoutTxIndexGracePeriodInBtcBlocks = 100;
     }
 
     public static BridgeRegTestConstants getInstance() {

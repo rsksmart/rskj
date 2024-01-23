@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2023 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +23,8 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.googlecode.jsonrpc4j.*;
+import com.googlecode.jsonrpc4j.JsonResponse;
+import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,6 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
 
     public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules) {
         super(new ObjectMapper(), handler, remoteInterface);
-
         this.modules = new ArrayList<>(modules);
     }
 
@@ -47,35 +47,39 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
         String method = Optional.ofNullable(node.get("method")).map(JsonNode::asText).orElse("");
 
         String[] methodParts = method.split("_");
-
-        if (methodParts.length < 2) {
-            return super.handleJsonNodeRequest(node);
-        }
-
-        String moduleName = methodParts[0];
-
-        Optional<ModuleDescription> optModule = modules.stream()
-                .filter(m -> m.getName().equals(moduleName))
-                .findFirst();
-
-        long timeout = optModule
-                .map(m -> m.getTimeout(method))
-                .orElse(0L);
-
         JsonResponse response;
+        if (methodParts.length >= 2) {
+            String moduleName = methodParts[0];
+            String methodName = methodParts[1];
 
-        if (timeout <= 0) {
+            long timeout = getTimeout(moduleName, methodName);
+
+            if (timeout <= 0) {
+                response = super.handleJsonNodeRequest(node);
+                ExecTimeoutContext.checkIfExpired();
+            } else {
+                try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout)) {
+                    response = super.handleJsonNodeRequest(node);
+                    ExecTimeoutContext.checkIfExpired();
+                }
+            }
+        } else {
             response = super.handleJsonNodeRequest(node);
             ExecTimeoutContext.checkIfExpired();
-
-            return response;
         }
 
-        try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout)) {
-            response = super.handleJsonNodeRequest(node);
-            ExecTimeoutContext.checkIfExpired();
-        }
-
+        ResponseSizeLimitContext.addResponse(response.getResponse());
         return response;
+    }
+
+    private long getTimeout(String moduleName, String methodName) {
+        ModuleDescription moduleDescription = modules.stream()
+                .filter(m -> m.getName().equals(moduleName))
+                .findFirst()
+                .orElse(null);
+        if (moduleDescription == null) {
+            return 0;
+        }
+        return moduleDescription.getTimeout(methodName);
     }
 }

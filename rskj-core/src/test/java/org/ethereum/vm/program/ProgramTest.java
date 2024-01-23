@@ -27,6 +27,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
+import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
@@ -60,9 +62,10 @@ class ProgramTest {
     protected long gasCost;
     protected Program program;
 
+    private final ActivationConfig.ForBlock activations = getBlockchainConfig();
+
     @BeforeEach
     void setup() {
-        final ActivationConfig.ForBlock activations = getBlockchainConfig();
         precompiledContract = spy(precompiledContracts.getContractForAddress(activations, PrecompiledContracts.ECRECOVER_ADDR_DW));
         gasCost = precompiledContract.getGasForData(DataWord.ONE.getData());
 
@@ -150,14 +153,17 @@ class ProgramTest {
 
         program.callToPrecompiledAddress(msg, bridge);
 
-        verify(bridge, atLeastOnce()).init(
-            any(Transaction.class),
-            any(Block.class),
-            any(Repository.class),
-            isNull(),
-            isNull(),
-            anyList()
-        );
+        ArgumentCaptor<PrecompiledContractArgs> argsCaptor = ArgumentCaptor.forClass(PrecompiledContractArgs.class);
+
+        verify(bridge, atLeastOnce()).init(argsCaptor.capture());
+
+        assertNotNull(argsCaptor.getValue().getTransaction());
+        assertNotNull(argsCaptor.getValue().getExecutionBlock());
+        assertNotNull(argsCaptor.getValue().getRepository());
+        assertNull(argsCaptor.getValue().getBlockStore());
+        assertNull(argsCaptor.getValue().getReceiptStore());
+        assertNotNull(argsCaptor.getValue().getLogs());
+        assertNotNull(argsCaptor.getValue().getProgramInvoke());
     }
 
     /*********************************

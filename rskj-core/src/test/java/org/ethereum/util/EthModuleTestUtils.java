@@ -31,8 +31,11 @@ import co.rsk.rpc.modules.eth.EthModuleTransaction;
 import co.rsk.rpc.modules.eth.EthModuleWallet;
 import co.rsk.test.World;
 import org.ethereum.config.Constants;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -43,6 +46,10 @@ public class EthModuleTestUtils {
         TestSystemProperties config = new TestSystemProperties();
         TransactionExecutorFactory executor = buildBasicExecutorFactory(world, config);
 
+        return buildCustomEthModule(world, executor, config);
+    }
+
+    public static EthModule buildCustomEthModule(World world, TransactionExecutorFactory executor, TestSystemProperties config) {
         return new EthModule(
                 null,
                 Constants.REGTEST_CHAIN_ID,
@@ -69,7 +76,7 @@ public class EthModuleTestUtils {
                 null,
                 new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
                 new ExecutionBlockRetriever(world.getBlockChain(), null, null),
-                null,
+                world.getRepositoryLocator(),
                 null,
                 null,
                 world.getBridgeSupportFactory(),
@@ -78,14 +85,19 @@ public class EthModuleTestUtils {
     }
 
     private static TransactionExecutorFactory buildBasicExecutorFactory(World world, TestSystemProperties config) {
+        return buildCustomExecutorFactory(world, config, null, null, null);
+    }
+
+    public static TransactionExecutorFactory buildCustomExecutorFactory(World world, TestSystemProperties config
+            , ReceiptStore receiptStore, BlockFactory blockFactory, BlockTxSignatureCache blockTxSignatureCache) {
         return new TransactionExecutorFactory(
                 config,
                 world.getBlockStore(),
-                null,
-                null,
+                receiptStore,
+                blockFactory,
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(config, world.getBridgeSupportFactory(), world.getBlockTxSignatureCache()),
-                null
+                blockTxSignatureCache
         );
     }
 

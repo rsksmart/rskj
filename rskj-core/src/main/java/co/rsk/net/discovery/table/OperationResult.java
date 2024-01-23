@@ -18,6 +18,8 @@
 
 package co.rsk.net.discovery.table;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * Created by mario on 21/02/17.
  */
@@ -37,5 +39,13 @@ public class OperationResult {
 
     public BucketEntry getAffectedEntry() {
         return affectedEntry;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("success", success)
+                .append("affectedEntry", affectedEntry)
+                .toString();
     }
 }

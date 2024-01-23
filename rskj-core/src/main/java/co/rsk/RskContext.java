@@ -19,6 +19,7 @@ package co.rsk;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.cli.CliArgs;
+import co.rsk.cli.RskCli;
 import co.rsk.config.*;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
@@ -252,24 +253,15 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
 
+    private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
+
     private volatile boolean closed;
 
     /***** Constructors ***********************************************************************************************/
-
     public RskContext(String[] args) {
-        this(args, false);
-    }
-
-    public RskContext(String[] args, boolean ignoreUnmatchedArgs) {
-        this(new CliArgs.Parser<>(
-                NodeCliOptions.class,
-                NodeCliFlags.class,
-                ignoreUnmatchedArgs
-        ).parse(args));
-    }
-
-    private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
-        this.cliArgs = cliArgs;
+        RskCli rskCli = new RskCli();
+        rskCli.load(args);
+        this.cliArgs = rskCli.getCliArgs();
         initializeNativeLibs();
     }
 
@@ -319,7 +311,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 FileUtil.recursiveDelete(rskSystemProperties.databaseDir());
             }
 
-            KeyValueDataSourceUtils.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
+            KeyValueDataSourceUtils.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir());
 
             if (rskSystemProperties.importEnabled()) {
                 getBootstrapImporter().importData();
@@ -553,7 +545,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getTransactionGateway(),
                     getCompositeEthereumListener(),
                     getBlockchain(),
-                    getGasPriceTracker()
+                    getGasPriceTracker(),
+                    getRskSystemProperties().getMinGasPriceMultiplier()
             );
         }
 
@@ -1162,8 +1155,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         DB indexDB = DBMaker.fileDB(dbFile)
                 .make();
 
-        DbKind currentDbKind = getRskSystemProperties().databaseKind();
-        KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "blocks"), currentDbKind);
+        Path blocksDbPath = Paths.get(databaseDir, "blocks");
+        DbKind currentDbKind = getDbKind(databaseDir);
+        KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(blocksDbPath, currentDbKind);
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
     }
@@ -1176,6 +1170,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return peerScoringReporterService;
+    }
+
+    public synchronized boolean isVersionOrHelpRequested() {
+        checkIfNotClosed();
+
+        return cliArgs.getFlags().contains(NodeCliFlags.VERSION) || cliArgs.getFlags().contains(NodeCliFlags.HELP);
     }
 
     public boolean isClosed() {
@@ -1199,6 +1199,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         closed = true;
+
+        final long startTime = System.currentTimeMillis();
+        logger.info("Closing RSK context");
 
         // as RskContext creates PeerExplorer and manages its lifecycle, dispose it here
         if (peerExplorer != null) {
@@ -1248,7 +1251,17 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             wallet.close();
             logger.trace("wallet closed.");
         }
+
+        final long endTime = System.currentTimeMillis();
+        logger.info("RSK context closed (after {} ms)", endTime - startTime);
     }
+
+    public synchronized DbKind getDbKind(String dbPath) {
+        checkIfNotClosed();
+        return dbPathToDbKindMap.computeIfAbsent(dbPath,
+                KeyValueDataSourceUtils::getDbKindValueFromDbKindFile);
+    }
+
 
     /***** Protected Methods ******************************************************************************************/
 
@@ -1262,7 +1275,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         int bloomsCacheSize = getRskSystemProperties().getBloomsCacheSize();
         Path bloomsStorePath = Paths.get(getRskSystemProperties().databaseDir(), "blooms");
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(bloomsStorePath, getRskSystemProperties().databaseKind());
+        DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(bloomsStorePath, currentDbKind);
 
         if (bloomsCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistBloomsCacheSnapshot()
@@ -1343,7 +1357,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         int receiptsCacheSize = rskSystemProperties.getReceiptsCacheSize();
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "receipts"), rskSystemProperties.databaseKind());
+        Path receiptsDbPath = Paths.get(rskSystemProperties.databaseDir(), "receipts");
+        DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(receiptsDbPath, currentDbKind);
 
         if (receiptsCacheSize != 0) {
             ds = new DataSourceWithCache(ds, receiptsCacheSize);
@@ -1384,7 +1400,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(trieStorePath, rskSystemProperties.databaseKind());
+        DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(trieStorePath, currentDbKind);
 
         if (statesCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = rskSystemProperties.shouldPersistStatesCacheSnapshot()
@@ -1413,7 +1430,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         int stateRootsCacheSize = rskSystemProperties.getStateRootsCacheSize();
-        KeyValueDataSource stateRootsDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "stateRoots"), rskSystemProperties.databaseKind());
+        Path stateRootsDbPath = Paths.get(rskSystemProperties.databaseDir(), "stateRoots");
+        DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
+        KeyValueDataSource stateRootsDB = KeyValueDataSourceUtils.makeDataSource(stateRootsDbPath, currentDbKind);
 
         if (stateRootsCacheSize > 0) {
             stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize);
@@ -1468,7 +1487,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             return null;
         }
 
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"), rskSystemProperties.databaseKind());
+        Path walletDbPath = Paths.get(rskSystemProperties.databaseDir(), "wallet");
+        DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(walletDbPath, currentDbKind);
 
         return new Wallet(ds);
     }
@@ -1508,7 +1529,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
                 boolean gcWasEnabled = !multiTrieStorePaths.isEmpty();
                 if (gcWasEnabled) {
-                    KeyValueDataSourceUtils.mergeDataSources(trieStorePath, multiTrieStorePaths, rskSystemProperties.databaseKind());
+                    DbKind currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
+                    KeyValueDataSourceUtils.mergeDataSources(trieStorePath, multiTrieStorePaths, currentDbKind);
                     // cleanup MultiTrieStore data sources
                     multiTrieStorePaths.stream()
                             .map(Path::toString)
@@ -1975,12 +1997,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private JsonRpcWeb3ServerHandler getJsonRpcWeb3ServerHandler() {
         if (jsonRpcWeb3ServerHandler == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(
-                    getWeb3(),
-                    getRskSystemProperties().getRpcModules(),
-                    rskSystemProperties.getMaxBatchRequestsSize(),
-                    getRskSystemProperties()
-            );
+            JsonRpcWeb3ServerProperties jsonRpcWeb3ServerProperties = JsonRpcWeb3ServerProperties.builder()
+                    .rpcModules(rskSystemProperties.getRpcModules())
+                    .maxBatchRequestsSize(rskSystemProperties.getMaxBatchRequestsSize())
+                    .rpcMaxResponseSize(rskSystemProperties.getRpcMaxResponseSize())
+                    .rpcTimeout(rskSystemProperties.getRpcTimeout())
+                    .build();
+
+            jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(getWeb3(), jsonRpcWeb3ServerProperties);
         }
 
         return jsonRpcWeb3ServerHandler;

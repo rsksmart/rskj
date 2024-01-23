@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
+import co.rsk.peg.StandardMultisigFederation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
@@ -103,7 +104,7 @@ class RetiringFederationTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             if (present) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
-                retiringFederation = new Federation(
+                retiringFederation = new StandardMultisigFederation(
                         ActiveFederationTest.getNRandomFederationMembers(numFederators),
                         Instant.ofEpochMilli(random.nextLong()),
                         Helper.randomInRange(1, 10),

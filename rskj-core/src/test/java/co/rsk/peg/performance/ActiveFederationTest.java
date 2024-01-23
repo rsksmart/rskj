@@ -20,10 +20,7 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.Federation;
-import co.rsk.peg.FederationMember;
+import co.rsk.peg.*;
 import org.ethereum.TestUtils;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -117,7 +114,7 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
                 List<FederationMember> members = getNRandomFederationMembers(numFederators);
 
-                federation = new Federation(
+                federation = new StandardMultisigFederation(
                         members,
                         Instant.ofEpochMilli(TestUtils.generateLong(String.valueOf(executionIndex))),
                         Helper.randomInRange(1, 10),

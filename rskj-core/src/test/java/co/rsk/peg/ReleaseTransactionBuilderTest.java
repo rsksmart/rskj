@@ -18,13 +18,40 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.InsufficientMoneyException;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.UTXOProvider;
+import co.rsk.bitcoinj.core.UTXOProviderException;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
@@ -32,14 +59,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.*;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 class ReleaseTransactionBuilderTest {
     private Wallet wallet;
@@ -71,7 +90,7 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void first_output_pay_fees() {
-        Federation federation = new Federation(
+        Federation federation = new StandardMultisigFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
@@ -145,7 +164,7 @@ class ReleaseTransactionBuilderTest {
         // Use mainnet constants to test a real situation
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
-        Federation erpFederation = new ErpFederation(
+        Federation erpFederation = new LegacyErpFederation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
@@ -544,8 +563,17 @@ class ReleaseTransactionBuilderTest {
     @Test
     void test_BuildBatchedPegouts_ok_P2SHAddress() {
         ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, 2);
-        ReleaseRequestQueue.Entry testEntry2 = new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2SHMultisigAddress(networkParameters, 3), Coin.COIN);
-        ReleaseRequestQueue.Entry testEntry3 = new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2SHMultisigAddress(networkParameters, 3), Coin.COIN);
+
+        List<BtcECKey> keys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"k1", "k2", "k3"}, true);
+        ReleaseRequestQueue.Entry testEntry2 = new ReleaseRequestQueue.Entry(
+            BitcoinTestUtils.createP2SHMultisigAddress(networkParameters, keys),
+            Coin.COIN
+        );
+        keys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"k4", "k5", "k6"}, true);
+        ReleaseRequestQueue.Entry testEntry3 = new ReleaseRequestQueue.Entry(
+            BitcoinTestUtils.createP2SHMultisigAddress(networkParameters, keys),
+            Coin.COIN
+        );
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
         List<UTXO> utxos = Arrays.asList(

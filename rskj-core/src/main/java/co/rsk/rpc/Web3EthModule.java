@@ -19,31 +19,36 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
-import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.FilterRequest;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.parameters.BlockHashParam;
+import org.ethereum.rpc.parameters.FilterRequestParam;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.BlockRefParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.rpc.parameters.HexIndexParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
+import org.ethereum.rpc.parameters.TxHashParam;
 
 import java.math.BigInteger;
 import java.util.Map;
 
+@SuppressWarnings({"java:S100", "java:S112"})
 public interface Web3EthModule {
     default String[] eth_accounts() {
         return getEthModule().accounts();
     }
 
-    default String eth_sign(String addr, String data) {
-        return getEthModule().sign(addr, data);
+    default String eth_sign(HexAddressParam addr, HexDataParam data) {
+        return getEthModule().sign(addr.getAddress().toHexString(), data.getAsHexString());
     }
 
-    default String eth_call(CallArguments args, String bnOrId) {
+    default String eth_call(CallArgumentsParam args, BlockIdentifierParam bnOrId) {
         return getEthModule().call(args, bnOrId);
-    }
-
-    default String eth_estimateGas(CallArguments args) {
-        return getEthModule().estimateGas(args);
     }
 
     default Map<String, Object> eth_bridgeState() throws Exception {
@@ -53,6 +58,9 @@ public interface Web3EthModule {
     default String eth_chainId() {
         return getEthModule().chainId();
     }
+
+    String eth_estimateGas(CallArgumentsParam args);
+    String eth_estimateGas(CallArgumentsParam args, BlockIdentifierParam bnOrId);
 
     EthModule getEthModule();
 
@@ -64,65 +72,59 @@ public interface Web3EthModule {
 
     boolean eth_mining();
 
-    BigInteger eth_hashrate();
+    String eth_hashrate();
 
     String eth_gasPrice();
 
     String eth_blockNumber();
 
-    String eth_call(CallArguments args, Map<String, String> blockRef) throws Exception; // NOSONAR
+    String eth_call(CallArgumentsParam args, Map<String, String> blockRef) throws Exception; // NOSONAR
 
-    String eth_getBalance(String address, String block) throws Exception;
+    String eth_getBalance(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 
-    String eth_getBalance(String address) throws Exception;
+    String eth_getBalance(HexAddressParam address) throws Exception;
 
-    String eth_getBalance(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
+    String eth_getStorageAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam) throws Exception;
 
-    String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) throws Exception; // NOSONAR
+    String eth_getTransactionCount(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 
-    String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception;
+    String eth_getBlockTransactionCountByHash(BlockHashParam blockHash)throws Exception;
 
-    String eth_getTransactionCount(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
+    String eth_getBlockTransactionCountByNumber(BlockIdentifierParam bnOrId)throws Exception;
 
-    String eth_getTransactionCount(String address, String blockId) throws Exception ;
+    String eth_getUncleCountByBlockHash(BlockHashParam blockHash)throws Exception;
 
-    String eth_getBlockTransactionCountByHash(String blockHash)throws Exception;
+    String eth_getUncleCountByBlockNumber(BlockIdentifierParam bnOrId)throws Exception;
 
-    String eth_getBlockTransactionCountByNumber(String bnOrId)throws Exception;
+    String eth_getCode(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 
-    String eth_getUncleCountByBlockHash(String blockHash)throws Exception;
-
-    String eth_getUncleCountByBlockNumber(String bnOrId)throws Exception;
-
-    default String eth_getCode(String address, String blockId) {
+    default String getCode(HexAddressParam address, String blockId) {
         return getEthModule().getCode(address, blockId);
     }
 
-    String eth_getCode(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
-
-    default String eth_sendRawTransaction(String rawData) {
+    default String eth_sendRawTransaction(HexDataParam rawData) {
         return getEthModule().sendRawTransaction(rawData);
     }
 
-    default String eth_sendTransaction(CallArguments args) {
+    default String eth_sendTransaction(CallArgumentsParam args) {
         return getEthModule().sendTransaction(args);
     }
 
-    BlockResultDTO eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception;
+    BlockResultDTO eth_getBlockByHash(BlockHashParam blockHash, Boolean fullTransactionObjects) throws Exception;
 
-    BlockResultDTO eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) throws Exception;
+    BlockResultDTO eth_getBlockByNumber(BlockIdentifierParam bnOrId, Boolean fullTransactionObjects) throws Exception;
 
-    TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception;
+    TransactionResultDTO eth_getTransactionByHash(TxHashParam transactionHash) throws Exception;
 
-    TransactionResultDTO eth_getTransactionByBlockHashAndIndex(String blockHash, String index) throws Exception;
+    TransactionResultDTO eth_getTransactionByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam index) throws Exception;
 
-    TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(String bnOrId, String index) throws Exception;
+    TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(BlockIdentifierParam bnOrId, HexIndexParam index) throws Exception;
 
-    TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception;
+    TransactionReceiptDTO eth_getTransactionReceipt(TxHashParam transactionHash) throws Exception;
 
-    BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) throws Exception;
+    BlockResultDTO eth_getUncleByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam uncleIdx) throws Exception;
 
-    BlockResultDTO eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) throws Exception;
+    BlockResultDTO eth_getUncleByBlockNumberAndIndex(BlockIdentifierParam blockId, HexIndexParam uncleIdx) throws Exception;
 
     String[] eth_getCompilers();
 
@@ -132,19 +134,19 @@ public interface Web3EthModule {
 
     Map<String, CompilationResultDTO> eth_compileSolidity(String contract);
 
-    String eth_newFilter(FilterRequest fr) throws Exception;
+    String eth_newFilter(FilterRequestParam fr) throws Exception;
 
     String eth_newBlockFilter();
 
     String eth_newPendingTransactionFilter();
 
-    boolean eth_uninstallFilter(String id);
+    boolean eth_uninstallFilter(HexIndexParam id);
 
-    Object[] eth_getFilterChanges(String id);
+    Object[] eth_getFilterChanges(HexIndexParam id);
 
-    Object[] eth_getFilterLogs(String id);
+    Object[] eth_getFilterLogs(HexIndexParam id);
 
-    Object[] eth_getLogs(FilterRequest fr) throws Exception;
+    Object[] eth_getLogs(FilterRequestParam fr) throws Exception;
 
     BigInteger eth_netHashrate();
 

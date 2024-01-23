@@ -791,8 +791,42 @@ class TransactionPoolImplTest {
         TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
 
         Assertions.assertFalse(result.transactionsWereAdded());
-        Assertions.assertEquals("insufficient funds to pay for pending and new transaction", result.getErrorMessage());
+        Assertions.assertEquals("insufficient funds to pay for pending and new transactions", result.getErrorMessage());
 
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    void checkTxBumpIsNotConsideredOnTotalCosts() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        // basic tx cost is 21000
+        int basicCost = 21000;
+        int gasPrice = 500000 / basicCost;
+        int gasPriceBumped = (int) (gasPrice * 1.4);
+
+        // tx cost: 483000, accumulated after: 483000
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 2, 0, 0, gasPrice);
+        // tx cost: 672000, accumulated after: 672000 (replaced tx cost is skipped from calculations
+        Transaction tx1Replaced = createSampleTransactionWithGasPrice(1, 2, 0, 0, gasPriceBumped);
+        // tx cost: 483000, accumulated after: 1155000 (not enough balance for this tx)
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 2, 0, 1, gasPrice);
+
+        TransactionPoolAddResult resultTx1 = transactionPool.addTransaction(tx1);
+        Assertions.assertTrue(resultTx1.transactionsWereAdded(), "tx1 should be added, balance is enough for its cost");
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+
+        TransactionPoolAddResult resultTx1Replaced = transactionPool.addTransaction(tx1Replaced);
+        Assertions.assertTrue(resultTx1Replaced.transactionsWereAdded(), "tx1Replaced should be added, it was replacing a pending tx and balance is enough for its new cost (replaced tx cost should be skipped from calculations)");
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+
+        TransactionPoolAddResult resultTx2 = transactionPool.addTransaction(tx2);
+        Assertions.assertFalse(resultTx2.transactionsWereAdded(), "tx2 should NOT be added, with tx1Replaced bumped price there should not be enough balance to pay for both tx1Replaced and tx2");
+        Assertions.assertEquals("insufficient funds to pay for pending and new transactions", resultTx2.getErrorMessage());
         Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
         Assertions.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
     }
