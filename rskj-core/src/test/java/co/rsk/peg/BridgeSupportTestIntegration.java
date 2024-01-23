@@ -1753,6 +1753,31 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
+    void btcAddressCannotBeDerivedBackFromEcKey() throws IOException {
+        Federation activeFederation = new StandardMultisigFederation(
+            FederationTestUtils.getFederationMembers(3),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Federation genesisFederation = new StandardMultisigFederation(
+            FederationTestUtils.getFederationMembers(6),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation, null, null, null, null);
+
+        //byte[] federatorPublicKeyOfType = bridgeSupport.getFederatorPublicKeyOfType(1, FederationMember.KeyType.BTC);
+        byte[] federatorPublicKeyOfType = BtcECKey.fromPrivate(BigInteger.valueOf((3) * 100)).getPubKey();
+        ECKey fromPublicOnly = ECKey.fromPublicOnly(federatorPublicKeyOfType);
+        BtcECKey btcECKey = BtcECKey.fromPublicOnly(fromPublicOnly.getPubKey());
+
+        Assertions.assertFalse(Arrays.equals(federatorPublicKeyOfType, btcECKey.getPubKey()));
+        Assertions.assertFalse(Arrays.equals(BtcECKey.fromPublicOnly(federatorPublicKeyOfType).getPubKey(), btcECKey.getPubKey()));
+    }
+
+    @Test
     void getFederationMethods_genesis() throws IOException {
         Federation activeFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembers(3),
