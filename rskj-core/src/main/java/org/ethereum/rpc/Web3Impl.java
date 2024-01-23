@@ -17,6 +17,7 @@
  */
 package org.ethereum.rpc;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -78,6 +79,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import static co.rsk.util.HexUtils.*;
 import static java.lang.Math.max;
@@ -856,16 +858,19 @@ public class Web3Impl implements Web3 {
 
     @Override
     public TransactionResultDTO[] eth_pendingTransactions() {
-        JsonNode content = txPoolModule.content();
-        JsonNode pendingTransactionsNode = content.get(TxPoolModuleImpl.PENDING);
+        // get pending txs
+        List<Transaction> pendingTransactions = web3InformationRetriever.getTransactions("pending");
 
-        if (pendingTransactionsNode == null || pendingTransactionsNode.isEmpty()) {
-            return new TransactionResultDTO[0];
-        }
+        // get list of accounts managed by the node
+        Set<String> managedAccountSet = new HashSet<>(Arrays.asList(personalModule.listAccounts()));
 
-        List<TransactionResultDTO> transactionDTOs = new ArrayList<>();
-
-        return transactionDTOs.toArray(new TransactionResultDTO[0]);
+        return pendingTransactions.stream()
+                .filter(tx -> {
+                    String senderAddress = HexUtils.toJsonHex(tx.getSender(signatureCache).getBytes());
+                    return managedAccountSet.contains(senderAddress);
+                })
+                .map(tx -> new TransactionResultDTO(null, null, tx, config.rpcZeroSignatureIfRemasc(), signatureCache))
+                .toArray(TransactionResultDTO[]::new);
     }
 
     @Override
