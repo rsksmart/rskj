@@ -1648,7 +1648,6 @@ class BridgeMethodsTest {
         }
     }
 
-    // TODO: check data
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
     void registerBtcCoinbaseTransaction(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {

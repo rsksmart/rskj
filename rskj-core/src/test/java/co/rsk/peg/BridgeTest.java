@@ -165,7 +165,7 @@ class BridgeTest {
     private static Stream<Arguments> lockingCapValues() {
         return Stream.of(
             Arguments.of(1),
-            Arguments.of(21_000_0000) // TODO y este nro?
+            Arguments.of(21_000_0000)
         );
     }
 
