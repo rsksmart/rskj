@@ -39,9 +39,6 @@ public class SnapshotProcessor {
     public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
-    private static final long DELAY_BTW_RUNS = 5 * 60 * 1000; // 20 minutes
-    private static final int CHUNK_MAX = 400;
-    private static final int CHUNK_MIN = 25;
     private final Blockchain blockchain;
     private final TrieStore trieStore;
     private final BlockStore blockStore;
@@ -86,7 +83,7 @@ public class SnapshotProcessor {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
-        this.chunkSize = CHUNK_MIN; //TODO (pato): chunkSize;
+        this.chunkSize = chunkSize;
         this.allNodes = Lists.newArrayList();
         this.blockStore = blockStore;
         this.blocks = Lists.newArrayList();
@@ -338,25 +335,12 @@ public class SnapshotProcessor {
                 this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
                 logger.debug("CLIENT - State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
                 if (!message.isComplete()) {
-                    //executeNextChunkRequestTask(peer);
+                    executeNextChunkRequestTask(peer);
                 } else {
                     new Thread(() -> {
                         rebuildStateAndSave();
                         logger.info("CLIENT - Snapshot sync finished!");
-                        //TODO (pato): this.stopSyncing();
-                        try {
-                            Thread.sleep(DELAY_BTW_RUNS);
-                        } catch (InterruptedException ignored) {
-                        }
-                        SnapshotProcessor.this.allNodes = Lists.newArrayList();
-                        SnapshotProcessor.this.stateSize = BigInteger.ZERO;
-                        SnapshotProcessor.this.stateChunkSize = BigInteger.ZERO;
-                        SnapshotProcessor.this.chunkTasks.clear();
-                        SnapshotProcessor.this.nextExpectedFrom = 0;
-                        //duplicateTheChunkSize();
-                        logger.debug("Starting again the infinite loop! With chunk size = {}", SnapshotProcessor.this.chunkSize);
-                        generateChunkRequestTasks();
-                        startRequestingChunks();
+                        this.stopSyncing();
                     }).start();
                 }
             } else {
@@ -370,10 +354,6 @@ public class SnapshotProcessor {
     }
 
 
-    private void duplicateTheChunkSize() {
-        this.chunkSize = this.chunkSize * 2 > CHUNK_MAX ? CHUNK_MIN : this.chunkSize * 2;
-    }
-
     /**
      * Once state share is received, rebuild the trie, save it in db and save all the blocks.
      */
@@ -382,23 +362,21 @@ public class SnapshotProcessor {
                 this.stateSize.toString(), this.stateChunkSize.toString(), this.chunkSize);
         final TrieDTO[] nodeArray = this.allNodes.toArray(new TrieDTO[0]);
         logger.debug("CLIENT - Recovering trie...");
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, (t) -> {
-        });//TODO (pato): this.trieStore::saveDTO);
+        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, this.trieStore::saveDTO);
         if (!result.isPresent() || !Arrays.equals(this.remoteRootHash, result.get().calculateHash())) {
             logger.error("CLIENT - State final validation FAILED");
         } else {
             logger.debug("CLIENT - State final validation OK!");
         }
-        /* TODO (pato):
-            logger.debug("CLIENT - Saving previous blocks...");
-            this.blockchain.removeBlocksByNumber(0l);
-            for (int i = 0; i < this.blocks.size(); i++) {
-                this.blockStore.saveBlock(this.blocks.get(i), this.difficulties.get(i), true);
-            }
-            logger.debug("CLIENT - Setting last block as best block...");
-            this.blockchain.setStatus(this.lastBlock, this.lastBlockDifficulty);
-            this.transactionPool.setBestBlock(this.lastBlock);
-        */
+
+        logger.debug("CLIENT - Saving previous blocks...");
+        this.blockchain.removeBlocksByNumber(0);
+        for (int i = 0; i < this.blocks.size(); i++) {
+            this.blockStore.saveBlock(this.blocks.get(i), this.difficulties.get(i), true);
+        }
+        logger.debug("CLIENT - Setting last block as best block...");
+        this.blockchain.setStatus(this.lastBlock, this.lastBlockDifficulty);
+        this.transactionPool.setBestBlock(this.lastBlock);
     }
 
 
