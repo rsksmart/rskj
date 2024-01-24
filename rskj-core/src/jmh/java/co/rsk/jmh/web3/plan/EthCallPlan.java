@@ -65,6 +65,7 @@ public class EthCallPlan extends BasePlan {
         args.setTo(tx.getTo());
         args.setGas("0x" + tx.getGas().toString(16));
         args.setGasPrice("0x" + tx.getGasPrice().toString(16));
+        args.setGasLimit(configuration.getString("eth_call.gasLimit"));
         args.setValue("0x" + tx.getValue().toString(16));
         args.setData(tx.getInput());
 
