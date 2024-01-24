@@ -22,7 +22,6 @@ package org.ethereum.net.server;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
-import co.rsk.net.SnapshotProcessor;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.InetAddressUtils;
@@ -226,7 +225,7 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     @Nonnull
-    public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, final Set<NodeID> targets, Peer sender) {
+    public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, final Set<NodeID> targets) {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
         final Message newBlockHash = new NewBlockHashesMessage(identifiers);
 
@@ -239,10 +238,6 @@ public class ChannelManagerImpl implements ChannelManager {
                         logger.trace("RSK announce hash: {}", peer);
                         peer.sendMessage(newBlockHash);
                     });
-
-            for (BlockIdentifier bi : identifiers){
-                loggerSnapExperiment.debug("NewBlockHashes Message block broadcast number: [{}] hash: [{}] from: [{}]", bi.getNumber(), HashUtil.toPrintableHash(bi.getHash()), sender.getPeerNodeID());
-            }
         }
 
         return nodesIdsBroadcastedTo;

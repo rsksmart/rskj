@@ -269,7 +269,7 @@ public class MessageVisitor {
                 .collect(Collectors.toSet());
         List<BlockIdentifier> identifiers = new ArrayList<>();
         identifiers.add(new BlockIdentifier(blockHash.getBytes(), block.getNumber()));
-        channelManager.broadcastBlockHash(identifiers, newNodes, this.sender);
+        channelManager.broadcastBlockHash(identifiers, newNodes);
     }
 
 }

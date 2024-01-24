@@ -58,7 +58,7 @@ public interface ChannelManager extends InternalService {
     Set<NodeID> broadcastBlock(@Nonnull final Block block);
 
     @Nonnull
-    Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, @Nullable final Set<NodeID> targets, Peer sender);
+    Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, @Nullable final Set<NodeID> targets);
 
     /**
      * broadcastTransaction Propagates a transaction message across active peers with exclusion of

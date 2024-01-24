@@ -188,7 +188,7 @@ class MessageVisitorTest {
         verify(peerScoringManager, times(1))
                 .recordEvent(peer, peerAddress, EventType.VALID_BLOCK,
                         "Valid block {} {} at {}", block.getNumber(), null, MessageVisitor.class);
-        verify(channelManager, never()).broadcastBlockHash(any(), any(), any());
+        verify(channelManager, never()).broadcastBlockHash(any(), any());
     }
 
     @Test
@@ -224,7 +224,7 @@ class MessageVisitorTest {
         verify(peerScoringManager, times(1))
                 .recordEvent(peer, peerAddress, EventType.VALID_BLOCK,
                         "Valid block {} {} at {}", block.getNumber(), null, MessageVisitor.class);
-        verify(channelManager, times(1)).broadcastBlockHash(any(), any(), any());
+        verify(channelManager, times(1)).broadcastBlockHash(any(), any());
     }
 
     @Test

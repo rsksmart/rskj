@@ -18,11 +18,9 @@
 
 package org.ethereum.rpc.Simples;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
-import co.rsk.net.messages.MessageWithId;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.net.simples.SimpleNodeChannel;
 import org.ethereum.core.Block;
@@ -30,8 +28,6 @@ import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.ChannelManagerImpl;
-import org.ethereum.sync.SyncPool;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -69,7 +65,7 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Nonnull
     @Override
-    public Set<NodeID> broadcastBlockHash(@Nonnull List<BlockIdentifier> identifiers, @Nullable Set<NodeID> targets, Peer sender) {
+    public Set<NodeID> broadcastBlockHash(@Nonnull List<BlockIdentifier> identifiers, @Nullable Set<NodeID> targets) {
         return new HashSet<>();
     }
 
