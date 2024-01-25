@@ -544,7 +544,7 @@ public enum BridgeMethods {
         fixedPermission(false)
     ),
     RECEIVE_HEADER(
-            CallTransaction.Function.fromSignature(
+        CallTransaction.Function.fromSignature(
                 "receiveHeader",
                 new String[]{"bytes"},
                 new String[]{"int256"}

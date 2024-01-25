@@ -5,7 +5,6 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
-import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -960,8 +959,8 @@ class BridgeMethodsTest {
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Address federationAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
-        when(bridgeSupportMock.getFederationAddress()).thenReturn(federationAddress);
+        Address retiringFederationAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
+        when(bridgeSupportMock.getRetiringFederationAddress()).thenReturn(retiringFederationAddress);
 
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)
@@ -970,7 +969,7 @@ class BridgeMethodsTest {
             .msgType(msgType)
             .build();
 
-        CallTransaction.Function function = Bridge.GET_FEDERATION_ADDRESS;
+        CallTransaction.Function function = Bridge.GET_RETIRING_FEDERATION_ADDRESS;
         byte[] data = function.encode();
 
         if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
@@ -979,7 +978,7 @@ class BridgeMethodsTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationAddress();
+            verify(bridgeSupportMock, times(1)).getRetiringFederationAddress();
         }
     }
 
@@ -1274,8 +1273,7 @@ class BridgeMethodsTest {
                 bridge.execute(data);
                 verify(bridgeSupportMock, times(1)).getActivePowpegRedeemScript();
             }
-        }
-        else {
+        } else {
             // Pre RSKIP293 this method is not enabled, should fail for all message types
             assertThrows(VMException.class, () -> bridge.execute(data));
         }
@@ -1431,15 +1429,16 @@ class BridgeMethodsTest {
         BtcBlock btcBlock = new BtcBlock(
             networkParameters,
             1,
-            PegTestUtils.createHash(1),
-            PegTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(1),
             1,
-            Utils.encodeCompactBits(networkParameters.getMaxTarget()),
+            100L,
             1,
             new ArrayList<>()
         ).cloneAsHeader();
-        Object[] btcBlockBytes = new Object[]{btcBlock.bitcoinSerialize()};
-        byte[] data = function.encode(btcBlockBytes);
+
+        byte[] serializedBlockHeader = btcBlock.bitcoinSerialize();
+        byte[] data = function.encode(serializedBlockHeader);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP200, 0)) {
             if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
@@ -1483,17 +1482,20 @@ class BridgeMethodsTest {
 
         CallTransaction.Function function = Bridge.REGISTER_BTC_TRANSACTION;
 
-        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
-        int zero = 0;
-        byte[] data = function.encode(value, zero, value);
+        byte[] btcTxSerialized = new byte[]{1};
+        int height = 0;
+        byte[] pmtSerialized = new byte[]{2};
+        byte[] data = function.encode(btcTxSerialized, height, pmtSerialized);
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
             verify(bridgeSupportMock, times(1)).registerBtcTransaction(
-                any(Transaction.class), any(byte[].class), anyInt(), any(byte[].class));
+                any(Transaction.class), any(byte[].class), anyInt(), any(byte[].class)
+            );
         }
     }
 
@@ -1510,7 +1512,8 @@ class BridgeMethodsTest {
         CallTransaction.Function function = Bridge.RELEASE_BTC;
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
@@ -1521,7 +1524,7 @@ class BridgeMethodsTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void removeLockWhitelistAddress(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void removeLockWhitelistAddress(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -1534,7 +1537,8 @@ class BridgeMethodsTest {
         String addressBase58 = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa";
         byte[] data = function.encode(addressBase58);
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
@@ -1577,10 +1581,11 @@ class BridgeMethodsTest {
 
         CallTransaction.Function function = Bridge.SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY;
 
-        BigInteger disableBlockDelayBI = BigInteger.valueOf(100);
-        byte[] data = function.encode(disableBlockDelayBI);
+        BigInteger disableBlockDelay = BigInteger.valueOf(100);
+        byte[] data = function.encode(disableBlockDelay);
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
@@ -1615,7 +1620,8 @@ class BridgeMethodsTest {
         CallTransaction.Function function = Bridge.UPDATE_COLLECTIONS;
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
@@ -1626,7 +1632,7 @@ class BridgeMethodsTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void voteFeePerKb(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void voteFeePerKb(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -1639,7 +1645,8 @@ class BridgeMethodsTest {
         long feePerKB = 10_000;
         byte[] data = function.encode(feePerKB);
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
+            !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
@@ -1650,7 +1657,7 @@ class BridgeMethodsTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void registerBtcCoinbaseTransaction(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void registerBtcCoinbaseTransaction(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -1680,7 +1687,7 @@ class BridgeMethodsTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void hasBtcBlockCoinbaseTransactionInformation(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void hasBtcBlockCoinbaseTransactionInformation(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -1690,8 +1697,8 @@ class BridgeMethodsTest {
 
         CallTransaction.Function function = Bridge.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION;
 
-        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
-        byte[] data = function.encode(value);
+        Sha256Hash blockHash = BitcoinTestUtils.createHash(2);
+        byte[] data = function.encode(blockHash.getBytes());
 
         if (activationConfig.isActive(ConsensusRule.RSKIP143, 0)) {
             if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
@@ -1720,13 +1727,24 @@ class BridgeMethodsTest {
 
         CallTransaction.Function function = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION;
 
-        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
-        byte[] hashBytes = new byte[32];
-        byte[] addressBytes = new byte[21];
-        int zero = 0;
-        RskAddress rskAddress = new RskAddress((new ECKey()).getAddress());
-        byte[] data = function
-            .encode(value, zero, value, hashBytes, addressBytes, rskAddress.toHexString(), addressBytes, true);
+        byte[] btcTxSerialized = new byte[]{1};
+        int height = 1;
+        byte[] pmtSerialized = new byte[]{2};
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(2);
+        byte[] refundAddressSerialized = new byte[21];
+        RskAddress lbcAddress = new RskAddress("0xFcE93641243D1EFB6131277cCD1c0a60460d5610");
+        byte[] lpAddressSerialized = new byte[21];
+        boolean shouldTransferToContract = true;
+        byte[] data = function.encode(
+            btcTxSerialized,
+            height,
+            pmtSerialized,
+            derivationArgumentsHash.getBytes(),
+            refundAddressSerialized,
+            lbcAddress.toHexString(),
+            lpAddressSerialized,
+            shouldTransferToContract
+        );
 
         if (activationConfig.isActive(ConsensusRule.RSKIP176, 0)) {
             if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
@@ -1735,16 +1753,23 @@ class BridgeMethodsTest {
             } else {
                 bridge.execute(data);
                 verify(bridgeSupportMock, times(1)).registerFlyoverBtcTransaction(
-                    any(Transaction.class), any(byte[].class), anyInt(), any(byte[].class),
-                    any(Keccak256.class), any(Address.class), any(RskAddress.class), any(Address.class),
-                    any(boolean.class));
+                    any(Transaction.class),
+                    any(byte[].class),
+                    anyInt(),
+                    any(byte[].class),
+                    any(Keccak256.class),
+                    any(Address.class),
+                    any(RskAddress.class),
+                    any(Address.class),
+                    any(boolean.class)
+                );
             }
-        }
-        else {
+        } else {
             // Pre RSKIP176 this method is not enabled, should fail for all message types
             assertThrows(VMException.class, () -> bridge.execute(data));
         }
     }
+
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
     void getBtcBlockchainBestBlockHeader(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
@@ -1773,6 +1798,7 @@ class BridgeMethodsTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         }
     }
+
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
     void getBtcBlockchainBlockHeaderByHash(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
@@ -1817,8 +1843,8 @@ class BridgeMethodsTest {
 
         CallTransaction.Function function = Bridge.GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HEIGHT;
 
-        int value = 20;
-        byte[] data = function.encode(value);
+        int height = 20;
+        byte[] data = function.encode(height);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP220, 0)) {
             if (activationConfig.isActive(ConsensusRule.RSKIP_ARROWHEAD, 0) &&
@@ -1827,7 +1853,7 @@ class BridgeMethodsTest {
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
                 bridge.execute(data);
-                verify(bridgeSupportMock, times(1)).getBtcBlockchainBlockHeaderByHeight(value);
+                verify(bridgeSupportMock, times(1)).getBtcBlockchainBlockHeaderByHeight(height);
             }
         } else {
             // Pre RSKIP220 this method is not enabled, should fail for all message types
@@ -1897,7 +1923,7 @@ class BridgeMethodsTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void getQueuedPegoutsCount(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void getQueuedPegoutsCount(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
         Bridge bridge = bridgeBuilder
@@ -1926,7 +1952,7 @@ class BridgeMethodsTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
-    void getEstimatedFeesForNextPegoutEvent(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
+    void getEstimatedFeesForNextPegoutEvent(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Coin estimatedFeesForNextPegout = Coin.SATOSHI;
         when(bridgeSupportMock.getEstimatedFeesForNextPegOutEvent()).thenReturn(estimatedFeesForNextPegout);
