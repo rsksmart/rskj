@@ -26,6 +26,8 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.logfilter.BlocksBloomStore;
+import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
@@ -42,13 +44,17 @@ import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleTransactionBase;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
+import co.rsk.rpc.modules.evm.EvmModule;
+import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.rsk.RskModuleImpl;
+import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
+import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
@@ -1102,6 +1108,140 @@ class Web3ImplTest {
         final ChainParams chain = createChainWithATransaction(true);
         assertNonCanonicalBlockHash("0x1", chain.block, blockRef -> chain.web3.eth_getTransactionCount(new HexAddressParam(chain.accountAddress), new BlockRefParam(blockRef)));
     }
+    @Test
+    void pendingTransactionsNoTxShouldReturnEmptyList() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        TransactionResultDTO[] tr = web3.eth_pendingTransactions();
+
+        List<TransactionResultDTO> trList = Arrays.asList(tr);
+
+        assertNotNull(trList);
+        assertEquals(0, trList.size());
+    }
+
+    @Test
+    void pendingTransactionsWithManagedAccount() {
+        Web3InformationRetriever web3InformationRetriever = mock(Web3InformationRetriever.class);
+        PersonalModule personalModule = mock(PersonalModule.class);
+        Web3Impl web3 = createWeb3WithMocks(web3InformationRetriever, personalModule);
+
+        Transaction mockTransaction1 = mockTransactionFrom("0x63a15ed8C3b83efC744F2e0A7824A00846C21860");
+        Transaction mockTransaction2 = mockTransactionFrom("0xa3a15ed8C3b83efC744F2e0A7824A00846C21860");
+
+        List<Transaction> pendingTransactions = Arrays.asList(mockTransaction1, mockTransaction2);
+        when(web3InformationRetriever.getTransactions("pending")).thenReturn(pendingTransactions);
+
+
+        Set<String> managedAccounts = new HashSet<>(Arrays.asList("0x63a15ed8C3b83efC744F2e0A7824A00846C21860".toLowerCase()));
+        when(personalModule.listAccounts()).thenReturn(managedAccounts.toArray(new String[0]));
+
+        TransactionResultDTO[] result = web3.eth_pendingTransactions();
+
+        assertEquals(1, result.length, "Expected only transactions from managed accounts");
+    }
+
+    @Test
+    void pendingTransactionsWithMultipleManagedAccounts() {
+        Web3InformationRetriever web3InformationRetriever = mock(Web3InformationRetriever.class);
+        PersonalModule personalModule = mock(PersonalModule.class);
+        Web3Impl web3 = createWeb3WithMocks(web3InformationRetriever, personalModule);
+
+        Transaction mockTransaction1 = mockTransactionFrom("0x63a15ed8C3b83efC744F2e0A7824A00846C21860");
+        Transaction mockTransaction2 = mockTransactionFrom("0xa3a15ed8C3b83efC744F2e0A7824A00846C21860");
+        Transaction mockTransaction3 = mockTransactionFrom("0xb3b15ed8C3b83efC744F2e0A7824A00846C21860");
+
+        List<Transaction> pendingTransactions = Arrays.asList(mockTransaction1, mockTransaction2, mockTransaction3);
+        when(web3InformationRetriever.getTransactions("pending")).thenReturn(pendingTransactions);
+
+        Set<String> managedAccounts = new HashSet<>(Arrays.asList(
+                "0x63a15ed8C3b83efC744F2e0A7824A00846C21860".toLowerCase(),
+                "0xa3a15ed8C3b83efC744F2e0A7824A00846C21860".toLowerCase()
+        ));
+
+        when(personalModule.listAccounts()).thenReturn(managedAccounts.toArray(new String[0]));
+
+        TransactionResultDTO[] result = web3.eth_pendingTransactions();
+
+        assertEquals(2, result.length, "Expected transactions only from managed accounts");
+    }
+
+    @Test
+    void pendingTransactionsWithNoManagedAccountsShouldReturnEmptyList() {
+        Web3InformationRetriever web3InformationRetriever = mock(Web3InformationRetriever.class);
+        PersonalModule personalModule = mock(PersonalModule.class);
+        Web3Impl web3 = createWeb3WithMocks(web3InformationRetriever, personalModule);
+
+        Transaction mockTransaction = mockTransactionFrom("0x63a15ed8C3b83efC744F2e0A7824A00846C21860");
+
+        List<Transaction> pendingTransactions = Collections.singletonList(mockTransaction);
+        when(web3InformationRetriever.getTransactions("pending")).thenReturn(pendingTransactions);
+
+        when(personalModule.listAccounts()).thenReturn(new String[0]);
+
+        TransactionResultDTO[] result = web3.eth_pendingTransactions();
+
+        assertEquals(0, result.length, "Expected no transactions as there are no managed accounts");
+    }
+
+    private Transaction mockTransactionFrom(String senderAddress) {
+        Transaction transaction = mock(Transaction.class);
+        RskAddress address = new RskAddress(senderAddress);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(address);
+
+        byte[] mockHashBytes = new byte[32];
+        Arrays.fill(mockHashBytes, (byte) 1);
+        Keccak256 mockHash = new Keccak256(mockHashBytes);
+        when(transaction.getHash()).thenReturn(mockHash);
+        when(transaction.getReceiveAddress()).thenReturn(address);
+        when(transaction.getNonce()).thenReturn(BigInteger.ZERO.toByteArray());
+        when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(21000).toByteArray());
+        when(transaction.getGasPrice()).thenReturn(Coin.valueOf(50_000_000_000L));
+        when(transaction.getValue()).thenReturn(Coin.ZERO);
+        when(transaction.getData()).thenReturn(new byte[0]);
+        ECDSASignature mockSignature = new ECDSASignature(BigInteger.ONE, BigInteger.ONE);
+        when(transaction.getSignature()).thenReturn(mockSignature);
+        when(transaction.getEncodedV()).thenReturn((byte) 1);
+
+        return transaction;
+    }
+
+    private Web3Impl createWeb3WithMocks(Web3InformationRetriever web3InformationRetriever, PersonalModule personalModule) {
+        // Mock all the dependencies required by Web3Impl
+        Ethereum eth = mock(Ethereum.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        RskSystemProperties config = mock(RskSystemProperties.class);
+        MinerClient minerClient = mock(MinerClient.class);
+        MinerServer minerServer = mock(MinerServer.class);
+        EthModule ethModule = mock(EthModule.class);
+        EvmModule evmModule = mock(EvmModule.class);
+        TxPoolModule txPoolModule = mock(TxPoolModule.class);
+        MnrModule mnrModule = mock(MnrModule.class);
+        DebugModule debugModule = mock(DebugModule.class);
+        TraceModule traceModule = mock(TraceModule.class);
+        RskModule rskModule = mock(RskModule.class);
+        ChannelManager channelManager = mock(ChannelManager.class);
+        PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
+        PeerServer peerServer = mock(PeerServer.class);
+        BlockProcessor nodeBlockProcessor = mock(BlockProcessor.class);
+        HashRateCalculator hashRateCalculator = mock(HashRateCalculator.class);
+        ConfigCapabilities configCapabilities = mock(ConfigCapabilities.class);
+        BuildInfo buildInfo = mock(BuildInfo.class);
+        BlocksBloomStore blocksBloomStore = mock(BlocksBloomStore.class);
+        SyncProcessor syncProcessor = mock(SyncProcessor.class);
+        SignatureCache signatureCache = mock(SignatureCache.class);
+
+        // Create Web3Impl with the mocked dependencies
+        return new Web3Impl(eth, blockchain, blockStore, receiptStore, config, minerClient, minerServer,
+                personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule,
+                traceModule, rskModule, channelManager, peerScoringManager, peerServer,
+                nodeBlockProcessor, hashRateCalculator, configCapabilities, buildInfo,
+                blocksBloomStore, web3InformationRetriever, syncProcessor, signatureCache);
+    }
+
 
     @Test
     void getBlockByNumber() {

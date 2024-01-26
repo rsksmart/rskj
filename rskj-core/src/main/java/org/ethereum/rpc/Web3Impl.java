@@ -866,7 +866,7 @@ public class Web3Impl implements Web3 {
 
         return pendingTransactions.stream()
                 .filter(tx -> {
-                    String senderAddress = HexUtils.toJsonHex(tx.getSender(signatureCache).getBytes());
+                    String senderAddress = tx.getSender(signatureCache).toJsonString();
                     return managedAccountSet.contains(senderAddress);
                 })
                 .map(tx -> new TransactionResultDTO(null, null, tx, config.rpcZeroSignatureIfRemasc(), signatureCache))
