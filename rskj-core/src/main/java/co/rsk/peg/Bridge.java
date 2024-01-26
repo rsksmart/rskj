@@ -26,6 +26,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -375,25 +376,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             }
 
             validateCall(bridgeParsedData);
-
-            Optional<?> result;
-            try {
-                // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
-                // If the user tries to call an non-existent function, parseData() will return null.
-                result = bridgeParsedData.bridgeMethod.getExecutor().execute(this, bridgeParsedData.args);
-            } catch (BridgeIllegalArgumentException ex) {
-                String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
-                logger.warn(errorMessage, ex);
-                if (!activations.isActive(ConsensusRule.RSKIP88)) {
-                    return null;
-                }
-
-                throw new BridgeIllegalArgumentException(errorMessage);
-            }
-
+            Optional<?> result = executeBridgeMethod(bridgeParsedData);
             teardown();
 
-            return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(new byte[]{});
+            byte[] voidReturnValue = new byte[]{};
+            if (!activations.isActive(RSKIP_ARROWHEAD)) {
+                voidReturnValue = null;
+            }
+
+            return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(voidReturnValue);
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("bridgeexecute", ex.getMessage());
@@ -430,7 +421,24 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 bridgeParsedData.bridgeMethod.getFunction().name
             );
             logger.info("[validateCallMessageType] {}", errorMessage);
-            // TODO: determine which type of exception makes sense for this case
+
+            throw new BridgeIllegalArgumentException(errorMessage);
+        }
+    }
+
+    private Optional<?> executeBridgeMethod(BridgeParsedData bridgeParsedData) throws Exception {
+        try {
+            // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
+            // If the user tries to call an non-existent function, parseData() will return null.
+            BridgeMethodExecutor executor = bridgeParsedData.bridgeMethod.getExecutor();
+            return executor.execute(this, bridgeParsedData.args);
+        } catch (BridgeIllegalArgumentException ex) {
+            String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
+            logger.warn(errorMessage, ex);
+            if (!activations.isActive(ConsensusRule.RSKIP88)) {
+                return null;
+            }
+
             throw new BridgeIllegalArgumentException(errorMessage);
         }
     }
