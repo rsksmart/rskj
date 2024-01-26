@@ -859,7 +859,7 @@ public class Web3Impl implements Web3 {
     @Override
     public TransactionResultDTO[] eth_pendingTransactions() {
         // get pending txs
-        List<Transaction> pendingTransactions = web3InformationRetriever.getTransactions("pending");
+        List<Transaction> pendingTransactions = web3InformationRetriever.getTransactions(Web3InformationRetriever.PENDING);
 
         // get list of accounts managed by the node
         Set<String> managedAccountSet = new HashSet<>(Arrays.asList(personalModule.listAccounts()));

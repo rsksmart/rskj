@@ -47,7 +47,7 @@ public class Web3InformationRetriever {
 
     private static final String EARLIEST = "earliest";
     private static final String LATEST = "latest";
-    private static final String PENDING = "pending";
+    public static final String PENDING = "pending";
 
     private final TransactionPool transactionPool;
     private final Blockchain blockchain;
