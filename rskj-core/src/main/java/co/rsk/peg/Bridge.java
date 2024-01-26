@@ -1160,7 +1160,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         byte[] pmtSerialized = (byte[]) args[2];
         Sha256Hash witnessMerkleRoot = Sha256Hash.wrap((byte[]) args[3]);
         byte[] witnessReservedValue = (byte[]) args[4];
-        bridgeSupport.registerBtcCoinbaseTransaction(btcTxSerialized, blockHash, pmtSerialized, witnessMerkleRoot, witnessReservedValue);
+
+        bridgeSupport.registerBtcCoinbaseTransaction(
+            btcTxSerialized,
+            blockHash,
+            pmtSerialized,
+            witnessMerkleRoot,
+            witnessReservedValue
+        );
     }
 
     public boolean hasBtcBlockCoinbaseTransactionInformation(Object[] args) {

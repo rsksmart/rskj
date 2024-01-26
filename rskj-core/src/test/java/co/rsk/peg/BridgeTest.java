@@ -40,6 +40,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeTest {
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[]{};
 
     private NetworkParameters networkParameters;
     private BridgeBuilder bridgeBuilder;
@@ -694,26 +695,29 @@ class BridgeTest {
     @Test
     void receiveHeader_after_RSKIP200_Ok() throws VMException {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
             .build();
 
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
             networkParameters,
             1,
-            PegTestUtils.createHash(1),
-            PegTestUtils.createHash(1),
-            1,
-            Utils.encodeCompactBits(networkParameters.getMaxTarget()),
-            1,
+            BitcoinTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(2),
+            1L,
+            100L,
+            1L,
             new ArrayList<>()
         ).cloneAsHeader();
 
-        Object[] parameters = new Object[]{block.bitcoinSerialize()};
-        byte[] data = Bridge.RECEIVE_HEADER.encode(parameters);
+        CallTransaction.Function function = BridgeMethods.RECEIVE_HEADER.getFunction();
+
+        byte[] data = function.encode(block.bitcoinSerialize());
         byte[] result = bridge.execute(data);
-        BigInteger decodedResult = (BigInteger) Bridge.RECEIVE_HEADER.decodeResult(result)[0];
+        BigInteger decodedResult = (BigInteger) function.decodeResult(result)[0];
 
         assertEquals(BigInteger.valueOf(0), decodedResult);
     }
@@ -1248,7 +1252,8 @@ class BridgeTest {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
-            bridge.execute(data);
+            byte[] result = bridge.execute(data);
+            assertVoidMethodResult(activationConfig, result);
             verify(bridgeSupportMock, times(1)).addSignature(
                 any(),
                 any(),
@@ -2430,7 +2435,8 @@ class BridgeTest {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
-            bridge.execute(data);
+            byte[] result = bridge.execute(data);
+            assertVoidMethodResult(activationConfig, result);
             verify(bridgeSupportMock, times(1)).receiveHeaders(new BtcBlock[]{});
         }
     }
@@ -2452,7 +2458,7 @@ class BridgeTest {
             networkParameters,
             1,
             BitcoinTestUtils.createHash(1),
-            BitcoinTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(2),
             1,
             100L,
             1,
@@ -2514,9 +2520,13 @@ class BridgeTest {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
-            bridge.execute(data);
+            byte[] result = bridge.execute(data);
+            assertVoidMethodResult(activationConfig, result);
             verify(bridgeSupportMock, times(1)).registerBtcTransaction(
-                any(Transaction.class), any(byte[].class), anyInt(), any(byte[].class)
+                any(Transaction.class),
+                any(byte[].class),
+                anyInt(),
+                any(byte[].class)
             );
         }
     }
@@ -2539,7 +2549,8 @@ class BridgeTest {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
-            bridge.execute(data);
+            byte[] result = bridge.execute(data);
+            assertVoidMethodResult(activationConfig, result);
             verify(bridgeSupportMock, times(1)).releaseBtc(any());
         }
     }
@@ -2647,7 +2658,8 @@ class BridgeTest {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
-            bridge.execute(data);
+            byte[] result = bridge.execute(data);
+            assertVoidMethodResult(activationConfig, result);
             verify(bridgeSupportMock, times(1)).updateCollections(rskTxMock);
         }
     }
@@ -2689,17 +2701,33 @@ class BridgeTest {
 
         CallTransaction.Function function = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction();
 
-        byte[] value = new byte[32];
-        byte[] data = function.encode(value, value, value, value, value);
+        byte[] btcTxSerialized = EMPTY_BYTE_ARRAY;
+        Sha256Hash blockHash = BitcoinTestUtils.createHash(1);
+        byte[] pmtSerialized = EMPTY_BYTE_ARRAY;
+        Sha256Hash witnessMerkleRoot = BitcoinTestUtils.createHash(2);
+        byte[] witnessReservedValue = new byte[32];
+        byte[] data = function.encode(
+            btcTxSerialized,
+            blockHash.getBytes(),
+            pmtSerialized,
+            witnessMerkleRoot.getBytes(),
+            witnessReservedValue
+        );
 
         if (activationConfig.isActive(ConsensusRule.RSKIP143, 0)) {
             if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
                 // Post arrowhead should fail for any msg type != CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
-                bridge.execute(data);
+                byte[] result = bridge.execute(data);
+                assertVoidMethodResult(activationConfig, result);
                 verify(bridgeSupportMock, times(1)).registerBtcCoinbaseTransaction(
-                    value, Sha256Hash.wrap(value), value, Sha256Hash.wrap(value), value);
+                    btcTxSerialized,
+                    blockHash,
+                    pmtSerialized,
+                    witnessMerkleRoot,
+                    witnessReservedValue
+                );
             }
         } else {
             // Pre RSKIP143 this method is not enabled, should fail for all message types
@@ -3022,5 +3050,13 @@ class BridgeTest {
         }
 
         return argumentsList.stream();
+    }
+
+    private void assertVoidMethodResult(ActivationConfig activationConfig, byte[] result) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0)) {
+            assertArrayEquals(EMPTY_BYTE_ARRAY, result);
+        } else {
+            assertNull(result);
+        }
     }
 }
