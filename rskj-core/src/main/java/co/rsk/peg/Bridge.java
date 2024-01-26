@@ -367,11 +367,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             if (bridgeParsedData == null) {
                 String errorMessage = String.format("Invalid data given: %s.", ByteUtil.toHexString(data));
                 logger.info("[execute] {}", errorMessage);
-                if (activations.isActive(ConsensusRule.RSKIP88)) {
-                    throw new BridgeIllegalArgumentException(errorMessage);
+                if (!activations.isActive(ConsensusRule.RSKIP88)) {
+                    return null;
                 }
 
-                return null;
+                throw new BridgeIllegalArgumentException(errorMessage);
             }
 
             validateCall(bridgeParsedData);
@@ -384,16 +384,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             } catch (BridgeIllegalArgumentException ex) {
                 String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
                 logger.warn(errorMessage, ex);
-                if (activations.isActive(ConsensusRule.RSKIP88)) {
-                    throw new BridgeIllegalArgumentException(errorMessage);
+                if (!activations.isActive(ConsensusRule.RSKIP88)) {
+                    return null;
                 }
 
-                return null;
+                throw new BridgeIllegalArgumentException(errorMessage);
             }
 
             teardown();
 
-            return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(null);
+            return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(new byte[]{});
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("bridgeexecute", ex.getMessage());
