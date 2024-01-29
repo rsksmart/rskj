@@ -833,39 +833,56 @@ public class BridgeSupport {
      * @throws IOException
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
-        Coin value = rskTx.getValue().toBitcoin();
+        Coin pegoutValue = rskTx.getValue().toBitcoin();
         final RskAddress senderAddress = rskTx.getSender(signatureCache);
-        //as we can't send btc from contracts we want to send them back to the senderAddressStr
+        logger.debug(
+            "[releaseBtc] Releasing {} RBTC from RSK address {} in tx {}",
+            pegoutValue,
+            senderAddress,
+            rskTx.getHash()
+        );
+
+        // Peg-out from a smart contract not allowed since it's not possible to derive a BTC address from it
         if (BridgeUtils.isContractTx(rskTx)) {
-            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx);
+            logger.trace(
+                "[releaseBtc] Contract {} tried to release funds. Release is just allowed from EOA",
+                senderAddress
+            );
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                emitRejectEvent(value, senderAddress.toHexString(), RejectedPegoutReason.CALLER_CONTRACT);
+                emitRejectEvent(pegoutValue, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
                 return;
             } else {
-                throw new Program.OutOfGasException("Contract calling releaseBTC");
+                String message = "Contract calling releaseBTC";
+                logger.debug("[releaseBtc] {}", message);
+                throw new Program.OutOfGasException(message);
             }
         }
 
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
+        logger.debug("[releaseBtc] BTC destination address: {}", btcDestinationAddress);
 
-        requestRelease(btcDestinationAddress, value, rskTx);
+        requestRelease(btcDestinationAddress, pegoutValue, rskTx);
     }
 
     private void refundAndEmitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
-        String senderAddressStr = senderAddress.toHexString();
-        logger.trace("Executing a refund of {} to {}. Reason: {}", value, senderAddressStr, reason);
-        rskRepository.transfer(
-                PrecompiledContracts.BRIDGE_ADDR,
-                senderAddress,
-                co.rsk.core.Coin.fromBitcoin(value)
+        logger.trace(
+            "[refundAndEmitRejectEvent] Executing a refund of {} to {}. Reason: {}",
+            value,
+            senderAddress,
+            reason
         );
-        emitRejectEvent(value, senderAddressStr, reason);
+        rskRepository.transfer(
+            PrecompiledContracts.BRIDGE_ADDR,
+            senderAddress,
+            co.rsk.core.Coin.fromBitcoin(value)
+        );
+        emitRejectEvent(value, senderAddress, reason);
     }
 
-    private void emitRejectEvent(Coin value, String senderAddressStr, RejectedPegoutReason reason) {
-        eventLogger.logReleaseBtcRequestRejected(senderAddressStr, value, reason);
+    private void emitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
+        eventLogger.logReleaseBtcRequestRejected(senderAddress.toHexString(), value, reason);
     }
 
     /**
@@ -915,7 +932,7 @@ public class BridgeSupport {
 
         if (optionalRejectedPegoutReason.isPresent()) {
             logger.warn(
-                "releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
+                "[requestRelease] releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
                 destinationAddress,
                 rskTx,
                 value,
@@ -938,7 +955,7 @@ public class BridgeSupport {
             if (activations.isActive(ConsensusRule.RSKIP185)) {
                 eventLogger.logReleaseBtcRequestReceived(rskTx.getSender(signatureCache).toHexString(), destinationAddress, value);
             }
-            logger.info("releaseBtc successful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
+            logger.info("[requestRelease] releaseBtc successful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
         }
     }
 
