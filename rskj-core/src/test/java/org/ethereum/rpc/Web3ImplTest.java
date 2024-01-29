@@ -77,6 +77,7 @@ import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.eth.handler.Eth;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Simples.*;
@@ -1124,14 +1125,15 @@ class Web3ImplTest {
     @Test
     void pendingTransactionsWithManagedAccount() {
         Web3InformationRetriever web3InformationRetriever = mock(Web3InformationRetriever.class);
+        EthModule ethModule = mock(EthModule.class);
         PersonalModule personalModule = mock(PersonalModule.class);
-        Web3Impl web3 = createWeb3WithMocks(web3InformationRetriever, personalModule);
+        Web3Impl web3 = createWeb3WithMocks(web3InformationRetriever, personalModule, ethModule);
 
         Transaction mockTransaction1 = mockTransactionFrom("0x63a15ed8C3b83efC744F2e0A7824A00846C21860");
         Transaction mockTransaction2 = mockTransactionFrom("0xa3a15ed8C3b83efC744F2e0A7824A00846C21860");
 
         List<Transaction> pendingTransactions = Arrays.asList(mockTransaction1, mockTransaction2);
-        when(web3InformationRetriever.getTransactions("pending")).thenReturn(pendingTransactions);
+        when(ethModule.pendingTransactions()).thenReturn(pendingTransactions);
 
 
         Set<String> managedAccounts = new HashSet<>(Arrays.asList("0x63a15ed8C3b83efC744F2e0A7824A00846C21860".toLowerCase()));
@@ -1145,15 +1147,16 @@ class Web3ImplTest {
     @Test
     void pendingTransactionsWithMultipleManagedAccounts() {
         Web3InformationRetriever web3InformationRetriever = mock(Web3InformationRetriever.class);
+        EthModule ethModule = mock(EthModule.class);
         PersonalModule personalModule = mock(PersonalModule.class);
-        Web3Impl web3 = createWeb3WithMocks(web3InformationRetriever, personalModule);
+        Web3Impl web3 = createWeb3WithMocks(web3InformationRetriever, personalModule, ethModule);
 
         Transaction mockTransaction1 = mockTransactionFrom("0x63a15ed8C3b83efC744F2e0A7824A00846C21860");
         Transaction mockTransaction2 = mockTransactionFrom("0xa3a15ed8C3b83efC744F2e0A7824A00846C21860");
         Transaction mockTransaction3 = mockTransactionFrom("0xb3b15ed8C3b83efC744F2e0A7824A00846C21860");
 
         List<Transaction> pendingTransactions = Arrays.asList(mockTransaction1, mockTransaction2, mockTransaction3);
-        when(web3InformationRetriever.getTransactions("pending")).thenReturn(pendingTransactions);
+        when(ethModule.pendingTransactions()).thenReturn(pendingTransactions);
 
         Set<String> managedAccounts = new HashSet<>(Arrays.asList(
                 "0x63a15ed8C3b83efC744F2e0A7824A00846C21860".toLowerCase(),
@@ -1171,13 +1174,14 @@ class Web3ImplTest {
     void pendingTransactionsWithNoManagedAccountsShouldReturnEmptyList() {
         Web3InformationRetriever web3InformationRetriever = mock(Web3InformationRetriever.class);
         PersonalModule personalModule = mock(PersonalModule.class);
-        Web3Impl web3 = createWeb3WithMocks(web3InformationRetriever, personalModule);
+        EthModule ethModule = mock(EthModule.class);
+        Web3Impl web3 = createWeb3WithMocks(web3InformationRetriever, personalModule, ethModule);
 
         Transaction mockTransaction = mockTransactionFrom("0x63a15ed8C3b83efC744F2e0A7824A00846C21860");
 
         List<Transaction> pendingTransactions = Collections.singletonList(mockTransaction);
-        when(web3InformationRetriever.getTransactions("pending")).thenReturn(pendingTransactions);
 
+        when(ethModule.pendingTransactions()).thenReturn(pendingTransactions);
         when(personalModule.listAccounts()).thenReturn(new String[0]);
 
         TransactionResultDTO[] result = web3.eth_pendingTransactions();
@@ -1207,7 +1211,7 @@ class Web3ImplTest {
         return transaction;
     }
 
-    private Web3Impl createWeb3WithMocks(Web3InformationRetriever web3InformationRetriever, PersonalModule personalModule) {
+    private Web3Impl createWeb3WithMocks(Web3InformationRetriever web3InformationRetriever, PersonalModule personalModule,  EthModule ethModule) {
         // Mock all the dependencies required by Web3Impl
         Ethereum eth = mock(Ethereum.class);
         Blockchain blockchain = mock(Blockchain.class);
@@ -1216,7 +1220,6 @@ class Web3ImplTest {
         RskSystemProperties config = mock(RskSystemProperties.class);
         MinerClient minerClient = mock(MinerClient.class);
         MinerServer minerServer = mock(MinerServer.class);
-        EthModule ethModule = mock(EthModule.class);
         EvmModule evmModule = mock(EvmModule.class);
         TxPoolModule txPoolModule = mock(TxPoolModule.class);
         MnrModule mnrModule = mock(MnrModule.class);

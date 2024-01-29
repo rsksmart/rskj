@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -187,6 +188,10 @@ public class EthModule
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", estimation);
         }
+    }
+
+    public List<Transaction> pendingTransactions() {
+        return transactionPool.getPendingTransactions();
     }
 
     protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {
