@@ -30,7 +30,6 @@ import static org.mockito.Mockito.when;
 
 class EthereumImplTest {
 
-
     @Test
     void getGasPrice_returns_GasPriceTrackerValue_when_feeMarketWorking_is_true() {
         GasPriceTracker gasPriceTracker = mock(GasPriceTracker.class);

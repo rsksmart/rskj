@@ -54,6 +54,7 @@ public class RskSystemProperties extends SystemProperties {
     private static final String RPC_MODULES_PATH = "rpc.modules";
     private static final String RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY = "rpc.logs.maxBlocksToQuery";
     private static final String RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN = "rpc.logs.maxLogsToReturn";
+    private static final String RPC_GAS_PRICE_MULTIPLIER_CONFIG = "rpc.gasPriceMultiplier";
 
     private static final int CHUNK_SIZE = 192;
 
@@ -183,6 +184,16 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean isWalletEnabled() {
         return getBoolean("wallet.enabled", false);
+    }
+
+    public double gasPriceMultiplier() {
+        double gasPriceMultiplier = getDouble(RPC_GAS_PRICE_MULTIPLIER_CONFIG, 1.1);
+
+        if(gasPriceMultiplier >= 0) {
+            return gasPriceMultiplier;
+        } else {
+            throw new RskConfigurationException(RPC_GAS_PRICE_MULTIPLIER_CONFIG + " cannot be a negative number");
+        }
     }
 
     public List<WalletAccount> walletAccounts() {

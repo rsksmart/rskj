@@ -555,8 +555,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     public GasPriceTracker getGasPriceTracker() {
         checkIfNotClosed();
 
+        double gasPriceMultiplier = getRskSystemProperties().gasPriceMultiplier();
+
         if (this.gasPriceTracker == null) {
-            this.gasPriceTracker = GasPriceTracker.create(getBlockStore());
+            this.gasPriceTracker = GasPriceTracker.create(getBlockStore(), gasPriceMultiplier);
         }
         return this.gasPriceTracker;
     }

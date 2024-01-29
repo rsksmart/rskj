@@ -22,7 +22,9 @@ import co.rsk.cli.CliArgs;
 import co.rsk.cli.RskCli;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -222,5 +224,41 @@ class RskSystemPropertiesTest {
         assertEquals(1, netModule.getDisabledMethods().size());
         assertEquals(9000, netModule.getTimeout());
         assertEquals(30000, netModule.getMethodTimeout("eth_getBlockByHash"));
+    }
+
+    @Test
+    void testGasPriceMultiplier() {
+        assertEquals(1.05, config.gasPriceMultiplier());
+    }
+
+    @Test
+    void testGasPriceMultiplierWithNull() {
+        // Set miner.gasPriceMultiplier to null which yields the same result as not finding the path
+        TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "rpc.gasPriceMultiplier = null" +
+                        " }").withFallback(rawConfig));
+
+        assertEquals(1.1, testSystemProperties.gasPriceMultiplier());
+    }
+
+    @Test
+    void testGasPriceMultiplierThrowsErrorForInvalidType() {
+        TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "rpc.gasPriceMultiplier = invalid" +
+                        " }").withFallback(rawConfig));
+
+        Assertions.assertThrows(ConfigException.WrongType.class, testSystemProperties::gasPriceMultiplier);
+    }
+
+    @Test
+    void testGasPriceMultiplierThrowsErrorForNegativeValue() {
+        TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "rpc.gasPriceMultiplier = -1" +
+                        " }").withFallback(rawConfig));
+
+        Assertions.assertThrows(RskConfigurationException.class, testSystemProperties::gasPriceMultiplier);
     }
 }
