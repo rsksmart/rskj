@@ -22,10 +22,9 @@ import co.rsk.config.InternalService;
 import co.rsk.util.ExecState;
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.DatagramChannelConfig;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +41,8 @@ import java.util.function.Function;
 public class UDPServer implements InternalService {
 
     private static final Logger logger = LoggerFactory.getLogger(UDPServer.class);
+
+    private static final int BUFFER_SIZE = 8_192;
 
     private final int port;
     private final String address;
@@ -163,6 +164,29 @@ public class UDPServer implements InternalService {
                 .handler(new ChannelInitializer<NioDatagramChannel>() {
                     @Override
                     public void initChannel(@Nonnull NioDatagramChannel ch) {
+                        DatagramChannelConfig channelConfig = ch.config();
+                        channelConfig.setRecvByteBufAllocator(new FixedRecvByteBufAllocator(BUFFER_SIZE));
+
+                        Integer defaultSndBuf = channelConfig.getOption(ChannelOption.SO_SNDBUF);
+                        if (defaultSndBuf == null || defaultSndBuf < BUFFER_SIZE) {
+                            logger.info("Default {} size of {} bytes is not sufficient. Changing to {}",
+                                    ChannelOption.SO_SNDBUF, defaultSndBuf, BUFFER_SIZE);
+                            channelConfig.setOption(ChannelOption.SO_SNDBUF, BUFFER_SIZE);
+                        }
+
+                        Integer defaultRcvBuf = channelConfig.getOption(ChannelOption.SO_RCVBUF);
+                        if (defaultRcvBuf == null || defaultRcvBuf < BUFFER_SIZE) {
+                            logger.info("Default {} size of {} bytes is not sufficient. Changing to {}",
+                                    ChannelOption.SO_RCVBUF, defaultRcvBuf, BUFFER_SIZE);
+                            channelConfig.setOption(ChannelOption.SO_RCVBUF, BUFFER_SIZE);
+                        }
+
+                        logger.info("Init channel with {}({}), {}={}, {}={}",
+                                FixedRecvByteBufAllocator.class.getSimpleName(),
+                                BUFFER_SIZE,
+                                ChannelOption.SO_SNDBUF, channelConfig.getOption(ChannelOption.SO_SNDBUF),
+                                ChannelOption.SO_RCVBUF, channelConfig.getOption(ChannelOption.SO_RCVBUF));
+
                         ch.pipeline().addLast(new PacketDecoder());
                         UDPChannel udpChannel = new UDPChannel(ch, peerExplorer);
                         peerExplorer.setUDPChannel(udpChannel);
