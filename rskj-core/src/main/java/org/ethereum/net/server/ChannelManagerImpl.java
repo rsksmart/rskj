@@ -179,6 +179,8 @@ public class ChannelManagerImpl implements ChannelManager {
             syncPool.add(peer);
             synchronized (activePeersLock) {
                 activePeers.put(peer.getNodeId(), peer);
+
+                logger.info("Added new peer: {}. Total num of active peers: {}", peer, activePeers.size());
             }
         }
     }

@@ -17,9 +17,40 @@
  */
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import static co.rsk.peg.PegTestUtils.createFederation;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.core.Is.is;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.AddressFormatException;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcBlockChain;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.CheckpointManager;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -43,15 +74,43 @@ import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.trie.Trie;
 import com.google.common.collect.Lists;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
@@ -71,23 +130,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-
-import java.io.*;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
-import java.security.SecureRandom;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 6/9/2016.
@@ -1450,9 +1492,7 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void registerBtcTransactionWithCrossFederationsChange() throws Exception {
-        NetworkParameters params = RegTestParams.get();
-        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
-        Context btcContext = new Context(params);
+        NetworkParameters params = bridgeConstants.getBtcParams();
 
         List<BtcECKey> activeFederationKeys = Stream.of("fa01", "fa02")
                 .map(Hex::decode)
@@ -1461,46 +1501,49 @@ public class BridgeSupportTestIntegration {
                 .collect(Collectors.toList());
         Federation activeFederation = new StandardMultisigFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
-                Instant.ofEpochMilli(1000L), 0L, params
+                Instant.ofEpochMilli(1000L), 5L, params
         );
 
-        List<BtcECKey> retiringFederationKeys = Stream.of("fb01", "fb02", "fb03")
-                .map(Hex::decode)
-                .map(BtcECKey::fromPrivate)
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .collect(Collectors.toList());
-        Federation retiringFederation = new StandardMultisigFederation(
-                FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
-                Instant.ofEpochMilli(2000L), 0L, params
+        final List<BtcECKey> retiringFedPrivateKeys = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
+            BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
+            BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
         );
 
-        BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class, Mockito.RETURNS_DEEP_STUBS);
-        when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
-        when(mockBridgeStorageProvider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.empty());
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        Federation retiringFederation = createFederation(bridgeConstants, retiringFedPrivateKeys);
 
-
+        List<UTXO> activeFederationUtxos = new ArrayList<>();
         List<UTXO> retiringFederationUtxos = new ArrayList<>();
-        FederationSupport mockFederationSupport = mock(FederationSupport.class);
-        doReturn(activeFederation).when(mockFederationSupport).getActiveFederation();
-        doReturn(retiringFederation).when(mockFederationSupport).getRetiringFederation();
-        doReturn(retiringFederationUtxos).when(mockFederationSupport).getRetiringFederationBtcUTXOs();
 
-        BtcBlockStoreWithCache mockBtcBlockStore = mock(BtcBlockStoreWithCache.class, Mockito.RETURNS_DEEP_STUBS);
-        when(mockBtcBlockStore.getChainHead().getHeight()).thenReturn(14);
+        BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
+
+        when(bridgeStorageProvider.getNewFederation()).thenReturn(activeFederation);
+        when(bridgeStorageProvider.getNewFederationBtcUTXOs()).thenReturn(activeFederationUtxos);
+
+        when(bridgeStorageProvider.getOldFederation()).thenReturn(retiringFederation);
+        when(bridgeStorageProvider.getOldFederationBtcUTXOs()).thenReturn(retiringFederationUtxos);
+
+        Address retiringFederationAddress = retiringFederation.getAddress();
+
+        // Peg-out from retiring federation with a change output
+        BtcTransaction releaseWithChangeTx = new BtcTransaction(params);
+
+        releaseWithChangeTx.addInput(Sha256Hash.ZERO_HASH, 0, retiringFederation.getRedeemScript());
+
+        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        releaseWithChangeTx.addOutput(Coin.COIN, randomAddress);
 
         Coin changeValue = Coin.COIN.plus(Coin.COIN);
-        Address retiringFederationAddress = retiringFederation.getAddress();
-        BtcTransaction releaseWithChangeTx = new BtcTransaction(params);
-        releaseWithChangeTx.addOutput(Coin.COIN, randomAddress);
         releaseWithChangeTx.addOutput(changeValue, retiringFederationAddress);
-        TransactionInput retiringFederationInput = new TransactionInput(params, releaseWithChangeTx, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
-        releaseWithChangeTx.addInput(retiringFederationInput);
+        FederationTestUtils.addSignatures(retiringFederation, retiringFedPrivateKeys, releaseWithChangeTx);
 
         PartialMerkleTree partialMerkleTree = PartialMerkleTree.buildFromLeaves(params, new byte[]{(byte) 0xff}, Collections.singletonList(releaseWithChangeTx.getHash()));
 
         BtcBlock mockBtcBlock = mock(BtcBlock.class, Mockito.RETURNS_DEEP_STUBS);
         when(mockBtcBlock.getMerkleRoot()).thenReturn(partialMerkleTree.getTxnHashAndMerkleRoot(new LinkedList<>()));
+
+        BtcBlockStoreWithCache mockBtcBlockStore = mock(BtcBlockStoreWithCache.class, Mockito.RETURNS_DEEP_STUBS);
+        when(mockBtcBlockStore.getChainHead().getHeight()).thenReturn(14);
 
         StoredBlock mockStoredBlock = mock(StoredBlock.class);
         when(mockStoredBlock.getHeader()).thenReturn(mockBtcBlock);
@@ -1509,51 +1552,36 @@ public class BridgeSupportTestIntegration {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(mockBtcBlockStore);
 
-        try (MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class, CALLS_REAL_METHODS)) {
-            bridgeUtilsMocked.when(() ->
-                    BridgeUtils.isValidPegInTx(
-                            any(BtcTransaction.class),
-                            anyList(),
-                            nullable(Script.class),
-                            any(Context.class),
-                            any(Coin.class),
-                            any(ActivationConfig.ForBlock.class)
-                    )).thenReturn(false);
-            bridgeUtilsMocked.when(() ->
-                    BridgeUtils.isMigrationTx(
-                            any(BtcTransaction.class),
-                            any(Federation.class),
-                            any(Federation.class),
-                            isNull(),
-                            any(Context.class),
-                            any(BridgeConstants.class),
-                            any(ActivationConfig.ForBlock.class))
-            ).thenReturn(true);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(185, 1);
 
-            BridgeSupport bridgeSupport = new BridgeSupport(
-                    bridgeConstants,
-                    mockBridgeStorageProvider,
-                    mock(BridgeEventLogger.class),
-                    mock(BtcLockSenderProvider.class),
-                    mock(PeginInstructionsProvider.class),
-                    mock(Repository.class),
-                    mock(Block.class),
-                    btcContext,
-                    mockFederationSupport,
-                    mockFactory,
-                    activations,
-                    signatureCache
-            );
+        Transaction rskTx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
 
-            bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
+        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+            .withBridgeConstants(bridgeConstants)
+            .withExecutionBlock(rskCurrentBlock)
+            .withBtcBlockStoreFactory(mockFactory)
+            .withProvider(bridgeStorageProvider).build();
 
-            assertThat(retiringFederationUtxos, hasSize(1));
-            UTXO changeUtxo = retiringFederationUtxos.get(0);
-            assertThat(changeUtxo.getValue(), is(changeValue));
-            assertThat(changeUtxo.getScript().getToAddress(params), is(retiringFederationAddress));
+        bridgeSupport.registerBtcTransaction(rskTx, releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
 
-            bridgeUtilsMocked.verify(() -> BridgeUtils.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants, activations));
-        }
+        // Assert no utxo is registered to active fed
+        assertThat(activeFederationUtxos, hasSize(0));
+        // Assert utxo is registered to retiring fed
+        assertThat(retiringFederationUtxos, hasSize(1));
+        // assert utxo registered is the expected one
+        UTXO changeUtxo = retiringFederationUtxos.get(0);
+        assertThat(changeUtxo.getValue(), is(changeValue));
+        assertThat(changeUtxo.getScript().getToAddress(params), is(retiringFederationAddress));
     }
 
     @Test
@@ -1561,17 +1589,17 @@ public class BridgeSupportTestIntegration {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
-                BtcECKey.fromPrivate(Hex.decode("fa01")),
-                BtcECKey.fromPrivate(Hex.decode("fa02")),
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02")),
         });
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
         Federation federation1 = new StandardMultisigFederation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys), Instant.ofEpochMilli(1000L), 0L, btcParams);
 
         List<BtcECKey> federation2Keys = Arrays.asList(new BtcECKey[]{
-                BtcECKey.fromPrivate(Hex.decode("fb01")),
-                BtcECKey.fromPrivate(Hex.decode("fb02")),
-                BtcECKey.fromPrivate(Hex.decode("fb03")),
+            BtcECKey.fromPrivate(Hex.decode("fb01")),
+            BtcECKey.fromPrivate(Hex.decode("fb02")),
+            BtcECKey.fromPrivate(Hex.decode("fb03")),
         });
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 

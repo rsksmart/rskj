@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.jsontestsuite.builder.EnvBuilder;
 import org.ethereum.util.ByteUtil;
 
 import java.io.IOException;
@@ -128,7 +129,7 @@ public class TestingCase {
             }
 
             if (testCaseJSONObj.has("env"))
-              this.env = new Env(envJSON);
+              this.env = EnvBuilder.build(envJSON);
 
             if (testCaseJSONObj.has("exec"))
               this.exec = new Exec(execJSON);
@@ -139,7 +140,7 @@ public class TestingCase {
         }
     }
 
-    static BigInteger toBigInt(String s) {
+    public static BigInteger toBigInt(String s) {
         if (s.startsWith("0x")) {
             if (s.equals("0x")) return new BigInteger("0");
             return new BigInteger(s.substring(2), 16);

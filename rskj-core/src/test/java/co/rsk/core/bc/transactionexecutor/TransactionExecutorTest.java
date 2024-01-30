@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
+import co.rsk.pcc.environment.Environment;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -31,15 +32,16 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
-import java.util.HashSet;
 import java.util.Random;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -168,6 +170,41 @@ class TransactionExecutorTest {
     }
 
     @Test
+    void PrecompiledContractInitShouldBeCalledWithCacheTrack() {
+        ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
+        MutableRepository cacheTrack = mock(MutableRepository.class);
+        PrecompiledContracts.PrecompiledContract precompiledContract = mock(PrecompiledContracts.PrecompiledContract.class);
+
+        when(repository.startTracking()).thenReturn(cacheTrack);
+
+        RskAddress sender = new RskAddress("0000000000000000000000000000000000000001");
+        RskAddress receiver = new RskAddress("0000000000000000000000000000000000000002");
+        byte[] gasLimit = BigInteger.valueOf(4000000).toByteArray();
+        byte[] txNonce = BigInteger.valueOf(1L).toByteArray();
+        Coin gasPrice = Coin.valueOf(1);
+        Coin value = new Coin(BigInteger.valueOf(2));
+
+
+        when(precompiledContracts.getContractForAddress(any(ActivationConfig.ForBlock.class), eq(DataWord.valueOf(receiver.getBytes())))).thenReturn(precompiledContract);
+        when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
+        when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(68000L)));
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
+
+        Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value, 1);
+
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(config, blockStore, receiptStore, blockFactory, programInvokeFactory, precompiledContracts, blockTxSignatureCache);
+        TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(transaction, txIndex++, executionBlock.getCoinbase(), repository, executionBlock, 0L);
+        assertTrue(txExecutor.executeTransaction());
+
+        ArgumentCaptor<PrecompiledContractArgs> argsCaptor = ArgumentCaptor.forClass(PrecompiledContractArgs.class);
+
+        verify(precompiledContract, times(1)).init(argsCaptor.capture());
+
+        assertEquals(cacheTrack, argsCaptor.getValue().getRepository());
+    }
+
+    @Test
     void InvalidTxsIsInBlockAndShouldntBeInCache() {
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
@@ -284,10 +321,46 @@ class TransactionExecutorTest {
         assertNotNull(blockTxSignatureCache.getSender(transaction));
     }
 
+    @Test
+    void callInitFromPrecompiledContract() {
+        PrecompiledContracts.PrecompiledContract precompiledContract = spy(new Environment(activationConfig, PrecompiledContracts.ENVIRONMENT_ADDR));
+        when(precompiledContracts.getContractForAddress(any(ActivationConfig.ForBlock.class), eq(PrecompiledContracts.ENVIRONMENT_ADDR_DW)))
+                .thenReturn(precompiledContract);
+
+        ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
+        MutableRepository cacheTrack = mock(MutableRepository.class);
+        when(repository.startTracking()).thenReturn(cacheTrack);
+
+        RskAddress sender = new RskAddress("0000000000000000000000000000000000000001");
+        RskAddress receiver = new RskAddress(PrecompiledContracts.ENVIRONMENT_ADDR_STR);
+        byte[] gasLimit = BigInteger.valueOf(4000000).toByteArray();
+        byte[] txNonce = BigInteger.valueOf(1L).toByteArray();
+        Coin gasPrice = Coin.valueOf(1);
+        Coin value = new Coin(BigInteger.valueOf(2));
+
+        when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
+        when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(68000L)));
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
+
+        Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value, 1);
+
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(config, blockStore, receiptStore, blockFactory, programInvokeFactory, precompiledContracts, blockTxSignatureCache);
+        TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(transaction, txIndex++, executionBlock.getCoinbase(), repository, executionBlock, 0L);
+        assertTrue(txExecutor.executeTransaction());
+
+        ArgumentCaptor<PrecompiledContractArgs> argsCaptor = ArgumentCaptor.forClass(PrecompiledContractArgs.class);
+
+        verify(precompiledContract, times(1)).init(argsCaptor.capture());
+
+        assertNull(argsCaptor.getValue().getProgramInvoke());
+    }
+
     private void mockRepositoryForAnAccountWithBalance(RskAddress sender, long val) {
         when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
         when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(val)));
     }
+
     private Transaction getTransaction(RskAddress sender, RskAddress receiver, byte[] gasLimit, byte[] txNonce, Coin gasPrice, Coin value) {
         Transaction transaction = mock(Transaction.class);
         when(transaction.getSender()).thenReturn(sender);

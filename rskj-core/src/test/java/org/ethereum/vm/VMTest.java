@@ -3367,6 +3367,20 @@ public abstract class VMTest {
     }
 
     @Test
+    void testBASEFEE() {
+        // Given
+        program = getProgram(compile("BASEFEE"));
+        when(program.getActivations().isActive(ConsensusRule.RSKIP412)).thenReturn(true);
+
+        // When
+        program.fullTrace();
+        vm.step(program);
+
+        // Then (See ProgramInvokeMockImpl.getMinimumGasPrice())
+        assertEquals("000000000000000000000000000000000000000000000000000003104e60a000", ByteUtil.toHexString(program.getStack().peek().getData()));
+    }
+
+    @Test
     void whenProgramIsInitializedPrecompiledCalledShouldBeFalse() {
         Program program = getProgram(new byte[]{});
         Assertions.assertTrue(program.precompiledContractsCalled().isEmpty());

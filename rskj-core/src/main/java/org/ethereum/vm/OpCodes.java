@@ -269,6 +269,11 @@ public class OpCodes {
      */
     public static final byte OP_SELFBALANCE = 0x47 ;
 
+    /**
+     * (0x48) Get the block base fee
+     */
+    public static final byte OP_BASEFEE = 0x48 ;
+
     /*  Memory Storage and F Operations */
 
     /**

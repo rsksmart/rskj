@@ -21,11 +21,11 @@ package org.ethereum.validator;
 import co.rsk.mine.NetworkUpgrades;
 import org.junit.jupiter.api.BeforeEach;
 
-class ProofOfWorkRuleTbd600Test extends ProofOfWorkRuleTest {
+class ProofOfWorkRuleArrowhead600Test extends ProofOfWorkRuleTest {
 
     @BeforeEach
     void beforeEach() {
-        setUp(NetworkUpgrades.TBD600_PROPERTIES.getProperties());
+        setUp(NetworkUpgrades.ARROWHEAD600_PROPERTIES.getProperties());
     }
 
 }

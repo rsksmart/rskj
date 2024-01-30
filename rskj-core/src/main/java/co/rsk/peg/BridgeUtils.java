@@ -17,6 +17,9 @@
  */
 package co.rsk.peg;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
+
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -24,7 +27,6 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.PartialMerkleTree;
-import co.rsk.bitcoinj.core.ScriptException;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.core.UTXO;
@@ -35,7 +37,6 @@ import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
@@ -44,6 +45,12 @@ import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -54,26 +61,12 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
-
 /**
  * @author Oscar Guindzberg
  */
 public class BridgeUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
+    private static final Logger logger = LoggerFactory.getLogger(BridgeUtils.class);
 
     private BridgeUtils() {}
 
@@ -180,44 +173,6 @@ public class BridgeUtils {
     }
 
     /**
-     * @param minimumPegInTxValue
-     * @param btcTx
-     * @param addresses
-     * @return true if any UTXO in the given btcTX is below the minimum pegin tx value
-     */
-    public static boolean isAnyUTXOAmountBelowMinimum(
-            Coin minimumPegInTxValue,
-            Context context,
-            BtcTransaction btcTx,
-            List<Address> addresses
-    ){
-        return isAnyUTXOAmountBelowMinimum(
-                minimumPegInTxValue,
-                btcTx,
-                createWatchedBtcWalletFromAddresses(
-                    context,
-                    addresses
-                )
-        );
-    }
-
-    /**
-     * @param minimumPegInTxValue
-     * @param btcTx
-     * @param wallet
-     * @return true if any UTXO in the given btcTX is below the minimum pegin tx value
-     */
-    private static boolean isAnyUTXOAmountBelowMinimum(
-            Coin minimumPegInTxValue,
-            BtcTransaction btcTx,
-            Wallet wallet
-    ){
-        return btcTx.getWalletOutputs(wallet).stream().anyMatch(transactionOutput ->
-                transactionOutput.getValue().isLessThan(minimumPegInTxValue)
-        );
-    }
-
-    /**
      * @param activations
      * @param bridgeConstants
      * @param btcTx
@@ -249,9 +204,15 @@ public class BridgeUtils {
         if (activations.isActive(RSKIP293)){
             Coin minimumPegInTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
 
-            if (isAnyUTXOAmountBelowMinimum(minimumPegInTxValue, context, btcTx, addresses)){
-                logger.debug("[validateFlyoverPeginValue] UTXOs amount sent to federation can't be below the minimum {}.",
-                    minimumPegInTxValue.value);
+            WatchedBtcWallet federationWallet = createWatchedBtcWalletFromAddresses(
+                context,
+                addresses
+            );
+            if (!PegUtils.allUTXOsToFedAreAboveMinimumPeginValue(btcTx, federationWallet, minimumPegInTxValue, activations)) {
+                logger.debug(
+                    "[validateFlyoverPeginValue] UTXOs amount sent to federation can't be below the minimum {}.",
+                    minimumPegInTxValue
+                );
                 return FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
             }
         }
@@ -331,150 +292,6 @@ public class BridgeUtils {
         ).collect(Collectors.toList());
     }
 
-    public static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
-        try {
-            TransactionInput txInput = tx.getInput(index);
-
-            // Check the input does not contain script op codes
-            List<ScriptChunk> chunks = txInput.getScriptSig().getChunks();
-            Iterator it = chunks.iterator();
-            while(it.hasNext()) {
-                ScriptChunk chunk = (ScriptChunk) it.next();
-                if (chunk.isOpCode() && chunk.opcode > 96) {
-                    return false;
-                }
-            }
-
-            txInput.getScriptSig().correctlySpends(tx, index, script, Script.ALL_VERIFY_FLAGS);
-            return true;
-        } catch (ScriptException se) {
-            return false;
-        }
-    }
-
-    /**
-     * It checks if the tx doesn't spend any of the federations' funds and if it sends more than
-     * the minimum ({@see BridgeConstants::getMinimumLockTxValue}) to any of the federations
-     * @param tx the BTC transaction to check
-     * @param activeFederations the active federations
-     * @param retiredFederationP2SHScript the retired federation P2SHScript. Could be {@code null}.
-     * @param btcContext the BTC Context
-     * @param minimumPegInTxValue minimum peg-in tx value allowed
-     * @param activations the network HF activations configuration
-     * @return true if this is a valid peg-in transaction
-     */
-    public static boolean isValidPegInTx(
-        BtcTransaction tx,
-        List<Federation> activeFederations,
-        Script retiredFederationP2SHScript,
-        Context btcContext,
-        Coin minimumPegInTxValue,
-        ActivationConfig.ForBlock activations) {
-
-        // First, check tx is not a typical release tx (tx spending from any of the federation addresses and
-        // optionally sending some change to any of the federation addresses)
-        for (int i = 0; i < tx.getInputs().size(); i++) {
-            final int index = i;
-            if (activeFederations.stream().anyMatch(federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
-                return false;
-            }
-
-            if (retiredFederationP2SHScript != null && scriptCorrectlySpendsTx(tx, index, retiredFederationP2SHScript)) {
-                return false;
-            }
-
-            // Check if the registered utxo is not change from an utxo spent from either a fast bridge federation,
-            // erp federation, or even a retired fast bridge or erp federation
-            if (activations.isActive(ConsensusRule.RSKIP201)) {
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(tx.getInput(index).getScriptSig().getChunks());
-                try {
-                    // Consider transactions that have an input with a redeem script of type P2SH ERP FED
-                    // to be "future transactions" that should not be pegins. These are gonna be considered pegouts.
-                    // This is only for backwards compatibility reasons. As soon as RSKIP353 activates,
-                    // pegins to the new federation should be valid again.
-                    // There's no reason for someone to send an actual pegin of this type before the new fed is active.
-                    // TODO: Remove this if block after RSKIP353 activation
-                    if (!activations.isActive(ConsensusRule.RSKIP353) &&
-                        (redeemScriptParser.getMultiSigType() == MultiSigType.P2SH_ERP_FED ||
-                        redeemScriptParser.getMultiSigType() == MultiSigType.FAST_BRIDGE_P2SH_ERP_FED)) {
-                        String message = "Tried to register a transaction with a P2SH ERP federation redeem script before RSKIP353 activation";
-                        logger.warn("[isValidPegInTx] {}", message);
-                        throw new ScriptException(message);
-                    }
-                    Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
-                    if (activeFederations.stream().anyMatch(federation ->
-                        (federation instanceof ErpFederation ? ((ErpFederation) federation).getStandardRedeemScript()
-                            : federation.getRedeemScript()
-                        ).equals(inputStandardRedeemScript))) {
-                        return false;
-                    }
-
-                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
-                    if (outputScript.equals(retiredFederationP2SHScript)) {
-                        return false;
-                    }
-                } catch (ScriptException e) {
-                    // There is no redeem script, could be a peg-in from a P2PKH address
-                }
-            }
-        }
-
-        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(
-            btcContext,
-            activeFederations,
-            false,
-            null
-        );
-        Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
-
-        boolean isUTXOsOrTxAmountBelowMinimum =
-            activations.isActive(RSKIP293) ? isAnyUTXOAmountBelowMinimum(
-                minimumPegInTxValue,
-                tx,
-                federationsWallet
-            ) : valueSentToMe.isLessThan(minimumPegInTxValue); // Legacy minimum validation against the total amount
-
-        if (!isUTXOsOrTxAmountBelowMinimum) {
-            return true;
-        }
-
-        logger.warn(
-            activations.isActive(RSKIP293)?
-                "[btctx:{}] Someone sent to the federation UTXOs amount less than {} satoshis":
-                "[btctx:{}] Someone sent to the federation less than {} satoshis",
-            tx.getHash(),
-            minimumPegInTxValue
-        );
-        return false;
-    }
-
-    /**
-     * It checks if the tx doesn't spend any of the federations' funds and if it sends more than
-     * the minimum ({@see BridgeConstants::getMinimumLockTxValue}) to any of the federations
-     * @param tx the BTC transaction to check
-     * @param federation the active federation
-     * @param btcContext the BTC Context
-     * @param bridgeConstants the Bridge constants
-     * @param activations the network HF activations configuration
-     * @return true if this is a valid peg-in transaction
-     */
-    public static boolean isValidPegInTx(
-        BtcTransaction tx,
-        Federation federation,
-        Context btcContext,
-        BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations) {
-
-        return isValidPegInTx(
-            tx,
-            Collections.singletonList(federation),
-            null,
-            btcContext,
-            bridgeConstants.getMinimumPeginTxValue(activations),
-            activations
-        );
-    }
-
     /**
      * It checks if the tx can be processed, if it is sent from a P2PKH address or RSKIP 143 is active
      * and the sender could be obtained
@@ -486,67 +303,6 @@ public class BridgeUtils {
         //After RSKIP 143 activation, check if the tx sender could be obtained to process the tx
         return txSenderAddressType == TxSenderAddressType.P2PKH ||
             (activations.isActive(ConsensusRule.RSKIP143) && txSenderAddressType != TxSenderAddressType.UNKNOWN);
-    }
-
-    private static boolean isPegOutTx(BtcTransaction tx, Federation federation, ActivationConfig.ForBlock activations) {
-        return isPegOutTx(tx, Collections.singletonList(federation), activations);
-    }
-
-    public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
-        return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(fed ->
-            fed instanceof ErpFederation ? ((ErpFederation) fed).getStandardP2SHScript()
-                : fed.getP2SHScript()
-            ).toArray(Script[]::new));
-    }
-
-    public static boolean isPegOutTx(BtcTransaction tx, ActivationConfig.ForBlock activations, Script... p2shScript) {
-        int inputsSize = tx.getInputs().size();
-        for (int i = 0; i < inputsSize; i++) {
-            TransactionInput txInput = tx.getInput(i);
-            Optional<Script> redeemScriptOptional = extractRedeemScriptFromInput(tx.getInput(i));
-            if (!redeemScriptOptional.isPresent()) {
-                continue;
-            }
-
-            Script redeemScript = redeemScriptOptional.get();
-            if (activations.isActive(ConsensusRule.RSKIP201)) {
-                // Extract standard redeem script since the registered utxo could be from a fast bridge or erp federation
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(txInput.getScriptSig().getChunks());
-                try {
-                    redeemScript = redeemScriptParser.extractStandardRedeemScript();
-                } catch (ScriptException e) {
-                    // There is no redeem script
-                    continue;
-                }
-            }
-
-            Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-            if (Stream.of(p2shScript).anyMatch(federationPayScript ->
-                federationPayScript.equals(outputScript))) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static boolean isMigrationTx(
-        BtcTransaction btcTx,
-        Federation activeFederation,
-        Federation retiringFederation,
-        Script retiredFederationP2SHScript,
-        Context btcContext,
-        BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations) {
-
-        if (retiredFederationP2SHScript == null && retiringFederation == null) {
-            return false;
-        }
-        boolean moveFromRetired = retiredFederationP2SHScript != null && isPegOutTx(btcTx, activations, retiredFederationP2SHScript);
-        boolean moveFromRetiring = retiringFederation != null && isPegOutTx(btcTx, retiringFederation, activations);
-        boolean moveToActive = isValidPegInTx(btcTx, activeFederation, btcContext, bridgeConstants, activations);
-
-        return (moveFromRetired || moveFromRetiring) && moveToActive;
     }
 
     /**
@@ -848,30 +604,5 @@ public class BridgeUtils {
         int signingSize = federation.getNumberOfSignaturesRequired() * inputs * SIGNATURE_MULTIPLIER;
 
         return baseSize + signingSize;
-    }
-
-    private static Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
-        Script inputScript = txInput.getScriptSig();
-        List<ScriptChunk> chunks = inputScript.getChunks();
-        if (chunks == null || chunks.isEmpty()) {
-            return Optional.empty();
-        }
-
-        byte[] program = chunks.get(chunks.size() - 1).data;
-        if (program == null) {
-            return Optional.empty();
-        }
-
-        try {
-            Script redeemScript = new Script(program);
-            return Optional.of(redeemScript);
-        } catch (ScriptException e) {
-            logger.debug(
-                "[extractRedeemScriptFromInput] Failed to extract redeem script from tx input {}. {}",
-                txInput,
-                e.getMessage()
-            );
-            return Optional.empty();
-        }
     }
 }

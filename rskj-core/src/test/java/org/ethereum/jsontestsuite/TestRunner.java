@@ -251,7 +251,7 @@ public class TestRunner {
             byte[] origin = exec.getOrigin();
             byte[] caller = exec.getCaller();
             byte[] balance = ByteUtil.bigIntegerToBytes(repository.getBalance(new RskAddress(exec.getAddress())).asBigInteger());
-            byte[] gasPrice = exec.getGasPrice();
+            byte[] txGasPrice = exec.getGasPrice();
             byte[] gas = exec.getGas();
             byte[] callValue = exec.getValue();
             byte[] msgData = exec.getData();
@@ -261,6 +261,7 @@ public class TestRunner {
             long number = ByteUtil.byteArrayToLong(env.getCurrentNumber());
             byte[] difficulty = env.getCurrentDifficulty();
             byte[] gaslimit = env.getCurrentGasLimit();
+            byte[] minimumGasPrice = env.getCurrentMinimumGasPrice();
 
             // Origin and caller need to exist in order to be able to execute
             RskAddress originAddress = new RskAddress(origin);
@@ -273,8 +274,8 @@ public class TestRunner {
             }
 
             ProgramInvoke programInvoke = new ProgramInvokeImpl(address, origin, caller, balance,
-                    gasPrice, gas, callValue, msgData, lastHash, coinbase,
-                    timestamp, number, 0, difficulty, gaslimit, repository, new BlockStoreDummy(), true);
+                    txGasPrice, gas, callValue, msgData, lastHash, coinbase,
+                    timestamp, number, 0, difficulty, gaslimit, minimumGasPrice, repository, new BlockStoreDummy(), true);
 
             /* 3. Create Program - exec.code */
             /* 4. run VM */

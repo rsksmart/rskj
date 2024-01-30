@@ -33,7 +33,7 @@ public interface ProgramInvoke extends InvokeData {
 
     DataWord getOriginAddress();
 
-    DataWord getMinGasPrice();
+    DataWord getTxGasPrice();
 
     DataWord getPrevHash();
 
@@ -48,6 +48,8 @@ public interface ProgramInvoke extends InvokeData {
     DataWord getDifficulty();
 
     DataWord getGaslimit();
+
+    DataWord getMinimumGasPrice();
 
     boolean byTransaction();
 

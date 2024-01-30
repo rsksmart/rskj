@@ -52,8 +52,8 @@ public class BridgeStorageProvider {
     protected static final int LEGACY_ERP_FEDERATION_FORMAT_VERSION = 2000;
     protected static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
 
-    // Dummy value to use when saved Fast Bridge Derivation Argument Hash
-    private static final byte FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE = (byte) 1;
+    // Dummy value to use when saving key only indexes
+    private static final byte TRUE_VALUE = (byte) 1;
 
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -109,6 +109,8 @@ public class BridgeStorageProvider {
     private long receiveHeadersLastTimestamp = 0;
 
     private Long nextPegoutHeight;
+
+    private Set<Sha256Hash> pegoutTxSigHashes;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -787,7 +789,7 @@ public class BridgeStorageProvider {
 
         return data != null &&
             data.length == 1 &&
-            data[0] == FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE;
+            data[0] == TRUE_VALUE;
     }
 
     public void markFlyoverDerivationHashAsUsed(Sha256Hash btcTxHash, Keccak256 flyoverDerivationHash) {
@@ -808,7 +810,7 @@ public class BridgeStorageProvider {
                 flyoverBtcTxHash,
                 flyoverDerivationHash
             ),
-            new byte[]{FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE}
+            new byte[]{TRUE_VALUE}
         );
     }
 
@@ -923,6 +925,51 @@ public class BridgeStorageProvider {
         return getReleaseRequestQueue().getEntries().size();
     }
 
+    public boolean hasPegoutTxSigHash(Sha256Hash sigHash) {
+        if (!activations.isActive(RSKIP379) || sigHash == null){
+            return false;
+        }
+
+        byte[] data = repository.getStorageBytes(
+            contractAddress,
+            getStorageKeyForPegoutTxSigHash(sigHash)
+        );
+
+        return data != null &&
+           data.length == 1 &&
+           data[0] == TRUE_VALUE;
+    }
+
+    public void setPegoutTxSigHash(Sha256Hash sigHash) {
+        if (!activations.isActive(RSKIP379) || sigHash == null) {
+            return;
+        }
+
+        if (hasPegoutTxSigHash(sigHash)){
+            throw new IllegalStateException(String.format("Given pegout tx sigHash %s already exists in the index. Index entries are considered unique.", sigHash));
+        }
+
+        if (pegoutTxSigHashes == null){
+            pegoutTxSigHashes = new HashSet<>();
+        }
+
+        pegoutTxSigHashes.add(sigHash);
+    }
+
+    private void savePegoutTxSigHashes() {
+        if (!activations.isActive(RSKIP379) || pegoutTxSigHashes == null) {
+            return;
+        }
+
+        pegoutTxSigHashes.forEach(pegoutTxSigHash -> repository.addStorageBytes(
+            contractAddress,
+            getStorageKeyForPegoutTxSigHash(
+                pegoutTxSigHash
+            ),
+            new byte[]{TRUE_VALUE}
+        ));
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -964,6 +1011,8 @@ public class BridgeStorageProvider {
         saveReceiveHeadersLastTimestamp();
 
         saveNextPegoutHeight();
+
+        savePegoutTxSigHashes();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
@@ -998,6 +1047,10 @@ public class BridgeStorageProvider {
         }
 
         return key;
+    }
+
+    private DataWord getStorageKeyForPegoutTxSigHash(Sha256Hash sigHash) {
+        return PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
