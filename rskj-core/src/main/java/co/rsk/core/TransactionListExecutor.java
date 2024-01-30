@@ -1,6 +1,7 @@
 package co.rsk.core;
 
 import co.rsk.crypto.Keccak256;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -246,5 +247,23 @@ public class TransactionListExecutor implements Callable<Boolean> {
 
     public void stop() {
         this.stopped = true;
+    }
+
+    public void addTransactions(List<Transaction> transactions) {
+        this.transactions.addAll(transactions);
+    }
+
+    public void addGasLimit(long gasLimitToAdd) {
+        this.sublistGasLimit = this.sublistGasLimit + gasLimitToAdd;
+    }
+
+    // Used for tests
+    public List<Transaction> getTransactions() {
+        return this.transactions;
+    }
+
+    // Used for tests
+    public long getSublistGasLimit() {
+        return this.sublistGasLimit;
     }
 }
