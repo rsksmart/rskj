@@ -19,13 +19,16 @@ package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -36,6 +39,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
@@ -44,6 +49,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -174,21 +180,68 @@ class BridgeEventLoggerImplTest {
         assertEvent(eventLogs, 0, BridgeEvents.UPDATE_COLLECTIONS.getEvent(), new Object[]{}, new Object[]{tx.getSender(signatureCache).toString()});
     }
 
-    @Test
-    void logAddSignature() {
-        // Setup logAddSignature params
-        BtcECKey federatorPubKey = BtcECKey.fromPrivate(BigInteger.valueOf(2L));
+    private static Stream<Arguments> logAddSignatureArgProvider() {
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock arrowHeadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+
+        FederationMember multiKeyFedMember = new FederationMember(
+            BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+            ECKey.fromPrivate(BigInteger.valueOf(200)),
+            ECKey.fromPrivate(BigInteger.valueOf(300))
+        );
+        ECKey rskKeyFromMultiFedMemberBtcKey = ECKey.fromPublicOnly(multiKeyFedMember.getBtcPublicKey().getPubKey());
+        String wrongDerivedRskAddressFromMultiKeyFedMember = ByteUtil.toHexString(rskKeyFromMultiFedMemberBtcKey.getAddress());
+        String derivedRskAddressFromMultiKeyFedMember = ByteUtil.toHexString(multiKeyFedMember.getRskPublicKey().getAddress());
+
+        Arguments before_arrowhead_should_log_wrong_rskAddress_for_multiKey_FedMember = Arguments.of(fingerrootActivations, multiKeyFedMember, wrongDerivedRskAddressFromMultiKeyFedMember);
+        Arguments after_arrowhead_should_log_correct_rskAddress_for_multiKey_FedMember = Arguments.of(arrowHeadActivations, multiKeyFedMember, derivedRskAddressFromMultiKeyFedMember);
+
+        FederationMember singleKeyFedMember = new FederationMember(
+            BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+            ECKey.fromPrivate(BigInteger.valueOf(100)),
+            ECKey.fromPrivate(BigInteger.valueOf(100))
+        );
+        ECKey rskKeyFromSingleFedMemberBtcKey = ECKey.fromPublicOnly(singleKeyFedMember.getBtcPublicKey().getPubKey());
+        String derivedRskAddressFromSingleBtcKeyFedMember = ByteUtil.toHexString(rskKeyFromSingleFedMemberBtcKey.getAddress());
+        String derivedRskAddressFromSingleRskKeyFedMember = ByteUtil.toHexString(singleKeyFedMember.getRskPublicKey().getAddress());
+
+        Arguments before_arrowhead_should_log_correct_rskAddress_for_single_FedMember = Arguments.of(fingerrootActivations, singleKeyFedMember, derivedRskAddressFromSingleBtcKeyFedMember);
+        Arguments after_arrowhead_should_log_correct_rskAddress_for_single_FedMember = Arguments.of(arrowHeadActivations, singleKeyFedMember, derivedRskAddressFromSingleRskKeyFedMember);
+
+        return Stream.of(
+            before_arrowhead_should_log_wrong_rskAddress_for_multiKey_FedMember,
+            after_arrowhead_should_log_correct_rskAddress_for_multiKey_FedMember,
+            before_arrowhead_should_log_correct_rskAddress_for_single_FedMember,
+            after_arrowhead_should_log_correct_rskAddress_for_single_FedMember
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("logAddSignatureArgProvider")
+    void logAddSignature(ActivationConfig.ForBlock activations, FederationMember federationMember, RskAddress expectedRskAddress) {
+        // Arrange
+        BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+        BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        LinkedList<LogInfo> eventLogs = new LinkedList<>();
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeMainNetConstants, activations, eventLogs, signatureCache);
+
+
+        BtcECKey federatorBtcPubKey = federationMember.getBtcPublicKey();
+
         Keccak256 rskTxHash = PegTestUtils.createHash3(1);
-        when(btcTxMock.getHashAsString()).thenReturn("3e72fdbae7bbd103f08e876c765e3d5ba35db30ea46cb45ab52803f987ead9fb");
+
+        BtcTransaction btcTxMock = mock(BtcTransaction.class);
+        when(btcTxMock.getHash()).thenReturn(BitcoinTestUtils.createHash(1));
+        when(btcTxMock.getHashAsString()).thenReturn(rskTxHash.toHexString());
 
         // Act
-        eventLogger.logAddSignature(federatorPubKey, btcTxMock, rskTxHash.getBytes());
+        eventLogger.logAddSignature(federationMember, btcTxMock, rskTxHash.getBytes());
 
+        // Assert
         commonAssertLogs(eventLogs);
         assertTopics(3, eventLogs);
-        ECKey key = ECKey.fromPublicOnly(federatorPubKey.getPubKey());
-        String federatorRskAddress = ByteUtil.toHexString(key.getAddress());
-        assertEvent(eventLogs, 0, BridgeEvents.ADD_SIGNATURE.getEvent(), new Object[]{rskTxHash.getBytes(), federatorRskAddress}, new Object[]{federatorPubKey.getPubKey()});
+
+        assertEvent(eventLogs, 0, BridgeEvents.ADD_SIGNATURE.getEvent(), new Object[]{rskTxHash.getBytes(), ByteUtil.toHexString(expectedRskAddress.getBytes())}, new Object[]{federatorBtcPubKey.getPubKey()});
     }
 
     @Test
