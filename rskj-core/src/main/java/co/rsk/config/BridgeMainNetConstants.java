@@ -7,16 +7,15 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.FederationMember;
 import co.rsk.peg.StandardMultisigFederation;
 import com.google.common.collect.Lists;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 
 public class BridgeMainNetConstants extends BridgeConstants {
-    private static BridgeMainNetConstants instance = new BridgeMainNetConstants();
+    private static final BridgeMainNetConstants instance = new BridgeMainNetConstants();
 
     BridgeMainNetConstants() {
         btcParamsString = NetworkParameters.ID_MAINNET;
@@ -38,11 +37,11 @@ public class BridgeMainNetConstants extends BridgeConstants {
         BtcECKey federator14PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"));
 
         List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
-                federator0PublicKey, federator1PublicKey, federator2PublicKey,
-                federator3PublicKey, federator4PublicKey, federator5PublicKey,
-                federator6PublicKey, federator7PublicKey, federator8PublicKey,
-                federator9PublicKey, federator10PublicKey, federator11PublicKey,
-                federator12PublicKey, federator13PublicKey, federator14PublicKey
+            federator0PublicKey, federator1PublicKey, federator2PublicKey,
+            federator3PublicKey, federator4PublicKey, federator5PublicKey,
+            federator6PublicKey, federator7PublicKey, federator8PublicKey,
+            federator9PublicKey, federator10PublicKey, federator11PublicKey,
+            federator12PublicKey, federator13PublicKey, federator14PublicKey
         );
 
         // IMPORTANT: BTC, RSK and MST keys are the same.
@@ -51,7 +50,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         // Currently set to:
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400l);
+        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400L);
 
         genesisFederation = new StandardMultisigFederation(
             federationMembers,
@@ -107,8 +106,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         feePerKbChangeAuthorizer = new AddressBasedAuthorizer(
-                feePerKbAuthorizedKeys,
-                AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
+            feePerKbAuthorizedKeys,
+            AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
         );
 
         genesisFeePerKb = Coin.MILLICOIN.multiply(5);
@@ -151,10 +150,12 @@ public class BridgeMainNetConstants extends BridgeConstants {
         maxInputsPerPegoutTransaction = 50;
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
+
+        btcHeightWhenPegoutTxIndexActivates = 100; // TODO: TBD and change current mock value. This is an estimation of the btc block number once RSKIP379 is activated.
+        pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
     }
 
     public static BridgeMainNetConstants getInstance() {
         return instance;
     }
-
 }

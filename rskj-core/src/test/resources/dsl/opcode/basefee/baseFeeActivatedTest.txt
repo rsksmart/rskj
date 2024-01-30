@@ -1,0 +1,122 @@
+comment
+
+// CONTRACT CODE
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
+
+contract TestBasefee {
+    constructor() {}
+
+    event OK();
+    event ERROR();
+
+    function checkBasefee(uint256 expected) external {
+        if (block.basefee == expected) {
+            emit OK();
+        } else {
+            emit ERROR();
+        }
+    }
+}
+
+// DESCRIPTION
+
+This contract compares an expected value against the block basefee:
+    - If block basefee matches the expected value, then the OK event is emmited
+    - ERROR event is emmited otherwise.
+
+// CONTRACT BYTECODE
+
+608060405234801561000f575f80fd5b506101498061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610029575f3560e01c80636b11a75f1461002d575b5f80fd5b610047600480360381019061004291906100e8565b610049565b005b804803610081577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16100ae565b7f1c9c433b57013295d61f5c5738f5e2cb1de70bb5ba5b2896edfa8efae345965e60405160405180910390a15b50565b5f80fd5b5f819050919050565b6100c7816100b5565b81146100d1575f80fd5b50565b5f813590506100e2816100be565b92915050565b5f602082840312156100fd576100fc6100b1565b5b5f61010a848285016100d4565b9150509291505056fea2646970667358221220af033c2d8dcac1c830549d1c3144ac62d2ce6d74e5363841f42152caab9ec22a64736f6c63430008170033
+
+// CONTRACT CALLS
+
+- checkBasefee(0) // Should emit "OK" as this is the minimum gas price on test
+
+    6b11a75f0000000000000000000000000000000000000000000000000000000000000000
+
+- checkBasefee(1) // Should emit "ERROR" as it is not the minimum gas price
+
+    6b11a75f0000000000000000000000000000000000000000000000000000000000000001
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TestBasefee contract
+transaction_build txTestBasefee
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 608060405234801561000f575f80fd5b506101498061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610029575f3560e01c80636b11a75f1461002d575b5f80fd5b610047600480360381019061004291906100e8565b610049565b005b804803610081577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16100ae565b7f1c9c433b57013295d61f5c5738f5e2cb1de70bb5ba5b2896edfa8efae345965e60405160405180910390a15b50565b5f80fd5b5f819050919050565b6100c7816100b5565b81146100d1575f80fd5b50565b5f813590506100e2816100be565b92915050565b5f602082840312156100fd576100fc6100b1565b5b5f61010a848285016100d4565b9150509291505056fea2646970667358221220af033c2d8dcac1c830549d1c3144ac62d2ce6d74e5363841f42152caab9ec22a64736f6c63430008170033
+    gas 600000
+    build
+
+# Create block to hold txTestBasefee transaction
+block_build b01
+    parent g00
+    transactions txTestBasefee
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Check txTestBasefee succeded
+assert_tx_success txTestBasefee
+
+# Create transaction to execute testBasefee(0) method
+transaction_build txTestBasefeeOKCall
+    sender acc1
+    nonce 1
+    contract txTestBasefee
+    value 0
+    data 6b11a75f0000000000000000000000000000000000000000000000000000000000000000
+    gas 30000
+    build
+
+# Create block to hold txTestBasefeeOKCall transaction
+block_build b02
+    parent b01
+    transactions txTestBasefeeOKCall
+    gasLimit 6500000
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02
+
+# Check txTestBasefeeOKCall succeded
+assert_tx_success txTestBasefeeOKCall
+
+# Create transaction to execute testBasefee(1) method
+transaction_build txTestBasefeeErrorCall
+    sender acc1
+    nonce 2
+    contract txTestBasefee
+    value 0
+    data 6b11a75f0000000000000000000000000000000000000000000000000000000000000001
+    gas 30000
+    build
+
+# Create block to hold txTestBasefeeErrorCall transaction
+block_build b03
+    parent b02
+    transactions txTestBasefeeErrorCall
+    gasLimit 6500000
+    build
+
+# Connect block
+block_connect b03
+
+# Check b03 is best block
+assert_best b03
+
+# Check txTestBasefeeErrorCall succeded
+assert_tx_success txTestBasefeeErrorCall

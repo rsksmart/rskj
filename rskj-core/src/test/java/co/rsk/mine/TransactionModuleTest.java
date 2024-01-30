@@ -580,7 +580,8 @@ class TransactionModuleTest {
                 transactionGateway,
                 compositeEthereumListener,
                 blockchain,
-                GasPriceTracker.create(blockStore)
+                GasPriceTracker.create(blockStore),
+                config.getMinGasPriceMultiplier()
         );
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
         this.transactionExecutorFactory = transactionExecutorFactory;

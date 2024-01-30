@@ -67,20 +67,20 @@ public enum NetworkUpgrades {
         }
     }),
 
-    TBD600_PROPERTIES(new TestSystemProperties() {
+    ARROWHEAD600_PROPERTIES(new TestSystemProperties() {
         @Override
         public ActivationConfig getActivationConfig() {
-            return ActivationConfigsForTest.tbd600();
+            return ActivationConfigsForTest.arrowhead600();
         }
 
         @Override
         public String toString() {
-            return "Tbd600";
+            return "Arrowhead";
         }
 
         @Override
         public String projectVersionModifier() {
-            return "TBD";
+            return "Arrowhead";
         }
     });
 

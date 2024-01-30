@@ -1,5 +1,6 @@
 package org.ethereum.datasource;
 
+import co.rsk.util.SystemUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -12,6 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class NotParameterizedKeyValueDataSourceTest {
 
@@ -44,6 +47,8 @@ class NotParameterizedKeyValueDataSourceTest {
 
     @Test
     void mergeDataSourceLevelDb() {
+        assumeTrue(!SystemUtils.isArm()); // LevelDB doesn't support ARM cpu
+
         testMergeDataSource(DbKind.LEVEL_DB);
     }
 

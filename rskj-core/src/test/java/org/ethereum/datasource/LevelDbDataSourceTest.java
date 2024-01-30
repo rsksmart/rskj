@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.util.SystemUtils;
 import com.google.common.collect.ImmutableSet;
 import org.awaitility.Awaitility;
 import org.ethereum.TestUtils;
@@ -28,10 +29,7 @@ import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBException;
 import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.WriteBatch;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
@@ -45,6 +43,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.ethereum.TestUtils.generateBytes;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.*;
 
 class LevelDbDataSourceTest {
@@ -52,6 +51,11 @@ class LevelDbDataSourceTest {
     public Path databaseDir;
 
     private LevelDbDataSource dataSource;
+
+    @BeforeAll
+    static void setUpBeforeClass() {
+        assumeTrue(!SystemUtils.isArm());
+    }
 
     @BeforeEach
     void setUp() {

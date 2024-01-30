@@ -1,41 +1,5 @@
 package org.ethereum.rpc;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.ethereum.TestUtils;
-import org.ethereum.core.*;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.PeerServer;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.rpc.parameters.BlockHashParam;
-import org.ethereum.rpc.parameters.BlockIdentifierParam;
-import org.ethereum.rpc.parameters.BlockRefParam;
-import org.ethereum.rpc.parameters.HexAddressParam;
-import org.ethereum.rpc.parameters.HexNumberParam;
-import org.ethereum.util.BuildInfo;
-import org.ethereum.util.TransactionFactoryHelper;
-import org.ethereum.vm.DataWord;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -55,6 +19,29 @@ import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.HexUtils;
+import org.ethereum.TestUtils;
+import org.ethereum.core.*;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.*;
+import org.ethereum.util.BuildInfo;
+import org.ethereum.util.TransactionFactoryHelper;
+import org.ethereum.vm.DataWord;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigInteger;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 class Web3ImplUnitTest {
 
@@ -222,6 +209,52 @@ class Web3ImplUnitTest {
                 .thenReturn(null);
 
         String result = target.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam);
+        assertEquals("0x0000000000000000000000000000000000000000000000000000000000000000", result);
+    }
+
+    @Test
+    void rsk_getStorageBytesAt() {
+        String id = "0x00";
+        String addr = "0x0011223344556677880011223344556677889900";
+        RskAddress expectedAddress = new RskAddress(addr);
+        String storageIdx = "0x01";
+        DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
+
+        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
+        BlockRefParam blockRefParam = new BlockRefParam(id);
+        byte[] resultBytes = TestUtils.generateBytes("result",64);
+
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        when(retriever.getInformationProvider(id)).thenReturn(aip);
+        when(aip.getStorageBytes(expectedAddress, expectedIdx))
+                .thenReturn(resultBytes);
+
+        String expectedResult = HexUtils.toUnformattedJsonHex(resultBytes);
+
+        String result = target.rsk_getStorageBytesAt(hexAddressParam, hexNumberParam, blockRefParam);
+        assertEquals(expectedResult,
+                result);
+    }
+
+    @Test
+    void rsk_getStorageBytesAtEmptyCell() {
+        String id = "0x00";
+        String addr = "0x0011223344556677880011223344556677889900";
+        RskAddress expectedAddress = new RskAddress(addr);
+        String storageIdx = "0x01";
+        DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
+
+        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
+        BlockRefParam blockRefParam = new BlockRefParam(id);
+
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        when(retriever.getInformationProvider(id)).thenReturn(aip);
+        when(aip.getStorageValue(expectedAddress, expectedIdx))
+                .thenReturn(null);
+
+        String result = target.rsk_getStorageBytesAt(hexAddressParam, hexNumberParam, blockRefParam);
         assertEquals("0x0",
                 result);
     }

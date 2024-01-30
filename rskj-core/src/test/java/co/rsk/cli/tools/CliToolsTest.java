@@ -37,6 +37,7 @@ import co.rsk.trie.Trie;
 import co.rsk.util.NodeStopper;
 import co.rsk.util.PreflightCheckException;
 import co.rsk.util.PreflightChecksUtils;
+import co.rsk.util.SystemUtils;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -81,6 +82,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -537,6 +539,8 @@ class CliToolsTest {
 
     @Test
     void dbMigrate() throws IOException {
+        assumeTrue(!SystemUtils.isArm()); // db migration assumes that one of the data sources is leveldb, which doesn't support ARM cpu
+
         File nodeIdPropsFile = tempDir.resolve("nodeId.properties").toFile();
         File dbKindPropsFile = tempDir.resolve(KeyValueDataSourceUtils.DB_KIND_PROPERTIES_FILE).toFile();
 

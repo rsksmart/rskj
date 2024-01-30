@@ -49,6 +49,11 @@ public class HexAddressParam implements Serializable {
         return address;
     }
 
+    @Override
+    public String toString() {
+        return address.toString();
+    }
+    
     public static class Deserializer extends StdDeserializer<HexAddressParam> {
         private static final long serialVersionUID = 1L;
 

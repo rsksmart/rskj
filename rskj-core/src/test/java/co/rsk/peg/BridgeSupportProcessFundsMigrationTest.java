@@ -40,7 +40,7 @@ class BridgeSupportProcessFundsMigrationTest {
         BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
         BridgeTestNetConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
 
-        ActivationConfig.ForBlock wasabiActivations = ActivationConfigsForTest.wasabi100().forBlock(0);;
+        ActivationConfig.ForBlock wasabiActivations = ActivationConfigsForTest.wasabi100().forBlock(0);
         Stream<Arguments> wasabiTests = Stream.of(
             Arguments.of(bridgeTestNetConstants, wasabiActivations, false),
             Arguments.of(bridgeTestNetConstants, wasabiActivations, true),
@@ -48,7 +48,7 @@ class BridgeSupportProcessFundsMigrationTest {
             Arguments.of(bridgeMainNetConstants, wasabiActivations, true)
         );
 
-        ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0);;
+        ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0);
         Stream<Arguments> papyrusTests = Stream.of(
             Arguments.of(bridgeTestNetConstants, papyrusActivations, false),
             Arguments.of(bridgeTestNetConstants, papyrusActivations, true),
@@ -56,7 +56,7 @@ class BridgeSupportProcessFundsMigrationTest {
             Arguments.of(bridgeMainNetConstants, papyrusActivations, true)
         );
 
-        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0);;
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0);
         Stream<Arguments> irisTests = Stream.of(
             Arguments.of(bridgeTestNetConstants, irisActivations, false),
             Arguments.of(bridgeTestNetConstants, irisActivations, true),
@@ -64,7 +64,7 @@ class BridgeSupportProcessFundsMigrationTest {
             Arguments.of(bridgeMainNetConstants, irisActivations, true)
         );
 
-        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);;
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
         Stream<Arguments> hopTests = Stream.of(
             Arguments.of(bridgeTestNetConstants, hopActivations, false),
             Arguments.of(bridgeTestNetConstants, hopActivations, true),
@@ -73,7 +73,7 @@ class BridgeSupportProcessFundsMigrationTest {
         );
 
 
-        ActivationConfig.ForBlock hop401Activations = ActivationConfigsForTest.hop401().forBlock(0);;
+        ActivationConfig.ForBlock hop401Activations = ActivationConfigsForTest.hop401().forBlock(0);
         Stream<Arguments> hop401Tests = Stream.of(
             Arguments.of(bridgeTestNetConstants, hop401Activations, false),
             Arguments.of(bridgeTestNetConstants, hop401Activations, true),
@@ -81,7 +81,7 @@ class BridgeSupportProcessFundsMigrationTest {
             Arguments.of(bridgeMainNetConstants, hop401Activations, true)
         );
 
-        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);;
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
         Stream<Arguments> fingerrootTests = Stream.of(
             Arguments.of(bridgeTestNetConstants, fingerrootActivations, false),
             Arguments.of(bridgeTestNetConstants, fingerrootActivations, true),
@@ -89,8 +89,8 @@ class BridgeSupportProcessFundsMigrationTest {
             Arguments.of(bridgeMainNetConstants, fingerrootActivations, true)
         );
 
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.tbd600().forBlock(0);;
-        Stream<Arguments> tbdTests = Stream.of(
+        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        Stream<Arguments> arrowheadTests = Stream.of(
             Arguments.of(bridgeTestNetConstants, tbdActivations, false),
             Arguments.of(bridgeTestNetConstants, tbdActivations, true),
             Arguments.of(bridgeMainNetConstants, tbdActivations, false),
@@ -104,7 +104,7 @@ class BridgeSupportProcessFundsMigrationTest {
             hopTests,
             hop401Tests,
             fingerrootTests,
-            tbdTests
+            arrowheadTests
         ).flatMap(Function.identity());
     }
 

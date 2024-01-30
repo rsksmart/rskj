@@ -29,7 +29,7 @@ import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -51,8 +51,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private static final double BLOCK_COMPLETION_PERCENT_FOR_FEE_MARKET_WORKING = 0.9;
 
-    private static final BigInteger BI_10 = BigInteger.valueOf(10);
-    private static final BigInteger BI_11 = BigInteger.valueOf(11);
+    private static final double DEFAULT_GAS_PRICE_MULTIPLIER = 1.1;
 
     private final Coin[] txWindow = new Coin[TX_WINDOW_SIZE];
 
@@ -60,6 +59,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private final AtomicReference<Coin> bestBlockPriceRef = new AtomicReference<>();
     private final BlockStore blockStore;
+    private final double gasPriceMultiplier;
 
     private Coin defaultPrice = Coin.valueOf(20_000_000_000L);
     private int txIdx = TX_WINDOW_SIZE - 1;
@@ -68,14 +68,19 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private Coin lastVal;
 
-    public static GasPriceTracker create(BlockStore blockStore) {
-        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore);
-        gasPriceTracker.initializeWindowsFromDB();
-        return gasPriceTracker;
+    private GasPriceTracker(BlockStore blockStore, Double configMultiplier) {
+        this.blockStore = blockStore;
+        this.gasPriceMultiplier = configMultiplier;
     }
 
-    private GasPriceTracker(BlockStore blockStore) {
-        this.blockStore = blockStore;
+    public static GasPriceTracker create(BlockStore blockStore) {
+        return create(blockStore, DEFAULT_GAS_PRICE_MULTIPLIER);
+    }
+
+    public static GasPriceTracker create(BlockStore blockStore, Double configMultiplier) {
+        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore, configMultiplier);
+        gasPriceTracker.initializeWindowsFromDB();
+        return gasPriceTracker;
     }
 
     @Override
@@ -109,20 +114,21 @@ public class GasPriceTracker extends EthereumListenerAdapter {
     public synchronized Coin getGasPrice() {
         if (txWindow[0] == null) { // for some reason, not filled yet (i.e. not enough blocks on DB)
             return defaultPrice;
-        } else {
-            if (lastVal == null) {
-                Coin[] values = Arrays.copyOf(txWindow, TX_WINDOW_SIZE);
-                Arrays.sort(values);
-                lastVal = values[values.length / 4];  // 25% percentile
-            }
-
-            Coin bestBlockPrice = bestBlockPriceRef.get();
-            if (bestBlockPrice == null) {
-                return lastVal;
-            } else {
-                return Coin.max(lastVal, bestBlockPrice.multiply(BI_11).divide(BI_10));
-            }
         }
+
+        if (lastVal == null) {
+            Coin[] values = Arrays.copyOf(txWindow, TX_WINDOW_SIZE);
+            Arrays.sort(values);
+            lastVal = values[values.length / 4];  // 25% percentile
+        }
+
+        Coin bestBlockPrice = bestBlockPriceRef.get();
+        if (bestBlockPrice == null) {
+            return lastVal;
+        }
+
+        return Coin.max(lastVal, new Coin(new BigDecimal(bestBlockPrice.asBigInteger())
+                .multiply(BigDecimal.valueOf(gasPriceMultiplier)).toBigInteger()));
     }
 
     public synchronized boolean isFeeMarketWorking() {
