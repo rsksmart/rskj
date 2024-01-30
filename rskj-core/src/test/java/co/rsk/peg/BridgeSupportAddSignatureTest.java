@@ -377,12 +377,13 @@ class BridgeSupportAddSignatureTest {
         }
 
         BtcECKey federatorPubKey = BridgeRegTestConstants.REGTEST_FEDERATION_PUBLIC_KEYS.get(indexOfKeyToSignWith);
+        FederationMember federationMember = FederationTestUtils.getFederationMemberWithKey(federatorPubKey);
         bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash.getBytes());
         if(shouldSignTwice) {
             bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash.getBytes());
         }
 
-        verify(eventLogger, times(wantedNumberOfInvocations)).logAddSignature(federatorPubKey, btcTx, rskTxHash.getBytes());
+        verify(eventLogger, times(wantedNumberOfInvocations)).logAddSignature(federationMember, btcTx, rskTxHash.getBytes());
     }
 
     @Test

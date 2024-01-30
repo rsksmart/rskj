@@ -115,10 +115,11 @@ class BridgeEventLoggerLegacyImplTest {
 
         // Setup logAddSignature params
         BtcECKey federatorPubKey = BtcECKey.fromPrivate(BigInteger.valueOf(2L));
+        FederationMember federationMember = FederationTestUtils.getFederationMemberWithKey(federatorPubKey);
         when(btcTxMock.getHashAsString()).thenReturn("3e72fdbae7bbd103f08e876c765e3d5ba35db30ea46cb45ab52803f987ead9fb");
 
         // Act
-        eventLogger.logAddSignature(federatorPubKey, btcTxMock, rskTxHash.getBytes());
+        eventLogger.logAddSignature(federationMember, btcTxMock, rskTxHash.getBytes());
 
         // Assert log size
         Assertions.assertEquals(1, eventLogs.size());
@@ -147,8 +148,9 @@ class BridgeEventLoggerLegacyImplTest {
     void testLogAddSignatureAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         BtcECKey federatorPublicKey = new BtcECKey();
+        FederationMember federationMember = FederationTestUtils.getFederationMemberWithKey(federatorPublicKey);
         byte[] bytes = rskTxHash.getBytes();
-        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(federatorPublicKey, btcTxMock, bytes));
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(federationMember, btcTxMock, bytes));
     }
 
     @Test
