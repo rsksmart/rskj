@@ -1,7 +1,6 @@
 package co.rsk.core;
 
 import co.rsk.crypto.Keccak256;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
