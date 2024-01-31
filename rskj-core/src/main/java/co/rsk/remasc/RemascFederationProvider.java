@@ -17,36 +17,26 @@
  */
 package co.rsk.remasc;
 
-import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.FederationMember;
 import co.rsk.peg.FederationSupport;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.vm.PrecompiledContracts;
 
 /**
  * Created by ajlopez on 14/11/2017.
  */
 public class RemascFederationProvider {
+
     private final FederationSupport federationSupport;
+    private final ActivationConfig.ForBlock activations;
 
     public RemascFederationProvider(
-            ActivationConfig activationConfig,
-            BridgeConstants bridgeConstants,
-            Repository repository,
-            Block processingBlock) {
-
-        ActivationConfig.ForBlock activations = activationConfig.forBlock(processingBlock.getNumber());
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                PrecompiledContracts.BRIDGE_ADDR,
-                bridgeConstants,
-                activations
-        );
-        this.federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock, activations);
+            ActivationConfig.ForBlock activations,
+            FederationSupport federationSupport) {
+        this.federationSupport = federationSupport;
+        this.activations = activations;
     }
 
     public int getFederationSize() {
@@ -54,7 +44,11 @@ public class RemascFederationProvider {
     }
 
     public RskAddress getFederatorAddress(int n) {
-        byte[] publicKey = this.federationSupport.getFederatorBtcPublicKey(n);
-        return new RskAddress(ECKey.fromPublicOnly(publicKey).getAddress());
+        if(!activations.isActive(ConsensusRule.RSKIP415)) {
+            byte[] btcPublicKey = this.federationSupport.getFederatorBtcPublicKey(n);
+            return new RskAddress(ECKey.fromPublicOnly(btcPublicKey).getAddress());
+        }
+        byte[] rskPublicKey = this.federationSupport.getFederatorPublicKeyOfType(n, FederationMember.KeyType.RSK);
+        return new RskAddress(ECKey.fromPublicOnly(rskPublicKey).getAddress());
     }
 }
