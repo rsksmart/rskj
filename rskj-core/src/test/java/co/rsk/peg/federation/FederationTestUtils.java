@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
@@ -41,11 +41,14 @@ import org.ethereum.crypto.ECKey;
 public class FederationTestUtils {
 
     public static Federation getFederation(Integer... federationMemberPks) {
-        return new StandardMultisigFederation(
+        FederationArgs federationArgs = new FederationArgs(
             getFederationMembersFromPks(federationMemberPks),
             ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        return FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
     }
 

@@ -24,13 +24,13 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -54,11 +54,6 @@ public class BridgeSerializationUtils {
     private static final int FEDERATION_CREATION_TIME_INDEX = 0;
     private static final int FEDERATION_CREATION_BLOCK_NUMBER_INDEX = 1;
     private static final int FEDERATION_MEMBERS_INDEX = 2;
-
-    private static final int FEDERATION_MEMBER_LIST_SIZE = 3;
-    private static final int FEDERATION_MEMBER_BTC_KEY_INDEX = 0;
-    private static final int FEDERATION_MEMBER_RSK_KEY_INDEX = 1;
-    private static final int FEDERATION_MEMBER_MST_KEY_INDEX = 2;
 
     private BridgeSerializationUtils() {
         throw new IllegalAccessError("Utility class, do not instantiate it");
@@ -273,7 +268,10 @@ public class BridgeSerializationUtils {
             federationMembers.add(member);
         }
 
-        return new StandardMultisigFederation(federationMembers, creationTime, creationBlockNumber, networkParameters);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, creationBlockNumber, networkParameters);
+        return FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
+        );
     }
 
     /**
@@ -299,7 +297,7 @@ public class BridgeSerializationUtils {
     public static byte[] serializeFederation(Federation federation) {
         return serializeFederationWithSerializer(
             federation,
-            BridgeSerializationUtils::serializeFederationMember
+            FederationMember::serialize
         );
     }
 
@@ -311,11 +309,10 @@ public class BridgeSerializationUtils {
         return deserializeStandardMultisigFederationWithDeserializer(
             data,
             networkParameters,
-            BridgeSerializationUtils::deserializeFederationMember
+            FederationMember::deserialize
         );
     }
-
-    public static LegacyErpFederation deserializeLegacyErpFederation(
+    public static ErpFederation deserializeNonStandardErpFederation(
         byte[] data,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations
@@ -323,122 +320,31 @@ public class BridgeSerializationUtils {
         Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
             bridgeConstants.getBtcParams(),
-            BridgeSerializationUtils::deserializeFederationMember
+            FederationMember::deserialize
         );
 
-        return new LegacyErpFederation(
-            federation.getMembers(),
-            federation.creationTime,
-            federation.getCreationBlockNumber(),
-            federation.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            activations
-        );
+        FederationArgs federationArgs = federation.getArgs();
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+
+        return FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
     }
 
-    public static P2shErpFederation deserializeP2shErpFederation(
+    public static ErpFederation deserializeP2shErpFederation(
         byte[] data,
-        BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations
+        BridgeConstants bridgeConstants
     ) {
         Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
             bridgeConstants.getBtcParams(),
-            BridgeSerializationUtils::deserializeFederationMember
+            FederationMember::deserialize
         );
 
-        return new P2shErpFederation(
-            federation.getMembers(),
-            federation.creationTime,
-            federation.getCreationBlockNumber(),
-            federation.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            activations
-        );
-    }
+        FederationArgs federationArgs = federation.getArgs();
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
 
-    /**
-     * A FederationMember is serialized as a list in the following order:
-     * - BTC public key
-     * - RSK public key
-     * - MST public key
-     * All keys are stored in their COMPRESSED versions.
-     */
-    public static byte[] serializeFederationMember(FederationMember federationMember) {
-        byte[][] rlpElements = new byte[FEDERATION_MEMBER_LIST_SIZE][];
-        rlpElements[FEDERATION_MEMBER_BTC_KEY_INDEX] = RLP.encodeElement(
-                federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true)
-        );
-        rlpElements[FEDERATION_MEMBER_RSK_KEY_INDEX] = RLP.encodeElement(federationMember.getRskPublicKey().getPubKey(true));
-        rlpElements[FEDERATION_MEMBER_MST_KEY_INDEX] = RLP.encodeElement(federationMember.getMstPublicKey().getPubKey(true));
-        return RLP.encodeList(rlpElements);
-    }
-
-    // For the serialization format, see BridgeSerializationUtils::serializeFederationMember
-    private static FederationMember deserializeFederationMember(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-
-        if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
-            throw new RuntimeException(String.format("Invalid serialized FederationMember. Expected %d elements but got %d", FEDERATION_MEMBER_LIST_SIZE, rlpList.size()));
-        }
-
-        BtcECKey btcKey = BtcECKey.fromPublicOnly(rlpList.get(FEDERATION_MEMBER_BTC_KEY_INDEX).getRLPData());
-        ECKey rskKey = ECKey.fromPublicOnly(rlpList.get(FEDERATION_MEMBER_RSK_KEY_INDEX).getRLPData());
-        ECKey mstKey = ECKey.fromPublicOnly(rlpList.get(FEDERATION_MEMBER_MST_KEY_INDEX).getRLPData());
-
-        return new FederationMember(btcKey, rskKey, mstKey);
-    }
-
-    /**
-     * A pending federation is serialized as the
-     * public keys conforming it.
-     * This is a legacy format for blocks before the Wasabi
-     * network upgrade.
-     * See BridgeSerializationUtils::serializeBtcPublicKeys
-     */
-    public static byte[] serializePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) {
-        return serializeBtcPublicKeys(pendingFederation.getBtcPublicKeys());
-    }
-
-    // For the serialization format, see BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys
-    // and serializePublicKeys::deserializeBtcPublicKeys
-    public static PendingFederation deserializePendingFederationOnlyBtcKeys(byte[] data) {
-        // BTC, RSK and MST keys are the same
-        List<FederationMember> members = deserializeBtcPublicKeys(data).stream().map(pk ->
-            FederationMember.getFederationMemberFromKey(pk)
-        ).collect(Collectors.toList());
-
-        return new PendingFederation(members);
-    }
-
-    /**
-     * A pending federation is serialized as the
-     * list of its sorted members serialized.
-     * For the member serialization format, see BridgeSerializationUtils::serializeFederationMember
-     */
-    public static byte[] serializePendingFederation(PendingFederation pendingFederation) {
-        List<byte[]> encodedMembers = pendingFederation.getMembers().stream()
-                .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
-                .map(BridgeSerializationUtils::serializeFederationMember)
-                .collect(Collectors.toList());
-        return RLP.encodeList(encodedMembers.toArray(new byte[0][]));
-    }
-
-    // For the serialization format, see BridgeSerializationUtils::serializePendingFederation
-    public static PendingFederation deserializePendingFederation(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-
-        List<FederationMember> members = new ArrayList<>();
-
-        for (int k = 0; k < rlpList.size(); k++) {
-            RLPElement element = rlpList.get(k);
-            FederationMember member = deserializeFederationMember(element.getRLPData());
-            members.add(member);
-        }
-
-        return new PendingFederation(members);
+        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
     // An ABI call election is serialized as a list of the votes, like so:
@@ -887,33 +793,6 @@ public class BridgeSerializationUtils {
         }
 
         return new ABICallSpec(function, arguments);
-    }
-
-    // A list of btc public keys is serialized as
-    // [pubkey1, pubkey2, ..., pubkeyn], sorted
-    // using the lexicographical order of the public keys
-    // (see BtcECKey.PUBKEY_COMPARATOR).
-    private static byte[] serializeBtcPublicKeys(List<BtcECKey> keys) {
-        List<byte[]> encodedKeys = keys.stream()
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(key -> RLP.encodeElement(key.getPubKey()))
-                .collect(Collectors.toList());
-        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
-    }
-
-    // For the serialization format, see BridgeSerializationUtils::serializePublicKeys
-    private static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-
-        List<BtcECKey> keys = new ArrayList<>();
-
-        for (int k = 0; k < rlpList.size(); k++) {
-            RLPElement element = rlpList.get(k);
-            BtcECKey key = BtcECKey.fromPublicOnly(element.getRLPData());
-            keys.add(key);
-        }
-
-        return keys;
     }
 
     // A list of voters is serialized as

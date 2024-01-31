@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.Federation;
+import co.rsk.peg.federation.Federation;
 import java.util.List;
 
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;

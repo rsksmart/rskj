@@ -64,6 +64,7 @@ import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.pegin.PeginEvaluationResult;
@@ -2198,7 +2199,7 @@ public class BridgeSupport {
             long nextFederationCreationBlockHeight = rskExecutionBlock.getNumber();
             provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
             Script oldFederationP2SHScript = activations.isActive(RSKIP377) && oldFederation instanceof ErpFederation ?
-                ((ErpFederation) oldFederation).getStandardP2SHScript() : oldFederation.getP2SHScript();
+                ((ErpFederation) oldFederation).getDefaultP2SHScript() : oldFederation.getP2SHScript();
             provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
         }
 

@@ -16,9 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
-import static co.rsk.peg.FederationCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.Address;
@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.peg.bitcoin.ScriptCreationException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
@@ -82,13 +83,12 @@ class StandardMultisigFederationTest {
         newKeys.add(federator15PublicKey);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newKeys);
         Instant creationTime = federation.getCreationTime();
-        FederationCreationException exception =
-            assertThrows(FederationCreationException.class, () -> new StandardMultisigFederation(
-                newMembers,
-                creationTime,
-                federation.creationBlockNumber,
-                federation.btcParams
-            ));
+        long creationBlockNumber = federation.getCreationBlockNumber();
+        NetworkParameters networkParameters = federation.getBtcParams();
+        FederationArgs federationArgs = new FederationArgs(newMembers, creationTime, creationBlockNumber, networkParameters);
+        ScriptCreationException exception =
+            assertThrows(ScriptCreationException.class,
+                () -> FederationFactory.buildStandardMultiSigFederation(federationArgs));
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
 
@@ -122,45 +122,77 @@ class StandardMultisigFederationTest {
 
     @Test
     void testEquals_same() {
-        Federation otherFederation = new StandardMultisigFederation(
+        FederationArgs federationArgs = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
             federation.getBtcParams()
+        );
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
 
         assertEquals(federation, otherFederation);
     }
 
     @Test
+    void values_from_federationArgs_equal_values_from_federation() {
+        List<FederationMember> federationMembers = federation.getMembers();
+        Instant creationTime = federation.getCreationTime();
+        long creationBlockNumber = federation.getCreationBlockNumber();
+        NetworkParameters btcParams = federation.getBtcParams();
+        FederationArgs federationArgsFromValues = new FederationArgs(federationMembers, creationTime, creationBlockNumber, btcParams);
+
+        FederationArgs federationArgs = federation.getArgs();
+        assertEquals(federationArgs, federationArgsFromValues);
+    }
+
+    @Test
+    void federation_from_federationArgs_equals_federation() {
+        FederationArgs federationArgs = federation.getArgs();
+        Federation federationFromFederationArgs = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+
+        assertEquals(federation, federationFromFederationArgs);
+    }
+
+    @Test
     void testEquals_differentCreationTime() {
-        Federation otherFederation = new StandardMultisigFederation(
+        FederationArgs federationArgs = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime().plus(1, ChronoUnit.MILLIS),
             federation.getCreationBlockNumber(),
             networkParameters
+        );
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
         assertEquals(federation, otherFederation);
     }
 
     @Test
     void testEquals_differentCreationBlockNumber() {
-        Federation otherFederation = new StandardMultisigFederation(
+        FederationArgs federationArgs = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber() + 1,
             networkParameters
+        );
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
         assertEquals(federation, otherFederation);
     }
 
     @Test
     void testEquals_differentNetworkParameters() {
-        Federation otherFederation = new StandardMultisigFederation(
+        FederationArgs federationArgs = new FederationArgs(
             federation.getMembers(),
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
         // Different network parameters will result in a different address
         assertNotEquals(federation, otherFederation);
@@ -172,12 +204,15 @@ class StandardMultisigFederationTest {
         List<BtcECKey> newKeys = federation.getBtcPublicKeys();
         newKeys.remove(14);
         List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithKeys(newKeys);
-
-        Federation otherFederation = new StandardMultisigFederation(
+        FederationArgs federationArgs = new FederationArgs(
             newMembers,
             federation.getCreationTime(),
             federation.getCreationBlockNumber(),
             federation.getBtcParams()
+        );
+
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
 
         Assertions.assertNotEquals(federation, otherFederation);
@@ -194,11 +229,17 @@ class StandardMultisigFederationTest {
         newKeys.add(anotherPublicKey);
         List<FederationMember> differentMembers = FederationTestUtils.getFederationMembersWithKeys(newKeys);
 
-        Federation otherFederation = new StandardMultisigFederation(
+        Instant creationTime = federation.getCreationTime();
+        long creationBlockNumber = federation.getCreationBlockNumber();
+        FederationArgs federationArgs = new FederationArgs(
             differentMembers,
-            federation.getCreationTime(),
-            federation.getCreationBlockNumber(),
+            creationTime,
+            creationBlockNumber,
             networkParameters
+        );
+
+        Federation otherFederation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
 
         assertNotEquals(federation, otherFederation);

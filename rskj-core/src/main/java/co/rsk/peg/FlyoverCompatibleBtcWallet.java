@@ -9,6 +9,7 @@ import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
+import co.rsk.peg.federation.Federation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.util.List;
 import java.util.Optional;
