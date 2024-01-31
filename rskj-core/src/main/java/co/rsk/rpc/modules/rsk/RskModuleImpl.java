@@ -74,11 +74,6 @@ public class RskModuleImpl implements RskModule {
     }
 
     @Override
-    public String getNodeId() {
-        return ByteUtil.toHexString(this.rskSystemProperties.nodeId());
-    }
-
-    @Override
     public String getRawTransactionReceiptByHash(String transactionHash) {
         String s = null;
         try {

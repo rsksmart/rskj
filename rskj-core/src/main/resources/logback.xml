@@ -107,7 +107,6 @@
     <logger name="btcBlockStore" level="INFO" />
     <logger name="secp256k1" level="INFO" />
     <logger name="altbn128" level="INFO" />
-    <logger name="snapExperiment" level="ERROR" />
     <logger name="co.rsk.net.discovery.PeerExplorer" level="INFO" />
     <logger name="co.rsk.net.discovery.NodeChallengeManager" level="INFO" />
 

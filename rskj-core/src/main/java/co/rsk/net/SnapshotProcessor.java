@@ -42,7 +42,7 @@ public class SnapshotProcessor {
     private final Blockchain blockchain;
     private final TrieStore trieStore;
     private final BlockStore blockStore;
-    private int chunkSize;
+    private final int chunkSize;
     private final PeersInformation peersInformation;
     private final TransactionPool transactionPool;
     private long messageId = 0;

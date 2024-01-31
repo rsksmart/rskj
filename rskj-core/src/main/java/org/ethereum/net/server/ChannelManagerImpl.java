@@ -53,8 +53,6 @@ public class ChannelManagerImpl implements ChannelManager {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
-    private static final Logger loggerSnapExperiment = LoggerFactory.getLogger("snapExperiment");
-
     // If the inbound peer connection was dropped by us with a reason message
     // then we ban that peer IP on any connections for some time to protect from
     // too active peers

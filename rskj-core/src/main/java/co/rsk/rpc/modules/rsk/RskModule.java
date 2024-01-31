@@ -31,7 +31,4 @@ public interface RskModule {
     void shutdown();
 
     void flush();
-
-
-    String getNodeId();
 }

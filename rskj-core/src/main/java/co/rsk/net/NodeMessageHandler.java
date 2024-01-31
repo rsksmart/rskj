@@ -53,9 +53,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
-
-    private static final Logger loggerSnapExperiment = LoggerFactory.getLogger("snapExperiment");
-
     private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private static final int QUEUED_TIME_TO_WARN_LIMIT = 2; // seconds
     private static final int QUEUED_TIME_TO_WARN_PERIOD = 10; // seconds
@@ -264,19 +261,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         // also, while queue implementation stays unbounded, offer() will never return false
         messageCounter.increment(sender);
         MessageTask messageTask = new MessageTask(sender, message, score, nodeMsgTraceInfo);
-
-        if (messageTask.getMessage().getMessageType() == MessageType.BLOCK_MESSAGE) {
-            BlockMessage blockMessage = (BlockMessage) messageTask.getMessage();
-            loggerSnapExperiment.debug("BlockMessage block arrived number: [{}] hash: [{}] from: [{}]", blockMessage.getBlock().getNumber(), blockMessage.getBlock().getPrintableHash(), messageTask.sender.getPeerNodeID());
-        }
-
-        if (messageTask.getMessage().getMessageType() == MessageType.NEW_BLOCK_HASHES) {
-            NewBlockHashesMessage blockMessage = (NewBlockHashesMessage) messageTask.getMessage();
-
-            for (BlockIdentifier bi : blockMessage.getBlockIdentifiers()){
-                loggerSnapExperiment.debug("NewBlockHashes Message block arrived number: [{}] hash: [{}] from: [{}]", bi.getNumber(), HashUtil.toPrintableHash(bi.getHash()), messageTask.sender.getPeerNodeID());
-            }
-        }
 
         boolean messageAdded = this.queue.offer(messageTask);
         if (!messageAdded) {
