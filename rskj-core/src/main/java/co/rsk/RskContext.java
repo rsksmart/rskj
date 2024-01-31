@@ -1590,10 +1590,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     initialBootNodes.add(address.getHostName() + ":" + address.getPort());
                 }
             }
+            int bucketSize = rskSystemProperties.discoveryBucketSize();
             peerExplorer = new PeerExplorer(
                     initialBootNodes,
                     localNode,
-                    new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode),
+                    new NodeDistanceTable(KademliaOptions.BINS, bucketSize, localNode),
                     key,
                     rskSystemProperties.peerDiscoveryMessageTimeOut(),
                     rskSystemProperties.peerDiscoveryRefreshPeriod(),
