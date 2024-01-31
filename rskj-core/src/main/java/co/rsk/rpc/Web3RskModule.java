@@ -49,10 +49,6 @@ public interface Web3RskModule {
         getRskModule().flush();
     }
 
-    default String rsk_nodeId()  {
-        return getRskModule().getNodeId();
-    }
-
     RskModule getRskModule();
 
     String rsk_getStorageBytesAt(HexAddressParam address, HexNumberParam storageIdx, BlockRefParam blockRefParam);
