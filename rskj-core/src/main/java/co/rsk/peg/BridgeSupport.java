@@ -2153,14 +2153,20 @@ public class BridgeSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
+            logger.trace("[commitFederation] no pending federation was found.");
             return -1;
         }
 
         if (!currentPendingFederation.isComplete()) {
+            logger.info("[commitFederation] pending federation still incomplete.");
             return -2;
         }
 
         if (!hash.equals(currentPendingFederation.getHash())) {
+            logger.trace("[commitFederation] pending federation hash {} doesn't match the given hash {}.",
+                currentPendingFederation.getHash(),
+                hash
+            );
             return -3;
         }
 
@@ -2175,6 +2181,7 @@ public class BridgeSupport {
         List<UTXO> oldFederationUTXOs = provider.getOldFederationBtcUTXOs();
         oldFederationUTXOs.clear();
         oldFederationUTXOs.addAll(utxosToMove);
+        logger.info("[commitFederation] {} UTXOs to move from the new federation into the old federation.", utxosToMove.size());
 
         // Network parameters for the new federation are taken from the bridge constants.
         // Creation time is the block's timestamp.
@@ -2189,6 +2196,14 @@ public class BridgeSupport {
                 activations
             )
         );
+        long activationHeight = rskExecutionBlock.getNumber() + bridgeConstants.getFederationActivationAge();
+        long migrationStartHeight = activationHeight + bridgeConstants.getFundsMigrationAgeSinceActivationBegin();
+        long migrationEndHeight = migrationStartHeight + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
+        logger.trace("[commitFederation] Activation height: {}. Migration start height: {}. Migration end height: {}.",
+            activationHeight,
+            migrationStartHeight,
+            migrationEndHeight
+        );
         provider.setPendingFederation(null);
 
         // Clear votes on election
@@ -2201,9 +2216,18 @@ public class BridgeSupport {
             Script oldFederationP2SHScript = activations.isActive(RSKIP377) && oldFederation instanceof ErpFederation ?
                 ((ErpFederation) oldFederation).getDefaultP2SHScript() : oldFederation.getP2SHScript();
             provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
+            String oldFederationP2shScriptAsHexString = Hex.toHexString(oldFederationP2SHScript.getProgram());
+            logger.trace("[commitFederation] nextFederationCreationBlockHeight: {}. RetiringFederationP2SHScript: {}",
+                nextFederationCreationBlockHeight,
+                oldFederationP2shScriptAsHexString
+            );
         }
 
-        logger.debug("[commitFederation] New Federation committed: {}", provider.getNewFederation().getAddress());
+        logger.debug(
+            "[commitFederation] New Federation committed: {}. Current retiring Federation: {}",
+            provider.getNewFederation().getAddress(),
+            provider.getOldFederation().getAddress()
+        );
         eventLogger.logCommitFederation(rskExecutionBlock, provider.getOldFederation(), provider.getNewFederation());
 
         return 1;
