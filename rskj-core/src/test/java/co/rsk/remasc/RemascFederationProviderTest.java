@@ -1,7 +1,7 @@
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -11,7 +11,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -24,12 +23,14 @@ import static org.mockito.Mockito.*;
 class RemascFederationProviderTest {
 
     private static final String BTC_PUBLIC_KEY = "0x03a5e32151f974c35c5d08af36a8d6af0593248e8e4adca7ed0148192eb2f5d1bf";
+    private static final String RSK_ADDRESS_FROM_BTC_PUBLIC_KEY = "131c7c821b0e4a1ab570feed952d9304e03fddd1";
     private static final String RSK_PUBLIC_KEY = "0x02f3b5fb3121932db9450121b0a37f3f051dc8b3fd5f1ea5e7cf726947d8f69c28";
+    private static final String RSK_ADDRESS_FROM_RSK_PUBLIC_KEY = "54a948b3d76ce84e5c7b4b3cd01f2af1f18d41e0";
 
     @Test
     void getDefaultFederationSize() {
         RemascFederationProvider provider = getRemascFederationProvider();
-        Assertions.assertEquals(3, provider.getFederationSize());
+        Assertions.assertEquals(15, provider.getFederationSize());
     }
 
     @Test
@@ -50,9 +51,8 @@ class RemascFederationProviderTest {
         RemascFederationProvider provider = new RemascFederationProvider(activations, federationSupport);
 
         RskAddress actualRskAddress = provider.getFederatorAddress(federatorIndex);
-        RskAddress expectedRskAddress = new RskAddress(ECKey.fromPublicOnly(btcPublicKey).getAddress());
 
-        Assertions.assertEquals(expectedRskAddress, actualRskAddress);
+        Assertions.assertEquals(RSK_ADDRESS_FROM_BTC_PUBLIC_KEY, actualRskAddress.toHexString());
         verify(federationSupport, never()).getFederatorPublicKeyOfType(federatorIndex, FederationMember.KeyType.RSK);
         verify(federationSupport, times(1)).getFederatorBtcPublicKey(federatorIndex);
 
@@ -76,11 +76,10 @@ class RemascFederationProviderTest {
         RemascFederationProvider provider = new RemascFederationProvider(activations, federationSupport);
 
         RskAddress actualRskAddress = provider.getFederatorAddress(federatorIndex);
-        RskAddress expectedRskAddress = new RskAddress(ECKey.fromPublicOnly(rskPublicKey).getAddress());
 
-        Assertions.assertEquals(expectedRskAddress, actualRskAddress);
-        verify(federationSupport, never()).getFederatorBtcPublicKey(federatorIndex);
+        Assertions.assertEquals(RSK_ADDRESS_FROM_RSK_PUBLIC_KEY, actualRskAddress.toHexString());
         verify(federationSupport, times(1)).getFederatorPublicKeyOfType(federatorIndex, FederationMember.KeyType.RSK);
+        verify(federationSupport, never()).getFederatorBtcPublicKey(federatorIndex);
 
     }
 
@@ -92,16 +91,16 @@ class RemascFederationProviderTest {
 
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(blockchain.getBestBlock().getNumber());
 
-        BridgeRegTestConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+        BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
 
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 builder.getRepository(),
                 PrecompiledContracts.BRIDGE_ADDR,
-                bridgeRegTestConstants,
+                bridgeMainNetConstants,
                 activations
         );
 
-        FederationSupport federationSupport = new FederationSupport(bridgeRegTestConstants, bridgeStorageProvider, blockchain.getBestBlock(), activations);
+        FederationSupport federationSupport = new FederationSupport(bridgeMainNetConstants, bridgeStorageProvider, blockchain.getBestBlock(), activations);
 
         return new RemascFederationProvider(
                 activations,

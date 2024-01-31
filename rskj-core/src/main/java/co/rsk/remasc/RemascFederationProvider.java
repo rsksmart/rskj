@@ -45,10 +45,23 @@ public class RemascFederationProvider {
 
     public RskAddress getFederatorAddress(int n) {
         if(!activations.isActive(ConsensusRule.RSKIP415)) {
-            byte[] btcPublicKey = this.federationSupport.getFederatorBtcPublicKey(n);
-            return new RskAddress(ECKey.fromPublicOnly(btcPublicKey).getAddress());
+            return getRskAddressFromBtcKey(n);
         }
-        byte[] rskPublicKey = this.federationSupport.getFederatorPublicKeyOfType(n, FederationMember.KeyType.RSK);
-        return new RskAddress(ECKey.fromPublicOnly(rskPublicKey).getAddress());
+        return getRskAddressFromRskKey(n);
     }
+
+    private RskAddress getRskAddressFromBtcKey(int n) {
+        byte[] btcPublicKey = this.federationSupport.getFederatorBtcPublicKey(n);
+        return getRskAddressFromKey(btcPublicKey);
+    }
+
+    private RskAddress getRskAddressFromRskKey(int n) {
+        byte[] rskPublicKey = this.federationSupport.getFederatorPublicKeyOfType(n, FederationMember.KeyType.RSK);
+        return getRskAddressFromKey(rskPublicKey);
+    }
+
+    private RskAddress getRskAddressFromKey(byte[] publicKey) {
+        return new RskAddress(ECKey.fromPublicOnly(publicKey).getAddress());
+    }
+
 }
