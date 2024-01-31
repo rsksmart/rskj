@@ -1435,7 +1435,15 @@ public class BridgeSupport {
         }
 
         Federation federation = optionalFederation.get();
-        FederationMember signingFederationMember = federation.getMemberByBtcPublicKey(federatorPublicKey).get();
+        Optional<FederationMember> federationMember = federation.getMemberByBtcPublicKey(federatorPublicKey);
+        if (!federationMember.isPresent()){
+            logger.warn(
+                "Supplied federator public key {} does not belong to any of the federators.",
+                federatorPublicKey
+            );
+            return;
+        }
+        FederationMember signingFederationMember = federationMember.get();
 
         BtcTransaction btcTx = provider.getPegoutsWaitingForSignatures().get(new Keccak256(rskTxHash));
         if (btcTx == null) {
