@@ -32,12 +32,11 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.*;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -966,7 +965,19 @@ class RemascProcessMinerFeesTest {
     }
 
     private void validateFederatorsBalanceIsCorrect(RepositorySnapshot repository, long federationReward, Block executionBlock) {
-        RemascFederationProvider provider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), executionBlock);
+
+        ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(executionBlock.getNumber());
+
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                repository.startTracking(),
+                PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(),
+                activations
+        );
+
+        FederationSupport federationSupport = new FederationSupport(config.getNetworkConstants().getBridgeConstants(), bridgeStorageProvider, executionBlock, activations);
+
+        RemascFederationProvider provider = new RemascFederationProvider(config.getActivationConfig().forBlock(executionBlock.getNumber()), federationSupport);
 
         int nfederators = provider.getFederationSize();
 
