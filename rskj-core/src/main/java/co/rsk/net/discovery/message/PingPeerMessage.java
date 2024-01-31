@@ -84,7 +84,7 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
 
     @Override
     protected final void parse(byte[] data) {
-        RLPList dataList = (RLPList) RLP.decode2OneItem(data, 0);
+        RLPList dataList = RLP.decodeList(data);
 
         if (dataList.size() < 3) {
             throw new PeerDiscoveryException(MORE_DATA);

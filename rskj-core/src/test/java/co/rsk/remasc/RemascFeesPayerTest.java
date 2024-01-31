@@ -79,7 +79,7 @@ class RemascFeesPayerTest {
 
         // Assert log data
         Assertions.assertNotNull(result.getData());
-        List<RLPElement> rlpData = RLP.decode2(result.getData());
+        List<RLPElement> rlpData = RLP.decodeListElements(result.getData());
         Assertions.assertEquals(1 , rlpData.size());
         RLPList dataList = (RLPList)rlpData.get(0);
         Assertions.assertEquals(2, dataList.size());

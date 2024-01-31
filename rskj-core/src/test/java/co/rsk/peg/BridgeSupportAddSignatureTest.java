@@ -532,7 +532,7 @@ class BridgeSupportAddSignatureTest {
         LogInfo releaseTxEvent = logs.get(4);
         assertThat(releaseTxEvent.getTopics(), hasSize(1));
         assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
-        BtcTransaction releaseTx = new BtcTransaction(btcRegTestParams, ((RLPList) RLP.decode2(releaseTxEvent.getData()).get(0)).get(1).getRLPData());
+        BtcTransaction releaseTx = new BtcTransaction(btcRegTestParams, ((RLPList) RLP.decodeListElements(releaseTxEvent.getData()).get(0)).get(1).getRLPData());
         // Verify all inputs fully signed
         for (int i = 0; i < releaseTx.getInputs().size(); i++) {
             Script retrievedScriptSig = releaseTx.getInput(i).getScriptSig();
@@ -643,7 +643,7 @@ class BridgeSupportAddSignatureTest {
             LogInfo releaseTxEvent = logs.get(2);
             assertThat(releaseTxEvent.getTopics(), hasSize(1));
             assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
-            BtcTransaction releaseTx = new BtcTransaction(btcRegTestParams, ((RLPList) RLP.decode2(releaseTxEvent.getData()).get(0)).get(1).getRLPData());
+            BtcTransaction releaseTx = new BtcTransaction(btcRegTestParams, ((RLPList) RLP.decodeListElements(releaseTxEvent.getData()).get(0)).get(1).getRLPData());
             Script retrievedScriptSig = releaseTx.getInput(0).getScriptSig();
             assertEquals(4, retrievedScriptSig.getChunks().size());
             assertTrue(retrievedScriptSig.getChunks().get(1).data.length > 0);

@@ -48,7 +48,7 @@ public class BlockResponseMessage extends MessageWithId {
 
     @Override
     public byte[] getEncodedMessageWithoutId() {
-        byte[] rlpBlock = RLP.encode(this.block.getEncoded());
+        byte[] rlpBlock = RLP.encodeElement(this.block.getEncoded());
 
         return RLP.encodeList(rlpBlock);
     }

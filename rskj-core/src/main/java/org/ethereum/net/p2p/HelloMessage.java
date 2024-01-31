@@ -26,7 +26,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -78,7 +77,7 @@ public class HelloMessage extends P2pMessage {
     }
 
     private void parse() {
-        RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+        RLPList paramsList = RLP.decodeList(encoded);
 
         byte[] p2pVersionBytes = paramsList.get(0).getRLPData();
         this.p2pVersion = p2pVersionBytes != null ? p2pVersionBytes[0] : 0;
@@ -117,7 +116,7 @@ public class HelloMessage extends P2pMessage {
         for (int i = 0; i < this.capabilities.size(); i++) {
             Capability capability = this.capabilities.get(i);
             capabilities[i] = RLP.encodeList(
-                    RLP.encodeElement(capability.getName().getBytes(StandardCharsets.UTF_8)),
+                    RLP.encodeString(capability.getName()),
                     RLP.encodeInt(capability.getVersion()));
         }
         byte[] capabilityList = RLP.encodeList(capabilities);

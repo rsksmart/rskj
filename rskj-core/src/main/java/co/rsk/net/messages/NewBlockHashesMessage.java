@@ -55,7 +55,7 @@ public class NewBlockHashesMessage extends Message {
     }
 
     private void parse() {
-        RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+        RLPList paramsList = RLP.decodeList(encoded);
 
         blockIdentifiers = new ArrayList<>();
 

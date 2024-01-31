@@ -51,7 +51,7 @@ public class PeersMessage extends P2pMessage {
     }
 
     private void parse() {
-        RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+        RLPList paramsList = RLP.decodeList(encoded);
 
         peers = new LinkedHashSet<>();
         for (int i = 1; i < paramsList.size(); ++i) {

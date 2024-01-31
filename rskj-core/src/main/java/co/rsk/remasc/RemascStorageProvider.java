@@ -151,7 +151,7 @@ class RemascStorageProvider {
         DataWord address = DataWord.fromString(SIBLINGS_KEY);
 
         // we add an empty list because Remasc state expects to have an empty siblings list after 0.5.0 activation
-        this.repository.addStorageBytes(this.contractAddress, address, RLP.encodedEmptyList());
+        this.repository.addStorageBytes(this.contractAddress, address, RLP.encodeList());
     }
 
     public Boolean getBrokenSelectionRule() {

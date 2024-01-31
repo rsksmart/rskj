@@ -112,7 +112,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
         }
 
         List<TransactionInfo> txsInfo = new ArrayList<>();
-        RLPList txsList = (RLPList) RLP.decode2(txsBytes).get(0);
+        RLPList txsList = RLP.decodeList(txsBytes);
 
 
         int txsListSize = txsList.size();

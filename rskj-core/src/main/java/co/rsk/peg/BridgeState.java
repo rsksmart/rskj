@@ -135,7 +135,7 @@ public class BridgeState {
     }
 
     public static BridgeState create(BridgeConstants bridgeConstants, byte[] data, @Nullable ActivationConfig.ForBlock activations) throws IOException {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = RLP.decodeList(data);
 
         byte[] btcBlockchainBestChainHeightBytes = rlpList.get(0).getRLPData();
         int btcBlockchainBestChainHeight = btcBlockchainBestChainHeightBytes == null ? 0 : (new BigInteger(1, btcBlockchainBestChainHeightBytes)).intValue();

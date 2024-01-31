@@ -30,11 +30,9 @@ import org.ethereum.util.RLP;
 
 import java.util.Optional;
 
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-
 public class RepositoryLocator {
     // all zeroed, default hash for empty nodes
-    private static final Keccak256 EMPTY_HASH = new Keccak256(Keccak256Helper.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
+    private static final Keccak256 EMPTY_HASH = new Keccak256(Keccak256Helper.keccak256(RLP.encodeElement(null)));
 
     private final TrieStore trieStore;
     private final StateRootHandler stateRootHandler;

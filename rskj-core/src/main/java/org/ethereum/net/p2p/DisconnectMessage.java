@@ -44,7 +44,7 @@ public class DisconnectMessage extends P2pMessage {
     }
 
     private void parse() {
-        RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+        RLPList paramsList = RLP.decodeList(encoded);
 
         byte[] reasonBytes = paramsList.get(0).getRLPData();
         if (reasonBytes == null) {

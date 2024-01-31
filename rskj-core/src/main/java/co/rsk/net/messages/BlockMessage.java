@@ -42,7 +42,7 @@ public class BlockMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        byte[] block = RLP.encode(this.block.getEncoded());
+        byte[] block = RLP.encodeElement(this.block.getEncoded());
 
         return RLP.encodeList(block);
     }

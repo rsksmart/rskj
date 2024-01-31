@@ -41,7 +41,7 @@ public class AuthResponseMessageV4 {
 
         AuthResponseMessageV4 message = new AuthResponseMessageV4();
 
-        RLPList params = (RLPList) RLP.decode2OneItem(wire, 0);
+        RLPList params = RLP.decodeList(wire);
 
         byte[] pubKeyBytes = params.get(0).getRLPData();
 
@@ -63,8 +63,8 @@ public class AuthResponseMessageV4 {
         byte[] publicKey = new byte[64];
         System.arraycopy(ephemeralPublicKey.getEncoded(false), 1, publicKey, 0, publicKey.length);
 
-        byte[] publicBytes = RLP.encode(publicKey);
-        byte[] nonceBytes = RLP.encode(nonce);
+        byte[] publicBytes = RLP.encodeElement(publicKey);
+        byte[] nonceBytes = RLP.encodeElement(nonce);
         byte[] versionBytes = RLP.encodeInt(version);
 
         return RLP.encodeList(publicBytes, nonceBytes, versionBytes);

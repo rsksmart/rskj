@@ -27,7 +27,6 @@ import org.ethereum.util.RLPList;
 import org.bouncycastle.util.BigIntegers;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 
 /**
  * Siblings are part of the remasc contract state
@@ -103,8 +102,7 @@ public class Sibling {
     }
 
     public static Sibling create(byte[] data) {
-        ArrayList<RLPElement> params = RLP.decode2(data);
-        RLPList sibling = (RLPList) params.get(0);
+        RLPList sibling = RLP.decodeList(data);
 
         byte[] hash = sibling.get(0).getRLPData();
         RskAddress coinbase = RLP.parseRskAddress(sibling.get(1).getRLPData());

@@ -61,7 +61,7 @@ public class Node implements Serializable {
     }
 
     public Node(byte[] rlp) {
-        RLPList nodeRLP = (RLPList)RLP.decode2(rlp).get(0);
+        RLPList nodeRLP = RLP.decodeList(rlp);
 
         byte[] hostB = nodeRLP.get(0).getRLPData();
         byte[] portB = nodeRLP.get(1).getRLPData();

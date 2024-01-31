@@ -87,7 +87,7 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
 
     @Override
     protected final void parse(byte[] data) {
-        RLPList list = (RLPList) RLP.decode2OneItem(data, 0);
+        RLPList list = RLP.decodeList(data);
 
         if (list.size() < 2) {
             throw new PeerDiscoveryException(MORE_DATA);

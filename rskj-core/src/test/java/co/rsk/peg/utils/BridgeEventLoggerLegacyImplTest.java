@@ -134,7 +134,7 @@ class BridgeEventLoggerLegacyImplTest {
 
         // Assert log data
         Assertions.assertNotNull(logResult.getData());
-        List<RLPElement> rlpData = RLP.decode2(logResult.getData());
+        List<RLPElement> rlpData = RLP.decodeListElements(logResult.getData());
         Assertions.assertEquals(1, rlpData.size());
         RLPList dataList = (RLPList) rlpData.get(0);
         Assertions.assertEquals(3, dataList.size());
@@ -242,7 +242,7 @@ class BridgeEventLoggerLegacyImplTest {
 
         // Assert log data
         Assertions.assertNotNull(logResult.getData());
-        List<RLPElement> rlpData = RLP.decode2(logResult.getData());
+        List<RLPElement> rlpData = RLP.decodeListElements(logResult.getData());
         Assertions.assertEquals(1, rlpData.size());
         RLPList dataList = (RLPList) rlpData.get(0);
         Assertions.assertEquals(3, dataList.size());

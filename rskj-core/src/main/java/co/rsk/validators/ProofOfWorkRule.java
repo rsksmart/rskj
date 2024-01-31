@@ -38,14 +38,12 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Checks proof value against its boundary for the block header.
@@ -239,12 +237,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
         ECKey fallbackMiningPubKey = ECKey.fromPublicOnly(fallbackMiningPubKeyBytes);
 
-        List<RLPElement> signatureRlpElements = RLP.decode2(signatureBytesRLP);
-        if (signatureRlpElements.size() != 1) {
-            return false;
-        }
-
-        RLPList signatureRLP = (RLPList) signatureRlpElements.get(0);
+        RLPList signatureRLP = RLP.decodeList(signatureBytesRLP);
 
         if (signatureRLP.size() != 3) {
             return false;

@@ -51,6 +51,7 @@ blocksminer
 
 # Jacoco Reports
 jacocoHtml/
+htmlreport/
 
 # CheckStyle Reports
 config/checkstyle/reports/

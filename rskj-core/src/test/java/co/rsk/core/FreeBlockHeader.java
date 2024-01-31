@@ -78,7 +78,7 @@ public class FreeBlockHeader {
     private byte[] uncleCount;
 
     public FreeBlockHeader(byte[] encoded) {
-        this((RLPList) RLP.decode2(encoded).get(0));
+        this((RLPList) RLP.decodeListElements(encoded).get(0));
     }
 
     public FreeBlockHeader(RLPList rlpHeader) {

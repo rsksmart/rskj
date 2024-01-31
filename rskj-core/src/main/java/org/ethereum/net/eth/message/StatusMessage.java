@@ -64,7 +64,7 @@ public class StatusMessage extends EthMessage {
     }
 
     protected void parse() {
-        RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+        RLPList paramsList = RLP.decodeList(encoded);
 
         this.protocolVersion = paramsList.get(0).getRLPData()[0];
         byte[] networkIdBytes = paramsList.get(1).getRLPData();

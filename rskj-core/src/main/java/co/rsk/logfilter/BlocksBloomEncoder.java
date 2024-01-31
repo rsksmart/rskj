@@ -46,7 +46,7 @@ public class BlocksBloomEncoder {
     }
 
     public static BlocksBloom decode(byte[] data) {
-        RLPList list = (RLPList) RLP.decode2(data).get(0);
+        RLPList list = RLP.decodeList(data);
 
         long from = decodeLong(list.get(0).getRLPData());
         long to = decodeLong(list.get(1).getRLPData());

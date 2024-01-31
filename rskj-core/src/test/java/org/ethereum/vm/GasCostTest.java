@@ -53,14 +53,47 @@ class GasCostTest {
         Assertions.assertEquals(Long.MAX_VALUE, GasCost.toGas(bytes));
     }
 
+    @Test
+    void toGasInRange() throws GasCost.InvalidGasException {
+        Assertions.assertEquals(0L, GasCost.toGas(new byte[]{
+                (byte)0
+        }));
+
+
+        Assertions.assertEquals(0x000000000a141e28L, GasCost.toGas(new byte[]{
+                (byte)10, (byte)20, (byte)30, (byte)40,
+        }));
+
+        Assertions.assertEquals(0x7ffffffffffffffeL, GasCost.toGas(new byte[]{
+                (byte)0x7f, (byte)255, (byte)255, (byte)255,
+                (byte)255, (byte)255, (byte)255, (byte)254,
+        }));
+
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.toGas(new byte[]{
+                (byte)0x7f, (byte)255, (byte)255, (byte)255,
+                (byte)255, (byte)255, (byte)255, (byte)255,
+        }));
+    }
 
     @Test
-    void toGasGivesNegativeValue() throws GasCost.InvalidGasException {
+    void toGasIsAlwaysPositive() throws GasCost.InvalidGasException {
+        Assertions.assertEquals(255, GasCost.toGas(new byte[]{
+                (byte) (-1 & 0xff),
+        }));
+
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.toGas(new byte[]{
+                (byte) (-1 & 0xff), (byte)255, (byte)255, (byte)255,
+                (byte)255, (byte)255, (byte)255, (byte)255,
+        }));
+    }
+
+    @Test
+    void toGasGivesMaxIntegerOnOverflow() throws GasCost.InvalidGasException {
         byte[] negativeBytes = new byte[]{
                 (byte)255, (byte)255, (byte)255, (byte)255,
                 (byte)255, (byte)255, (byte)255, (byte)255,
         };
-        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.toGas(negativeBytes));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.toGas(negativeBytes));
     }
 
     @Test

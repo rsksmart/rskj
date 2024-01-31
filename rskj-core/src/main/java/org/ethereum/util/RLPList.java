@@ -55,6 +55,6 @@ public class RLPList extends RLPItem implements RLPElement {
         byte[] bytes = this.getRLPData();
         byte[] content = Arrays.copyOfRange(bytes, offset, bytes.length);
 
-        this.elements = RLP.decode2(content);
+        this.elements = RLP.decodeListElements(content);
     }
 }

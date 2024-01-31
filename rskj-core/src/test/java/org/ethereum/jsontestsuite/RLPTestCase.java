@@ -21,12 +21,7 @@ package org.ethereum.jsontestsuite;
 
 
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.ethereum.util.*;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -35,8 +30,6 @@ import java.util.List;
 import java.util.Vector;
 
 public class RLPTestCase {
-    private static Logger logger = LoggerFactory.getLogger("rlp");
-
     private Object in;
     private String out;
 
@@ -77,7 +70,7 @@ public class RLPTestCase {
 
     public void doDecode() {
         String out = this.out.toLowerCase();
-        ArrayList<RLPElement> list = RLP.decode2(Hex.decode(out));
+        ArrayList<RLPElement> list = RLP.decodeListElements(Hex.decode(out));
         checkRLPAgainstJson(list.get(0), in);
     }
 
@@ -93,12 +86,12 @@ public class RLPTestCase {
             if (in instanceof String) {
                 String s = in.toString();
                 if (s.contains("#")) {
-                    return RLP.encode(new BigInteger(s.substring(1)));
+                    return RLP.encodeBigInteger(new BigInteger(s.substring(1)));
                 }
             } else if (in instanceof Integer) {
                 return RLP.encodeInt(Integer.parseInt(in.toString()));
             }
-            return RLP.encode(in);
+            return RLPTestUtil.encode(in);
         }
     }
 

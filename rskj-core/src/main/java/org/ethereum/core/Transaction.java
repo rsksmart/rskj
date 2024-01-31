@@ -112,7 +112,7 @@ public class Transaction {
         this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());
         this.gasLimit = transaction.get(2).getRLPData();
         this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
-        this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
+        this.value = RLP.parseCoin(transaction.get(4).getRLPData());
         this.data = transaction.get(5).getRLPData();
         // only parse signature in case tx is signed
         byte[] vData = transaction.get(6).getRLPData();
@@ -147,7 +147,7 @@ public class Transaction {
                 RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw)),
                 gasLimit,
                 RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress)),
-                RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw)),
+                RLP.parseCoin(ByteUtil.cloneBytes(valueRaw)),
                 data,
                 chainId,
                 false

@@ -53,7 +53,7 @@ public class HandshakeMessage {
     }
 
     static HandshakeMessage parse(byte[] wire) {
-        RLPList list = (RLPList) RLP.decode2(wire).get(0);
+        RLPList list = RLP.decodeList(wire);
         HandshakeMessage message = new HandshakeMessage();
         message.version = ByteUtil.byteArrayToInt(list.get(0).getRLPData()); // FIXME long
         message.name = new String(list.get(1).getRLPData(), StandardCharsets.UTF_8);
