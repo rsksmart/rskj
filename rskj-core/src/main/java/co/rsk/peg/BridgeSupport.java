@@ -1490,7 +1490,7 @@ public class BridgeSupport {
         BtcTransaction btcTx,
         Federation federation) throws IOException {
 
-        BtcECKey federatorPublicKey = federatorMember.getBtcPublicKey();
+        BtcECKey federatorBtcPublicKey = federatorMember.getBtcPublicKey();
         // Build input hashes for signatures
         int numInputs = btcTx.getInputs().size();
 
@@ -1522,13 +1522,13 @@ public class BridgeSupport {
 
             Sha256Hash sighash = sighashes.get(i);
 
-            if (!federatorPublicKey.verify(sighash, sig)) {
+            if (!federatorBtcPublicKey.verify(sighash, sig)) {
                 logger.warn(
                     "Signature {} {} is not valid for hash {} and public key {}",
                     i,
                     ByteUtil.toHexString(sig.encodeToDER()),
                     sighash,
-                    federatorPublicKey
+                    federatorBtcPublicKey
                 );
                 return;
             }
@@ -1550,24 +1550,24 @@ public class BridgeSupport {
             Script inputScript = input.getScriptSig();
 
             boolean alreadySignedByThisFederator = BridgeUtils.isInputSignedByThisFederator(
-                    federatorPublicKey,
+                    federatorBtcPublicKey,
                     sighash,
                     input);
 
             // Sign the input if it wasn't already
             if (!alreadySignedByThisFederator) {
                 try {
-                    int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
+                    int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorBtcPublicKey);
                     inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigs.get(i).encodeToBitcoin(), sigIndex, 1, 1);
                     input.setScriptSig(inputScript);
                     logger.debug("Tx input {} for tx {} signed.", i, new Keccak256(rskTxHash));
                     signed = true;
                 } catch (IllegalStateException e) {
                     Federation retiringFederation = getRetiringFederation();
-                    if (getActiveFederation().hasBtcPublicKey(federatorPublicKey)) {
+                    if (getActiveFederation().hasBtcPublicKey(federatorBtcPublicKey)) {
                         logger.debug("A member of the active federation is trying to sign a tx of the retiring one");
                         return;
-                    } else if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey)) {
+                    } else if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorBtcPublicKey)) {
                         logger.debug("A member of the retiring federation is trying to sign a tx of the active one");
                         return;
                     }
