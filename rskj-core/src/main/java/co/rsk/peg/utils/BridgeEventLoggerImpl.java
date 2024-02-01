@@ -77,14 +77,17 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     @Override
     public void logAddSignature(FederationMember federationMember, BtcTransaction btcTx, byte[] rskTxHash) {
+        String federatorRskAddress = getFederatorRskAddress(federationMember);
+        logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddress, federationMember.getBtcPublicKey());
+    }
+
+    private String getFederatorRskAddress(FederationMember federationMember){
         if (shouldUseRskPublicKey()){
-            String federatorRskAddress = ByteUtil.toHexString(federationMember.getRskPublicKey().getAddress());
-            logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddress, federationMember.getBtcPublicKey());
-        } else {
-            ECKey ecKeyFromBtcPublicKey = ECKey.fromPublicOnly(federationMember.getBtcPublicKey().getPubKey());
-            String federatorRskAddressFromBtcPublicKey = ByteUtil.toHexString(ecKeyFromBtcPublicKey.getAddress());
-            logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddressFromBtcPublicKey, federationMember.getBtcPublicKey());
+            return ByteUtil.toHexString(federationMember.getRskPublicKey().getAddress());
         }
+
+        ECKey ecKeyFromBtcPublicKey = ECKey.fromPublicOnly(federationMember.getBtcPublicKey().getPubKey());
+        return ByteUtil.toHexString(ecKeyFromBtcPublicKey.getAddress());
     }
 
     private boolean shouldUseRskPublicKey() {

@@ -178,11 +178,11 @@ public class ActivationConfigsForTest {
     private static List<ConsensusRule> getArrowhead600Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(Arrays.asList(
+            ConsensusRule.RSKIP203,
             ConsensusRule.RSKIP376,
             ConsensusRule.RSKIP379,
             ConsensusRule.RSKIP398,
             ConsensusRule.RSKIP400,
-            ConsensusRule.RSKIP203,
             ConsensusRule.RSKIP415
         ));
 
