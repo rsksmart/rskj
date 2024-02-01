@@ -68,7 +68,8 @@ public abstract class Federation {
         if (btcPublicKey == null){
             return Optional.empty();
         }
-        return members.stream().filter(federationMember -> Arrays.equals(federationMember.getBtcPublicKey().getPubKey(), btcPublicKey.getPubKey())).findAny();
+        final BtcECKey btcPublicKeyOnly = BtcECKey.fromPublicOnly(btcPublicKey.getPubKey());
+        return members.stream().filter(federationMember -> federationMember.getBtcPublicKey().equals(btcPublicKeyOnly)).findAny();
     }
 
     public List<BtcECKey> getBtcPublicKeys() {
