@@ -193,7 +193,8 @@ class BridgeEventLoggerImplTest {
         );
 
         return Stream.of(
-            Arguments.of(singleKeyFedMember, multiKeyFedMember)
+            Arguments.of(singleKeyFedMember),
+            Arguments.of(multiKeyFedMember)
         );
     }
 
@@ -224,8 +225,13 @@ class BridgeEventLoggerImplTest {
         assertTopics(3, eventLogs);
 
         ECKey federatorECKeyFromBtcPubKey = ECKey.fromPublicOnly(federationMember.getBtcPublicKey().getPubKey());
-        String derivedRskAddress = ByteUtil.toHexString(federatorECKeyFromBtcPubKey.getAddress());
-        assertEvent(eventLogs, 0, BridgeEvents.ADD_SIGNATURE.getEvent(), new Object[]{rskTxHash.getBytes(), derivedRskAddress}, new Object[]{federatorBtcPubKey.getPubKey()});
+        String expectedRskAddress = ByteUtil.toHexString(federatorECKeyFromBtcPubKey.getAddress());
+
+        CallTransaction.Function bridgeEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
+        Object[] eventTopics = new Object[]{rskTxHash.getBytes(), expectedRskAddress};
+        Object[] eventParams = new Object[]{federatorBtcPubKey.getPubKey()};
+
+        assertEvent(eventLogs, 0, bridgeEvent, eventTopics, eventParams);
     }
 
     @ParameterizedTest()
@@ -253,8 +259,13 @@ class BridgeEventLoggerImplTest {
         commonAssertLogs(eventLogs);
         assertTopics(3, eventLogs);
 
-        String derivedRskAddress = ByteUtil.toHexString(federationMember.getRskPublicKey().getAddress());
-        assertEvent(eventLogs, 0, BridgeEvents.ADD_SIGNATURE.getEvent(), new Object[]{rskTxHash.getBytes(), derivedRskAddress}, new Object[]{federatorBtcPubKey.getPubKey()});
+        String expectedRskAddress = ByteUtil.toHexString(federationMember.getRskPublicKey().getAddress());
+
+        CallTransaction.Function bridgeEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
+        Object[] eventTopics = new Object[]{rskTxHash.getBytes(), expectedRskAddress};
+        Object[] eventParams = new Object[]{federatorBtcPubKey.getPubKey()};
+
+        assertEvent(eventLogs, 0, bridgeEvent, eventTopics, eventParams);
     }
 
     @Test
