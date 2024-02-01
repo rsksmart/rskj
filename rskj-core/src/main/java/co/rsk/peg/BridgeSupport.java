@@ -1428,7 +1428,7 @@ public class BridgeSupport {
         Optional<Federation> optionalFederation = getFederationFromPublicKey(federatorPublicKey);
         if (!optionalFederation.isPresent()) {
             logger.warn(
-                "Supplied federator public key {} does not belong to any of the federators.",
+                "[addSignature] Supplied federator btc public key {} does not belong to any of the federators.",
                 federatorPublicKey
             );
             return;
@@ -1438,8 +1438,8 @@ public class BridgeSupport {
         Optional<FederationMember> federationMember = federation.getMemberByBtcPublicKey(federatorPublicKey);
         if (!federationMember.isPresent()){
             logger.warn(
-                "Supplied federator public key {} does not belong to any of the federators.",
-                federatorPublicKey
+                "[addSignature] Supplied federator btc public key {} doest not match any of the federator member btc public keys {}.",
+                federatorPublicKey, federation.getBtcPublicKeys()
             );
             return;
         }
