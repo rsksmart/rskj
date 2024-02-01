@@ -18,10 +18,13 @@
 
 package co.rsk.remasc;
 
+import co.rsk.config.BridgeConstants;
 import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.FederationSupport;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -32,6 +35,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -176,7 +180,7 @@ public class Remasc {
         Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, rskLabsAddress, logs);
         syntheticReward = syntheticReward.subtract(payToRskLabs);
-        Coin payToFederation = payToFederation(constants, isRskip85Enabled, processingBlock, processingBlockHeader, syntheticReward);
+        Coin payToFederation = payToFederation(constants, processingBlock, processingBlockHeader, syntheticReward);
         syntheticReward = syntheticReward.subtract(payToFederation);
 
         if (!siblings.isEmpty()) {
@@ -198,8 +202,22 @@ public class Remasc {
         return isRskip218Enabled ? remascConstants.getRskLabsAddressRskip218() : remascConstants.getRskLabsAddress();
     }
 
-    private Coin payToFederation(Constants constants, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
-        RemascFederationProvider federationProvider = new RemascFederationProvider(activationConfig, constants.getBridgeConstants(), repository, processingBlock);
+    private Coin payToFederation(Constants constants, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
+
+        ActivationConfig.ForBlock activations = activationConfig.forBlock(processingBlock.getNumber());
+
+        BridgeConstants bridgeConstants = constants.getBridgeConstants();
+
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                repository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeConstants,
+                activations
+        );
+
+        FederationSupport federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock, activations);
+
+        RemascFederationProvider federationProvider = new RemascFederationProvider(activations, federationSupport);
         Coin federationReward = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
         Coin payToFederation = provider.getFederationBalance().add(federationReward);
@@ -209,7 +227,7 @@ public class Remasc {
         Coin payToFederator = payAndRemainderToFederator[0];
         Coin restToLastFederator = payAndRemainderToFederator[1];
 
-        if (isRskip85Enabled) {
+        if (activations.isActive(ConsensusRule.RSKIP85)) {
             BigInteger minimumFederatorPayableGas = constants.getFederatorMinimumPayableGas();
             Coin minPayableFederatorFees = executionBlock.getMinimumGasPrice().multiply(minimumFederatorPayableGas);
             if (payToFederator.compareTo(minPayableFederatorFees) < 0) {
