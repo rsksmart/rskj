@@ -108,7 +108,7 @@ class TxPendingValidatorTest {
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
         when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
 
-        long sublistGasLimit = BlockUtils.getSublistGasLimit(executionBlock);
+        long sublistGasLimit = BlockUtils.getSublistGasLimit(executionBlock, true);
 
         Transaction tx = mock(Transaction.class);
         when(tx.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(sublistGasLimit));
@@ -143,7 +143,7 @@ class TxPendingValidatorTest {
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
         when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
 
-        long sublistGasLimit = BlockUtils.getSublistGasLimit(executionBlock);
+        long sublistGasLimit = BlockUtils.getSublistGasLimit(executionBlock, true);
 
         Transaction tx = mock(Transaction.class);
         when(tx.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(sublistGasLimit + 1L));

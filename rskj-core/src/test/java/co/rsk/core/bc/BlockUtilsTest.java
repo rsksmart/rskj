@@ -188,7 +188,7 @@ class BlockUtilsTest {
         Block block = mock(Block.class);
         when(block.getGasLimit()).thenReturn(BigInteger.valueOf(10_000_000L).toByteArray());
 
-        long expectedLimit = 10_000_000L / (Constants.getTransactionExecutionThreads() + 1);
-        assertEquals(expectedLimit, BlockUtils.getSublistGasLimit(block));
+        long expectedLimit = (10_000_000L - BlockUtils.SEQUENTIAL_SET_GAS_LIMIT) / (Constants.getTransactionExecutionThreads());
+        assertEquals(expectedLimit, BlockUtils.getSublistGasLimit(block, false));
     }
 }

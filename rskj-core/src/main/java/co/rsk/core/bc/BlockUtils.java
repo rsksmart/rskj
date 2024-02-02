@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
  */
 public class BlockUtils {
     private static final long MAX_BLOCK_PROCESS_TIME_NANOSECONDS = 60_000_000_000L;
+    public static final long SEQUENTIAL_SET_GAS_LIMIT = 6_800_000L;
 
     private BlockUtils() { }
 
@@ -118,7 +119,19 @@ public class BlockUtils {
                 .collect(Collectors.toList());
     }
 
-    public static long getSublistGasLimit(Block block) {
-        return GasCost.toGas(block.getGasLimit()) / (Constants.getTransactionExecutionThreads() + 1);
+    public static long getSublistGasLimit(Block block, boolean forSequentialTxSet) {
+        long blockGasLimit = GasCost.toGas(block.getGasLimit());
+
+        if (blockGasLimit <= SEQUENTIAL_SET_GAS_LIMIT) {
+            if (forSequentialTxSet) {
+                return blockGasLimit;
+            }
+            return 0;
+        }
+
+        if (forSequentialTxSet) {
+            return SEQUENTIAL_SET_GAS_LIMIT;
+        }
+        return (blockGasLimit - SEQUENTIAL_SET_GAS_LIMIT) / (Constants.getTransactionExecutionThreads());
     }
 }

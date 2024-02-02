@@ -461,7 +461,6 @@ public class BlockExecutor {
             }
         } : Runnable::run);
         List<TransactionListExecutor> transactionListExecutors = new ArrayList<>();
-        long sublistGasLimit = BlockUtils.getSublistGasLimit(block);
 
         short start = 0;
 
@@ -486,7 +485,7 @@ public class BlockExecutor {
                     Coin.ZERO,
                     remascEnabled,
                     concurrentContractsDisallowed,
-                    sublistGasLimit
+                    BlockUtils.getSublistGasLimit(block, false)
             );
             completionService.submit(txListExecutor);
             transactionListExecutors.add(txListExecutor);
@@ -561,7 +560,7 @@ public class BlockExecutor {
                 totalPaidFees,
                 remascEnabled,
                 Collections.emptySet(), // precompiled contracts are always allowed in a sequential list, as there's no concurrency in it
-                sublistGasLimit
+                BlockUtils.getSublistGasLimit(block, true)
         );
         Boolean success = txListExecutor.call();
         if (!Boolean.TRUE.equals(success)) {
@@ -625,8 +624,7 @@ public class BlockExecutor {
         int txindex = 0;
 
         int transactionExecutionThreads = Constants.getTransactionExecutionThreads();
-        long sublistGasLimit = BlockUtils.getSublistGasLimit(block);
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) transactionExecutionThreads, sublistGasLimit);
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) transactionExecutionThreads, block);
 
         for (Transaction tx : transactionsList) {
             loggingApplyBlockToTx(block, i);
@@ -642,7 +640,7 @@ public class BlockExecutor {
                     0,
                     deletedAccounts,
                     true,
-                    sublistGasLimit
+                    BlockUtils.getSublistGasLimit(block, false)
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
