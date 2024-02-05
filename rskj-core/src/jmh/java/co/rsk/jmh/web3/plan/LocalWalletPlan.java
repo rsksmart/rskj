@@ -26,7 +26,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.infra.BenchmarkParams;
 
 @State(Scope.Benchmark)
-public class LocaWalletlPlan extends BasePlan{
+public class LocalWalletPlan extends BasePlan{
 
     public static final String ETH_SIGN_ADDRESS = "ethSign.address";
     public static final String ETH_SIGN_MESSAGE = "ethSign.message";
