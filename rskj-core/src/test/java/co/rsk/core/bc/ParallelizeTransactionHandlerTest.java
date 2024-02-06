@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -49,6 +50,7 @@ class ParallelizeTransactionHandlerTest {
     private Transaction bigTx2;
     private Transaction bigSequentialTx;
     private short sequentialSublistNumber;
+    private long minSequentialSetGasLimit;
 
     @BeforeEach
     public void setup() {
@@ -64,13 +66,14 @@ class ParallelizeTransactionHandlerTest {
         byte[] aKey = {1, 2, 3};
         byte[] aDifferentKey = {1, 2, 3, 4};
         long gasUsedByTx = 16000;
-        long biggestGasLimitPossibleInParallelSublists = BlockUtils.getSublistGasLimit(executionBlock, false) - 1;
-        long biggestGasLimitPossibleInSequentialSublist = BlockUtils.getSublistGasLimit(executionBlock, true) - 1;
+        minSequentialSetGasLimit = Constants.regtest().getMinSequentialSetGasLimit();
+        long biggestGasLimitPossibleInParallelSublists = BlockUtils.getSublistGasLimit(executionBlock, false, minSequentialSetGasLimit) - 1;
+        long biggestGasLimitPossibleInSequentialSublist = BlockUtils.getSublistGasLimit(executionBlock, true, minSequentialSetGasLimit) - 1;
 
         aWrappedKey = new ByteArrayWrapper(aKey);
         sublists = 2;
         sequentialSublistNumber = sublists;
-        handler = new ParallelizeTransactionHandler(sublists, executionBlock);
+        handler = new ParallelizeTransactionHandler(sublists, executionBlock, minSequentialSetGasLimit);
         tx = new TransactionBuilder().nonce(1).sender(sender).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx2 = new TransactionBuilder().nonce(1).sender(sender2).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx3 = new TransactionBuilder().nonce(1).sender(sender3).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
@@ -869,30 +872,30 @@ class ParallelizeTransactionHandlerTest {
     @Test
     void writeAfterWriteToSequentialForOutOfGasShouldGoToSequential() {
         Block executionBlock = mock(Block.class);
-        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6_804_000L).toByteArray());
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(5_000_000L).toByteArray());
 
         HashSet<ByteArrayWrapper> setWithX = createASetAndAddKeys(aWrappedKey);
 
         AccountBuilder accountBuilder = new AccountBuilder();
 
-        ParallelizeTransactionHandler handler = new ParallelizeTransactionHandler((short) 2, executionBlock);
+        ParallelizeTransactionHandler handler = new ParallelizeTransactionHandler((short) 2, executionBlock, minSequentialSetGasLimit);
 
         // write X with 800
         handler.addTransaction(
                 new TransactionBuilder()
                         .sender(accountBuilder.name("sender1").build())
-                        .gasLimit(BigInteger.valueOf(800))
+                        .gasLimit(BigInteger.valueOf(800000))
                         .build(),
-                new HashSet<>(), setWithX, 800
+                new HashSet<>(), setWithX, 800000
         );
 
         // write X with 300
         handler.addTransaction(
                 new TransactionBuilder()
                         .sender(accountBuilder.name("sender2").build())
-                        .gasLimit(BigInteger.valueOf(300))
+                        .gasLimit(BigInteger.valueOf(300000))
                         .build(),
-                new HashSet<>(), setWithX, 300
+                new HashSet<>(), setWithX, 300000
         );
 
         // last write of X is in sequential because of out of gas. 800 + 300 > 1000
@@ -902,9 +905,9 @@ class ParallelizeTransactionHandlerTest {
         handler.addTransaction(
                 new TransactionBuilder()
                         .sender(accountBuilder.name("sender3").build())
-                        .gasLimit(BigInteger.valueOf(100))
+                        .gasLimit(BigInteger.valueOf(100000))
                         .build(),
-                setWithX, new HashSet<>(), 100
+                setWithX, new HashSet<>(), 100000
         );
 
         // should go to sequential

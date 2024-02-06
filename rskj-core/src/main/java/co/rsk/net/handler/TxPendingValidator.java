@@ -74,7 +74,7 @@ public class TxPendingValidator {
         long executionBlockNumber = executionBlock.getNumber();
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlockNumber);
         BigInteger gasLimit = activations.isActive(ConsensusRule.RSKIP144)
-                ? BigInteger.valueOf(Math.max(BlockUtils.getSublistGasLimit(executionBlock, true), BlockUtils.getSublistGasLimit(executionBlock, false)))
+                ? BigInteger.valueOf(Math.max(BlockUtils.getSublistGasLimit(executionBlock, true, constants.getMinSequentialSetGasLimit()), BlockUtils.getSublistGasLimit(executionBlock, false, constants.getMinSequentialSetGasLimit())))
                 : BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long basicTxCost = tx.transactionCost(constants, activations, signatureCache);

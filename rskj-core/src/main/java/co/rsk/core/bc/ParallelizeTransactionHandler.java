@@ -32,15 +32,15 @@ public class ParallelizeTransactionHandler {
     private final Map<RskAddress, TransactionSublist> sublistOfSender;
     private final ArrayList<TransactionSublist> sublists;
 
-    public ParallelizeTransactionHandler(short numberOfSublists, Block block) {
+    public ParallelizeTransactionHandler(short numberOfSublists, Block block, long minSequentialSetGasLimit) {
         this.sublistOfSender = new HashMap<>();
         this.sublistsHavingWrittenToKey = new HashMap<>();
         this.sublistsHavingReadFromKey = new HashMap<>();
         this.sublists = new ArrayList<>();
         for (short i = 0; i < numberOfSublists; i++){
-            this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(block, false), false));
+            this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit), false));
         }
-        this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(block, true), true));
+        this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit), true));
     }
 
     public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {

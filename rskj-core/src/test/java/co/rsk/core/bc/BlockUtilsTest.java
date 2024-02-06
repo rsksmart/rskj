@@ -184,11 +184,24 @@ class BlockUtilsTest {
     }
 
     @Test
-    void sublistGasLimit_ShouldReturnCorrectValue() {
+    void sublistGasLimit_ShouldDivideGasLimitEquallyAmongAllSets() {
+        long minSequentialSetGasLimit = Constants.regtest().getMinSequentialSetGasLimit();
+        long mockedBlockGasLimit =  10_000_000L;
         Block block = mock(Block.class);
-        when(block.getGasLimit()).thenReturn(BigInteger.valueOf(10_000_000L).toByteArray());
+        when(block.getGasLimit()).thenReturn(BigInteger.valueOf(mockedBlockGasLimit).toByteArray());
 
-        long expectedLimit = (10_000_000L - BlockUtils.SEQUENTIAL_SET_GAS_LIMIT) / (Constants.getTransactionExecutionThreads());
-        assertEquals(expectedLimit, BlockUtils.getSublistGasLimit(block, false));
+        long expectedLimit = mockedBlockGasLimit / (Constants.getTransactionExecutionThreads() + 1);
+        assertEquals(expectedLimit, BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit));
+    }
+
+    @Test
+    void sublistGasLimit_ShouldAssignLessGasLimitToParallelSets() {
+        long minSequentialSetGasLimit = 6_800_000L;
+        long mockedBlockGasLimit =  10_000_000L;
+        Block block = mock(Block.class);
+        when(block.getGasLimit()).thenReturn(BigInteger.valueOf(mockedBlockGasLimit).toByteArray());
+
+        long expectedLimit = (mockedBlockGasLimit - minSequentialSetGasLimit) / (Constants.getTransactionExecutionThreads());
+        assertEquals(expectedLimit, BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit));
     }
 }

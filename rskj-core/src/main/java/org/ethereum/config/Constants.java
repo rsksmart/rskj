@@ -60,6 +60,7 @@ public class Constants {
     private final int newBlockMaxSecondsInTheFuture;
     public final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
+    private final long minSequentialSetGasLimit;
 
     public Constants(
             byte chainId,
@@ -71,7 +72,8 @@ public class Constants {
             int newBlockMaxSecondsInTheFuture,
             BridgeConstants bridgeConstants,
             ActivationConfig activationConfig,
-            BlockDifficulty minimumDifficultyForRskip290) {
+            BlockDifficulty minimumDifficultyForRskip290,
+            long minSequentialSetGasLimit) {
         this.chainId = chainId;
         this.seedCowAccounts = seedCowAccounts;
         this.durationLimit = durationLimit;
@@ -82,6 +84,7 @@ public class Constants {
         this.bridgeConstants = bridgeConstants;
         this.activationConfig = activationConfig;
         this.minimumDifficultyForRskip290 = minimumDifficultyForRskip290;
+        this.minSequentialSetGasLimit = minSequentialSetGasLimit;
     }
 
     public Constants(
@@ -93,7 +96,8 @@ public class Constants {
             BigInteger difficultyBoundDivisor,
             int newBlockMaxSecondsInTheFuture,
             BridgeConstants bridgeConstants,
-            BlockDifficulty minimumDifficultyForRskip290) {
+            BlockDifficulty minimumDifficultyForRskip290,
+            long minSequentialSetGasLimit) {
         this(chainId,
                 seedCowAccounts,
                 durationLimit,
@@ -103,7 +107,8 @@ public class Constants {
                 newBlockMaxSecondsInTheFuture,
                 bridgeConstants,
                 null,
-                minimumDifficultyForRskip290
+                minimumDifficultyForRskip290,
+                minSequentialSetGasLimit
                 );
     }
 
@@ -228,6 +233,10 @@ public class Constants {
 
     public static int getTransactionExecutionThreads() { return TX_EXECUTION_THREADS; }
 
+    public long getMinSequentialSetGasLimit() {
+        return minSequentialSetGasLimit;
+    }
+
     public static Constants mainnet() {
         return new Constants(
                 MAINNET_CHAIN_ID,
@@ -238,7 +247,8 @@ public class Constants {
                 BigInteger.valueOf(50),
                 60,
                 BridgeMainNetConstants.getInstance(),
-                new BlockDifficulty(new BigInteger("550000000"))
+                new BlockDifficulty(new BigInteger("550000000")),
+                6_800_000L
         );
     }
 
@@ -252,7 +262,8 @@ public class Constants {
                 BigInteger.valueOf(50),
                 540,
                 new BridgeDevNetConstants(federationPublicKeys),
-                new BlockDifficulty(new BigInteger("550000000"))
+                new BlockDifficulty(new BigInteger("550000000")),
+                6_800_000L
         );
     }
 
@@ -267,7 +278,8 @@ public class Constants {
                 540,
                 BridgeTestNetConstants.getInstance(),
                 activationConfig,
-                new BlockDifficulty(new BigInteger("550000000"))
+                new BlockDifficulty(new BigInteger("550000000")),
+                6_800_000L
         );
     }
 
@@ -281,7 +293,8 @@ public class Constants {
                 BigInteger.valueOf(2048),
                 0,
                 BridgeRegTestConstants.getInstance(),
-                new BlockDifficulty(new BigInteger("550000000"))
+                new BlockDifficulty(new BigInteger("550000000")),
+                1_000_000L
         );
     }
 
@@ -295,7 +308,8 @@ public class Constants {
                 BigInteger.valueOf(2048),
                 0,
                 new BridgeRegTestConstants(genesisFederationPublicKeys),
-                new BlockDifficulty(new BigInteger("550000000"))
+                new BlockDifficulty(new BigInteger("550000000")),
+                1_000_000L
         );
     }
 }

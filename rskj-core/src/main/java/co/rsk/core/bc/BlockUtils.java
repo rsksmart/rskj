@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
  */
 public class BlockUtils {
     private static final long MAX_BLOCK_PROCESS_TIME_NANOSECONDS = 60_000_000_000L;
-    public static final long SEQUENTIAL_SET_GAS_LIMIT = 6_800_000L;
 
     private BlockUtils() { }
 
@@ -119,19 +118,24 @@ public class BlockUtils {
                 .collect(Collectors.toList());
     }
 
-    public static long getSublistGasLimit(Block block, boolean forSequentialTxSet) {
+    public static long getSublistGasLimit(Block block, boolean forSequentialTxSet, long minSequentialSetGasLimit) {
         long blockGasLimit = GasCost.toGas(block.getGasLimit());
+        int transactionExecutionThreadCount = Constants.getTransactionExecutionThreads();
 
-        if (blockGasLimit <= SEQUENTIAL_SET_GAS_LIMIT) {
-            if (forSequentialTxSet) {
-                return blockGasLimit;
+        if((transactionExecutionThreadCount + 1) * minSequentialSetGasLimit <= blockGasLimit) {
+            return blockGasLimit / (transactionExecutionThreadCount + 1);
+        } else {
+            if (blockGasLimit <= minSequentialSetGasLimit) {
+                if (forSequentialTxSet) {
+                    return blockGasLimit;
+                }
+                return 0;
             }
-            return 0;
-        }
 
-        if (forSequentialTxSet) {
-            return SEQUENTIAL_SET_GAS_LIMIT;
+            if (forSequentialTxSet) {
+                return minSequentialSetGasLimit;
+            }
+            return (blockGasLimit - minSequentialSetGasLimit) / (transactionExecutionThreadCount);
         }
-        return (blockGasLimit - SEQUENTIAL_SET_GAS_LIMIT) / (Constants.getTransactionExecutionThreads());
     }
 }
