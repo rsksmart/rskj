@@ -47,6 +47,9 @@ public class RskSystemProperties extends SystemProperties {
     private static final int PD_DEFAULT_CLEAN_PERIOD = 15000; //miliseconds
     private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; //miliseconds
     private static final int PD_DEFAULT_REFRESH_PERIOD = 60000; //miliseconds
+    private static final int PD_DEFAULT_MAX_BOOTSTRAP_RETRIES = -1;
+
+    private static final String PD_MAX_BOOTSTRAP_RETRIES_CONFIG = "peer.discovery.maxBootRetries";
 
     private static final String REGTEST_BLOCKCHAIN_CONFIG = "regtest";
 
@@ -260,6 +263,10 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean allowMultipleConnectionsPerHostPort() {
         return getBoolean("peer.discovery.allowMultipleConnectionsPerHostPort", true);
+    }
+
+    public long peerDiscoveryMaxBootRetries() {
+        return getLong(PD_MAX_BOOTSTRAP_RETRIES_CONFIG, PD_DEFAULT_MAX_BOOTSTRAP_RETRIES);
     }
 
     public int discoveryBucketSize() {
