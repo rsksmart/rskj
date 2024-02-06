@@ -19,6 +19,7 @@
 package org.ethereum.rpc;
 
 import co.rsk.Flusher;
+import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
@@ -77,7 +78,6 @@ import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.eth.handler.Eth;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Simples.*;
@@ -1133,7 +1133,7 @@ class Web3ImplTest {
         Transaction mockTransaction2 = mockTransactionFrom("0xa3a15ed8C3b83efC744F2e0A7824A00846C21860");
 
         List<Transaction> pendingTransactions = Arrays.asList(mockTransaction1, mockTransaction2);
-        when(ethModule.pendingTransactions()).thenReturn(pendingTransactions);
+        when(ethModule.ethPendingTransactions()).thenReturn(pendingTransactions);
 
 
         Set<String> managedAccounts = new HashSet<>(Arrays.asList("0x63a15ed8C3b83efC744F2e0A7824A00846C21860".toLowerCase()));
@@ -1156,7 +1156,7 @@ class Web3ImplTest {
         Transaction mockTransaction3 = mockTransactionFrom("0xb3b15ed8C3b83efC744F2e0A7824A00846C21860");
 
         List<Transaction> pendingTransactions = Arrays.asList(mockTransaction1, mockTransaction2, mockTransaction3);
-        when(ethModule.pendingTransactions()).thenReturn(pendingTransactions);
+        when(ethModule.ethPendingTransactions()).thenReturn(pendingTransactions);
 
         Set<String> managedAccounts = new HashSet<>(Arrays.asList(
                 "0x63a15ed8C3b83efC744F2e0A7824A00846C21860".toLowerCase(),
@@ -1180,9 +1180,13 @@ class Web3ImplTest {
         Transaction mockTransaction = mockTransactionFrom("0x63a15ed8C3b83efC744F2e0A7824A00846C21860");
 
         List<Transaction> pendingTransactions = Collections.singletonList(mockTransaction);
+        // mock transactionPool.getPendingTransactions() to return a list of transactions
+        when(ethModule.ethPendingTransactions()).thenReturn(pendingTransactions);
 
-        when(ethModule.pendingTransactions()).thenReturn(pendingTransactions);
+
         when(personalModule.listAccounts()).thenReturn(new String[0]);
+
+
 
         TransactionResultDTO[] result = web3.eth_pendingTransactions();
 
@@ -2746,7 +2750,7 @@ class Web3ImplTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
                 null, new ExecutionBlockRetriever(blockchain, null, null),
-                null, new EthModuleWalletEnabled(wallet), null,
+                null, new EthModuleWalletEnabled(wallet, transactionPool), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
@@ -2863,7 +2867,7 @@ class Web3ImplTest {
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
-                new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet),
+                new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet, transactionPool),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
@@ -2927,7 +2931,7 @@ class Web3ImplTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
                 new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator,
-                new EthModuleWalletEnabled(wallet),
+                new EthModuleWalletEnabled(wallet, transactionPool),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, null),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),

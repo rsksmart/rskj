@@ -22,10 +22,14 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Account;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
@@ -41,9 +45,11 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
     private final Wallet wallet;
+    private final TransactionPool transactionPool;
 
-    public EthModuleWalletEnabled(Wallet wallet) {
+    public EthModuleWalletEnabled(Wallet wallet, TransactionPool transactionPool) {
         this.wallet = wallet;
+        this.transactionPool = transactionPool;
     }
 
     @Override
@@ -89,5 +95,13 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
                 BigIntegers.asUnsignedByteArray(32, signature.getS()),
                 new byte[]{signature.getV()}
         ));
+    }
+    @Override
+    public List<Transaction> ethPendingTransactions() {
+        List<Transaction> pendingTxs = transactionPool.getPendingTransactions();
+        String[] managedAccounts = accounts();
+        return pendingTxs.stream()
+                .filter(tx -> Arrays.stream(managedAccounts).anyMatch(acc -> acc.equals(tx.getSender().toString())))
+                .collect(Collectors.toList());
     }
 }

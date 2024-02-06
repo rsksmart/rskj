@@ -393,7 +393,7 @@ class Web3ImplScoringTest {
         EthModule em = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), world.getBlockChain(), null,
                 null, new ExecutionBlockRetriever(world.getBlockChain(), null, null),
-                null, new EthModuleWalletEnabled(wallet), null,
+                null, new EthModuleWalletEnabled(wallet, world.getTransactionPool()), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 config.getGasEstimationCap(),

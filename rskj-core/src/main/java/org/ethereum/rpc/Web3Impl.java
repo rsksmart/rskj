@@ -854,17 +854,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public TransactionResultDTO[] eth_pendingTransactions() {
-        // get pending txs
-        List<Transaction> pendingTransactions = ethModule.pendingTransactions();
-
-        // get list of accounts managed by the node
-        Set<String> managedAccountSet = new HashSet<>(Arrays.asList(personalModule.listAccounts()));
-
-        return pendingTransactions.stream()
-                .filter(tx -> {
-                    String senderAddress = tx.getSender(signatureCache).toJsonString();
-                    return managedAccountSet.contains(senderAddress);
-                })
+        return ethModule.ethPendingTransactions().stream()
                 .map(tx -> new TransactionResultDTO(null, null, tx, config.rpcZeroSignatureIfRemasc(), signatureCache))
                 .toArray(TransactionResultDTO[]::new);
     }
