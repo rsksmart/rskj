@@ -51,7 +51,7 @@ public class Remasc {
     private static final Logger logger = LoggerFactory.getLogger(Remasc.class);
 
     private final Constants constants;
-    private final ActivationConfig activationConfig;
+    private final ActivationConfig.ForBlock activations;
     private final Repository repository;
     private final BlockStore blockStore;
     private final RemascConfig remascConstants;
@@ -82,7 +82,7 @@ public class Remasc {
         this.provider = new RemascStorageProvider(repository, contractAddress);
         this.feesPayer = new RemascFeesPayer(repository, contractAddress);
         this.constants = constants;
-        this.activationConfig = activationConfig;
+        this.activations = activationConfig.forBlock(executionBlock.getNumber());
     }
 
     public void save() {
@@ -113,11 +113,11 @@ public class Remasc {
             throw new RemascInvalidInvocationException("Invoked Remasc outside last tx of the block");
         }
 
-        long blockNbr = executionBlock.getNumber();
+        long executionBlockNumber = executionBlock.getNumber();
 
-        long processingBlockNumber = blockNbr - remascConstants.getMaturity();
-        if (processingBlockNumber < 1 ) {
-            logger.debug("First block has not reached maturity yet, current block is {}", blockNbr);
+        long candidateBlockNumberToReward = executionBlockNumber - remascConstants.getMaturity();
+        if (candidateBlockNumberToReward < 1 ) {
+            logger.debug("First block has not reached maturity yet, current block is {}", executionBlockNumber);
             return;
         }
 
@@ -149,20 +149,20 @@ public class Remasc {
         rewardBalance = rewardBalance.add(processingBlockReward);
         provider.setRewardBalance(rewardBalance);
 
-        if (processingBlockNumber - remascConstants.getSyntheticSpan() < 0 ) {
+        if (candidateBlockNumberToReward - remascConstants.getSyntheticSpan() < 0 ) {
             logger.debug("First block has not reached maturity+syntheticSpan yet, current block is {}", executionBlock.getNumber());
             return;
         }
 
-        List<Sibling> siblings = getSiblingsToReward(descendantsBlocks, processingBlockNumber);
+        List<Sibling> siblings = getSiblingsToReward(descendantsBlocks, candidateBlockNumberToReward);
         boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
         boolean brokenSelectionRule = SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
         provider.setBrokenSelectionRule(!siblings.isEmpty() && brokenSelectionRule);
 
         // Takes from rewardBalance this block's height reward.
         Coin syntheticReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
-        boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, blockNbr);
-        if (isRskip85Enabled) {
+
+        if (shouldRewardBeAboveMinimumPayableGas()) {
             BigInteger minimumPayableGas = constants.getMinimumPayableGas();
             Coin minPayableFees = executionBlock.getMinimumGasPrice().multiply(minimumPayableGas);
             if (syntheticReward.compareTo(minPayableFees) < 0) {
@@ -197,22 +197,23 @@ public class Remasc {
         }
     }
 
+    private boolean shouldRewardBeAboveMinimumPayableGas() {
+        return activations.isActive(ConsensusRule.RSKIP85);
+    }
+
     RskAddress getRskLabsAddress() {
-        boolean isRskip218Enabled = activationConfig.isActive(ConsensusRule.RSKIP218, executionBlock.getNumber());
+        boolean isRskip218Enabled = activations.isActive(ConsensusRule.RSKIP218);
         return isRskip218Enabled ? remascConstants.getRskLabsAddressRskip218() : remascConstants.getRskLabsAddress();
     }
 
     private Coin payToFederation(Constants constants, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
-
-        ActivationConfig.ForBlock activations = activationConfig.forBlock(processingBlock.getNumber());
-
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
 
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                activations
+            activations
         );
 
         FederationSupport federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock, activations);
@@ -227,7 +228,7 @@ public class Remasc {
         Coin payToFederator = payAndRemainderToFederator[0];
         Coin restToLastFederator = payAndRemainderToFederator[1];
 
-        if (activations.isActive(ConsensusRule.RSKIP85)) {
+        if (shouldRewardBeAboveMinimumPayableGas()) {
             BigInteger minimumFederatorPayableGas = constants.getFederatorMinimumPayableGas();
             Coin minPayableFederatorFees = executionBlock.getMinimumGasPrice().multiply(minimumFederatorPayableGas);
             if (payToFederator.compareTo(minPayableFederatorFees) < 0) {
