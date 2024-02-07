@@ -99,9 +99,9 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     @Override
     public List<Transaction> ethPendingTransactions() {
         List<Transaction> pendingTxs = transactionPool.getPendingTransactions();
-        String[] managedAccounts = accounts();
+        List<String> managedAccounts = Arrays.asList(accounts());
         return pendingTxs.stream()
-                .filter(tx -> Arrays.stream(managedAccounts).anyMatch(acc -> acc.equals(tx.getSender().toString())))
+                .filter(tx -> managedAccounts.contains(tx.getSender().toJsonString()))
                 .collect(Collectors.toList());
     }
 }

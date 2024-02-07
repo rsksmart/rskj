@@ -28,5 +28,5 @@ public interface EthModuleWallet {
 
     String sign(String addr, String data);
 
-    public List<Transaction> ethPendingTransactions();
+    List<Transaction> ethPendingTransactions();
 }

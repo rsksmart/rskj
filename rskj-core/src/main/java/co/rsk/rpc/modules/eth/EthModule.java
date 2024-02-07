@@ -188,7 +188,7 @@ public class EthModule
     }
 
     public List<Transaction> ethPendingTransactions() {
-       return ethModuleWallet.ethPendingTransactions();
+        return ethModuleWallet.ethPendingTransactions();
     }
 
     protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {

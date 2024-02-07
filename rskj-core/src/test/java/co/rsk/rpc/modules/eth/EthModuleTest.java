@@ -19,10 +19,12 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.core.bc.PendingState;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.TransactionGateway;
 import co.rsk.peg.BridgeSupportFactory;
@@ -33,6 +35,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -48,6 +51,11 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -730,5 +738,161 @@ class EthModuleTest {
         verify(transactionGateway, times(1))
                 .receiveTransaction(transactionCaptor.capture());
         assertArrayEquals(Hex.decode(expectedDataValue), transactionCaptor.getValue().getData());
+    }
+
+    @Test
+    void testEthPendingTransactionsWithNoTransactions() {
+        EthModuleWallet ethModuleWalletMock = mock(EthModuleWallet.class);
+        TransactionPool transactionPoolMock = mock(TransactionPool.class);
+        when(transactionPoolMock.getPendingTransactions()).thenReturn(Collections.emptyList());
+
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        when(blockResult.getBlock()).thenReturn(block);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        Blockchain blockchain = mock(Blockchain.class);
+
+        ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
+
+        EthModule ethModule  = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                blockchain,
+                transactionPoolMock,
+                reversibleTransactionExecutor,
+                retriever,
+                mock(RepositoryLocator.class),
+                ethModuleWalletMock,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        List<Transaction> result = ethModule.ethPendingTransactions();
+
+        assertTrue(result.isEmpty(), "Expected no transactions");
+    }
+
+    @Test
+    void pendingTransactionsWithMultipleManagedAccounts() {
+        Wallet wallet = mock(Wallet.class);
+        TransactionPool transactionPoolMock = mock(TransactionPool.class);
+        EthModuleWalletEnabled ethModuleWallet = new EthModuleWalletEnabled(wallet, transactionPoolMock);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
+
+        EthModule ethModule = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                blockchain,
+                transactionPoolMock,
+                reversibleTransactionExecutor,
+                retriever,
+                mock(RepositoryLocator.class),
+                ethModuleWallet,
+                null,
+                new BridgeSupportFactory(null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        Transaction mockTransaction1 = createMockTransaction("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
+        Transaction mockTransaction2 = createMockTransaction( "0xa3a15ed8c3b83efc744f2e0a7824a00846c21860");
+        Transaction mockTransaction3 = createMockTransaction( "0xb3a15ed8c3b83efc744f2e0a7824a00846c21860");
+        List<Transaction> allTransactions = Arrays.asList(mockTransaction1, mockTransaction2, mockTransaction3);
+
+        when(transactionPoolMock.getPendingTransactions()).thenReturn(allTransactions);
+        when(ethModuleWallet.accounts()).thenReturn(new String[]{"0x63a15ed8c3b83efc744f2e0a7824a00846c21860", "0xa3a15ed8c3b83efc744f2e0a7824a00846c21860"});
+
+        List<Transaction> result = ethModule.ethPendingTransactions();
+
+        assertEquals(2, result.size(), "Expected only transactions from managed accounts");
+    }
+
+    @Test
+    void pendingTransactionsWithNoManagedAccounts() {
+        Wallet wallet = mock(Wallet.class);
+        TransactionPool transactionPoolMock = mock(TransactionPool.class);
+        EthModuleWalletEnabled ethModuleWallet = new EthModuleWalletEnabled(wallet, transactionPoolMock);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
+
+        EthModule ethModule = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                blockchain,
+                transactionPoolMock,
+                reversibleTransactionExecutor,
+                retriever,
+                mock(RepositoryLocator.class),
+                ethModuleWallet,
+                null,
+                new BridgeSupportFactory(null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        Transaction mockTransaction1 = createMockTransaction("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
+        Transaction mockTransaction2 = createMockTransaction("0x13a15ed8c3b83efc744f2e0a7824a00846c21860");
+        List<Transaction> allTransactions = Arrays.asList(mockTransaction1, mockTransaction2);
+
+        when(transactionPoolMock.getPendingTransactions()).thenReturn(allTransactions);
+        when(ethModuleWallet.accounts()).thenReturn(new String[]{});
+
+        List<Transaction> result = ethModule.ethPendingTransactions();
+
+        assertTrue(result.isEmpty(), "Expected no transactions as there are no managed accounts");
+    }
+
+    @Test
+    void pendingTransactionsWithWalletDisabled() {
+        TransactionPool transactionPoolMock = mock(TransactionPool.class);
+        EthModuleWalletDisabled ethModuleWallet = new EthModuleWalletDisabled();
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
+
+        EthModule ethModule = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                blockchain,
+                transactionPoolMock,
+                reversibleTransactionExecutor,
+                retriever,
+                mock(RepositoryLocator.class),
+                ethModuleWallet,
+                null,
+                new BridgeSupportFactory(null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        List<Transaction> result = ethModule.ethPendingTransactions();
+
+        assertTrue(result.isEmpty(), "Expected no transactions as wallet is disabled");
+    }
+
+
+    private Transaction createMockTransaction(String fromAddress) {
+        Transaction transaction = mock(Transaction.class);
+        RskAddress address = new RskAddress(fromAddress);
+        System.out.println("mock address: " + address);
+        when(transaction.getSender()).thenReturn(address);
+
+        byte[] mockHashBytes = new byte[32];
+        Arrays.fill(mockHashBytes, (byte) 1);
+        Keccak256 mockHash = new Keccak256(mockHashBytes);
+        when(transaction.getHash()).thenReturn(mockHash);
+        when(transaction.getReceiveAddress()).thenReturn(address);
+        when(transaction.getNonce()).thenReturn(BigInteger.ZERO.toByteArray());
+        when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(21000).toByteArray());
+        when(transaction.getGasPrice()).thenReturn(Coin.valueOf(50_000_000_000L));
+        when(transaction.getValue()).thenReturn(Coin.ZERO);
+        when(transaction.getData()).thenReturn(new byte[0]);
+        ECDSASignature mockSignature = new ECDSASignature(BigInteger.ONE, BigInteger.ONE);
+        when(transaction.getSignature()).thenReturn(mockSignature);
+        when(transaction.getEncodedV()).thenReturn((byte) 1);
+
+        return transaction;
     }
 }
