@@ -118,7 +118,24 @@ public class BlockUtils {
                 .collect(Collectors.toList());
     }
 
-    public static long getSublistGasLimit(Block block) {
-        return GasCost.toGas(block.getGasLimit()) / (Constants.getTransactionExecutionThreads() + 1);
+    public static long getSublistGasLimit(Block block, boolean forSequentialTxSet, long minSequentialSetGasLimit) {
+        long blockGasLimit = GasCost.toGas(block.getGasLimit());
+        int transactionExecutionThreadCount = Constants.getTransactionExecutionThreads();
+
+        if((transactionExecutionThreadCount + 1) * minSequentialSetGasLimit <= blockGasLimit) {
+            return blockGasLimit / (transactionExecutionThreadCount + 1);
+        } else {
+            if (blockGasLimit <= minSequentialSetGasLimit) {
+                if (forSequentialTxSet) {
+                    return blockGasLimit;
+                }
+                return 0;
+            }
+
+            if (forSequentialTxSet) {
+                return minSequentialSetGasLimit;
+            }
+            return (blockGasLimit - minSequentialSetGasLimit) / (transactionExecutionThreadCount);
+        }
     }
 }

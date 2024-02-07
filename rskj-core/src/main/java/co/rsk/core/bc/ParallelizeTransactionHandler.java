@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.RskAddress;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.GasCost;
@@ -31,15 +32,15 @@ public class ParallelizeTransactionHandler {
     private final Map<RskAddress, TransactionSublist> sublistOfSender;
     private final ArrayList<TransactionSublist> sublists;
 
-    public ParallelizeTransactionHandler(short numberOfSublists, long sublistGasLimit) {
+    public ParallelizeTransactionHandler(short numberOfSublists, Block block, long minSequentialSetGasLimit) {
         this.sublistOfSender = new HashMap<>();
         this.sublistsHavingWrittenToKey = new HashMap<>();
         this.sublistsHavingReadFromKey = new HashMap<>();
         this.sublists = new ArrayList<>();
         for (short i = 0; i < numberOfSublists; i++){
-            this.sublists.add(new TransactionSublist(sublistGasLimit, false));
+            this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit), false));
         }
-        this.sublists.add(new TransactionSublist(sublistGasLimit, true));
+        this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit), true));
     }
 
     public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {

@@ -70,6 +70,7 @@ public class BlockExecutor {
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     private boolean registerProgramResults;
+    private long minSequentialSetGasLimit;
 
     /**
      * An array of ExecutorService's of size `Constants.getTransactionExecutionThreads()`. Each parallel list uses an executor
@@ -88,6 +89,7 @@ public class BlockExecutor {
         this.activationConfig = systemProperties.getActivationConfig();
         this.remascEnabled = systemProperties.isRemascEnabled();
         this.concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(systemProperties.concurrentContractsDisallowed()));
+        this.minSequentialSetGasLimit = systemProperties.getNetworkConstants().getMinSequentialSetGasLimit();
 
         int numOfParallelList = Constants.getTransactionExecutionThreads();
         this.execServices = new ExecutorService[numOfParallelList];
@@ -461,7 +463,6 @@ public class BlockExecutor {
             }
         } : Runnable::run);
         List<TransactionListExecutor> transactionListExecutors = new ArrayList<>();
-        long sublistGasLimit = BlockUtils.getSublistGasLimit(block);
 
         short start = 0;
 
@@ -486,7 +487,7 @@ public class BlockExecutor {
                     Coin.ZERO,
                     remascEnabled,
                     concurrentContractsDisallowed,
-                    sublistGasLimit
+                    BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit)
             );
             completionService.submit(txListExecutor);
             transactionListExecutors.add(txListExecutor);
@@ -561,7 +562,7 @@ public class BlockExecutor {
                 totalPaidFees,
                 remascEnabled,
                 Collections.emptySet(), // precompiled contracts are always allowed in a sequential list, as there's no concurrency in it
-                sublistGasLimit
+                BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit)
         );
         Boolean success = txListExecutor.call();
         if (!Boolean.TRUE.equals(success)) {
@@ -625,8 +626,7 @@ public class BlockExecutor {
         int txindex = 0;
 
         int transactionExecutionThreads = Constants.getTransactionExecutionThreads();
-        long sublistGasLimit = BlockUtils.getSublistGasLimit(block);
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) transactionExecutionThreads, sublistGasLimit);
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) transactionExecutionThreads, block, minSequentialSetGasLimit);
 
         for (Transaction tx : transactionsList) {
             loggingApplyBlockToTx(block, i);
@@ -642,7 +642,7 @@ public class BlockExecutor {
                     0,
                     deletedAccounts,
                     true,
-                    sublistGasLimit
+                    Math.max(BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit), BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit))
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
 

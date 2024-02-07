@@ -22,9 +22,11 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.net.TransactionValidationResult;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -33,6 +35,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class TxPendingValidatorTest {
+
+    private long minSequentialSetGasLimit;
+
+    @BeforeEach
+    public void setup() {
+        minSequentialSetGasLimit = Constants.regtest().getMinSequentialSetGasLimit();
+    }
 
     @Test
     void isValid_ShouldBeValid_WhenRSKIP144IsNotActivated() {
@@ -108,7 +117,7 @@ class TxPendingValidatorTest {
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
         when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
 
-        long sublistGasLimit = BlockUtils.getSublistGasLimit(executionBlock);
+        long sublistGasLimit = BlockUtils.getSublistGasLimit(executionBlock, true, minSequentialSetGasLimit);
 
         Transaction tx = mock(Transaction.class);
         when(tx.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(sublistGasLimit));
@@ -143,7 +152,7 @@ class TxPendingValidatorTest {
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(10L).toByteArray());
         when(executionBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
 
-        long sublistGasLimit = BlockUtils.getSublistGasLimit(executionBlock);
+        long sublistGasLimit = BlockUtils.getSublistGasLimit(executionBlock, true, minSequentialSetGasLimit);
 
         Transaction tx = mock(Transaction.class);
         when(tx.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(sublistGasLimit + 1L));
