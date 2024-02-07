@@ -180,7 +180,7 @@ public class Remasc {
         Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, rskLabsAddress, logs);
         syntheticReward = syntheticReward.subtract(payToRskLabs);
-        Coin payToFederation = payToFederation(constants, processingBlock, processingBlockHeader, syntheticReward);
+        Coin payToFederation = payToFederation(constants, processingBlock, syntheticReward);
         syntheticReward = syntheticReward.subtract(payToFederation);
 
         if (!siblings.isEmpty()) {
@@ -206,7 +206,7 @@ public class Remasc {
         return isRskip218Enabled ? remascConstants.getRskLabsAddressRskip218() : remascConstants.getRskLabsAddress();
     }
 
-    private Coin payToFederation(Constants constants, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
+    private Coin payToFederation(Constants constants, Block processingBlock, Coin syntheticReward) {
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
 
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
@@ -222,7 +222,7 @@ public class Remasc {
         Coin federationReward = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
         Coin payToFederation = provider.getFederationBalance().add(federationReward);
-        byte[] processingBlockHash = processingBlockHeader.getHash().getBytes();
+        byte[] processingBlockHash = processingBlock.getHeader().getHash().getBytes();
         int nfederators = federationProvider.getFederationSize();
         Coin[] payAndRemainderToFederator = payToFederation.divideAndRemainder(BigInteger.valueOf(nfederators));
         Coin payToFederator = payAndRemainderToFederator[0];
