@@ -19,6 +19,7 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
+import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.rpc.ModuleDescription;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
@@ -49,6 +50,9 @@ public class RskSystemProperties extends SystemProperties {
     private static final int PD_DEFAULT_CLEAN_PERIOD = 15000; //miliseconds
     private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; //miliseconds
     private static final int PD_DEFAULT_REFRESH_PERIOD = 60000; //miliseconds
+    private static final int PD_DEFAULT_MAX_BOOTSTRAP_RETRIES = -1;
+
+    private static final String PD_MAX_BOOTSTRAP_RETRIES_CONFIG = "peer.discovery.maxBootRetries";
 
     private static final String REGTEST_BLOCKCHAIN_CONFIG = "regtest";
 
@@ -58,6 +62,7 @@ public class RskSystemProperties extends SystemProperties {
     private static final String RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY = "rpc.logs.maxBlocksToQuery";
     private static final String RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN = "rpc.logs.maxLogsToReturn";
     private static final String RPC_GAS_PRICE_MULTIPLIER_CONFIG = "rpc.gasPriceMultiplier";
+    private static final String DISCOVERY_BUCKET_SIZE = "peer.discovery.bucketSize";
 
     private static final int CHUNK_SIZE = 192;
 
@@ -274,6 +279,14 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean allowMultipleConnectionsPerHostPort() {
         return getBoolean("peer.discovery.allowMultipleConnectionsPerHostPort", true);
+    }
+
+    public long peerDiscoveryMaxBootRetries() {
+        return getLong(PD_MAX_BOOTSTRAP_RETRIES_CONFIG, PD_DEFAULT_MAX_BOOTSTRAP_RETRIES);
+    }
+
+    public int discoveryBucketSize() {
+        return getInt(DISCOVERY_BUCKET_SIZE, KademliaOptions.BUCKET_SIZE);
     }
 
     public List<ModuleDescription> getRpcModules() {

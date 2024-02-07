@@ -16,15 +16,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -38,9 +38,22 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public final class FederationMember {
+    public static final FederationMemberPubKeysComparator BTC_RSK_MST_PUBKEYS_COMPARATOR = new FederationMemberPubKeysComparator();
+    private static final int KEYS_QUANTITY = 3;
+    private static final int BTC_KEY_INDEX = 0;
+    private static final int RSK_KEY_INDEX = 1;
+    private static final int MST_KEY_INDEX = 2;
     private final BtcECKey btcPublicKey;
     private final ECKey rskPublicKey;
     private final ECKey mstPublicKey;
+
+    public FederationMember(BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
+        // Copy public keys to ensure effective immutability
+        // Make sure we always use compressed versions of public keys
+        this.btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
+        this.rskPublicKey = ECKey.fromPublicOnly(rskPublicKey.getPubKey(true));
+        this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey(true));
+    }
 
     public enum KeyType {
         BTC("btc"),
@@ -80,50 +93,7 @@ public final class FederationMember {
     }
 
     public static List<FederationMember> getFederationMembersFromKeys(List<BtcECKey> pks) {
-        return pks.stream().map(pk -> getFederationMemberFromKey(pk)).collect(Collectors.toList());
-    }
-
-    /**
-     * Compares federation members based on their underlying keys.
-     *
-     * The total ordering is defined such that, for any two members M1, M2,
-     * 1) M1 < M2 iff BTC_PUB_KEY(M1) <lex BTC_PUB_KEY(M2) OR
-     *              (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
-     *               RSK_PUB_KEY(M1) <lex RSK_PUB_KEY(M2)) OR
-     *              (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
-     *               RSK_PUB_KEY(M1) ==lex RSK_PUB_KEY(M2) AND
-     *               MST_PUB_KEY(M1) <lex MST_PUB_KEY(M2))
-     * 2) M1 == M2 iff BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
-     *                 RSK_PUB_KEY(M1) ==lex RSK_PUB_KEY(M2) AND
-     *                 MST_PUB_KEY(M1) ==lex MST_PUB_KEY(M2) AND
-     * 3) M1 > M2 otherwise
-     *
-     * where <lex and ==lex is given by negative and zero values (resp.) of the
-     * UnsignedBytes.lexicographicalComparator() comparator.
-     */
-    public static final Comparator<FederationMember> BTC_RSK_MST_PUBKEYS_COMPARATOR = new Comparator<FederationMember>() {
-        private Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
-
-        @Override
-        public int compare(FederationMember m1, FederationMember m2) {
-            int btcKeysComparison = comparator.compare(m1.getBtcPublicKey().getPubKey(), m2.getBtcPublicKey().getPubKey());
-            if (btcKeysComparison == 0) {
-                int rskKeysComparison = comparator.compare(m1.getRskPublicKey().getPubKey(), m2.getRskPublicKey().getPubKey());
-                if (rskKeysComparison == 0) {
-                    return comparator.compare(m1.getMstPublicKey().getPubKey(), m2.getMstPublicKey().getPubKey());
-                }
-                return rskKeysComparison;
-            }
-            return btcKeysComparison;
-        }
-    };
-
-    public FederationMember(BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
-        // Copy public keys to ensure effective immutability
-        // Make sure we always use compressed versions of public keys
-        this.btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
-        this.rskPublicKey = ECKey.fromPublicOnly(rskPublicKey.getPubKey(true));
-        this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey(true));
+        return pks.stream().map(FederationMember::getFederationMemberFromKey).collect(Collectors.toList());
     }
 
     public BtcECKey getBtcPublicKey() {
@@ -189,5 +159,35 @@ public final class FederationMember {
                 rskPublicKey,
                 mstPublicKey
         );
+    }
+
+    public byte[] serialize() {
+        byte[][] rlpElements = new byte[KEYS_QUANTITY][];
+        byte[] btcPublicKeyBytes = this.getBtcPublicKey().getPubKeyPoint().getEncoded(true);
+        byte[] rskPublicKeyBytes = this.getRskPublicKey().getPubKey(true);
+        byte[] mstPublicKeyBytes = this.getMstPublicKey().getPubKey(true);
+
+        rlpElements[BTC_KEY_INDEX] = RLP.encodeElement(btcPublicKeyBytes);
+        rlpElements[RSK_KEY_INDEX] = RLP.encodeElement(rskPublicKeyBytes);
+        rlpElements[MST_KEY_INDEX] = RLP.encodeElement(mstPublicKeyBytes);
+        return RLP.encodeList(rlpElements);
+    }
+
+    public static FederationMember deserialize(byte[] data) {
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        if (rlpList.size() != KEYS_QUANTITY) {
+            throw new RuntimeException(String.format(
+                "Invalid serialized FederationMember. Expected %d elements but got %d", KEYS_QUANTITY, rlpList.size())
+            );
+        }
+
+        byte[] btcKeyData = rlpList.get(BTC_KEY_INDEX).getRLPData();
+        byte[] rskKeyData = rlpList.get(RSK_KEY_INDEX).getRLPData();
+        byte[] mstKeyData = rlpList.get(MST_KEY_INDEX).getRLPData();
+
+        BtcECKey btcKey = BtcECKey.fromPublicOnly(btcKeyData);
+        ECKey rskKey = ECKey.fromPublicOnly(rskKeyData);
+        ECKey mstKey = ECKey.fromPublicOnly(mstKeyData);
+        return new FederationMember(btcKey, rskKey, mstKey);
     }
 }

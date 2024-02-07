@@ -14,6 +14,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.time.Instant;
 import java.util.Arrays;
@@ -23,7 +24,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,34 +36,23 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
     }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
     private Federation federation;
-    private ErpFederation erpFederation;
+    private ErpFederation nonStandardErpFederation;
     private List<Federation> federationList;
-    private List<Federation> erpFederationList;
+    private List<Federation> nonStandardErpFederationList;
 
     @BeforeEach
     void setup() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembers(3);
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
-        federation = new StandardMultisigFederation(
-            FederationTestUtils.getFederationMembers(3),
-            Instant.ofEpochMilli(1000),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
-
-        erpFederation = new LegacyErpFederation(
-            FederationTestUtils.getFederationMembers(3),
-            Instant.ofEpochMilli(1000),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            erpFedKeys,
-            5063,
-            activations
-        );
-
+        FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.ofEpochMilli(1000), 0L, btcParams);
+        federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
         federationList = Collections.singletonList(federation);
-        erpFederationList = Collections.singletonList(erpFederation);
+
+        long activationDelay = 5063;
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpFedKeys, activationDelay, activations);
+        nonStandardErpFederationList = Collections.singletonList(nonStandardErpFederation);
     }
 
     @Test
@@ -112,13 +101,13 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
     }
 
     @Test
-    void findRedeemDataFromScriptHash_with_flyoverInformation_in_storage_and_erp_fed() {
+    void findRedeemDataFromScriptHash_with_flyoverInformation_in_storage_and_non_standard_erp_fed() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
 
         Script flyoverRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            erpFederation.getRedeemScript(),
-            Sha256Hash.wrap(derivationArgumentsHash.getBytes()
+                nonStandardErpFederation.getRedeemScript(),
+                Sha256Hash.wrap(derivationArgumentsHash.getBytes()
             )
         );
 
@@ -128,7 +117,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
                 derivationArgumentsHash,
-                erpFederation.getP2SHScript().getPubKeyHash(),
+                nonStandardErpFederation.getP2SHScript().getPubKeyHash(),
                 flyoverFederationP2SH);
 
         when(provider.getFlyoverFederationInformation(flyoverFederationP2SH))
@@ -137,7 +126,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
         FlyoverCompatibleBtcWalletWithStorage flyoverCompatibleBtcWalletWithStorage =
             new FlyoverCompatibleBtcWalletWithStorage(
                 mock(Context.class),
-                erpFederationList,
+                nonStandardErpFederationList,
                 provider
         );
 
@@ -163,7 +152,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
         );
 
         FlyoverCompatibleBtcWalletWithStorage flyoverCompatibleBtcWalletWithStorage =
-            new FlyoverCompatibleBtcWalletWithStorage(mock(Context.class), federationList, provider);
+            new FlyoverCompatibleBtcWalletWithStorage(mock(Context.class), nonStandardErpFederationList, provider);
 
         Assertions.assertNull(flyoverCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(new byte[]{1}));
     }
@@ -183,7 +172,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
         );
 
         FlyoverCompatibleBtcWalletWithStorage flyoverCompatibleBtcWalletWithStorage =
-            new FlyoverCompatibleBtcWalletWithStorage(mock(Context.class), federationList, provider);
+            new FlyoverCompatibleBtcWalletWithStorage(mock(Context.class), nonStandardErpFederationList, provider);
 
         Optional<FlyoverFederationInformation> result = flyoverCompatibleBtcWalletWithStorage.
             getFlyoverFederationInformation(flyoverScriptHash);
@@ -200,7 +189,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
         );
 
         FlyoverCompatibleBtcWalletWithStorage flyoverCompatibleBtcWalletWithStorage =
-            new FlyoverCompatibleBtcWalletWithStorage(mock(Context.class), federationList, provider);
+            new FlyoverCompatibleBtcWalletWithStorage(mock(Context.class), nonStandardErpFederationList, provider);
 
         Optional<FlyoverFederationInformation> result = flyoverCompatibleBtcWalletWithStorage.
             getFlyoverFederationInformation(new byte[1]);
