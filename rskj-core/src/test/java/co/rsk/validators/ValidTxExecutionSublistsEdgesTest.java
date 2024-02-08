@@ -53,7 +53,7 @@ class ValidTxExecutionSublistsEdgesTest {
 
     @Test
     void blockWithValidEdges() {
-        mockGetTxExecutionListsEdges(new short[]{2, 5, 6}, true);
+        mockGetTxExecutionListsEdges(new short[]{2, 5}, true);
 
         Assertions.assertTrue(rule.isValid(block));
     }
