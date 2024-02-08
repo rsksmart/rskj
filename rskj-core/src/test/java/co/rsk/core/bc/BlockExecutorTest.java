@@ -520,7 +520,7 @@ public class BlockExecutorTest {
         doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         long txGasLimit = 21000L;
-        short[] expectedEdges = new short[]{3, 6, 9, 12};
+        short[] expectedEdges = new short[]{6, 12};
         Block parent = blockchain.getBestBlock();
         int numberOfTxs = 12;
 
@@ -582,7 +582,7 @@ public class BlockExecutorTest {
         Block parent = blockchain.getBestBlock();
         int gasLimit = 21000;
         int numberOfTransactions = (int) (BlockUtils.getSublistGasLimit(parent, false, MIN_SEQUENTIAL_SET_GAS_LIMIT) / gasLimit);
-        short[] expectedEdges = new short[]{(short) numberOfTransactions, (short) (numberOfTransactions*2), (short) (numberOfTransactions*3), (short) (numberOfTransactions*4)};
+        short[] expectedEdges = new short[]{(short) numberOfTransactions, (short) (numberOfTransactions*2)};
         int transactionsInSequential = 1;
         Block block = getBlockWithNIndependentTransactions(numberOfTransactions * Constants.getTransactionExecutionThreads() + transactionsInSequential, BigInteger.valueOf(gasLimit), false);
         List<Transaction> transactionsList = block.getTransactionsList();
@@ -680,7 +680,7 @@ public class BlockExecutorTest {
         doReturn(true).when(activationConfig).isActive(eq(ConsensusRule.RSKIP144), anyLong());
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = blockchain.getBestBlock();
-        Block block1 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
+        Block block1 = getBlockWithTenTransactions(new short[]{4, 8});
         BlockResult result1 = executor.execute(null, 0, block1, parent.getHeader(), true, false, true);
 
 
@@ -700,7 +700,7 @@ public class BlockExecutorTest {
         doReturn(true).when(activationConfig).isActive(eq(ConsensusRule.RSKIP144), anyLong());
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = blockchain.getBestBlock();
-        Block pBlock = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
+        Block pBlock = getBlockWithTenTransactions(new short[]{4, 8});
         BlockResult parallelResult = executor.execute(null, 0, pBlock, parent.getHeader(), true, false, true);
 
 
@@ -799,11 +799,11 @@ public class BlockExecutorTest {
         doReturn(true).when(activationConfig).isActive(eq(ConsensusRule.RSKIP144), anyLong());
         BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = blockchain.getBestBlock();
-        Block block1 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
+        Block block1 = getBlockWithTenTransactions(new short[]{4, 8});
         BlockResult result1 = executor.execute(null, 0, block1, parent.getHeader(), true, false, true);
 
 
-        Block block2 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
+        Block block2 = getBlockWithTenTransactions(new short[]{4, 8});
         BlockResult result2 = executor.execute(null, 0, block2, parent.getHeader(), true, false, true);
 
         Assertions.assertArrayEquals(result2.getFinalState().getHash().getBytes(), result1.getFinalState().getHash().getBytes());
@@ -846,14 +846,14 @@ public class BlockExecutorTest {
     @ValueSource(booleans = {true, false})
     void blockWithManyTxsRemascShouldGoToSequentialSublist (boolean activeRskip144) {
         if (!activeRskip144) return;
-        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(3, new short[]{ 1, 2, 3 }, activeRskip144);
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(2, new short[]{ 1, 2 }, activeRskip144);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void blockWithMoreThanThreadsTxsRemascShouldGoToSequentialSublist (boolean activeRskip144) {
         if (!activeRskip144) return;
-        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(5, new short[]{ 2, 3, 4, 5 }, activeRskip144);
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(3, new short[]{ 2, 3 }, activeRskip144);
     }
 
     @ParameterizedTest
