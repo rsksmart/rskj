@@ -17,7 +17,7 @@
  */
 package co.rsk.peg;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP414;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
@@ -380,7 +380,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             teardown();
 
             byte[] voidReturnValue = new byte[]{};
-            if (!activations.isActive(RSKIP414)) {
+            if (!activations.isActive(RSKIP417)) {
                 voidReturnValue = null;
             }
 
@@ -413,7 +413,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private void validateCallMessageType(BridgeParsedData bridgeParsedData) throws BridgeIllegalArgumentException {
-        if (activations.isActive(RSKIP414) &&
+        if (activations.isActive(RSKIP417) &&
             !bridgeParsedData.bridgeMethod.acceptsThisTypeOfCall(this.msgType)) {
             String errorMessage = String.format(
                 "Call type (%s) not accepted by %s. Returning without execution.",

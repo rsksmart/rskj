@@ -1114,7 +1114,7 @@ class BridgeTest {
         byte[] data = function.encode(Hex.decode(publicKey), Hex.decode(publicKey), Hex.decode(publicKey));
 
         if (activationConfig.isActive(ConsensusRule.RSKIP123, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
                 // Post arrowhead should fail for any msg type != CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
@@ -1171,7 +1171,7 @@ class BridgeTest {
         byte[] data = function.encode(addressBase58, maxTransferValue);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP87, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
                 // Post arrowhead should fail for any msg type != CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
@@ -1203,7 +1203,7 @@ class BridgeTest {
         byte[] data = function.encode(addressBase58);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP87, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
                 // Post arrowhead should fail for any msg type != CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
@@ -1248,7 +1248,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.ADD_SIGNATURE.getFunction();
         byte[] data = function.encode(Hex.decode(pegnatoryPublicKey), derEncodedSigs, rskTxHash.getBytes());
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
@@ -1276,7 +1276,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.COMMIT_FEDERATION.getFunction();
         byte[] data = function.encode(commitTransactionHash.getBytes());
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
@@ -1301,7 +1301,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.CREATE_FEDERATION.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
@@ -1331,7 +1331,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1359,7 +1359,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1418,7 +1418,7 @@ class BridgeTest {
         byte[] data = function.encode(depth);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP89, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1461,7 +1461,7 @@ class BridgeTest {
         );
 
         if (activationConfig.isActive(ConsensusRule.RSKIP122, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1497,7 +1497,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_BTC_TX_HASH_PROCESSED_HEIGHT.getFunction();
         byte[] data = function.encode(btcTxHash.toString());
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1526,7 +1526,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1553,7 +1553,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1581,7 +1581,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_FEDERATION_CREATION_TIME.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1608,7 +1608,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_FEDERATION_SIZE.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1635,7 +1635,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_FEDERATION_THRESHOLD.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1692,7 +1692,7 @@ class BridgeTest {
         byte[] data = function.encode(federatorIndex, keyType.getValue());
 
         if (activationConfig.isActive(ConsensusRule.RSKIP123, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1728,7 +1728,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_FEE_PER_KB.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1756,7 +1756,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_LOCK_WHITELIST_ADDRESS.getFunction();
         byte[] data = function.encode(index);
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1785,7 +1785,7 @@ class BridgeTest {
         byte[] data = function.encode(addressBase58);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP87, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1816,7 +1816,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_LOCK_WHITELIST_SIZE.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1850,7 +1850,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_MINIMUM_LOCK_TX_VALUE.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1877,7 +1877,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_PENDING_FEDERATION_HASH.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1905,7 +1905,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_PENDING_FEDERATION_SIZE.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -1964,7 +1964,7 @@ class BridgeTest {
         byte[] data = function.encode(federatorIndex, keyType.getValue());
 
         if (activationConfig.isActive(ConsensusRule.RSKIP123, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2001,7 +2001,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_RETIRING_FEDERATION_ADDRESS.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2028,7 +2028,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2056,7 +2056,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_RETIRING_FEDERATION_CREATION_TIME.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2083,7 +2083,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_RETIRING_FEDERATION_SIZE.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2110,7 +2110,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_RETIRING_FEDERATION_THRESHOLD.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2168,7 +2168,7 @@ class BridgeTest {
         byte[] data = function.encode(federatorIndex, keyType.getValue());
 
         if (activationConfig.isActive(ConsensusRule.RSKIP123, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2202,7 +2202,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_STATE_FOR_BTC_RELEASE_CLIENT.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2229,7 +2229,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_STATE_FOR_DEBUGGING.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2260,7 +2260,7 @@ class BridgeTest {
         byte[] data = function.encode();
 
         if (activationConfig.isActive(ConsensusRule.RSKIP134, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2293,7 +2293,7 @@ class BridgeTest {
         byte[] data = function.encode();
 
         if (activationConfig.isActive(ConsensusRule.RSKIP293, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2321,7 +2321,7 @@ class BridgeTest {
         byte[] data = function.encode();
 
         if (activationConfig.isActive(ConsensusRule.RSKIP186, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2354,7 +2354,7 @@ class BridgeTest {
         byte[] data = function.encode(newLockingCap);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP134, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
                 // Post arrowhead should fail for any msg type != CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
@@ -2388,7 +2388,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.IS_BTC_TX_HASH_ALREADY_PROCESSED.getFunction();
         byte[] data = function.encode(btcTxHash.toString());
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
             // Post arrowhead should fail for any msg type != CALL or STATIC CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2430,7 +2430,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.RECEIVE_HEADERS.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2469,7 +2469,7 @@ class BridgeTest {
         byte[] data = function.encode(serializedBlockHeader);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP200, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
                 // Post arrowhead should fail for any msg type != CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
@@ -2515,7 +2515,7 @@ class BridgeTest {
         byte[] pmtSerialized = new byte[]{2};
         byte[] data = function.encode(btcTxSerialized, height, pmtSerialized);
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2544,7 +2544,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.RELEASE_BTC.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2570,7 +2570,7 @@ class BridgeTest {
         String addressBase58 = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa";
         byte[] data = function.encode(addressBase58);
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2593,7 +2593,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.ROLLBACK_FEDERATION.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
@@ -2617,7 +2617,7 @@ class BridgeTest {
         BigInteger disableBlockDelay = BigInteger.valueOf(100);
         byte[] data = function.encode(disableBlockDelay);
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2653,7 +2653,7 @@ class BridgeTest {
         CallTransaction.Function function = BridgeMethods.UPDATE_COLLECTIONS.getFunction();
         byte[] data = function.encode();
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2679,7 +2679,7 @@ class BridgeTest {
         long feePerKB = 10_000;
         byte[] data = function.encode(feePerKB);
 
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
             !msgType.equals(MessageCall.MsgType.CALL)) {
             // Post arrowhead should fail for any msg type != CALL
             assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2715,7 +2715,7 @@ class BridgeTest {
         );
 
         if (activationConfig.isActive(ConsensusRule.RSKIP143, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
                 // Post arrowhead should fail for any msg type != CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
@@ -2751,7 +2751,7 @@ class BridgeTest {
         byte[] data = function.encode(blockHash.getBytes());
 
         if (activationConfig.isActive(ConsensusRule.RSKIP143, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATICCALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2797,7 +2797,7 @@ class BridgeTest {
         );
 
         if (activationConfig.isActive(ConsensusRule.RSKIP176, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) && !msgType.equals(MessageCall.MsgType.CALL)) {
                 // Post arrowhead should fail for any msg type != CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
@@ -2835,7 +2835,7 @@ class BridgeTest {
         byte[] data = function.encode();
 
         if (activationConfig.isActive(ConsensusRule.RSKIP220, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2866,7 +2866,7 @@ class BridgeTest {
         byte[] data = function.encode(hashBytes);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP220, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2897,7 +2897,7 @@ class BridgeTest {
         byte[] data = function.encode(height);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP220, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2928,7 +2928,7 @@ class BridgeTest {
         byte[] data = function.encode(hashBytes);
 
         if (activationConfig.isActive(ConsensusRule.RSKIP220, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2957,7 +2957,7 @@ class BridgeTest {
         byte[] data = function.encode();
 
         if (activationConfig.isActive(ConsensusRule.RSKIP271, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -2986,7 +2986,7 @@ class BridgeTest {
         byte[] data = function.encode();
 
         if (activationConfig.isActive(ConsensusRule.RSKIP271, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -3017,7 +3017,7 @@ class BridgeTest {
         byte[] data = function.encode();
 
         if (activationConfig.isActive(ConsensusRule.RSKIP271, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP414, 0) &&
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
                 !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
@@ -3053,7 +3053,7 @@ class BridgeTest {
     }
 
     private void assertVoidMethodResult(ActivationConfig activationConfig, byte[] result) {
-        if (activationConfig.isActive(ConsensusRule.RSKIP414, 0)) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP417, 0)) {
             assertArrayEquals(EMPTY_BYTE_ARRAY, result);
         } else {
             assertNull(result);
