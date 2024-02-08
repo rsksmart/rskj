@@ -12,9 +12,6 @@ import org.mockito.Mockito;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.mockito.AdditionalMatchers.geq;
-import static org.mockito.ArgumentMatchers.any;
-
 class ValidTxExecutionSublistsEdgesTest {
 
     private BlockHeader blockHeader;
@@ -53,7 +50,7 @@ class ValidTxExecutionSublistsEdgesTest {
 
     @Test
     void blockWithValidEdges() {
-        mockGetTxExecutionListsEdges(new short[]{2, 5, 6}, true);
+        mockGetTxExecutionListsEdges(new short[]{2, 5}, true);
 
         Assertions.assertTrue(rule.isValid(block));
     }

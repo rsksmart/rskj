@@ -872,7 +872,7 @@ class ParallelizeTransactionHandlerTest {
     @Test
     void writeAfterWriteToSequentialForOutOfGasShouldGoToSequential() {
         Block executionBlock = mock(Block.class);
-        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(5_000_000L).toByteArray());
+        when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(3_000_000L).toByteArray());
 
         HashSet<ByteArrayWrapper> setWithX = createASetAndAddKeys(aWrappedKey);
 
