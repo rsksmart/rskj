@@ -376,14 +376,20 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             }
 
             validateCall(bridgeParsedData);
-            Optional<?> result = executeBridgeMethod(bridgeParsedData);
+            Optional<?> result;
+            try {
+                result = executeBridgeMethod(bridgeParsedData);
+            } catch (BridgeIllegalArgumentException ex) {
+                String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
+                logger.warn(errorMessage, ex);
+                if (shouldReturnNullInsteadOfException()) {
+                    return null;
+                }
+                throw new BridgeIllegalArgumentException(errorMessage);
+            }
             teardown();
 
-            byte[] voidReturnValue = new byte[]{};
-            if (!activations.isActive(RSKIP417)) {
-                voidReturnValue = null;
-            }
-
+            byte[] voidReturnValue = calculateVoidReturnValue();
             return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(voidReturnValue);
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
@@ -433,18 +439,23 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             BridgeMethodExecutor executor = bridgeParsedData.bridgeMethod.getExecutor();
             return executor.execute(this, bridgeParsedData.args);
         } catch (BridgeIllegalArgumentException ex) {
-            String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
-            logger.warn(errorMessage, ex);
-            if (shouldReturnNullInsteadOfBridgeException()) {
-                return Optional.empty();
-            }
-
-            throw new BridgeIllegalArgumentException(errorMessage);
+            throw new BridgeIllegalArgumentException();
         }
     }
 
-    private boolean shouldReturnNullInsteadOfBridgeException() {
+    private boolean shouldReturnNullInsteadOfException() {
         return !activations.isActive(ConsensusRule.RSKIP88);
+    }
+
+    private byte[] calculateVoidReturnValue() {
+        if (shouldReturnNullOnVoidMethods()) {
+            return null;
+        }
+        return new byte[]{};
+    }
+
+    private boolean shouldReturnNullOnVoidMethods() {
+        return !activations.isActive(RSKIP417);
     }
 
     private void teardown() throws IOException {
