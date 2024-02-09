@@ -383,9 +383,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 if (shouldReturnNullInsteadOfException()) {
                     return null;
                 }
-                throw new BridgeIllegalArgumentException(ex.getMessage());
+                throw ex;
             }
-
             teardown();
 
             byte[] voidReturnValue = calculateVoidReturnValue();
