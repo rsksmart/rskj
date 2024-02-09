@@ -287,8 +287,8 @@ class BridgeStorageProviderPegoutTxIndexTests {
     void setPegoutTxSigHash_null(boolean isRskip379HardForkActive) throws IOException {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
-                                                    getArrowHeadActivationExceptLockingCap() :
-                                                    getFingerrootActivationsExceptLockingCap();
+                                                    ActivationConfigsForTest.arrowhead600().forBlock(0) :
+                                                    ActivationConfigsForTest.fingerroot500().forBlock(0);
 
         Repository repository = mock(Repository.class);
 
@@ -301,7 +301,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
 
         // Act
         provider.setPegoutTxSigHash(null);
-        provider.save();
+        provider.savePegoutTxSigHashes();
 
         // Assert
         verify(repository, never()).getStorageBytes(
@@ -321,8 +321,8 @@ class BridgeStorageProviderPegoutTxIndexTests {
     void setPegoutTxSigHash_non_null(boolean isRskip379HardForkActive, Sha256Hash sigHash) throws IOException {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
-                                                    getArrowHeadActivationExceptLockingCap() :
-                                                    getFingerrootActivationsExceptLockingCap();
+                                                    ActivationConfigsForTest.arrowhead600().forBlock(0) :
+                                                    ActivationConfigsForTest.fingerroot500().forBlock(0);
 
         Repository repository = mock(Repository.class);
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -334,7 +334,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
 
         // Act
         provider.setPegoutTxSigHash(sigHash);
-        provider.save();
+        provider.savePegoutTxSigHashes();
 
         // Assert
         if (isRskip379HardForkActive) {
@@ -360,14 +360,6 @@ class BridgeStorageProviderPegoutTxIndexTests {
                 any()
             );
         }
-    }
-
-    private ActivationConfig.ForBlock getFingerrootActivationsExceptLockingCap() {
-        return ActivationConfigsForTest.fingerroot500(Collections.singletonList(RSKIP134)).forBlock(0);
-    }
-
-    private ActivationConfig.ForBlock getArrowHeadActivationExceptLockingCap() {
-        return ActivationConfigsForTest.arrowhead600(Collections.singletonList(RSKIP134)).forBlock(0);
     }
 
     @Test
