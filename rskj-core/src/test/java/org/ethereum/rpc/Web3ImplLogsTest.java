@@ -1092,7 +1092,7 @@ class Web3ImplLogsTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockChain, transactionPool,
                 null, new ExecutionBlockRetriever(blockChain, null, null),
-                null, new EthModuleWalletEnabled(wallet, transactionPool), null,
+                null, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 config.getGasEstimationCap(),

@@ -778,7 +778,7 @@ class EthModuleTest {
     void pendingTransactionsWithMultipleManagedAccounts() {
         Wallet wallet = mock(Wallet.class);
         TransactionPool transactionPoolMock = mock(TransactionPool.class);
-        EthModuleWalletEnabled ethModuleWallet = new EthModuleWalletEnabled(wallet, transactionPoolMock);
+        EthModuleWalletEnabled ethModuleWallet = new EthModuleWalletEnabled(wallet, transactionPoolMock, signatureCache);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         Blockchain blockchain = mock(Blockchain.class);
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
@@ -814,7 +814,7 @@ class EthModuleTest {
     void pendingTransactionsWithNoManagedAccounts() {
         Wallet wallet = mock(Wallet.class);
         TransactionPool transactionPoolMock = mock(TransactionPool.class);
-        EthModuleWalletEnabled ethModuleWallet = new EthModuleWalletEnabled(wallet, transactionPoolMock);
+        EthModuleWalletEnabled ethModuleWallet = new EthModuleWalletEnabled(wallet, transactionPoolMock, signatureCache);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         Blockchain blockchain = mock(Blockchain.class);
         ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
@@ -877,7 +877,7 @@ class EthModuleTest {
         Transaction transaction = mock(Transaction.class);
         RskAddress address = new RskAddress(fromAddress);
         System.out.println("mock address: " + address);
-        when(transaction.getSender()).thenReturn(address);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(address);
 
         byte[] mockHashBytes = new byte[32];
         Arrays.fill(mockHashBytes, (byte) 1);
