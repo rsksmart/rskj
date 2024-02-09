@@ -301,6 +301,7 @@ class MessageVisitorTest {
                 .processBlockHeadersRequest(sender, 1L, hash, 10);
     }
 
+    // fix this
     @Test
     void stateChunkRequestMessage() {
         SnapStateChunkRequestMessage message = mock(SnapStateChunkRequestMessage.class);
@@ -309,8 +310,8 @@ class MessageVisitorTest {
 
         target.apply(message);
 
-        verify(blockProcessor, times(1))
-                .processStateChunkRequest(sender, new SnapStateChunkRequestMessage(1l, 0l, 0L, 0L));
+        verify(snapshotProcessor, times(1))
+                .processStateChunkRequest(eq(sender), same(message));
     }
 
     @Test
