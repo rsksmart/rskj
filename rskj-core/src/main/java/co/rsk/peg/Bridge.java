@@ -435,12 +435,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         } catch (BridgeIllegalArgumentException ex) {
             String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
             logger.warn(errorMessage, ex);
-            if (!activations.isActive(ConsensusRule.RSKIP88)) {
-                return null;
+            if (shouldReturnNullInsteadOfBridgeException()) {
+                return Optional.empty();
             }
 
             throw new BridgeIllegalArgumentException(errorMessage);
         }
+    }
+
+    private boolean shouldReturnNullInsteadOfBridgeException() {
+        return !activations.isActive(ConsensusRule.RSKIP88);
     }
 
     private void teardown() throws IOException {
