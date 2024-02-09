@@ -35,6 +35,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -503,9 +504,14 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     private BridgeSupport buildBridgeSupport(ActivationConfig.ForBlock activations) {
+        Repository repository = mock(Repository.class);
+        when(repository.getBalance(PrecompiledContracts.BRIDGE_ADDR)).thenReturn(co.rsk.core.Coin.fromBitcoin(bridgeMainnetConstants.getMaxRbtc()));
+        when(provider.getLockingCap()).thenReturn(bridgeMainnetConstants.getMaxRbtc());
+
         return new BridgeSupportBuilder()
             .withBtcBlockStoreFactory(mockFactory)
             .withBridgeConstants(bridgeMainnetConstants)
+            .withRepository(repository)
             .withProvider(provider)
             .withActivations(activations)
             .withSignatureCache(signatureCache)
@@ -534,8 +540,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         RskAddress rskAddress = new RskAddress(senderRskKey.getAddress());
 
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
-
-
 
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
         btcTransaction.addOutput(amountToSend, userAddress);
