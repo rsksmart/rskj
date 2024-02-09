@@ -380,13 +380,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             try {
                 result = executeBridgeMethod(bridgeParsedData);
             } catch (BridgeIllegalArgumentException ex) {
-                String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
-                logger.warn(errorMessage, ex);
                 if (shouldReturnNullInsteadOfException()) {
                     return null;
                 }
-                throw new BridgeIllegalArgumentException(errorMessage);
+                throw new BridgeIllegalArgumentException(ex.getMessage());
             }
+
             teardown();
 
             byte[] voidReturnValue = calculateVoidReturnValue();
@@ -439,7 +438,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             BridgeMethodExecutor executor = bridgeParsedData.bridgeMethod.getExecutor();
             return executor.execute(this, bridgeParsedData.args);
         } catch (BridgeIllegalArgumentException ex) {
-            throw new BridgeIllegalArgumentException();
+            String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
+            logger.warn(errorMessage, ex);
+            
+            throw new BridgeIllegalArgumentException(errorMessage);
         }
     }
 
