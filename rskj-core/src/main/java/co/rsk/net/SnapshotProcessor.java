@@ -388,7 +388,6 @@ public class SnapshotProcessor {
             chunkTasks.add(task);
             from += chunkSize * 1024L;
         }
-        logger.debug("Generated: {} chunk request tasks.", chunkTasks.size());
     }
 
     private void startRequestingChunks() {
