@@ -30,7 +30,6 @@ import co.rsk.util.ExecState;
 import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.TraceUtils;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.BlockIdentifier;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;

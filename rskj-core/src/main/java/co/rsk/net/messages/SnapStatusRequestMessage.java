@@ -2,8 +2,6 @@ package co.rsk.net.messages;
 
 import org.ethereum.util.RLP;
 
-import java.math.BigInteger;
-
 public class SnapStatusRequestMessage extends Message {
 
     public SnapStatusRequestMessage() {

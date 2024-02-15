@@ -15,7 +15,6 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +33,6 @@ public class RskModuleImpl implements RskModule {
     private final ReceiptStore receiptStore;
     private final Web3InformationRetriever web3InformationRetriever;
     private final Flusher flusher;
-
     private final NodeStopper nodeStopper;
 
     private final RskSystemProperties rskSystemProperties;
