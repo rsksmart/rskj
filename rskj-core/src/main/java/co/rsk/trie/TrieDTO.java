@@ -25,7 +25,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.util.HexUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -300,9 +299,18 @@ public class TrieDTO {
     }
 
     public boolean isTerminal() {
-        return (!this.leftNodePresent && !this.rightNodePresent) ||
-                !((this.leftNodePresent && !this.leftNodeEmbedded) ||
-                        (this.rightNodePresent && !this.rightNodeEmbedded));
+        // old impl:
+//        return (!this.leftNodePresent && !this.rightNodePresent) ||
+//                !((this.leftNodePresent && !this.leftNodeEmbedded) ||
+//                        (this.rightNodePresent && !this.rightNodeEmbedded));
+        if (!this.leftNodePresent && !this.rightNodePresent) {
+            return true;
+        }
+
+        boolean isLeftTerminal = !this.leftNodePresent || this.leftNodeEmbedded;
+        boolean isRightTerminal = !this.rightNodePresent || this.rightNodeEmbedded;
+
+        return isLeftTerminal && isRightTerminal;
     }
 
     public byte[] getLeft() {
@@ -401,14 +409,25 @@ public class TrieDTO {
      * Based on {@link Trie:toMessage()}
      */
     public byte[] toMessage() {
-        ByteBuffer buffer = ByteBuffer.allocate(
-                1 + // flags
-                        (this.sharedPrefixPresent ? SharedPathSerializer.calculateVarIntSize(this.pathLength) + this.path.length : 0) +
-                        serializedLength(leftNodePresent, leftNodeEmbedded, left) +
-                        serializedLength(rightNodePresent, rightNodeEmbedded, right) +
-                        ((leftNodePresent || rightNodePresent) ? childrenSize.getSizeInBytes() : 0) +
-                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : value.length)
-        );
+//        ByteBuffer buffer = ByteBuffer.allocate(
+//                1 + // flags
+//                        (this.sharedPrefixPresent ? SharedPathSerializer.calculateVarIntSize(this.pathLength) + this.path.length : 0) +
+//                        serializedLength(leftNodePresent, leftNodeEmbedded, left) +
+//                        serializedLength(rightNodePresent, rightNodeEmbedded, right) +
+//                        ((leftNodePresent || rightNodePresent) ? childrenSize.getSizeInBytes() : 0) +
+//                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : value.length)
+//        );
+
+        int sharedPrefixSize = this.sharedPrefixPresent ? SharedPathSerializer.calculateVarIntSize(this.pathLength) + this.path.length : 0;
+        int leftNodeSize = serializedLength(leftNodePresent, leftNodeEmbedded, left);
+        int rightNodeSize = serializedLength(rightNodePresent, rightNodeEmbedded, right);
+        int childrenSizeBytes = (leftNodePresent || rightNodePresent) ? childrenSize.getSizeInBytes() : 0;
+        int valueSize = hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : value.length;
+
+        int totalSize = 1 + sharedPrefixSize + leftNodeSize + rightNodeSize + childrenSizeBytes + valueSize;
+
+        ByteBuffer buffer = ByteBuffer.allocate(totalSize);
+
         buffer.put(flags);
         if (this.sharedPrefixPresent) {
             SharedPathSerializer.serializeBytes(buffer, this.pathLength, this.path);
