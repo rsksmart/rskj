@@ -30,6 +30,9 @@ import java.util.function.Consumer;
 public class TrieDTOInOrderRecoverer {
 
     private static final Logger logger = LoggerFactory.getLogger(TrieDTOInOrderRecoverer.class);
+    private TrieDTOInOrderRecoverer() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
     public static Optional<TrieDTO> recoverTrie(TrieDTO[] trieCollection, Consumer<? super TrieDTO> processTrieDTO) {
         Optional<TrieDTO> result = recoverSubtree(trieCollection, 0, trieCollection.length - 1, processTrieDTO);
