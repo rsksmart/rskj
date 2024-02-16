@@ -33,6 +33,7 @@ import org.ethereum.net.rlpx.Node;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.net.InetAddress;
@@ -674,7 +675,7 @@ class PeerExplorerTest {
         for (int i = 0; i < 100; i++) {
             peerExplorer.update();
         }
-        Assertions.assertEquals(peerExplorer.getRetryCounter(), 100);
+        Assertions.assertEquals(100,peerExplorer.getRetryCounter());
     }
 
     @Test
@@ -717,13 +718,28 @@ class PeerExplorerTest {
 
     @Test
     void disposeShouldSaveKnownPeers() {
-        KnownPeersSaver knownPeersSaver = mock(KnownPeersSaver.class);
-        PeerExplorer peerExplorer = new PeerExplorer(Collections.emptyList(), mock(Node.class), mock(NodeDistanceTable.class), mock(ECKey.class), 199, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class), true, 0, knownPeersSaver);
+        KnownPeersHandler knownPeersHandler = mock(KnownPeersHandler.class);
+        PeerExplorer peerExplorer = new PeerExplorer(Collections.emptyList(), mock(Node.class), mock(NodeDistanceTable.class),
+                mock(ECKey.class), 199, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class),
+                true, 0, knownPeersHandler);
+        PeerExplorer sPeerExplorer = spy(peerExplorer);
+        ArgumentCaptor<Map> map = ArgumentCaptor.forClass(Map.class);
+        Map<String, NodeID> knownPeers = new HashMap<>();
+        NodeID nodeID = NodeID.ofHexString("1234");
+        knownPeers.put("1.2.2.2:5050", nodeID);
 
-        peerExplorer.dispose();
+        when(sPeerExplorer.getKnownHosts()).thenReturn(knownPeers);
 
-        verify(knownPeersSaver, times(1)).savePeers(any());
+        sPeerExplorer.dispose();
 
+        verify(knownPeersHandler, times(1)).savePeers(map.capture());
+
+        Map<String,String> savedPeers = (Map<String,String>) map.getValue();
+        assertEquals(1, savedPeers.size());
+
+        Map.Entry<String,String> entry = savedPeers.entrySet().iterator().next();
+        assertEquals("1.2.2.2:5050",entry.getValue());
+        assertEquals(nodeID.toString(),entry.getKey());
     }
 
     @Test
