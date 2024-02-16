@@ -93,7 +93,7 @@ public class PeerExplorer {
 
     private UDPChannel udpChannel;
 
-    private KnownPeersSaver knownPeersSaver;
+    private final KnownPeersHandler knownPeersHandler;
 
     public PeerExplorer(List<String> initialBootNodes,
                         Node localNode, NodeDistanceTable distanceTable, ECKey key,
@@ -106,7 +106,7 @@ public class PeerExplorer {
                         Node localNode, NodeDistanceTable distanceTable, ECKey key,
                         long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
                         PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHostPort,
-                        long maxBootRetries, KnownPeersSaver knownPeersSaver) {
+                        long maxBootRetries, KnownPeersHandler knownPeersHandler) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
@@ -124,7 +124,7 @@ public class PeerExplorer {
         this.allowMultipleConnectionsPerHostPort = allowMultipleConnectionsPerHostPort;
 
         this.maxBootRetries = maxBootRetries;
-        this.knownPeersSaver = knownPeersSaver;
+        this.knownPeersHandler = knownPeersHandler;
     }
 
     void start() {
@@ -146,16 +146,19 @@ public class PeerExplorer {
     }
 
     public synchronized void dispose() {
-        if(knownPeersSaver != null) {
-            knownPeersSaver.savePeers(getKnownHosts());
-        }
-
         if (state == ExecState.FINISHED) {
             logger.warn("Cannot dispose peer explorer as current state is {}", state);
             return;
         }
         state = ExecState.FINISHED;
 
+        if (knownPeersHandler != null) {
+            Map<String, String> knownPeers = getKnownHosts().entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getValue().toString(), Map.Entry::getKey));
+            if (knownPeers.size() > 0) {
+                knownPeersHandler.savePeers(knownPeers);
+            }
+        }
         this.cleaner.dispose();
     }
 
@@ -616,7 +619,7 @@ public class PeerExplorer {
         return address != null && this.peerScoringManager.isAddressBanned(address) || this.peerScoringManager.isNodeIDBanned(node.getId());
     }
 
-    List<String> getKnownHosts(){
-        return new ArrayList<>(knownHosts.keySet());
+    Map<String, NodeID> getKnownHosts() {
+        return knownHosts;
     }
 }

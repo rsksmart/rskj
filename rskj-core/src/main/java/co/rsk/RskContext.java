@@ -41,7 +41,7 @@ import co.rsk.metrics.HashRateCalculatorMining;
 import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.mine.*;
 import co.rsk.net.*;
-import co.rsk.net.discovery.KnownPeersSaver;
+import co.rsk.net.discovery.KnownPeersHandler;
 import co.rsk.net.discovery.PeerExplorer;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
@@ -89,6 +89,7 @@ import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -158,7 +159,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private static final String CACHE_FILE_NAME = "rskcache";
 
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
-
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
     private MiningMainchainView miningMainchainView;
@@ -1585,15 +1585,15 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getPeerPort()
             );
 
-            KnownPeersSaver knownPeersSaver = null;
-            if(rskSystemProperties.usePeersFromLastSession()) {
-                knownPeersSaver = new KnownPeersSaver(getRskSystemProperties().getLastKnewPeersFilePath());
+            KnownPeersHandler knownPeersHandler = null;
+            if (rskSystemProperties.usePeersFromLastSession()) {
+                knownPeersHandler = new KnownPeersHandler(getRskSystemProperties().getLastKnewPeersFilePath());
 
             }
 
             int bucketSize = rskSystemProperties.discoveryBucketSize();
             peerExplorer = new PeerExplorer(
-                    getInitialBootNodes(),
+                    getInitialBootNodes(knownPeersHandler),
                     localNode,
                     new NodeDistanceTable(KademliaOptions.BINS, bucketSize, localNode),
                     key,
@@ -1604,15 +1604,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getPeerScoringManager(),
                     rskSystemProperties.allowMultipleConnectionsPerHostPort(),
                     rskSystemProperties.peerDiscoveryMaxBootRetries(),
-                    knownPeersSaver
+                    knownPeersHandler
             );
         }
 
         return peerExplorer;
     }
 
-    List<String> getInitialBootNodes() {
-        List<String> initialBootNodes = new ArrayList<>();
+    @VisibleForTesting
+    List<String> getInitialBootNodes(KnownPeersHandler knownPeersHandler) {
+        Set<String> initialBootNodes = new HashSet<>();
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         List<String> peerDiscoveryIPList = rskSystemProperties.peerDiscoveryIPList();
         if (peerDiscoveryIPList != null) {
@@ -1627,15 +1628,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         if (rskSystemProperties.usePeersFromLastSession()) {
-            List<String> peerLastSession = rskSystemProperties.peerLastSession();
+            List<String> peerLastSession = knownPeersHandler.readPeers();
             logger.debug("Loading peers from previous session: {}",peerLastSession);
-            for(String peer: peerLastSession) {
-                if (!initialBootNodes.contains(peer)) {
-                    initialBootNodes.add(peer);
-                }
-            }
+            initialBootNodes.addAll(peerLastSession);
         }
-        return initialBootNodes;
+        return new ArrayList<>(initialBootNodes);
     }
 
     private BlockChainLoader getBlockChainLoader() {

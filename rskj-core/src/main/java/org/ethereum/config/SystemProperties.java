@@ -255,18 +255,6 @@ public abstract class SystemProperties {
         return list.stream().map(this::parsePeer).collect(Collectors.toList());
     }
 
-    public List<String> peerLastSession() {
-        Path lastConnectedPeersFile = getLastKnewPeersFilePath();
-        try {
-            if (Files.exists(lastConnectedPeersFile)) {
-                return Files.readAllLines(lastConnectedPeersFile);
-            }
-        } catch (IOException e) {
-            logger.error("Failed to read last connected peers file path {}. Error: {}", lastConnectedPeersFile.toAbsolutePath(), e.getMessage());
-        }
-        return Collections.emptyList();
-    }
-
     private Node parsePeer(ConfigObject configObject) {
         if (configObject.get("url") != null) {
             String url = configObject.toConfig().getString("url");

@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.*;
 import co.rsk.net.AsyncNodeBlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.discovery.KnownPeersHandler;
 import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -276,12 +277,13 @@ class RskContextTest {
 
     @Test
     void initialNodesAreLoadedWithoutDuplications(){
+        KnownPeersHandler knownPeersHandler = mock(KnownPeersHandler.class);
         List<String> peerDiscoveryIPList = Arrays.asList("1.1.1.1:1234","1.2.3.4:4444");
         doReturn(peerDiscoveryIPList).when(testProperties).peerDiscoveryIPList();
         List<String> peersFromLastSession = Arrays.asList("4.3.2.1:4444","1.1.1.1:1234");
-        doReturn(peersFromLastSession).when(testProperties).peerLastSession();
+        when(knownPeersHandler.readPeers()).thenReturn(peersFromLastSession);
         doReturn(true).when(testProperties).usePeersFromLastSession();
-        List<String> initialBootNodes = rskContext.getInitialBootNodes();
+        List<String> initialBootNodes = rskContext.getInitialBootNodes(knownPeersHandler);
         assertNotNull(initialBootNodes);
         assertEquals(3, initialBootNodes.size(), "Initial nodes should be 3");
         assertEquals(initialBootNodes.stream().distinct().count(), initialBootNodes.size(), "Initial nodes should not have duplicates");

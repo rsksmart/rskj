@@ -29,10 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -40,7 +36,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 3/16/2016.
@@ -263,23 +260,6 @@ class RskSystemPropertiesTest {
                         " }").withFallback(rawConfig));
 
         Assertions.assertThrows(RskConfigurationException.class, testSystemProperties::gasPriceMultiplier);
-    }
-
-    @Test
-    void testPeerLastSession() throws IOException {
-
-        File tempFile = File.createTempFile("peers", ".properties");
-        List<String> expectedPeers = Arrays.asList("peer1", "peer2", "peer3");
-        String data = String.join("\n", expectedPeers);
-        try (FileWriter writer = new FileWriter(tempFile, false)) {
-            writer.write(data);
-        }
-        TestSystemProperties spyConfig = spy(config);
-        when(spyConfig.getLastKnewPeersFilePath()).thenReturn(tempFile.toPath());
-
-        List<String> actualPeers = spyConfig.peerLastSession();
-
-        assertEquals(expectedPeers, actualPeers);
     }
 
     @Test

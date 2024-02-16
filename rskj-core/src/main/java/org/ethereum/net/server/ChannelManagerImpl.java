@@ -175,7 +175,6 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private void addToActives(Channel peer) {
-
         if (peer.isUsingNewProtocol() || peer.hasEthStatusSucceeded()) {
             syncPool.add(peer);
             synchronized (activePeersLock) {
