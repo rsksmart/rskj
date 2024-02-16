@@ -186,12 +186,13 @@ class BlockUtilsTest {
     @Test
     void sublistGasLimit_ShouldDivideGasLimitEquallyAmongAllSets() {
         long minSequentialSetGasLimit = Constants.regtest().getMinSequentialSetGasLimit();
-        long mockedBlockGasLimit =  10_000_000L;
+        long mockedBlockGasLimit =  9_000_000L;
         Block block = mock(Block.class);
         when(block.getGasLimit()).thenReturn(BigInteger.valueOf(mockedBlockGasLimit).toByteArray());
 
         long expectedLimit = mockedBlockGasLimit / (Constants.getTransactionExecutionThreads() + 1);
         assertEquals(expectedLimit, BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit));
+        assertEquals(expectedLimit, BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit));
     }
 
     @Test
@@ -201,7 +202,23 @@ class BlockUtilsTest {
         Block block = mock(Block.class);
         when(block.getGasLimit()).thenReturn(BigInteger.valueOf(mockedBlockGasLimit).toByteArray());
 
-        long expectedLimit = (mockedBlockGasLimit - minSequentialSetGasLimit) / (Constants.getTransactionExecutionThreads());
-        assertEquals(expectedLimit, BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit));
+        assertEquals(minSequentialSetGasLimit, BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit));
+
+        long expectedParallelLimit = (mockedBlockGasLimit - minSequentialSetGasLimit) / (Constants.getTransactionExecutionThreads());
+        assertEquals(expectedParallelLimit, BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit));
+    }
+
+    @Test
+    void sublistGasLimit_ShouldAssignExtraGasLimitToSequentialSet() {
+        long minSequentialSetGasLimit = Constants.regtest().getMinSequentialSetGasLimit();
+        long mockedBlockGasLimit =  10_000_010L;
+        Block block = mock(Block.class);
+        when(block.getGasLimit()).thenReturn(BigInteger.valueOf(mockedBlockGasLimit).toByteArray());
+
+        long expectedSequentialLimit = 3_333_338L;
+        assertEquals(expectedSequentialLimit, BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit));
+
+        long expectedParallelLimit = 3_333_336L;
+        assertEquals(expectedParallelLimit, BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit));
     }
 }

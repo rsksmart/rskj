@@ -123,7 +123,12 @@ public class BlockUtils {
         int transactionExecutionThreadCount = Constants.getTransactionExecutionThreads();
 
         if((transactionExecutionThreadCount + 1) * minSequentialSetGasLimit <= blockGasLimit) {
-            return blockGasLimit / (transactionExecutionThreadCount + 1);
+            long parallelTxSetGasLimit = blockGasLimit / (transactionExecutionThreadCount + 1);
+
+            if (forSequentialTxSet) {
+                return blockGasLimit - (transactionExecutionThreadCount * parallelTxSetGasLimit);
+            }
+            return parallelTxSetGasLimit;
         } else {
             if (blockGasLimit <= minSequentialSetGasLimit) {
                 if (forSequentialTxSet) {
@@ -132,10 +137,14 @@ public class BlockUtils {
                 return 0;
             }
 
+            long additionalGasLimit = (blockGasLimit - minSequentialSetGasLimit);
+            long parallelTxSetGasLimit = additionalGasLimit / (transactionExecutionThreadCount);
+
             if (forSequentialTxSet) {
-                return minSequentialSetGasLimit;
+                long extraGasLimit = additionalGasLimit - (parallelTxSetGasLimit * transactionExecutionThreadCount);
+                return minSequentialSetGasLimit + extraGasLimit;
             }
-            return (blockGasLimit - minSequentialSetGasLimit) / (transactionExecutionThreadCount);
+            return parallelTxSetGasLimit;
         }
     }
 }
