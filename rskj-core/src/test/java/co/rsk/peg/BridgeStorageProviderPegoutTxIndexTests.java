@@ -18,9 +18,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.stream.Stream;
 
 import static co.rsk.peg.BridgeStorageIndexKey.PEGOUT_TX_SIG_HASH;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP134;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -299,7 +301,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
 
         // Act
         provider.setPegoutTxSigHash(null);
-        provider.save();
+        provider.savePegoutTxSigHashes();
 
         // Assert
         verify(repository, never()).getStorageBytes(
@@ -332,7 +334,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
 
         // Act
         provider.setPegoutTxSigHash(sigHash);
-        provider.save();
+        provider.savePegoutTxSigHashes();
 
         // Assert
         if (isRskip379HardForkActive) {

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -452,6 +453,27 @@ class P2shErpFederationTest {
             value.minus(fee),
             signWithEmergencyMultisig
         ));
+    }
+
+    @Test
+    void getMemberByBtcPublicKey_passing_existing_btcPublicKey_should_return_found_member(){
+        BtcECKey existingMemberBtcPublicKey = standardKeys.get(0);
+        Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(existingMemberBtcPublicKey);
+        Assertions.assertTrue(foundMember.isPresent());
+        Assertions.assertEquals(existingMemberBtcPublicKey, foundMember.get().getBtcPublicKey());
+    }
+
+    @Test
+    void getMemberByBtcPublicKey_passing_non_existing_btcPublicKey_should_return_empty(){
+        BtcECKey noExistingBtcPublicKey = new BtcECKey();
+        Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(noExistingBtcPublicKey);
+        Assertions.assertFalse(foundMember.isPresent());
+    }
+
+    @Test
+    void getMemberByBtcPublicKey_passing_null_btcPublicKey_should_return_empty(){
+        Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(null);
+        Assertions.assertFalse(foundMember.isPresent());
     }
 
     private void validateP2shErpRedeemScript(

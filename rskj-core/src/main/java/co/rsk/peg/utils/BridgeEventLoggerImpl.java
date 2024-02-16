@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.Federation;
+import co.rsk.peg.FederationMember;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -75,10 +76,22 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
-        ECKey key = ECKey.fromPublicOnly(federatorPublicKey.getPubKey());
-        String federatorRskAddress = ByteUtil.toHexString(key.getAddress());
-        logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddress, federatorPublicKey);
+    public void logAddSignature(FederationMember federationMember, BtcTransaction btcTx, byte[] rskTxHash) {
+        ECKey federatorPublicKey = getFederatorPublicKey(federationMember);
+        String federatorRskAddress = ByteUtil.toHexString(federatorPublicKey.getAddress());
+        logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddress, federationMember.getBtcPublicKey());
+    }
+
+    private ECKey getFederatorPublicKey(FederationMember federationMember) {
+        if (!shouldUseRskPublicKey()) {
+            return ECKey.fromPublicOnly(federationMember.getBtcPublicKey().getPubKey());
+        }
+
+        return federationMember.getRskPublicKey();
+    }
+
+    private boolean shouldUseRskPublicKey() {
+        return activations.isActive(ConsensusRule.RSKIP415);
     }
 
     private void logAddSignatureInSolidityFormat(byte[] rskTxHash, String federatorRskAddress, BtcECKey federatorPublicKey) {

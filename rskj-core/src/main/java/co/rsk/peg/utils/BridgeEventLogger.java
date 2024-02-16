@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Federation;
+import co.rsk.peg.FederationMember;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -36,7 +37,7 @@ public interface BridgeEventLogger {
 
     void logUpdateCollections(Transaction rskTx);
 
-    void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash);
+    void logAddSignature(FederationMember federationMember, BtcTransaction btcTx, byte[] rskTxHash);
 
     void logReleaseBtc(BtcTransaction btcTx, byte[] rskTxHash);
 

@@ -14,7 +14,6 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.ScriptException;
 import co.rsk.bitcoinj.core.Utils;
-import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.config.BridgeConstants;
@@ -36,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -695,6 +695,27 @@ class LegacyErpFederationTest {
             true,
             false
         ));
+    }
+
+    @Test
+    void getMemberByBtcPublicKey_passing_existing_btcPublicKey_should_return_found_member(){
+        BtcECKey existingMemberBtcPublicKey = standardKeys.get(0);
+        Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(existingMemberBtcPublicKey);
+        Assertions.assertTrue(foundMember.isPresent());
+        Assertions.assertEquals(existingMemberBtcPublicKey, foundMember.get().getBtcPublicKey());
+    }
+
+    @Test
+    void getMemberByBtcPublicKey_passing_non_existing_btcPublicKey_should_return_empty(){
+        BtcECKey noExistingBtcPublicKey = new BtcECKey();
+        Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(noExistingBtcPublicKey);
+        Assertions.assertFalse(foundMember.isPresent());
+    }
+
+    @Test
+    void getMemberByBtcPublicKey_passing_null_btcPublicKey_should_return_empty(){
+        Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(null);
+        Assertions.assertFalse(foundMember.isPresent());
     }
 
     private void createErpFederation(BridgeConstants constants, boolean isRskip293Active) {
