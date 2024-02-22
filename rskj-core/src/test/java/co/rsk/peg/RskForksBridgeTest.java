@@ -252,7 +252,7 @@ class RskForksBridgeTest {
         long nonce = 0;
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
-        BigInteger gasLimit = BigInteger.valueOf(1000000);
+        BigInteger gasLimit = BigInteger.valueOf(500000);
         Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
                 Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS, Constants.REGTEST_CHAIN_ID, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value) });
@@ -378,7 +378,7 @@ class RskForksBridgeTest {
         long nonce = 0;
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
-        BigInteger gasLimit = BigInteger.valueOf(1000000);
+        BigInteger gasLimit = BigInteger.valueOf(500000);
         Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
                 Bridge.RECEIVE_HEADERS, Constants.REGTEST_CHAIN_ID, new Object[]{headerArray});
@@ -408,7 +408,6 @@ class RskForksBridgeTest {
 
     private Transaction buildReleaseTx() throws AddressFormatException {
         String btcAddressString = "mhoDGMzHHDq2ZD6cFrKV9USnMfpxEtLwGm";
-        Address btcAddress = Address.fromBase58(RegTestParams.get(), btcAddressString);
         long nonce = 2;
         long value = 1000000000000000000l;
         BigInteger gasPrice = BigInteger.valueOf(0);

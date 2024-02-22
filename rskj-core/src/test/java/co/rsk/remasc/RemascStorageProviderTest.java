@@ -444,7 +444,6 @@ class RemascStorageProviderTest {
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
 
         BlockExecutor blockExecutor = new BlockExecutor(
-                config.getActivationConfig(),
                 repositoryLocator,
                 new TransactionExecutorFactory(
                         config,
@@ -454,8 +453,8 @@ class RemascStorageProviderTest {
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                )
-        );
+                ),
+                config);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
