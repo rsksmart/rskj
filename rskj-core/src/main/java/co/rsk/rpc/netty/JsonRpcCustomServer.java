@@ -50,7 +50,8 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
         String method = Optional.ofNullable(node.get("method")).map(JsonNode::asText).orElse("");
 
         if(!methodNames.contains(method)) {
-            throw new JsonRpcMethodNotFoundError(method);
+            Object requestId = node.get("id");
+            throw new JsonRpcMethodNotFoundError(requestId);
         }
 
         String[] methodParts = method.split("_");

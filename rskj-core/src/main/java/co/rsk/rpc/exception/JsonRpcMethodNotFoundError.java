@@ -3,8 +3,12 @@ package co.rsk.rpc.exception;
 import co.rsk.jsonrpc.JsonRpcError;
 
 public class JsonRpcMethodNotFoundError extends JsonRpcThrowableError {
-    public JsonRpcMethodNotFoundError(String methodName) {
-        super("The method " + methodName + " does not exist/is not available");
+
+    private static final long serialVersionUID = 2919587893031838269L;
+    private static final String MSG = "method not found";
+
+    public JsonRpcMethodNotFoundError(Object requestId) {
+        super(MSG, requestId);
     }
 
     @Override

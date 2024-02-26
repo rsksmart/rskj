@@ -22,10 +22,20 @@ import co.rsk.jsonrpc.JsonRpcError;
 
 public abstract class JsonRpcThrowableError extends Error {
     private static final long serialVersionUID = 5255618001502614914L;
-
+    private final Object requestId;
     JsonRpcThrowableError(String msg) {
         super(msg);
+        this.requestId = null;
+    }
+
+    JsonRpcThrowableError(String msg, Object requestId) {
+        super(msg);
+        this.requestId = requestId;
     }
 
     public abstract JsonRpcError getErrorResponse();
+
+    public Object requestId() {
+        return requestId;
+    }
 }
