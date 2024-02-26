@@ -107,8 +107,6 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             int errorCode = ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
             responseContent = buildErrorContent(errorCode, unexpectedErrorMsg);
             responseCode = errorCode;
-        } finally {
-            ReflectionUtil.clearCache();
         }
 
         ctx.fireChannelRead(new Web3Result(

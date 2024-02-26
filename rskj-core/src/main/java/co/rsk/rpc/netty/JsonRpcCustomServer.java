@@ -19,6 +19,7 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.rpc.exception.JsonRpcMethodNotFoundError;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,16 +27,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonResponse;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class JsonRpcCustomServer extends JsonRpcBasicServer {
     private final List<ModuleDescription> modules;
+    private final Set<String> methodNames;
 
     public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules) {
         super(new ObjectMapper(), handler, remoteInterface);
         this.modules = new ArrayList<>(modules);
+        this.methodNames = extractMethodNames(remoteInterface);
     }
 
     @Override
@@ -45,6 +48,10 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
         }
 
         String method = Optional.ofNullable(node.get("method")).map(JsonNode::asText).orElse("");
+
+        if(!methodNames.contains(method)) {
+            throw new JsonRpcMethodNotFoundError(method);
+        }
 
         String[] methodParts = method.split("_");
         JsonResponse response;
@@ -81,5 +88,15 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
             return 0;
         }
         return moduleDescription.getTimeout(methodName);
+    }
+
+    private Set<String> extractMethodNames(Class<?> remoteInterface) {
+        if (remoteInterface == null) {
+            return Collections.emptySet();
+        }
+
+        return Arrays.stream(remoteInterface.getMethods())
+                .map(Method::getName)
+                .collect(Collectors.toSet());
     }
 }
