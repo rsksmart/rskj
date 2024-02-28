@@ -29,7 +29,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.googlecode.jsonrpc4j.*;
 import io.netty.buffer.*;
 import io.netty.channel.ChannelHandler;
@@ -45,13 +44,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.*;
-
 @ChannelHandler.Sharable
 public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBufHolder> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("jsonrpc");
-    public static final String VERSION = "2.0";
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
@@ -60,7 +56,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final int maxResponseSize;
 
     public JsonRpcWeb3ServerHandler(Web3 service, JsonRpcWeb3ServerProperties jsonRpcWeb3ServerProperties) {
-        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), jsonRpcWeb3ServerProperties.getRpcModules());
+        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), jsonRpcWeb3ServerProperties.getRpcModules(), mapper);
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new JsonRpcRequestValidatorInterceptor(jsonRpcWeb3ServerProperties.getMaxBatchRequestsSize()));
         jsonRpcServer.setInterceptorList(interceptors);
@@ -103,9 +99,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             LOGGER.error(e.getMessage(), e);
             JsonRpcError error = e.getErrorResponse();
             int errorCode = error.getCode();
-            Object id = e.requestId();
-            //TODO update all exceptions to return standard JSONRPC response error format.
-            responseContent = id == null ? buildErrorContent(errorCode, error.getMessage()): buildError(e.requestId(), errorCode, error.getMessage());
+            responseContent = buildErrorContent(errorCode, error.getMessage());
             responseCode = errorCode;
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";
@@ -135,20 +129,5 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         Object object = JacksonParserUtil.treeToValue(mapper, error, Object.class);
 
         return Unpooled.wrappedBuffer(mapper.writeValueAsBytes(object));
-    }
-
-    private ByteBuf buildError(Object id, int errorCode, String errorMessage) throws JsonProcessingException {
-        ObjectNode response = mapper.createObjectNode();
-        response.put(JSONRPC, VERSION);
-        if(id != null) {
-            response.set(ID, mapper.valueToTree(id));
-        }
-        ObjectNode error = mapper.createObjectNode();
-        error.put(ERROR_CODE, errorCode);
-        error.put(ERROR_MESSAGE, errorMessage);
-
-        response.set(ERROR, error);
-        return Unpooled.wrappedBuffer(mapper.writeValueAsBytes(response));
-
     }
 }
