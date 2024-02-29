@@ -209,6 +209,25 @@ class JsonRpcCustomServerTest {
         verify(handler, times(1)).test_second(anyString(), anyString());
     }
 
+    @Test
+    void sendingRequestWithNonDeclaredMethodShouldFail() throws Exception {
+        String jsonRequest = "    {\n" +
+                "      \"jsonrpc\": \"2.0\",\n" +
+                "      \"method\": \"invalid_method\",\n" +
+                "      \"params\": [],\n" +
+                "      \"id\": 1\n" +
+                "    }";
+
+        String expectedResponse = "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"method not found\"}}";
+        JsonNode request = objectMapper.readTree(jsonRequest);
+        Web3Test handler = mock(Web3Test.class);
+
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, modules, objectMapper);
+
+        JsonResponse actualResponse = jsonRpcCustomServer.handleJsonNodeRequest(request);
+        assertEquals(expectedResponse, actualResponse.getResponse().toString());
+    }
+
 
     public interface Web3Test {
         String test_first(String param1);
