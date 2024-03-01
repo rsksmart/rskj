@@ -28,7 +28,6 @@ class SnapBlocksResponseMessageTest {
     private final Block block4Test = new BlockGenerator().getBlock(1);
     private List<Block> blockList = Arrays.asList(new BlockGenerator().getBlock(1));
     private List<BlockDifficulty> blockDifficulties = Arrays.asList(indexedBlockStore.getTotalDifficultyForHash(block4Test.getHash().getBytes()));
-
     private SnapBlocksResponseMessage underTest = new SnapBlocksResponseMessage(blockList, blockDifficulties);
 
 
@@ -52,7 +51,7 @@ class SnapBlocksResponseMessageTest {
 
         //then
         assertThat(encodedMessage)
-                .isEqualTo(encodedMessage);
+                .isEqualTo(expectedEncodedMessage);
     }
 
     @Test
@@ -78,7 +77,7 @@ class SnapBlocksResponseMessageTest {
     }
 
     @Test
-    void givenAcceptIsCalled_messageVisitorIsAppliedFormessage() {
+    void givenAcceptIsCalled_messageVisitorIsAppliedForMessage() {
         //given
         Block block = new BlockGenerator().getBlock(1);
         SnapBlocksRequestMessage message = new SnapBlocksRequestMessage(block.getNumber());
