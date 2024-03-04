@@ -107,13 +107,12 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
     }
 
     private JsonResponse buildError(Object id, int errorCode, String errorMessage) {
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode response = mapper.createObjectNode();
+        ObjectNode response = objectMapper.createObjectNode();
         response.put(JSONRPC, VERSION);
         if(id != null) {
-            response.set(ID, mapper.valueToTree(id));
+            response.set(ID, objectMapper.valueToTree(id));
         }
-        ObjectNode error = mapper.createObjectNode();
+        ObjectNode error = objectMapper.createObjectNode();
         error.put(ERROR_CODE, errorCode);
         error.put(ERROR_MESSAGE, errorMessage);
 
