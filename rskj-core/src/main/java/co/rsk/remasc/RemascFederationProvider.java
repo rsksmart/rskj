@@ -18,8 +18,8 @@
 package co.rsk.remasc;
 
 import co.rsk.core.RskAddress;
-import co.rsk.peg.FederationMember;
 import co.rsk.peg.FederationSupport;
+import co.rsk.peg.federation.FederationMember;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;

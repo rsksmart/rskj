@@ -1,21 +1,21 @@
 package co.rsk.remasc;
 
+import static org.mockito.Mockito.*;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.*;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.FederationSupport;
+import co.rsk.peg.federation.FederationMember;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.util.HexUtils;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 14/11/2017.
