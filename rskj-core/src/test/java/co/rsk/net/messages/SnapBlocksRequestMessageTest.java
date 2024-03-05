@@ -7,14 +7,15 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 class SnapBlocksRequestMessageTest {
 
-    private Block block4Test = new BlockGenerator().getBlock(1);
-    private SnapBlocksRequestMessage underTest = new SnapBlocksRequestMessage(block4Test.getNumber());
+    private final Block block4Test = new BlockGenerator().getBlock(1);
+    private final SnapBlocksRequestMessage underTest = new SnapBlocksRequestMessage(block4Test.getNumber());
 
 
     @Test
@@ -34,8 +35,7 @@ class SnapBlocksRequestMessageTest {
         byte[] encodedMessage = underTest.getEncodedMessage();
 
         //then
-        assertThat(encodedMessage)
-                .isEqualTo(RLP.encodeList(RLP.encodeBigInteger(BigInteger.ONE)));
+        assertThat(encodedMessage, equalTo(RLP.encodeList(RLP.encodeBigInteger(BigInteger.ONE))));
     }
 
     @Test
@@ -46,8 +46,7 @@ class SnapBlocksRequestMessageTest {
         long blockNumber = underTest.getBlockNumber();
 
         //then
-        assertThat(blockNumber)
-                .isEqualTo(block4Test.getNumber());
+        assertThat(blockNumber, equalTo(block4Test.getNumber()));
     }
 
     @Test

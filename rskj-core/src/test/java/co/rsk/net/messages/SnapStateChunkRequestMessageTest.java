@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 public class SnapStateChunkRequestMessageTest {
@@ -23,7 +25,7 @@ public class SnapStateChunkRequestMessageTest {
         MessageType messageType = message.getMessageType();
 
         //then
-        assertThat(messageType).isEqualTo(MessageType.STATE_CHUNK_REQUEST_MESSAGE);
+        assertThat(messageType, equalTo(MessageType.STATE_CHUNK_REQUEST_MESSAGE));
     }
     @Test
     void givenParameters4Test_assureExpectedValues() {
@@ -37,9 +39,10 @@ public class SnapStateChunkRequestMessageTest {
         SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, block.getNumber(), from, chunkSize);
 
         //then
-        assertThat(message).extracting(SnapStateChunkRequestMessage::getId,
-                SnapStateChunkRequestMessage::getBlockNumber, SnapStateChunkRequestMessage::getFrom, SnapStateChunkRequestMessage::getChunkSize)
-                .containsExactly(id4Test, block.getNumber(), from, chunkSize);
+        assertEquals(id4Test, message.getId());
+        assertEquals(block.getNumber(),  message.getBlockNumber());
+        assertEquals(from, message.getFrom());
+        assertEquals(chunkSize, message.getChunkSize());
     }
 
 
@@ -61,8 +64,7 @@ public class SnapStateChunkRequestMessageTest {
         byte[] encodedMessage = message.getEncodedMessageWithoutId();
 
         //then
-        assertThat(encodedMessage)
-                .isEqualTo(expectedEncodedMessage);
+        assertThat(encodedMessage, equalTo(expectedEncodedMessage));
     }
 
     @Test
@@ -81,8 +83,7 @@ public class SnapStateChunkRequestMessageTest {
         byte[] encodedMessage = message.getEncodedMessage();
 
         //then
-        assertThat(encodedMessage)
-                .isEqualTo(expectedEncodedMessage);
+        assertThat(encodedMessage, equalTo(expectedEncodedMessage));
     }
 
     @Test

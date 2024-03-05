@@ -15,7 +15,8 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
@@ -49,8 +50,7 @@ class SnapBlocksResponseMessageTest {
         byte[] encodedMessage = underTest.getEncodedMessage();
 
         //then
-        assertThat(encodedMessage)
-                .isEqualTo(expectedEncodedMessage);
+        assertThat(encodedMessage, equalTo(expectedEncodedMessage));
     }
 
     @Test
@@ -60,8 +60,7 @@ class SnapBlocksResponseMessageTest {
         //when
         List<BlockDifficulty> difficultiesReturned = underTest.getDifficulties();
         //then
-        assertThat(difficultiesReturned)
-                .isEqualTo(blockDifficulties);
+        assertThat(difficultiesReturned, equalTo(blockDifficulties));
     }
 
     @Test
@@ -71,8 +70,7 @@ class SnapBlocksResponseMessageTest {
         //when
         List<Block> blocksReturned = underTest.getBlocks();
         //then
-        assertThat(blocksReturned)
-                .isEqualTo(blockList);
+        assertThat(blocksReturned, equalTo(blockList));
     }
 
     @Test

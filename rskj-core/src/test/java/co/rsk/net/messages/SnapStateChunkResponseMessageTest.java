@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 public class SnapStateChunkResponseMessageTest {
@@ -24,7 +26,7 @@ public class SnapStateChunkResponseMessageTest {
         MessageType messageType = message.getMessageType();
 
         //then
-        assertThat(messageType).isEqualTo(MessageType.STATE_CHUNK_RESPONSE_MESSAGE);
+        assertThat(messageType, equalTo(MessageType.STATE_CHUNK_RESPONSE_MESSAGE));
     }
 
     @Test
@@ -41,13 +43,12 @@ public class SnapStateChunkResponseMessageTest {
         SnapStateChunkResponseMessage message = new SnapStateChunkResponseMessage(id4Test, trieValueBytes, block.getNumber(), from, to, complete);
 
         //then
-        assertThat(message).extracting(SnapStateChunkResponseMessage::getId,
-                        SnapStateChunkResponseMessage::getChunkOfTrieKeyValue,
-                        SnapStateChunkResponseMessage::getBlockNumber,
-                        SnapStateChunkResponseMessage::getFrom,
-                        SnapStateChunkResponseMessage::getTo,
-                        SnapStateChunkResponseMessage::isComplete)
-                .containsExactly(id4Test, trieValueBytes, block.getNumber(), from, to, complete);
+        assertEquals(id4Test, message.getId());
+        assertEquals(trieValueBytes, message.getChunkOfTrieKeyValue());
+        assertEquals(block.getNumber(),message.getBlockNumber());
+        assertEquals(from,message.getFrom());
+        assertEquals(to,message.getTo());
+        assertEquals(complete,message.isComplete());
     }
 
 
@@ -74,8 +75,7 @@ public class SnapStateChunkResponseMessageTest {
         byte[] encodedMessage = message.getEncodedMessageWithoutId();
 
         //then
-        assertThat(encodedMessage)
-                .isEqualTo(expectedEncodedMessage);
+        assertThat(encodedMessage, equalTo(expectedEncodedMessage));
     }
 
     @Test
@@ -96,8 +96,7 @@ public class SnapStateChunkResponseMessageTest {
         byte[] encodedMessage = message.getEncodedMessage();
 
         //then
-        assertThat(encodedMessage)
-                .isEqualTo(expectedEncodedMessage);
+        assertThat(encodedMessage, equalTo(expectedEncodedMessage));
     }
 
     @Test

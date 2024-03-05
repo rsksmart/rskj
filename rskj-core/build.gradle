@@ -158,7 +158,6 @@ ext {
             commonsCodecVer: '1.15',
             jacksonVer     : '2.13.3',
             okhttpWsVer    : '2.7.5',
-            assertJVer     : '3.25.3',
 
             rskLllVer      : '0.0.2',
     ]
@@ -179,7 +178,6 @@ ext {
             commonsCodecLib         : "commons-codec:commons-codec:${testLibVersions.commonsCodecVer}",
             jacksonLib              : "com.fasterxml.jackson.core:jackson-databind:${testLibVersions.jacksonVer}",
             okhttpWsLib             : "com.squareup.okhttp:okhttp-ws:${testLibVersions.okhttpWsVer}",
-            assertJLib              : "org.assertj:assertj-core:${testLibVersions.assertJVer}",
 
             rskLllLib               : "co.rsk:lll-compiler:${testLibVersions.rskLllVer}",
     ]
@@ -233,7 +231,6 @@ dependencies {
     testImplementation "${testLibs.commonsIoLib}"
     testImplementation "${testLibs.commonsCodecLib}"
     testImplementation "${testLibs.okhttpWsLib}"
-    testImplementation "${testLibs.assertJLib}"
     testImplementation "${testLibs.rskLllLib}"
 
     integrationTestImplementation "${testLibs.junitLib}"

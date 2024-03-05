@@ -3,7 +3,8 @@ package co.rsk.net.messages;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.*;
 
 class SnapStatusRequestMessageTest {
@@ -16,7 +17,7 @@ class SnapStatusRequestMessageTest {
         MessageType messageType = message.getMessageType();
 
         //then
-        assertThat(messageType).isEqualTo(MessageType.SNAP_STATUS_REQUEST_MESSAGE);
+        assertThat(messageType, equalTo(MessageType.SNAP_STATUS_REQUEST_MESSAGE));
     }
 
     @Test
@@ -28,8 +29,7 @@ class SnapStatusRequestMessageTest {
         byte[] encodedMessage = message.getEncodedMessage();
 
         //then
-        assertThat(encodedMessage)
-                .isEqualTo(expectedEncodedMessage);
+        assertThat(encodedMessage, equalTo(expectedEncodedMessage));
     }
 
     @Test
