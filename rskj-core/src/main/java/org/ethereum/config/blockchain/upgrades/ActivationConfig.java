@@ -36,8 +36,8 @@ public class ActivationConfig {
             List<ConsensusRule> missing = new ArrayList<>(Arrays.asList(ConsensusRule.values()));
             missing.removeAll(activationHeights.keySet());
             throw new IllegalArgumentException(String.format(
-                    "The configuration must contain all consensus rule values but is missing [%s]",
-                    missing.stream().map(ConsensusRule::getConfigKey).collect(Collectors.joining(", "))
+                "The configuration must contain all consensus rule values but is missing [%s]",
+                missing.stream().map(ConsensusRule::getConfigKey).collect(Collectors.joining(", "))
             ));
         }
 

@@ -421,7 +421,7 @@ public class BridgeUtils {
      * @return
      */
     public static boolean isContractTx(Transaction rskTx) {
-        // TODO: this should be refactored to provide a more robust way of checking the transaction origin
+        // Calls between contracts are done through internal transactions
         return rskTx.getClass() == org.ethereum.vm.program.InternalTransaction.class;
     }
 

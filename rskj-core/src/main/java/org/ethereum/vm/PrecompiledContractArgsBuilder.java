@@ -25,7 +25,9 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 
+import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Objects;
 
 public class PrecompiledContractArgsBuilder {
     private Transaction transaction;
@@ -35,8 +37,11 @@ public class PrecompiledContractArgsBuilder {
     private ReceiptStore receiptStore;
     private List<LogInfo> logs;
     private ProgramInvoke programInvoke;
+    private MessageCall.MsgType msgType;
 
-    private PrecompiledContractArgsBuilder() {}
+    private PrecompiledContractArgsBuilder() {
+        msgType = MessageCall.MsgType.CALL;
+    }
 
     public static PrecompiledContractArgsBuilder builder() {
         return new PrecompiledContractArgsBuilder();
@@ -77,6 +82,11 @@ public class PrecompiledContractArgsBuilder {
         return this;
     }
 
+    public PrecompiledContractArgsBuilder msgType(@Nonnull MessageCall.MsgType msgType) {
+        this.msgType = Objects.requireNonNull(msgType);
+        return this;
+    }
+
     public PrecompiledContractArgs build() {
         PrecompiledContractArgs args = new PrecompiledContractArgs();
         args.setTransaction(this.transaction);
@@ -86,6 +96,7 @@ public class PrecompiledContractArgsBuilder {
         args.setReceiptStore(this.receiptStore);
         args.setLogs(this.logs);
         args.setProgramInvoke(this.programInvoke);
+        args.setMsgType(this.msgType);
 
         return args;
     }

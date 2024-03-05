@@ -1,0 +1,43 @@
+account_new acc1 10000000
+
+transaction_build tx01
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 5f600060006000600073000000000000000000000000000000000100000663005b8d80f1
+    gas 1200000
+    build
+
+transaction_build tx02
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 5f600060006000600073000000000000000000000000000000000100000663005b8d80f4
+    gas 1200000
+    nonce 1
+    build
+
+transaction_build tx03
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 5f600060006000600073000000000000000000000000000000000100000663005b8d80f2
+    gas 1200000
+    nonce 2
+    build
+
+transaction_build tx04
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 5f600060006000600073000000000000000000000000000000000100000663005b8d80fa
+    gas 1200000
+    nonce 3
+    build
+
+block_build b01
+    parent g00
+    transactions tx01 tx02 tx03 tx04
+    build
+
+block_connect b01
