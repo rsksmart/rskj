@@ -105,6 +105,7 @@ import org.ethereum.db.ReceiptStoreImplV2;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.GasPriceCalculator;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.NodeManager;
@@ -558,7 +559,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         double gasPriceMultiplier = getRskSystemProperties().gasPriceMultiplier();
 
         if (this.gasPriceTracker == null) {
-            this.gasPriceTracker = GasPriceTracker.create(getBlockStore(), gasPriceMultiplier);
+            GasPriceCalculator.GasCalculatorType calculatorType = getRskSystemProperties().getGasCalculatorType();
+            this.gasPriceTracker = GasPriceTracker.create(getBlockStore(), gasPriceMultiplier, calculatorType);
         }
         return this.gasPriceTracker;
     }
