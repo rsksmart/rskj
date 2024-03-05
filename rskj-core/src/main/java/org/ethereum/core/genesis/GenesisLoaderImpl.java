@@ -44,6 +44,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,6 +56,7 @@ import java.util.Map;
  * 4. Registers the genesis state root in the state root handler
  */
 public class GenesisLoaderImpl implements GenesisLoader {
+
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private static final Logger logger = LoggerFactory.getLogger(GenesisLoaderImpl.class);
@@ -81,7 +84,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
                 activationConfig,
                 stateRootHandler,
                 trieStore,
-                GenesisLoaderImpl.class.getResourceAsStream("/genesis/" + genesisFile),
+                loadGenesisFile(genesisFile),
                 initialNonce,
                 isRsk,
                 useRskip92Encoding,
@@ -230,6 +233,21 @@ public class GenesisLoaderImpl implements GenesisLoader {
         }
     }
 
+    static InputStream loadGenesisFile(String fileName) {
+        InputStream inputStream = GenesisLoaderImpl.class.getResourceAsStream("/genesis/" + fileName);
+        if (inputStream != null) {
+            return inputStream;
+        }
+
+        try {
+            return Files.newInputStream(Paths.get(fileName));
+        } catch (Exception e) {
+            logger.error("Cannot read genesis json file");
+
+            throw new GenesisLoaderException("Cannot open genesis block configuration file", e);
+        }
+    }
+
     public static void loadGenesisInitalState(Repository repository, Genesis genesis) {
         // first we need to create the accounts, which creates also the associated ContractDetails
         for (RskAddress accounts : genesis.getAccounts().keySet()) {
@@ -259,7 +277,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
         } catch (Exception e) {
             logger.error("Cannot read genesis json file");
 
-            throw new RuntimeException("Genesis block configuration is corrupted or not found ./resources/genesis/...", e);
+            throw new GenesisLoaderException("Genesis block configuration is corrupted or not found", e);
         } finally {
             closeStream(inputStream);
         }
