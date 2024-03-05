@@ -21,6 +21,7 @@ package co.rsk.rpc;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.util.HexUtils;
+import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -30,6 +31,7 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import java.util.List;
 import java.util.Optional;
 
+import static co.rsk.crypto.Keccak256.HASH_LEN;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -70,14 +72,22 @@ public class Web3InformationRetriever {
      */
     public Optional<Block> getBlock(String identifier) {
         Block block;
-        if (PENDING.equals(identifier)) {
-            block = executionBlockRetriever.retrieveExecutionBlock(identifier).getBlock();
-        } else if (LATEST.equals(identifier)) {
-            block = blockchain.getBestBlock();
-        } else if (EARLIEST.equals(identifier)) {
-            block = blockchain.getBlockByNumber(0);
-        } else {
-            block = this.blockchain.getBlockByNumber(getBlockNumber(identifier));
+
+        switch (identifier) {
+            case PENDING:
+                block = executionBlockRetriever.retrieveExecutionBlock(identifier).getBlock();
+                break;
+            case LATEST:
+                block = blockchain.getBestBlock();
+                break;
+            case EARLIEST:
+                block = blockchain.getBlockByNumber(0);
+                break;
+            default:
+                byte[] hash = getBlockHash(identifier);
+                block = hash.length == HASH_LEN ?
+                        blockchain.getBlockByHash(hash)
+                        : blockchain.getBlockByNumber(getBlockNumber(identifier));
         }
 
         return Optional.ofNullable(block);
@@ -133,5 +143,15 @@ public class Web3InformationRetriever {
             throw invalidParamError(String.format("invalid blocknumber %s", identifier));
         }
         return blockNumber;
+    }
+
+    private byte[] getBlockHash(String identifier) {
+        byte[] blockHash;
+        try {
+            blockHash = HexUtils.stringHexToByteArray(identifier);
+        } catch (DecoderException e) {
+            throw invalidParamError(String.format("invalid blockhash %s", identifier));
+        }
+        return blockHash;
     }
 }

@@ -52,6 +52,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import co.rsk.peg.federation.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
@@ -90,15 +92,21 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void first_output_pay_fees() {
-        Federation federation = new StandardMultisigFederation(
-            FederationMember.getFederationMembersFromKeys(Arrays.asList(
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
+            Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
-                new BtcECKey())
-            ),
+                new BtcECKey()
+            )
+        );
+        FederationArgs federationArgs = new FederationArgs(
+            members,
             Instant.now(),
             0,
             networkParameters
+        );
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
 
         List<UTXO> utxos = Arrays.asList(
@@ -157,26 +165,26 @@ class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    void build_pegout_tx_from_erp_federation() {
+    void build_pegout_tx_from_non_standard_erp_federation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
         // Use mainnet constants to test a real situation
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
-        Federation erpFederation = new LegacyErpFederation(
-            FederationMember.getFederationMembersFromKeys(Arrays.asList(
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
+            Arrays.asList(
                 new BtcECKey(),
                 new BtcECKey(),
-                new BtcECKey())
-            ),
-            Instant.now(),
-            0,
-            bridgeConstants.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            activations
+                new BtcECKey()
+            )
         );
+        FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 0, bridgeConstants.getBtcParams());
+
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs,
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(), activations);
 
         List<UTXO> utxos = Arrays.asList(
             new UTXO(
@@ -185,7 +193,7 @@ class ReleaseTransactionBuilderTest {
                 Coin.COIN,
                 0,
                 false,
-                erpFederation.getP2SHScript()
+                nonStandardErpFederation.getP2SHScript()
             ),
             new UTXO(
                 Sha256Hash.of(new byte[]{1}),
@@ -193,13 +201,13 @@ class ReleaseTransactionBuilderTest {
                 Coin.COIN,
                 0,
                 false,
-                erpFederation.getP2SHScript()
+                nonStandardErpFederation.getP2SHScript()
             )
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(bridgeConstants.getBtcParams()),
-            erpFederation,
+            nonStandardErpFederation,
             utxos,
             false,
             mock(BridgeStorageProvider.class)
@@ -208,7 +216,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             bridgeConstants.getBtcParams(),
             thisWallet,
-            erpFederation.address,
+            nonStandardErpFederation.getAddress(),
             Coin.SATOSHI.multiply(1000),
             activations
         );

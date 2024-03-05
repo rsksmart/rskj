@@ -16,6 +16,11 @@ import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationArgs;
+import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationMember.KeyType;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.test.builders.BridgeBuilder;
 import java.io.IOException;
@@ -270,13 +275,15 @@ class BridgeTest {
     @Test
     void registerBtcTransaction_beforeRskip199_rejectsExternalCalls() throws VMException, IOException, BlockStoreException {
         ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
-        Federation activeFederation = new StandardMultisigFederation(
+        FederationArgs activeFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            btcParams
         );
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFederationArgs);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);
@@ -313,18 +320,19 @@ class BridgeTest {
     @Test
     void registerBtcTransaction_beforeRskip199_acceptsCallFromFederationMember() throws VMException, IOException, BlockStoreException {
         ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcECKey fed1Key = new BtcECKey();
         RskAddress fed1Address = new RskAddress(ECKey.fromPublicOnly(fed1Key.getPubKey()).getAddress());
         List<BtcECKey> federationKeys = Arrays.asList(fed1Key, new BtcECKey(), new BtcECKey());
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation activeFederation = new StandardMultisigFederation(
-            FederationTestUtils.getFederationMembersWithKeys(federationKeys),
+        FederationArgs activeFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithKeys(federationKeys),
             Instant.ofEpochMilli(1000),
             0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            btcParams
         );
+        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFederationArgs);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);
@@ -1679,7 +1687,7 @@ class BridgeTest {
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
         int federatorIndex = 1;
-        FederationMember.KeyType keyType = FederationMember.KeyType.BTC;
+        KeyType keyType = KeyType.BTC;
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)

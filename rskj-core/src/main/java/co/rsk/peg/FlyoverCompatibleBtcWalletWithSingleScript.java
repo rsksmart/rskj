@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Context;
+import co.rsk.peg.federation.Federation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.util.List;
 import java.util.Optional;

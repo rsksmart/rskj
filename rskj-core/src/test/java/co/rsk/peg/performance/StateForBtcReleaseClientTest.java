@@ -26,7 +26,7 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.Federation;
+import co.rsk.peg.federation.Federation;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Repository;

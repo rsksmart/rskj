@@ -151,6 +151,21 @@ class GasPriceTrackerTest {
     }
 
     @Test
+    void getGasPrice_PriceWindowFilled_BestBlockReceivedWithGreaterPrice_GasPriceMultiplierOverWritten_ReturnsBestBlockAdjustedPriceWithNewBuffer() {
+        GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore, 1.05, GasPriceCalculator.GasCalculatorType.PLAIN_PERCENTILE);
+
+        Block bestBlock = makeBlock(Coin.valueOf(50_000_000_000L), 0, i -> null);
+        Block block = makeBlock(Coin.valueOf(30_000_000_000L), TOTAL_SLOTS, i -> makeTx(Coin.valueOf(40_000_000_000L)));
+
+        gasPriceTracker.onBestBlock(bestBlock, Collections.emptyList());
+        gasPriceTracker.onBlock(block, Collections.emptyList());
+
+        Coin actualResult = gasPriceTracker.getGasPrice();
+
+        assertEquals(Coin.valueOf(52_500_000_000L), actualResult);
+    }
+
+    @Test
     void isFeeMarketWorking_falseWhenNotEnoughBlocks() {
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
 
@@ -192,6 +207,20 @@ class GasPriceTrackerTest {
         }
 
         assertTrue(gasPriceTracker.isFeeMarketWorking());
+    }
+
+    @Test
+    void gasTrackerIsCreatedWithTheCorrectType() {
+        GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
+        assertEquals(GasPriceCalculator.GasCalculatorType.PLAIN_PERCENTILE, gasPriceTracker.getGasCalculatorType(), "Plain pecentile is the default one");
+
+        assertEquals(GasPriceCalculator.GasCalculatorType.PLAIN_PERCENTILE,
+                GasPriceTracker.create(blockStore, GasPriceCalculator.GasCalculatorType.PLAIN_PERCENTILE).getGasCalculatorType(),
+                "Plain percentile type is expected when passed as parameter");
+
+        assertEquals(GasPriceCalculator.GasCalculatorType.WEIGHTED_PERCENTILE,
+                GasPriceTracker.create(blockStore, GasPriceCalculator.GasCalculatorType.WEIGHTED_PERCENTILE).getGasCalculatorType(),
+                "Weighted percentile type is expected when passed as parameter");
     }
 
     private static Block makeBlock(Coin mgp, int txCount, Function<Integer, Transaction> txMaker) {

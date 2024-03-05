@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
@@ -45,19 +45,31 @@ public abstract class Federation {
     protected final NetworkParameters btcParams;
 
     protected Script redeemScript;
+    protected int formatVersion;
     protected Script p2shScript;
     protected Address address;
 
-    protected Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber, NetworkParameters btcParams) {
+    protected Federation(
+        FederationArgs federationArgs,
+        int formatVersion
+    ) {
         // Sorting members ensures same order of federation members for same members
         // Immutability provides protection against unwanted modification, thus making the Federation instance
         // effectively immutable
-        this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
-        this.creationTime = creationTime.truncatedTo(ChronoUnit.MILLIS);
-        this.creationBlockNumber = creationBlockNumber;
-        this.btcParams = btcParams;
+        this.members = Collections.unmodifiableList(federationArgs.getMembers().stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
+        this.creationTime = federationArgs.getCreationTime().truncatedTo(ChronoUnit.MILLIS);
+        this.creationBlockNumber = federationArgs.getCreationBlockNumber();
+        this.btcParams = federationArgs.getBtcParams();
+        this.formatVersion = formatVersion;
     }
 
+    public int getFormatVersion() {
+        return formatVersion;
+    }
+
+    public FederationArgs getArgs() {
+        return new FederationArgs(members, creationTime, creationBlockNumber, btcParams);
+    }
     public List<FederationMember> getMembers() {
         // Safe to return members since
         // both list and instances are immutable

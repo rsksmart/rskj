@@ -16,14 +16,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-
-import java.time.Instant;
-import java.util.List;
+import co.rsk.peg.bitcoin.ScriptValidations;
 
 /**
  * Immutable representation of an RSK Federation in the context of
@@ -33,13 +30,11 @@ import java.util.List;
 
 public class StandardMultisigFederation extends Federation {
 
-    public StandardMultisigFederation(
-        List<FederationMember> members,
-        Instant creationTime,
-        long creationBlockNumber,
-        NetworkParameters btcParams) {
+    protected StandardMultisigFederation(
+        FederationArgs federationArgs,
+        int formatVersion) {
 
-        super(members, creationTime, creationBlockNumber, btcParams);
+        super(federationArgs, formatVersion);
 
         validateRedeemScriptSize();
     }
@@ -55,6 +50,6 @@ public class StandardMultisigFederation extends Federation {
 
     private void validateRedeemScriptSize() {
         Script redeemScript = this.getRedeemScript();
-        FederationUtils.validateScriptSize(redeemScript);
+        ScriptValidations.validateScriptSize(redeemScript);
     }
 }

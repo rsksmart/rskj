@@ -22,8 +22,9 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.FederationMember;
-import co.rsk.peg.StandardMultisigFederation;
+import co.rsk.peg.federation.FederationArgs;
+import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationFactory;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -65,12 +66,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // Currently set to: Monday, October 8, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1538967600l);
 
-        genesisFederation = new StandardMultisigFederation(
-            federationMembers,
-            genesisFederationAddressCreatedAt,
-            1L,
-            getBtcParams()
-        );
+        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, getBtcParams());
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         btc2RskMinimumAcceptableConfirmations = 10;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;

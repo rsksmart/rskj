@@ -384,6 +384,34 @@ class Web3ImplTest {
     }
 
     @Test
+        //[ "0x<address>",  "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" -> return storage at given address in genesis block
+    void getStorageAtAccountAndBlockHashWithSingleIdentifier() {
+        //given
+        final ChainParams chain = chainWithAccount10kBalance(false);
+        // when
+        String result = chain.web3.eth_getStorageAt(
+                new HexAddressParam(chain.accountAddress),
+                new HexNumberParam("0x0"),
+                new BlockRefParam( "0x" + chain.block.getPrintableHash()));
+        // then
+        assertEquals(NON_EXISTING_KEY_RESPONSE, result );
+    }
+
+    @Test
+        //[ "0x<address>",  "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" -> return storage at given address in genesis block
+    void getStorageAtAccountAndBlockHashWithSingleIdentifier_whenItsAInvalidHash() {
+        //given
+        String invalidBlockIdentifier = "0x00011231234123";
+        final ChainParams chain = chainWithAccount10kBalance(false);
+        //when-then
+        Exception ex = assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getStorageAt(
+                new HexAddressParam(chain.accountAddress),
+                new HexNumberParam("0x0"),
+                new BlockRefParam( invalidBlockIdentifier)));
+        assertEquals("Block " + invalidBlockIdentifier + " not found", ex.getMessage());
+    }
+
+    @Test
         //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
     void getStorageAtAccountAndNonExistentBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(false);
@@ -810,7 +838,7 @@ class Web3ImplTest {
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
         Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).difficulty(3l).transactions(txs).build();
+                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).difficulty(3L).transactions(txs).build();
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
         Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
                 world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis)
@@ -1018,7 +1046,7 @@ class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = createCanonicalBlock(world, txs);
+        createCanonicalBlock(world, txs);
 
         String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
@@ -3108,7 +3136,7 @@ class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = createCanonicalBlock(world, txs);
+        createCanonicalBlock(world, txs);
 
         String hashString = tx.getHash().toHexString();
         TxHashParam txHashParam = new TxHashParam(hashString);

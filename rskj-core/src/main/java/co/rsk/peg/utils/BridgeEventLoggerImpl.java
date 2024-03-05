@@ -22,8 +22,8 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;
-import co.rsk.peg.Federation;
-import co.rsk.peg.FederationMember;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -51,12 +51,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     private static final byte[] BRIDGE_CONTRACT_ADDRESS = PrecompiledContracts.BRIDGE_ADDR.getBytes();
 
     private final BridgeConstants bridgeConstants;
-
     private final SignatureCache signatureCache;
-
-    private List<LogInfo> logs;
-
-    private ActivationConfig.ForBlock activations;
+    private final List<LogInfo> logs;
+    private final ActivationConfig.ForBlock activations;
 
     public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs, SignatureCache signatureCache) {
         this.activations = activations;

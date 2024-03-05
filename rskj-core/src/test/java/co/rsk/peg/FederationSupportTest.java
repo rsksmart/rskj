@@ -23,6 +23,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.federation.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -37,7 +38,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -167,12 +167,14 @@ class FederationSupportTest {
         ECKey rskKey1 = new ECKey();
         ECKey mstKey1 = new ECKey();
 
-        Federation theFederation = new StandardMultisigFederation(
-            Arrays.asList(
-                new FederationMember(btcKey0, rskKey0, mstKey0),
-                new FederationMember(btcKey1, rskKey1, mstKey1)
-            ), Instant.ofEpochMilli(123), 456,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        List<FederationMember> members = Arrays.asList(
+            new FederationMember(btcKey0, rskKey0, mstKey0),
+            new FederationMember(btcKey1, rskKey1, mstKey1)
+        );
+        FederationArgs federationArgs = new FederationArgs(members, Instant.ofEpochMilli(123), 456,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Federation theFederation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
         when(provider.getNewFederation()).thenReturn(theFederation);
 
@@ -242,10 +244,14 @@ class FederationSupportTest {
             true
         );
         List<FederationMember> members = FederationTestUtils.getFederationMembersWithBtcKeys(keys);
+        FederationArgs federationArgs = new FederationArgs(members,
+            Instant.ofEpochMilli(123),
+            creationBlockNumber,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
 
-        return new StandardMultisigFederation(
-            members, Instant.ofEpochMilli(123),
-            creationBlockNumber, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        return FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
         );
     }
 }

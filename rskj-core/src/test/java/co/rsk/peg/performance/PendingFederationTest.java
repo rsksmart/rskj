@@ -21,7 +21,7 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.PendingFederation;
+import co.rsk.peg.federation.PendingFederation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;

@@ -28,6 +28,8 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
