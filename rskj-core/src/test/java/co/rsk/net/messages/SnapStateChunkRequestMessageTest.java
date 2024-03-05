@@ -1,16 +1,13 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.util.RLP;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 public class SnapStateChunkRequestMessageTest {
@@ -92,7 +89,6 @@ public class SnapStateChunkRequestMessageTest {
     void givenAcceptIsCalled_messageVisitorIsAppliedForMessage() {
         //given
         long someId = 42;
-        byte[] someHash = TestUtils.generateBytes("msg",32);
         SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(someId, 0L, 0L, 0L);
         MessageVisitor visitor = mock(MessageVisitor.class);
 
