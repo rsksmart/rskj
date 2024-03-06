@@ -53,31 +53,40 @@ class RemascRskAddressActivationTest {
         final RemascConfig remascConfig = spy(new RemascConfigFactory(RemascContract.REMASC_CONFIG)
                 .createRemascConfig("regtest"));
 
-        final Remasc remasc = new Remasc(Constants.regtest(), activationConfig, repositoryMock,
-                blockStoreMock, remascConfig, txMock, PrecompiledContracts.REMASC_ADDR, blockMock, logs);
-
         when(remascConfig.getRskLabsAddress()).thenReturn(rskLabsAddress);
         when(remascConfig.getRskLabsAddressRskip218()).thenReturn(rskLabsAddressRskip218);
 
-        when(activationConfig.isActive(ConsensusRule.RSKIP218, 1)).thenReturn(false);
-        when(activationConfig.isActive(ConsensusRule.RSKIP218, 2)).thenReturn(true);
+        ActivationConfig.ForBlock activationsBeforeRSKIP218 = mock(ActivationConfig.ForBlock.class);
+        when(activationsBeforeRSKIP218.isActive(ConsensusRule.RSKIP218)).thenReturn(false);
+
+        ActivationConfig.ForBlock activationsAfterRSKIP218 = mock(ActivationConfig.ForBlock.class);
+        when(activationsAfterRSKIP218.isActive(ConsensusRule.RSKIP218)).thenReturn(true);
+
+        when(activationConfig.forBlock(1)).thenReturn(activationsBeforeRSKIP218);
+        when(activationConfig.forBlock(2)).thenReturn(activationsAfterRSKIP218);
 
         when(blockMock.getNumber()).thenReturn(1L);
 
+        Remasc remasc = new Remasc(Constants.regtest(), activationConfig, repositoryMock,
+            blockStoreMock, remascConfig, txMock, PrecompiledContracts.REMASC_ADDR, blockMock, logs);
+
         RskAddress actualAddress = remasc.getRskLabsAddress();
 
-        Assertions.assertEquals(rskLabsAddress, actualAddress);
         Assertions.assertEquals(1L, blockMock.getNumber());
+        Assertions.assertEquals(rskLabsAddress, actualAddress);
+
         Assertions.assertFalse(activationConfig.isActive(ConsensusRule.RSKIP218, blockMock.getNumber()));
         verify(remascConfig).getRskLabsAddress();
 
         when(blockMock.getNumber()).thenReturn(2L);
 
+        remasc = new Remasc(Constants.regtest(), activationConfig, repositoryMock,
+            blockStoreMock, remascConfig, txMock, PrecompiledContracts.REMASC_ADDR, blockMock, logs);
+
         actualAddress = remasc.getRskLabsAddress();
 
         Assertions.assertEquals(rskLabsAddressRskip218, actualAddress);
         Assertions.assertEquals(2L, blockMock.getNumber());
-        Assertions.assertTrue(activationConfig.isActive(ConsensusRule.RSKIP218, blockMock.getNumber()));
         verify(remascConfig).getRskLabsAddressRskip218();
     }
 }
