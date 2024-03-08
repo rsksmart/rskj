@@ -30,37 +30,43 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-public class SnapStateChunkRequestMessageTest {
+public class SnapStateChunkResponseMessageTest {
 
     @Test
     void getMessageType_returnCorrectMessageType() {
         //given
         Block block = new BlockGenerator().getBlock(1);
         long id4Test = 42L;
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, block.getNumber(), 0L, 0L);
+        String trieValue = "any random data";
+        SnapStateChunkResponseMessage message = new SnapStateChunkResponseMessage(id4Test, trieValue.getBytes(), block.getNumber(), 0L, 0L, true);
 
         //when
         MessageType messageType = message.getMessageType();
 
         //then
-        assertThat(messageType, equalTo(MessageType.STATE_CHUNK_REQUEST_MESSAGE));
+        assertThat(messageType, equalTo(MessageType.STATE_CHUNK_RESPONSE_MESSAGE));
     }
+
     @Test
     void givenParameters4Test_assureExpectedValues() {
         //given
         Block block = new BlockGenerator().getBlock(1);
         long id4Test = 42L;
+        byte[] trieValueBytes = "any random data".getBytes();
         long from = 5L;
-        long chunkSize = 10L;
+        long to = 20L;
+        boolean complete = true;
 
         //when
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, block.getNumber(), from, chunkSize);
+        SnapStateChunkResponseMessage message = new SnapStateChunkResponseMessage(id4Test, trieValueBytes, block.getNumber(), from, to, complete);
 
         //then
         assertEquals(id4Test, message.getId());
-        assertEquals(block.getNumber(),  message.getBlockNumber());
-        assertEquals(from, message.getFrom());
-        assertEquals(chunkSize, message.getChunkSize());
+        assertEquals(trieValueBytes, message.getChunkOfTrieKeyValue());
+        assertEquals(block.getNumber(),message.getBlockNumber());
+        assertEquals(from,message.getFrom());
+        assertEquals(to,message.getTo());
+        assertEquals(complete,message.isComplete());
     }
 
 
@@ -69,14 +75,19 @@ public class SnapStateChunkRequestMessageTest {
         //given
         long blockNumber = 1L;
         long id4Test = 42L;
-        long from = 1L;
-        long chunkSize = 20L;
+        byte[] trieValueBytes = "any random data".getBytes();
+        long from = 5L;
+        long to = 20L;
+        boolean complete = true;
+
         byte[] expectedEncodedMessage = RLP.encodeList(
+                trieValueBytes,
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
                 RLP.encodeBigInteger(BigInteger.valueOf(from)),
-                RLP.encodeBigInteger(BigInteger.valueOf(chunkSize)));
+                RLP.encodeBigInteger(BigInteger.valueOf(to)),
+                new byte[]{(byte) 1});
 
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, blockNumber, from, chunkSize);
+        SnapStateChunkResponseMessage message = new SnapStateChunkResponseMessage(id4Test, trieValueBytes, blockNumber, from, to, complete);
 
         //when
         byte[] encodedMessage = message.getEncodedMessageWithoutId();
@@ -90,10 +101,12 @@ public class SnapStateChunkRequestMessageTest {
         //given
         long blockNumber = 1L;
         long id4Test = 42L;
-        long from = 1L;
-        long chunkSize = 20L;
+        byte[] trieValueBytes = "any random data".getBytes();
+        long from = 5L;
+        long to = 20L;
+        boolean complete = true;
 
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, blockNumber, from, chunkSize);
+        SnapStateChunkResponseMessage message = new SnapStateChunkResponseMessage(id4Test, trieValueBytes, blockNumber, from, to, complete);
         byte[] expectedEncodedMessage = RLP.encodeList(
                 RLP.encodeBigInteger(BigInteger.valueOf(id4Test)), message.getEncodedMessageWithoutId());
 
@@ -107,8 +120,13 @@ public class SnapStateChunkRequestMessageTest {
     @Test
     void givenAcceptIsCalled_messageVisitorIsAppliedForMessage() {
         //given
-        long someId = 42;
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(someId, 0L, 0L, 0L);
+        long blockNumber = 1L;
+        long id4Test = 42L;
+        byte[] trieValueBytes = "any random data".getBytes();
+        long from = 5L;
+        long to = 20L;
+        boolean complete = true;
+        SnapStateChunkResponseMessage message = new SnapStateChunkResponseMessage(id4Test, trieValueBytes, blockNumber, from, to, complete);
         MessageVisitor visitor = mock(MessageVisitor.class);
 
         //when
