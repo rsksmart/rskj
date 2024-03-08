@@ -46,7 +46,7 @@ class JsonRPCParamValidationTest {
     @BeforeEach
     void setUp() {
         handler = mock(Web3EthModule.class);
-        this.jsonRpcServer = new JsonRpcCustomServer(handler, handler.getClass(), Collections.emptyList());
+        this.jsonRpcServer = new JsonRpcCustomServer(handler, handler.getClass(), Collections.emptyList(), objectMapper);
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
     }
 

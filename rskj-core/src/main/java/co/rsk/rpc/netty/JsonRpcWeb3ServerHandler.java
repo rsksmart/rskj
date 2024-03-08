@@ -56,7 +56,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final int maxResponseSize;
 
     public JsonRpcWeb3ServerHandler(Web3 service, JsonRpcWeb3ServerProperties jsonRpcWeb3ServerProperties) {
-        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), jsonRpcWeb3ServerProperties.getRpcModules());
+        this.jsonRpcServer = new JsonRpcCustomServer(service, service.getClass(), jsonRpcWeb3ServerProperties.getRpcModules(), mapper);
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new JsonRpcRequestValidatorInterceptor(jsonRpcWeb3ServerProperties.getMaxBatchRequestsSize()));
         jsonRpcServer.setInterceptorList(interceptors);
@@ -107,8 +107,6 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             int errorCode = ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
             responseContent = buildErrorContent(errorCode, unexpectedErrorMsg);
             responseCode = errorCode;
-        } finally {
-            ReflectionUtil.clearCache();
         }
 
         ctx.fireChannelRead(new Web3Result(
