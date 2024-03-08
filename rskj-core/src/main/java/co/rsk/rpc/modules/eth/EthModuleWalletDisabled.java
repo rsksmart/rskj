@@ -18,10 +18,13 @@
 
 package co.rsk.rpc.modules.eth;
 
+import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -34,6 +37,13 @@ public class EthModuleWalletDisabled implements EthModuleWallet {
         String[] accounts = {};
         LOGGER.debug("eth_accounts(): {}", Arrays.toString(accounts));
         return accounts;
+    }
+
+    @Override
+    public List<Transaction> ethPendingTransactions()  {
+        List<Transaction> transactions = Collections.emptyList();
+        LOGGER.debug("eth_pendingTransactions(): {}", transactions);
+        return transactions;
     }
 
     @Override

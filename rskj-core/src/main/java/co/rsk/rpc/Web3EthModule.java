@@ -121,6 +121,8 @@ public interface Web3EthModule {
     TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(BlockIdentifierParam bnOrId, HexIndexParam index) throws Exception;
 
     TransactionReceiptDTO eth_getTransactionReceipt(TxHashParam transactionHash) throws Exception;
+    TransactionResultDTO[] eth_pendingTransactions() throws Exception;
+
 
     BlockResultDTO eth_getUncleByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam uncleIdx) throws Exception;
 

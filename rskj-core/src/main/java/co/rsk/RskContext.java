@@ -1869,7 +1869,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             if (wallet == null) {
                 ethModuleWallet = new EthModuleWalletDisabled();
             } else {
-                ethModuleWallet = new EthModuleWalletEnabled(wallet);
+                ethModuleWallet = new EthModuleWalletEnabled(wallet, getTransactionPool(), getReceivedTxSignatureCache());
             }
         }
 
