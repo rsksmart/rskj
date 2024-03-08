@@ -55,7 +55,13 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
 
             if (nodeDTO.isLeftNodePresent() && !nodeDTO.isLeftNodeEmbedded()) {
                 TrieDTO left = getNode(nodeDTO.getLeftHash());
+
+                if (left == null) {
+                    throw new NullPointerException("Left node is null");
+                }
+
                 long maxLeftSize = left.getTotalSize();
+
                 if (offset <= maxLeftSize) {
                     visiting.push(nodeDTO);
                     return findByChildrenSize(offset, left, visiting);
@@ -64,25 +70,26 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
                 if (offset <= maxLeftSize) {
                     return pushAndReturn(nodeDTO, visiting, (offset - left.getTotalSize()));
                 }
-            } else if (nodeDTO.isLeftNodePresent() && nodeDTO.isLeftNodeEmbedded()) {
-                if (offset <= nodeDTO.getLeftSize()) {
+            } else if (nodeDTO.isLeftNodePresent() && nodeDTO.isLeftNodeEmbedded() && (offset <= nodeDTO.getLeftSize())) {
                     return pushAndReturn(nodeDTO, visiting, offset);
-                }
             }
 
             if (nodeDTO.isRightNodePresent() && !nodeDTO.isRightNodeEmbedded()) {
                 TrieDTO right = getNode(nodeDTO.getRightHash());
+                if (right == null) {
+                    throw new NullPointerException("Right node is null.");
+                }
+
                 long maxParentSize = nodeDTO.getTotalSize() - right.getTotalSize();
                 long maxRightSize = nodeDTO.getTotalSize();
+
                 if (maxParentSize < offset && offset <= maxRightSize) {
                     preRootNodes.add(nodeDTO);
                     return findByChildrenSize(offset - maxParentSize, right, visiting);
                 }
-            } else if (nodeDTO.isRightNodeEmbedded()) {
-                if (offset <= nodeDTO.getTotalSize()) {
+            } else if (nodeDTO.isRightNodeEmbedded() && (offset <= nodeDTO.getTotalSize())) {
                     long leftAndParentSize = nodeDTO.getTotalSize() - nodeDTO.getRightSize();
                     return pushAndReturn(nodeDTO, visiting, offset - leftAndParentSize);
-                }
             }
         }
         if (nodeDTO.getTotalSize() >= offset) {
