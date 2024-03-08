@@ -198,7 +198,7 @@ public class BenchmarkWeb3 {
     }
 
     @Benchmark
-    @Timeout(time = 60)
+    @Timeout(time = 100)
     public void traceFilterBetweenAddresses(TracePlan plan) throws BenchmarkWeb3Exception {
         plan.getWeb3Connector().traceFilter(plan.getFromBlock(), plan.getToBlock(), plan.getFromAddresses(), plan.getToAddresses());
     }
