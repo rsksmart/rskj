@@ -11,6 +11,7 @@ import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.time.Instant;
 import java.util.Arrays;
@@ -32,34 +33,30 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
     private Federation federation;
-    private ErpFederation erpFederation;
+    private ErpFederation nonStandardErpFederation;
     private List<Federation> federationList;
-    private List<Federation> erpFederationList;
+    private List<Federation> nonStandardErpFederationList;
+    private ActivationConfig.ForBlock activations;
 
     @BeforeEach
     void setup() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
-        federation = new StandardMultisigFederation(
-            FederationTestUtils.getFederationMembers(3),
-            Instant.ofEpochMilli(1000),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
-
-        erpFederation = new LegacyErpFederation(
-            FederationTestUtils.getFederationMembers(3),
-            Instant.ofEpochMilli(1000),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            erpFedKeys,
-            5063,
-            activations
-        );
-
+        // set up standard multisig federation
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembers(3);
+        Instant creationTime = Instant.ofEpochMilli(1000);
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
+        federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
         federationList = Collections.singletonList(federation);
-        erpFederationList = Collections.singletonList(erpFederation);
+
+        // set up non-standard erp federation
+        activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpFedKeys, 5063, activations);
+        nonStandardErpFederationList = Collections.singletonList(nonStandardErpFederation);
     }
 
     @Test
@@ -103,25 +100,25 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     }
 
     @Test
-    void findRedeemDataFromScriptHash_with_flyoverInformation_and_erp_federation() {
+    void findRedeemDataFromScriptHash_with_flyoverInformation_and_non_standard_erp_federation() {
         byte[] flyoverScriptHash = new byte[]{(byte)0x22};
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
                 PegTestUtils.createHash3(2),
-                erpFederation.getP2SHScript().getPubKeyHash(),
+                nonStandardErpFederation.getP2SHScript().getPubKeyHash(),
                 flyoverScriptHash);
 
         FlyoverCompatibleBtcWalletWithSingleScript flyoverCompatibleBtcWalletWithSingleScript =
             new FlyoverCompatibleBtcWalletWithSingleScript(
                 mock(Context.class),
-                erpFederationList,
+                nonStandardErpFederationList,
                 flyoverFederationInformation);
 
         RedeemData redeemData = flyoverCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
-            erpFederation.getP2SHScript().getPubKeyHash());
+            nonStandardErpFederation.getP2SHScript().getPubKeyHash());
 
         Script flyoverRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            erpFederation.getRedeemScript(),
+            nonStandardErpFederation.getRedeemScript(),
             Sha256Hash.wrap(flyoverFederationInformation.getDerivationHash().getBytes())
         );
 

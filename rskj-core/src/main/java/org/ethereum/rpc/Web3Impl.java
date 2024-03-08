@@ -853,6 +853,13 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public TransactionResultDTO[] eth_pendingTransactions() {
+        return ethModule.ethPendingTransactions().stream()
+                .map(tx -> new TransactionResultDTO(null, null, tx, config.rpcZeroSignatureIfRemasc(), signatureCache))
+                .toArray(TransactionResultDTO[]::new);
+    }
+
+    @Override
     public BlockResultDTO eth_getUncleByBlockHashAndIndex(BlockHashParam blockHash, HexIndexParam uncleIdx) {
         BlockResultDTO s = null;
 

@@ -4,8 +4,9 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.FederationMember;
-import co.rsk.peg.StandardMultisigFederation;
+import co.rsk.peg.federation.FederationArgs;
+import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationFactory;
 import com.google.common.collect.Lists;
 import java.time.Instant;
 import java.util.Arrays;
@@ -52,12 +53,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400L);
 
-        genesisFederation = new StandardMultisigFederation(
-            federationMembers,
-            genesisFederationAddressCreatedAt,
-            1L,
-            getBtcParams()
-        );
+        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, getBtcParams());
+        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         btc2RskMinimumAcceptableConfirmations = 100;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;
@@ -151,7 +148,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
 
-        btcHeightWhenPegoutTxIndexActivates = 100; // TODO: TBD and change current mock value. This is an estimation of the btc block number once RSKIP379 is activated.
+        btcHeightWhenPegoutTxIndexActivates = 837_589; // Estimated date Wed, 03 Apr 2024 15:00:00 GMT. 832,430 was the block number at time of calculation
         pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
     }
 

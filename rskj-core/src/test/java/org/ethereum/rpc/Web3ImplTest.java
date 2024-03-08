@@ -26,6 +26,8 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.logfilter.BlocksBloomStore;
+import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
@@ -42,13 +44,17 @@ import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleTransactionBase;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
+import co.rsk.rpc.modules.evm.EvmModule;
+import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.rsk.RskModuleImpl;
+import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
+import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
@@ -381,6 +387,34 @@ class Web3ImplTest {
                 new HexAddressParam(chain.accountAddress),
                 new HexNumberParam("0x0"),
                 new BlockRefParam(blockRef)));
+    }
+
+    @Test
+        //[ "0x<address>",  "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" -> return storage at given address in genesis block
+    void getStorageAtAccountAndBlockHashWithSingleIdentifier() {
+        //given
+        final ChainParams chain = chainWithAccount10kBalance(false);
+        // when
+        String result = chain.web3.eth_getStorageAt(
+                new HexAddressParam(chain.accountAddress),
+                new HexNumberParam("0x0"),
+                new BlockRefParam( "0x" + chain.block.getPrintableHash()));
+        // then
+        assertEquals(NON_EXISTING_KEY_RESPONSE, result );
+    }
+
+    @Test
+        //[ "0x<address>",  "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" -> return storage at given address in genesis block
+    void getStorageAtAccountAndBlockHashWithSingleIdentifier_whenItsAInvalidHash() {
+        //given
+        String invalidBlockIdentifier = "0x00011231234123";
+        final ChainParams chain = chainWithAccount10kBalance(false);
+        //when-then
+        Exception ex = assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getStorageAt(
+                new HexAddressParam(chain.accountAddress),
+                new HexNumberParam("0x0"),
+                new BlockRefParam( invalidBlockIdentifier)));
+        assertEquals("Block " + invalidBlockIdentifier + " not found", ex.getMessage());
     }
 
     @Test
@@ -810,7 +844,7 @@ class Web3ImplTest {
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
         Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).difficulty(3l).transactions(txs).build();
+                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).difficulty(3L).transactions(txs).build();
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
         Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
                 world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis)
@@ -1018,7 +1052,7 @@ class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = createCanonicalBlock(world, txs);
+        createCanonicalBlock(world, txs);
 
         String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
@@ -1073,6 +1107,109 @@ class Web3ImplTest {
     void getTransactionCountByNonCanonicalBlockHash() {
         final ChainParams chain = createChainWithATransaction(true);
         assertNonCanonicalBlockHash("0x1", chain.block, blockRef -> chain.web3.eth_getTransactionCount(new HexAddressParam(chain.accountAddress), new BlockRefParam(blockRef)));
+    }
+    @Test
+    void pendingTransactionsNoTxShouldReturnEmptyList() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        TransactionResultDTO[] tr = web3.eth_pendingTransactions();
+
+        List<TransactionResultDTO> trList = Arrays.asList(tr);
+
+        assertNotNull(trList);
+        assertEquals(0, trList.size());
+    }
+
+    @Test
+    void pendingTransactionsReturnsFilteredList() {
+        EthModule ethModuleMock = mock(EthModule.class);
+
+        Web3Impl web3 = createWeb3WithMocks(ethModuleMock);
+
+        Transaction mockTransaction1 = mockTransactionFrom("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
+        Transaction mockTransaction2 = mockTransactionFrom( "0xa3a15ed8c3b83efc744f2e0a7824a00846c21860");
+        Transaction mockTransaction3 = mockTransactionFrom( "0xb3a15ed8c3b83efc744f2e0a7824a00846c21860");
+        List<Transaction> allTransactions = Arrays.asList(mockTransaction1, mockTransaction2, mockTransaction3);
+
+        when(ethModuleMock.ethPendingTransactions()).thenReturn(allTransactions);
+
+        TransactionResultDTO[] result = web3.eth_pendingTransactions();
+
+        assertEquals(3, result.length, "Expected all transactions");
+    }
+
+    @Test
+    void pendingTransactionsReturnsCorrectTransaction() {
+        EthModule ethModuleMock = mock(EthModule.class);
+
+        Web3Impl web3 = createWeb3WithMocks(ethModuleMock);
+
+        Transaction mockTransaction1 = mockTransactionFrom("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
+        List<Transaction> allTransactions = Arrays.asList(mockTransaction1);
+
+        when(ethModuleMock.ethPendingTransactions()).thenReturn(allTransactions);
+
+        TransactionResultDTO[] result = web3.eth_pendingTransactions();
+
+        assertEquals(1, result.length, "Expected only one transaction");
+        assertEquals("0x63a15ed8c3b83efc744f2e0a7824a00846c21860", result[0].getFrom());
+    }
+
+    private Transaction mockTransactionFrom(String senderAddress) {
+        Transaction transaction = mock(Transaction.class);
+        RskAddress address = new RskAddress(senderAddress);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(address);
+
+        byte[] mockHashBytes = new byte[32];
+        Arrays.fill(mockHashBytes, (byte) 1);
+        Keccak256 mockHash = new Keccak256(mockHashBytes);
+        when(transaction.getHash()).thenReturn(mockHash);
+        when(transaction.getReceiveAddress()).thenReturn(address);
+        when(transaction.getNonce()).thenReturn(BigInteger.ZERO.toByteArray());
+        when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(21000).toByteArray());
+        when(transaction.getGasPrice()).thenReturn(Coin.valueOf(50_000_000_000L));
+        when(transaction.getValue()).thenReturn(Coin.ZERO);
+        when(transaction.getData()).thenReturn(new byte[0]);
+        ECDSASignature mockSignature = new ECDSASignature(BigInteger.ONE, BigInteger.ONE);
+        when(transaction.getSignature()).thenReturn(mockSignature);
+        when(transaction.getEncodedV()).thenReturn((byte) 1);
+
+        return transaction;
+    }
+
+    private Web3Impl createWeb3WithMocks(EthModule ethModule) {
+        Ethereum eth = mock(Ethereum.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        MinerClient minerClient = mock(MinerClient.class);
+        MinerServer minerServer = mock(MinerServer.class);
+        EvmModule evmModule = mock(EvmModule.class);
+        TxPoolModule txPoolModule = mock(TxPoolModule.class);
+        MnrModule mnrModule = mock(MnrModule.class);
+        DebugModule debugModule = mock(DebugModule.class);
+        TraceModule traceModule = mock(TraceModule.class);
+        RskModule rskModule = mock(RskModule.class);
+        ChannelManager channelManager = mock(ChannelManager.class);
+        PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
+        PeerServer peerServer = mock(PeerServer.class);
+        BlockProcessor nodeBlockProcessor = mock(BlockProcessor.class);
+        HashRateCalculator hashRateCalculator = mock(HashRateCalculator.class);
+        ConfigCapabilities configCapabilities = mock(ConfigCapabilities.class);
+        BuildInfo buildInfo = mock(BuildInfo.class);
+        BlocksBloomStore blocksBloomStore = mock(BlocksBloomStore.class);
+        SyncProcessor syncProcessor = mock(SyncProcessor.class);
+        SignatureCache signatureCache = mock(SignatureCache.class);
+        Web3InformationRetriever web3InformationRetriever = mock(Web3InformationRetriever.class);
+        PersonalModule personalModule = mock(PersonalModule.class);
+
+        // Create Web3Impl with the mocked dependencies
+        return new Web3Impl(eth, blockchain, blockStore, receiptStore, config, minerClient, minerServer,
+                personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule,
+                traceModule, rskModule, channelManager, peerScoringManager, peerServer,
+                nodeBlockProcessor, hashRateCalculator, configCapabilities, buildInfo,
+                blocksBloomStore, web3InformationRetriever, syncProcessor, signatureCache);
     }
 
     @Test
@@ -2575,7 +2712,7 @@ class Web3ImplTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
                 null, new ExecutionBlockRetriever(blockchain, null, null),
-                null, new EthModuleWalletEnabled(wallet), null,
+                null, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
@@ -2692,7 +2829,7 @@ class Web3ImplTest {
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
-                new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet),
+                new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet, transactionPool, signatureCache),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
@@ -2756,7 +2893,7 @@ class Web3ImplTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
                 new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator,
-                new EthModuleWalletEnabled(wallet),
+                new EthModuleWalletEnabled(wallet, transactionPool, signatureCache),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, null),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
@@ -3108,7 +3245,7 @@ class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = createCanonicalBlock(world, txs);
+        createCanonicalBlock(world, txs);
 
         String hashString = tx.getHash().toHexString();
         TxHashParam txHashParam = new TxHashParam(hashString);

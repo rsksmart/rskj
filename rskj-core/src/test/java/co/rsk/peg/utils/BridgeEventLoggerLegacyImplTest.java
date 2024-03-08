@@ -24,6 +24,8 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
+import co.rsk.peg.federation.*;
+import co.rsk.peg.PegTestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -115,10 +117,11 @@ class BridgeEventLoggerLegacyImplTest {
 
         // Setup logAddSignature params
         BtcECKey federatorPubKey = BtcECKey.fromPrivate(BigInteger.valueOf(2L));
+        FederationMember federationMember = FederationTestUtils.getFederationMemberWithKey(federatorPubKey);
         when(btcTxMock.getHashAsString()).thenReturn("3e72fdbae7bbd103f08e876c765e3d5ba35db30ea46cb45ab52803f987ead9fb");
 
         // Act
-        eventLogger.logAddSignature(federatorPubKey, btcTxMock, rskTxHash.getBytes());
+        eventLogger.logAddSignature(federationMember, btcTxMock, rskTxHash.getBytes());
 
         // Assert log size
         Assertions.assertEquals(1, eventLogs.size());
@@ -147,8 +150,9 @@ class BridgeEventLoggerLegacyImplTest {
     void testLogAddSignatureAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         BtcECKey federatorPublicKey = new BtcECKey();
+        FederationMember federationMember = FederationTestUtils.getFederationMemberWithKey(federatorPublicKey);
         byte[] bytes = rskTxHash.getBytes();
-        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(federatorPublicKey, btcTxMock, bytes));
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(federationMember, btcTxMock, bytes));
     }
 
     @Test
@@ -206,24 +210,20 @@ class BridgeEventLoggerLegacyImplTest {
         );
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        FederationArgs oldFedArgs = new FederationArgs(oldFederationMembers, Instant.ofEpochMilli(15005L), 15L, btcParams);
 
-        Federation oldFederation = new StandardMultisigFederation(oldFederationMembers,
-            Instant.ofEpochMilli(15005L), 15L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(oldFedArgs);
 
         List<BtcECKey> newFederationKeys = Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
             BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
             BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
         );
-
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
+        FederationArgs newFedArgs  = new FederationArgs(newFederationMembers, Instant.ofEpochMilli(15005L), 15L, btcParams);
 
-        Federation newFederation = new StandardMultisigFederation(
-            newFederationMembers,
-            Instant.ofEpochMilli(5005L),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFedArgs);
 
         // Act
         eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);

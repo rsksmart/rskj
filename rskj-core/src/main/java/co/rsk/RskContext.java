@@ -105,6 +105,7 @@ import org.ethereum.db.ReceiptStoreImplV2;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.GasPriceCalculator;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.NodeManager;
@@ -556,8 +557,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     public GasPriceTracker getGasPriceTracker() {
         checkIfNotClosed();
 
+        double gasPriceMultiplier = getRskSystemProperties().gasPriceMultiplier();
+
         if (this.gasPriceTracker == null) {
-            this.gasPriceTracker = GasPriceTracker.create(getBlockStore());
+            GasPriceCalculator.GasCalculatorType calculatorType = getRskSystemProperties().getGasCalculatorType();
+            this.gasPriceTracker = GasPriceTracker.create(getBlockStore(), gasPriceMultiplier, calculatorType);
         }
         return this.gasPriceTracker;
     }
@@ -1593,17 +1597,19 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     initialBootNodes.add(address.getHostName() + ":" + address.getPort());
                 }
             }
+            int bucketSize = rskSystemProperties.discoveryBucketSize();
             peerExplorer = new PeerExplorer(
                     initialBootNodes,
                     localNode,
-                    new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode),
+                    new NodeDistanceTable(KademliaOptions.BINS, bucketSize, localNode),
                     key,
                     rskSystemProperties.peerDiscoveryMessageTimeOut(),
                     rskSystemProperties.peerDiscoveryRefreshPeriod(),
                     rskSystemProperties.peerDiscoveryCleanPeriod(),
                     rskSystemProperties.networkId(),
                     getPeerScoringManager(),
-                    rskSystemProperties.allowMultipleConnectionsPerHostPort()
+                    rskSystemProperties.allowMultipleConnectionsPerHostPort(),
+                    rskSystemProperties.peerDiscoveryMaxBootRetries()
             );
         }
 
@@ -1868,7 +1874,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             if (wallet == null) {
                 ethModuleWallet = new EthModuleWalletDisabled();
             } else {
-                ethModuleWallet = new EthModuleWalletEnabled(wallet);
+                ethModuleWallet = new EthModuleWalletEnabled(wallet, getTransactionPool(), getReceivedTxSignatureCache());
             }
         }
 

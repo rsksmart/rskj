@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.Federation;
+import co.rsk.peg.federation.Federation;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;

@@ -19,23 +19,29 @@ package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.federation.*;
+import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
@@ -44,6 +50,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -61,12 +68,13 @@ import static org.mockito.Mockito.when;
 class BridgeEventLoggerImplTest {
 
     private static final BridgeRegTestConstants CONSTANTS = BridgeRegTestConstants.getInstance();
+    private final ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
     private List<LogInfo> eventLogs;
     private BridgeEventLogger eventLogger;
     private BtcTransaction btcTxMock;
     private BtcTransaction btcTx;
     private SignatureCache signatureCache;
-    private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
     @BeforeEach
     void setup() {
@@ -174,21 +182,66 @@ class BridgeEventLoggerImplTest {
         assertEvent(eventLogs, 0, BridgeEvents.UPDATE_COLLECTIONS.getEvent(), new Object[]{}, new Object[]{tx.getSender(signatureCache).toString()});
     }
 
-    @Test
-    void logAddSignature() {
-        // Setup logAddSignature params
-        BtcECKey federatorPubKey = BtcECKey.fromPrivate(BigInteger.valueOf(2L));
+    private static Stream<Arguments> logAddSignatureArgProvider() {
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+
+        BtcECKey btcKey = BtcECKey.fromPrivate(Hex.decode("000000000000000000000000000000000000000000000000000000000000015e")); // 350
+        ECKey rskKey = ECKey.fromPrivate(Hex.decode("000000000000000000000000000000000000000000000000000000000000015f")); // 351
+        ECKey mstKey = ECKey.fromPrivate(Hex.decode("0000000000000000000000000000000000000000000000000000000000000160")); // 352
+
+        String addressDerivedFromBtcKey = "dbc29273d4de3d5645e308c7e629d28d4499b3d3";
+        String addressDerivedFromRskKey = "74891a05ad4d7ec87c1cffe9bd00bb4e1382b586";
+
+        FederationMember singleKeyFedMember = new FederationMember(
+            btcKey,
+            ECKey.fromPublicOnly(btcKey.getPubKey()),
+            ECKey.fromPublicOnly(btcKey.getPubKey())
+        );
+
+        FederationMember multiKeyFedMember = new FederationMember(
+            btcKey,
+            rskKey,
+            mstKey
+        );
+
+        return Stream.of(
+            Arguments.of(fingerrootActivations, singleKeyFedMember, addressDerivedFromBtcKey),
+            Arguments.of(fingerrootActivations, multiKeyFedMember, addressDerivedFromBtcKey),
+            Arguments.of(arrowheadActivations, singleKeyFedMember, addressDerivedFromBtcKey), // Given this is a single key fed member, the rsk address is equal to the one obtained from btc key
+            Arguments.of(arrowheadActivations, multiKeyFedMember, addressDerivedFromRskKey)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("logAddSignatureArgProvider")
+    void logAddSignature(ActivationConfig.ForBlock activations, FederationMember federationMember, String expectedRskAddress) {
+        // Arrange
+        BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+        BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        LinkedList<LogInfo> eventLogs = new LinkedList<>();
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeMainNetConstants, activations, eventLogs, signatureCache);
+
+        BtcECKey federatorBtcPubKey = federationMember.getBtcPublicKey();
+
         Keccak256 rskTxHash = PegTestUtils.createHash3(1);
-        when(btcTxMock.getHashAsString()).thenReturn("3e72fdbae7bbd103f08e876c765e3d5ba35db30ea46cb45ab52803f987ead9fb");
+
+        BtcTransaction btcTxMock = mock(BtcTransaction.class);
+        when(btcTxMock.getHash()).thenReturn(BitcoinTestUtils.createHash(1));
+        when(btcTxMock.getHashAsString()).thenReturn(rskTxHash.toHexString());
 
         // Act
-        eventLogger.logAddSignature(federatorPubKey, btcTxMock, rskTxHash.getBytes());
+        eventLogger.logAddSignature(federationMember, btcTxMock, rskTxHash.getBytes());
 
+        // Assert
         commonAssertLogs(eventLogs);
         assertTopics(3, eventLogs);
-        ECKey key = ECKey.fromPublicOnly(federatorPubKey.getPubKey());
-        String federatorRskAddress = ByteUtil.toHexString(key.getAddress());
-        assertEvent(eventLogs, 0, BridgeEvents.ADD_SIGNATURE.getEvent(), new Object[]{rskTxHash.getBytes(), federatorRskAddress}, new Object[]{federatorPubKey.getPubKey()});
+
+        CallTransaction.Function bridgeEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
+        Object[] eventTopics = new Object[]{rskTxHash.getBytes(), expectedRskAddress};
+        Object[] eventParams = new Object[]{federatorBtcPubKey.getPubKey()};
+
+        assertEvent(eventLogs, 0, bridgeEvent, eventTopics, eventParams);
     }
 
     @Test
@@ -221,28 +274,20 @@ class BridgeEventLoggerImplTest {
         );
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        FederationArgs oldFedArgs = new FederationArgs(oldFederationMembers, Instant.ofEpochMilli(15005L), 15L, btcParams);
 
-        Federation oldFederation = new StandardMultisigFederation(
-            oldFederationMembers,
-            Instant.ofEpochMilli(15005L),
-            15L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
+        Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(oldFedArgs);
 
         List<BtcECKey> newFederationKeys = Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
             BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
             BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
         );
-
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
+        FederationArgs newFedArgs = new FederationArgs(newFederationMembers, Instant.ofEpochMilli(15005L), 15L, btcParams);
 
-        Federation newFederation = new StandardMultisigFederation(
-            newFederationMembers,
-            Instant.ofEpochMilli(5005L),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFedArgs);
 
         // Act
         eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);

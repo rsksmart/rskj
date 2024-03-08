@@ -1422,6 +1422,7 @@ public class Program {
                     .blockStore(this.invoke.getBlockStore())
                     .logs(result.getLogInfoList())
                     .programInvoke(this.invoke)
+                    .msgType(msg.getType())
                     .build();
 
             contract.init(args);

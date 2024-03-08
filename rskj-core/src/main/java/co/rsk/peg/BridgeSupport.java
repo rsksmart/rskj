@@ -64,6 +64,7 @@ import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.pegin.PeginEvaluationResult;
@@ -833,39 +834,56 @@ public class BridgeSupport {
      * @throws IOException
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
-        Coin value = rskTx.getValue().toBitcoin();
+        Coin pegoutValue = rskTx.getValue().toBitcoin();
         final RskAddress senderAddress = rskTx.getSender(signatureCache);
-        //as we can't send btc from contracts we want to send them back to the senderAddressStr
+        logger.debug(
+            "[releaseBtc] Releasing {} RBTC from RSK address {} in tx {}",
+            pegoutValue,
+            senderAddress,
+            rskTx.getHash()
+        );
+
+        // Peg-out from a smart contract not allowed since it's not possible to derive a BTC address from it
         if (BridgeUtils.isContractTx(rskTx)) {
-            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx);
+            logger.trace(
+                "[releaseBtc] Contract {} tried to release funds. Release is just allowed from EOA",
+                senderAddress
+            );
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                emitRejectEvent(value, senderAddress.toHexString(), RejectedPegoutReason.CALLER_CONTRACT);
+                emitRejectEvent(pegoutValue, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
                 return;
             } else {
-                throw new Program.OutOfGasException("Contract calling releaseBTC");
+                String message = "Contract calling releaseBTC";
+                logger.debug("[releaseBtc] {}", message);
+                throw new Program.OutOfGasException(message);
             }
         }
 
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
+        logger.debug("[releaseBtc] BTC destination address: {}", btcDestinationAddress);
 
-        requestRelease(btcDestinationAddress, value, rskTx);
+        requestRelease(btcDestinationAddress, pegoutValue, rskTx);
     }
 
     private void refundAndEmitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
-        String senderAddressStr = senderAddress.toHexString();
-        logger.trace("Executing a refund of {} to {}. Reason: {}", value, senderAddressStr, reason);
-        rskRepository.transfer(
-                PrecompiledContracts.BRIDGE_ADDR,
-                senderAddress,
-                co.rsk.core.Coin.fromBitcoin(value)
+        logger.trace(
+            "[refundAndEmitRejectEvent] Executing a refund of {} to {}. Reason: {}",
+            value,
+            senderAddress,
+            reason
         );
-        emitRejectEvent(value, senderAddressStr, reason);
+        rskRepository.transfer(
+            PrecompiledContracts.BRIDGE_ADDR,
+            senderAddress,
+            co.rsk.core.Coin.fromBitcoin(value)
+        );
+        emitRejectEvent(value, senderAddress, reason);
     }
 
-    private void emitRejectEvent(Coin value, String senderAddressStr, RejectedPegoutReason reason) {
-        eventLogger.logReleaseBtcRequestRejected(senderAddressStr, value, reason);
+    private void emitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
+        eventLogger.logReleaseBtcRequestRejected(senderAddress.toHexString(), value, reason);
     }
 
     /**
@@ -915,7 +933,7 @@ public class BridgeSupport {
 
         if (optionalRejectedPegoutReason.isPresent()) {
             logger.warn(
-                "releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
+                "[requestRelease] releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
                 destinationAddress,
                 rskTx,
                 value,
@@ -938,7 +956,7 @@ public class BridgeSupport {
             if (activations.isActive(ConsensusRule.RSKIP185)) {
                 eventLogger.logReleaseBtcRequestReceived(rskTx.getSender(signatureCache).toHexString(), destinationAddress, value);
             }
-            logger.info("releaseBtc successful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
+            logger.info("[requestRelease] releaseBtc successful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
         }
     }
 
@@ -1428,13 +1446,23 @@ public class BridgeSupport {
         Optional<Federation> optionalFederation = getFederationFromPublicKey(federatorPublicKey);
         if (!optionalFederation.isPresent()) {
             logger.warn(
-                "Supplied federator public key {} does not belong to any of the federators.",
+                "[addSignature] Supplied federator btc public key {} does not belong to any of the federators.",
                 federatorPublicKey
             );
             return;
         }
 
         Federation federation = optionalFederation.get();
+        Optional<FederationMember> federationMember = federation.getMemberByBtcPublicKey(federatorPublicKey);
+        if (!federationMember.isPresent()){
+            logger.warn(
+                "[addSignature] Supplied federator btc public key {} doest not match any of the federator member btc public keys {}.",
+                federatorPublicKey, federation.getBtcPublicKeys()
+            );
+            return;
+        }
+        FederationMember signingFederationMember = federationMember.get();
+
         BtcTransaction btcTx = provider.getPegoutsWaitingForSignatures().get(new Keccak256(rskTxHash));
         if (btcTx == null) {
             logger.warn(
@@ -1453,10 +1481,10 @@ public class BridgeSupport {
         }
 
         if (!activations.isActive(ConsensusRule.RSKIP326)) {
-            eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
+            eventLogger.logAddSignature(signingFederationMember, btcTx, rskTxHash);
         }
 
-        processSigning(federatorPublicKey, signatures, rskTxHash, btcTx, federation);
+        processSigning(signingFederationMember, signatures, rskTxHash, btcTx, federation);
     }
 
     private Optional<Federation> getFederationFromPublicKey(BtcECKey federatorPublicKey) {
@@ -1474,11 +1502,13 @@ public class BridgeSupport {
     }
 
     private void processSigning(
-        BtcECKey federatorPublicKey,
+        FederationMember federatorMember,
         List<byte[]> signatures,
         byte[] rskTxHash,
         BtcTransaction btcTx,
         Federation federation) throws IOException {
+
+        BtcECKey federatorBtcPublicKey = federatorMember.getBtcPublicKey();
         // Build input hashes for signatures
         int numInputs = btcTx.getInputs().size();
 
@@ -1510,13 +1540,13 @@ public class BridgeSupport {
 
             Sha256Hash sighash = sighashes.get(i);
 
-            if (!federatorPublicKey.verify(sighash, sig)) {
+            if (!federatorBtcPublicKey.verify(sighash, sig)) {
                 logger.warn(
                     "Signature {} {} is not valid for hash {} and public key {}",
                     i,
                     ByteUtil.toHexString(sig.encodeToDER()),
                     sighash,
-                    federatorPublicKey
+                    federatorBtcPublicKey
                 );
                 return;
             }
@@ -1538,24 +1568,24 @@ public class BridgeSupport {
             Script inputScript = input.getScriptSig();
 
             boolean alreadySignedByThisFederator = BridgeUtils.isInputSignedByThisFederator(
-                    federatorPublicKey,
+                    federatorBtcPublicKey,
                     sighash,
                     input);
 
             // Sign the input if it wasn't already
             if (!alreadySignedByThisFederator) {
                 try {
-                    int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
+                    int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorBtcPublicKey);
                     inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigs.get(i).encodeToBitcoin(), sigIndex, 1, 1);
                     input.setScriptSig(inputScript);
                     logger.debug("Tx input {} for tx {} signed.", i, new Keccak256(rskTxHash));
                     signed = true;
                 } catch (IllegalStateException e) {
                     Federation retiringFederation = getRetiringFederation();
-                    if (getActiveFederation().hasBtcPublicKey(federatorPublicKey)) {
+                    if (getActiveFederation().hasBtcPublicKey(federatorBtcPublicKey)) {
                         logger.debug("A member of the active federation is trying to sign a tx of the retiring one");
                         return;
-                    } else if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey)) {
+                    } else if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorBtcPublicKey)) {
                         logger.debug("A member of the retiring federation is trying to sign a tx of the active one");
                         return;
                     }
@@ -1568,7 +1598,7 @@ public class BridgeSupport {
         }
 
         if(signed && activations.isActive(ConsensusRule.RSKIP326)) {
-            eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
+            eventLogger.logAddSignature(federatorMember, btcTx, rskTxHash);
         }
 
         if (BridgeUtils.hasEnoughSignatures(btcContext, btcTx)) {
@@ -2198,7 +2228,7 @@ public class BridgeSupport {
             long nextFederationCreationBlockHeight = rskExecutionBlock.getNumber();
             provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
             Script oldFederationP2SHScript = activations.isActive(RSKIP377) && oldFederation instanceof ErpFederation ?
-                ((ErpFederation) oldFederation).getStandardP2SHScript() : oldFederation.getP2SHScript();
+                ((ErpFederation) oldFederation).getDefaultP2SHScript() : oldFederation.getP2SHScript();
             provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
         }
 

@@ -17,6 +17,8 @@
  */
 package co.rsk.peg;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -24,7 +26,10 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
@@ -37,6 +42,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
@@ -223,15 +229,34 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private final BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory;
 
     private final SignatureCache signatureCache;
+    private MsgType msgType;
 
-    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
-                  BridgeSupportFactory bridgeSupportFactory, SignatureCache signatureCache) {
-        this(contractAddress, constants, activationConfig, bridgeSupportFactory, MerkleBranch::new, signatureCache);
+    public Bridge(
+        RskAddress contractAddress,
+        Constants constants,
+        ActivationConfig activationConfig,
+        BridgeSupportFactory bridgeSupportFactory,
+        SignatureCache signatureCache) {
+
+        this(
+            contractAddress,
+            constants,
+            activationConfig,
+            bridgeSupportFactory,
+            MerkleBranch::new,
+            signatureCache
+        );
     }
 
     @VisibleForTesting
-    Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
-           BridgeSupportFactory bridgeSupportFactory, BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory, SignatureCache signatureCache) {
+    Bridge(
+        RskAddress contractAddress,
+        Constants constants,
+        ActivationConfig activationConfig,
+        BridgeSupportFactory bridgeSupportFactory,
+        BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory,
+        SignatureCache signatureCache) {
+
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.contractAddress = contractAddress;
         this.constants = constants;
@@ -316,12 +341,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Block rskExecutionBlock = args.getExecutionBlock();
         this.activations = activationConfig.forBlock(rskExecutionBlock.getNumber());
         this.rskTx = args.getTransaction();
+        this.msgType = args.getMsgType();
 
         this.bridgeSupport = bridgeSupportFactory.newInstance(
-                args.getRepository(),
-                rskExecutionBlock,
-                contractAddress,
-                args.getLogs());
+            args.getRepository(),
+            rskExecutionBlock,
+            contractAddress,
+            args.getLogs()
+        );
     }
 
     @Override
@@ -342,48 +369,96 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             // Function parsing from data returned null => invalid function selected, halt!
             if (bridgeParsedData == null) {
                 String errorMessage = String.format("Invalid data given: %s.", ByteUtil.toHexString(data));
-                logger.info(errorMessage);
-                if (activations.isActive(ConsensusRule.RSKIP88)) {
-                    throw new BridgeIllegalArgumentException(errorMessage);
+                logger.info("[execute] {}", errorMessage);
+                if (!activations.isActive(ConsensusRule.RSKIP88)) {
+                    return null;
                 }
 
-                return null;
-            }
-
-            // If this is not a local call, then first check whether the function
-            // allows for non-local calls
-            if (activations.isActive(ConsensusRule.RSKIP88) &&
-                !isLocalCall() &&
-                bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls(this, bridgeParsedData.args)) {
-
-                String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
-                logger.info(errorMessage);
                 throw new BridgeIllegalArgumentException(errorMessage);
             }
 
+            validateCall(bridgeParsedData);
             Optional<?> result;
             try {
-                // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
-                // If the user tries to call an non-existent function, parseData() will return null.
-                result = bridgeParsedData.bridgeMethod.getExecutor().execute(this, bridgeParsedData.args);
+                result = executeBridgeMethod(bridgeParsedData);
             } catch (BridgeIllegalArgumentException ex) {
-                String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
-                logger.warn(errorMessage, ex);
-                if (activations.isActive(ConsensusRule.RSKIP88)) {
-                    throw new BridgeIllegalArgumentException(errorMessage);
+                if (shouldReturnNullInsteadOfException()) {
+                    return null;
                 }
-
-                return null;
+                throw ex;
             }
-
             teardown();
 
-            return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(null);
+            byte[] voidReturnValue = calculateVoidReturnValue();
+            return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(voidReturnValue);
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("bridgeexecute", ex.getMessage());
             throw new VMException(String.format("Exception executing bridge: %s", ex.getMessage()), ex);
         }
+    }
+
+    private void validateCall(BridgeParsedData bridgeParsedData) throws BridgeIllegalArgumentException {
+        validateLocalCall(bridgeParsedData);
+        validateCallMessageType(bridgeParsedData);
+    }
+
+    private void validateLocalCall(BridgeParsedData bridgeParsedData) throws BridgeIllegalArgumentException {
+        // If this is not a local call, then check whether the function allows for non-local calls
+        if (activations.isActive(ConsensusRule.RSKIP88) &&
+            !isLocalCall() &&
+            bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls(this, bridgeParsedData.args)) {
+
+            String errorMessage = String.format(
+                "Non-local-call to %s. Returning without execution.",
+                bridgeParsedData.bridgeMethod.getFunction().name
+            );
+            logger.info("[validateLocalCall] {}", errorMessage);
+            throw new BridgeIllegalArgumentException(errorMessage);
+        }
+    }
+
+    private void validateCallMessageType(BridgeParsedData bridgeParsedData) throws BridgeIllegalArgumentException {
+        if (activations.isActive(RSKIP417) &&
+            !bridgeParsedData.bridgeMethod.acceptsThisTypeOfCall(this.msgType)) {
+            String errorMessage = String.format(
+                "Call type (%s) not accepted by %s. Returning without execution.",
+                this.msgType.name(),
+                bridgeParsedData.bridgeMethod.getFunction().name
+            );
+            logger.info("[validateCallMessageType] {}", errorMessage);
+
+            throw new BridgeIllegalArgumentException(errorMessage);
+        }
+    }
+
+    private Optional<?> executeBridgeMethod(BridgeParsedData bridgeParsedData) throws Exception {
+        try {
+            // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
+            // If the user tries to call an non-existent function, parseData() will return null.
+            BridgeMethodExecutor executor = bridgeParsedData.bridgeMethod.getExecutor();
+            return executor.execute(this, bridgeParsedData.args);
+        } catch (BridgeIllegalArgumentException ex) {
+            String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
+            logger.warn(errorMessage, ex);
+            
+            throw new BridgeIllegalArgumentException(errorMessage);
+        }
+    }
+
+    private boolean shouldReturnNullInsteadOfException() {
+        return !activations.isActive(ConsensusRule.RSKIP88);
+    }
+
+    private byte[] calculateVoidReturnValue() {
+        if (shouldReturnNullOnVoidMethods()) {
+            return null;
+        }
+        return new byte[]{};
+    }
+
+    private boolean shouldReturnNullOnVoidMethods() {
+        return !activations.isActive(RSKIP417);
     }
 
     private void teardown() throws IOException {
@@ -628,7 +703,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getBtcBlockchainBlockHashAtDepth");
 
         int depth = ((BigInteger) args[0]).intValue();
-        Sha256Hash blockHash = null;
+        Sha256Hash blockHash;
         try {
             blockHash = bridgeSupport.getBtcBlockchainBlockHashAtDepth(depth);
         } catch (Exception e) {
@@ -831,8 +906,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("createFederation");
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("create", new byte[][]{})
+            rskTx,
+            new ABICallSpec("create", new byte[][]{})
         );
     }
 
@@ -848,8 +923,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("add", new byte[][]{ publicKeyBytes })
+            rskTx,
+            new ABICallSpec("add", new byte[][]{ publicKeyBytes })
         );
     }
 
@@ -861,8 +936,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         byte[] mstPublicKeyBytes = (byte[]) args[2];
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("add-multi", new byte[][]{ btcPublicKeyBytes, rskPublicKeyBytes, mstPublicKeyBytes })
+            rskTx,
+            new ABICallSpec(
+                "add-multi",
+                new byte[][]{ btcPublicKeyBytes, rskPublicKeyBytes, mstPublicKeyBytes }
+            )
         );
     }
 
@@ -878,8 +956,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("commit", new byte[][]{ hash })
+            rskTx,
+            new ABICallSpec("commit", new byte[][]{ hash })
         );
     }
 
@@ -1100,7 +1178,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         byte[] pmtSerialized = (byte[]) args[2];
         Sha256Hash witnessMerkleRoot = Sha256Hash.wrap((byte[]) args[3]);
         byte[] witnessReservedValue = (byte[]) args[4];
-        bridgeSupport.registerBtcCoinbaseTransaction(btcTxSerialized, blockHash, pmtSerialized, witnessMerkleRoot, witnessReservedValue);
+
+        bridgeSupport.registerBtcCoinbaseTransaction(
+            btcTxSerialized,
+            blockHash,
+            pmtSerialized,
+            witnessMerkleRoot,
+            witnessReservedValue
+        );
     }
 
     public boolean hasBtcBlockCoinbaseTransactionInformation(Object[] args) {

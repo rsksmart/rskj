@@ -1,12 +1,6 @@
-package co.rsk.peg.bitcoin;
+package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -14,11 +8,8 @@ import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
-import co.rsk.peg.ErpFederation;
-import co.rsk.peg.Federation;
-import co.rsk.peg.FederationMember;
-import co.rsk.peg.P2shErpFederation;
-import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.federation.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -34,23 +25,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static co.rsk.peg.federation.FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -75,22 +55,19 @@ class PocSighashTest {
         // Arrange
         int erpFedActivationDelay = 720;
 
-        List<FedSigner> fedMembers = FedSigner.listOf("fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7");
-        List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+        List<FedSigner> fedSigners = FedSigner.listOf("fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7");
+        List<FedSigner> erpFedSigners = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        P2shErpFederation fed = new P2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
-            Instant.now(),
-            0L,
-            networkParameters,
-            erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
-            erpFedActivationDelay,
-            activations
-        );
+        List<FederationMember> fedMembers = fedSigners.stream().map(FedSigner::getFed).collect(Collectors.toList());
+        Instant creationTime = Instant.now();
+        List<BtcECKey> erpFedPubKeys = erpFedSigners.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
+
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, networkParameters);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpFedPubKeys, erpFedActivationDelay);
 
         List<FedUtxo> utxos = new ArrayList<>();
         for (int i = 0; i < 7; i++) {
@@ -120,7 +97,7 @@ class PocSighashTest {
             networkParameters,
             erpFedActivationDelay,
             fed,
-            fedMembers,
+            fedSigners,
             false,
             utxos,
             totalAmount.minus(Coin.valueOf(15_000)),
@@ -149,26 +126,22 @@ class PocSighashTest {
         // Arrange
         int erpFedActivationDelay = 720;
 
-        List<FedSigner> fedMembers = FedSigner.listOf("fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7");
-        List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+        List<FedSigner> fedSigners = FedSigner.listOf("fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7");
+        List<FederationMember> fedMembers = fedSigners.stream().map(FedSigner::getFed).collect(Collectors.toList());
+        Instant creationTime = Instant.now();
+        List<FedSigner> erpSigners = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+        List<BtcECKey> erpPubKeys = erpSigners.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        P2shErpFederation fed = new P2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
-            Instant.now(),
-            0L,
-            networkParameters,
-            erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
-            erpFedActivationDelay,
-            activations
-        );
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, networkParameters);
+        ErpFederation p2shErpFederation = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
         List<FedUtxo> utxos = new ArrayList<>();
         BtcTransaction peginTx = new BtcTransaction(networkParameters);
-        peginTx.addOutput(Coin.valueOf(100_000), fed.getAddress());
+        peginTx.addOutput(Coin.valueOf(100_000), p2shErpFederation.getAddress());
         utxos.add(FedUtxo.of(peginTx, 0));
 
         Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
@@ -179,8 +152,8 @@ class PocSighashTest {
         BtcTransaction pegOutTx = spendFromFed(
             networkParameters,
             erpFedActivationDelay,
-            fed,
-            fedMembers,
+            p2shErpFederation,
+            fedSigners,
             false,
             utxos,
             totalAmount.minus(Coin.valueOf(15_000)),
@@ -195,7 +168,7 @@ class PocSighashTest {
         for (int i = 0; i < pegOutTx.getInputs().size(); i++) {
             Sha256Hash sighashFromSignedTx = pegOutTx.hashForSignature(
                 i,
-                fed.getRedeemScript(),
+                p2shErpFederation.getRedeemScript(),
                 BtcTransaction.SigHash.ALL,
                 false
             );
@@ -204,7 +177,7 @@ class PocSighashTest {
 
 
         BtcTransaction peginTx2 = new BtcTransaction(networkParameters);
-        peginTx2.addOutput(Coin.valueOf(100_000), fed.getAddress());
+        peginTx2.addOutput(Coin.valueOf(100_000), p2shErpFederation.getAddress());
         utxos.add(FedUtxo.of(peginTx2, 0));
 
         Coin alteredTxTotalAmount = utxos.stream().map(fedUtxo -> fedUtxo.btcTransaction.getOutput(fedUtxo.getOutputIdx()).getValue()).reduce(Coin.ZERO, Coin::add);
@@ -213,8 +186,8 @@ class PocSighashTest {
         spendFromFed(
             networkParameters,
             erpFedActivationDelay,
-            fed,
-            fedMembers,
+            p2shErpFederation,
+            fedSigners,
             false,
             utxos,
             alteredTxTotalAmount.minus(Coin.valueOf(15_000)),
@@ -246,22 +219,18 @@ class PocSighashTest {
         // Arrange
         int erpFedActivationDelay = 720;
 
-        List<FedSigner> fedMembers = FedSigner.listOf("fed1", "fed2", "fed3");
-        List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+        List<FedSigner> fedSigners = FedSigner.listOf("fed1", "fed2", "fed3");
+        List<FederationMember> fedMembers = fedSigners.stream().map(FedSigner::getFed).collect(Collectors.toList());
+        Instant creationTime = Instant.now();
+        List<FedSigner> erpSigners = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+        List<BtcECKey> erpPubKeys = erpSigners.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        P2shErpFederation fed = new P2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
-            Instant.now(),
-            0L,
-            networkParameters,
-            erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
-            erpFedActivationDelay,
-            activations
-        );
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, networkParameters);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
         List<FedUtxo> utxos = new ArrayList<>();
         for (int i = 0; i < 7; i++) {
@@ -279,7 +248,7 @@ class PocSighashTest {
             networkParameters,
             erpFedActivationDelay,
             fed,
-            fedMembers,
+            fedSigners,
             false,
             utxos,
             totalAmount.minus(Coin.valueOf(15_000)),
@@ -308,22 +277,17 @@ class PocSighashTest {
         NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
         int erpFedActivationDelay = 720;
 
-        List<FedSigner> fedMembers = FedSigner.listOf("federator1", "federator2", "federator6");
-        List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+        List<FedSigner> fedSigners = FedSigner.listOf("federator1", "federator2", "federator6");
+        List<FederationMember> fedMembers = fedSigners.stream().map(FedSigner::getFed).collect(Collectors.toList());
+        List<FedSigner> erpFedSigners = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+        List<BtcECKey> erpPubKeys = erpFedSigners.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        P2shErpFederation fed = new P2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
-            Instant.now(),
-            0L,
-            networkParameters,
-            erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
-            erpFedActivationDelay,
-            activations
-        );
+        FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.now(), 0L, networkParameters);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
         Address expectedAddress = Address.fromBase58(
             networkParameters,
@@ -353,7 +317,7 @@ class PocSighashTest {
             networkParameters,
             erpFedActivationDelay,
             fed,
-            fedMembers,
+            fedSigners,
             false,
             utxos,
             Coin.valueOf(1_107_748L),
@@ -394,22 +358,18 @@ class PocSighashTest {
         NetworkParameters networkParameters = BridgeTestNetConstants.getInstance().getBtcParams();
         int erpFedActivationDelay = 720;
 
-        List<FedSigner> fedMembers = FedSigner.listOf("federator1", "federator2", "federator6");
+        List<FedSigner> fedSigners = FedSigner.listOf("federator1", "federator2", "federator6");
+        List<FederationMember> fedMembers = fedSigners.stream().map(FedSigner::getFed).collect(Collectors.toList());
+        Instant creationTime = Instant.now();
         List<FedSigner> erpFedMembers = FedSigner.listOf("erp-fed-01", "erp-fed-02", "erp-fed-03");
+        List<BtcECKey> erpPubKeys = erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        P2shErpFederation fed = new P2shErpFederation(
-            fedMembers.stream().map(FedSigner::getFed).collect(Collectors.toList()),
-            Instant.now(),
-            0L,
-            networkParameters,
-            erpFedMembers.stream().map(FedSigner::getFed).map(FederationMember::getBtcPublicKey).collect(Collectors.toList()),
-            erpFedActivationDelay,
-            activations
-        );
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, networkParameters);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
         Address expectedAddress = Address.fromBase58(
             networkParameters,
@@ -492,15 +452,8 @@ class PocSighashTest {
             FedSigner::getFed
         ).map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
 
-        P2shErpFederation fed = new P2shErpFederation(
-            fedMembers,
-            Instant.now(),
-            0L,
-            networkParameters,
-            erpPubKeys,
-            erpFedActivationDelay,
-            activations
-        );
+        FederationArgs federationArgs = new FederationArgs(fedMembers, Instant.now(), 0L, networkParameters);
+        ErpFederation fed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, erpFedActivationDelay);
 
         Address expectedAddress = Address.fromBase58(
             networkParameters,
@@ -632,7 +585,7 @@ class PocSighashTest {
         scriptBuilder = scriptBuilder.number(0);
         signaturesEncoded.forEach(scriptBuilder::data);
 
-        if (federation instanceof P2shErpFederation || federation instanceof ErpFederation){
+        if (federation instanceof ErpFederation){
             int flowOpCode = signWithTheEmergencyMultisig ? 1 : 0;
             scriptBuilder.number(flowOpCode);
         }

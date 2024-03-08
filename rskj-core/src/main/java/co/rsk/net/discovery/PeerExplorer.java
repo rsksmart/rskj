@@ -41,12 +41,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -63,6 +58,9 @@ public class PeerExplorer {
     private static final int MAX_NODES_TO_CHECK = 16;
     private static final int RETRIES_COUNT = 3;
 
+    private final List<String> initialBootNodes;
+    private int retryCounter = 0;
+    private final long maxBootRetries;
     private final Set<InetSocketAddress> bootNodes = ConcurrentHashMap.newKeySet();
 
     private final Map<String, PeerDiscoveryRequest> pendingPingRequests = new ConcurrentHashMap<>();
@@ -98,12 +96,13 @@ public class PeerExplorer {
     public PeerExplorer(List<String> initialBootNodes,
                         Node localNode, NodeDistanceTable distanceTable, ECKey key,
                         long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
-                        PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHostPort) {
+                        PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHostPort, long maxBootRetries) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
         this.updateEntryLock = new ReentrantLock();
         this.networkId = networkId;
+        this.initialBootNodes = Collections.unmodifiableList(new ArrayList<>(initialBootNodes));
         loadInitialBootNodes(initialBootNodes);
 
         this.cleaner = new PeerExplorerCleaner(updatePeriod, cleanPeriod, this);
@@ -114,6 +113,8 @@ public class PeerExplorer {
 
         this.knownHosts = new ConcurrentHashMap<>();
         this.allowMultipleConnectionsPerHostPort = allowMultipleConnectionsPerHostPort;
+
+        this.maxBootRetries = maxBootRetries;
     }
 
     void start() {
@@ -147,6 +148,11 @@ public class PeerExplorer {
     @VisibleForTesting
     ExecState getState() {
         return state;
+    }
+
+    @VisibleForTesting
+    int getRetryCounter() {
+        return retryCounter;
     }
 
     @VisibleForTesting
@@ -429,10 +435,25 @@ public class PeerExplorer {
 
         List<Node> closestNodes = this.distanceTable.getClosestNodes(this.localNode.getId());
 
-        logger.trace("update - closestNodes: [{}]", closestNodes);
+        if (shouldRetryConnection(closestNodes)) {
+            if (maxBootRetries == -1 || retryCounter < maxBootRetries) {
+                retryCounter++;
+                logger.info("retrying connection to bootstrap nodes. Attempt: {}", retryCounter);
+                loadInitialBootNodes(initialBootNodes);
+                startConversationWithNewNodes();
+            } else {
+                logger.warn("max retry attempts reached.");
+            }
+        } else {
+            logger.trace("update - closestNodes: [{}]", closestNodes);
+            this.askForMoreNodes(closestNodes);
+            this.checkPeersPulse(closestNodes);
+        }
+    }
 
-        this.askForMoreNodes(closestNodes);
-        this.checkPeersPulse(closestNodes);
+    private boolean shouldRetryConnection(List<Node> closestNodes) {
+        return closestNodes.isEmpty() && bootNodes.isEmpty() && pendingPingRequests.isEmpty() &&
+                pendingFindNodeRequests.isEmpty() && establishedConnections.isEmpty();
     }
 
     private void checkPeersPulse(List<Node> closestNodes) {

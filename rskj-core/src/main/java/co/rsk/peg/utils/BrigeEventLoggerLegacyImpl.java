@@ -22,7 +22,8 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.DeprecatedMethodCallException;
-import co.rsk.peg.Federation;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationMember;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -52,7 +53,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     private final BridgeConstants bridgeConstants;
     private final ActivationConfig.ForBlock activations;
     private final SignatureCache signatureCache;
-    private List<LogInfo> logs;
+    private final List<LogInfo> logs;
 
     public BrigeEventLoggerLegacyImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs, SignatureCache signatureCache) {
         this.bridgeConstants = bridgeConstants;
@@ -77,7 +78,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
+    public void logAddSignature(FederationMember federationMember, BtcTransaction btcTx, byte[] rskTxHash) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             throw new DeprecatedMethodCallException(
                 "Calling BrigeEventLoggerLegacyImpl.logAddSignature method after RSKIP146 activation"
@@ -85,7 +86,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
         }
         List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
         byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
-            RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
+            RLP.encodeElement(federationMember.getBtcPublicKey().getPubKeyHash()),
             RLP.encodeElement(rskTxHash));
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));

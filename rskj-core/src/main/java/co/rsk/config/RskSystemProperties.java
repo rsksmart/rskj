@@ -19,6 +19,7 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
+import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
@@ -29,6 +30,7 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.listener.GasPriceCalculator;
 
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
@@ -46,6 +48,9 @@ public class RskSystemProperties extends SystemProperties {
     private static final int PD_DEFAULT_CLEAN_PERIOD = 15000; //miliseconds
     private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; //miliseconds
     private static final int PD_DEFAULT_REFRESH_PERIOD = 60000; //miliseconds
+    private static final int PD_DEFAULT_MAX_BOOTSTRAP_RETRIES = -1;
+
+    private static final String PD_MAX_BOOTSTRAP_RETRIES_CONFIG = "peer.discovery.maxBootRetries";
 
     private static final String REGTEST_BLOCKCHAIN_CONFIG = "regtest";
 
@@ -54,6 +59,10 @@ public class RskSystemProperties extends SystemProperties {
     private static final String RPC_MODULES_PATH = "rpc.modules";
     private static final String RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY = "rpc.logs.maxBlocksToQuery";
     private static final String RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN = "rpc.logs.maxLogsToReturn";
+    public static final String TX_GAS_PRICE_CALCULATOR_TYPE = "transaction.gasPriceCalculatorType";
+
+    private static final String RPC_GAS_PRICE_MULTIPLIER_CONFIG = "rpc.gasPriceMultiplier";
+    private static final String DISCOVERY_BUCKET_SIZE = "peer.discovery.bucketSize";
 
     private static final int CHUNK_SIZE = 192;
 
@@ -185,6 +194,16 @@ public class RskSystemProperties extends SystemProperties {
         return getBoolean("wallet.enabled", false);
     }
 
+    public double gasPriceMultiplier() {
+        double gasPriceMultiplier = getDouble(RPC_GAS_PRICE_MULTIPLIER_CONFIG, 1.1);
+
+        if(gasPriceMultiplier >= 0) {
+            return gasPriceMultiplier;
+        } else {
+            throw new RskConfigurationException(RPC_GAS_PRICE_MULTIPLIER_CONFIG + " cannot be a negative number");
+        }
+    }
+
     public List<WalletAccount> walletAccounts() {
         if (!configFromFiles.hasPath("wallet.accounts")) {
             return Collections.emptyList();
@@ -247,6 +266,14 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean allowMultipleConnectionsPerHostPort() {
         return getBoolean("peer.discovery.allowMultipleConnectionsPerHostPort", true);
+    }
+
+    public long peerDiscoveryMaxBootRetries() {
+        return getLong(PD_MAX_BOOTSTRAP_RETRIES_CONFIG, PD_DEFAULT_MAX_BOOTSTRAP_RETRIES);
+    }
+
+    public int discoveryBucketSize() {
+        return getInt(DISCOVERY_BUCKET_SIZE, KademliaOptions.BUCKET_SIZE);
     }
 
     public List<ModuleDescription> getRpcModules() {
@@ -492,6 +519,18 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         return value;
+    }
+
+    public GasPriceCalculator.GasCalculatorType getGasCalculatorType() {
+        String value = configFromFiles.getString(TX_GAS_PRICE_CALCULATOR_TYPE);
+        if (value == null || value.isEmpty()) {
+            return GasPriceCalculator.GasCalculatorType.PLAIN_PERCENTILE;
+        }
+        GasPriceCalculator.GasCalculatorType gasCalculatorType = GasPriceCalculator.GasCalculatorType.fromString(value);
+        if(gasCalculatorType == null) {
+            throw new RskConfigurationException("Invalid gasPriceCalculatorType: " + value);
+        }
+        return gasCalculatorType;
     }
 
     private void fetchMethodTimeout(Config configElement, Map<String, Long> methodTimeoutMap) {

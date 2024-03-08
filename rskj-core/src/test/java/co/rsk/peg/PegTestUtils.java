@@ -18,14 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
@@ -33,19 +26,19 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.simples.SimpleRskTransaction;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.Keccak256Helper;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.Keccak256Helper;
-import org.mockito.Mockito;
 
 /**
  * Created by oscar on 05/08/2016.
@@ -306,25 +299,24 @@ public final class PegTestUtils {
 
     public static Federation createFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        return new StandardMultisigFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            bridgeConstants.getBtcParams()
-        );
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys);
+        Instant creationTime = Instant.ofEpochMilli(1000L);
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
+        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
-    public static P2shErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
+    public static ErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        return new P2shErpFederation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            bridgeConstants.getBtcParams(),
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(),
-            Mockito.mock(ActivationConfig.ForBlock.class)
-        );
+        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys);
+        Instant creationTime = Instant.ofEpochMilli(1000L);
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
+        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
     public static BtcTransaction createBtcTransactionWithOutputToAddress(NetworkParameters networkParameters, Coin amount, Address btcAddress) {
