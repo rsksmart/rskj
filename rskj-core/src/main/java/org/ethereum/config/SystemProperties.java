@@ -44,6 +44,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -106,6 +108,7 @@ public abstract class SystemProperties {
     public static final String PROPERTY_PERSIST_BLOOMS_CACHE_SNAPSHOT = "cache.blooms.persist-snapshot";
 
     /* Testing */
+    public static final String LAST_KNEW_PEERS_FILE = "lastPeers.properties";
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
 
     protected final Config configFromFiles;
@@ -310,6 +313,10 @@ public abstract class SystemProperties {
 
     public String databaseDir() {
         return databaseDir == null ? configFromFiles.getString(PROPERTY_BASE_PATH) : databaseDir;
+    }
+
+    public Path getLastKnewPeersFilePath() {
+        return Paths.get(databaseDir(), LAST_KNEW_PEERS_FILE);
     }
 
     public void setDataBaseDir(String dataBaseDir) {
