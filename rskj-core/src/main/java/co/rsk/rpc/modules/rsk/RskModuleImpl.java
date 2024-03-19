@@ -1,13 +1,12 @@
 package co.rsk.rpc.modules.rsk;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import co.rsk.config.RskSystemProperties;
-import co.rsk.util.NodeStopper;
 import co.rsk.Flusher;
+import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.crypto.Keccak256;
+import co.rsk.rpc.Web3InformationRetriever;
+import co.rsk.trie.Trie;
+import co.rsk.util.HexUtils;
+import co.rsk.util.NodeStopper;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -19,11 +18,10 @@ import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import co.rsk.core.bc.BlockHashesHelper;
-import co.rsk.crypto.Keccak256;
-import co.rsk.rpc.Web3InformationRetriever;
-import co.rsk.trie.Trie;
-import co.rsk.util.HexUtils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 public class RskModuleImpl implements RskModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -35,30 +33,26 @@ public class RskModuleImpl implements RskModule {
     private final Flusher flusher;
     private final NodeStopper nodeStopper;
 
-    private final RskSystemProperties rskSystemProperties;
-
     public RskModuleImpl(Blockchain blockchain,
                          BlockStore blockStore,
                          ReceiptStore receiptStore,
                          Web3InformationRetriever web3InformationRetriever,
                          Flusher flusher,
-                         NodeStopper nodeStopper,
-                         RskSystemProperties rskSystemProperties) {
+                         NodeStopper nodeStopper) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.web3InformationRetriever = web3InformationRetriever;
         this.flusher = flusher;
         this.nodeStopper = nodeStopper;
-        this.rskSystemProperties = rskSystemProperties;
     }
 
     public RskModuleImpl(Blockchain blockchain,
                          BlockStore blockStore,
                          ReceiptStore receiptStore,
                          Web3InformationRetriever web3InformationRetriever,
-                         Flusher flusher, RskSystemProperties rskSystemProperties) {
-        this(blockchain, blockStore, receiptStore, web3InformationRetriever, flusher, System::exit, rskSystemProperties);
+                         Flusher flusher) {
+        this(blockchain, blockStore, receiptStore, web3InformationRetriever, flusher, System::exit);
     }
 
     @Override

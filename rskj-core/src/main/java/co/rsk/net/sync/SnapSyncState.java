@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Optional;
 
 public class SnapSyncState extends BaseSyncState {
 
@@ -62,12 +63,15 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     protected void onMessageTimeOut() {
         // TODO(snap-poc) handle multiple peers here, not just stop syncing, similarly to co.rsk.net.sync.DownloadingBodiesSyncState.tick
-        Peer timeoutPeer = this.peers.getBestPeer().get();
+        Optional<Peer> timeoutPeerResult = this.peers.getBestPeer();
         syncEventsHandler.stopSyncing();
 
-        logger.warn("Timeout on SnapSyncState for peer {}", timeoutPeer.getPeerNodeID());
-        syncEventsHandler.onErrorSyncing(timeoutPeer, EventType.TIMEOUT_MESSAGE,
-                "Timeout for peer {} on {}", timeoutPeer.getPeerNodeID(), this.getClass());
+        if (timeoutPeerResult.isPresent()) {
+            Peer timeoutPeer = timeoutPeerResult.get();
+            logger.warn("Timeout on SnapSyncState for peer {}", timeoutPeer.getPeerNodeID());
+            syncEventsHandler.onErrorSyncing(timeoutPeer, EventType.TIMEOUT_MESSAGE,
+                    "Timeout for peer {} on {}", timeoutPeer.getPeerNodeID(), this.getClass());
+        }
     }
 
     public void finished() {

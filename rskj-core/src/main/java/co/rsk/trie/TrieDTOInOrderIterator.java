@@ -71,7 +71,7 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
                     return pushAndReturn(nodeDTO, visiting, (offset - left.getTotalSize()));
                 }
             } else if (nodeDTO.isLeftNodePresent() && nodeDTO.isLeftNodeEmbedded() && (offset <= nodeDTO.getLeftSize())) {
-                    return pushAndReturn(nodeDTO, visiting, offset);
+                return pushAndReturn(nodeDTO, visiting, offset);
             }
 
             if (nodeDTO.isRightNodePresent() && !nodeDTO.isRightNodeEmbedded()) {
@@ -88,8 +88,8 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
                     return findByChildrenSize(offset - maxParentSize, right, visiting);
                 }
             } else if (nodeDTO.isRightNodeEmbedded() && (offset <= nodeDTO.getTotalSize())) {
-                    long leftAndParentSize = nodeDTO.getTotalSize() - nodeDTO.getRightSize();
-                    return pushAndReturn(nodeDTO, visiting, offset - leftAndParentSize);
+                long leftAndParentSize = nodeDTO.getTotalSize() - nodeDTO.getRightSize();
+                return pushAndReturn(nodeDTO, visiting, offset - leftAndParentSize);
             }
         }
         if (nodeDTO.getTotalSize() >= offset) {
@@ -119,7 +119,9 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
             if (result.getRightHash() != null) {
                 TrieDTO rightNode = pushNode(result.getRightHash(), this.visiting);
                 // find the leftmost node of the right child
-                pushLeftmostNode(rightNode);
+                if (rightNode != null) {
+                    pushLeftmostNode(rightNode);
+                }
                 // note "node" has been replaced on the stack by its right child
             }
         } // else: no right subtree, go back up the stack
@@ -127,6 +129,7 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
         this.from += offset;
         return result;
     }
+
     /**
      * Find the leftmost node from this root, pushing all the intermediate nodes onto the visiting stack
      *
@@ -136,7 +139,9 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
         // find the leftmost node
         if (nodeKey.getLeftHash() != null) {
             TrieDTO leftNode = pushNode(nodeKey.getLeftHash(), visiting);
-            pushLeftmostNode(leftNode); // recurse on next left node
+            if (leftNode != null) {
+                pushLeftmostNode(leftNode); // recurse on next left node
+            }
         }
     }
 
