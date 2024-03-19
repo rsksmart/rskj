@@ -53,7 +53,7 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
         // TODO poner los nodos padres intermedios en el stack, tenemos que serializarlos para poder validar el chunk completo.
         if (!nodeDTO.isTerminal()) {
 
-            if (nodeDTO.isLeftNodePresent() && !nodeDTO.isLeftNodeEmbedded()) {
+            if (isLeftNotEmbedded(nodeDTO)){
                 TrieDTO left = getNode(nodeDTO.getLeftHash());
 
                 if (left == null) {
@@ -97,6 +97,10 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
         } else {
             return nodeDTO;
         }
+    }
+
+    private boolean isLeftNotEmbedded(TrieDTO nodeDTO){
+        return nodeDTO.isLeftNodePresent() && !nodeDTO.isLeftNodeEmbedded();
     }
 
     private TrieDTO pushAndReturn(TrieDTO nodeDTO, Deque<TrieDTO> visiting, long offset) {

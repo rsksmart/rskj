@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2023 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -77,9 +77,6 @@ public class TrieDTO {
     private TrieDTO rightNode;
     private byte[] hash;
 
-    public TrieDTO() {
-    }
-
     public static TrieDTO decodeFromMessage(byte[] src, TrieStore ds) {
         return decodeFromMessage(src, ds, false, null);
     }
@@ -106,33 +103,10 @@ public class TrieDTO {
             result.path = pathTuple != null ? pathTuple.getValue() : null;
 
             //(*optional) 3.left - if present & !embedded => hash
-
-            if (result.leftNodePresent && result.leftNodeEmbedded) {
-                result.leftNode = TrieDTO.decodeFromMessage(readChildEmbedded(srcWrap, decodeUint8(), Uint8.BYTES), ds, false, hash);
-                result.left = result.leftNode.getEncoded();
-                result.leftHash = null;
-                encoder.write(encodeUint24(result.left.length));
-                encoder.write(result.left);
-            } else if (result.leftNodePresent) {
-                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-                srcWrap.get(valueHash);
-                result.left = preloadChildren ? valueHash : null;
-                result.leftHash = valueHash;
-            }
+            handleLeft(result, srcWrap, encoder, ds, preloadChildren, hash);
 
             //(*optional) 3.right - if present & !embedded => hash
-            if (result.rightNodePresent && result.rightNodeEmbedded) {
-                result.rightNode = TrieDTO.decodeFromMessage(readChildEmbedded(srcWrap, decodeUint8(), Uint8.BYTES), ds, false, hash);
-                result.right = result.rightNode.getEncoded();
-                result.rightHash = null;
-                encoder.write(encodeUint24(result.right.length));
-                encoder.write(result.right);
-            } else if (result.rightNodePresent) {
-                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-                srcWrap.get(valueHash);
-                result.right = preloadChildren ? valueHash : null;
-                result.rightHash = valueHash;
-            }
+            handleRight(result, srcWrap, encoder, ds, preloadChildren, hash);
 
             result.childrenSize = new VarInt(0);
             if (result.leftNodePresent || result.rightNodePresent) {
@@ -140,22 +114,7 @@ public class TrieDTO {
                 result.childrenSize = readVarInt(srcWrap, encoder);
             }
 
-            if (result.hasLongVal) {
-                byte[] valueHashBytes = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-                srcWrap.get(valueHashBytes);
-                byte[] lvalueBytes = new byte[Uint24.BYTES];
-                srcWrap.get(lvalueBytes);
-                byte[] value = ds.retrieveValue(valueHashBytes);
-                encoder.write(value);
-                result.value = value;
-            } else {
-                int remaining = srcWrap.remaining();
-                byte[] value = new byte[remaining];
-                srcWrap.get(value);
-                //(*optional) 5.value - if !longValue => value
-                encoder.write(value);
-                result.value = value;
-            }
+            handleValue(result, srcWrap, encoder, ds);
 
             if (srcWrap.hasRemaining()) {
                 throw new IllegalArgumentException("The srcWrap had more data than expected");
@@ -169,6 +128,55 @@ public class TrieDTO {
         return result;
     }
 
+    private static void handleLeft(TrieDTO result, ByteBuffer srcWrap, ByteArrayOutputStream encoder, TrieStore ds, boolean preloadChildren, byte[] hash) throws IOException {
+        if (result.leftNodePresent && result.leftNodeEmbedded) {
+            result.leftNode = TrieDTO.decodeFromMessage(readChildEmbedded(srcWrap, decodeUint8(), Uint8.BYTES), ds, false, hash);
+            result.left = result.leftNode.getEncoded();
+            result.leftHash = null;
+            encoder.write(encodeUint24(result.left.length));
+            encoder.write(result.left);
+        } else if (result.leftNodePresent) {
+            byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+            srcWrap.get(valueHash);
+            result.left = preloadChildren ? valueHash : null;
+            result.leftHash = valueHash;
+        }
+    }
+    private static void handleRight(TrieDTO result, ByteBuffer srcWrap, ByteArrayOutputStream encoder, TrieStore ds, boolean preloadChildren, byte[] hash) throws IOException {
+        if (result.rightNodePresent && result.rightNodeEmbedded) {
+            result.rightNode = TrieDTO.decodeFromMessage(readChildEmbedded(srcWrap, decodeUint8(), Uint8.BYTES), ds, false, hash);
+            result.right = result.rightNode.getEncoded();
+            result.rightHash = null;
+            encoder.write(encodeUint24(result.right.length));
+            encoder.write(result.right);
+        } else if (result.rightNodePresent) {
+            byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+            srcWrap.get(valueHash);
+            result.right = preloadChildren ? valueHash : null;
+            result.rightHash = valueHash;
+        }
+
+    }
+
+    private static void handleValue(TrieDTO result, ByteBuffer srcWrap, ByteArrayOutputStream encoder, TrieStore ds) throws IOException {
+        if (result.hasLongVal) {
+            byte[] valueHashBytes = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+            srcWrap.get(valueHashBytes);
+            byte[] lvalueBytes = new byte[Uint24.BYTES];
+            srcWrap.get(lvalueBytes);
+            byte[] value = ds.retrieveValue(valueHashBytes);
+            encoder.write(value);
+            result.value = value;
+        } else {
+            int remaining = srcWrap.remaining();
+            byte[] value = new byte[remaining];
+            srcWrap.get(value);
+            //(*optional) 5.value - if !longValue => value
+            encoder.write(value);
+            result.value = value;
+        }
+
+    }
     public static TrieDTO decodeFromSync(byte[] src) {
         TrieDTO result = new TrieDTO();
         try {
@@ -215,7 +223,7 @@ public class TrieDTO {
         return result;
     }
 
-    private static byte[] readChildEmbedded(ByteBuffer srcWrap, Function<byte[], byte[]> decode, int uintBytes) throws IOException {
+    private static byte[] readChildEmbedded(ByteBuffer srcWrap, Function<byte[], byte[]> decode, int uintBytes) {
         byte[] lengthBytes = new byte[uintBytes];
         srcWrap.get(lengthBytes);
         byte[] serializedNode = decode.apply(lengthBytes);
@@ -238,9 +246,9 @@ public class TrieDTO {
 
     public long getSize() {
         long externalValueLength = this.hasLongVal ? this.value.length : 0L;
-        final long left = getLeftSize();
-        final long right = getRightSize();
-        return externalValueLength + this.source.length + left + right;
+        final long leftSize = getLeftSize();
+        final long rightSize = getRightSize();
+        return externalValueLength + this.source.length + leftSize + rightSize;
     }
 
     public long getLeftSize() {
@@ -299,10 +307,6 @@ public class TrieDTO {
     }
 
     public boolean isTerminal() {
-        // old impl:
-//        return (!this.leftNodePresent && !this.rightNodePresent) ||
-//                !((this.leftNodePresent && !this.leftNodeEmbedded) ||
-//                        (this.rightNodePresent && !this.rightNodeEmbedded));
         if (!this.leftNodePresent && !this.rightNodePresent) {
             return true;
         }
@@ -336,6 +340,7 @@ public class TrieDTO {
     public TrieDTO getRightNode() {
         return rightNode;
     }
+
     public void setLeftHash(byte[] hash) {
         this.leftHash = hash;
     }
@@ -343,6 +348,7 @@ public class TrieDTO {
     public void setRightHash(byte[] hash) {
         this.rightHash = hash;
     }
+
     public boolean isLeftNodePresent() {
         return leftNodePresent;
     }
@@ -362,6 +368,7 @@ public class TrieDTO {
     public boolean isSharedPrefixPresent() {
         return sharedPrefixPresent;
     }
+
     public byte[] getPath() {
         return this.path;
     }
@@ -373,6 +380,7 @@ public class TrieDTO {
     public boolean isHasLongVal() {
         return hasLongVal;
     }
+
     @Override
     public String toString() {
         return "Node{" + HexUtils.toJsonHex(this.path) + "}:" + this.childrenSize.value;
@@ -432,22 +440,10 @@ public class TrieDTO {
         if (this.sharedPrefixPresent) {
             SharedPathSerializer.serializeBytes(buffer, this.pathLength, this.path);
         }
-        if (leftNodePresent) {
-            if (leftNodeEmbedded) {
-                buffer.put(encodeUint8(this.left.length));
-                buffer.put(this.left);
-            } else {
-                buffer.put(this.leftHash);
-            }
-        }
-        if (rightNodePresent) {
-            if (rightNodeEmbedded) {
-                buffer.put(encodeUint8(this.right.length));
-                buffer.put(this.right);
-            } else {
-                buffer.put(this.rightHash);
-            }
-        }
+
+        toMessageHandleLeftNode(buffer);
+        toMessageHandleRightNode(buffer);
+
         if (leftNodePresent || rightNodePresent) {
             buffer.put(childrenSize.encode());
         }
@@ -461,6 +457,27 @@ public class TrieDTO {
         return buffer.array();
     }
 
+    private void toMessageHandleLeftNode(ByteBuffer buffer){
+        if (leftNodePresent) {
+            if (leftNodeEmbedded) {
+                buffer.put(encodeUint8(this.left.length));
+                buffer.put(this.left);
+            } else {
+                buffer.put(this.leftHash);
+            }
+        }
+    }
+
+    private void toMessageHandleRightNode(ByteBuffer buffer){
+        if (rightNodePresent) {
+            if (rightNodeEmbedded) {
+                buffer.put(encodeUint8(this.right.length));
+                buffer.put(this.right);
+            } else {
+                buffer.put(this.rightHash);
+            }
+        }
+    }
     public int serializedLength(boolean isPresent, boolean isEmbeddable, byte[] value) {
         if (isPresent) {
             if (isEmbeddable) {
@@ -474,8 +491,12 @@ public class TrieDTO {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o){
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()){
+            return false;
+        }
         TrieDTO trieDTO = (TrieDTO) o;
         return hasLongVal == trieDTO.hasLongVal
                 && sharedPrefixPresent == trieDTO.sharedPrefixPresent
