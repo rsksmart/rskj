@@ -23,15 +23,12 @@ import org.ethereum.TestUtils;
 import org.ethereum.datasource.HashMapDB;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
 import static org.bouncycastle.util.encoders.Hex.decode;
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(MockitoExtension.class)
 class TrieDTOTest {
 
 
