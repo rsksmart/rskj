@@ -868,8 +868,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockStore(),
                     getReceiptStore(),
                     getWeb3InformationRetriever(),
-                    getBlockChainFlusher(),
-                    getRskSystemProperties());
+                    getBlockChainFlusher());
         }
 
         return rskModule;

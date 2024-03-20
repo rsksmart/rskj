@@ -106,10 +106,6 @@ public class TrieDTOInOrderRecoverer {
         return new Keccak256(Keccak256Helper.keccak256(recoveredBytes));
     }
 
-    private static String getHashString(byte[] recoveredBytes) {
-        return getHash(recoveredBytes).toHexString();
-    }
-
     private static long getValue(TrieDTO trieCollection) {
         return trieCollection.getChildrenSize().value;
     }
