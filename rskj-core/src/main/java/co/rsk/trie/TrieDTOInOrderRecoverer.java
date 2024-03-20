@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 public class TrieDTOInOrderRecoverer {
 
     private static final Logger logger = LoggerFactory.getLogger(TrieDTOInOrderRecoverer.class);
+
     private TrieDTOInOrderRecoverer() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
@@ -100,10 +101,6 @@ public class TrieDTOInOrderRecoverer {
             result.setRightHash(hash.getBytes());
         });
         return result;
-    }
-
-    private static Keccak256 getHash(byte[] recoveredBytes) {
-        return new Keccak256(Keccak256Helper.keccak256(recoveredBytes));
     }
 
     private static long getValue(TrieDTO trieCollection) {
