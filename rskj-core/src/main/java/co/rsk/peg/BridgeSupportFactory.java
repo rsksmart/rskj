@@ -22,6 +22,9 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
@@ -67,6 +70,7 @@ public class BridgeSupportFactory {
         );
 
         FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock, activations);
+        FeePerKbSupport feePerKbSupport = newFeePerKbSupportInstance(repository, contractAddress, bridgeConstants);
 
         BridgeEventLogger eventLogger;
         if (logs == null) {
@@ -92,9 +96,16 @@ public class BridgeSupportFactory {
                 executionBlock,
                 btcContext,
                 federationSupport,
+                feePerKbSupport,
                 btcBlockStoreFactory,
                 activations,
                 signatureCache
         );
+    }
+
+    private FeePerKbSupport newFeePerKbSupportInstance(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants) {
+        FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProvider(repository, contractAddress);
+        return new FeePerKbSupport(feePerKbConstants, feePerKbStorageProvider);
     }
 }
