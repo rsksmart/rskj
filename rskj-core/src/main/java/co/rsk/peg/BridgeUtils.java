@@ -30,6 +30,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import org.ethereum.config.Constants;
@@ -442,7 +443,8 @@ public class BridgeUtils {
     }
 
     private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
-        AddressBasedAuthorizer authorizer = bridgeConfiguration.getFeePerKbChangeAuthorizer();
+        FeePerKbConstants feePerKbConstants = bridgeConfiguration.getFeePerKbConstants();
+        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
 
