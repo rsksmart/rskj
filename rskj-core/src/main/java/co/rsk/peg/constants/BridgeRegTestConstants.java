@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import co.rsk.peg.feeperkb.constants.FeePerKbRegTestConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -48,6 +49,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
+        feePerKbConstants = new FeePerKbRegTestConstants();
 
         genesisFederationPublicKeys = federationPublicKeys;
         genesisFederationCreationTime = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
@@ -95,20 +97,6 @@ public class BridgeRegTestConstants extends BridgeConstants {
             lockWhitelistAuthorizedKeys,
             AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
-
-        // Key generated with GenNodeKey using generator 'auth-fee-per-kb'
-        List<ECKey> feePerKbAuthorizedKeys = Arrays.stream(new String[]{
-            "0430c7d0146029db553d60cf11e8d39df1c63979ee2e4cd1e4d4289a5d88cfcbf3a09b06b5cbc88b5bfeb4b87a94cefab81c8d44655e7e813fc3e18f51cfe7e8a0"
-        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
-
-        feePerKbChangeAuthorizer = new AddressBasedAuthorizer(
-            feePerKbAuthorizedKeys,
-            AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
-        );
-
-        genesisFeePerKb = Coin.MILLICOIN;
-
-        maxFeePerKb = Coin.valueOf(5_000_000L);
 
         initialLockingCap = Coin.COIN.multiply(1_000L); // 1_000 BTC
 
