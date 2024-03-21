@@ -402,6 +402,18 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("sync.longSyncLimit");
     }
 
+    public boolean isSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.enabled");}
+
+    public int getSnapshotChunkTimeout() {
+        return configFromFiles.getInt("sync.snapshot.chunkRequestTimeout");
+    }
+
+    public boolean isSnapshotParallelEnabled() { return configFromFiles.getBoolean("sync.snapshot.parallel");}
+
+    public int getSnapshotChunkSize() { return configFromFiles.getInt("sync.snapshot.chunkSize");}
+
+    public int getSnapshotSyncLimit() { return configFromFiles.getInt("sync.snapshot.limit");}
+
     // its fixed, cannot be set by config file
     public int getChunkSize() {
         return CHUNK_SIZE;
@@ -529,4 +541,5 @@ public class RskSystemProperties extends SystemProperties {
                 .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), Long.parseLong(entry.getValue().toString())))
                 .forEach(entry -> methodTimeoutMap.put(entry.getKey(), entry.getValue()));
     }
+
 }

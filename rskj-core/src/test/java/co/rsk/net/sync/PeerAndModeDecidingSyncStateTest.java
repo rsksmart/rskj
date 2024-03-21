@@ -108,11 +108,11 @@ class PeerAndModeDecidingSyncStateTest {
                 peersInformation,
                 blockStore);
 
-        verify(syncEventsHandler, never()).startSyncing(any());
+        verify(syncEventsHandler, never()).startBlockForwardSyncing(any());
 
         syncState.tick(Duration.ofMinutes(2));
 
-        verify(syncEventsHandler).startSyncing(any());
+        verify(syncEventsHandler).startBlockForwardSyncing(any());
     }
 
     @Test
@@ -251,7 +251,7 @@ class PeerAndModeDecidingSyncStateTest {
 
         syncState.newPeerStatus();
 
-        verify(syncEventsHandler).startSyncing(peer);
+        verify(syncEventsHandler).startBlockForwardSyncing(peer);
     }
 
     @Test
@@ -284,6 +284,6 @@ class PeerAndModeDecidingSyncStateTest {
 
         syncState.newPeerStatus();
 
-        verify(syncEventsHandler).startSyncing(peer);
+        verify(syncEventsHandler).startBlockForwardSyncing(peer);
     }
 }

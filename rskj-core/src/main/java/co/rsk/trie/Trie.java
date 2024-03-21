@@ -154,6 +154,9 @@ public class Trie {
         checkValueLength();
     }
 
+    public void setChildrenSize(VarInt childrenSize) {
+        this.childrenSize = childrenSize;
+    }
     /**
      * Deserialize a Trie, either using the original format or RSKIP 107 format, based on version flags.
      * The original trie wasted the first byte by encoding the arity, which was always 2. We use this marker to
@@ -171,6 +174,7 @@ public class Trie {
         profiler.stop(metric);
 
         return trie;
+
     }
 
     private static Trie fromMessageOrchid(byte[] message, TrieStore store) {
@@ -655,7 +659,6 @@ public class Trie {
         if (sharedPath.length() > key.length()) {
             return null;
         }
-
         int commonPathLength = key.commonPath(sharedPath).length();
         if (commonPathLength < sharedPath.length()) {
             return null;
@@ -982,7 +985,6 @@ public class Trie {
             value = retrieveLongValue();
             checkValueLengthAfterRetrieve();
         }
-
         return cloneArray(value);
     }
 

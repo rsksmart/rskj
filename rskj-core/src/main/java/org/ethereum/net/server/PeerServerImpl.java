@@ -109,7 +109,7 @@ public class PeerServerImpl implements PeerServer {
             b.childHandler(ethereumChannelInitializer);
 
             // Start the client.
-            logger.info("Listening for incoming connections, host: {}, port: [{}] ", host, port);
+            logger.info("Listening for incoming connections, hosts: {}, port: [{}] ", host, port);
             logger.info("NodeId: [{}] ", ByteUtil.toHexString(config.nodeId()));
 
             ChannelFuture f = b.bind(host, port).sync();

@@ -166,4 +166,9 @@ public class MapDBBlocksIndex implements BlocksIndex {
     public void close() {
         indexDB.close();
     }
+
+    @Override
+    public void remove(long number) {
+        this.index.remove(number);
+    }
 }

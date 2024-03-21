@@ -117,7 +117,6 @@ public class Stats {
     }
 
     private double priority(MessageType type) {
-
         switch (type) {
             case TRANSACTIONS:
                 return 2;
@@ -151,8 +150,10 @@ public class Stats {
                 return 0.5;
             case BLOCK_HEADERS_RESPONSE_MESSAGE:
                 return 5;
+                // TODO (pato) add priority for Snap sync messages.
+            default:
+                return 0.0;
         }
-        return 0.0;
     }
     public synchronized void imported(boolean best) {
         if (best) {

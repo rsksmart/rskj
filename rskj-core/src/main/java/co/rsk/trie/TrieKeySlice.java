@@ -107,6 +107,9 @@ public class TrieKeySlice {
     }
 
     public static TrieKeySlice fromKey(byte[] key) {
+        if(key == null) {
+            return TrieKeySlice.empty();
+        }
         byte[] expandedKey = PathEncoder.decode(key, key.length * 8);
         return new TrieKeySlice(expandedKey, 0, expandedKey.length);
     }
