@@ -94,7 +94,8 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         // TODO(snap-poc) deal with multiple peers logic here
         Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
-        List<Peer> bestPeers = peersInformation.getBestPeerCandidates();
+        // TODO: To be handled when we implement the multiple peers
+        //List<Peer> bestPeers = peersInformation.getBestPeerCandidates();
 
         if (!bestPeerOpt.isPresent() || !peerBestBlockNumOpt.isPresent()) {
             logger.trace("Snap syncing not possible, no valid peer");

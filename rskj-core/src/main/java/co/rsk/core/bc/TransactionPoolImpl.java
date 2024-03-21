@@ -153,6 +153,7 @@ public class TransactionPoolImpl implements TransactionPool {
         return bestBlock;
     }
 
+    @Override
     public void setBestBlock(Block bestBlock) {
         this.bestBlock = bestBlock;
     }

@@ -156,16 +156,16 @@ public class SnapshotProcessor {
     }
 
     public void processSnapStatusResponse(Peer sender, SnapStatusResponseMessage responseMessage) {
-        List<Block> blocks = responseMessage.getBlocks();
-        List<BlockDifficulty> difficulties = responseMessage.getDifficulties();
-        this.lastBlock = blocks.get(blocks.size() - 1);
+        List<Block> blocksFromResponse = responseMessage.getBlocks();
+        List<BlockDifficulty> difficultiesFromResponse = responseMessage.getDifficulties();
+        this.lastBlock = blocksFromResponse.get(blocksFromResponse.size() - 1);
         this.lastBlockDifficulty = lastBlock.getCumulativeDifficulty();
         this.remoteRootHash = this.lastBlock.getStateRoot();
         this.remoteTrieSize = responseMessage.getTrieSize();
-        this.blocks.addAll(blocks);
-        this.difficulties.addAll(difficulties);
+        this.blocks.addAll(blocksFromResponse);
+        this.difficulties.addAll(difficultiesFromResponse);
         logger.debug("CLIENT - Processing snapshot status response - blockNumber: {} rootHash: {} triesize: {}", lastBlock.getNumber(), remoteRootHash, remoteTrieSize);
-        requestBlocksChunk(sender, blocks.get(0).getNumber());
+        requestBlocksChunk(sender, blocksFromResponse.get(0).getNumber());
         generateChunkRequestTasks();
         startRequestingChunks();
     }
@@ -193,11 +193,11 @@ public class SnapshotProcessor {
 
     public void processSnapBlocksResponse(Peer sender, SnapBlocksResponseMessage snapBlocksResponseMessage) {
         logger.debug("CLIENT - Processing snap blocks response");
-        List<Block> blocks = snapBlocksResponseMessage.getBlocks();
-        List<BlockDifficulty> difficulties = snapBlocksResponseMessage.getDifficulties();
-        this.blocks.addAll(blocks);
-        this.difficulties.addAll(difficulties);
-        long nextChunk = blocks.get(0).getNumber();
+        List<Block> blocksFromResponse = snapBlocksResponseMessage.getBlocks();
+        List<BlockDifficulty> difficultiesFromResponse = snapBlocksResponseMessage.getDifficulties();
+        this.blocks.addAll(blocksFromResponse);
+        this.difficulties.addAll(difficultiesFromResponse);
+        long nextChunk = blocksFromResponse.get(0).getNumber();
         if (nextChunk > this.lastBlock.getNumber() - BLOCKS_REQUIRED) {
             requestBlocksChunk(sender, nextChunk);
         } else {

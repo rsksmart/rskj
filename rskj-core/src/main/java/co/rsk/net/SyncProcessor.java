@@ -280,7 +280,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void startSnapSync(PeersInformation peers) {
-        logger.info("Start Snap syncing with #{} nodes", peers);
+        logger.info("Start Snap syncing with #{} nodes", peers.getBestPeerCandidates());
         setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration, peers));
     }
 
