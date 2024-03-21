@@ -25,11 +25,14 @@ import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.federation.Federation;
 import java.util.List;
 
+import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public abstract class BridgeConstants {
     protected String btcParamsString;
+
+    protected FeePerKbConstants feePerKbConstants;
 
     protected Federation genesisFederation;
 
@@ -56,12 +59,6 @@ public abstract class BridgeConstants {
     protected AddressBasedAuthorizer federationChangeAuthorizer;
 
     protected AddressBasedAuthorizer lockWhitelistChangeAuthorizer;
-
-    protected AddressBasedAuthorizer feePerKbChangeAuthorizer;
-
-    protected Coin genesisFeePerKb;
-
-    protected Coin maxFeePerKb;
 
     protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
 
@@ -93,6 +90,8 @@ public abstract class BridgeConstants {
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
+
+    public FeePerKbConstants getFeePerKbConstants() { return feePerKbConstants; }
 
     public String getBtcParamsString() {
         return btcParamsString;
@@ -144,17 +143,11 @@ public abstract class BridgeConstants {
 
     public AddressBasedAuthorizer getLockWhitelistChangeAuthorizer() { return lockWhitelistChangeAuthorizer; }
 
-    public AddressBasedAuthorizer getFeePerKbChangeAuthorizer() { return feePerKbChangeAuthorizer; }
-
     public AddressBasedAuthorizer getIncreaseLockingCapAuthorizer() { return increaseLockingCapAuthorizer; }
 
     public int getLockingCapIncrementsMultiplier() { return lockingCapIncrementsMultiplier; }
 
     public Coin getInitialLockingCap() { return initialLockingCap; }
-
-    public Coin getGenesisFeePerKb() { return genesisFeePerKb; }
-
-    public Coin getMaxFeePerKb() { return maxFeePerKb; }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 
