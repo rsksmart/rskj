@@ -39,7 +39,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-class SnapshotProcessorTest {
+public class SnapshotProcessorTest {
     public static final int TEST_CHUNK_SIZE = 200;
     private BlockChainBuilder blockChainBuilder;
     private Blockchain blockchain;
@@ -90,7 +90,7 @@ class SnapshotProcessorTest {
                 TEST_CHUNK_SIZE,
                 false);
 
-        for (int blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber ++){
+        for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber ++){
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
             blocks.add(currentBlock);
             difficulties.add(blockStore.getTotalDifficultyForHash(currentBlock.getHash().getBytes()));
@@ -161,7 +161,7 @@ class SnapshotProcessorTest {
                 200,
                 false);
 
-        for (int blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber ++){
+        for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber ++){
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
             blocks.add(currentBlock);
             difficulties.add(blockStore.getTotalDifficultyForHash(currentBlock.getHash().getBytes()));
