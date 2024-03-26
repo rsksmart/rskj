@@ -26,6 +26,7 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.util.ContractUtil;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -477,7 +478,13 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0;
+        boolean senderCanPay =  costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0;
+
+        if(senderCanPay) {
+            return true;
+        }
+
+        return ContractUtil.isClaimTxAndValid(newTx, currentRepository, costWithNewTx, config.getNetworkConstants(), signatureCache);
     }
 
     private Coin getTxBaseCost(Transaction tx) {
