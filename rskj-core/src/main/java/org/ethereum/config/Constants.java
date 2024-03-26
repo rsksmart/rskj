@@ -25,6 +25,7 @@ import co.rsk.core.BlockDifficulty;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.CallTransaction;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -45,6 +46,11 @@ public class Constants {
     private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
     private static final BigInteger TRANSACTION_GAS_CAP = BigDecimal.valueOf(Math.pow(2, 60)).toBigInteger();
     private static final BigInteger RSKIP156_DIF_BOUND_DIVISOR = BigInteger.valueOf(400);
+    public static final byte[] CLAIM_FUNCTION_SIGNATURE = CallTransaction.Function.fromSignature(
+            "claim",
+            new String[]{"bytes32", "uint256", "address", "uint256"},
+            new String[]{}
+    ).encodeSignature();
 
     private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5L * 60;  // 5 mins
     private static final long TESTNET_MAX_TIMESTAMPS_DIFF_IN_SECS = 120L * 60; // 120 mins
@@ -59,6 +65,7 @@ public class Constants {
     private final int newBlockMaxSecondsInTheFuture;
     public final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
+    private final String etherSwapContractAddress;
 
     public Constants(
             byte chainId,
@@ -70,7 +77,8 @@ public class Constants {
             int newBlockMaxSecondsInTheFuture,
             BridgeConstants bridgeConstants,
             ActivationConfig activationConfig,
-            BlockDifficulty minimumDifficultyForRskip290) {
+            BlockDifficulty minimumDifficultyForRskip290,
+            String etherSwapContractAddress) {
         this.chainId = chainId;
         this.seedCowAccounts = seedCowAccounts;
         this.durationLimit = durationLimit;
@@ -81,6 +89,7 @@ public class Constants {
         this.bridgeConstants = bridgeConstants;
         this.activationConfig = activationConfig;
         this.minimumDifficultyForRskip290 = minimumDifficultyForRskip290;
+        this.etherSwapContractAddress = etherSwapContractAddress;
     }
 
     public Constants(
@@ -92,7 +101,8 @@ public class Constants {
             BigInteger difficultyBoundDivisor,
             int newBlockMaxSecondsInTheFuture,
             BridgeConstants bridgeConstants,
-            BlockDifficulty minimumDifficultyForRskip290) {
+            BlockDifficulty minimumDifficultyForRskip290,
+            String etherSwapContractAddress) {
         this(chainId,
                 seedCowAccounts,
                 durationLimit,
@@ -102,7 +112,8 @@ public class Constants {
                 newBlockMaxSecondsInTheFuture,
                 bridgeConstants,
                 null,
-                minimumDifficultyForRskip290
+                minimumDifficultyForRskip290,
+                etherSwapContractAddress
                 );
     }
 
@@ -225,6 +236,10 @@ public class Constants {
         return 960;
     }
 
+    public String getEtherSwapContractAddress() {
+        return etherSwapContractAddress;
+    }
+
     public static Constants mainnet() {
         return new Constants(
                 MAINNET_CHAIN_ID,
@@ -235,7 +250,8 @@ public class Constants {
                 BigInteger.valueOf(50),
                 60,
                 BridgeMainNetConstants.getInstance(),
-                new BlockDifficulty(new BigInteger("550000000"))
+                new BlockDifficulty(new BigInteger("550000000")),
+                null
         );
     }
 
@@ -249,7 +265,8 @@ public class Constants {
                 BigInteger.valueOf(50),
                 540,
                 new BridgeDevNetConstants(federationPublicKeys),
-                new BlockDifficulty(new BigInteger("550000000"))
+                new BlockDifficulty(new BigInteger("550000000")),
+                null
         );
     }
 
@@ -264,7 +281,8 @@ public class Constants {
                 540,
                 BridgeTestNetConstants.getInstance(),
                 activationConfig,
-                new BlockDifficulty(new BigInteger("550000000"))
+                new BlockDifficulty(new BigInteger("550000000")),
+                null
         );
     }
 
@@ -278,7 +296,8 @@ public class Constants {
                 BigInteger.valueOf(2048),
                 0,
                 BridgeRegTestConstants.getInstance(),
-                new BlockDifficulty(new BigInteger("550000000"))
+                new BlockDifficulty(new BigInteger("550000000")),
+                "77045E71a7A2c50903d88e564cD72fab11e82051"
         );
     }
 
@@ -292,7 +311,8 @@ public class Constants {
                 BigInteger.valueOf(2048),
                 0,
                 new BridgeRegTestConstants(genesisFederationPublicKeys),
-                new BlockDifficulty(new BigInteger("550000000"))
+                new BlockDifficulty(new BigInteger("550000000")),
+                null
         );
     }
 }
