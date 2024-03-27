@@ -44,6 +44,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -81,7 +83,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
                 activationConfig,
                 stateRootHandler,
                 trieStore,
-                GenesisLoaderImpl.class.getResourceAsStream("/genesis/" + genesisFile),
+                loadGenesisFile(genesisFile),
                 initialNonce,
                 isRsk,
                 useRskip92Encoding,
@@ -227,6 +229,20 @@ public class GenesisLoaderImpl implements GenesisLoader {
         ActivationConfig.ForBlock genesisActivations = activationConfig.forBlock(0);
         if (genesisActivations.isActivating(ConsensusRule.RSKIP126)) {
             BlockExecutor.maintainPrecompiledContractStorageRoots(repository, genesisActivations);
+        }
+    }
+
+    public static InputStream loadGenesisFile(String fileName) {
+        InputStream inputStream = GenesisLoaderImpl.class.getResourceAsStream("/genesis/" + fileName);
+        if (inputStream != null) {
+            return inputStream;
+        }
+
+        try {
+            return Files.newInputStream(Paths.get(fileName));
+        } catch (Exception e) {
+            logger.error("Could not load file due to:", e);
+            return null;
         }
     }
 
