@@ -41,13 +41,10 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -237,21 +234,16 @@ public class GenesisLoaderImpl implements GenesisLoader {
 
     public static InputStream loadGenesisFile(String fileName) {
         InputStream inputStream = GenesisLoaderImpl.class.getResourceAsStream("/genesis/" + fileName);
-
         if (inputStream != null) {
             return inputStream;
         }
 
-        Path filePath = Paths.get(fileName);
-        if (Files.exists(filePath)) {
-            try {
-                return new FileInputStream(filePath.toFile());
-            } catch (FileNotFoundException e) {
-                logger.error(e.getLocalizedMessage());
-            }
+        try {
+            return Files.newInputStream(Paths.get(fileName));
+        } catch (Exception e) {
+            logger.error("Could not load file due to:", e);
+            return null;
         }
-
-        return null;
     }
 
     public static void loadGenesisInitalState(Repository repository, Genesis genesis) {
