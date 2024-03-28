@@ -47,8 +47,11 @@ public interface Web3EthModule {
         return getEthModule().sign(addr.getAddress().toHexString(), data.getAsHexString());
     }
 
-    default String eth_call(CallArgumentsParam args, BlockIdentifierParam bnOrId) {
-        return getEthModule().call(args, bnOrId);
+    default String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam) {
+        if (blockRefParam.getIdentifier() != null) {
+            return getEthModule().call(args, new BlockIdentifierParam(blockRefParam.getIdentifier()));
+        }
+        return eth_call(args, blockRefParam.getInputs());
     }
 
     default Map<String, Object> eth_bridgeState() throws Exception {
@@ -78,7 +81,7 @@ public interface Web3EthModule {
 
     String eth_blockNumber();
 
-    String eth_call(CallArgumentsParam args, Map<String, String> blockRef) throws Exception; // NOSONAR
+    String eth_call(CallArgumentsParam args, Map<String, String> blockRef); // NOSONAR
 
     String eth_getBalance(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 
