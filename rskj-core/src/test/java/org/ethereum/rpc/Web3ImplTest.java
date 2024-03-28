@@ -1950,7 +1950,7 @@ class Web3ImplTest {
         argsForCall.setTo(HexUtils.toJsonHex(tx.getContractAddress().getBytes()));
         argsForCall.setData("0xead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
 
-        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
+        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockRefParam("latest"));
 
         assertEquals("0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000", result);
     }
@@ -1997,7 +1997,7 @@ class Web3ImplTest {
         argsForCall.setTo(HexUtils.toJsonHex(tx.getContractAddress().getBytes()));
         argsForCall.setData("0xead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
 
-        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
+        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockRefParam("latest"));
 
         assertEquals("0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000", result);
     }
@@ -2030,7 +2030,7 @@ class Web3ImplTest {
         argsForCall.setTo(HexUtils.toUnformattedJsonHex(tx.getContractAddress().getBytes()));
         argsForCall.setData(HexUtils.toUnformattedJsonHex(func.encode()));
 
-        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
+        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockRefParam("latest"));
 
         assertEquals("0x", result);
     }
@@ -2612,7 +2612,7 @@ class Web3ImplTest {
         argsForCall.setTo(HexUtils.toJsonHex(tx.getContractAddress().getBytes()));
         argsForCall.setData(HexUtils.toJsonHex(noreturn.functions.get("noreturn").encodeSignature()));
 
-        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockIdentifierParam("latest"));
+        String result = web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockRefParam("latest"));
 
         Assertions.assertEquals("0x", result);
     }
