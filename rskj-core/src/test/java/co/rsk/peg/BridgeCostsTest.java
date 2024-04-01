@@ -1,7 +1,7 @@
 package co.rsk.peg;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;

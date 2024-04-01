@@ -3,7 +3,7 @@ package co.rsk.remasc;
 import static org.mockito.Mockito.*;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.FederationSupport;
