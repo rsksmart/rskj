@@ -18,7 +18,7 @@
  */
 package org.ethereum.jsontestsuite.runners;
 
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;

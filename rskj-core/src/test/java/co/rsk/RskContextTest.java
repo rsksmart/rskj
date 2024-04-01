@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.*;
 import co.rsk.net.AsyncNodeBlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.net.discovery.KnownPeersHandler;
 import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.TrieStore;

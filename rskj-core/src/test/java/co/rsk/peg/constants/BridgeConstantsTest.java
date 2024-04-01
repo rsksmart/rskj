@@ -1,4 +1,4 @@
-package co.rsk.config;
+package co.rsk.peg.constants;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -6,6 +6,11 @@ import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Coin;
 import java.util.stream.Stream;
+
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeTestNetConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.params.ParameterizedTest;
