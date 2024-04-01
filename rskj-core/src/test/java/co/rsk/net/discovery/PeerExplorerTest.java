@@ -144,7 +144,7 @@ class PeerExplorerTest {
 
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         String check = UUID.randomUUID().toString();
-        PingPeerMessage pingPeerMessageWithDifferentNetwork = PingPeerMessage.create(HOST_1, PORT_1, check, key1, this.NETWORK_ID2);
+        PingPeerMessage pingPeerMessageWithDifferentNetwork = PingPeerMessage.create(HOST_1, PORT_1, check, key1, NETWORK_ID2);
         DiscoveryEvent incomingPingEvent = new DiscoveryEvent(pingPeerMessageWithDifferentNetwork, new InetSocketAddress(HOST_1, PORT_1));
 
         //A message is received
@@ -176,7 +176,7 @@ class PeerExplorerTest {
 
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         String check = UUID.randomUUID().toString();
-        PingPeerMessage nodeMessage = PingPeerMessage.create(HOST_1, PORT_1, check, key1, this.NETWORK_ID1);
+        PingPeerMessage nodeMessage = PingPeerMessage.create(HOST_1, PORT_1, check, key1, NETWORK_ID1);
         DiscoveryEvent incomingPingEvent = new DiscoveryEvent(nodeMessage, new InetSocketAddress(HOST_2, PORT_3));
 
         //A message is received
@@ -234,7 +234,7 @@ class PeerExplorerTest {
 
         peerExplorer.start(false);
 
-        //A incoming pong for a Ping we did not sent.
+        //An incoming pong for a Ping we did not sent.
         String check = UUID.randomUUID().toString();
         PongPeerMessage incomingPongMessage = PongPeerMessage.create(HOST_1, PORT_1, check, key1, NETWORK_ID1);
         DiscoveryEvent incomingPongEvent = new DiscoveryEvent(incomingPongMessage, new InetSocketAddress(HOST_1, PORT_1));
@@ -257,13 +257,17 @@ class PeerExplorerTest {
         addedNodes = peerExplorer.getNodes();
         assertEquals(1, addedNodes.size());
 
-        //A incoming pong for a ping we sent but from a different address
+        //An incoming pong for a ping we sent but from a different address
         incomingPongMessage = PongPeerMessage.create(HOST_4, PORT_4, ((PingPeerMessage) initialPingMessages.get(1).getMessage()).getMessageId(), key4, NETWORK_ID1);
         incomingPongEvent = new DiscoveryEvent(incomingPongMessage, new InetSocketAddress(HOST_1, PORT_1));
         channel.clearEvents();
         channel.channelRead0(ctx, incomingPongEvent);
         assertEquals(1, peerExplorer.getNodes().size());
         assertEquals(1,peerExplorer.getKnownHosts().size());
+
+        // Verify that only IP is being sent, not hostname
+        assertNoHostnameFromDiscovery(peerExplorer);
+
         peerExplorer.dispose();
     }
 
@@ -425,6 +429,9 @@ class PeerExplorerTest {
         assertEquals(1, sentEvents.size());
         NeighborsPeerMessage neighborsPeerMessage = (NeighborsPeerMessage) sentEvents.get(0).getMessage();
         assertEquals(1, neighborsPeerMessage.getNodes().size());
+
+        // Verify that only IP is being sent, not hostname
+        assertNoHostnameFromDiscovery(peerExplorer);
 
         peerExplorer.dispose();
     }
@@ -762,5 +769,18 @@ class PeerExplorerTest {
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    private static void assertNoHostnameFromDiscovery(PeerExplorer peerExplorer) {
+        ECKey key = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        Node localhostNode = new Node(key.getNodeId(), HOST_1, PORT_1); // more stable if loopback address overrides
+        String localhostIP = localhostNode.getAddress().getAddress().getHostAddress();
+        Optional<Node> discoveredNode = peerExplorer.getNodes()
+                .stream().filter((Node node) -> Objects.equals(
+                        node.getAddress().getAddress().getHostAddress(),
+                        localhostIP))
+                .findFirst();
+        assertTrue(discoveredNode.isPresent());
+        assertNotEquals(HOST_1, discoveredNode.get().getHost());
     }
 }

@@ -259,7 +259,7 @@ public class PeerExplorer {
             this.pendingPingRequests.remove(message.getMessageId());
             NodeChallenge challenge = this.challengeManager.removeChallenge(message.getMessageId());
             if (challenge == null) {
-                this.addConnection(message, request.getAddress().getHostString(), request.getAddress().getPort());
+                this.addConnection(message, request.getAddress().getAddress().getHostAddress(), request.getAddress().getPort());
             }
         } else {
             logger.debug("handlePong - Peer discovery request with id [{}] is either null or invalid", message.getMessageId());
