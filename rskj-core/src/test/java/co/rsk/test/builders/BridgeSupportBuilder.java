@@ -3,7 +3,7 @@ package co.rsk.test.builders;
 import static org.mockito.Mockito.mock;
 
 import co.rsk.bitcoinj.core.Context;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;

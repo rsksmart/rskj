@@ -13,7 +13,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;

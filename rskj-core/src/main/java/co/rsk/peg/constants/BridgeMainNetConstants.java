@@ -1,4 +1,4 @@
-package co.rsk.config;
+package co.rsk.peg.constants;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;

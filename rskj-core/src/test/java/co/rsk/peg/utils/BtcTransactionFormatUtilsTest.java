@@ -27,7 +27,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionWitness;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;

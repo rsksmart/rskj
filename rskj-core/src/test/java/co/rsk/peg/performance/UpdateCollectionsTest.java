@@ -26,7 +26,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
