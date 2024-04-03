@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.config;
+package co.rsk.peg.constants;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
@@ -38,14 +39,14 @@ import org.ethereum.crypto.HashUtil;
 public class BridgeRegTestConstants extends BridgeConstants {
     // IMPORTANT: BTC, RSK and MST keys are the same.
     // Change upon implementation of the <INSERT FORK NAME HERE> fork.
-    public static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
-        BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))),
-        BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8))),
-        BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)))
-    );
-    public static final List<BtcECKey> REGTEST_FEDERATION_PUBLIC_KEYS = REGTEST_FEDERATION_PRIVATE_KEYS.stream()
-        .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
-        .collect(Collectors.toList());
+    public static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Collections.unmodifiableList(Arrays.asList(
+            BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))),
+            BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8))),
+            BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)))
+    ));
+    public static final List<BtcECKey> REGTEST_FEDERATION_PUBLIC_KEYS = Collections.unmodifiableList(REGTEST_FEDERATION_PRIVATE_KEYS.stream()
+            .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
+            .collect(Collectors.toList()));
 
     private static final BridgeRegTestConstants instance = new BridgeRegTestConstants(REGTEST_FEDERATION_PUBLIC_KEYS);
 

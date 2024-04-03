@@ -19,7 +19,7 @@
 
 package org.ethereum.util;
 
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.TransactionExecutorFactory;

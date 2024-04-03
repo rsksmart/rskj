@@ -20,7 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;

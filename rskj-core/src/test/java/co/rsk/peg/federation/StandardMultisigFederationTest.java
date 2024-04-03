@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.bitcoin.ScriptCreationException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;

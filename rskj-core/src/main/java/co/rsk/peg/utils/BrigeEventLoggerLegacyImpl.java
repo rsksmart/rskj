@@ -19,7 +19,7 @@
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.DeprecatedMethodCallException;
 import co.rsk.peg.federation.Federation;

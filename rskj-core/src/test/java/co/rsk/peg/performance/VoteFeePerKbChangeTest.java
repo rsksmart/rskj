@@ -19,7 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
