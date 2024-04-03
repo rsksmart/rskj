@@ -27,6 +27,7 @@ import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.FederationFactory;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
@@ -35,17 +36,17 @@ import org.ethereum.crypto.ECKey;
 public class BridgeDevNetConstants extends BridgeConstants {
     // IMPORTANT: BTC, RSK and MST keys are the same.
     // Change upon implementation of the <INSERT FORK NAME HERE> fork.
-    public static final List<BtcECKey> DEVNET_FEDERATION_PUBLIC_KEYS = Arrays.asList(
-        BtcECKey.fromPublicOnly(
-            Hex.decode("03d68975ab0f6ab782febc37aaa486ae19cc5e72c6900e34e21317285c88915ed6")
-        ),
-        BtcECKey.fromPublicOnly(
-            Hex.decode("02914c05df0b11862ac6931c226ad40ebc4f5624ee6dca34278d3bbfa73b914cbd")
-        ),
-        BtcECKey.fromPublicOnly(
-            Hex.decode("0309d9df35855aa45235a04e30d228889eb03e462874588e631359d5f9cdea6519")
-        )
-    );
+    public static final List<BtcECKey> DEVNET_FEDERATION_PUBLIC_KEYS = Collections.unmodifiableList(Arrays.asList(
+            BtcECKey.fromPublicOnly(
+                    Hex.decode("03d68975ab0f6ab782febc37aaa486ae19cc5e72c6900e34e21317285c88915ed6")
+            ),
+            BtcECKey.fromPublicOnly(
+                    Hex.decode("02914c05df0b11862ac6931c226ad40ebc4f5624ee6dca34278d3bbfa73b914cbd")
+            ),
+            BtcECKey.fromPublicOnly(
+                    Hex.decode("0309d9df35855aa45235a04e30d228889eb03e462874588e631359d5f9cdea6519")
+            )
+    ));
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
