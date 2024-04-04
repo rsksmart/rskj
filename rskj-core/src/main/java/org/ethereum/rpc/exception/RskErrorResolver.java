@@ -14,6 +14,8 @@ import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 
+import static javax.xml.bind.DatatypeConverter.printHexBinary;
+
 /**
  * Created by mario on 17/10/2016.
  */
@@ -31,7 +33,10 @@ public class RskErrorResolver implements ErrorResolver {
                     "invalid argument 0: hex string has length " + arguments.get(0).asText().replace("0x", "").length() + ", want 40 for RSK address",
                     null);
         } else if (t instanceof RskJsonRpcRequestException) {
-            error = new JsonError(((RskJsonRpcRequestException) t).getCode(), t.getMessage(), null);
+            RskJsonRpcRequestException rskJsonRpcRequestException = (RskJsonRpcRequestException) t;
+            byte[] revertData = rskJsonRpcRequestException.getRevertData();
+            String errorDataHexString = "0x" + printHexBinary(revertData == null ? new byte[]{} : revertData).toLowerCase();
+            error = new JsonError(rskJsonRpcRequestException.getCode(), t.getMessage(), errorDataHexString);
         } else if (t instanceof InvalidFormatException) {
             error = new JsonError(JsonRpcError.INTERNAL_ERROR, "Internal server error, probably due to invalid parameter type", null);
         } else if (t instanceof UnrecognizedPropertyException) {

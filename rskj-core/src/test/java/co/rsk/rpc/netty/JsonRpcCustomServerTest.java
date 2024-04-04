@@ -22,11 +22,19 @@ package co.rsk.rpc.netty;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.exception.JsonRpcResponseLimitError;
 import co.rsk.rpc.exception.JsonRpcTimeoutError;
+import co.rsk.rpc.modules.eth.ProgramRevert;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonResponse;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.rpc.exception.RskErrorResolver;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
@@ -38,10 +46,7 @@ import static org.ethereum.TestUtils.waitFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class JsonRpcCustomServerTest {
@@ -228,6 +233,33 @@ class JsonRpcCustomServerTest {
         assertEquals(expectedResponse, actualResponse.getResponse().toString());
     }
 
+    @Test
+    void failedEthCall_givenRskErrorResolver_shouldThrowWithData() throws JsonProcessingException {
+        String jsonRequest = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{\"to\": \"0x77045E71a7A2c50903d88e564cD72fab11e82051\", \"data\": \"0x00004\"}, \"latest\"],\"id\":1}";
+        byte[] revertBytes = Hex.decode(
+                "08c379a000000000000000000000000000000000000000000000000000000000" +
+                        "0000002000000000000000000000000000000000000000000000000000000000" +
+                        "0000000f6465706f73697420746f6f2062696700000000000000000000000000" +
+                        "00000000");
+        String expectedData = "0x" + Hex.toHexString(revertBytes);
+        JsonNode request = objectMapper.readTree(jsonRequest);
+
+        FakeWeb3ForEthCall web3ForEthCall = mock(FakeWeb3ForEthCall.class);
+        ProgramRevert fakeProgramRevert = new ProgramRevert("deposit too big", revertBytes);
+        RskJsonRpcRequestException exception = RskJsonRpcRequestException.transactionRevertedExecutionError(fakeProgramRevert);
+        when(web3ForEthCall.eth_call(any(), any())).thenThrow(exception);
+        jsonRpcCustomServer = new JsonRpcCustomServer(web3ForEthCall, FakeWeb3ForEthCall.class, modules, objectMapper);
+        jsonRpcCustomServer.setErrorResolver(new RskErrorResolver());
+
+        JsonResponse actualResponse = jsonRpcCustomServer.handleJsonNodeRequest(request);
+        String actualData = actualResponse.getResponse().get("error").get("data").asText();
+
+        assertEquals(expectedData, actualData);
+    }
+
+    public interface FakeWeb3ForEthCall {
+        String eth_call(CallArgumentsParam args, BlockIdentifierParam bnOrId);
+    }
 
     public interface Web3Test {
         String test_first(String param1);

@@ -137,16 +137,10 @@ public class EthModule
             } else {
                 res = callConstant(args, block);
             }
-
             if (res.isRevert()) {
-                Optional<String> revertReason = decodeRevertReason(res);
-                if (revertReason.isPresent()) {
-                    throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason.get());
-                } else {
-                    throw RskJsonRpcRequestException.transactionRevertedExecutionError();
-                }
-            }
 
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError(decodeProgramRevert(res));
+            }
             hReturn = HexUtils.toUnformattedJsonHex(res.getHReturn());
 
             return hReturn;
@@ -299,22 +293,29 @@ public class EthModule
      * Look for { Error("msg") } function, if it matches decode the "msg" param.
      * The 4 first bytes are the function signature.
      *
-     * @param res
-     * @return revert reason, empty if didnt match.
+     * @param programResult contains the result of execution of a smart contract
+     * @return revert reason and revert data. reason may be nullable or empty
      */
-    public static Optional<String> decodeRevertReason(ProgramResult res) {
-        byte[] bytes = res.getHReturn();
-        if (bytes == null || bytes.length < 4) {
-            return Optional.empty();
+    public static ProgramRevert decodeProgramRevert(ProgramResult programResult) {
+        byte[] bytes = programResult.getHReturn();
+        if (bytes.length < 4) {
+
+            return new ProgramRevert(bytes);
         }
 
-        final byte[] signature = copyOfRange(res.getHReturn(), 0, 4);
+        final byte[] signature = copyOfRange(bytes, 0, 4);
         if (!Arrays.equals(signature, ERROR_ABI_FUNCTION_SIGNATURE)) {
-            return Optional.empty();
+
+            return new ProgramRevert(bytes);
         }
 
-        final Object[] decode = ERROR_ABI_FUNCTION.decode(res.getHReturn());
-        return decode != null && decode.length > 0 ? Optional.of((String) decode[0]) : Optional.empty();
+        final Object[] decode = ERROR_ABI_FUNCTION.decode(bytes);
+        if (decode == null || decode.length == 0) {
+
+            return new ProgramRevert(bytes);
+        }
+
+        return new ProgramRevert((String) decode[0], bytes);
     }
 
     private ProgramResult callConstantWithState(CallArguments args, Block executionBlock, Trie state) {

@@ -160,7 +160,7 @@ class EthModuleTest {
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
-        byte[] hreturn = Hex.decode(
+        byte[] hReturn = Hex.decode(
                 "08c379a000000000000000000000000000000000000000000000000000000000" +
                         "0000002000000000000000000000000000000000000000000000000000000000" +
                         "0000000f6465706f73697420746f6f2062696700000000000000000000000000" +
@@ -168,7 +168,7 @@ class EthModuleTest {
         ProgramResult executorResult = mock(ProgramResult.class);
         when(executorResult.isRevert()).thenReturn(true);
         when(executorResult.getHReturn())
-                .thenReturn(hreturn);
+                .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
@@ -189,11 +189,10 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        try {
-            eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
-        } catch (RskJsonRpcRequestException e) {
-            assertThat(e.getMessage(), Matchers.containsString("deposit too big"));
-        }
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest")));
+        assertThat(exception.getMessage(), Matchers.containsString("deposit too big"));
+        assertNotNull(exception.getRevertData());
+        assertEquals(hReturn, exception.getRevertData());
     }
 
     @Test

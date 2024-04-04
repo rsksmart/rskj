@@ -18,20 +18,6 @@
 
 package co.rsk.rpc.modules.eth;
 
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionRevertedExecutionError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
-
-import java.util.Optional;
-
-import org.ethereum.config.Constants;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.db.TransactionInfo;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexDataParam;
-import org.ethereum.vm.program.ProgramResult;
-
 import co.rsk.core.Wallet;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
@@ -39,6 +25,16 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.TransactionGateway;
 import co.rsk.util.HexUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.db.TransactionInfo;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.vm.program.ProgramResult;
+
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionRevertedExecutionError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
 
 public class EthModuleTransactionInstant extends EthModuleTransactionBase {
 
@@ -115,13 +111,7 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
         ProgramResult programResult = this.blockExecutor.getProgramResult(hash);
 
         if (programResult != null && programResult.isRevert()) {
-            Optional<String> revertReason = EthModule.decodeRevertReason(programResult);
-
-            if (revertReason.isPresent()) {
-                throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason.get());
-            } else {
-                throw RskJsonRpcRequestException.transactionRevertedExecutionError();
-            }
+            throw transactionRevertedExecutionError(EthModule.decodeProgramRevert(programResult));
         }
 
         if (!transactionInfo.getReceipt().isSuccessful()) {
