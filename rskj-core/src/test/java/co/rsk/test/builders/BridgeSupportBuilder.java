@@ -6,10 +6,10 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
-import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -19,7 +19,6 @@ import org.ethereum.core.*;
 public class BridgeSupportBuilder {
     private BridgeConstants bridgeConstants;
     private BridgeStorageProvider provider;
-    private FeePerKbSupport feePerKbSupport;
     private BridgeEventLogger eventLogger;
     private BtcLockSenderProvider btcLockSenderProvider;
     private PeginInstructionsProvider peginInstructionsProvider;
@@ -32,7 +31,6 @@ public class BridgeSupportBuilder {
     public BridgeSupportBuilder() {
         this.bridgeConstants = mock(BridgeConstants.class);
         this.provider = mock(BridgeStorageProvider.class);
-        this.feePerKbSupport = mock(FeePerKbSupport.class);
         this.eventLogger = mock(BridgeEventLogger.class);
         this.btcLockSenderProvider= mock(BtcLockSenderProvider.class);
         this.peginInstructionsProvider = mock(PeginInstructionsProvider.class);
@@ -50,11 +48,6 @@ public class BridgeSupportBuilder {
 
     public BridgeSupportBuilder withProvider(BridgeStorageProvider provider) {
         this.provider = provider;
-        return this;
-    }
-
-    public BridgeSupportBuilder withFeePerKbSupport(FeePerKbSupport feePerKbSupport) {
-        this.feePerKbSupport = feePerKbSupport;
         return this;
     }
 
@@ -109,7 +102,7 @@ public class BridgeSupportBuilder {
             executionBlock,
             new Context(bridgeConstants.getBtcParams()),
             new FederationSupport(bridgeConstants, provider, executionBlock, activations),
-            feePerKbSupport,
+            new FeePerKbSupport(bridgeConstants.getFeePerKbConstants(), new FeePerKbStorageProvider(repository)),
             btcBlockStoreFactory,
             activations,
             signatureCache
