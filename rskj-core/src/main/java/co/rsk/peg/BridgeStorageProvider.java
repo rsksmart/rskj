@@ -27,7 +27,6 @@ import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.PendingFederation;
-import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelist;
