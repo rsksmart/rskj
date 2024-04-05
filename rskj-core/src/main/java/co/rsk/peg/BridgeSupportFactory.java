@@ -70,7 +70,7 @@ public class BridgeSupportFactory {
         );
 
         FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock, activations);
-        FeePerKbSupport feePerKbSupport = newFeePerKbSupportInstance(repository, contractAddress, bridgeConstants);
+        FeePerKbSupport feePerKbSupport = newFeePerKbSupportInstance(repository, bridgeConstants);
 
         BridgeEventLogger eventLogger;
         if (logs == null) {
@@ -103,9 +103,9 @@ public class BridgeSupportFactory {
         );
     }
 
-    private FeePerKbSupport newFeePerKbSupportInstance(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants) {
+    private FeePerKbSupport newFeePerKbSupportInstance(Repository repository, BridgeConstants bridgeConstants) {
         FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
-        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProvider(repository, contractAddress);
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProvider(repository);
         return new FeePerKbSupport(feePerKbConstants, feePerKbStorageProvider);
     }
 }
