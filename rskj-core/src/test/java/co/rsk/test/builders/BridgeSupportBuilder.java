@@ -6,7 +6,6 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
-import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
@@ -20,7 +19,6 @@ import org.ethereum.core.*;
 public class BridgeSupportBuilder {
     private BridgeConstants bridgeConstants;
     private BridgeStorageProvider provider;
-    private FeePerKbSupport feePerKbSupport;
     private BridgeEventLogger eventLogger;
     private BtcLockSenderProvider btcLockSenderProvider;
     private PeginInstructionsProvider peginInstructionsProvider;
@@ -33,7 +31,6 @@ public class BridgeSupportBuilder {
     public BridgeSupportBuilder() {
         this.bridgeConstants = mock(BridgeConstants.class);
         this.provider = mock(BridgeStorageProvider.class);
-        this.feePerKbSupport = mock(FeePerKbSupport.class);
         this.eventLogger = mock(BridgeEventLogger.class);
         this.btcLockSenderProvider= mock(BtcLockSenderProvider.class);
         this.peginInstructionsProvider = mock(PeginInstructionsProvider.class);
