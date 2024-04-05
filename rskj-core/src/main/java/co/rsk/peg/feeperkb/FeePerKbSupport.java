@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 public class FeePerKbSupport {
-    private static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = FeePerKbResponseCodes.FEE_PER_KB_GENERIC_ERROR.getCodeResponse();
-    private static final Integer NEGATIVE_FEE_PER_KB_ERROR_CODE = FeePerKbResponseCodes.NEGATIVE_FEE_PER_KB_ERROR.getCodeResponse();
-    private static final Integer EXCESSIVE_FEE_PER_KB_ERROR_CODE = FeePerKbResponseCodes.EXCESSIVE_FEE_PER_KB_ERROR.getCodeResponse();
+    private static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = FeePerKbResponseCodes.getGenericErrorCode();
+    private static final Integer NEGATIVE_FEE_PER_KB_ERROR_CODE = FeePerKbResponseCodes.getNegativeFeeErrorCode();
+    private static final Integer EXCESSIVE_FEE_PER_KB_ERROR_CODE = FeePerKbResponseCodes.getNegativeFeeErrorCode();
 
     private final FeePerKbStorageProvider provider;
     private final FeePerKbConstants feePerKbConstants;
@@ -99,7 +99,7 @@ public class FeePerKbSupport {
         return 1;
     }
 
-    public void save() throws IOException {
+    public void save() {
         provider.save();
     }
 }
