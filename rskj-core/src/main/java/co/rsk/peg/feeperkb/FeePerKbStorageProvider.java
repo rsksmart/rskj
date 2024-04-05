@@ -1,7 +1,6 @@
 package co.rsk.peg.feeperkb;
 
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
 import co.rsk.peg.abi.ABICallElection;
 import org.ethereum.core.Repository;
@@ -9,14 +8,13 @@ import org.ethereum.core.Repository;
 import static co.rsk.peg.BridgeStorageIndexKey.FEE_PER_KB_ELECTION_KEY;
 import static co.rsk.peg.BridgeStorageIndexKey.FEE_PER_KB_KEY;
 
-public class FeePerKbStorageProvider extends StorageAccessor {
+public class FeePerKbStorageProvider extends BridgeStorageAccessor {
     private Coin feePerKb;
     private ABICallElection feePerKbElection;
 
     public FeePerKbStorageProvider(
-        Repository repository,
-        RskAddress contractAddress) {
-        super(repository, contractAddress);
+        Repository repository) {
+        super(repository);
     }
 
     public void setFeePerKb(Coin feePerKb) {
