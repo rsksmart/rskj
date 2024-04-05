@@ -13,4 +13,15 @@ public enum FeePerKbResponseCodes {
         public int getCodeResponse() {
             return codeResponse;
         }
+
+        public static int getGenericErrorCode() {
+            return FEE_PER_KB_GENERIC_ERROR.getCodeResponse();
+        }
+        public static Integer getNegativeFeeErrorCode() {
+            return NEGATIVE_FEE_PER_KB_ERROR.getCodeResponse();
+        }
+
+        public static Integer getExcessiveFeeErrorCode() {
+            return EXCESSIVE_FEE_PER_KB_ERROR.getCodeResponse();
+        }
 }
