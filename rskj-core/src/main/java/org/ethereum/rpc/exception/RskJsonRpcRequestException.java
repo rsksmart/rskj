@@ -1,16 +1,15 @@
 package org.ethereum.rpc.exception;
 
-import co.rsk.rpc.modules.eth.ProgramRevert;
-
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class RskJsonRpcRequestException extends RuntimeException {
-
     private final Integer code;
 
+    @Nullable
     private final byte[] revertData;
 
-    protected RskJsonRpcRequestException(Integer code, byte[] revertData, String message, Exception e) {
+    protected RskJsonRpcRequestException(Integer code, @Nullable byte[] revertData, String message, Exception e) {
         super(message, e);
         this.code = code;
         this.revertData = revertData;
@@ -20,7 +19,7 @@ public class RskJsonRpcRequestException extends RuntimeException {
         this(code, new byte[]{}, message, e);
     }
 
-    public RskJsonRpcRequestException(Integer code, byte[] revertData, String message) {
+    public RskJsonRpcRequestException(Integer code, @Nullable byte[] revertData, String message) {
         super(message);
         this.code = code;
         this.revertData = revertData;
@@ -34,24 +33,28 @@ public class RskJsonRpcRequestException extends RuntimeException {
         return code;
     }
 
-    @Nullable
     public byte[] getRevertData() {
         return revertData;
     }
 
-    public static RskJsonRpcRequestException transactionRevertedExecutionError(ProgramRevert programRevert) {
-        byte[] revertData = programRevert.getData();
-        String revertReason = programRevert.getReason();
-        if (revertReason.isEmpty()) {
-
-            return executionError("transaction reverted, no reason specified", revertData);
-        }
-
-        return executionError("revert " + revertReason, revertData);
-    }
-
     public static RskJsonRpcRequestException transactionRevertedExecutionError() {
         return executionError("transaction reverted", null);
+    }
+
+    public static RskJsonRpcRequestException transactionRevertedExecutionError(@Nonnull byte[] revertData) {
+        return executionError("transaction reverted", revertData);
+    }
+
+    public static RskJsonRpcRequestException transactionRevertedExecutionError(
+            @Nonnull String revertReason,
+            @Nonnull byte[] revertData
+    ) {
+        return executionError(
+                revertReason.isEmpty()
+                        ? "transaction reverted, no reason specified"
+                        : "revert " + revertReason,
+                revertData
+        );
     }
 
     public static RskJsonRpcRequestException unknownError(String message) {

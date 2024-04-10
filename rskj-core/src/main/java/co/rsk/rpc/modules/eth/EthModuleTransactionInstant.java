@@ -25,10 +25,12 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.TransactionGateway;
 import co.rsk.util.HexUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.vm.program.ProgramResult;
@@ -111,7 +113,18 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
         ProgramResult programResult = this.blockExecutor.getProgramResult(hash);
 
         if (programResult != null && programResult.isRevert()) {
-            throw transactionRevertedExecutionError(EthModule.decodeProgramRevert(programResult));
+            Pair<String, byte[]> programRevert = EthModule.decodeProgramRevert(programResult);
+            String revertReason = programRevert.getLeft();
+            byte[] revertData = programRevert.getRight();
+            if (revertData == null) {
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+            }
+
+            if (revertReason == null) {
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertData);
+            }
+
+            throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason, revertData);
         }
 
         if (!transactionInfo.getReceipt().isSuccessful()) {

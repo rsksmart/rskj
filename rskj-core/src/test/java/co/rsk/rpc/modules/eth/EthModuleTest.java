@@ -189,10 +189,19 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest")));
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        RskJsonRpcRequestException exception = assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> eth.call(
+                        callArgumentsParam,
+                        blockIdentifierParam
+                )
+        );
         assertThat(exception.getMessage(), Matchers.containsString("deposit too big"));
         assertNotNull(exception.getRevertData());
-        assertEquals(hReturn, exception.getRevertData());
+        assertArrayEquals(hReturn, exception.getRevertData());
     }
 
     @Test

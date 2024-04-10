@@ -22,7 +22,6 @@ package co.rsk.rpc.netty;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.exception.JsonRpcResponseLimitError;
 import co.rsk.rpc.exception.JsonRpcTimeoutError;
-import co.rsk.rpc.modules.eth.ProgramRevert;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,7 +33,6 @@ import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
@@ -46,7 +44,11 @@ import static org.ethereum.TestUtils.waitFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class JsonRpcCustomServerTest {
@@ -93,7 +95,7 @@ class JsonRpcCustomServerTest {
         String response = "test_method_response";
 
         when(handler.test_second("param", "param2")).thenAnswer(invocation -> {
-           waitFor(150);
+            waitFor(150);
             return response;
         });
 
@@ -246,11 +248,8 @@ class JsonRpcCustomServerTest {
         JsonNode request = objectMapper.readTree(jsonRequest);
 
         FakeWeb3ForEthCall web3ForEthCall = mock(FakeWeb3ForEthCall.class);
-        ProgramRevert fakeProgramRevert = new ProgramRevert("deposit too big", revertBytes);
-        RskJsonRpcRequestException exception = RskJsonRpcRequestException.transactionRevertedExecutionError(fakeProgramRevert);
-        when(web3ForEthCall.eth_call(any(), any())).then(invocation -> {
-           throw  exception;
-        });
+        RskJsonRpcRequestException exception = RskJsonRpcRequestException.transactionRevertedExecutionError("deposit too big", revertBytes);
+        when(web3ForEthCall.eth_call(any(), any())).thenThrow(exception);
         jsonRpcCustomServer = new JsonRpcCustomServer(web3ForEthCall, FakeWeb3ForEthCall.class, modules, objectMapper);
         jsonRpcCustomServer.setErrorResolver(new RskErrorResolver());
 

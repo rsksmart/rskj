@@ -2,6 +2,7 @@ package org.ethereum.rpc.exception;
 
 import co.rsk.core.exception.InvalidRskAddressException;
 import co.rsk.jsonrpc.JsonRpcError;
+import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
@@ -13,8 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
-
-import static javax.xml.bind.DatatypeConverter.printHexBinary;
 
 /**
  * Created by mario on 17/10/2016.
@@ -35,7 +34,7 @@ public class RskErrorResolver implements ErrorResolver {
         } else if (t instanceof RskJsonRpcRequestException) {
             RskJsonRpcRequestException rskJsonRpcRequestException = (RskJsonRpcRequestException) t;
             byte[] revertData = rskJsonRpcRequestException.getRevertData();
-            String errorDataHexString = "0x" + printHexBinary(revertData == null ? new byte[]{} : revertData).toLowerCase();
+            String errorDataHexString = revertData == null ? null : HexUtils.toUnformattedJsonHex(revertData);
             error = new JsonError(rskJsonRpcRequestException.getCode(), t.getMessage(), errorDataHexString);
         } else if (t instanceof InvalidFormatException) {
             error = new JsonError(JsonRpcError.INTERNAL_ERROR, "Internal server error, probably due to invalid parameter type", null);

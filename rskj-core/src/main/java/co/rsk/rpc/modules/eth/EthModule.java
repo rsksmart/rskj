@@ -33,7 +33,14 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.*;
+import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
@@ -51,7 +58,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.copyOfRange;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
@@ -138,13 +147,24 @@ public class EthModule
                 res = callConstant(args, block);
             }
             if (res.isRevert()) {
+                Pair<String, byte[]> programRevert = decodeProgramRevert(res);
+                String revertReason = programRevert.getLeft();
+                byte[] revertData = programRevert.getRight();
+                if (revertData == null) {
+                    throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+                }
 
-                throw RskJsonRpcRequestException.transactionRevertedExecutionError(decodeProgramRevert(res));
+                if (revertReason == null) {
+                    throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertData);
+                }
+
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason, revertData);
             }
             hReturn = HexUtils.toUnformattedJsonHex(res.getHReturn());
 
             return hReturn;
-        } finally {
+        }
+        finally {
             LOGGER.debug("eth_call(): {}", hReturn);
         }
     }
@@ -296,26 +316,26 @@ public class EthModule
      * @param programResult contains the result of execution of a smart contract
      * @return revert reason and revert data. reason may be nullable or empty
      */
-    public static ProgramRevert decodeProgramRevert(ProgramResult programResult) {
+    public static Pair<String, byte[]> decodeProgramRevert(ProgramResult programResult) {
         byte[] bytes = programResult.getHReturn();
-        if (bytes.length < 4) {
+        if (bytes == null || bytes.length < 4) {
 
-            return new ProgramRevert(bytes);
+            return Pair.of(null, null);
         }
 
         final byte[] signature = copyOfRange(bytes, 0, 4);
         if (!Arrays.equals(signature, ERROR_ABI_FUNCTION_SIGNATURE)) {
 
-            return new ProgramRevert(bytes);
+            return Pair.of(null, bytes);
         }
 
         final Object[] decode = ERROR_ABI_FUNCTION.decode(bytes);
         if (decode == null || decode.length == 0) {
 
-            return new ProgramRevert(bytes);
+            return Pair.of(null, bytes);
         }
 
-        return new ProgramRevert((String) decode[0], bytes);
+        return Pair.of((String) decode[0], bytes);
     }
 
     private ProgramResult callConstantWithState(CallArguments args, Block executionBlock, Trie state) {
