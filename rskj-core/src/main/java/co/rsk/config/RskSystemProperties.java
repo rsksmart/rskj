@@ -67,6 +67,7 @@ public class RskSystemProperties extends SystemProperties {
     private static final int CHUNK_SIZE = 192;
 
     public static final String PROPERTY_SYNC_TOP_BEST = "sync.topBest";
+    public static final String USE_PEERS_FROM_LAST_SESSION = "peer.discovery.usePeersFromLastSession";
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -254,6 +255,10 @@ public class RskSystemProperties extends SystemProperties {
         return getBoolean("rpc.skipRemasc", false);
     }
 
+    public boolean usePeersFromLastSession() {
+        return getBoolean(USE_PEERS_FROM_LAST_SESSION, false);
+    }
+    
     public long peerDiscoveryMessageTimeOut() {
         return getLong("peer.discovery.msg.timeout", PD_DEFAULT_TIMEOUT_MESSAGE);
     }

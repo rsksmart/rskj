@@ -20,8 +20,8 @@
 package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.InetAddressUtils;
