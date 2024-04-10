@@ -130,6 +130,8 @@ public class SnapshotProcessor {
         logger.debug("SERVER - Processing snapshot status request.");
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
         long checkpointBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
+        logger.debug("SERVER - checkpointBlockNumber: {}", checkpointBlockNumber);
+        logger.debug("SERVER - bestBlockNumber: {}", bestBlockNumber);
         List<Block> blocks = Lists.newArrayList();
         List<BlockDifficulty> difficulties = Lists.newArrayList();
         for (long i = checkpointBlockNumber - BLOCK_CHUNK_SIZE; i < checkpointBlockNumber; i++) {
@@ -140,8 +142,10 @@ public class SnapshotProcessor {
 
         Block checkpointBlock = blockchain.getBlockByNumber(checkpointBlockNumber);
         blocks.add(checkpointBlock);
+        logger.debug("SERVER - checkpointBlock: {} - {}", checkpointBlock.getHeader().getNumber(), checkpointBlock.toString());
         difficulties.add(blockStore.getTotalDifficultyForHash(checkpointBlock.getHash().getBytes()));
         byte[] rootHash = checkpointBlock.getStateRoot();
+        logger.debug("SERVER - checkpointBlock rootHash: {}", rootHash);
         Optional<TrieDTO> opt = trieStore.retrieveDTO(rootHash);
 
         long trieSize = 0;

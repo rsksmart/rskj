@@ -168,13 +168,15 @@ public class TrieStoreImpl implements TrieStore {
 
     @Override
     public Optional<TrieDTO> retrieveDTO(byte[] hash) {
+        logger.trace("Retrieving trie DTO with hash: {}", hash);
         byte[] message = this.store.get(hash);
-
+        logger.trace("Message length retrieved: {}", message == null ? 0 : message.length);
         if (message == null) {
             return Optional.empty();
         }
 
         TrieDTO trie = TrieDTO.decodeFromMessage(message, this);
+        logger.trace("Trie DTO retrieved: {}, size: {}", trie.toDescription(), trie.getSize());
         return Optional.of(trie);
     }
 
