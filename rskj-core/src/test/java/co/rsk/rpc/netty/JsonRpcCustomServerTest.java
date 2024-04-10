@@ -76,12 +76,13 @@ class JsonRpcCustomServerTest {
         JsonNode request = objectMapper.readTree(FIRST_METHOD_REQUEST);
         Web3Test handler = mock(Web3Test.class);
         //expected response would be {"jsonrpc":"2.0","id":1,"result":"test_method_response"} with 56 bytes
-        ResponseSizeLimitContext.createResponseSizeContext(55);
+        ResponseSizeLimitContext limitContext = ResponseSizeLimitContext.createResponseSizeContext(55);
         jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, modules, objectMapper);
 
         when(handler.test_first(anyString())).thenReturn(response);
 
         assertThrows(JsonRpcResponseLimitError.class, () -> jsonRpcCustomServer.handleJsonNodeRequest(request));
+        limitContext.close();
     }
 
     @Test
@@ -247,7 +248,9 @@ class JsonRpcCustomServerTest {
         FakeWeb3ForEthCall web3ForEthCall = mock(FakeWeb3ForEthCall.class);
         ProgramRevert fakeProgramRevert = new ProgramRevert("deposit too big", revertBytes);
         RskJsonRpcRequestException exception = RskJsonRpcRequestException.transactionRevertedExecutionError(fakeProgramRevert);
-        when(web3ForEthCall.eth_call(any(), any())).thenThrow(exception);
+        when(web3ForEthCall.eth_call(any(), any())).then(invocation -> {
+           throw  exception;
+        });
         jsonRpcCustomServer = new JsonRpcCustomServer(web3ForEthCall, FakeWeb3ForEthCall.class, modules, objectMapper);
         jsonRpcCustomServer.setErrorResolver(new RskErrorResolver());
 
