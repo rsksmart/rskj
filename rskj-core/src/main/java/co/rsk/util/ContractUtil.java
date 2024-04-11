@@ -18,11 +18,10 @@
  */
 package co.rsk.util;
 
+import co.rsk.PropertyGetter;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
-import co.rsk.db.RepositorySnapshot;
-import co.rsk.rpc.Web3InformationRetriever;
 import org.ethereum.config.Constants;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.SignatureCache;
@@ -96,7 +95,7 @@ public class ContractUtil {
                                             Coin txCost,
                                             Constants constants,
                                             SignatureCache signatureCache,
-                                            Web3InformationRetriever web3InformationRetriever) {
+                                            PropertyGetter propertyGetter) {
         byte[] functionSelector = Arrays.copyOfRange(newTx.getData(), 0, 4);
         if(newTx.getReceiveAddress().toHexString().equalsIgnoreCase(constants.getEtherSwapContractAddress())
                 && Arrays.equals(functionSelector, Constants.CLAIM_FUNCTION_SIGNATURE)) {
@@ -104,7 +103,7 @@ public class ContractUtil {
             String swapHash = HexUtils.toUnformattedJsonHex(calculateSwapHash(newTx, signatureCache));
             byte[] key = HashUtil.keccak256(HexUtils.decode(HexUtils.stringToByteArray(swapHash + SWAPS_MAP_POSITION)));
 
-            AccountInformationProvider accountInformationProvider = web3InformationRetriever.getInformationProvider("latest");
+            AccountInformationProvider accountInformationProvider = propertyGetter.getWeb3InfoRetriever().getInformationProvider("latest");
             DataWord swapRecord = accountInformationProvider.getStorageValue(newTx.getReceiveAddress(), DataWord.valueOf(key));
 
             if(swapRecord != null){

@@ -146,7 +146,8 @@ class RemascTestRunner {
                         blockFactory,
                         programInvokeFactory,
                         precompiledContracts,
-                        blockTxSignatureCache
+                        blockTxSignatureCache,
+                        null
                 )
         );
         Random random = new Random(RemascTestRunner.class.hashCode());
