@@ -26,6 +26,7 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.util.ContractUtil;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
@@ -75,11 +76,13 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private Block bestBlock;
 
-    private final TxPendingValidator validator;
+    private TxPendingValidator validator;
 
     private final TxQuotaChecker quotaChecker;
 
     private final GasPriceTracker gasPriceTracker;
+
+    private Web3InformationRetriever web3InformationRetriever;
 
     @java.lang.SuppressWarnings("squid:S107")
     public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker) {
@@ -98,8 +101,6 @@ public class TransactionPoolImpl implements TransactionPool {
         pendingTransactions = new TransactionSet(this.signatureCache);
         queuedTransactions = new TransactionSet(this.signatureCache);
 
-        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots(), signatureCache);
-
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
         }
@@ -112,6 +113,13 @@ public class TransactionPoolImpl implements TransactionPool {
     @Override
     public void start() {
         processBest(blockStore.getBestBlock());
+
+        this.validator = new TxPendingValidator(
+                this.config.getNetworkConstants(),
+                this.config.getActivationConfig(),
+                this.config.getNumOfAccountSlots(),
+                signatureCache,
+                web3InformationRetriever);
 
         if (this.outdatedTimeout > 0 && this.cleanerTimer != null) {
             this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
@@ -435,6 +443,10 @@ public class TransactionPoolImpl implements TransactionPool {
         return ret;
     }
 
+    public void setWeb3InformationRetriever(Web3InformationRetriever web3InformationRetriever) {
+        this.web3InformationRetriever = web3InformationRetriever;
+    }
+
     private void addQueuedTransaction(Transaction tx) {
         this.queuedTransactions.addTransaction(tx);
     }
@@ -484,7 +496,7 @@ public class TransactionPoolImpl implements TransactionPool {
             return true;
         }
 
-        return ContractUtil.isClaimTxAndValid(newTx, currentRepository, costWithNewTx, config.getNetworkConstants(), signatureCache);
+        return ContractUtil.isClaimTxAndValid(newTx, costWithNewTx, config.getNetworkConstants(), signatureCache, web3InformationRetriever);
     }
 
     private Coin getTxBaseCost(Transaction tx) {
@@ -500,5 +512,4 @@ public class TransactionPoolImpl implements TransactionPool {
     private long getTransactionCost(Transaction tx, long number) {
         return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number), signatureCache);
     }
-
 }

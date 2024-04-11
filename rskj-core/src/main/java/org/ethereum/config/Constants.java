@@ -55,6 +55,8 @@ public class Constants {
     private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5L * 60;  // 5 mins
     private static final long TESTNET_MAX_TIMESTAMPS_DIFF_IN_SECS = 120L * 60; // 120 mins
 
+    private static final String REGTEST_ETHERSWAP_CONTRACT_ADDRESS = "5fbdb2315678afecb367f032d93f642f64180aa3";
+
     private final byte chainId;
     private final boolean seedCowAccounts;
     private final int durationLimit;
@@ -297,7 +299,7 @@ public class Constants {
                 0,
                 BridgeRegTestConstants.getInstance(),
                 new BlockDifficulty(new BigInteger("550000000")),
-                "77045E71a7A2c50903d88e564cD72fab11e82051"
+                REGTEST_ETHERSWAP_CONTRACT_ADDRESS
         );
     }
 
@@ -312,7 +314,7 @@ public class Constants {
                 0,
                 new BridgeRegTestConstants(genesisFederationPublicKeys),
                 new BlockDifficulty(new BigInteger("550000000")),
-                null
+                REGTEST_ETHERSWAP_CONTRACT_ADDRESS
         );
     }
 }

@@ -25,6 +25,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.util.ContractUtil;
 import org.ethereum.config.Constants;
@@ -102,12 +103,14 @@ public class TransactionExecutor {
     private boolean localCall = false;
     private boolean txWasPaid = false;
 
+    private Web3InformationRetriever web3InformationRetriever;
+
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
             boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
-            SignatureCache signatureCache) {
+            SignatureCache signatureCache, Web3InformationRetriever web3InformationRetriever) {
         this.constants = constants;
         this.signatureCache = signatureCache;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
@@ -126,6 +129,7 @@ public class TransactionExecutor {
         this.precompiledContracts = precompiledContracts;
         this.enableRemasc = remascEnabled;
         this.deletedAccounts = new HashSet<>(deletedAccounts);
+        this.web3InformationRetriever = web3InformationRetriever;
     }
 
     /**
@@ -173,7 +177,7 @@ public class TransactionExecutor {
 
         Coin senderBalance = track.getBalance(tx.getSender(signatureCache));
 
-        if (!isCovers(senderBalance, totalCost) && !ContractUtil.isClaimTxAndValid(tx, track, totalCost,constants, signatureCache)) {
+        if (!isCovers(senderBalance, totalCost) && !ContractUtil.isClaimTxAndValid(tx, totalCost,constants, signatureCache, web3InformationRetriever)) {
 
             logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, tx.getHash());
             logger.warn("Transaction Data: {}", tx);
@@ -274,12 +278,6 @@ public class TransactionExecutor {
                 payTransaction();
                 txWasPaid = true;
             }
-
-            long txGasLimit = GasCost.toGas(tx.getGasLimit());
-            Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            track.addBalance(tx.getSender(signatureCache), txGasCost.negate());
-
-            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
         }
 
         if (tx.isContractCreation()) {

@@ -2,7 +2,9 @@ package co.rsk.util;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.rpc.Web3InformationRetriever;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.CallTransaction;
@@ -45,15 +47,19 @@ public class ContractUtilTest {
 
     @Test
     public void testIsClaimTxAndValid() {
-        Transaction mockedTx = mockTx();
         Coin txCost = Coin.valueOf(5);
         SignatureCache signatureCache = new ReceivedTxSignatureCache();
-        RepositorySnapshot mockedRepository = mock(RepositorySnapshot.class);
-        when(mockedRepository.getStorageValue(mockedTx.getReceiveAddress(), DataWord.valueOf(HexUtils.stringHexToByteArray(EXPECTED_HASH))))
-                .thenReturn(DataWord.valueOf(1));
-        when(mockedRepository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(3));
 
-        boolean result = ContractUtil.isClaimTxAndValid(mockedTx, mockedRepository, txCost, testConstans, signatureCache);
+        Transaction mockedTx = mockTx();
+        Web3InformationRetriever mockedWeb3InformationRetriever = mock(Web3InformationRetriever.class);
+        AccountInformationProvider mockedAccountInformationProvider = mock(AccountInformationProvider.class);
+
+        when(mockedWeb3InformationRetriever.getInformationProvider("latest")).thenReturn(mockedAccountInformationProvider);
+        when(mockedAccountInformationProvider.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(3));
+        when(mockedAccountInformationProvider.getStorageValue(any(RskAddress.class), any(DataWord.class)))
+                .thenReturn(DataWord.valueOf(1));
+
+        boolean result = ContractUtil.isClaimTxAndValid(mockedTx, txCost, testConstans, signatureCache, mockedWeb3InformationRetriever);
 
         assertTrue(result);
     }
