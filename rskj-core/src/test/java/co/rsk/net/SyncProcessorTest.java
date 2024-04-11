@@ -797,7 +797,8 @@ class SyncProcessorTest {
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
-                        new BlockTxSignatureCache(new ReceivedTxSignatureCache())
+                        new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
+                        null
                 )
         );
         Assertions.assertEquals(1, block.getTransactionsList().size());

@@ -258,6 +258,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private volatile boolean closed;
 
+    private final PropertyGetter propertyGetter = this::getWeb3InformationRetriever;
+
     /***** Constructors ***********************************************************************************************/
     public RskContext(String[] args) {
         RskCli rskCli = new RskCli();
@@ -388,7 +390,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.txOutdatedThreshold(),
                     rskSystemProperties.txOutdatedTimeout(),
                     getTxQuotaChecker(),
-                    getGasPriceTracker());
+                    getGasPriceTracker(),
+                    propertyGetter);
         }
 
         return transactionPool;
@@ -590,7 +593,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockFactory(),
                     getProgramInvokeFactory(),
                     getPrecompiledContracts(),
-                    getBlockTxSignatureCache()
+                    getBlockTxSignatureCache(),
+                    propertyGetter
             );
         }
 
@@ -1346,16 +1350,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (web3InformationRetriever == null) {
-            TransactionPoolImpl transactionPoolImpl = (TransactionPoolImpl) getTransactionPool();
-            TransactionExecutorFactory transactionExecutorFactory = getTransactionExecutorFactory();
             web3InformationRetriever = new Web3InformationRetriever(
-                    transactionPoolImpl,
+                    getTransactionPool(),
                     getBlockchain(),
                     getRepositoryLocator(),
                     getExecutionBlockRetriever());
-
-            transactionPoolImpl.setWeb3InformationRetriever(web3InformationRetriever);
-            transactionExecutorFactory.setWeb3InformationRetriever(web3InformationRetriever);
         }
         return web3InformationRetriever;
     }

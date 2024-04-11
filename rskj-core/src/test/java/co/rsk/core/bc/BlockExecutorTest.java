@@ -867,7 +867,8 @@ public class BlockExecutorTest {
                         BLOCK_FACTORY,
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
-                        signatureCache
+                        signatureCache,
+                        null
                 )
         );
     }
