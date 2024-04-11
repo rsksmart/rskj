@@ -239,13 +239,14 @@ public class BlockChainBuilder {
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
-                blockTxSignatureCache
+                blockTxSignatureCache,
+                null
         );
         repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
         transactionPool = new TransactionPoolImpl(
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
-                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class), null);
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,
