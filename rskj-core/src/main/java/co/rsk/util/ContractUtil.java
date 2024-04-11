@@ -1,8 +1,28 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2024 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.util;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.rpc.Web3InformationRetriever;
 import org.ethereum.config.Constants;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.SignatureCache;
@@ -16,13 +36,16 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 public class ContractUtil {
+    private static final String SWAPS_MAP_POSITION = "0000000000000000000000000000000000000000000000000000000000000000";
+
+
     public static byte[] calculateSwapHash(Transaction newTx, SignatureCache signatureCache) {
+
         CallTransaction.Invocation invocation = getTxInvocation(newTx);
 
         // Get arguments from the invocation object
         byte[] preimage = (byte[]) invocation.args[0];
-        // Encode preimage with sha256, this is to imitate the encoding done in teh claim function before calling hashValues
-        byte[] preimageHash = HashUtil.sha256(preimage);
+        byte[] preimageHash = HashUtil.sha256(encodePacked(preimage));
         BigInteger amount = (BigInteger) invocation.args[1];
         DataWord refundAddress = (DataWord) invocation.args[2];
         BigInteger timeLock = (BigInteger) invocation.args[3];
@@ -70,21 +93,24 @@ public class ContractUtil {
     }
 
     public static boolean isClaimTxAndValid(Transaction newTx,
-                                            RepositorySnapshot currentRepository,
                                             Coin txCost,
                                             Constants constants,
-                                            SignatureCache signatureCache) {
+                                            SignatureCache signatureCache,
+                                            Web3InformationRetriever web3InformationRetriever) {
         byte[] functionSelector = Arrays.copyOfRange(newTx.getData(), 0, 4);
         if(newTx.getReceiveAddress().toHexString().equalsIgnoreCase(constants.getEtherSwapContractAddress())
                 && Arrays.equals(functionSelector, Constants.CLAIM_FUNCTION_SIGNATURE)) {
 
-            byte[] swapHash = calculateSwapHash(newTx, signatureCache);
-            DataWord swapRecord = currentRepository.getStorageValue(newTx.getReceiveAddress(), DataWord.valueOf(swapHash));
+            String swapHash = HexUtils.toUnformattedJsonHex(calculateSwapHash(newTx, signatureCache));
+            byte[] key = HashUtil.keccak256(HexUtils.decode(HexUtils.stringToByteArray(swapHash + SWAPS_MAP_POSITION)));
+
+            AccountInformationProvider accountInformationProvider = web3InformationRetriever.getInformationProvider("latest");
+            DataWord swapRecord = accountInformationProvider.getStorageValue(newTx.getReceiveAddress(), DataWord.valueOf(key));
 
             if(swapRecord != null){
                 CallTransaction.Invocation invocation = getTxInvocation(newTx);
                 BigInteger amount = (BigInteger) invocation.args[1];
-                Coin balanceWithClaim = currentRepository.getBalance(newTx.getSender(signatureCache))
+                Coin balanceWithClaim = accountInformationProvider.getBalance(newTx.getSender(signatureCache))
                         .add(Coin.valueOf(amount.longValue()));
 
                 return txCost.compareTo(balanceWithClaim) <= 0;
