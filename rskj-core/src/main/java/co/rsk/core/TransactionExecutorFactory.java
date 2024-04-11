@@ -20,6 +20,7 @@ package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
+import co.rsk.rpc.Web3InformationRetriever;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -39,6 +40,7 @@ public class TransactionExecutorFactory {
     private final ProgramInvokeFactory programInvokeFactory;
     private final PrecompiledContracts precompiledContracts;
     private BlockTxSignatureCache blockTxSignatureCache;
+    private Web3InformationRetriever web3InformationRetriever;
 
     public TransactionExecutorFactory(
             RskSystemProperties config,
@@ -109,7 +111,12 @@ public class TransactionExecutorFactory {
                 config.isRemascEnabled(),
                 precompiledContracts,
                 deletedAccounts,
-                blockTxSignatureCache
+                blockTxSignatureCache,
+                web3InformationRetriever
         );
+    }
+
+    public void setWeb3InformationRetriever(Web3InformationRetriever web3InformationRetriever) {
+        this.web3InformationRetriever = web3InformationRetriever;
     }
 }

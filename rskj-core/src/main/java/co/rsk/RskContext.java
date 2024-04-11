@@ -1345,11 +1345,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (web3InformationRetriever == null) {
+            TransactionPoolImpl transactionPoolImpl = (TransactionPoolImpl) getTransactionPool();
+            TransactionExecutorFactory transactionExecutorFactory = getTransactionExecutorFactory();
             web3InformationRetriever = new Web3InformationRetriever(
-                    getTransactionPool(),
+                    transactionPoolImpl,
                     getBlockchain(),
                     getRepositoryLocator(),
                     getExecutionBlockRetriever());
+
+            transactionPoolImpl.setWeb3InformationRetriever(web3InformationRetriever);
+            transactionExecutorFactory.setWeb3InformationRetriever(web3InformationRetriever);
         }
         return web3InformationRetriever;
     }

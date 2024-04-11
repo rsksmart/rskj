@@ -68,7 +68,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         if (config.getNetworkConstants().seedCowAccounts()) {
             newAccountWithSeed("cow");
 
-            for (int k = 1; k <= 9; k++) {
+            for (int k = 1; k <= 10; k++) {
                 newAccountWithSeed("cow" + k);
             }
         }
