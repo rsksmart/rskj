@@ -323,7 +323,8 @@ public class WorldDslProcessor {
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,
                             null,
-                            world.getBlockTxSignatureCache()
+                            world.getBlockTxSignatureCache(),
+                            null
                     )
             );
             executor.executeAndFill(block, parent.getHeader());

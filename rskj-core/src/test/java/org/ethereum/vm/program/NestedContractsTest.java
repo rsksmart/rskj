@@ -205,6 +205,7 @@ class NestedContractsTest {
                 null,
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(config, world.getBridgeSupportFactory(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
+                null,
                 null
         );
 

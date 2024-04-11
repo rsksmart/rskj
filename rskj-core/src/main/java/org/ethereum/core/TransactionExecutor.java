@@ -18,6 +18,7 @@
  */
 package org.ethereum.core;
 
+import co.rsk.PropertyGetter;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -25,7 +26,6 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.util.ContractUtil;
 import org.ethereum.config.Constants;
@@ -103,14 +103,14 @@ public class TransactionExecutor {
     private boolean localCall = false;
     private boolean txWasPaid = false;
 
-    private Web3InformationRetriever web3InformationRetriever;
+    private PropertyGetter propertyGetter;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
             boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
-            SignatureCache signatureCache, Web3InformationRetriever web3InformationRetriever) {
+            SignatureCache signatureCache, PropertyGetter propertyGetter) {
         this.constants = constants;
         this.signatureCache = signatureCache;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
@@ -129,7 +129,7 @@ public class TransactionExecutor {
         this.precompiledContracts = precompiledContracts;
         this.enableRemasc = remascEnabled;
         this.deletedAccounts = new HashSet<>(deletedAccounts);
-        this.web3InformationRetriever = web3InformationRetriever;
+        this.propertyGetter = propertyGetter;
     }
 
     /**
@@ -177,7 +177,7 @@ public class TransactionExecutor {
 
         Coin senderBalance = track.getBalance(tx.getSender(signatureCache));
 
-        if (!isCovers(senderBalance, totalCost) && !ContractUtil.isClaimTxAndValid(tx, totalCost,constants, signatureCache, web3InformationRetriever)) {
+        if (!isCovers(senderBalance, totalCost) && !ContractUtil.isClaimTxAndValid(tx, totalCost,constants, signatureCache, propertyGetter)) {
 
             logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, tx.getHash());
             logger.warn("Transaction Data: {}", tx);

@@ -113,7 +113,8 @@ public class StateTestRunner {
             blockFactory,
             invokeFactory,
             precompiledContracts,
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
+            new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
+                null
         );
         TransactionExecutor executor = transactionExecutorFactory.newInstance(
             transaction,
@@ -147,25 +148,26 @@ public class StateTestRunner {
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         blockchain = new BlockChainImpl(
-            blockStore,
-            null,
-            null,
-            null,
-            null,
-            new BlockExecutor(
-                config.getActivationConfig(),
-                new RepositoryLocator(trieStore, stateRootHandler),
-                new TransactionExecutorFactory(
-                    config,
-                    blockStore,
-                    null,
-                    blockFactory,
-                    new ProgramInvokeFactoryImpl(),
-                    precompiledContracts,
-                    new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                )
-            ),
-            stateRootHandler
+                blockStore,
+                null,
+                null,
+                null,
+                null,
+                new BlockExecutor(
+                        config.getActivationConfig(),
+                        new RepositoryLocator(trieStore, stateRootHandler),
+                        new TransactionExecutorFactory(
+                                config,
+                                blockStore,
+                                null,
+                                blockFactory,
+                                new ProgramInvokeFactoryImpl(),
+                                precompiledContracts,
+                                new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
+                                null
+                        )
+                ),
+                stateRootHandler
         );
 
         env = EnvBuilder.build(stateTestCase.getEnv());
