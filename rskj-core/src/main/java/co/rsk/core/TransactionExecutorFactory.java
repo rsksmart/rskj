@@ -18,9 +18,9 @@
 
 package co.rsk.core;
 
+import co.rsk.PropertyGetter;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
-import co.rsk.rpc.Web3InformationRetriever;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -40,7 +40,7 @@ public class TransactionExecutorFactory {
     private final ProgramInvokeFactory programInvokeFactory;
     private final PrecompiledContracts precompiledContracts;
     private BlockTxSignatureCache blockTxSignatureCache;
-    private Web3InformationRetriever web3InformationRetriever;
+    private PropertyGetter propertyGetter;
 
     public TransactionExecutorFactory(
             RskSystemProperties config,
@@ -49,7 +49,8 @@ public class TransactionExecutorFactory {
             BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory,
             PrecompiledContracts precompiledContracts,
-            BlockTxSignatureCache blockTxSignatureCache) {
+            BlockTxSignatureCache blockTxSignatureCache,
+            PropertyGetter propertyGetter) {
         this.config = config;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
@@ -57,6 +58,7 @@ public class TransactionExecutorFactory {
         this.programInvokeFactory = programInvokeFactory;
         this.precompiledContracts = precompiledContracts;
         this.blockTxSignatureCache = blockTxSignatureCache;
+        this.propertyGetter = propertyGetter;
     }
 
     public TransactionExecutor newInstance(
@@ -112,11 +114,7 @@ public class TransactionExecutorFactory {
                 precompiledContracts,
                 deletedAccounts,
                 blockTxSignatureCache,
-                web3InformationRetriever
+                propertyGetter
         );
-    }
-
-    public void setWeb3InformationRetriever(Web3InformationRetriever web3InformationRetriever) {
-        this.web3InformationRetriever = web3InformationRetriever;
     }
 }

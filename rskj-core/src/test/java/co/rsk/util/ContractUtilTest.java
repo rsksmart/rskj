@@ -1,5 +1,6 @@
 package co.rsk.util;
 
+import co.rsk.PropertyGetter;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
@@ -59,7 +60,9 @@ public class ContractUtilTest {
         when(mockedAccountInformationProvider.getStorageValue(any(RskAddress.class), any(DataWord.class)))
                 .thenReturn(DataWord.valueOf(1));
 
-        boolean result = ContractUtil.isClaimTxAndValid(mockedTx, txCost, testConstans, signatureCache, mockedWeb3InformationRetriever);
+        PropertyGetter propertyGetter = () -> mockedWeb3InformationRetriever;
+
+        boolean result = ContractUtil.isClaimTxAndValid(mockedTx, txCost, testConstans, signatureCache, propertyGetter);
 
         assertTrue(result);
     }

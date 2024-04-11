@@ -17,10 +17,10 @@
  */
 package co.rsk.net.handler;
 
+import co.rsk.PropertyGetter;
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
-import co.rsk.rpc.Web3InformationRetriever;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -53,7 +53,7 @@ public class TxPendingValidator {
 
     private final SignatureCache signatureCache;
 
-    public TxPendingValidator(Constants constants, ActivationConfig activationConfig, int accountSlots, SignatureCache signatureCache, Web3InformationRetriever web3InformationRetriever) {
+    public TxPendingValidator(Constants constants, ActivationConfig activationConfig, int accountSlots, SignatureCache signatureCache, PropertyGetter propertyGetter) {
         this.constants = constants;
         this.activationConfig = activationConfig;
         this.signatureCache = signatureCache;
@@ -63,7 +63,7 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorGasLimitValidator());
         validatorSteps.add(new TxValidatorAccountStateValidator());
         validatorSteps.add(new TxValidatorNonceRangeValidator(accountSlots));
-        validatorSteps.add(new TxValidatorAccountBalanceValidator(constants, signatureCache, web3InformationRetriever));
+        validatorSteps.add(new TxValidatorAccountBalanceValidator(constants, signatureCache, propertyGetter));
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig, signatureCache));
         validatorSteps.add(new TxValidatorMaximumGasPriceValidator(activationConfig));

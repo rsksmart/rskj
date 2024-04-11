@@ -18,10 +18,9 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.PropertyGetter;
 import co.rsk.core.Coin;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
-import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.util.ContractUtil;
 import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
@@ -38,12 +37,12 @@ public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
 
     private final Constants constants;
     private final SignatureCache signatureCache;
-    private final Web3InformationRetriever web3InformationRetriever;
+    private final PropertyGetter propertyGetter;
 
-    public TxValidatorAccountBalanceValidator(Constants constants, SignatureCache signatureCache, Web3InformationRetriever web3InformationRetriever) {
+    public TxValidatorAccountBalanceValidator(Constants constants, SignatureCache signatureCache, PropertyGetter propertyGetter) {
         this.constants = constants;
         this.signatureCache = signatureCache;
-        this.web3InformationRetriever = web3InformationRetriever;
+        this.propertyGetter = propertyGetter;
     }
 
     @Override
@@ -59,7 +58,7 @@ public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
         Coin maximumPrice = tx.getGasPrice().multiply(txGasLimit);
         if (state.getBalance().compareTo(maximumPrice) >= 0
-            || ContractUtil.isClaimTxAndValid(tx, maximumPrice, constants, signatureCache, web3InformationRetriever)) {
+            || ContractUtil.isClaimTxAndValid(tx, maximumPrice, constants, signatureCache, propertyGetter)) {
             return TransactionValidationResult.ok();
         }
 
