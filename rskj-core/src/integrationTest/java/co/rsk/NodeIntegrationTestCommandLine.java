@@ -1,12 +1,13 @@
 package co.rsk;
 
 import co.rsk.util.CommandLineFixture;
+import co.rsk.util.StreamGobbler;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -20,22 +21,35 @@ public class NodeIntegrationTestCommandLine {
     private String baseJavaCmd;
     private int port;
     private String rskConfFileName;
-    private Path tempDatabaseDir;
-    private int timeout = 30;
-    private String procOutput;
+    private Path tempDir;
+    private int timeout = 0;
+    private StringBuilder processOutputBuilder;
+    private Consumer<String> procOutputConsumer = output -> appendLinesToProcessOutput(output);
+    private Process nodeProcess;
 
-    public NodeIntegrationTestCommandLine(int port, Path tempDatabaseDir, String rskConfFileName) {
+    public NodeIntegrationTestCommandLine(int port, Path tempDir, String rskConfFileName) {
         this.port = port;
-        this.tempDatabaseDir = tempDatabaseDir;
+        this.tempDir = tempDir;
         this.rskConfFileName = rskConfFileName;
     }
 
-    public NodeIntegrationTestCommandLine(int port, Path tempDatabaseDir, String rskConfFileName, int timeout) {
-        this(port, tempDatabaseDir, rskConfFileName);
+    public NodeIntegrationTestCommandLine(int port, Path tempDir, String rskConfFileName, int timeout) {
+        this(port, tempDir, rskConfFileName);
         this.timeout = timeout;
     }
 
+    private void appendLinesToProcessOutput(String output){
+        processOutputBuilder.append(output);
+    }
+
+    private void configureProcessStreamReaderToGetCommandLineOutput() {
+        StreamGobbler streamGobbler = new StreamGobbler(nodeProcess.getInputStream(), procOutputConsumer);
+        Executors.newSingleThreadExecutor().submit(streamGobbler);
+    }
+
+    //TODO: Improve this to use ProcessBuilder
     private void setUp() throws IOException {
+        processOutputBuilder = new StringBuilder();
         String projectPath = System.getProperty("user.dir");
         buildLibsPath = String.format("%s/build/libs", projectPath);
         String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
@@ -47,9 +61,9 @@ public class NodeIntegrationTestCommandLine {
                 .filter(fn -> fn.endsWith("-all.jar"))
                 .findFirst()
                 .get();
-        Path databaseDirPath = tempDatabaseDir.resolve("database");
+        Path databaseDirPath = Files.createDirectories(tempDir.resolve("database"));
         databaseDir = databaseDirPath.toString();
-        bloomsDbDir = databaseDirPath.resolve("blooms").toString();
+        bloomsDbDir = Files.createDirectories(databaseDirPath.resolve("blooms")).toString();
         baseArgs = new String[]{
                 String.format("-Xdatabase.dir=%s", databaseDir),
                 "--regtest",
@@ -60,35 +74,49 @@ public class NodeIntegrationTestCommandLine {
         baseJavaCmd = String.format("java %s %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile), String.format("-Drsk.conf.file=%s", rskConfFile));
     }
 
-    public String startNode(Consumer<Process> beforeDestroyFn) throws IOException, InterruptedException {
-        setUp();
-        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        Process proc = Runtime.getRuntime().exec(cmd);
-
-        try {
-            proc.waitFor(timeout, TimeUnit.MINUTES);
-
-            procOutput = CommandLineFixture.readProcStream(proc.getInputStream());
-            String procError = CommandLineFixture.readProcStream(proc.getErrorStream());
-
-            if (!proc.isAlive()) {
-                if(proc.exitValue() != 0){
-                    System.out.println("procError:" + procError);
-                    System.out.println("Proc exited with value: " + proc.exitValue());
-                }
-            }
-
-            if (beforeDestroyFn != null) {
-                beforeDestroyFn.accept(proc);
-            }
-        } finally {
-            proc.destroy();
-        }
-
-        return procOutput;
+    public Process startNode() throws IOException, InterruptedException {
+        return startNode(null);
     }
 
-    public String startNode() throws IOException, InterruptedException {
-        return startNode(null);
+    public Process startNode(Consumer<Process> beforeDestroyFn) throws IOException, InterruptedException {
+        setUp();
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        nodeProcess = Runtime.getRuntime().exec(cmd);
+        configureProcessStreamReaderToGetCommandLineOutput();
+
+        try {
+            if(timeout != 0) {
+                nodeProcess.waitFor(timeout, TimeUnit.MINUTES);
+            }
+        } finally {
+            if (!nodeProcess.isAlive() && nodeProcess.exitValue() != 0) {
+                    String procError = CommandLineFixture.readProcStream(nodeProcess.getErrorStream());
+                    System.out.println("procError:" + procError);
+                    System.out.println("Proc exited with value: " + nodeProcess.exitValue());
+            } else if(timeout != 0) {
+                killNode(beforeDestroyFn);
+            }
+        }
+
+        return nodeProcess;  // We return the process so the test can use it to waitFor, to kill, to add in a Future operation
+    }
+
+    public String appendLinesToProcessOutput() {
+        return this.processOutputBuilder.toString();
+    }
+
+    public int killNode() throws InterruptedException {
+        return this.killNode(null);
+    }
+
+    public int killNode(Consumer<Process> beforeDestroyFn) throws InterruptedException {
+        if (beforeDestroyFn != null) {
+            beforeDestroyFn.accept(nodeProcess);
+        }
+        if(nodeProcess.isAlive()){
+            nodeProcess.destroyForcibly();
+        }
+        nodeProcess.waitFor(1, TimeUnit.MINUTES); // We have to wait a bit so the process finishes the kill command
+        return nodeProcess.exitValue();
     }
 }
