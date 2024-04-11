@@ -19,8 +19,13 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
+import co.rsk.rpc.Web3InformationRetriever;
+import co.rsk.util.ContractUtil;
+import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 
 import javax.annotation.Nullable;
@@ -30,6 +35,16 @@ import java.math.BigInteger;
  * Checks if an account can pay the transaction execution cost
  */
 public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
+
+    private final Constants constants;
+    private final SignatureCache signatureCache;
+    private final Web3InformationRetriever web3InformationRetriever;
+
+    public TxValidatorAccountBalanceValidator(Constants constants, SignatureCache signatureCache, Web3InformationRetriever web3InformationRetriever) {
+        this.constants = constants;
+        this.signatureCache = signatureCache;
+        this.web3InformationRetriever = web3InformationRetriever;
+    }
 
     @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
@@ -43,7 +58,8 @@ public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
 
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
         Coin maximumPrice = tx.getGasPrice().multiply(txGasLimit);
-        if (state.getBalance().compareTo(maximumPrice) >= 0) {
+        if (state.getBalance().compareTo(maximumPrice) >= 0
+            || ContractUtil.isClaimTxAndValid(tx, maximumPrice, constants, signatureCache, web3InformationRetriever)) {
             return TransactionValidationResult.ok();
         }
 
