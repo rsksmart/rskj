@@ -96,9 +96,10 @@ public class ContractUtil {
                                             Constants constants,
                                             SignatureCache signatureCache,
                                             PropertyGetter propertyGetter) {
-        byte[] functionSelector = Arrays.copyOfRange(newTx.getData(), 0, 4);
-        if(newTx.getReceiveAddress().toHexString().equalsIgnoreCase(constants.getEtherSwapContractAddress())
-                && Arrays.equals(functionSelector, Constants.CLAIM_FUNCTION_SIGNATURE)) {
+        if(newTx.getReceiveAddress() != null
+                && newTx.getData() != null
+                && newTx.getReceiveAddress().toHexString().equalsIgnoreCase(constants.getEtherSwapContractAddress())
+                && Arrays.equals(Arrays.copyOfRange(newTx.getData(), 0, 4), Constants.CLAIM_FUNCTION_SIGNATURE)) {
 
             String swapHash = HexUtils.toUnformattedJsonHex(calculateSwapHash(newTx, signatureCache));
             byte[] key = HashUtil.keccak256(HexUtils.decode(HexUtils.stringToByteArray(swapHash + SWAPS_MAP_POSITION)));
