@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class NodeIntegrationTestCommandLine {
+    private String modeArg;
     private String buildLibsPath;
     private String jarName;
     private String databaseDir;
@@ -20,26 +21,27 @@ public class NodeIntegrationTestCommandLine {
     private String strBaseArgs;
     private String baseJavaCmd;
     private int port;
-    private String rskConfFileName;
+    private String rskConfFilePath;
     private Path tempDir;
     private int timeout = 0;
     private StringBuilder processOutputBuilder;
     private Consumer<String> procOutputConsumer = output -> appendLinesToProcessOutput(output);
     private Process nodeProcess;
 
-    public NodeIntegrationTestCommandLine(int port, Path tempDir, String rskConfFileName) {
+    public NodeIntegrationTestCommandLine(int port, Path tempDir, String rskConfFilePath, String modeArg) {
         this.port = port;
         this.tempDir = tempDir;
-        this.rskConfFileName = rskConfFileName;
+        this.rskConfFilePath = rskConfFilePath;
+        this.modeArg = modeArg;
     }
 
-    public NodeIntegrationTestCommandLine(int port, Path tempDir, String rskConfFileName, int timeout) {
-        this(port, tempDir, rskConfFileName);
+    public NodeIntegrationTestCommandLine(int port, Path tempDir, String rskConfFilePath, String modeArg, int timeout) {
+        this(port, tempDir, rskConfFilePath, modeArg);
         this.timeout = timeout;
     }
 
     private void appendLinesToProcessOutput(String output){
-        processOutputBuilder.append(output);
+        processOutputBuilder.append(output).append(System.lineSeparator());
     }
 
     private void configureProcessStreamReaderToGetCommandLineOutput() {
@@ -54,7 +56,7 @@ public class NodeIntegrationTestCommandLine {
         buildLibsPath = String.format("%s/build/libs", projectPath);
         String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
         String logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
-        String rskConfFile = String.format("%s/%s", integrationTestResourcesPath, rskConfFileName);
+        //String rskConfFile = String.format("%s/%s", integrationTestResourcesPath, rskConfFilePath);
         Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath));
         jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
                 .map(p -> p.getFileName().toString())
@@ -66,12 +68,12 @@ public class NodeIntegrationTestCommandLine {
         bloomsDbDir = Files.createDirectories(databaseDirPath.resolve("blooms")).toString();
         baseArgs = new String[]{
                 String.format("-Xdatabase.dir=%s", databaseDir),
-                "--regtest",
+                this.modeArg,
                 "-Xkeyvalue.datasource=rocksdb",
                 String.format("-Xrpc.providers.web.http.port=%s", port)
         };
         strBaseArgs = String.join(" ", baseArgs);
-        baseJavaCmd = String.format("java %s %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile), String.format("-Drsk.conf.file=%s", rskConfFile));
+        baseJavaCmd = String.format("java %s %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile), String.format("-Drsk.conf.file=%s", rskConfFilePath));
     }
 
     public Process startNode() throws IOException, InterruptedException {
