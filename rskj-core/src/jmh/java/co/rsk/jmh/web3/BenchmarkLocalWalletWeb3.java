@@ -18,7 +18,7 @@
 
 package co.rsk.jmh.web3;
 
-import co.rsk.jmh.web3.plan.LocaWalletlPlan;
+import co.rsk.jmh.web3.plan.LocalWalletPlan;
 import co.rsk.jmh.web3.plan.TransactionPlan;
 import org.openjdk.jmh.annotations.*;
 import org.web3j.protocol.core.methods.request.Transaction;
@@ -57,7 +57,7 @@ public class BenchmarkLocalWalletWeb3 {
     }
 
     @Benchmark
-    public void ethSign(LocaWalletlPlan plan) throws BenchmarkWeb3Exception {
+    public void ethSign(LocalWalletPlan plan) throws BenchmarkWeb3Exception {
         String address = plan.getEthSignAddress();
         String message = plan.getEthSignMessage();
         plan.getWeb3Connector().ethSign(address, message);

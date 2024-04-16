@@ -95,6 +95,7 @@ public class ActivationConfigsForTest {
     private static List<ConsensusRule> getPapyrus200Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(Arrays.asList(
+            ConsensusRule.RSKIP134,
             ConsensusRule.RSKIP137,
             ConsensusRule.RSKIP140,
             ConsensusRule.RSKIP143,
@@ -178,11 +179,13 @@ public class ActivationConfigsForTest {
     private static List<ConsensusRule> getArrowhead600Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(Arrays.asList(
+            ConsensusRule.RSKIP203,
             ConsensusRule.RSKIP376,
             ConsensusRule.RSKIP379,
             ConsensusRule.RSKIP398,
             ConsensusRule.RSKIP400,
-            ConsensusRule.RSKIP203,
+            ConsensusRule.RSKIP415,
+            ConsensusRule.RSKIP417,
             ConsensusRule.RSKIP144,
             ConsensusRule.RSKIP351
         ));

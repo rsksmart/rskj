@@ -124,8 +124,8 @@ class BridgeConstantsTest {
 
     private static Stream<Arguments> getBtcHeightWhenPegoutTxIndexActivatesArgProvider() {
         return Stream.of(
-            Arguments.of(BridgeMainNetConstants.getInstance(), 100),
-            Arguments.of(BridgeTestNetConstants.getInstance(), 150),
+            Arguments.of(BridgeMainNetConstants.getInstance(), 837589),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 2589553),
             Arguments.of(BridgeRegTestConstants.getInstance(), 250)
         );
     }
@@ -143,7 +143,7 @@ class BridgeConstantsTest {
     private static Stream<Arguments> getPegoutTxIndexGracePeriodInBtcBlocksArgProvider() {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), 4_320),
-            Arguments.of(BridgeTestNetConstants.getInstance(), 4_320),
+            Arguments.of(BridgeTestNetConstants.getInstance(), 1_440),
             Arguments.of(BridgeRegTestConstants.getInstance(), 100)
         );
     }

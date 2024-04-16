@@ -403,7 +403,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_call(CallArgumentsParam args, Map<String, String> inputs) {
-        return invokeByBlockRef(inputs, blockNumber -> this.eth_call(args, new BlockIdentifierParam(blockNumber)));
+        return invokeByBlockRef(inputs, blockNumber -> getEthModule().call(args, new BlockIdentifierParam(blockNumber)));
     }
 
     @Override
@@ -850,6 +850,13 @@ public class Web3Impl implements Web3 {
         txInfo.setTransaction(tx);
 
         return new TransactionReceiptDTO(block, txInfo, signatureCache);
+    }
+
+    @Override
+    public TransactionResultDTO[] eth_pendingTransactions() {
+        return ethModule.ethPendingTransactions().stream()
+                .map(tx -> new TransactionResultDTO(null, null, tx, config.rpcZeroSignatureIfRemasc(), signatureCache))
+                .toArray(TransactionResultDTO[]::new);
     }
 
     @Override

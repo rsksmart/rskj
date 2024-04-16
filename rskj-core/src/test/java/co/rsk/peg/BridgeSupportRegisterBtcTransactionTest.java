@@ -471,9 +471,14 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     private BridgeSupport buildBridgeSupport(ActivationConfig.ForBlock activations) {
+        Repository repository = mock(Repository.class);
+        when(repository.getBalance(PrecompiledContracts.BRIDGE_ADDR)).thenReturn(co.rsk.core.Coin.fromBitcoin(bridgeMainnetConstants.getMaxRbtc()));
+        when(provider.getLockingCap()).thenReturn(bridgeMainnetConstants.getMaxRbtc());
+
         return new BridgeSupportBuilder()
             .withBtcBlockStoreFactory(mockFactory)
             .withBridgeConstants(bridgeMainnetConstants)
+            .withRepository(repository)
             .withProvider(provider)
             .withActivations(activations)
             .withSignatureCache(signatureCache)
@@ -502,8 +507,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         RskAddress rskAddress = new RskAddress(senderRskKey.getAddress());
 
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, senderBtcKey));
-
-
 
         Coin amountToSend = shouldSendAmountBelowMinimum ? belowMinimumPeginTxValue : minimumPeginTxValue;
         btcTransaction.addOutput(amountToSend, userAddress);

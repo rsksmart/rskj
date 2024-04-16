@@ -51,9 +51,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static java.util.Arrays.copyOfRange;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
@@ -187,6 +185,10 @@ public class EthModule
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", estimation);
         }
+    }
+
+    public List<Transaction> ethPendingTransactions() {
+        return ethModuleWallet.ethPendingTransactions();
     }
 
     protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {

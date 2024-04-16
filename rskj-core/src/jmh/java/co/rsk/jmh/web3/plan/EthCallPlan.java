@@ -18,16 +18,13 @@
 
 package co.rsk.jmh.web3.plan;
 
-import co.rsk.jmh.helpers.BenchmarkHelper;
 import co.rsk.jmh.web3.BenchmarkWeb3Exception;
 import co.rsk.jmh.web3.e2e.RskModuleWeb3j;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.infra.BenchmarkParams;
-import org.web3j.protocol.core.methods.response.Transaction;
 
 import java.math.BigInteger;
 
@@ -44,29 +41,16 @@ public class EthCallPlan extends BasePlan {
         ethCallArguments = buildEthCallArguments();
     }
 
-    private Transaction setupTransaction() {
-        Transaction tx = new Transaction();
-
-        tx.setFrom(configuration.getString("eth_call.transaction.from"));
-        tx.setTo(configuration.getString("eth_call.transaction.to"));
-        tx.setGas(configuration.getString("eth_call.transaction.gas"));
-        tx.setGasPrice(configuration.getString("eth_call.transaction.gasPrice"));
-        tx.setValue(configuration.getString("eth_call.transaction.value"));
-        tx.setInput(configuration.getString("eth_call.transaction.input"));
-
-        return tx;
-    }
-
     private RskModuleWeb3j.EthCallArguments buildEthCallArguments() {
         RskModuleWeb3j.EthCallArguments args = new RskModuleWeb3j.EthCallArguments();
-        Transaction tx = setupTransaction();
 
-        args.setFrom(tx.getFrom());
-        args.setTo(tx.getTo());
-        args.setGas("0x" + tx.getGas().toString(16));
-        args.setGasPrice("0x" + tx.getGasPrice().toString(16));
-        args.setValue("0x" + tx.getValue().toString(16));
-        args.setData(tx.getInput());
+        args.setGasLimit(configuration.getString("eth_call.gasLimit"));
+        args.setFrom(configuration.getString("eth_call.transaction.from"));
+        args.setTo(configuration.getString("eth_call.transaction.to"));
+        args.setGas(configuration.getString("eth_call.transaction.gas"));
+        args.setGasPrice(configuration.getString("eth_call.transaction.gasPrice"));
+        args.setValue(configuration.getString("eth_call.transaction.value"));
+        args.setData(configuration.getString("eth_call.transaction.input"));
 
         return args;
     }

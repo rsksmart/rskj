@@ -41,6 +41,7 @@ import co.rsk.metrics.HashRateCalculatorMining;
 import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.mine.*;
 import co.rsk.net.*;
+import co.rsk.net.discovery.KnownPeersHandler;
 import co.rsk.net.discovery.PeerExplorer;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
@@ -88,6 +89,7 @@ import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -105,6 +107,7 @@ import org.ethereum.db.ReceiptStoreImplV2;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.GasPriceCalculator;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.NodeManager;
@@ -156,7 +159,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private static final String CACHE_FILE_NAME = "rskcache";
 
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
-
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
     private MiningMainchainView miningMainchainView;
@@ -251,7 +253,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
-
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
 
     private volatile boolean closed;
@@ -558,7 +559,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         double gasPriceMultiplier = getRskSystemProperties().gasPriceMultiplier();
 
         if (this.gasPriceTracker == null) {
-            this.gasPriceTracker = GasPriceTracker.create(getBlockStore(), gasPriceMultiplier);
+            GasPriceCalculator.GasCalculatorType calculatorType = getRskSystemProperties().getGasCalculatorType();
+            this.gasPriceTracker = GasPriceTracker.create(getBlockStore(), gasPriceMultiplier, calculatorType);
         }
         return this.gasPriceTracker;
     }
@@ -1583,17 +1585,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getPublicIp(),
                     rskSystemProperties.getPeerPort()
             );
-            List<String> initialBootNodes = rskSystemProperties.peerDiscoveryIPList();
-            List<Node> activePeers = rskSystemProperties.peerActive();
-            if (activePeers != null) {
-                for (Node n : activePeers) {
-                    InetSocketAddress address = n.getAddress();
-                    initialBootNodes.add(address.getHostName() + ":" + address.getPort());
-                }
+
+            KnownPeersHandler knownPeersHandler = null;
+            if (rskSystemProperties.usePeersFromLastSession()) {
+                knownPeersHandler = new KnownPeersHandler(getRskSystemProperties().getLastKnewPeersFilePath());
+
             }
+
             int bucketSize = rskSystemProperties.discoveryBucketSize();
             peerExplorer = new PeerExplorer(
-                    initialBootNodes,
+                    getInitialBootNodes(knownPeersHandler),
                     localNode,
                     new NodeDistanceTable(KademliaOptions.BINS, bucketSize, localNode),
                     key,
@@ -1603,11 +1604,36 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.networkId(),
                     getPeerScoringManager(),
                     rskSystemProperties.allowMultipleConnectionsPerHostPort(),
-                    rskSystemProperties.peerDiscoveryMaxBootRetries()
+                    rskSystemProperties.peerDiscoveryMaxBootRetries(),
+                    knownPeersHandler
             );
         }
 
         return peerExplorer;
+    }
+
+    @VisibleForTesting
+    List<String> getInitialBootNodes(KnownPeersHandler knownPeersHandler) {
+        Set<String> initialBootNodes = new HashSet<>();
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        List<String> peerDiscoveryIPList = rskSystemProperties.peerDiscoveryIPList();
+        if (peerDiscoveryIPList != null) {
+            initialBootNodes.addAll(peerDiscoveryIPList);
+        }
+        List<Node> activePeers = rskSystemProperties.peerActive();
+        if (activePeers != null) {
+            for (Node n : activePeers) {
+                InetSocketAddress address = n.getAddress();
+                initialBootNodes.add(address.getHostName() + ":" + address.getPort());
+            }
+        }
+
+        if (rskSystemProperties.usePeersFromLastSession()) {
+            List<String> peerLastSession = knownPeersHandler.readPeers();
+            logger.debug("Loading peers from previous session: {}",peerLastSession);
+            initialBootNodes.addAll(peerLastSession);
+        }
+        return new ArrayList<>(initialBootNodes);
     }
 
     private BlockChainLoader getBlockChainLoader() {
@@ -1868,7 +1894,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             if (wallet == null) {
                 ethModuleWallet = new EthModuleWalletDisabled();
             } else {
-                ethModuleWallet = new EthModuleWalletEnabled(wallet);
+                ethModuleWallet = new EthModuleWalletEnabled(wallet, getTransactionPool(), getReceivedTxSignatureCache());
             }
         }
 
