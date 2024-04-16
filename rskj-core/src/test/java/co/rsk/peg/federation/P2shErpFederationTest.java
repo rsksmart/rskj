@@ -1,35 +1,28 @@
 package co.rsk.peg.federation;
 
 import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
-import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
-import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
 import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
+import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.*;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.BridgeTestNetConstants;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.config.*;
 import co.rsk.peg.bitcoin.*;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,9 +56,16 @@ class P2shErpFederationTest {
         BtcECKey federator8PublicKey = BtcECKey.fromPublicOnly(Hex.decode("031aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d26"));
         BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea"));
         defaultKeys = Arrays.asList(
-            federator0PublicKey, federator1PublicKey, federator2PublicKey,
-            federator3PublicKey, federator4PublicKey, federator5PublicKey,
-            federator6PublicKey, federator7PublicKey, federator8PublicKey, federator9PublicKey
+            federator0PublicKey,
+            federator1PublicKey,
+            federator2PublicKey,
+            federator3PublicKey,
+            federator4PublicKey,
+            federator5PublicKey,
+            federator6PublicKey,
+            federator7PublicKey,
+            federator8PublicKey,
+            federator9PublicKey
         );
         defaultThreshold = defaultKeys.size() / 2 + 1;
         emergencyKeys = bridgeConstants.getErpFedPubKeysList();
@@ -524,6 +524,27 @@ class P2shErpFederationTest {
             value.minus(fee),
             signWithEmergencyMultisig
         ));
+    }
+
+    @Test
+    void getMemberByBtcPublicKey_passing_existing_btcPublicKey_should_return_found_member(){
+        BtcECKey existingMemberBtcPublicKey = defaultKeys.get(0);
+        Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(existingMemberBtcPublicKey);
+        Assertions.assertTrue(foundMember.isPresent());
+        Assertions.assertEquals(existingMemberBtcPublicKey, foundMember.get().getBtcPublicKey());
+    }
+
+    @Test
+    void getMemberByBtcPublicKey_passing_non_existing_btcPublicKey_should_return_empty(){
+        BtcECKey noExistingBtcPublicKey = new BtcECKey();
+        Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(noExistingBtcPublicKey);
+        Assertions.assertFalse(foundMember.isPresent());
+    }
+
+    @Test
+    void getMemberByBtcPublicKey_passing_null_btcPublicKey_should_return_empty(){
+        Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(null);
+        Assertions.assertFalse(foundMember.isPresent());
     }
 
     private void validateP2shErpRedeemScript(

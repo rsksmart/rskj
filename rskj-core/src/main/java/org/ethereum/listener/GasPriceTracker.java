@@ -23,7 +23,6 @@ import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
@@ -35,10 +34,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Calculates a 'reasonable' Gas price based on statistics of the latest transaction's Gas prices
- *
+ * <p>
  * Normally the price returned should be sufficient to execute a transaction since ~25% of the latest
  * transactions were executed at this or lower price.
- *
+ * <p>
  * Created by Anton Nashatyrev on 22.09.2015.
  */
 public class GasPriceTracker extends EthereumListenerAdapter {
@@ -53,8 +52,6 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private static final double DEFAULT_GAS_PRICE_MULTIPLIER = 1.1;
 
-    private final Coin[] txWindow = new Coin[TX_WINDOW_SIZE];
-
     private final Double[] blockWindow = new Double[BLOCK_WINDOW_SIZE];
 
     private final AtomicReference<Coin> bestBlockPriceRef = new AtomicReference<>();
@@ -62,25 +59,45 @@ public class GasPriceTracker extends EthereumListenerAdapter {
     private final double gasPriceMultiplier;
 
     private Coin defaultPrice = Coin.valueOf(20_000_000_000L);
-    private int txIdx = TX_WINDOW_SIZE - 1;
-
     private int blockIdx = 0;
 
-    private Coin lastVal;
+    private final GasPriceCalculator gasPriceCalculator;
 
-    private GasPriceTracker(BlockStore blockStore, Double configMultiplier) {
+    private GasPriceTracker(BlockStore blockStore, GasPriceCalculator gasPriceCalculator, Double configMultiplier) {
         this.blockStore = blockStore;
+        this.gasPriceCalculator = gasPriceCalculator;
         this.gasPriceMultiplier = configMultiplier;
     }
 
-    public static GasPriceTracker create(BlockStore blockStore) {
-        return create(blockStore, DEFAULT_GAS_PRICE_MULTIPLIER);
+    public static GasPriceTracker create(BlockStore blockStore, GasPriceCalculator.GasCalculatorType gasCalculatorType) {
+        return create(blockStore, DEFAULT_GAS_PRICE_MULTIPLIER, gasCalculatorType);
     }
 
-    public static GasPriceTracker create(BlockStore blockStore, Double configMultiplier) {
-        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore, configMultiplier);
+    public static GasPriceTracker create(BlockStore blockStore, Double configMultiplier, GasPriceCalculator.GasCalculatorType gasCalculatorType) {
+        GasPriceCalculator gasCal;
+        switch (gasCalculatorType) {
+            case WEIGHTED_PERCENTILE:
+                gasCal = new WeightedPercentileGasPriceCalculator();
+                break;
+            case PLAIN_PERCENTILE:
+                gasCal = new PercentileGasPriceCalculator();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown gas calculator type: " + gasCalculatorType);
+        }
+        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore, gasCal, configMultiplier);
         gasPriceTracker.initializeWindowsFromDB();
+
         return gasPriceTracker;
+    }
+
+    /**
+     * @deprecated Use {@link #create(BlockStore, GasPriceCalculator.GasCalculatorType)} instead.
+     */
+    @Deprecated
+    public static GasPriceTracker create(BlockStore blockStore) {
+        //Will be using the legacy gas calculator as default option
+        return GasPriceTracker.create(blockStore, GasPriceCalculator.GasCalculatorType.PLAIN_PERCENTILE);
     }
 
     @Override
@@ -96,38 +113,25 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
         trackBlockCompleteness(block);
 
-        for (Transaction tx : block.getTransactionsList()) {
-            onTransaction(tx);
-        }
-
+        gasPriceCalculator.onBlock(block, receipts);
         logger.trace("End onBlock");
     }
 
-    private void onTransaction(Transaction tx) {
-        if (tx instanceof RemascTransaction) {
-            return;
-        }
-
-        trackGasPrice(tx);
-    }
-
     public synchronized Coin getGasPrice() {
-        if (txWindow[0] == null) { // for some reason, not filled yet (i.e. not enough blocks on DB)
+        Optional<Coin> gasPriceResult = gasPriceCalculator.getGasPrice();
+        if(!gasPriceResult.isPresent()) {
             return defaultPrice;
         }
 
-        if (lastVal == null) {
-            Coin[] values = Arrays.copyOf(txWindow, TX_WINDOW_SIZE);
-            Arrays.sort(values);
-            lastVal = values[values.length / 4];  // 25% percentile
-        }
+        logger.debug("Gas provided by GasWindowCalc: {}", gasPriceResult.get());
 
         Coin bestBlockPrice = bestBlockPriceRef.get();
         if (bestBlockPrice == null) {
-            return lastVal;
+            logger.debug("Best block price not available, defaulting to {}", gasPriceResult.get());
+            return gasPriceResult.get();
         }
 
-        return Coin.max(lastVal, new Coin(new BigDecimal(bestBlockPrice.asBigInteger())
+        return Coin.max(gasPriceResult.get(), new Coin(new BigDecimal(bestBlockPrice.asBigInteger())
                 .multiply(BigDecimal.valueOf(gasPriceMultiplier)).toBigInteger()));
     }
 
@@ -180,14 +184,6 @@ public class GasPriceTracker extends EthereumListenerAdapter {
         return blocks;
     }
 
-    private void trackGasPrice(Transaction tx) {
-        if (txIdx == -1) {
-            txIdx = TX_WINDOW_SIZE - 1;
-            lastVal = null;  // recalculate only 'sometimes'
-        }
-        txWindow[txIdx--] = tx.getGasPrice();
-    }
-
     private void trackBlockCompleteness(Block block) {
         double gasUsed = block.getGasUsed();
         double gasLimit = block.getGasLimitAsInteger().doubleValue();
@@ -197,6 +193,10 @@ public class GasPriceTracker extends EthereumListenerAdapter {
             blockIdx = 0;
         }
         blockWindow[blockIdx++] = completeness;
+    }
+
+    public GasPriceCalculator.GasCalculatorType getGasCalculatorType() {
+        return gasPriceCalculator.getType();
     }
 
 }

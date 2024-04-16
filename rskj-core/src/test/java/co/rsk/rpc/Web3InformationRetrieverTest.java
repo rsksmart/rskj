@@ -6,6 +6,7 @@ import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.util.HexUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -85,6 +86,18 @@ class Web3InformationRetrieverTest {
         Block secondBlock = mock(Block.class);
         when(blockchain.getBlockByNumber(2)).thenReturn(secondBlock);
         Optional<Block> result = target.getBlock("0x2");
+
+        assertTrue(result.isPresent());
+        assertEquals(secondBlock, result.get());
+    }
+
+    @Test
+    void getBlock_hash() {
+        String hash = "0x0000000000000000000000000000000000000000000000000000000000000002";
+        byte[] bytesHash = HexUtils.stringHexToByteArray(hash);
+        Block secondBlock = mock(Block.class);
+        when(blockchain.getBlockByHash(bytesHash)).thenReturn(secondBlock);
+        Optional<Block> result = target.getBlock(hash);
 
         assertTrue(result.isPresent());
         assertEquals(secondBlock, result.get());

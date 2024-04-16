@@ -29,13 +29,12 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.*;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -293,7 +292,20 @@ class RemascStorageProviderTest {
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
         RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
+        Block executionBlock = testRunner.getBlockChain().getBestBlock();
+
+        ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(executionBlock.getNumber());
+
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                repository.startTracking(),
+                PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(),
+                activations
+        );
+
+        FederationSupport federationSupport = new FederationSupport(config.getNetworkConstants().getBridgeConstants(), bridgeStorageProvider, executionBlock, activations);
+
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig().forBlock(executionBlock.getNumber()), federationSupport);
         assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(repository).getFederationBalance());
         long federatorBalance = (168 / federationProvider.getFederationSize()) * 2;
         assertEquals(Coin.valueOf(federatorBalance), RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
@@ -320,7 +332,20 @@ class RemascStorageProviderTest {
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
         RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
+        Block executionBlock = testRunner.getBlockChain().getBestBlock();
+
+        ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(executionBlock.getNumber());
+
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                repository.startTracking(),
+                PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(),
+                activations
+        );
+
+        FederationSupport federationSupport = new FederationSupport(config.getNetworkConstants().getBridgeConstants(), bridgeStorageProvider, executionBlock, activations);
+
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig().forBlock(executionBlock.getNumber()), federationSupport);
         assertEquals(Coin.valueOf(336), this.getRemascStorageProvider(repository).getFederationBalance());
         assertEquals(null, RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
     }
@@ -370,7 +395,20 @@ class RemascStorageProviderTest {
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
         RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
+        Block executionBlock = testRunner.getBlockChain().getBestBlock();
+
+        ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(executionBlock.getNumber());
+
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                repository.startTracking(),
+                PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(),
+                activations
+        );
+
+        FederationSupport federationSupport = new FederationSupport(config.getNetworkConstants().getBridgeConstants(), bridgeStorageProvider, executionBlock, activations);
+
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig().forBlock(executionBlock.getNumber()), federationSupport);
         long federatorBalance = (1680 / federationProvider.getFederationSize()) * 2;
         assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(repository).getFederationBalance());
         assertEquals(Coin.valueOf(federatorBalance), RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));

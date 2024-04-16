@@ -31,6 +31,7 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.listener.GasPriceCalculator;
 import org.ethereum.vm.PrecompiledContracts;
 
 import javax.annotation.Nonnull;
@@ -61,12 +62,15 @@ public class RskSystemProperties extends SystemProperties {
     private static final String RPC_MODULES_PATH = "rpc.modules";
     private static final String RPC_ETH_GET_LOGS_MAX_BLOCKS_TO_QUERY = "rpc.logs.maxBlocksToQuery";
     private static final String RPC_ETH_GET_LOGS_MAX_LOGS_TO_RETURN = "rpc.logs.maxLogsToReturn";
+    public static final String TX_GAS_PRICE_CALCULATOR_TYPE = "transaction.gasPriceCalculatorType";
+
     private static final String RPC_GAS_PRICE_MULTIPLIER_CONFIG = "rpc.gasPriceMultiplier";
     private static final String DISCOVERY_BUCKET_SIZE = "peer.discovery.bucketSize";
 
     private static final int CHUNK_SIZE = 192;
 
     public static final String PROPERTY_SYNC_TOP_BEST = "sync.topBest";
+    public static final String USE_PEERS_FROM_LAST_SESSION = "peer.discovery.usePeersFromLastSession";
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -265,6 +269,10 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean skipRemasc() {
         return getBoolean("rpc.skipRemasc", false);
+    }
+
+    public boolean usePeersFromLastSession() {
+        return getBoolean(USE_PEERS_FROM_LAST_SESSION, false);
     }
 
     public long peerDiscoveryMessageTimeOut() {
@@ -520,6 +528,18 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         return value;
+    }
+
+    public GasPriceCalculator.GasCalculatorType getGasCalculatorType() {
+        String value = configFromFiles.getString(TX_GAS_PRICE_CALCULATOR_TYPE);
+        if (value == null || value.isEmpty()) {
+            return GasPriceCalculator.GasCalculatorType.PLAIN_PERCENTILE;
+        }
+        GasPriceCalculator.GasCalculatorType gasCalculatorType = GasPriceCalculator.GasCalculatorType.fromString(value);
+        if(gasCalculatorType == null) {
+            throw new RskConfigurationException("Invalid gasPriceCalculatorType: " + value);
+        }
+        return gasCalculatorType;
     }
 
     private void fetchMethodTimeout(Config configElement, Map<String, Long> methodTimeoutMap) {

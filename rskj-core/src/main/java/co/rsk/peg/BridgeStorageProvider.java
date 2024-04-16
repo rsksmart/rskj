@@ -947,7 +947,7 @@ public class BridgeStorageProvider {
         pegoutTxSigHashes.add(sigHash);
     }
 
-    private void savePegoutTxSigHashes() {
+    protected void savePegoutTxSigHashes() {
         if (!activations.isActive(RSKIP379) || pegoutTxSigHashes == null) {
             return;
         }

@@ -22,10 +22,12 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
-import org.ethereum.core.Account;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
@@ -39,11 +41,14 @@ import co.rsk.util.HexUtils;
 public class EthModuleWalletEnabled implements EthModuleWallet {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
-
     private final Wallet wallet;
+    private final TransactionPool transactionPool;
+    private final SignatureCache signatureCache;
 
-    public EthModuleWalletEnabled(Wallet wallet) {
+    public EthModuleWalletEnabled(Wallet wallet, TransactionPool transactionPool, SignatureCache signatureCache) {
         this.wallet = wallet;
+        this.transactionPool = transactionPool;
+        this.signatureCache = signatureCache;
     }
 
     @Override
@@ -89,5 +94,13 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
                 BigIntegers.asUnsignedByteArray(32, signature.getS()),
                 new byte[]{signature.getV()}
         ));
+    }
+    @Override
+    public List<Transaction> ethPendingTransactions() {
+        List<Transaction> pendingTxs = transactionPool.getPendingTransactions();
+        List<String> managedAccounts = Arrays.asList(accounts());
+        return pendingTxs.stream()
+                .filter(tx -> managedAccounts.contains(tx.getSender(signatureCache).toJsonString()))
+                .collect(Collectors.toList());
     }
 }

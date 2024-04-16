@@ -18,9 +18,15 @@
 
 package co.rsk.rpc.modules.eth;
 
+import org.ethereum.core.Transaction;
+
+import java.util.List;
+
 public interface EthModuleWallet {
 
     String[] accounts();
 
     String sign(String addr, String data);
+
+    List<Transaction> ethPendingTransactions();
 }

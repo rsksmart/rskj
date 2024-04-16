@@ -76,6 +76,14 @@ public abstract class Federation {
         return members;
     }
 
+    public Optional<FederationMember> getMemberByBtcPublicKey(BtcECKey btcPublicKey) {
+        if (btcPublicKey == null){
+            return Optional.empty();
+        }
+        final BtcECKey btcPublicKeyOnly = BtcECKey.fromPublicOnly(btcPublicKey.getPubKey());
+        return members.stream().filter(federationMember -> federationMember.getBtcPublicKey().equals(btcPublicKeyOnly)).findAny();
+    }
+
     public List<BtcECKey> getBtcPublicKeys() {
         // Copy instances since we don't control
         // immutability of BtcECKey instances

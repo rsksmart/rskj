@@ -166,8 +166,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
 
-        btcHeightWhenPegoutTxIndexActivates = 150; // TODO: TBD and change current mock value. This is an estimation of the btc block number once RSKIP379 is activated.
-        pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
+        btcHeightWhenPegoutTxIndexActivates = 2_589_553; // Estimated date Wed, 20 Mar 2024 15:00:00 GMT. 2,579,823 was the block number at time of calculation
+        pegoutTxIndexGracePeriodInBtcBlocks = 1_440; // 10 days in BTC blocks (considering 1 block every 10 minutes)
     }
 
     public static BridgeTestNetConstants getInstance() {

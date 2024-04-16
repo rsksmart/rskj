@@ -18,10 +18,13 @@
 
 package co.rsk.remasc;
 
+import co.rsk.config.BridgeConstants;
 import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.FederationSupport;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -32,6 +35,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +51,7 @@ public class Remasc {
     private static final Logger logger = LoggerFactory.getLogger(Remasc.class);
 
     private final Constants constants;
-    private final ActivationConfig activationConfig;
+    private final ActivationConfig.ForBlock activations;
     private final Repository repository;
     private final BlockStore blockStore;
     private final RemascConfig remascConstants;
@@ -78,7 +82,7 @@ public class Remasc {
         this.provider = new RemascStorageProvider(repository, contractAddress);
         this.feesPayer = new RemascFeesPayer(repository, contractAddress);
         this.constants = constants;
-        this.activationConfig = activationConfig;
+        this.activations = activationConfig.forBlock(executionBlock.getNumber());
     }
 
     public void save() {
@@ -109,11 +113,11 @@ public class Remasc {
             throw new RemascInvalidInvocationException("Invoked Remasc outside last tx of the block");
         }
 
-        long blockNbr = executionBlock.getNumber();
+        long executionBlockNumber = executionBlock.getNumber();
 
-        long processingBlockNumber = blockNbr - remascConstants.getMaturity();
-        if (processingBlockNumber < 1 ) {
-            logger.debug("First block has not reached maturity yet, current block is {}", blockNbr);
+        long candidateBlockNumberToReward = executionBlockNumber - remascConstants.getMaturity();
+        if (candidateBlockNumberToReward < 1 ) {
+            logger.debug("First block has not reached maturity yet, current block is {}", executionBlockNumber);
             return;
         }
 
@@ -145,20 +149,20 @@ public class Remasc {
         rewardBalance = rewardBalance.add(processingBlockReward);
         provider.setRewardBalance(rewardBalance);
 
-        if (processingBlockNumber - remascConstants.getSyntheticSpan() < 0 ) {
+        if (candidateBlockNumberToReward - remascConstants.getSyntheticSpan() < 0 ) {
             logger.debug("First block has not reached maturity+syntheticSpan yet, current block is {}", executionBlock.getNumber());
             return;
         }
 
-        List<Sibling> siblings = getSiblingsToReward(descendantsBlocks, processingBlockNumber);
+        List<Sibling> siblings = getSiblingsToReward(descendantsBlocks, candidateBlockNumberToReward);
         boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
         boolean brokenSelectionRule = SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
         provider.setBrokenSelectionRule(!siblings.isEmpty() && brokenSelectionRule);
 
         // Takes from rewardBalance this block's height reward.
         Coin syntheticReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
-        boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, blockNbr);
-        if (isRskip85Enabled) {
+
+        if (shouldRewardBeAboveMinimumPayableGas()) {
             BigInteger minimumPayableGas = constants.getMinimumPayableGas();
             Coin minPayableFees = executionBlock.getMinimumGasPrice().multiply(minimumPayableGas);
             if (syntheticReward.compareTo(minPayableFees) < 0) {
@@ -176,7 +180,7 @@ public class Remasc {
         Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, rskLabsAddress, logs);
         syntheticReward = syntheticReward.subtract(payToRskLabs);
-        Coin payToFederation = payToFederation(constants, isRskip85Enabled, processingBlock, processingBlockHeader, syntheticReward);
+        Coin payToFederation = payToFederation(constants, processingBlock, syntheticReward);
         syntheticReward = syntheticReward.subtract(payToFederation);
 
         if (!siblings.isEmpty()) {
@@ -193,23 +197,38 @@ public class Remasc {
         }
     }
 
+    private boolean shouldRewardBeAboveMinimumPayableGas() {
+        return activations.isActive(ConsensusRule.RSKIP85);
+    }
+
     RskAddress getRskLabsAddress() {
-        boolean isRskip218Enabled = activationConfig.isActive(ConsensusRule.RSKIP218, executionBlock.getNumber());
+        boolean isRskip218Enabled = activations.isActive(ConsensusRule.RSKIP218);
         return isRskip218Enabled ? remascConstants.getRskLabsAddressRskip218() : remascConstants.getRskLabsAddress();
     }
 
-    private Coin payToFederation(Constants constants, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
-        RemascFederationProvider federationProvider = new RemascFederationProvider(activationConfig, constants.getBridgeConstants(), repository, processingBlock);
+    private Coin payToFederation(Constants constants, Block processingBlock, Coin syntheticReward) {
+        BridgeConstants bridgeConstants = constants.getBridgeConstants();
+
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                repository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeConstants,
+            activations
+        );
+
+        FederationSupport federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock, activations);
+
+        RemascFederationProvider federationProvider = new RemascFederationProvider(activations, federationSupport);
         Coin federationReward = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
         Coin payToFederation = provider.getFederationBalance().add(federationReward);
-        byte[] processingBlockHash = processingBlockHeader.getHash().getBytes();
+        byte[] processingBlockHash = processingBlock.getHeader().getHash().getBytes();
         int nfederators = federationProvider.getFederationSize();
         Coin[] payAndRemainderToFederator = payToFederation.divideAndRemainder(BigInteger.valueOf(nfederators));
         Coin payToFederator = payAndRemainderToFederator[0];
         Coin restToLastFederator = payAndRemainderToFederator[1];
 
-        if (isRskip85Enabled) {
+        if (shouldRewardBeAboveMinimumPayableGas()) {
             BigInteger minimumFederatorPayableGas = constants.getFederatorMinimumPayableGas();
             Coin minPayableFederatorFees = executionBlock.getMinimumGasPrice().multiply(minimumFederatorPayableGas);
             if (payToFederator.compareTo(minPayableFederatorFees) < 0) {

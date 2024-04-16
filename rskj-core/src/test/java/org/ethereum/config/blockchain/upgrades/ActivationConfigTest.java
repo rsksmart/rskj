@@ -119,6 +119,8 @@ class ActivationConfigTest {
             "    rskip398: arrowhead600",
             "    rskip400: arrowhead600",
             "    rskip412: arrowhead600",
+            "    rskip415: arrowhead600",
+            "    rskip417: arrowhead600",
             "}"
     ));
 
@@ -134,8 +136,8 @@ class ActivationConfigTest {
     @Test
     void readWithTwoUpgradesInOrchid060() {
         ActivationConfig config = ActivationConfig.read(BASE_CONFIG
-                .withValue("hardforkActivationHeights.orchid060", ConfigValueFactory.fromAnyRef(200))
-                .withValue("consensusRules.rskip98", ConfigValueFactory.fromAnyRef("orchid060"))
+            .withValue("hardforkActivationHeights.orchid060", ConfigValueFactory.fromAnyRef(200))
+            .withValue("consensusRules.rskip98", ConfigValueFactory.fromAnyRef("orchid060"))
         );
 
         for (ConsensusRule value : ConsensusRule.values()) {
@@ -149,8 +151,8 @@ class ActivationConfigTest {
 
     @Test
     void readWithOneHardcodedActivationNumber() {
-        ActivationConfig config = ActivationConfig.read(BASE_CONFIG
-                .withValue("consensusRules.rskip85", ConfigValueFactory.fromAnyRef(200))
+        ActivationConfig config = ActivationConfig.read(
+            BASE_CONFIG.withValue("consensusRules.rskip85", ConfigValueFactory.fromAnyRef(200))
         );
 
         for (ConsensusRule value : ConsensusRule.values()) {

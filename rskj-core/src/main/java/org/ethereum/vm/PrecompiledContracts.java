@@ -437,6 +437,10 @@ public class PrecompiledContracts {
                 int expLen = parseLen(data, EXPONENT);
                 int modLen = parseLen(data, MODULUS);
 
+                if (baseLen == 0 && modLen == 0) {
+                    return ByteUtil.leftPadBytes(ByteUtil.EMPTY_BYTE_ARRAY, modLen);
+                }
+
                 int expOffset = Math.addExact(ARGS_OFFSET, baseLen);
                 int modOffset = Math.addExact(expOffset, expLen);
 

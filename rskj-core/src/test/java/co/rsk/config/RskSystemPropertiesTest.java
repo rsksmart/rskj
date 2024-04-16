@@ -261,4 +261,41 @@ class RskSystemPropertiesTest {
 
         Assertions.assertThrows(RskConfigurationException.class, testSystemProperties::gasPriceMultiplier);
     }
+
+    @Test
+    void checkPeerLastSessionProperty(){
+        TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "peer {\n" +
+                        "  discovery{ usePeersFromLastSession = true\n}" +
+                                "}" +
+                        " }").withFallback(rawConfig));
+
+        assertTrue(testSystemProperties.usePeersFromLastSession());
+
+        testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "peer {\n" +
+                        "  discovery{ usePeersFromLastSession = false\n}" +
+                        "}" +
+                        " }").withFallback(rawConfig));
+        assertFalse(testSystemProperties.usePeersFromLastSession());
+
+        testSystemProperties = new TestSystemProperties();
+
+        assertFalse(testSystemProperties.usePeersFromLastSession());
+    }
+
+    @Test
+    void checkLastSessionPeersFilePathProperty(){
+        TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "database {\n" +
+                        "  dir = \"/dbdir\"\n" +
+                        "}" +
+                        " }").withFallback(rawConfig));
+
+        assertEquals("/dbdir/lastPeers.properties", testSystemProperties.getLastKnewPeersFilePath().toString());
+    }
+
 }
