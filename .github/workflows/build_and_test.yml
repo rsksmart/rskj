@@ -1,0 +1,291 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    types: [opened, reopened]
+    branches:
+      - '**'
+
+jobs:
+  prepare-rskj:
+    runs-on: ubuntu-latest
+    container:
+      image: openjdk:8-jdk
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup System Tools
+        run: |
+          apt update -y
+          apt install -y gnupg2 curl
+
+      - name: Verify files
+        run: |
+          curl -sSL https://secchannel.rsk.co/SUPPORT.asc | gpg2 --import -
+          gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
+
+      - uses: actions/cache@v4
+        name: Cache Gradle
+        id: cache-gradle
+        with:
+          path: |
+            .gradle/caches
+            gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Get gradle wrapper and build dependencies
+        run: |
+          ./configure.sh
+          ./gradlew --no-daemon dependencies
+
+      - name: Build
+        run: |
+          ./gradlew --no-daemon --stacktrace build -x test
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-files
+          path: |
+            rskj-core/build
+
+  smell-test:
+    needs: prepare-rskj
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: actions/cache@v4
+        name: Restore Gradle cache
+        id: cache-gradle
+        with:
+          path: |
+            .gradle/caches
+            gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Get gradle wrapper and build dependencies
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            ./configure.sh
+            ./gradlew --no-daemon dependencies
+          fi
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: |
+            rskj-core/build
+
+      - name: If GH event is PR
+        if: github.event_name == 'pull_request'
+        run: |
+          git branch -f master origin/master
+          pr_number==${{ github.event.pull_request.number }}
+          extra_flags="-Dsonar.pullrequest.base=master
+            -Dsonar.pullrequest.branch=${{ github.head_ref }}
+            -Dsonar.pullrequest.key=$pr_number"
+          ./gradlew sonarqube --no-daemon -x build -x test \
+            $extra_flags \
+            -Dsonar.organization=rsksmart \
+            -Dsonar.host.url="https://sonarcloud.io" \
+            -Dsonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: If not
+        if: github.event_name != 'pull_request'
+        run: |
+          ./gradlew sonarqube --no-daemon -x build -x test \
+            -Dsonar.branch.name=master \
+            -Dsonar.organization=rsksmart \
+            -Dsonar.host.url="https://sonarcloud.io" \
+            -Dsonar.token="${{ secrets.SONAR_TOKEN }}"
+
+  unit-tests:
+    needs: prepare-rskj
+    runs-on: ubuntu-latest
+    container:
+      image: openjdk:8-jdk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup System Tools
+        run: |
+          apt update -y
+          apt install -y curl
+
+      - uses: actions/cache@v4
+        name: Restore gradle cache
+        id: cache-gradle
+        with:
+          path: |
+            .gradle/caches
+            gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Get gradle wrapper and build dependencies
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            ./configure.sh
+            ./gradlew --no-daemon dependencies
+          fi
+
+      - name: Run tests
+        run: |
+          ./gradlew --no-daemon --stacktrace test
+
+  integration-tests:
+    needs: prepare-rskj
+    runs-on: ubuntu-latest
+    container:
+      image: openjdk:8-jdk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup System Tools
+        run: |
+          apt update -y
+          apt install -y curl
+
+      - uses: actions/cache@v4
+        name: Restore gradle cache
+        id: cache-gradle
+        with:
+          path: |
+            .gradle/caches
+            gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Get gradle wrapper and build dependencies
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            ./configure.sh
+            ./gradlew --no-daemon dependencies
+          fi
+
+      - name: Run tests
+        run: |
+          ./gradlew --no-daemon --stacktrace integrationTest
+
+  mining-tests:
+    needs: prepare-rskj
+    runs-on: ubuntu-latest
+    services:
+      bitcoind1:
+        image: ghcr.io/rsksmart/rskj/mit_bitcoind1:latest
+        ports:
+          - 8331:8331
+          - 31591:31591
+          - 32591:32591
+        options: --name bitcoind1
+      bitcoind2:
+        image: ghcr.io/rsksmart/rskj/mit_bitcoind2:latest
+        ports:
+          - 8332:8332
+          - 31592:31592
+          - 32592:32592
+        options: --name bitcoind2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '12.x'
+      - name: Check Node.js version
+        run: node --version
+
+      - name: Checkout Mining Integration Tests Repository
+        uses: actions/checkout@v4
+        with:
+          repository: rsksmart/mining-integration-tests
+          ref: ${{ secrets.MINING_INTEGRATION_TESTS_REF }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: mining-integration-tests
+
+      - name: Install Mining Integration Tests dependencies
+        working-directory: mining-integration-tests
+        run: |
+          npm ci
+
+      - name: Change mining-integration-tests bitcoind url in config.json to localhost
+        working-directory: mining-integration-tests
+        run: |
+          sed -i 's/bitcoind01/localhost/g' config.json
+
+      - name: Generate BTC blocks
+        working-directory: mining-integration-tests
+        run: |
+          node --unhandled-rejections=strict generateBtcBlocks.js
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: actions/cache@v4
+        name: Restore gradle cache
+        id: cache-gradle
+        with:
+          path: |
+            .gradle/caches
+            gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Get gradle wrapper and build dependencies
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            ./configure.sh
+            ./gradlew --no-daemon dependencies
+          fi
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: |
+            rskj-core/build
+
+      - name: Start RSKj and Run Tests
+        working-directory: mining-integration-tests
+        run: |
+          version=$(tr -d "'\"" < ../rskj-core/src/main/resources/version.properties \
+            | cut -d = -f 2- | paste -sd - -)
+          echo "Using RskJ version $version at ../rskj-core/build/libs/rskj-core-$version-all.jar"
+          java -Drsk.conf.file=./rsk-integration-test.conf -cp ../rskj-core/build/libs/rskj-core-"$version"-all.jar co.rsk.Start --regtest & rskpid=$!
+          export tries=0
+          export MAX_TRIES=10
+          
+          until nc -z 127.0.0.1 4444 || [ $tries -eq $MAX_TRIES ] || ! kill -0 $rskpid 2>/dev/null; do
+            echo "Waiting for RskJ..."
+            export tries=$((tries+1))
+            sleep 1
+          done
+          
+          if ! kill -0 $rskpid 2>/dev/null; then
+            echo "RskJ process has died"
+            exit 1
+          fi
+          
+          npm test
+          kill -9 $rskpid
