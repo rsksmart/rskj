@@ -4,9 +4,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationFactory;
 import com.google.common.collect.Lists;
 import java.time.Instant;
 import java.util.Arrays;
@@ -37,7 +34,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         BtcECKey federator13PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02c6018fcbd3e89f3cf9c7f48b3232ea3638eb8bf217e59ee290f5f0cfb2fb9259"));
         BtcECKey federator14PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"));
 
-        List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
+        genesisFederationPublicKeys = Lists.newArrayList(
             federator0PublicKey, federator1PublicKey, federator2PublicKey,
             federator3PublicKey, federator4PublicKey, federator5PublicKey,
             federator6PublicKey, federator7PublicKey, federator8PublicKey,
@@ -45,16 +42,9 @@ public class BridgeMainNetConstants extends BridgeConstants {
             federator12PublicKey, federator13PublicKey, federator14PublicKey
         );
 
-        // IMPORTANT: BTC, RSK and MST keys are the same.
-        // Change upon implementation of the <INSERT FORK NAME HERE> fork.
-        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
-
         // Currently set to:
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400L);
-
-        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, getBtcParams());
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400L);
 
         btc2RskMinimumAcceptableConfirmations = 100;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;
