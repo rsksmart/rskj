@@ -22,11 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationFactory;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,25 +36,22 @@ public class BridgeRegTestConstants extends BridgeConstants {
     // IMPORTANT: BTC, RSK and MST keys are the same.
     // Change upon implementation of the <INSERT FORK NAME HERE> fork.
     public static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Collections.unmodifiableList(Arrays.asList(
-            BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))),
-            BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8))),
-            BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)))
+        BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))),
+        BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8))),
+        BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)))
     ));
     public static final List<BtcECKey> REGTEST_FEDERATION_PUBLIC_KEYS = Collections.unmodifiableList(REGTEST_FEDERATION_PRIVATE_KEYS.stream()
-            .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
-            .collect(Collectors.toList()));
+        .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
+        .collect(Collectors.toList()));
 
     private static final BridgeRegTestConstants instance = new BridgeRegTestConstants(REGTEST_FEDERATION_PUBLIC_KEYS);
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
 
-        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federationPublicKeys);
+        this.genesisFederationPublicKeys = federationPublicKeys;
 
-        Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
-
-        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreatedAt, 1L, getBtcParams());
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        genesisFederationAddressCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 3;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
