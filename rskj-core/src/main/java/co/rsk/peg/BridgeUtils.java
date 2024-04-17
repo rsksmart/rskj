@@ -37,14 +37,17 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.InternalTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,9 +60,12 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
  */
 public class BridgeUtils {
 
+    private static BridgeConstants bridgeConstants;
     private static final Logger logger = LoggerFactory.getLogger(BridgeUtils.class);
 
-    private BridgeUtils() {}
+    private BridgeUtils(BridgeConstants bridgeConstants) {
+        BridgeUtils.bridgeConstants = bridgeConstants;
+    }
 
     public static Wallet getFederationNoSpendWallet(
         Context btcContext,
@@ -152,7 +158,7 @@ public class BridgeUtils {
         if (addresses == null || addresses.isEmpty()){
             return Coin.ZERO;
         }
-        if (activations.isActive(ConsensusRule.RSKIP293)){
+        if (activations.isActive(RSKIP293)){
             return getAmountSentToAddresses(
                 context,
                 btcTx,
@@ -251,7 +257,7 @@ public class BridgeUtils {
         List<Address> addresses
 
     ) {
-        if (activations.isActive(ConsensusRule.RSKIP293)){
+        if (activations.isActive(RSKIP293)){
             return getUTXOsSentToAddresses(context, btcTx, addresses);
         } else {
             return BridgeUtilsLegacy.getUTXOsSentToAddress(
@@ -378,8 +384,8 @@ public class BridgeUtils {
         return true;
     }
 
-    public static Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
-        org.ethereum.crypto.ECKey key = tx.getKey();
+    public static Address recoverBtcAddressFromEthTransaction(Transaction tx, NetworkParameters networkParameters) {
+        ECKey key = tx.getKey();
         byte[] pubKey = key.getPubKey(true);
         return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
     }
@@ -391,6 +397,7 @@ public class BridgeUtils {
         }
 
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
+        RskAddress rskAddress = rskTx.getSender(signatureCache);
 
         // Temporary assumption: if areBridgeTxsFree() is true then the current federation
         // must be the genesis federation.
@@ -399,7 +406,7 @@ public class BridgeUtils {
                !activations.isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
                rskTx.acceptTransactionSignature(constants.getChainId()) &&
                (
-                       isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation(), signatureCache) ||
+                       isFromGenesisFederation(rskAddress) ||
                        isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
                        isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
                        isFromFeePerKbChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache)
@@ -413,11 +420,23 @@ public class BridgeUtils {
      */
     public static boolean isContractTx(Transaction rskTx) {
         // Calls between contracts are done through internal transactions
-        return rskTx.getClass() == org.ethereum.vm.program.InternalTransaction.class;
+        return rskTx.getClass() == InternalTransaction.class;
     }
 
-    public static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation, SignatureCache signatureCache) {
+    public static boolean isFromFederateMember(Transaction rskTx, Federation federation, SignatureCache signatureCache) {
         return federation.hasMemberWithRskAddress(rskTx.getSender(signatureCache).getBytes());
+    }
+
+    /**
+     * Method that verify if an RskAddress is part of the Genesis Federation
+     *
+     * @param rskAddress
+     * @return boolean
+     */
+    private static boolean isFromGenesisFederation(RskAddress rskAddress) {
+        final List<BtcECKey> genesisFederationPublicKeys = bridgeConstants.getGenesisFederationPublicKeys();
+        final List<ECKey> genesisFederationECKeys = genesisFederationPublicKeys.stream().map(k -> ECKey.fromPublicOnly(k.getPubKey())).collect(Collectors.toList());
+        return genesisFederationECKeys.stream().anyMatch(m -> Arrays.equals(m.getAddress(), rskAddress.getBytes()));
     }
 
     public static Coin getCoinFromBigInteger(BigInteger value) throws BridgeIllegalArgumentException {
@@ -431,17 +450,17 @@ public class BridgeUtils {
         }
     }
 
-    private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
+    private static boolean isFromFederationChangeAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFederationChangeAuthorizer();
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
 
-    private static boolean isFromLockWhitelistChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
+    private static boolean isFromLockWhitelistChangeAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getLockWhitelistChangeAuthorizer();
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
 
-    private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
+    private static boolean isFromFeePerKbChangeAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFeePerKbChangeAuthorizer();
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
@@ -540,7 +559,7 @@ public class BridgeUtils {
         ActivationConfig.ForBlock activations,
         byte[] addressBytes) throws BridgeIllegalArgumentException {
 
-        if (!activations.isActive(ConsensusRule.RSKIP284)) {
+        if (!activations.isActive(RSKIP284)) {
             return BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(networkParameters, activations, addressBytes);
         }
 

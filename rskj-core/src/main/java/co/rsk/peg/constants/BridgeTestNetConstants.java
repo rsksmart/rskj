@@ -22,15 +22,13 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationFactory;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
+
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
 
 public class BridgeTestNetConstants extends BridgeConstants {
     private static final BridgeTestNetConstants instance = new BridgeTestNetConstants();
@@ -51,23 +49,15 @@ public class BridgeTestNetConstants extends BridgeConstants {
             Hex.decode("034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85")
         );
 
-        List<BtcECKey> genesisFederationPublicKeys = Arrays.asList(
+        genesisFederationPublicKeys = Arrays.asList(
             federator0PublicKey,
             federator1PublicKey,
             federator2PublicKey,
             federator3PublicKey
         );
 
-        // IMPORTANT: BTC, RSK and MST keys are the same.
-        // Change upon implementation of the <INSERT FORK NAME HERE> fork.
-        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
-
-        // Currently set to:
         // Currently set to: Monday, October 8, 2018 12:00:00 AM GMT-03:00
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1538967600l);
-
-        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, getBtcParams());
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1538967600l);
 
         btc2RskMinimumAcceptableConfirmations = 10;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
