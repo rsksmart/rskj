@@ -41,6 +41,7 @@ public class FederationSupport {
     private final BridgeConstants bridgeConstants;
     private final Block executionBlock;
     private final ActivationConfig.ForBlock activations;
+    private static final long CREATION_BLOCK_NUMBER = 1L;
 
     public FederationSupport(BridgeConstants bridgeConstants, BridgeStorageProvider provider, Block executionBlock, ActivationConfig.ForBlock activations) {
         this.provider = provider;
@@ -244,11 +245,9 @@ public class FederationSupport {
      */
     private Federation getGenesisFederation() {
         final List<BtcECKey> genesisFederationPublicKeys = bridgeConstants.getGenesisFederationPublicKeys();
-        // IMPORTANT: BTC, RSK and MST keys are the same.
-        // Change upon implementation of the <INSERT FORK NAME HERE> fork.
         final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
-        final Instant genesisFederationAddressCreatedAt = bridgeConstants.getGenesisFederationAddressCreatedAt();
-        final FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, bridgeConstants.getBtcParams());
+        final Instant genesisFederationCreationTime = bridgeConstants.getGenesisFederationCreationTime();
+        final FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, CREATION_BLOCK_NUMBER, bridgeConstants.getBtcParams());
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 }

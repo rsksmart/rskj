@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,8 +55,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
             federator3PublicKey
         );
 
-        // Currently set to: Monday, October 8, 2018 12:00:00 AM GMT-03:00
-        genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1538967600l);
+        genesisFederationCreationTime = ZonedDateTime.parse("2018-10-08T03:00:00Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 10;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
