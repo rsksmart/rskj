@@ -19,9 +19,10 @@
 
 package co.rsk;
 
+import co.rsk.util.CommandLineFixture;
 import co.rsk.util.ContractUtil;
 import co.rsk.util.HexUtils;
-import co.rsk.util.TestUtils;
+import co.rsk.util.OkHttpClientTestFixture;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.Response;
@@ -30,12 +31,18 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 public class EtherSwapTest {
     private static final int LOCAL_PORT = 4444;
@@ -50,8 +57,35 @@ public class EtherSwapTest {
             new String[]{"bytes32", "uint256", "address", "uint256"},
             new String[]{}
     );
-
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private String buildLibsPath;
+    private String jarName;
+    private String databaseDir;
+    @TempDir
+    private Path tempDir;
+
+    private String[] baseArgs;
+    private String strBaseArgs;
+    private String baseJavaCmd;
+
+    @BeforeEach
+    public void setup() throws IOException {
+        String projectPath = System.getProperty("user.dir");
+        buildLibsPath = String.format("%s/build/libs", projectPath);
+        String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
+        String rskConfFile = String.format("%s/integration-test-rskj.conf", integrationTestResourcesPath);
+        Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath));
+        jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
+                .map(p -> p.getFileName().toString())
+                .filter(fn -> fn.endsWith("-all.jar"))
+                .findFirst()
+                .get();
+        Path databaseDirPath = tempDir.resolve("database");
+        databaseDir = databaseDirPath.toString();
+        baseArgs = new String[]{"--regtest"};
+        strBaseArgs = String.join(" ", baseArgs);
+        baseJavaCmd = String.format("java %s", String.format("-Drsk.conf.file=%s", rskConfFile));
+    }
 
     private Response lockTxRequest(String refundAddress, byte[] lockData, BigInteger amount) throws IOException {
         String lockTxRequestContent = "[{\n" +
@@ -68,7 +102,7 @@ public class EtherSwapTest {
                 "    \"jsonrpc\": \"2.0\"\n" +
                 "}]";
 
-        return TestUtils.sendJsonRpcMessage(lockTxRequestContent, LOCAL_PORT);
+        return OkHttpClientTestFixture.sendJsonRpcMessage(lockTxRequestContent, LOCAL_PORT);
     }
 
     private Response claimTxRequest(String claimAddress, byte[] claimData) throws IOException {
@@ -86,7 +120,7 @@ public class EtherSwapTest {
                 "    \"jsonrpc\": \"2.0\"\n" +
                 "}]";
 
-        return TestUtils.sendJsonRpcMessage(claimTxRequestContent, LOCAL_PORT);
+        return OkHttpClientTestFixture.sendJsonRpcMessage(claimTxRequestContent, LOCAL_PORT);
     }
 
     private Response getBalanceRequest(String address) throws IOException {
@@ -100,7 +134,7 @@ public class EtherSwapTest {
                 "    \"jsonrpc\": \"2.0\"\n" +
                 "}]";
 
-        return TestUtils.sendJsonRpcMessage(getBalanceRequestContent, LOCAL_PORT);
+        return OkHttpClientTestFixture.sendJsonRpcMessage(getBalanceRequestContent, LOCAL_PORT);
     }
 
     private Response getTxReceiptRequest(String txHash) throws IOException {
@@ -113,7 +147,7 @@ public class EtherSwapTest {
                 "    \"jsonrpc\": \"2.0\"\n" +
                 "}]";
 
-        return TestUtils.sendJsonRpcMessage(getReceiptRequestContent, LOCAL_PORT);
+        return OkHttpClientTestFixture.sendJsonRpcMessage(getReceiptRequestContent, LOCAL_PORT);
     }
 
     @Test
@@ -135,25 +169,36 @@ public class EtherSwapTest {
                 refundAddress,
                 8000000);
 
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CommandLineFixture.runCommand(
+                cmd,
+                60,
+                TimeUnit.SECONDS,
+                proc -> {
+                    try {
+                        Response getBalanceResponse = getBalanceRequest(claimAddress);
+                        JsonNode jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
+                        JsonNode currentBalance = jsonRpcResponse.get(0).get("result");
+                        BigInteger balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
+                        Assertions.assertEquals(0, balanceBigInt.compareTo(BigInteger.ZERO));
 
-        Response getBalanceResponse = getBalanceRequest(claimAddress);
-        JsonNode jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
-        JsonNode currentBalance = jsonRpcResponse.get(0).get("result");
-        BigInteger balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
-        Assertions.assertEquals(0, balanceBigInt.compareTo(BigInteger.ZERO));
+                        lockTxRequest(refundAddress, lockData, amount);
+                        TimeUnit.SECONDS.sleep(5);
 
-        lockTxRequest(refundAddress, lockData, amount);
-        TimeUnit.SECONDS.sleep(5);
+                        claimTxRequest(claimAddress, claimData);
+                        TimeUnit.SECONDS.sleep(5);
 
-        claimTxRequest(claimAddress, claimData);
-        TimeUnit.SECONDS.sleep(5);
+                        getBalanceResponse = getBalanceRequest(claimAddress);
+                        jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
+                        currentBalance = jsonRpcResponse.get(0).get("result");
+                        balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
 
-        getBalanceResponse = getBalanceRequest(claimAddress);
-        jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
-        currentBalance = jsonRpcResponse.get(0).get("result");
-        balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
-
-        Assertions.assertEquals(0, balanceBigInt.compareTo(BigInteger.ZERO));
+                        Assertions.assertEquals(0, balanceBigInt.compareTo(BigInteger.ZERO));
+                    } catch (IOException | InterruptedException e) {
+                        Assertions.fail(e);
+                    }
+                }
+        );
     }
 
 
@@ -176,32 +221,43 @@ public class EtherSwapTest {
                 refundAddress,
                 8000000);
 
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CommandLineFixture.runCommand(
+                cmd,
+                60,
+                TimeUnit.SECONDS,
+                proc -> {
+                    try {
+                        Response getBalanceResponse = getBalanceRequest(claimAddress);
+                        JsonNode jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
+                        JsonNode currentBalance = jsonRpcResponse.get(0).get("result");
+                        BigInteger balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
+                        Assertions.assertEquals(0, balanceBigInt.compareTo(BigInteger.ZERO));
 
-        Response getBalanceResponse = getBalanceRequest(claimAddress);
-        JsonNode jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
-        JsonNode currentBalance = jsonRpcResponse.get(0).get("result");
-        BigInteger balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
-        Assertions.assertEquals(0, balanceBigInt.compareTo(BigInteger.ZERO));
+                        Response lockResponse = lockTxRequest(refundAddress, lockData, amount);
+                        TimeUnit.SECONDS.sleep(5);
 
-        lockTxRequest(refundAddress, lockData, amount);
-        TimeUnit.SECONDS.sleep(5);
+                        Response claimResponse = claimTxRequest(claimAddress, claimData);
+                        TimeUnit.SECONDS.sleep(5);
 
-        Response claimResponse = claimTxRequest(claimAddress, claimData);
-        TimeUnit.SECONDS.sleep(5);
+                        jsonRpcResponse = objectMapper.readTree(claimResponse.body().string());
+                        JsonNode claimTxHash = jsonRpcResponse.get(0).get("result");
 
-        jsonRpcResponse = objectMapper.readTree(claimResponse.body().string());
-        JsonNode claimTxHash = jsonRpcResponse.get(0).get("result");
+                        Response getTxReceiptResponse = getTxReceiptRequest(claimTxHash.asText());
+                        jsonRpcResponse = objectMapper.readTree(getTxReceiptResponse.body().string());
+                        JsonNode gasUsed = jsonRpcResponse.get(0).get("result").get("gasUsed");
+                        BigInteger expectedBalance = amount.subtract(new BigInteger(HexUtils.removeHexPrefix(gasUsed.asText()), 16));
 
-        Response getTxReceiptResponse = getTxReceiptRequest(claimTxHash.asText());
-        jsonRpcResponse = objectMapper.readTree(getTxReceiptResponse.body().string());
-        JsonNode gasUsed = jsonRpcResponse.get(0).get("result").get("gasUsed");
-        BigInteger expectedBalance = amount.subtract(new BigInteger(HexUtils.removeHexPrefix(gasUsed.asText()), 16));
+                        getBalanceResponse = getBalanceRequest(claimAddress);
+                        jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
+                        currentBalance = jsonRpcResponse.get(0).get("result");
+                        balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
 
-        getBalanceResponse = getBalanceRequest(claimAddress);
-        jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
-        currentBalance = jsonRpcResponse.get(0).get("result");
-        balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
-
-        Assertions.assertEquals(0, balanceBigInt.compareTo(expectedBalance));
+                        Assertions.assertEquals(0, balanceBigInt.compareTo(expectedBalance));
+                    } catch (IOException | InterruptedException e) {
+                        Assertions.fail(e);
+                    }
+                }
+        );
     }
 }
