@@ -398,7 +398,7 @@ public class BridgeUtils {
         }
 
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
-        RskAddress rskAddress = rskTx.getSender(signatureCache);
+        RskAddress senderAddress = rskTx.getSender(signatureCache);
 
         // Temporary assumption: if areBridgeTxsFree() is true then the current federation
         // must be the genesis federation.
@@ -407,7 +407,7 @@ public class BridgeUtils {
                !activations.isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
                rskTx.acceptTransactionSignature(constants.getChainId()) &&
                (
-                       isFromGenesisFederation(rskAddress) ||
+                       isFromGenesisFederation(senderAddress) ||
                        isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
                        isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
                        isFromFeePerKbChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache)
@@ -436,8 +436,9 @@ public class BridgeUtils {
      */
     private static boolean isFromGenesisFederation(RskAddress rskAddress) {
         final List<BtcECKey> genesisFederationPublicKeys = bridgeConstants.getGenesisFederationPublicKeys();
-        final List<ECKey> genesisFederationECKeys = genesisFederationPublicKeys.stream().map(k -> ECKey.fromPublicOnly(k.getPubKey())).collect(Collectors.toList());
-        return genesisFederationECKeys.stream().anyMatch(m -> Arrays.equals(m.getAddress(), rskAddress.getBytes()));
+        return genesisFederationPublicKeys.stream().anyMatch(genesisBtcPublicKey ->
+                Arrays.equals((ECKey.fromPublicOnly(genesisBtcPublicKey.getPubKey())).getAddress()
+                        , rskAddress.getBytes()));
     }
 
     public static Coin getCoinFromBigInteger(BigInteger value) throws BridgeIllegalArgumentException {
