@@ -37,6 +37,9 @@ import java.util.Arrays;
 public class ContractUtil {
     private static final String SWAPS_MAP_POSITION = "0000000000000000000000000000000000000000000000000000000000000000";
 
+    private ContractUtil() {
+        throw new IllegalStateException("Utility class");
+    }
 
     public static byte[] calculateSwapHash(Transaction newTx, SignatureCache signatureCache) {
 
