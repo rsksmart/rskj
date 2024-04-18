@@ -52,7 +52,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         this.genesisFederationPublicKeys = federationPublicKeys;
 
-        genesisFederationAddressCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
+        genesisFederationCreationTime = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 3;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;

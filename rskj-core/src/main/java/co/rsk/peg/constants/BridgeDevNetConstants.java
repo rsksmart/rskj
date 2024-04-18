@@ -25,7 +25,7 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -51,9 +51,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         this.genesisFederationPublicKeys = federationPublicKeys;
 
-        // Currently set to:
-        // Monday, November 13, 2017 9:00:00 PM GMT-03:00
-        genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1510617600l);
+        genesisFederationCreationTime = ZonedDateTime.parse("2017-11-14T00:00:00Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 1;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;

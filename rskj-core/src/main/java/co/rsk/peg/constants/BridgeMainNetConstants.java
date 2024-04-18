@@ -8,7 +8,7 @@ import com.google.common.collect.Lists;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,9 +43,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
             federator12PublicKey, federator13PublicKey, federator14PublicKey
         );
 
-        // Currently set to:
-        // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
-        genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400L);
+        genesisFederationCreationTime = ZonedDateTime.parse("2018-01-03T03:00:00Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 100;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;

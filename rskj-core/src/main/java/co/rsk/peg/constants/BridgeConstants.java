@@ -31,7 +31,7 @@ import java.util.List;
 public abstract class BridgeConstants {
     protected String btcParamsString;
     protected List<BtcECKey> genesisFederationPublicKeys;
-    protected Instant genesisFederationAddressCreatedAt;
+    protected Instant genesisFederationCreationTime;
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
     protected int rsk2BtcMinimumAcceptableConfirmations;
@@ -101,8 +101,8 @@ public abstract class BridgeConstants {
         return genesisFederationPublicKeys;
     }
 
-    public Instant getGenesisFederationAddressCreatedAt() {
-        return genesisFederationAddressCreatedAt;
+    public Instant getGenesisFederationCreationTime() {
+        return genesisFederationCreationTime;
     }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
