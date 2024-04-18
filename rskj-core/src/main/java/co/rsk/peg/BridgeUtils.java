@@ -60,11 +60,9 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
  */
 public class BridgeUtils {
 
-    private static BridgeConstants bridgeConstants;
     private static final Logger logger = LoggerFactory.getLogger(BridgeUtils.class);
 
-    private BridgeUtils(BridgeConstants bridgeConstants) {
-        BridgeUtils.bridgeConstants = bridgeConstants;
+    private BridgeUtils() {
     }
 
     public static Wallet getFederationNoSpendWallet(
@@ -406,7 +404,7 @@ public class BridgeUtils {
                !activations.isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
                rskTx.acceptTransactionSignature(constants.getChainId()) &&
                (
-                       isFromGenesisFederation(senderAddress) ||
+                       isFromGenesisFederation(senderAddress, bridgeConstants.getGenesisFederationPublicKeys()) ||
                        isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
                        isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
                        isFromFeePerKbChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache)
@@ -430,14 +428,16 @@ public class BridgeUtils {
     /**
      * Method that verify if an RskAddress is part of the Genesis Federation
      *
-     * @param rskAddress
+     * @param rskAddress                  RskAddress to find in Genesis Federation
+     * @param genesisFederationPublicKeys List of BtcECKey part of Genesis Federation
      * @return boolean
      */
-    private static boolean isFromGenesisFederation(RskAddress rskAddress) {
-        final List<BtcECKey> genesisFederationPublicKeys = bridgeConstants.getGenesisFederationPublicKeys();
-        return genesisFederationPublicKeys.stream().anyMatch(genesisBtcPublicKey ->
-                Arrays.equals((ECKey.fromPublicOnly(genesisBtcPublicKey.getPubKey())).getAddress()
-                        , rskAddress.getBytes()));
+    private static boolean isFromGenesisFederation(RskAddress rskAddress, List<BtcECKey> genesisFederationPublicKeys) {
+        return genesisFederationPublicKeys.stream().
+                anyMatch(genesisBtcPublicKey ->
+                        Arrays.equals(
+                                (ECKey.fromPublicOnly(genesisBtcPublicKey.getPubKey())).getAddress()
+                                , rskAddress.getBytes()));
     }
 
     public static Coin getCoinFromBigInteger(BigInteger value) throws BridgeIllegalArgumentException {
