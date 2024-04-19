@@ -16,7 +16,7 @@ public class RskJsonRpcRequestException extends RuntimeException {
     }
 
     protected RskJsonRpcRequestException(Integer code, String message, Exception e) {
-        this(code, new byte[]{}, message, e);
+        this(code, null, message, e);
     }
 
     public RskJsonRpcRequestException(Integer code, @Nullable byte[] revertData, String message) {
@@ -26,7 +26,7 @@ public class RskJsonRpcRequestException extends RuntimeException {
     }
 
     public RskJsonRpcRequestException(Integer code, String message) {
-        this(code, new byte[]{}, message);
+        this(code, null, message);
     }
 
     public Integer getCode() {
@@ -50,9 +50,7 @@ public class RskJsonRpcRequestException extends RuntimeException {
             @Nonnull byte[] revertData
     ) {
         return executionError(
-                revertReason.isEmpty()
-                        ? "transaction reverted, no reason specified"
-                        : "revert " + revertReason,
+                "revert " + revertReason,
                 revertData
         );
     }

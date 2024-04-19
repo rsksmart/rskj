@@ -318,9 +318,14 @@ public class EthModule
      */
     public static Pair<String, byte[]> decodeProgramRevert(ProgramResult programResult) {
         byte[] bytes = programResult.getHReturn();
-        if (bytes == null || bytes.length < 4) {
+        if (bytes == null) {
 
             return Pair.of(null, null);
+        }
+
+        if (bytes.length < 4) {
+
+            return Pair.of(null, bytes);
         }
 
         final byte[] signature = copyOfRange(bytes, 0, 4);

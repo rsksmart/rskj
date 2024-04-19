@@ -38,7 +38,7 @@ class RskErrorResolverTest {
         // Given
         Integer code = 1;
         String message = "message";
-        String expectedData = "0x";
+        String expectedData = null;
         RskJsonRpcRequestException exception = new RskJsonRpcRequestException(code, message);
 
         Method methodMock = this.getClass().getMethod("mockMethod");
