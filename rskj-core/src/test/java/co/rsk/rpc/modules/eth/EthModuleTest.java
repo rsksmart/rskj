@@ -205,6 +205,57 @@ class EthModuleTest {
     }
 
     @Test
+    void test_revertedTransactionWithNoRevertDataOrSizeLowerThan4() {
+        CallArguments args = new CallArguments();
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.isRevert()).thenReturn(true);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                (byte) 0,
+                null,
+                null,
+                executor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        List<byte[]> hReturns = Arrays.asList(null, new byte[0], Hex.decode("08"), Hex.decode("08c3"), Hex.decode("08c379"));
+        for (byte[] hReturn : hReturns) {
+            when(executorResult.getHReturn()).thenReturn(hReturn);
+
+            RskJsonRpcRequestException exception = assertThrows(
+                    RskJsonRpcRequestException.class,
+                    () -> eth.call(
+                            callArgumentsParam,
+                            blockIdentifierParam
+                    )
+            );
+            assertArrayEquals(hReturn, exception.getRevertData());
+        }
+    }
+
+    @Test
     void sendTransactionWithGasLimitTest() {
 
         Constants constants = Constants.regtest();
