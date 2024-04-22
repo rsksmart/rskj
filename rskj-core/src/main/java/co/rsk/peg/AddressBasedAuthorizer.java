@@ -33,13 +33,13 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public class AddressBasedAuthorizer {
-    public enum MinimumRequiredCalculation { ONE, MAJORITY, ALL };
+    public enum MinimumRequiredCalculation { ONE, MAJORITY, ALL }
 
     protected List<byte[]> authorizedAddresses;
     protected MinimumRequiredCalculation requiredCalculation;
 
     public AddressBasedAuthorizer(List<ECKey> authorizedKeys, MinimumRequiredCalculation requiredCalculation) {
-        this.authorizedAddresses = authorizedKeys.stream().map(key -> key.getAddress()).collect(Collectors.toList());
+        this.authorizedAddresses = authorizedKeys.stream().map(ECKey::getAddress).collect(Collectors.toList());
         this.requiredCalculation = requiredCalculation;
     }
 
