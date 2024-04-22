@@ -50,8 +50,8 @@ public class SnapshotSyncIntegrationTest {
         nodeClient.waitFor(2, TimeUnit.MINUTES);
 
         //then
-        assertNotNull(serverNode.appendLinesToProcessOutput());
-        assertNotNull(clientNode.appendLinesToProcessOutput());
+        assertNotNull(serverNode.getOutput());
+        assertNotNull(clientNode.getOutput());
         serverNode.killNode();
         clientNode.killNode();
     }
