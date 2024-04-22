@@ -34,9 +34,8 @@ import java.util.Objects;
  * @author Ariel Mendelzon
  */
 public final class ABICallSpec {
-    public static final Comparator<ABICallSpec> byBytesComparator = Comparator.comparing(
-        spec -> SignedBytes.lexicographicalComparator().compare(spec.getEncoded(), spec.getEncoded())
-    );
+    public static final Comparator<ABICallSpec> byBytesComparator = (specA, specB)
+        -> SignedBytes.lexicographicalComparator().compare(specA.getEncoded(), specB.getEncoded());
 
     private final String function;
     private final byte[][] arguments;
