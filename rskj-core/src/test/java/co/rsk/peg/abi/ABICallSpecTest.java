@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.abi;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;

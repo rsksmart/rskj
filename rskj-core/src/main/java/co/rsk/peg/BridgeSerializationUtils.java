@@ -23,6 +23,8 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.abi.ABICallElection;
+import co.rsk.peg.abi.ABICallSpec;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;

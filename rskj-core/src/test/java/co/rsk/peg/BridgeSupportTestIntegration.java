@@ -64,6 +64,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.abi.ABICallElection;
+import co.rsk.peg.abi.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
