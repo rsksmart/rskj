@@ -2143,7 +2143,6 @@ public class BridgeSupportTestIntegration {
             when(election.getWinner()).then((InvocationOnMock m) -> this.getWinner());
         }
 
-
         public RskAddress getVoter() {
             return voter;
         }
