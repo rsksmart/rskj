@@ -71,7 +71,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
@@ -1850,7 +1849,7 @@ class BridgeStorageProviderTest {
 
         ABICallElection result = storageProvider.getFeePerKbElection(authorizerMock);
         MatcherAssert.assertThat(result.getVotes().isEmpty(), is(true));
-        MatcherAssert.assertThat(result.getWinner(), nullValue());
+        Assertions.assertFalse(result.getWinner().isPresent());
     }
 
     @Test
@@ -1882,7 +1881,7 @@ class BridgeStorageProviderTest {
 
         ABICallElection result = storageProvider.getFeePerKbElection(authorizerMock);
         MatcherAssert.assertThat(result.getVotes(), is(electionVotes));
-        MatcherAssert.assertThat(result.getWinner(), is(expectedWinner));
+        Assertions.assertEquals(expectedWinner, result.getWinner().get());
     }
 
     @Test
