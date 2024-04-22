@@ -18,7 +18,6 @@
 
 package co.rsk.peg.abi;
 
-import co.rsk.peg.abi.ABICallSpec;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.util.ByteUtil;
