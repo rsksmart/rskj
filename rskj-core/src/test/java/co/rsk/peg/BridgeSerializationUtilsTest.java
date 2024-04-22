@@ -25,6 +25,8 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.abi.ABICallElection;
+import co.rsk.peg.abi.ABICallSpec;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.resources.TestConstants;

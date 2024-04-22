@@ -16,9 +16,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.abi;
 
 import co.rsk.core.RskAddress;
+import co.rsk.peg.AddressBasedAuthorizer;
 
 import java.util.*;
 

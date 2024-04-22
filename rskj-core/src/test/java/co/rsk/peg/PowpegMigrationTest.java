@@ -10,6 +10,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.abi.ABICallSpec;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
