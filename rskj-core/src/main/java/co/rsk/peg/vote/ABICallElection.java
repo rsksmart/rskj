@@ -83,11 +83,11 @@ public class ABICallElection {
     }
 
     /**
-     * Returns the election winner abi call spec, or null if there's none
+     * Returns the election winner abi call spec, or empty if there's none
      * The vote authorizer determines the number of participants,
      * whereas this class determines the number of votes that
      * conforms a win
-     * @return the winner abi call spec
+     * @return the (optional) winner abi call spec
      */
     public Optional<ABICallSpec> getWinner() {
         for (Map.Entry<ABICallSpec, List<RskAddress>> specVotes : votes.entrySet()) {
