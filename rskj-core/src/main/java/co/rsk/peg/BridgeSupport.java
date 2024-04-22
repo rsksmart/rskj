@@ -2302,8 +2302,9 @@ public class BridgeSupport {
         }
 
         // If enough votes have been reached, then actually execute the function
-        ABICallSpec winnerSpec = election.getWinner();
-        if (winnerSpec != null) {
+        Optional<ABICallSpec> winnerSpecOptional = election.getWinner();
+        if (winnerSpecOptional.isPresent()) {
+            ABICallSpec winnerSpec = winnerSpecOptional.get();
             try {
                 result = executeVoteFederationChangeFunction(false, winnerSpec);
             } catch (IOException e) {
@@ -2605,12 +2606,13 @@ public class BridgeSupport {
             return -1;
         }
 
-        ABICallSpec winner = feePerKbElection.getWinner();
-        if (winner == null) {
+        Optional<ABICallSpec> winnerOptional = feePerKbElection.getWinner();
+        if (!winnerOptional.isPresent()) {
             logger.info("Successful fee per kb vote for {}", feePerKb);
             return 1;
         }
 
+        ABICallSpec winner = winnerOptional.get();
         Coin winnerFee;
         try {
             winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);

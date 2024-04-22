@@ -22,6 +22,10 @@ import co.rsk.core.RskAddress;
 
 import java.util.*;
 
+import co.rsk.peg.UnauthorizedVoterException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Representation of a given state of the election
  * of an ABI function call by a series of known
@@ -30,7 +34,8 @@ import java.util.*;
  * @author Ariel Mendelzon
  */
 public class ABICallElection {
-    private AddressBasedAuthorizer authorizer;
+    private static final Logger logger = LoggerFactory.getLogger(ABICallElection.class);
+    private final AddressBasedAuthorizer authorizer;
     private Map<ABICallSpec, List<RskAddress>> votes;
 
     public ABICallElection(AddressBasedAuthorizer authorizer, Map<ABICallSpec, List<RskAddress>> votes) {
@@ -60,20 +65,20 @@ public class ABICallElection {
      */
     public boolean vote(ABICallSpec callSpec, RskAddress voter) {
         if (!authorizer.isAuthorized(voter)) {
+            logger.info("[vote] Voter is not authorized.");
             return false;
         }
 
-        if (!votes.containsKey(callSpec)) {
-            votes.put(callSpec, new ArrayList<>());
-        }
-
+        votes.computeIfAbsent(callSpec, k -> new ArrayList<>());
         List<RskAddress> callVoters = votes.get(callSpec);
 
         if (callVoters.contains(voter)) {
+            logger.info("[vote] Vote has already been registered.");
             return false;
         }
 
         callVoters.add(voter);
+        logger.info("[vote] Vote registered successfully.");
         return true;
     }
 
@@ -84,22 +89,30 @@ public class ABICallElection {
      * conforms a win
      * @return the winner abi call spec
      */
-    public ABICallSpec getWinner() {
+    public Optional<ABICallSpec> getWinner() {
         for (Map.Entry<ABICallSpec, List<RskAddress>> specVotes : votes.entrySet()) {
-            if (specVotes.getValue().size() >= authorizer.getRequiredAuthorizedKeys()) {
-                return specVotes.getKey();
+            int votesSize = specVotes.getValue().size();
+            if (areEnoughVotes(votesSize)) {
+                ABICallSpec winner = specVotes.getKey();
+                logger.info("[getWinner] Winner is {} ", winner);
+                return Optional.of(winner);
             }
         }
 
-        return null;
+        return Optional.empty();
+    }
+
+    private boolean areEnoughVotes(int votesSize) {
+        return votesSize >= authorizer.getRequiredAuthorizedKeys();
     }
 
     /**
      * Removes the entry votes for the current winner of the election
      */
     public void clearWinners() {
-        ABICallSpec winner = getWinner();
-        if (winner != null) {
+        Optional<ABICallSpec> winnerOptional = getWinner();
+        if (winnerOptional.isPresent()) {
+            ABICallSpec winner = winnerOptional.get();
             votes.remove(winner);
         }
     }
@@ -109,7 +122,7 @@ public class ABICallElection {
         for (Map.Entry<ABICallSpec, List<RskAddress>> specVotes : votes.entrySet()) {
             for (RskAddress vote : specVotes.getValue()) {
                 if (!authorizer.isAuthorized(vote)) {
-                    throw new RuntimeException("Unauthorized voter");
+                    throw new UnauthorizedVoterException("Unauthorized voter");
                 }
             }
         }
