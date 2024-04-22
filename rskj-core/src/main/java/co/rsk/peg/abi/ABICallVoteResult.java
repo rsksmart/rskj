@@ -27,8 +27,8 @@ package co.rsk.peg.abi;
  * @author Ariel Mendelzon
  */
 public final class ABICallVoteResult {
-    private boolean successful;
-    private Object result;
+    private final boolean successful;
+    private final Object result;
 
     public ABICallVoteResult(boolean successful, Object result) {
         this.successful = successful;
