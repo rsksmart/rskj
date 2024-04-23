@@ -47,17 +47,17 @@ public class FeePerKbSupport {
 
         if (!authorizer.isAuthorized(tx, signatureCache)) {
             logger.warn("[voteFeePerKbChange] Unauthorized signature.");
-            return FeePerKbErrorCode.GENERIC.getCode();
+            return FeePerKbResponseCode.GENERIC.getCode();
         }
 
         if (!feePerKb.isPositive()){
             logger.warn("[voteFeePerKbChange] Negative fee.");
-            return FeePerKbErrorCode.NEGATIVE.getCode();
+            return FeePerKbResponseCode.NEGATIVE.getCode();
         }
 
         if (feePerKb.isGreaterThan(maxFeePerKb)) {
             logger.warn("[voteFeePerKbChange] Fee greater than maximum.");
-            return FeePerKbErrorCode.EXCESSIVE.getCode();
+            return FeePerKbResponseCode.EXCESSIVE.getCode();
         }
 
         ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
@@ -70,7 +70,7 @@ public class FeePerKbSupport {
         ABICallSpec winner = feePerKbElection.getWinner();
         if (winner == null) {
             logger.info("[voteFeePerKbChange] Successful fee per kb vote for {}", feePerKb);
-            return 1;
+            return FeePerKbResponseCode.SUCCESSFUL.getCode();
         }
 
         Coin winnerFee;
@@ -78,12 +78,12 @@ public class FeePerKbSupport {
             winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);
         } catch (Exception e) {
             logger.warn("[voteFeePerKbChange] Exception deserializing winner feePerKb", e);
-            return FeePerKbErrorCode.GENERIC.getCode();
+            return FeePerKbResponseCode.GENERIC.getCode();
         }
 
         if (winnerFee == null) {
             logger.warn("[voteFeePerKbChange] Invalid winner feePerKb: feePerKb can't be null");
-            return FeePerKbErrorCode.GENERIC.getCode();
+            return FeePerKbResponseCode.GENERIC.getCode();
         }
 
         if (!winnerFee.equals(feePerKb)) {
@@ -94,7 +94,7 @@ public class FeePerKbSupport {
         provider.setFeePerKb(winnerFee);
         feePerKbElection.clear();
 
-        return 1;
+        return FeePerKbResponseCode.SUCCESSFUL.getCode();
     }
 
     public void save() {

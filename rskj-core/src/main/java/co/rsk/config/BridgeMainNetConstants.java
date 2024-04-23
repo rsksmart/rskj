@@ -21,7 +21,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
     private BridgeMainNetConstants() {
         btcParamsString = NetworkParameters.ID_MAINNET;
-        feePerKbConstants = new FeePerKbMainNetConstants();
+        feePerKbConstants = FeePerKbMainNetConstants.getInstance();
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344"));
