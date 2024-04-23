@@ -1,8 +1,7 @@
 package co.rsk.peg.feeperkb;
 
-import co.rsk.peg.abi.*;
+import co.rsk.peg.vote.*;
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.feeperkb.constants.*;
 import org.ethereum.core.SignatureCache;

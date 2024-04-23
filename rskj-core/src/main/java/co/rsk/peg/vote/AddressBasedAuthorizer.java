@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.peg;
+package co.rsk.peg.vote;
 
 import co.rsk.core.RskAddress;
 import org.ethereum.core.SignatureCache;

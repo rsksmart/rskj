@@ -1,7 +1,7 @@
 package co.rsk.peg.feeperkb.constants;
 
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.peg.AddressBasedAuthorizer;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 

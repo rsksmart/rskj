@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg.abi;
+package co.rsk.peg.vote;
 
 import com.google.common.primitives.SignedBytes;
 
