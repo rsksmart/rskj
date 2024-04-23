@@ -2,7 +2,8 @@ package co.rsk.peg.feeperkb;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.*;
-import co.rsk.peg.abi.ABICallElection;
+import co.rsk.peg.vote.ABICallElection;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.ethereum.core.Repository;
 
 import static co.rsk.peg.BridgeStorageIndexKey.FEE_PER_KB_ELECTION_KEY;
