@@ -10,16 +10,11 @@ import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
 public class FeePerKbSupport {
-    private static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = FeePerKbResponseCodes.getGenericErrorCode();
-    private static final Integer NEGATIVE_FEE_PER_KB_ERROR_CODE = FeePerKbResponseCodes.getNegativeFeeErrorCode();
-    private static final Integer EXCESSIVE_FEE_PER_KB_ERROR_CODE = FeePerKbResponseCodes.getNegativeFeeErrorCode();
 
     private final FeePerKbStorageProvider provider;
     private final FeePerKbConstants feePerKbConstants;
-    private static final Logger logger = LoggerFactory.getLogger("FeePerKbSupport");
+    private static final Logger logger = LoggerFactory.getLogger(FeePerKbSupport.class);
 
     public FeePerKbSupport(FeePerKbConstants feePerKbConstants, FeePerKbStorageProvider provider) {
         this.provider = provider;
@@ -51,15 +46,18 @@ public class FeePerKbSupport {
         Coin maxFeePerKb = feePerKbConstants.getMaxFeePerKb();
 
         if (!authorizer.isAuthorized(tx, signatureCache)) {
-            return FEE_PER_KB_GENERIC_ERROR_CODE;
+            logger.warn("[voteFeePerKbChange] Unauthorized signature.");
+            return FeePerKbErrorCode.GENERIC.getCode();
         }
 
-        if(!feePerKb.isPositive()){
-            return NEGATIVE_FEE_PER_KB_ERROR_CODE;
+        if (!feePerKb.isPositive()){
+            logger.warn("[voteFeePerKbChange] Negative fee.");
+            return FeePerKbErrorCode.NEGATIVE.getCode();
         }
 
-        if(feePerKb.isGreaterThan(maxFeePerKb)) {
-            return EXCESSIVE_FEE_PER_KB_ERROR_CODE;
+        if (feePerKb.isGreaterThan(maxFeePerKb)) {
+            logger.warn("[voteFeePerKbChange] Fee greater than maximum.");
+            return FeePerKbErrorCode.EXCESSIVE.getCode();
         }
 
         ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
@@ -71,7 +69,7 @@ public class FeePerKbSupport {
 
         ABICallSpec winner = feePerKbElection.getWinner();
         if (winner == null) {
-            logger.info("Successful fee per kb vote for {}", feePerKb);
+            logger.info("[voteFeePerKbChange] Successful fee per kb vote for {}", feePerKb);
             return 1;
         }
 
@@ -79,20 +77,20 @@ public class FeePerKbSupport {
         try {
             winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);
         } catch (Exception e) {
-            logger.warn("Exception deserializing winner feePerKb", e);
-            return FEE_PER_KB_GENERIC_ERROR_CODE;
+            logger.warn("[voteFeePerKbChange] Exception deserializing winner feePerKb", e);
+            return FeePerKbErrorCode.GENERIC.getCode();
         }
 
         if (winnerFee == null) {
-            logger.warn("Invalid winner feePerKb: feePerKb can't be null");
-            return FEE_PER_KB_GENERIC_ERROR_CODE;
+            logger.warn("[voteFeePerKbChange] Invalid winner feePerKb: feePerKb can't be null");
+            return FeePerKbErrorCode.GENERIC.getCode();
         }
 
         if (!winnerFee.equals(feePerKb)) {
-            logger.debug("Winner fee is different than the last vote: maybe you forgot to clear winners");
+            logger.debug("[voteFeePerKbChange] Winner fee is different than the last vote: maybe you forgot to clear winners");
         }
 
-        logger.info("Fee per kb changed to {}", winnerFee);
+        logger.info("[voteFeePerKbChange] Fee per kb changed to {}", winnerFee);
         provider.setFeePerKb(winnerFee);
         feePerKbElection.clear();
 
