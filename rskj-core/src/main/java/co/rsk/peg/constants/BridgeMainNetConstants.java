@@ -15,7 +15,7 @@ import org.ethereum.crypto.ECKey;
 public class BridgeMainNetConstants extends BridgeConstants {
     private static final BridgeMainNetConstants instance = new BridgeMainNetConstants();
 
-    BridgeMainNetConstants() {
+    private BridgeMainNetConstants() {
         btcParamsString = NetworkParameters.ID_MAINNET;
         feePerKbConstants = new FeePerKbMainNetConstants();
 
