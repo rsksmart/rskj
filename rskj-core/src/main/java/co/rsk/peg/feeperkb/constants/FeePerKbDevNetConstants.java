@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 public class FeePerKbDevNetConstants extends FeePerKbConstants {
     private static final FeePerKbDevNetConstants instance = new FeePerKbDevNetConstants();
 
-    public FeePerKbDevNetConstants() {
+    private FeePerKbDevNetConstants() {
 
         // Key generated with GenNodeKey using generator 'auth-fee-per-kb'
         List<ECKey> feePerKbAuthorizedKeys = Arrays.stream(new String[]{
