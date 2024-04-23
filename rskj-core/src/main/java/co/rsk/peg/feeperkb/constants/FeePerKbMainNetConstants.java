@@ -13,7 +13,7 @@ public class FeePerKbMainNetConstants extends FeePerKbConstants {
 
     private static final FeePerKbMainNetConstants instance = new FeePerKbMainNetConstants();
 
-    public FeePerKbMainNetConstants() {
+    private FeePerKbMainNetConstants() {
         List<ECKey> feePerKbAuthorizedKeys = Arrays.stream(new String[]{
             "0448f51638348b034995b1fd934fe14c92afde783e69f120a46ee16eb6bdc2e4f6b5e37772094c68c0dea2b1be3d96ea9651a9eebda7304914c8047f4e3e251378",
             "0484c66f75548baf93e322574adac4e4579b6a53f8d11fab640e14c90118e6983ef24b0de349a3e88f72e81e771ae1c897cef446fd7f4da71778c532aee3b6c41b",

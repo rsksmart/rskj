@@ -35,7 +35,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
     BridgeTestNetConstants() {
         btcParamsString = NetworkParameters.ID_TESTNET;
-        feePerKbConstants = new FeePerKbTestNetConstants();
+        feePerKbConstants = FeePerKbTestNetConstants.getInstance();
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9")

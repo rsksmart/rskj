@@ -49,7 +49,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
-        feePerKbConstants = new FeePerKbRegTestConstants();
+        feePerKbConstants = FeePerKbRegTestConstants.getInstance();
 
         genesisFederationPublicKeys = federationPublicKeys;
         genesisFederationCreationTime = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
