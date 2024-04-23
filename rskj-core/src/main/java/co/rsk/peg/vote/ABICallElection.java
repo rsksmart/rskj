@@ -64,6 +64,8 @@ public class ABICallElection {
      * @return whether the voting succeeded
      */
     public boolean vote(ABICallSpec callSpec, RskAddress voter) {
+        logger.info("[vote] Trying to register voter's {} vote ", voter);
+
         if (!authorizer.isAuthorized(voter)) {
             logger.info("[vote] Voter is not authorized.");
             return false;
