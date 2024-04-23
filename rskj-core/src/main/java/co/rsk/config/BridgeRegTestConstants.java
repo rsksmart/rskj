@@ -52,7 +52,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
-        feePerKbConstants = new FeePerKbRegTestConstants();
+        feePerKbConstants = FeePerKbRegTestConstants.getInstance();
 
         List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federationPublicKeys);
 

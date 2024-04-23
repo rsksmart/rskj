@@ -13,7 +13,7 @@ public class FeePerKbRegTestConstants extends FeePerKbConstants {
 
     private static final FeePerKbRegTestConstants instance = new FeePerKbRegTestConstants();
 
-    public FeePerKbRegTestConstants() {
+    private FeePerKbRegTestConstants() {
         // Key generated with GenNodeKey using generator 'auth-fee-per-kb'
         List<ECKey> feePerKbAuthorizedKeys = Arrays.stream(new String[]{
             "0430c7d0146029db553d60cf11e8d39df1c63979ee2e4cd1e4d4289a5d88cfcbf3a09b06b5cbc88b5bfeb4b87a94cefab81c8d44655e7e813fc3e18f51cfe7e8a0"

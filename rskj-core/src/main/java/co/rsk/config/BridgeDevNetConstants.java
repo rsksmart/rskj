@@ -50,7 +50,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
-        feePerKbConstants = new FeePerKbDevNetConstants();
+        feePerKbConstants = FeePerKbDevNetConstants.getInstance();
 
         List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federationPublicKeys);
 
