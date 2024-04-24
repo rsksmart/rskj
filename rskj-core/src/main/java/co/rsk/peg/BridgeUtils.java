@@ -58,7 +58,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 /**
  * @author Oscar Guindzberg
  */
-public class BridgeUtils {
+public final class BridgeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(BridgeUtils.class);
 
@@ -433,11 +433,11 @@ public class BridgeUtils {
      * @return boolean
      */
     private static boolean isFromGenesisFederation(RskAddress rskAddress, List<BtcECKey> genesisFederationPublicKeys) {
-        return genesisFederationPublicKeys.stream().
-                anyMatch(genesisBtcPublicKey ->
-                        Arrays.equals(
-                                (ECKey.fromPublicOnly(genesisBtcPublicKey.getPubKey())).getAddress()
-                                , rskAddress.getBytes()));
+        return genesisFederationPublicKeys.stream().anyMatch(genesisBtcPublicKey -> {
+                    ECKey genesisEcKey = ECKey.fromPublicOnly(genesisBtcPublicKey.getPubKey());
+                    return Arrays.equals(genesisEcKey.getAddress(), rskAddress.getBytes());
+                }
+        );
     }
 
     public static Coin getCoinFromBigInteger(BigInteger value) throws BridgeIllegalArgumentException {

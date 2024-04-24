@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationTestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;
@@ -59,7 +60,7 @@ class GetFeePerKbTest extends BridgePerformanceTestCase {
             if (!genesis) {
                 provider.setFeePerKb(Helper.randomCoin(Coin.MILLICOIN, 1, 100));
             } else {
-                federation = bridgeConstants.getGenesisFederation();
+                federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
             }
         };
     }

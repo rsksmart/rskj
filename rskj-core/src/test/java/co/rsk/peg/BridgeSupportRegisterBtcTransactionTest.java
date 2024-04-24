@@ -50,6 +50,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
+    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
 
     private static final ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
     private static final ActivationConfig.ForBlock arrowhead600Activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
@@ -2399,7 +2400,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
-        BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
         Context.propagate(new Context(btcRegTestsParams));
 
@@ -2422,7 +2422,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         Federation oldFederation = createFederation(bridgeRegTestConstants, REGTEST_OLD_FEDERATION_PRIVATE_KEYS);
-        Federation activeFederation = bridgeRegTestConstants.getGenesisFederation();
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
 
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
         migrationTx.addInput(

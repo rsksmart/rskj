@@ -45,6 +45,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
                     Hex.decode("0309d9df35855aa45235a04e30d228889eb03e462874588e631359d5f9cdea6519")
             )
     ));
+    private static final BridgeDevNetConstants instance = new BridgeDevNetConstants(DEVNET_FEDERATION_PUBLIC_KEYS);
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
@@ -159,5 +160,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         btcHeightWhenPegoutTxIndexActivates = 1_000_000;
         pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
+    }
+    public static BridgeDevNetConstants getInstance() {
+        return instance;
     }
 }

@@ -93,6 +93,7 @@ class BridgeStorageProviderTest {
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
     private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
     private final BridgeTestNetConstants bridgeTestnetInstance = BridgeTestNetConstants.getInstance();
+    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
     private final NetworkParameters networkParameters = bridgeTestnetInstance.getBtcParams();
 
     private int transactionOffset;
@@ -278,9 +279,8 @@ class BridgeStorageProviderTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = bridgeTestnetInstance;
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             track,

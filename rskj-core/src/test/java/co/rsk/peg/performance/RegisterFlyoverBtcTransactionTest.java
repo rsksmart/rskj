@@ -10,6 +10,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationTestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -149,9 +151,12 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
 
                 int blocksToGenerate = Helper.randomInRange(minBtcBlocks, maxBtcBlocks);
                 BtcBlock lastBlock = Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
+                Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+                Script federationRedeemScript= federation.getRedeemScript();
 
-                Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-                        bridgeConstants.getGenesisFederation().getRedeemScript(),
+
+            Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+                        federationRedeemScript,
                         Sha256Hash.wrap(
                                 getFLyoverDerivationHash(
                                         PegTestUtils.createHash3(1),

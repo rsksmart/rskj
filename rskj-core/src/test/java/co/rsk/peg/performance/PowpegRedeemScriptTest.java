@@ -1,7 +1,10 @@
 package co.rsk.peg.performance;
 
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeMethods;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationTestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.vm.exception.VMException;
@@ -24,6 +27,12 @@ class PowpegRedeemScriptTest extends BridgePerformanceTestCase {
     void getActivePowpegRedeemScriptTest() throws VMException {
         ExecutionStats stats = new ExecutionStats("getActivePowpegRedeemScript");
         ABIEncoder abiEncoder = (int executionIndex) -> BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode();
+        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        Script federationRedeemScript= federation.getRedeemScript();
+        byte[] federationRedeemScriptProgram = federationRedeemScript.getProgram();
+
+
+
         executeAndAverage(
             "getActivePowpegRedeemScriptTest",
             10,
@@ -32,12 +41,10 @@ class PowpegRedeemScriptTest extends BridgePerformanceTestCase {
             Helper.getZeroValueRandomSenderTxBuilder(),
             Helper.getRandomHeightProvider(10),
             stats,
-            (environment, executionResult) -> {
-                assertArrayEquals(
-                    constants.getBridgeConstants().getGenesisFederation().getRedeemScript().getProgram(),
-                    getByteFromResult(executionResult)
-                );
-            }
+            (environment, executionResult) -> assertArrayEquals(
+                federationRedeemScriptProgram,
+                getByteFromResult(executionResult)
+            )
         );
         BridgePerformanceTest.addStats(stats);
     }
