@@ -16,12 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg.abi;
+package co.rsk.peg;
 
 import co.rsk.core.RskAddress;
-import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.abi.ABICallElection;
-import co.rsk.peg.abi.ABICallSpec;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;

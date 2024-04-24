@@ -393,7 +393,7 @@ public class BridgeUtils {
         }
 
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
-        FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
+
 
         // Temporary assumption: if areBridgeTxsFree() is true then the current federation
         // must be the genesis federation.
@@ -402,11 +402,17 @@ public class BridgeUtils {
                !activations.isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
                rskTx.acceptTransactionSignature(constants.getChainId()) &&
                (
-                       isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation(), signatureCache) ||
-                       isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
-                       isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
-                       isFromFeePerKbChangeAuthorizedSender(rskTx, feePerKbConstants, signatureCache)
+                   isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation(), signatureCache) ||
+                   isFromAuthorizedSender(rskTx, bridgeConstants, signatureCache)
                );
+    }
+
+    private static boolean isFromAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConstants, SignatureCache signatureCache) {
+        FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
+
+        return isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
+            isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
+            isFromFeePerKbChangeAuthorizedSender(rskTx, feePerKbConstants, signatureCache);
     }
 
     /**
