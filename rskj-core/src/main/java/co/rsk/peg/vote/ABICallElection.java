@@ -22,7 +22,6 @@ import co.rsk.core.RskAddress;
 
 import java.util.*;
 
-import co.rsk.peg.UnauthorizedVoterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
