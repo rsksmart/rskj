@@ -38,6 +38,11 @@ public class ABICallElection {
     private final AddressBasedAuthorizer authorizer;
     private Map<ABICallSpec, List<RskAddress>> votes;
 
+    public ABICallElection(AddressBasedAuthorizer authorizer) {
+        this.authorizer = authorizer;
+        this.votes = new HashMap<>();
+    }
+
     public ABICallElection(AddressBasedAuthorizer authorizer, Map<ABICallSpec, List<RskAddress>> votes) {
         this.authorizer = authorizer;
         this.votes = clone(votes);
@@ -47,11 +52,6 @@ public class ABICallElection {
     private Map<ABICallSpec, List<RskAddress>> clone(Map<ABICallSpec, List<RskAddress>> originalMap) {
         return originalMap.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue())));
-    }
-
-    public ABICallElection(AddressBasedAuthorizer authorizer) {
-        this.authorizer = authorizer;
-        this.votes = new HashMap<>();
     }
 
     public Map<ABICallSpec, List<RskAddress>> getVotes() {
