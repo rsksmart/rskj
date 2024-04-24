@@ -41,7 +41,6 @@ public class FederationSupport {
     private final BridgeConstants bridgeConstants;
     private final Block executionBlock;
     private final ActivationConfig.ForBlock activations;
-    private static final long CREATION_BLOCK_NUMBER = 1L;
 
     public FederationSupport(BridgeConstants bridgeConstants, BridgeStorageProvider provider, Block executionBlock, ActivationConfig.ForBlock activations) {
         this.provider = provider;
@@ -244,10 +243,11 @@ public class FederationSupport {
      * @return Federation
      */
     private Federation getGenesisFederation() {
+        final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
         final List<BtcECKey> genesisFederationPublicKeys = bridgeConstants.getGenesisFederationPublicKeys();
         final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
         final Instant genesisFederationCreationTime = bridgeConstants.getGenesisFederationCreationTime();
-        final FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, CREATION_BLOCK_NUMBER, bridgeConstants.getBtcParams());
+        final FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, GENESIS_FEDERATION_CREATION_BLOCK_NUMBER, bridgeConstants.getBtcParams());
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 }

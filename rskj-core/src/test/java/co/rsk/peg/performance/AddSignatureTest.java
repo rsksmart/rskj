@@ -34,6 +34,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.federation.FederationTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -86,11 +87,13 @@ class AddSignatureTest extends BridgePerformanceTestCase {
     }
 
     private void addSignature_fullySigned(int times, ExecutionStats stats) throws VMException {
+        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        int numberOfSignaturesRequired = federation.getNumberOfSignaturesRequired();
         executeAndAverage(
                 "addSignature-fullySigned",
                 times,
                 getABIEncoder(),
-                getInitializerFor(bridgeConstants.getGenesisFederation().getNumberOfSignaturesRequired()-1),
+                getInitializerFor(numberOfSignaturesRequired-1),
                 Helper.getZeroValueValueTxBuilderFromFedMember(),
                 Helper.getRandomHeightProvider(10),
                 stats
@@ -112,7 +115,7 @@ class AddSignatureTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             releaseTx = new BtcTransaction(networkParameters);
 
-            Federation federation = bridgeConstants.getGenesisFederation();
+            Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
 
             // Receiver and amounts
             BtcECKey to = new BtcECKey();

@@ -50,6 +50,7 @@ class BridgeTest {
 
     private NetworkParameters networkParameters;
     private BridgeBuilder bridgeBuilder;
+    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
 
     @BeforeEach
     void resetConfigToMainnet() {
@@ -76,7 +77,7 @@ class BridgeTest {
         CallTransaction.Function getActivePowpegRedeemScriptFunction = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Script activePowpegRedeemScript = BridgeRegTestConstants.getInstance().getGenesisFederation().getRedeemScript();
+        Script activePowpegRedeemScript = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants).getRedeemScript();
         when(bridgeSupportMock.getActivePowpegRedeemScript()).thenReturn(
             Optional.of(activePowpegRedeemScript)
         );
@@ -762,10 +763,11 @@ class BridgeTest {
     @Test
     void receiveHeaders_after_RSKIP200_notFederation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
-
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Federation federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
-        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(federation);
 
         Transaction txMock = mock(Transaction.class);
         RskAddress txSender = new RskAddress(new ECKey().getAddress());
