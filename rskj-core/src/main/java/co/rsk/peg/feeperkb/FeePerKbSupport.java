@@ -37,7 +37,10 @@ public class FeePerKbSupport {
      * Votes for a fee per kb value.
      *
      * @return 1 upon successful vote, -1 when the vote was unsuccessful,
-     * FEE_PER_KB_GENERIC_ERROR_CODE when there was an un expected error.
+     * GENERIC fee per kb response code when there was an unexpected error.
+     * UNAUTHORIZED fee per kb response code when the signature is not authorized to vote.
+     * NEGATIVE fee per kb response code when fee is not positive.
+     * EXCESSIVE fee per kb response code when fee is greater than the maximum fee allowed.
      */
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb, SignatureCache signatureCache) {
 
@@ -46,7 +49,7 @@ public class FeePerKbSupport {
 
         if (!authorizer.isAuthorized(tx, signatureCache)) {
             logger.warn("[voteFeePerKbChange] Unauthorized signature.");
-            return FeePerKbResponseCode.GENERIC.getCode();
+            return FeePerKbResponseCode.UNAUTHORIZED.getCode();
         }
 
         if (!feePerKb.isPositive()){
@@ -63,7 +66,7 @@ public class FeePerKbSupport {
         ABICallSpec feeVote = new ABICallSpec("setFeePerKb", new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
         boolean successfulVote = feePerKbElection.vote(feeVote, tx.getSender(signatureCache));
         if (!successfulVote) {
-            return -1;
+            return FeePerKbResponseCode.UNSUCCESSFUL.getCode();
         }
 
         ABICallSpec winner = feePerKbElection.getWinner();
