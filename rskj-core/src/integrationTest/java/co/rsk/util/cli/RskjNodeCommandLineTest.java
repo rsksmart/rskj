@@ -1,8 +1,9 @@
-package co.rsk.util;
+package co.rsk.util.cli;
 
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RskjNodeCommandLineTest {
@@ -10,11 +11,9 @@ class RskjNodeCommandLineTest {
     @Test
     void whenExecuteCommandConnectBlocks_thenOutputWithSuccess() throws IOException, InterruptedException {
         //given
-        String integrationTestResourcesPath = getIntegrationTestResourcesFullPath() + "server_blocks.csv";
-        String[] args = new String[]{};
-        String[] parameters = new String[]{"-f ", integrationTestResourcesPath, "--regtest"};
+        String filePath = getIntegrationTestResourcesFullPath() + "server_blocks.csv";
         //when
-        RskjCommandLineBase rskjCommandLineBase = new ConnectBlocksCommandLine(parameters, args);
+        RskjCommandLineBase rskjCommandLineBase = new ConnectBlocksCommandLine(filePath);
         Process cliProcess = rskjCommandLineBase.executeCommand();
         String output = rskjCommandLineBase.getOutput();
         //then
@@ -24,7 +23,6 @@ class RskjNodeCommandLineTest {
 
     private static String getIntegrationTestResourcesFullPath() {
         String projectPath = System.getProperty("user.dir");
-        String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources/", projectPath);
-        return integrationTestResourcesPath;
+        return String.format("%s/src/integrationTest/resources/", projectPath);
     }
 }

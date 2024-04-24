@@ -17,20 +17,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.util;
+package co.rsk.util.cli;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 
-public class ConnectBlocksCommandLine extends RskjCommandLineBase{
+public class ConnectBlocksCommandLine extends RskjCommandLineBase {
 
-    public ConnectBlocksCommandLine(String[] parameters, String[] arguments){
-        super ("co.rsk.cli.tools.ConnectBlocks", parameters, arguments);
+    public ConnectBlocksCommandLine(String filePath){
+        super ("co.rsk.cli.tools.ConnectBlocks",
+                new String[]{},
+                new String[]{"-f", filePath, "--regtest"});
+    }
+
+    @Override
+    public Process executeCommand() throws IOException, InterruptedException {
+        return super.executeCommand(10);
     }
 }

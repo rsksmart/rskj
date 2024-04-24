@@ -21,7 +21,7 @@ import co.rsk.RskContext;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import co.rsk.util.CommandLineFixture;
+import co.rsk.util.cli.CommandLineFixture;
 import co.rsk.util.DataBytesFixture;
 import co.rsk.util.HexUtils;
 import co.rsk.util.OkHttpClientTestFixture;

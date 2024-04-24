@@ -17,7 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.util;
+package co.rsk.util.cli;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,9 +31,9 @@ import java.util.stream.Stream;
 public abstract class RskjCommandLineBase {
 
     private String buildJarPath;
-    private String rskjClass;
+    private final String rskjClass;
     private StringBuilder processOutputBuilder;
-    private Consumer<String> procOutputConsumer = output -> appendLinesToProcessOutput(output);
+    private final Consumer<String> procOutputConsumer = this::appendLinesToProcessOutput;
     protected String[] arguments;
     protected String[] parameters;
     protected Process cliProcess;
@@ -46,8 +46,9 @@ public abstract class RskjCommandLineBase {
 
     private void appendToCommandIfArrayNotEmpty(StringBuilder command, String[] array){
         if(array.length > 0){
-            command.append(String.join(" ", array));
+            command.append(" ").append(String.join(" ", array));
         }
+        command.append(" ");
     }
 
     private void appendLinesToProcessOutput(String output){
@@ -63,12 +64,14 @@ public abstract class RskjCommandLineBase {
         processOutputBuilder = new StringBuilder();
         String projectPath = System.getProperty("user.dir");
         String buildLibsPath = String.format("%s/build/libs", projectPath);
-        Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath));
-        String jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
-                .map(p -> p.getFileName().toString())
-                .filter(fn -> fn.endsWith("-all.jar"))
-                .findFirst()
-                .get();
+        String jarName;
+        try (Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath))) {
+            jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
+                    .map(p -> p.getFileName().toString())
+                    .filter(fn -> fn.endsWith("-all.jar"))
+                    .findFirst()
+                    .get();
+        }
         buildJarPath = String.format("%s/%s", buildLibsPath, jarName);
     }
 
@@ -78,13 +81,13 @@ public abstract class RskjCommandLineBase {
 
     public Process executeCommand(int timeout) throws IOException, InterruptedException {
         setUp();
-        StringBuilder fullCommand = new StringBuilder("java ");
+        StringBuilder fullCommand = new StringBuilder("java");
 
         appendToCommandIfArrayNotEmpty(fullCommand, parameters);
 
-        fullCommand.append(" -cp ")
-                .append(buildJarPath).append(" ")
-                .append(rskjClass).append(" ");
+        fullCommand.append("-cp")
+                .append(" ").append(buildJarPath)
+                .append(" ").append(rskjClass);
 
         appendToCommandIfArrayNotEmpty(fullCommand, arguments);
 

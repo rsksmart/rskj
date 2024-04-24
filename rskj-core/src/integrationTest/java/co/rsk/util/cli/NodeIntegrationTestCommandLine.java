@@ -1,54 +1,36 @@
-package co.rsk;
-
-import co.rsk.util.CommandLineFixture;
-import co.rsk.util.RskjCommandLineBase;
-import co.rsk.util.StreamGobbler;
+package co.rsk.util.cli;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 public class NodeIntegrationTestCommandLine extends RskjCommandLineBase {
-    private String modeArg;
-    private String bloomsDbDir;
-    private int port;
-    private String rskConfFilePath;
-    private Path tempDir;
+    private final String modeArg;
+    private final String rskConfFilePath;
     private int timeout = 0;
 
-    public NodeIntegrationTestCommandLine(int port, Path tempDir, String rskConfFilePath, String modeArg) {
-        super("co.rsk.Start ", new String[]{}, new String[]{});
-        this.port = port;
-        this.tempDir = tempDir;
+    public NodeIntegrationTestCommandLine(String rskConfFilePath, String modeArg) {
+        super("co.rsk.Start", new String[]{}, new String[]{});
         this.rskConfFilePath = rskConfFilePath;
         this.modeArg = modeArg;
     }
 
-    public NodeIntegrationTestCommandLine(int port, Path tempDir, String rskConfFilePath, String modeArg, int timeout) {
-        this(port, tempDir, rskConfFilePath, modeArg);
+    public NodeIntegrationTestCommandLine(String rskConfFilePath, String modeArg, int timeout) {
+        this(rskConfFilePath, modeArg);
         this.timeout = timeout;
     }
 
-    private void setUp() throws IOException {
+    private void setUp() {
         String projectPath = System.getProperty("user.dir");
         String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
         String logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
-        Path databaseDirPath = Files.createDirectories(tempDir.resolve("database"));
         arguments = new String[]{
-                String.format("-Xdatabase.dir=%s", databaseDirPath.toString()),
                 this.modeArg,
-                "-Xkeyvalue.datasource=rocksdb",
-                String.format("-Xrpc.providers.web.http.port=%s", port)
         };
         parameters = new String[]{
                 String.format("-Dlogback.configurationFile=%s", logbackXmlFile),
                 String.format("-Drsk.conf.file=%s", rskConfFilePath)
         };
-        bloomsDbDir = Files.createDirectories(databaseDirPath.resolve("blooms")).toString();
     }
 
     public Process startNode() throws IOException, InterruptedException {

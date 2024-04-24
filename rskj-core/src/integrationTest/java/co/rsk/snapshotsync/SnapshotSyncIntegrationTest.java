@@ -1,7 +1,10 @@
 package co.rsk.snapshotsync;
 
-import co.rsk.NodeIntegrationTestCommandLine;
-import co.rsk.util.CommandLineFixture;
+import co.rsk.util.cli.NodeIntegrationTestCommandLine;
+import co.rsk.util.cli.ConnectBlocksCommandLine;
+import co.rsk.util.FilesHelper;
+import co.rsk.util.cli.RskjCommandLineBase;
+import co.rsk.util.ThreadTimerHelper;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -12,97 +15,99 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static co.rsk.util.FilesHelper.readBytesFromFile;
+import static co.rsk.util.FilesHelper.writeBytesToFile;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SnapshotSyncIntegrationTest {
-
+    private static final String TAG_TO_REPLACE_SERVER_RPC_PORT = "<SERVER_NODE_RPC_PORT>";
+    private static final String TAG_TO_REPLACE_SERVER_PORT = "<SERVER_NODE_PORT>";
+    private static final String TAG_TO_REPLACE_SERVER_DATABASE_PATH = "<SERVER_NODE_DATABASE_PATH>";
     private static final String TAG_TO_REPLACE_NODE_ID = "<SERVER_NODE_ID>";
+    private static final String TAG_TO_REPLACE_CLIENT_DATABASE_PATH = "<CLIENT_NODE_DATABASE_PATH>";
+    private static final String TAG_TO_REPLACE_CLIENT_PORT = "<CLIENT_PORT>";
     public static final String TMP_RSKJ_INTEGRATION_TEST_FOLDER = "rskj-integration-test-";
-    private String rskConfFileServerName = "snap-sync-server-rskj.conf";
-    private String rskConfFileClientName = "snap-sync-client-rskj.conf";
-    private int portServer = 3333;
-    private int portClient = RandomUtils.nextInt(5001, 9999);
-    private String randomPathDatabaseServer = RandomStringUtils.randomAlphanumeric(10);
-    private String randomPathDatabaseClient = RandomStringUtils.randomAlphanumeric(10);
+    private final String rskConfFileServerName = "snap-sync-server-rskj.conf";
+    private final String rskConfFileClientName = "snap-sync-client-rskj.conf";
+    private final int portServer = RandomUtils.nextInt(1, 5000);
+    private final int portClient = RandomUtils.nextInt(5001, 9999);
+    private final String pathDatabaseServer = "/.rsk/regtest/database";
+    private final String randomPathDatabaseClient = RandomStringUtils.randomAlphanumeric(10);
 
     @Test
-    public void whenStartTheServerAndClientNodes_thenTheClientWillSynchWithServer() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    public void whenStartTheServerAndClientNodes_thenTheClientWillSynchWithServer() throws IOException, InterruptedException {
         //given
         Path tempDirectory = Files.createTempDirectory(TMP_RSKJ_INTEGRATION_TEST_FOLDER);
-        Path tempDirDatabaseServer = Files.createTempDirectory(tempDirectory, randomPathDatabaseServer);
+        Path dirDatabaseServer = Paths.get(System.getProperty("user.home") + pathDatabaseServer);
+        FilesHelper.deleteContents(dirDatabaseServer.toFile());
         Path tempDirDatabaseClient = Files.createTempDirectory(tempDirectory, randomPathDatabaseClient);
 
-        NodeIntegrationTestCommandLine serverNode = new NodeIntegrationTestCommandLine(portServer, tempDirDatabaseServer, getAbsolutPathFromResourceFile(rskConfFileServerName), "--regtest");
+        importTheExportedBlocksToRegtestNode();
+        String rskConfFileChangedServer = configureServerWithGeneratedInformation(dirDatabaseServer);
+        NodeIntegrationTestCommandLine serverNode = new NodeIntegrationTestCommandLine(rskConfFileChangedServer, "--regtest");
 
         //when
-        Process nodeServer = serverNode.startNode();
-        nodeServer.waitFor(2, TimeUnit.MINUTES);
+        serverNode.startNode();
+        ThreadTimerHelper.waitForSeconds(30);
 
-        String rskConfFileChanged = configureClientConfWithServerInformation(tempDirDatabaseServer);
-        NodeIntegrationTestCommandLine clientNode = new NodeIntegrationTestCommandLine(portClient, tempDirDatabaseClient, rskConfFileChanged, "--regtest");
-        Process nodeClient = clientNode.startNode();
+        String rskConfFileChangedClient = configureClientConfWithGeneratedInformation(dirDatabaseServer, tempDirDatabaseClient.toString());
+        NodeIntegrationTestCommandLine clientNode = new NodeIntegrationTestCommandLine(rskConfFileChangedClient, "--regtest");
+        clientNode.startNode();
 
-        nodeClient.waitFor(2, TimeUnit.MINUTES);
+        ThreadTimerHelper.waitForSeconds(20);
 
         //then
-        assertNotNull(serverNode.getOutput());
-        assertNotNull(clientNode.getOutput());
+        boolean snapshotNotAsserted = true;
+        while (snapshotNotAsserted) {
+            if(clientNode.getOutput().contains("CLIENT - Starting Snapshot sync.") && clientNode.getOutput().contains("CLIENT - Snapshot sync finished!")) {
+                snapshotNotAsserted = false;
+            }
+        }
         serverNode.killNode();
         clientNode.killNode();
     }
 
-    private String configureClientConfWithServerInformation(Path tempDirDatabaseServerPath) throws IOException, InterruptedException {
-        String nodeId = readServerNodeId(tempDirDatabaseServerPath);
-        String rskConfFileClient = getAbsolutPathFromResourceFile(rskConfFileClientName);
-        substituteTagByValueOnConfigurationFile(TAG_TO_REPLACE_NODE_ID, nodeId, rskConfFileClient);
-        return rskConfFileClient;
+    private void importTheExportedBlocksToRegtestNode() throws IOException, InterruptedException {
+        String exportedBlocksCsv = FilesHelper.getIntegrationTestResourcesFullPath("server_blocks.csv");
+        RskjCommandLineBase rskjCommandLineBase = new ConnectBlocksCommandLine(exportedBlocksCsv);
+        rskjCommandLineBase.executeCommand();
+        String output = rskjCommandLineBase.getOutput();
+        assertTrue(output.contains("ConnectBlocks finished"));
     }
 
-    private String getAbsolutPathFromResourceFile(String resourceFile) {
-        ClassLoader classLoader = getClass().getClassLoader();
-        File file = new File(classLoader.getResource(resourceFile).getFile());
-        String rskConfFileClient = file.getAbsolutePath();
+    private String configureServerWithGeneratedInformation(Path tempDirDatabaseServerPath) throws IOException {
+        String rskConfFileServer = FilesHelper.getAbsolutPathFromResourceFile(getClass(), rskConfFileServerName);
+        substituteTagByValueOnConfigurationFile(TAG_TO_REPLACE_SERVER_DATABASE_PATH, tempDirDatabaseServerPath.toString(), rskConfFileServer);
+        substituteTagByValueOnConfigurationFile(TAG_TO_REPLACE_SERVER_PORT, String.valueOf(portServer), rskConfFileServer);
+        substituteTagByValueOnConfigurationFile(TAG_TO_REPLACE_SERVER_RPC_PORT, String.valueOf(portServer + 1), rskConfFileServer);
+
+        return rskConfFileServer;
+    }
+
+    private String configureClientConfWithGeneratedInformation(Path tempDirDatabaseServerPath, String tempDirDatabasePath) throws IOException {
+        String nodeId = readServerNodeId(tempDirDatabaseServerPath);
+        String rskConfFileClient = FilesHelper.getAbsolutPathFromResourceFile(getClass(), rskConfFileClientName);
+        substituteTagByValueOnConfigurationFile(TAG_TO_REPLACE_NODE_ID, nodeId, rskConfFileClient);
+        substituteTagByValueOnConfigurationFile(TAG_TO_REPLACE_SERVER_PORT, String.valueOf(portServer), rskConfFileClient);
+        substituteTagByValueOnConfigurationFile(TAG_TO_REPLACE_CLIENT_PORT, String.valueOf(portClient), rskConfFileClient);
+        substituteTagByValueOnConfigurationFile(TAG_TO_REPLACE_CLIENT_DATABASE_PATH, tempDirDatabasePath, rskConfFileClient);
+
         return rskConfFileClient;
     }
 
     private void substituteTagByValueOnConfigurationFile(String tag, String replacement, String configurationFilePath) throws IOException {
-        // Read the file
         byte[] fileBytes = readBytesFromFile(configurationFilePath);
 
-        // Replace the tag
         String fileContent = new String(fileBytes, StandardCharsets.UTF_8);
         fileContent = StringUtils.replace(fileContent, tag, replacement);
 
-        // Write the updated contents back to the file
         writeBytesToFile(fileContent.getBytes(StandardCharsets.UTF_8), configurationFilePath);
     }
 
     private String readServerNodeId(Path serverDatabasePath) throws IOException {
-        byte[] fileBytes = readBytesFromFile(String.format("%s/database/nodeId.properties", serverDatabasePath));
+        byte[] fileBytes = readBytesFromFile(String.format("%s/nodeId.properties", serverDatabasePath));
         String fileContent = new String(fileBytes, StandardCharsets.UTF_8);
         return StringUtils.substringAfter(fileContent, "nodeId=").trim();
-    }
-
-    private static byte[] readBytesFromFile(String filePath) throws IOException {
-        try (InputStream inputStream = new FileInputStream(filePath);
-             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-            return outputStream.toByteArray();
-        }
-    }
-
-    private static void writeBytesToFile(byte[] bytes, String filePath) throws IOException {
-        try (OutputStream outputStream = new FileOutputStream(filePath)) {
-            outputStream.write(bytes);
-        }
     }
 }
