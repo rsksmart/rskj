@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -73,8 +74,28 @@ class ABICallElectionTest {
     }
 
     @Test
-    void getVotes() {
-        Assertions.assertSame(votes, election.getVotes());
+    void getVotes_shouldNotBeSame_ButEqual_votes() {
+        Assertions.assertNotSame(votes, election.getVotes());
+        Assertions.assertEquals(votes, election.getVotes());
+    }
+
+    @Test
+    void modify_votes_shouldNotChange_electionVotes() {
+        votes.put(
+            spec_fnb,
+            new ArrayList<>(Arrays.asList(
+                createVoter("cc"),
+                createVoter("dd")
+            ))
+        );
+
+        Assertions.assertNotEquals(votes, election.getVotes());
+    }
+
+    @Test
+    void clear_electionVotes_shouldNotChange_votes() {
+        election.clear();
+        Assertions.assertNotEquals(votes, election.getVotes());
     }
 
     @Test

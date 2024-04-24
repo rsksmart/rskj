@@ -21,6 +21,7 @@ package co.rsk.peg.vote;
 import co.rsk.core.RskAddress;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +40,13 @@ public class ABICallElection {
 
     public ABICallElection(AddressBasedAuthorizer authorizer, Map<ABICallSpec, List<RskAddress>> votes) {
         this.authorizer = authorizer;
-        this.votes = votes;
+        this.votes = clone(votes);
         validate();
+    }
+
+    private Map<ABICallSpec, List<RskAddress>> clone(Map<ABICallSpec, List<RskAddress>> originalMap) {
+        return originalMap.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue())));
     }
 
     public ABICallElection(AddressBasedAuthorizer authorizer) {
@@ -49,7 +55,7 @@ public class ABICallElection {
     }
 
     public Map<ABICallSpec, List<RskAddress>> getVotes() {
-        return votes;
+        return clone(votes);
     }
 
     public void clear() {
