@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.vote;
 
 public class UnauthorizedVoterException extends RuntimeException {
 
