@@ -63,6 +63,8 @@ public class BridgeSupportFactory {
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlock.getNumber());
         Context btcContext = new Context(bridgeConstants.getBtcParams());
 
+        BridgeStorageAccessor bridgeStorageAccessor = new BridgeStorageAccessor(repository);
+
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
             contractAddress,
@@ -71,7 +73,7 @@ public class BridgeSupportFactory {
         );
 
         FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock, activations);
-        FeePerKbSupport feePerKbSupport = newFeePerKbSupportInstance(repository, bridgeConstants);
+        FeePerKbSupport feePerKbSupport = newFeePerKbSupportInstance(bridgeStorageAccessor, bridgeConstants);
 
         BridgeEventLogger eventLogger;
         if (logs == null) {
@@ -104,12 +106,9 @@ public class BridgeSupportFactory {
         );
     }
 
-    private FeePerKbSupport newFeePerKbSupportInstance(Repository repository, BridgeConstants bridgeConstants) {
+    private FeePerKbSupport newFeePerKbSupportInstance(BridgeStorageAccessor bridgeStorageAccessor, BridgeConstants bridgeConstants) {
         FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
-
-        BridgeStorageAccessor bridgeStorageAccessor = new BridgeStorageAccessor(repository);
         FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProvider(bridgeStorageAccessor);
-
         return new FeePerKbSupport(feePerKbConstants, feePerKbStorageProvider);
     }
 }
