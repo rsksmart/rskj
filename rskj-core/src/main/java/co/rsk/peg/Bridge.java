@@ -27,6 +27,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
+import co.rsk.peg.feeperkb.FeePerKbResponseCode;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.federation.Federation;
@@ -1128,7 +1129,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             feePerKb = Coin.valueOf(((BigInteger) args[0]).longValueExact());
         } catch (Exception e) {
             logger.warn("Exception in voteFeePerKbChange", e);
-            return -10;
+            return FeePerKbResponseCode.GENERIC.getCode();
         }
 
         return bridgeSupport.voteFeePerKbChange(rskTx, feePerKb);
