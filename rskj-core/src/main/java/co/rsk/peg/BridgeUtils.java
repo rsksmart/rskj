@@ -32,6 +32,7 @@ import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;

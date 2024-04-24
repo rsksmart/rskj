@@ -10,7 +10,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.peg.abi.ABICallSpec;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
@@ -222,7 +222,7 @@ class PowpegMigrationTest {
 
         // Trying to create a new powpeg again should fail
         // -2 corresponds to a new powpeg was elected and the Bridge is waiting for this new powpeg to activate
-        attemptToCreateNewFederation(bridgeSupport, bridgeConstants, -2);
+        attemptToCreateNewFederation(bridgeSupport, -2);
 
         // No change in active powpeg
         assertEquals(oldPowPegAddress, bridgeSupport.getFederationAddress());
@@ -334,7 +334,7 @@ class PowpegMigrationTest {
 
         // Trying to create a new powpeg again should fail
         // -3 corresponds to a new powpeg was elected and the Bridge is waiting for this new powpeg to migrate
-        attemptToCreateNewFederation(bridgeSupport, bridgeConstants, -3);
+        attemptToCreateNewFederation(bridgeSupport, -3);
 
         // peg-in after new fed activates
         testPegins(
@@ -387,7 +387,7 @@ class PowpegMigrationTest {
 
         // Trying to create a new powpeg again should fail
         // -3 corresponds to a new powpeg was elected and the Bridge is waiting for this new powpeg to migrate
-        attemptToCreateNewFederation(bridgeSupport, bridgeConstants, -3);
+        attemptToCreateNewFederation(bridgeSupport, -3);
 
         // Migration should start !
         assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
@@ -876,14 +876,14 @@ class PowpegMigrationTest {
 
     private void attemptToCreateNewFederation(
         BridgeSupport bridgeSupport,
-        BridgeConstants bridgeConstants,
         int expectedResult) throws BridgeIllegalArgumentException {
 
         ABICallSpec createSpec = new ABICallSpec("create", new byte[][]{});
         Transaction voteTx = mock(Transaction.class);
-        RskAddress federationChangeAuthorizer = new RskAddress(
-            bridgeConstants.getFederationChangeAuthorizer().authorizedAddresses.get(0)
-        );
+
+        // Known authorized address to vote the federation change
+        RskAddress federationChangeAuthorizer = new RskAddress("56bc5087ac97bc85a877bd20dfef910b78b1dc5a");
+
         when(voteTx.getSender(any())).thenReturn(federationChangeAuthorizer);
         int federationChangeResult = bridgeSupport.voteFederationChange(voteTx, createSpec);
 
