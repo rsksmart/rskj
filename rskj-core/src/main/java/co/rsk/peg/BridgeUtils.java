@@ -397,7 +397,6 @@ public final class BridgeUtils {
         }
 
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
-        FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
         RskAddress senderAddress = rskTx.getSender(signatureCache);
 
         // Temporary assumption: if areBridgeTxsFree() is true then the current federation
@@ -408,10 +407,16 @@ public final class BridgeUtils {
            rskTx.acceptTransactionSignature(constants.getChainId()) &&
            (
                isFromGenesisFederation(senderAddress, bridgeConstants.getGenesisFederationPublicKeys()) ||
-               isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
-               isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
-               isFromFeePerKbChangeAuthorizedSender(rskTx, feePerKbConstants, signatureCache)
+               isFromAuthorizedSender(rskTx, bridgeConstants, signatureCache)
            );
+    }
+
+    private static boolean isFromAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConstants, SignatureCache signatureCache) {
+        FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
+
+        return isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
+            isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
+            isFromFeePerKbChangeAuthorizedSender(rskTx, feePerKbConstants, signatureCache);
     }
 
     /**
