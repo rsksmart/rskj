@@ -25,6 +25,8 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationTestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -240,10 +242,13 @@ class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             BtcTransaction inputTx = new BtcTransaction(networkParameters);
             inputTx.addOutput(fromAmount, fromAddress);
 
+            Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+            Address federationAddress = federation.getAddress();
+
             // Lock tx that uses the input tx
             txToLock = new BtcTransaction(networkParameters);
             txToLock.addInput(inputTx.getOutput(0));
-            txToLock.addOutput(lockAmount, bridgeConstants.getGenesisFederation().getAddress());
+            txToLock.addOutput(lockAmount, federationAddress);
             txToLock.addOutput(changeAmount, fromAddress);
 
             ECKey ecKey = new ECKey();

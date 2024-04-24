@@ -51,13 +51,12 @@ class StandardMultisigFederationTest {
     private List<BtcECKey> keys;
     private List<BtcECKey> sortedPublicKeys;
     private List<byte[]> rskAddresses;
+    private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
 
     @BeforeEach
     void setUp() {
-        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
-
-        networkParameters = bridgeConstants.getBtcParams();
-        federation = bridgeConstants.getGenesisFederation();
+        networkParameters = bridgeMainNetConstants.getBtcParams();
+        federation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants);
 
         keys = federation.getBtcPublicKeys();
         sortedPublicKeys = keys.stream()

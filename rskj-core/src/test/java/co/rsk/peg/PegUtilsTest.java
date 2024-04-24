@@ -6,6 +6,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -31,6 +32,8 @@ import static org.mockito.Mockito.when;
 
 class PegUtilsTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
     private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
@@ -40,8 +43,6 @@ class PegUtilsTest {
 
     private BridgeStorageProvider provider;
     private Address userAddress;
-
-    private Federation retiredFed;
     private List<BtcECKey> retiringFedSigners;
     private Federation retiringFederation;
     private List<BtcECKey> activeFedSigners;
@@ -52,9 +53,6 @@ class PegUtilsTest {
     void init() {
         provider = mock(BridgeStorageProvider.class);
         userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
-
-        retiredFed = bridgeMainnetConstants.getGenesisFederation();
-
         retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
@@ -107,7 +105,7 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_below_minimum_active_fed() {
         // Arrange
-        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
@@ -199,7 +197,7 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_output_to_retiring_fed_and_other_addresses() {
         // Arrange
-        Federation retiringFed = bridgeMainnetConstants.getGenesisFederation();
+        Federation retiringFed = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
@@ -518,19 +516,20 @@ class PegUtilsTest {
     void test_getTransactionType_migration_from_retired_fed() {
         // Arrange
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
+        Federation federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, retiredFed.getP2SHScript());
+        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, federation.getP2SHScript());
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiredFed.getRedeemScript());
-        Script inputScript = p2SHScript.createEmptyInputScript(null, retiredFed.getRedeemScript());
+        Script p2SHScript = ScriptBuilder.createP2SHOutputScript(federation.getRedeemScript());
+        Script inputScript = p2SHScript.createEmptyInputScript(null, federation.getRedeemScript());
 
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
-            retiredFed.getRedeemScript(),
+            federation.getRedeemScript(),
             BtcTransaction.SigHash.ALL,
             false
         );
@@ -600,7 +599,7 @@ class PegUtilsTest {
         NetworkParameters btcTestNetParams = bridgeTestNetConstants.getBtcParams();
         Context context = new Context(bridgeTestNetConstants.getBtcParams());
 
-        Federation retiringFed = bridgeTestNetConstants.getGenesisFederation();
+        Federation retiringFed = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true

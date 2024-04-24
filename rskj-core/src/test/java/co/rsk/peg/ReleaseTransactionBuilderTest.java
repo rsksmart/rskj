@@ -69,7 +69,7 @@ class ReleaseTransactionBuilderTest {
     private ActivationConfig.ForBlock activations;
     private Context btcContext;
     private NetworkParameters networkParameters;
-    private BridgeConstants bridgeConstants;
+    private BridgeConstants bridgeRegTestConstants;
     private Federation federation;
 
     @BeforeEach
@@ -77,10 +77,10 @@ class ReleaseTransactionBuilderTest {
         wallet = mock(Wallet.class);
         changeAddress = mockAddress(1000);
         activations = mock(ActivationConfig.ForBlock.class);
-        bridgeConstants = BridgeRegTestConstants.getInstance();
-        networkParameters = bridgeConstants.getBtcParams();
+        bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+        networkParameters = bridgeRegTestConstants.getBtcParams();
         btcContext = new Context(networkParameters);
-        federation = bridgeConstants.getGenesisFederation();
+        federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
         builder = new ReleaseTransactionBuilder(
             networkParameters,
             wallet,

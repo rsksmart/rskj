@@ -113,6 +113,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -386,7 +387,7 @@ public class BridgeSupportTestIntegration {
     @Test
     void callUpdateCollectionsFundsEnoughForJustTheSmallerTx() throws IOException {
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -458,7 +459,7 @@ public class BridgeSupportTestIntegration {
     @Test
     void callUpdateCollectionsThrowsCouldNotAdjustDownwards() throws IOException {
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -538,7 +539,7 @@ public class BridgeSupportTestIntegration {
     @Test
     void callUpdateCollectionsThrowsExceededMaxTransactionSize() throws IOException {
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -618,7 +619,7 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void minimumProcessFundsMigrationValue() throws IOException {
-        Federation oldFederation = bridgeConstants.getGenesisFederation();
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
         BtcECKey key = new BtcECKey(new SecureRandom());
         FederationMember member = new FederationMember(key, new ECKey(), new ECKey());
         FederationArgs newFederationArgs = new FederationArgs(
@@ -712,7 +713,7 @@ public class BridgeSupportTestIntegration {
     @Test
     void callUpdateCollectionsChangeGetsOutOfDust() throws IOException {
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
 
         Map<byte[], BigInteger> preMineMap = new HashMap<>();
         preMineMap.put(PrecompiledContracts.BRIDGE_ADDR.getBytes(), LIMIT_MONETARY_BASE.asBigInteger());
@@ -1276,7 +1277,7 @@ public class BridgeSupportTestIntegration {
     @Test
     void registerBtcTransactionReleaseTx() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
         Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Repository track = repository.startTracking();
@@ -3909,7 +3910,10 @@ public class BridgeSupportTestIntegration {
         BridgeEventLogger eventLogger) throws IOException {
 
         BridgeConstants constantsMock = mock(BridgeConstants.class);
-        when(constantsMock.getGenesisFederation()).thenReturn((StandardMultisigFederation) mockedGenesisFederation);
+        try(MockedStatic<FederationTestUtils> federationTestUtils = Mockito.mockStatic(FederationTestUtils.class)){
+            federationTestUtils.when(() -> FederationTestUtils.getGenesisFederation(constantsMock))
+                    .thenReturn(mockedGenesisFederation);
+        }
 
         when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         when(constantsMock.getFederationChangeAuthorizer()).thenReturn(bridgeConstants.getFederationChangeAuthorizer());

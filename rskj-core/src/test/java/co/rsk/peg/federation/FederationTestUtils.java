@@ -31,14 +31,22 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import co.rsk.peg.constants.BridgeConstants;
 import org.ethereum.crypto.ECKey;
 
-public class FederationTestUtils {
+public final class FederationTestUtils {
+
+    public static final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
+
+    private FederationTestUtils() {
+    }
 
     public static Federation getFederation(Integer... federationMemberPks) {
         FederationArgs federationArgs = new FederationArgs(
@@ -50,6 +58,14 @@ public class FederationTestUtils {
         return FederationFactory.buildStandardMultiSigFederation(
             federationArgs
         );
+    }
+
+    public static Federation getGenesisFederation(BridgeConstants bridgeConstants) {
+        final List<BtcECKey> genesisFederationPublicKeys = bridgeConstants.getGenesisFederationPublicKeys();
+        final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
+        final Instant genesisFederationCreationTime = bridgeConstants.getGenesisFederationCreationTime();
+        final FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, GENESIS_FEDERATION_CREATION_BLOCK_NUMBER, bridgeConstants.getBtcParams());
+        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
     public static List<FederationMember> getFederationMembers(int memberCount) {
