@@ -1,5 +1,6 @@
 package co.rsk.peg.feeperkb;
 
+import co.rsk.peg.storage.FeePerKbStorageProvider;
 import co.rsk.peg.vote.*;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.BridgeSerializationUtils;
@@ -36,11 +37,13 @@ public class FeePerKbSupport {
     /**
      * Votes for a fee per kb value.
      *
-     * @return 1 upon successful vote, -1 when the vote was unsuccessful,
-     * GENERIC fee per kb response code when there was an unexpected error.
+     * @return
      * UNAUTHORIZED fee per kb response code when the signature is not authorized to vote.
      * NEGATIVE fee per kb response code when fee is not positive.
      * EXCESSIVE fee per kb response code when fee is greater than the maximum fee allowed.
+     * UNSUCCESSFUL fee per kb response code when the vote was unsuccessful.
+     * GENERIC fee per kb response code when there was an unexpected error.
+     * SUCCESSFUL fee per kb response code when the vote was successful.
      */
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb, SignatureCache signatureCache) {
 
