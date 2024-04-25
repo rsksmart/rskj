@@ -45,7 +45,7 @@ public class AddressBasedAuthorizer {
 
     public boolean isAuthorized(RskAddress sender) {
         return authorizedAddresses.stream()
-                .anyMatch(address -> Arrays.equals(address, sender.getBytes()));
+            .anyMatch(address -> Arrays.equals(address, sender.getBytes()));
     }
 
     public boolean isAuthorized(Transaction tx, SignatureCache signatureCache) {
