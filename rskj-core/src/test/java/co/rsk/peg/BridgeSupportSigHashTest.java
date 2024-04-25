@@ -60,8 +60,8 @@ class BridgeSupportSigHashTest {
     @ParameterizedTest
     @MethodSource("pegoutTxIndexArgsProvider")
     void test_pegoutTxIndex_when_pegout_batch_is_created(ActivationConfig.ForBlock activations) throws IOException {
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
-        Address federationAddress = federation.getAddress();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Address federationAddress = genesisFederation.getAddress();
         // Arrange
         List<UTXO> fedUTXOs = PegTestUtils.createUTXOs(
             10,

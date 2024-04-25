@@ -188,8 +188,8 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
             // Generate some utxos
             int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
-            Federation federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
-            Script federationP2SHScript = federation.getP2SHScript();
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+            Script federationP2SHScript = genesisFederation.getP2SHScript();
 
             for (int i = 0; i < numUTXOs; i++) {
                 Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
@@ -247,10 +247,10 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 throw new RuntimeException("Unable to gather release tx set");
             }
 
-            Federation federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
 
             // Generate some txs waiting for signatures
-            Script genesisFederationScript = federation.getP2SHScript();
+            Script genesisFederationScript = genesisFederation.getP2SHScript();
             for (int i = 0; i < Helper.randomInRange(minTxsWaitingForSigs, maxTxsWaitingForSigs); i++) {
                 Keccak256 rskHash = new Keccak256(HashUtil.keccak256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 BtcTransaction btcTx = new BtcTransaction(networkParameters);
@@ -307,8 +307,8 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
             // Generate some utxos
             int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
-            Federation federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
-            Script federationP2SHScript =  federation.getP2SHScript();
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+            Script federationP2SHScript =  genesisFederation.getP2SHScript();
 
             for (int i = 0; i < numUTXOs; i++) {
                 Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
