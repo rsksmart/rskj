@@ -3,10 +3,10 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -30,7 +30,6 @@ import static org.mockito.Mockito.mock;
 
 class PegUtilsLegacyGetTransactionTypeTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
 
     private static final Address oldFederationAddress = Address.fromBase58(
@@ -66,7 +65,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         );
 
         List<FederationMember> federationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(standardKeys);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
         List<BtcECKey> erpPubKeys = bridgeMainnetConstants.getErpFedPubKeysList();
         long activationDelay = bridgeMainnetConstants.getErpFedActivationDelay();
         FederationArgs activeFedArgs =
@@ -122,6 +121,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
     @ParameterizedTest
     @MethodSource("test_sentFromOldFed_Args")
     void test_sentFromOldFed(ActivationConfig.ForBlock activations, PegTxType expectedTxType) {
+        BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
         Context.propagate(new Context(btcRegTestsParams));
 
@@ -158,14 +158,14 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
-            migrationTx,
-            activeFederation,
-            null,
-            activations.isActive(RSKIP186)? retiredFederation.getP2SHScript(): null,
-            oldFederationAddress,
-            activations,
-            bridgeRegTestConstants.getMinimumPeginTxValue(activations),
-            new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation))
+                migrationTx,
+                activeFederation,
+                null,
+                activations.isActive(RSKIP186) ? retiredFederation.getP2SHScript() : null,
+                oldFederationAddress,
+                activations,
+                bridgeRegTestConstants.getMinimumPeginTxValue(activations),
+                new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation))
         );
 
         // Assert
@@ -178,7 +178,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
         List<BtcECKey> unknownFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"key1", "key2", "key3"}, true
@@ -544,7 +544,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
     @Test
     void test_unknown_tx() {
         // Arrange
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
