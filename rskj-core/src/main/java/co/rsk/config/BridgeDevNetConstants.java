@@ -29,7 +29,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import co.rsk.peg.feeperkb.constants.FeePerKbDevNetConstants;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -50,7 +50,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
-        feePerKbConstants = FeePerKbDevNetConstants.getInstance();
 
         List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federationPublicKeys);
 
