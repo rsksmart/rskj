@@ -41,11 +41,11 @@ class ABICallElectionTest {
     @BeforeEach
     void createVotesAuthorizerAndElection() {
         authorizer = new AddressBasedAuthorizer(Arrays.asList(
-                createMockKeyForAddress("aa"),
-                createMockKeyForAddress("bb"),
-                createMockKeyForAddress("cc"),
-                createMockKeyForAddress("dd"),
-                createMockKeyForAddress("ee")
+            createMockKeyForAddress("aa"),
+            createMockKeyForAddress("bb"),
+            createMockKeyForAddress("cc"),
+            createMockKeyForAddress("dd"),
+            createMockKeyForAddress("ee")
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
         spec_fna = new ABICallSpec("fn-a", new byte[][]{});
@@ -53,15 +53,15 @@ class ABICallElectionTest {
 
         votes = new HashMap<>();
         votes.put(
-                spec_fna,
-                new ArrayList<>(Collections.emptyList())
+            spec_fna,
+            new ArrayList<>(Collections.emptyList())
         );
         votes.put(
-                spec_fnb,
-                new ArrayList<>(Arrays.asList(
-                        createVoter("aa"),
-                        createVoter("bb")
-                ))
+            spec_fnb,
+            new ArrayList<>(Arrays.asList(
+                createVoter("aa"),
+                createVoter("bb")
+            ))
         );
 
         election = new ABICallElection(authorizer, votes);

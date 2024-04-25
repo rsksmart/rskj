@@ -30,6 +30,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
@@ -393,6 +394,7 @@ public class BridgeUtils {
 
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
 
+
         // Temporary assumption: if areBridgeTxsFree() is true then the current federation
         // must be the genesis federation.
         // Once the original federation changes, txs are always paid.
@@ -400,11 +402,17 @@ public class BridgeUtils {
                !activations.isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
                rskTx.acceptTransactionSignature(constants.getChainId()) &&
                (
-                       isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation(), signatureCache) ||
-                       isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
-                       isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
-                       isFromFeePerKbChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache)
+                   isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation(), signatureCache) ||
+                   isFromAuthorizedSender(rskTx, bridgeConstants, signatureCache)
                );
+    }
+
+    private static boolean isFromAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConstants, SignatureCache signatureCache) {
+        FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
+
+        return isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
+            isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
+            isFromFeePerKbChangeAuthorizedSender(rskTx, feePerKbConstants, signatureCache);
     }
 
     /**
@@ -442,8 +450,8 @@ public class BridgeUtils {
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
 
-    private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
-        AddressBasedAuthorizer authorizer = bridgeConfiguration.getFeePerKbChangeAuthorizer();
+    private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, FeePerKbConstants feePerKbConstants, SignatureCache signatureCache) {
+        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
 

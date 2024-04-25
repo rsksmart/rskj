@@ -22,6 +22,10 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.storage.BridgeStorageAccessor;
+import co.rsk.peg.storage.FeePerKbStorageProvider;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
@@ -59,6 +63,8 @@ public class BridgeSupportFactory {
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlock.getNumber());
         Context btcContext = new Context(bridgeConstants.getBtcParams());
 
+        BridgeStorageAccessor bridgeStorageAccessor = new BridgeStorageAccessor(repository);
+
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
             contractAddress,
@@ -67,6 +73,7 @@ public class BridgeSupportFactory {
         );
 
         FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock, activations);
+        FeePerKbSupport feePerKbSupport = newFeePerKbSupportInstance(bridgeStorageAccessor, bridgeConstants);
 
         BridgeEventLogger eventLogger;
         if (logs == null) {
@@ -92,9 +99,16 @@ public class BridgeSupportFactory {
                 executionBlock,
                 btcContext,
                 federationSupport,
+                feePerKbSupport,
                 btcBlockStoreFactory,
                 activations,
                 signatureCache
         );
+    }
+
+    private FeePerKbSupport newFeePerKbSupportInstance(BridgeStorageAccessor bridgeStorageAccessor, BridgeConstants bridgeConstants) {
+        FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProvider(bridgeStorageAccessor);
+        return new FeePerKbSupport(feePerKbConstants, feePerKbStorageProvider);
     }
 }

@@ -88,16 +88,16 @@ public final class ABICallSpec {
 
         ABICallSpec otherSpec = ((ABICallSpec) other);
         return otherSpec.getFunction().equals(getFunction()) &&
-                areEqual(arguments, otherSpec.arguments);
+            areEqual(arguments, otherSpec.arguments);
     }
 
     @Override
     public int hashCode() {
         int[] argumentsHashes = Arrays
-                                .stream(arguments)
-                                .map(Arrays::hashCode)
-                                .mapToInt(Integer::intValue)
-                                .toArray();
+            .stream(arguments)
+            .map(Arrays::hashCode)
+            .mapToInt(Integer::intValue)
+            .toArray();
 
         return Objects.hash(function, Arrays.hashCode(argumentsHashes));
     }

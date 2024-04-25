@@ -31,8 +31,8 @@ class ABICallSpecTest {
     @Test
     void argumentsIsCopy() {
         ABICallSpec spec = new ABICallSpec("a-function", new byte[][]{
-                Hex.decode("aabb"),
-                Hex.decode("ccddee")
+            Hex.decode("aabb"),
+            Hex.decode("ccddee")
         });
 
         byte[][] arguments = spec.getArguments();
@@ -50,8 +50,8 @@ class ABICallSpecTest {
     @Test
     void getEncoded() {
         ABICallSpec spec = new ABICallSpec("a-function", new byte[][]{
-                Hex.decode("1122"),
-                Hex.decode("334455"),
+            Hex.decode("1122"),
+            Hex.decode("334455"),
         });
 
         StringBuilder expectedBuilder = new StringBuilder();
@@ -63,27 +63,27 @@ class ABICallSpecTest {
     @Test
     void testEquals() {
         ABICallSpec specA = new ABICallSpec("function-a", new byte[][]{
-                Hex.decode("aabb"),
-                Hex.decode("ccddee")
+            Hex.decode("aabb"),
+            Hex.decode("ccddee")
         });
         ABICallSpec specB = new ABICallSpec("function-b", new byte[][]{
-                Hex.decode("aabb"),
-                Hex.decode("ccddee")
+            Hex.decode("aabb"),
+            Hex.decode("ccddee")
         });
         ABICallSpec specC = new ABICallSpec("function-a", new byte[][]{
-                Hex.decode("ccddee"),
-                Hex.decode("aabb")
+            Hex.decode("ccddee"),
+            Hex.decode("aabb")
         });
         ABICallSpec specD = new ABICallSpec("function-a", new byte[][]{
-                Hex.decode("aabb"),
-                Hex.decode("ccdd")
+            Hex.decode("aabb"),
+            Hex.decode("ccdd")
         });
         ABICallSpec specE = new ABICallSpec("function-a", new byte[][]{
-                Hex.decode("aabb")
+            Hex.decode("aabb")
         });
         ABICallSpec specF = new ABICallSpec("function-a", new byte[][]{
-                Hex.decode("aabb"),
-                Hex.decode("ccddee")
+            Hex.decode("aabb"),
+            Hex.decode("ccddee")
         });
 
         Assertions.assertEquals(specA, specF);

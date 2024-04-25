@@ -32,10 +32,14 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.pegin.*;
@@ -87,9 +91,6 @@ public class BridgeSupport {
     public static final Integer LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE = -1;
     public static final Integer LOCK_WHITELIST_UNKNOWN_ERROR_CODE = 0;
     public static final Integer LOCK_WHITELIST_SUCCESS_CODE = 1;
-    public static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = -10;
-    public static final Integer NEGATIVE_FEE_PER_KB_ERROR_CODE = -1;
-    public static final Integer EXCESSIVE_FEE_PER_KB_ERROR_CODE = -2;
 
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE = -1;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE = -2;
@@ -120,6 +121,7 @@ public class BridgeSupport {
         "rollback"
     ));
 
+    private final FeePerKbSupport feePerKbSupport;
     private final BridgeConstants bridgeConstants;
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
@@ -149,6 +151,7 @@ public class BridgeSupport {
             Block executionBlock,
             Context btcContext,
             FederationSupport federationSupport,
+            FeePerKbSupport feePerKbSupport,
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
             ActivationConfig.ForBlock activations,
             SignatureCache signatureCache) {
@@ -161,6 +164,7 @@ public class BridgeSupport {
         this.peginInstructionsProvider = peginInstructionsProvider;
         this.btcContext = btcContext;
         this.federationSupport = federationSupport;
+        this.feePerKbSupport = feePerKbSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
         this.signatureCache = signatureCache;
@@ -189,6 +193,7 @@ public class BridgeSupport {
 
     public void save() throws IOException {
         provider.save();
+        feePerKbSupport.save();
     }
 
     /**
@@ -914,17 +919,8 @@ public class BridgeSupport {
         }
     }
 
-    /**
-     * @return Current fee per kb in BTC.
-     */
     public Coin getFeePerKb() {
-        Coin currentFeePerKb = provider.getFeePerKb();
-
-        if (currentFeePerKb == null) {
-            currentFeePerKb = bridgeConstants.getGenesisFeePerKb();
-        }
-
-        return currentFeePerKb;
+        return feePerKbSupport.getFeePerKb();
     }
 
     /**
@@ -2536,54 +2532,7 @@ public class BridgeSupport {
      * FEE_PER_KB_GENERIC_ERROR_CODE when there was an un expected error.
      */
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb) {
-        AddressBasedAuthorizer authorizer = bridgeConstants.getFeePerKbChangeAuthorizer();
-        if (!authorizer.isAuthorized(tx, signatureCache)) {
-            return FEE_PER_KB_GENERIC_ERROR_CODE;
-        }
-
-        if(!feePerKb.isPositive()){
-            return NEGATIVE_FEE_PER_KB_ERROR_CODE;
-        }
-
-        if(feePerKb.isGreaterThan(bridgeConstants.getMaxFeePerKb())) {
-            return EXCESSIVE_FEE_PER_KB_ERROR_CODE;
-        }
-
-        ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
-        ABICallSpec feeVote = new ABICallSpec("setFeePerKb", new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
-        boolean successfulVote = feePerKbElection.vote(feeVote, tx.getSender(signatureCache));
-        if (!successfulVote) {
-            return -1;
-        }
-
-        Optional<ABICallSpec> winnerOptional = feePerKbElection.getWinner();
-        if (!winnerOptional.isPresent()) {
-            logger.info("Successful fee per kb vote for {}", feePerKb);
-            return 1;
-        }
-
-        ABICallSpec winner = winnerOptional.get();
-        Coin winnerFee;
-        try {
-            winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);
-        } catch (Exception e) {
-            logger.warn("Exception deserializing winner feePerKb", e);
-            return FEE_PER_KB_GENERIC_ERROR_CODE;
-        }
-
-        if (winnerFee == null) {
-            logger.warn("Invalid winner feePerKb: feePerKb can't be null");
-            return FEE_PER_KB_GENERIC_ERROR_CODE;
-        }
-
-        if (!winnerFee.equals(feePerKb)) {
-            logger.debug("Winner fee is different than the last vote: maybe you forgot to clear winners");
-        }
-
-        logger.info("Fee per kb changed to {}", winnerFee);
-        provider.setFeePerKb(winnerFee);
-        feePerKbElection.clear();
-        return 1;
+        return feePerKbSupport.voteFeePerKbChange(tx, feePerKb, signatureCache);
     }
 
     /**
