@@ -69,16 +69,22 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     }
 
     private void tryStartSyncing() {
-        if (tryStartSnapshotSync()) {
-            return;
-        }
+        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
+        Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
 
-        if (tryStartBlockForwardSync()) {
-            return;
-        }
+        if (bestPeerOpt.isPresent() && peerBestBlockNumOpt.isPresent()) {
+            logger.trace("Starting tryStartSyncing");
+            if (tryStartSnapshotSync()) {
+                return;
+            }
 
-        if (tryStartShortBackwardSync()) {
-            return;
+            if (tryStartBlockForwardSync()) {
+                return;
+            }
+
+            if (tryStartShortBackwardSync()) {
+                return;
+            }
         }
 
         syncEventsHandler.onLongSyncUpdate(false, null);
