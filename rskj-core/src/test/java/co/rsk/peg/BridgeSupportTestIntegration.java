@@ -1799,11 +1799,12 @@ public class BridgeSupportTestIntegration {
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-            activeFedArgs
-        );
 
-        FederationArgs genesisFedArgs = new FederationArgs(FederationTestUtils.getFederationMembers(6),
+        FederationArgs genesisFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithKeys(
+            Stream.iterate(1, i -> i + 1)
+                .limit(6)
+                .map(i -> BtcECKey.fromPrivate(BigInteger.valueOf((i) * 100)))
+                .collect(Collectors.toList())),
             Instant.ofEpochMilli(1000),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -1811,13 +1812,15 @@ public class BridgeSupportTestIntegration {
         Federation genesisFederation = FederationFactory.buildStandardMultiSigFederation(
             genesisFedArgs
         );
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation, null, null, null, null);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, null, genesisFederation, null, null, null, null);
 
         Assertions.assertEquals(6, bridgeSupport.getFederationSize().intValue());
         Assertions.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
         Assertions.assertEquals(genesisFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
-        List<FederationMember> members = FederationTestUtils.getFederationMembers(6);
+
+        List<FederationMember> members = genesisFederation.getMembers();
         for (int i = 0; i < 6; i++) {
+            //BtcECKey{pub HEX=02cfd70505faacd3caf4419000bf4b6ab9e7dc2e4bcf43bbcaa550839cf4713b42, isPubKeyOnly=true}
             Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
             Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
             Assertions.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
