@@ -10,11 +10,14 @@ import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 public class FeePerKbSupport {
 
     private final FeePerKbStorageProvider provider;
     private final FeePerKbConstants feePerKbConstants;
     private static final Logger logger = LoggerFactory.getLogger(FeePerKbSupport.class);
+    private static final String setFeePerKbAbiFunction = "setFeePerKb";
 
     public FeePerKbSupport(FeePerKbConstants feePerKbConstants, FeePerKbStorageProvider provider) {
         this.provider = provider;
@@ -47,6 +50,8 @@ public class FeePerKbSupport {
      */
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb, SignatureCache signatureCache) {
 
+        logger.info("[voteFeePerKbChange] Voting new fee per kb value: {}", feePerKb);
+
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
         Coin maxFeePerKb = feePerKbConstants.getMaxFeePerKb();
 
@@ -66,18 +71,20 @@ public class FeePerKbSupport {
         }
 
         ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
-        ABICallSpec feeVote = new ABICallSpec("setFeePerKb", new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
+        ABICallSpec feeVote = new ABICallSpec(setFeePerKbAbiFunction, new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
         boolean successfulVote = feePerKbElection.vote(feeVote, tx.getSender(signatureCache));
         if (!successfulVote) {
+            logger.warn("[voteFeePerKbChange] Unsuccessful {} vote", feeVote);
             return FeePerKbResponseCode.UNSUCCESSFUL.getCode();
         }
 
-        ABICallSpec winner = feePerKbElection.getWinner();
-        if (winner == null) {
+        Optional<ABICallSpec> winnerOptional = feePerKbElection.getWinner();
+        if (!winnerOptional.isPresent()) {
             logger.info("[voteFeePerKbChange] Successful fee per kb vote for {}", feePerKb);
             return FeePerKbResponseCode.SUCCESSFUL.getCode();
         }
 
+        ABICallSpec winner = winnerOptional.get();
         Coin winnerFee;
         try {
             winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);

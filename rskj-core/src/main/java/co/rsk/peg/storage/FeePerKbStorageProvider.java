@@ -5,8 +5,8 @@ import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 
-import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB_ELECTION_KEY;
-import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB_KEY;
+import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB_ELECTION;
+import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB;
 
 public class FeePerKbStorageProvider {
     private final BridgeStorageAccessor bridgeStorageAccessor;
@@ -21,12 +21,12 @@ public class FeePerKbStorageProvider {
         this.feePerKb = feePerKb;
     }
 
-    public void saveFeePerKb() {
+    private void saveFeePerKb() {
         if (feePerKb == null) {
             return;
         }
 
-        bridgeStorageAccessor.safeSaveToRepository(FEE_PER_KB_KEY.getKey(), feePerKb, BridgeSerializationUtils::serializeCoin);
+        bridgeStorageAccessor.safeSaveToRepository(FEE_PER_KB.getKey(), feePerKb, BridgeSerializationUtils::serializeCoin);
     }
 
     public Coin getFeePerKb() {
@@ -34,15 +34,15 @@ public class FeePerKbStorageProvider {
             return feePerKb;
         }
 
-        feePerKb = bridgeStorageAccessor.safeGetFromRepository(FEE_PER_KB_KEY.getKey(), BridgeSerializationUtils::deserializeCoin);
+        feePerKb = bridgeStorageAccessor.safeGetFromRepository(FEE_PER_KB.getKey(), BridgeSerializationUtils::deserializeCoin);
         return feePerKb;
     }
-    public void saveFeePerKbElection() {
+    private void saveFeePerKbElection() {
         if (feePerKbElection == null) {
             return;
         }
 
-        bridgeStorageAccessor.safeSaveToRepository(FEE_PER_KB_ELECTION_KEY.getKey(), feePerKbElection, BridgeSerializationUtils::serializeElection);
+        bridgeStorageAccessor.safeSaveToRepository(FEE_PER_KB_ELECTION.getKey(), feePerKbElection, BridgeSerializationUtils::serializeElection);
     }
 
     public ABICallElection getFeePerKbElection(AddressBasedAuthorizer authorizer) {
@@ -50,7 +50,7 @@ public class FeePerKbStorageProvider {
             return feePerKbElection;
         }
 
-        feePerKbElection = bridgeStorageAccessor.safeGetFromRepository(FEE_PER_KB_ELECTION_KEY.getKey(), data -> BridgeSerializationUtils.deserializeElection(data, authorizer));
+        feePerKbElection = bridgeStorageAccessor.safeGetFromRepository(FEE_PER_KB_ELECTION.getKey(), data -> BridgeSerializationUtils.deserializeElection(data, authorizer));
         return feePerKbElection;
     }
 
