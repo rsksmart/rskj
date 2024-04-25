@@ -1,12 +1,12 @@
 package co.rsk.peg.feeperkb;
 
 public enum FeePerKbResponseCode {
-    GENERIC(-10),
     SUCCESSFUL(1),
     UNSUCCESSFUL(-1),
     EXCESSIVE(-2),
     NEGATIVE(-3),
-    UNAUTHORIZED(-4);
+    UNAUTHORIZED(-4),
+    GENERIC(-10);
 
     private final int code;
 
