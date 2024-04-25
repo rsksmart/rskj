@@ -43,7 +43,6 @@ class P2shErpFederationTest {
     private List<BtcECKey> emergencyKeys;
     private int emergencyThreshold;
     private long activationDelayValue;
-    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
 
     @BeforeEach
     void setup() {
@@ -339,7 +338,7 @@ class P2shErpFederationTest {
             // should add this case because adding erp to mainnet genesis federation
             // throws a validation error, so in that case we use the one set up before each test.
             // if using testnet constants, we can add them with no errors
-            Federation federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+            Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
             defaultKeys = federation.getBtcPublicKeys();
         }
 

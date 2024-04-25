@@ -98,17 +98,17 @@ class BridgeSupportAddSignatureTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BridgeSupport bridgeSupport = new BridgeSupport(
                 bridgeRegTestConstants,
-            provider,
-            mock(BridgeEventLogger.class),
-            new BtcLockSenderProvider(),
-            new PeginInstructionsProvider(),
-            mock(Repository.class),
-            mock(Block.class),
-            new Context(bridgeRegTestConstants.getBtcParams()),
-            mockFederationSupport,
-            null,
-            null,
-            null
+                provider,
+                mock(BridgeEventLogger.class),
+                new BtcLockSenderProvider(),
+                new PeginInstructionsProvider(),
+                mock(Repository.class),
+                mock(Block.class),
+                new Context(bridgeRegTestConstants.getBtcParams()),
+                mockFederationSupport,
+                null,
+                null,
+                null
         );
 
         when(mockFederationSupport.getActiveFederation()).thenReturn(activeFederation);

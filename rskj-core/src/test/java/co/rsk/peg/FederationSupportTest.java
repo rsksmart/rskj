@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.federation.*;
 import org.bouncycastle.util.encoders.Hex;
@@ -36,8 +35,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -54,7 +51,6 @@ class FederationSupportTest {
 
     private FederationSupport federationSupport;
     private BridgeConstants bridgeConstants;
-    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
     private BridgeStorageProvider provider;
     private Block executionBlock;
     private ActivationConfig.ForBlock activations;
@@ -76,21 +72,20 @@ class FederationSupportTest {
 
     @Test
     void whenNewFederationIsNullThenActiveFederationIsGenesisFederation() {
-        final Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+        final Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants);
         when(provider.getNewFederation())
                 .thenReturn(null);
-        try (MockedStatic<FederationTestUtils> federationTestUtils = Mockito.mockStatic(FederationTestUtils.class)) {
-            federationTestUtils.when(() -> FederationTestUtils.getGenesisFederation(bridgeConstants))
-                    .thenReturn(genesisFederation);
+        when(bridgeConstants.getGenesisFederationCreationTime()).thenReturn(genesisFederation.getCreationTime());
+        when(bridgeConstants.getGenesisFederationPublicKeys()).thenReturn(genesisFederation.getBtcPublicKeys());
 
-            final List<BtcECKey> genesisFederationPublicKeys = bridgeRegTestConstants.getGenesisFederationPublicKeys();
-            final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
-            final Instant genesisFederationCreationTime = bridgeRegTestConstants.getGenesisFederationCreationTime();
-            final FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, GENESIS_FEDERATION_CREATION_BLOCK_NUMBER, bridgeRegTestConstants.getBtcParams());
-            final Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        final List<BtcECKey> genesisFederationPublicKeys = bridgeMainNetConstants.getGenesisFederationPublicKeys();
+        final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
+        final Instant genesisFederationCreationTime = bridgeMainNetConstants.getGenesisFederationCreationTime();
+        final FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, GENESIS_FEDERATION_CREATION_BLOCK_NUMBER, bridgeMainNetConstants.getBtcParams());
+        final Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
-            assertThat(activeFederation, is(genesisFederation));
-        }
+        assertThat(activeFederation, is(genesisFederation));
     }
 
     @Test
