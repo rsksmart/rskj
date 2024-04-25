@@ -3275,9 +3275,9 @@ class BridgeSupportFlyoverTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         FederationSupport federationSupport = mock(FederationSupport.class);
-        when(federationSupport.getActiveFederation()).thenReturn(genesisFederation);
+        when(federationSupport.getActiveFederation()).thenReturn(activeFederation);
 
         BridgeSupport bridgeSupport = new BridgeSupport(
             bridgeConstantsRegtest,
@@ -3294,8 +3294,8 @@ class BridgeSupportFlyoverTest {
             signatureCache
         );
 
-        Federation genesisFederation2 = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
-        Script federationRedeemScript = genesisFederation2.getRedeemScript();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Script federationRedeemScript = genesisFederation.getRedeemScript();
 
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             federationRedeemScript,
@@ -3307,7 +3307,7 @@ class BridgeSupportFlyoverTest {
 
         FlyoverFederationInformation expectedFlyoverFederationInformation =
             new FlyoverFederationInformation(derivationHash,
-                genesisFederation.getP2SHScript().getPubKeyHash(),
+                activeFederation.getP2SHScript().getPubKeyHash(),
                 flyoverP2SH.getPubKeyHash()
             );
 
