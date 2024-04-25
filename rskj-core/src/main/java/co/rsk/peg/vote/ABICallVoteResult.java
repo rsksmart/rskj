@@ -1,5 +1,3 @@
-<<<<<<<< HEAD:rskj-core/src/main/java/co/rsk/peg/abi/ABICallVoteResult.java
-========
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
@@ -29,8 +27,8 @@ package co.rsk.peg.vote;
  * @author Ariel Mendelzon
  */
 public final class ABICallVoteResult {
-    private boolean successful;
-    private Object result;
+    private final boolean successful;
+    private final Object result;
 
     public ABICallVoteResult(boolean successful, Object result) {
         this.successful = successful;
@@ -45,4 +43,3 @@ public final class ABICallVoteResult {
         return result;
     }
 }
->>>>>>>> 794a52cfb (Add AddressBasedAuthorizer class to abi package. Rename /abi to /vote):rskj-core/src/main/java/co/rsk/peg/vote/ABICallVoteResult.java

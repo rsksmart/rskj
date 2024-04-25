@@ -10,6 +10,8 @@ import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 public class FeePerKbSupport {
 
     private final FeePerKbStorageProvider provider;
@@ -76,12 +78,13 @@ public class FeePerKbSupport {
             return FeePerKbResponseCode.UNSUCCESSFUL.getCode();
         }
 
-        ABICallSpec winner = feePerKbElection.getWinner();
-        if (winner == null) {
+        Optional<ABICallSpec> winnerOptional = feePerKbElection.getWinner();
+        if (!winnerOptional.isPresent()) {
             logger.info("[voteFeePerKbChange] Successful fee per kb vote for {}", feePerKb);
             return FeePerKbResponseCode.SUCCESSFUL.getCode();
         }
 
+        ABICallSpec winner = winnerOptional.get();
         Coin winnerFee;
         try {
             winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);

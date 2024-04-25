@@ -1,5 +1,3 @@
-<<<<<<<< HEAD:rskj-core/src/main/java/co/rsk/peg/abi/ABICallElection.java
-========
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
@@ -23,6 +21,10 @@ package co.rsk.peg.vote;
 import co.rsk.core.RskAddress;
 
 import java.util.*;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Representation of a given state of the election
@@ -32,22 +34,28 @@ import java.util.*;
  * @author Ariel Mendelzon
  */
 public class ABICallElection {
-    private AddressBasedAuthorizer authorizer;
+    private static final Logger logger = LoggerFactory.getLogger(ABICallElection.class);
+    private final AddressBasedAuthorizer authorizer;
     private Map<ABICallSpec, List<RskAddress>> votes;
-
-    public ABICallElection(AddressBasedAuthorizer authorizer, Map<ABICallSpec, List<RskAddress>> votes) {
-        this.authorizer = authorizer;
-        this.votes = votes;
-        validate();
-    }
 
     public ABICallElection(AddressBasedAuthorizer authorizer) {
         this.authorizer = authorizer;
         this.votes = new HashMap<>();
     }
 
+    public ABICallElection(AddressBasedAuthorizer authorizer, Map<ABICallSpec, List<RskAddress>> votes) {
+        this.authorizer = authorizer;
+        this.votes = clone(votes);
+        validate();
+    }
+
+    private Map<ABICallSpec, List<RskAddress>> clone(Map<ABICallSpec, List<RskAddress>> originalMap) {
+        return originalMap.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> new ArrayList<>(e.getValue())));
+    }
+
     public Map<ABICallSpec, List<RskAddress>> getVotes() {
-        return votes;
+        return clone(votes);
     }
 
     public void clear() {
@@ -61,47 +69,57 @@ public class ABICallElection {
      * @return whether the voting succeeded
      */
     public boolean vote(ABICallSpec callSpec, RskAddress voter) {
+        logger.info("[vote] Trying to register voter's {} vote ", voter);
+
         if (!authorizer.isAuthorized(voter)) {
+            logger.info("[vote] Voter is not authorized.");
             return false;
         }
 
-        if (!votes.containsKey(callSpec)) {
-            votes.put(callSpec, new ArrayList<>());
-        }
-
+        votes.computeIfAbsent(callSpec, k -> new ArrayList<>());
         List<RskAddress> callVoters = votes.get(callSpec);
 
         if (callVoters.contains(voter)) {
+            logger.info("[vote] Vote has already been registered.");
             return false;
         }
 
         callVoters.add(voter);
+        logger.info("[vote] Vote registered successfully.");
         return true;
     }
 
     /**
-     * Returns the election winner abi call spec, or null if there's none
+     * Returns the election winner abi call spec, or empty if there's none
      * The vote authorizer determines the number of participants,
      * whereas this class determines the number of votes that
      * conforms a win
-     * @return the winner abi call spec
+     * @return the (optional) winner abi call spec
      */
-    public ABICallSpec getWinner() {
+    public Optional<ABICallSpec> getWinner() {
         for (Map.Entry<ABICallSpec, List<RskAddress>> specVotes : votes.entrySet()) {
-            if (specVotes.getValue().size() >= authorizer.getRequiredAuthorizedKeys()) {
-                return specVotes.getKey();
+            int votesSize = specVotes.getValue().size();
+            if (areEnoughVotes(votesSize)) {
+                ABICallSpec winner = specVotes.getKey();
+                logger.info("[getWinner] Winner is {} ", winner);
+                return Optional.of(winner);
             }
         }
 
-        return null;
+        return Optional.empty();
+    }
+
+    private boolean areEnoughVotes(int votesSize) {
+        return votesSize >= authorizer.getRequiredAuthorizedKeys();
     }
 
     /**
      * Removes the entry votes for the current winner of the election
      */
     public void clearWinners() {
-        ABICallSpec winner = getWinner();
-        if (winner != null) {
+        Optional<ABICallSpec> winnerOptional = getWinner();
+        if (winnerOptional.isPresent()) {
+            ABICallSpec winner = winnerOptional.get();
             votes.remove(winner);
         }
     }
@@ -111,10 +129,9 @@ public class ABICallElection {
         for (Map.Entry<ABICallSpec, List<RskAddress>> specVotes : votes.entrySet()) {
             for (RskAddress vote : specVotes.getValue()) {
                 if (!authorizer.isAuthorized(vote)) {
-                    throw new RuntimeException("Unauthorized voter");
+                    throw new UnauthorizedVoterException("Unauthorized voter");
                 }
             }
         }
     }
 }
->>>>>>>> 794a52cfb (Add AddressBasedAuthorizer class to abi package. Rename /abi to /vote):rskj-core/src/main/java/co/rsk/peg/vote/ABICallElection.java

@@ -1,5 +1,3 @@
-<<<<<<<< HEAD:rskj-core/src/main/java/co/rsk/peg/abi/ABICallSpec.java
-========
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
@@ -36,18 +34,11 @@ import java.util.Objects;
  * @author Ariel Mendelzon
  */
 public final class ABICallSpec {
-    public static final Comparator<ABICallSpec> byBytesComparator = new Comparator<ABICallSpec>() {
-        @Override
-        public int compare(ABICallSpec specA, ABICallSpec specB) {
-            return SignedBytes.lexicographicalComparator().compare(
-                    specA.getEncoded(),
-                    specB.getEncoded()
-            );
-        }
-    };
+    public static final Comparator<ABICallSpec> byBytesComparator = (specA, specB)
+        -> SignedBytes.lexicographicalComparator().compare(specA.getEncoded(), specB.getEncoded());
 
-    private String function;
-    private byte[][] arguments;
+    private final String function;
+    private final byte[][] arguments;
 
     public ABICallSpec(String function, byte[][] arguments) {
         this.function = function;
@@ -97,12 +88,17 @@ public final class ABICallSpec {
 
         ABICallSpec otherSpec = ((ABICallSpec) other);
         return otherSpec.getFunction().equals(getFunction()) &&
-                areEqual(arguments, otherSpec.arguments);
+            areEqual(arguments, otherSpec.arguments);
     }
 
     @Override
     public int hashCode() {
-        int[] argumentsHashes = Arrays.stream(arguments).map(argument -> Arrays.hashCode(argument)).mapToInt(Integer::intValue).toArray();
+        int[] argumentsHashes = Arrays
+            .stream(arguments)
+            .map(Arrays::hashCode)
+            .mapToInt(Integer::intValue)
+            .toArray();
+
         return Objects.hash(function, Arrays.hashCode(argumentsHashes));
     }
 
@@ -128,4 +124,3 @@ public final class ABICallSpec {
         return result;
     }
 }
->>>>>>>> 794a52cfb (Add AddressBasedAuthorizer class to abi package. Rename /abi to /vote):rskj-core/src/main/java/co/rsk/peg/vote/ABICallSpec.java
