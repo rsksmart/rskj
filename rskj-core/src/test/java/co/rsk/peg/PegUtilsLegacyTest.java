@@ -51,10 +51,10 @@ class PegUtilsLegacyTest {
     void testIsValidPegInTx() {
         // Peg-in is for the genesis federation ATM
         Context btcContext = new Context(networkParameters);
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
-        Wallet wallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
-        Address federationAddress = federation.getAddress();
-        wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Wallet wallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
+        Address federationAddress = genesisFederation.getAddress();
+        wallet.addWatchedAddress(federationAddress, genesisFederation.getCreationTime().toEpochMilli());
         when(activations.isActive(any(ConsensusRule.class))).thenReturn(false);
 
         // Tx sending less than the minimum allowed, not a peg-in tx
@@ -62,7 +62,7 @@ class PegUtilsLegacyTest {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(minimumLockValue.subtract(Coin.CENT), federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(isValidPegInTx(tx, federation, wallet, bridgeConstantsRegtest, activations));
+        assertFalse(isValidPegInTx(tx, genesisFederation, wallet, bridgeConstantsRegtest, activations));
 
         // Tx sending 1 btc to the federation, but also spending from the federation address,
         // the typical peg-out tx, not a peg-in tx.
@@ -75,38 +75,38 @@ class PegUtilsLegacyTest {
             new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
         );
         tx2.addInput(txIn);
-        signWithNecessaryKeys(federation, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx2);
-        assertFalse(isValidPegInTx(tx2, federation, wallet, bridgeConstantsRegtest, activations));
+        signWithNecessaryKeys(genesisFederation, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx2);
+        assertFalse(isValidPegInTx(tx2, genesisFederation, wallet, bridgeConstantsRegtest, activations));
 
         // Tx sending 1 btc to the federation, is a peg-in tx
         BtcTransaction tx3 = new BtcTransaction(networkParameters);
         tx3.addOutput(Coin.COIN, federationAddress);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(isValidPegInTx(tx3, federation, wallet, bridgeConstantsRegtest, activations));
+        assertTrue(isValidPegInTx(tx3, genesisFederation, wallet, bridgeConstantsRegtest, activations));
 
         // Tx sending 50 btc to the federation, is a peg-in tx
         BtcTransaction tx4 = new BtcTransaction(networkParameters);
         tx4.addOutput(Coin.FIFTY_COINS, federationAddress);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(isValidPegInTx(tx4, federation, wallet, bridgeConstantsRegtest, activations));
+        assertTrue(isValidPegInTx(tx4, genesisFederation, wallet, bridgeConstantsRegtest, activations));
     }
 
     @Test
     void testIsValidPegInTx_less_than_minimum_not_pegin_after_iris() {
         // Tx sending less than the minimum allowed, not a peg-in tx
         Context btcContext = new Context(networkParameters);
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
 
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         Coin minimumPegInValueAfterIris = bridgeConstantsRegtest.getMinimumPeginTxValue(activations);
 
         // Tx sending less than the minimum allowed, not a peg-in tx
         BtcTransaction tx = new BtcTransaction(networkParameters);
-        tx.addOutput(minimumPegInValueAfterIris.subtract(Coin.CENT), federation.getAddress());
+        tx.addOutput(minimumPegInValueAfterIris.subtract(Coin.CENT), genesisFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
-        assertFalse(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsRegtest, activations));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
+        assertFalse(isValidPegInTx(tx, genesisFederation, federationWallet, bridgeConstantsRegtest, activations));
     }
 
     @Test
@@ -114,12 +114,12 @@ class PegUtilsLegacyTest {
         // Tx sending 1 btc to the federation, but also spending from the federation address,
         // the typical peg-out tx, not a peg-in tx.
         Context btcContext = new Context(networkParameters);
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
 
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
-        tx.addOutput(Coin.COIN, federation.getAddress());
+        tx.addOutput(Coin.COIN, genesisFederation.getAddress());
         TransactionInput txIn = new TransactionInput(
             networkParameters,
             tx,
@@ -127,33 +127,33 @@ class PegUtilsLegacyTest {
             new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
         );
         tx.addInput(txIn);
-        signWithNecessaryKeys(federation, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
+        signWithNecessaryKeys(genesisFederation, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
-        assertFalse(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsRegtest, activations));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
+        assertFalse(isValidPegInTx(tx, genesisFederation, federationWallet, bridgeConstantsRegtest, activations));
     }
 
     @Test
     void testIsValidPegInTx_sending_50_btc_after_iris() {
         // Tx sending 50 btc to the federation, is a peg-in tx
         Context btcContext = new Context(networkParameters);
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
 
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
-        tx.addOutput(Coin.FIFTY_COINS, federation.getAddress());
+        tx.addOutput(Coin.FIFTY_COINS, genesisFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
-        assertTrue(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsRegtest, activations));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
+        assertTrue(isValidPegInTx(tx, genesisFederation, federationWallet, bridgeConstantsRegtest, activations));
     }
 
     @Test
     void testIsValidPegInTx_value_between_old_and_new_before_iris() {
         // Tx sending btc between old and new value, it is not a peg-in before iris
         Context btcContext = new Context(networkParameters);
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
 
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
 
@@ -166,18 +166,18 @@ class PegUtilsLegacyTest {
         assertTrue(valueLock.isLessThan(minimumPegInValueBeforeIris));
         assertTrue(valueLock.isGreaterThan(minimumPegInValueAfterIris));
 
-        tx.addOutput(valueLock, federation.getAddress());
+        tx.addOutput(valueLock, genesisFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
-        assertFalse(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsRegtest, activations));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
+        assertFalse(isValidPegInTx(tx, genesisFederation, federationWallet, bridgeConstantsRegtest, activations));
     }
 
     @Test
     void testIsValidPegInTx_value_between_old_and_new_after_iris() {
         // Tx sending btc between old and new value, it is a peg-in after iris
         Context btcContext = new Context(networkParameters);
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
@@ -189,11 +189,11 @@ class PegUtilsLegacyTest {
         assertTrue(valueLock.isGreaterThan(minimumPegInValueAfterIris));
         assertTrue(valueLock.isLessThan(minimumPegInValueBeforeIris));
 
-        tx.addOutput(valueLock, federation.getAddress());
+        tx.addOutput(valueLock, genesisFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
-        assertTrue(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsRegtest, activations));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(genesisFederation));
+        assertTrue(isValidPegInTx(tx, genesisFederation, federationWallet, bridgeConstantsRegtest, activations));
     }
 
     @Test
@@ -1095,8 +1095,8 @@ class PegUtilsLegacyTest {
 
     @Test
     void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
-        Address activeFederationAddress = federation.getAddress();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Address activeFederationAddress = genesisFederation.getAddress();
         testIsValidPegInTx_fromP2shErpScriptSender(
             false,
             false,
@@ -1119,8 +1119,8 @@ class PegUtilsLegacyTest {
 
     @Test
     void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
-        Address activeFederationAddress = federation.getAddress();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Address activeFederationAddress = genesisFederation.getAddress();
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
             false,
@@ -1142,8 +1142,8 @@ class PegUtilsLegacyTest {
 
     @Test
     void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
-        Address activeFederationAddress = federation.getAddress();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Address activeFederationAddress = genesisFederation.getAddress();
         testIsValidPegInTx_fromP2shErpScriptSender(
             false,
             true,
@@ -1166,8 +1166,8 @@ class PegUtilsLegacyTest {
 
     @Test
     void testIsValidPegInTx_flyoverpP2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
-        Address activeFederationAddress = federation.getAddress();
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Address activeFederationAddress = activeFederation.getAddress();
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
             true,
@@ -1793,7 +1793,7 @@ class PegUtilsLegacyTest {
 
     @Test
     void testIsPegOutTx() {
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         List<BtcECKey> activeFederationKeys = Stream.of(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
@@ -1819,14 +1819,14 @@ class PegUtilsLegacyTest {
             new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
         );
         pegOutTx1.addInput(pegOutInput1);
-        signWithNecessaryKeys(federation, federationPrivateKeys, pegOutInput1, pegOutTx1);
+        signWithNecessaryKeys(genesisFederation, federationPrivateKeys, pegOutInput1, pegOutTx1);
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
-        assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(federation, federation2), activations));
+        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(genesisFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(genesisFederation, federation2), activations));
         assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(federation2), activations));
 
-        assertTrue(isPegOutTx(pegOutTx1, activations, federation.getP2SHScript()));
-        assertTrue(isPegOutTx(pegOutTx1, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, activations, genesisFederation.getP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, activations, genesisFederation.getP2SHScript(), federation2.getP2SHScript()));
         assertFalse(isPegOutTx(pegOutTx1, activations, federation2.getP2SHScript()));
     }
 
@@ -2022,7 +2022,7 @@ class PegUtilsLegacyTest {
 
     @Test
     void testIsPegOutTx_noRedeemScript() {
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
@@ -2035,12 +2035,12 @@ class PegUtilsLegacyTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(genesisFederation), activations));
     }
 
     @Test
     void testIsPegOutTx_invalidRedeemScript() {
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         Script invalidRedeemScript = ScriptBuilder.createRedeemScript(2, Arrays.asList(new BtcECKey(), new BtcECKey()));
 
@@ -2054,7 +2054,7 @@ class PegUtilsLegacyTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(genesisFederation), activations));
     }
 
     @Test

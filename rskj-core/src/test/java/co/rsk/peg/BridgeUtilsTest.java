@@ -1476,15 +1476,15 @@ class BridgeUtilsTest {
     private BtcTransaction createPegOutTx(
         List<byte[]> signatures,
         int inputsToAdd,
-        Federation federation,
+        Federation genesisFederation,
         boolean isFlyover
     ) {
         // Setup
         Address address;
         byte[] program;
 
-        if (federation == null) {
-            federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        if (genesisFederation == null) {
+            genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         }
 
         if (isFlyover) {
@@ -1492,16 +1492,16 @@ class BridgeUtilsTest {
             Sha256Hash derivationArgumentsHash = Sha256Hash.of(new byte[]{1});
             Script flyoverRedeemScript;
 
-            if (federation instanceof ErpFederation) {
+            if (genesisFederation instanceof ErpFederation) {
                 flyoverRedeemScript =
                     FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-                        federation.getRedeemScript(),
+                        genesisFederation.getRedeemScript(),
                         derivationArgumentsHash
                     );
             } else {
                 flyoverRedeemScript =
                     FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-                        federation.getRedeemScript(),
+                        genesisFederation.getRedeemScript(),
                         derivationArgumentsHash
                     );
             }
@@ -1512,8 +1512,8 @@ class BridgeUtilsTest {
             program = flyoverRedeemScript.getProgram();
 
         } else {
-            address = federation.getAddress();
-            program = federation.getRedeemScript().getProgram();
+            address = genesisFederation.getAddress();
+            program = genesisFederation.getRedeemScript().getProgram();
         }
 
         // Build prev btc tx
@@ -1532,7 +1532,7 @@ class BridgeUtilsTest {
         Script scriptSig;
 
         if (signatures.isEmpty()) {
-            scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
+            scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(genesisFederation);
         } else {
             scriptSig = ScriptBuilder.createMultiSigInputScriptBytes(signatures, program);
         }
@@ -1554,7 +1554,7 @@ class BridgeUtilsTest {
             networkParameters,
             btcTx,
             Coin.COIN,
-            federation.getAddress()
+            genesisFederation.getAddress()
         );
         btcTx.addOutput(changeOutput);
 

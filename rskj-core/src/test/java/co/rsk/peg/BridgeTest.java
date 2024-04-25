@@ -764,10 +764,10 @@ class BridgeTest {
     void receiveHeaders_after_RSKIP200_notFederation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
 
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
-        when(bridgeSupportMock.getActiveFederation()).thenReturn(federation);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(genesisFederation);
 
         Transaction txMock = mock(Transaction.class);
         RskAddress txSender = new RskAddress(new ECKey().getAddress());

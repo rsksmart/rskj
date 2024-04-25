@@ -62,12 +62,12 @@ class ConstantsTest {
 
     @Test
     void devnetWithFederationTest() {
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
 
-        assertThat(federation.hasBtcPublicKey(TEST_FED_KEYS.get(0)), is(true));
-        assertThat(federation.hasBtcPublicKey(TEST_FED_KEYS.get(1)), is(true));
-        assertThat(federation.hasBtcPublicKey(TEST_FED_KEYS.get(2)), is(true));
-        assertThat(federation.hasBtcPublicKey(TEST_FED_KEYS.get(3)), is(false));
+        assertThat(genesisFederation.hasBtcPublicKey(TEST_FED_KEYS.get(0)), is(true));
+        assertThat(genesisFederation.hasBtcPublicKey(TEST_FED_KEYS.get(1)), is(true));
+        assertThat(genesisFederation.hasBtcPublicKey(TEST_FED_KEYS.get(2)), is(true));
+        assertThat(genesisFederation.hasBtcPublicKey(TEST_FED_KEYS.get(3)), is(false));
     }
 
     @Test

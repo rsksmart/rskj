@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 
 @Disabled
 class GetFeePerKbTest extends BridgePerformanceTestCase {
-    private Federation federation;
+    private Federation genesisFederation;
 
     @Test
     void getFeePerKb() throws VMException {
@@ -60,7 +60,7 @@ class GetFeePerKbTest extends BridgePerformanceTestCase {
             if (!genesis) {
                 provider.setFeePerKb(Helper.randomCoin(Coin.MILLICOIN, 1, 100));
             } else {
-                federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+                genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
             }
         };
     }

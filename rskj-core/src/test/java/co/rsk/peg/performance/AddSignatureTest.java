@@ -87,8 +87,8 @@ class AddSignatureTest extends BridgePerformanceTestCase {
     }
 
     private void addSignature_fullySigned(int times, ExecutionStats stats) throws VMException {
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
-        int numberOfSignaturesRequired = federation.getNumberOfSignaturesRequired();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        int numberOfSignaturesRequired = genesisFederation.getNumberOfSignaturesRequired();
         executeAndAverage(
                 "addSignature-fullySigned",
                 times,
@@ -115,7 +115,7 @@ class AddSignatureTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             releaseTx = new BtcTransaction(networkParameters);
 
-            Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
 
             // Receiver and amounts
             BtcECKey to = new BtcECKey();
@@ -129,10 +129,10 @@ class AddSignatureTest extends BridgePerformanceTestCase {
             for (int i = 0; i < numInputs; i++) {
                 Coin inputAmount = releaseAmount.divide(numInputs);
                 BtcTransaction inputTx = new BtcTransaction(networkParameters);
-                inputTx.addOutput(inputAmount, federation.getAddress());
+                inputTx.addOutput(inputAmount, genesisFederation.getAddress());
                 releaseTx
                         .addInput(inputTx.getOutput(0))
-                        .setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+                        .setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(genesisFederation));
             }
 
             // Partial signing according to numSignatures asked for

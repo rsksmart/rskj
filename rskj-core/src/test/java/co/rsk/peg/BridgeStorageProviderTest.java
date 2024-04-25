@@ -280,7 +280,7 @@ class BridgeStorageProviderTest {
         Repository track = repository.startTracking();
 
         // Federation is the genesis federation ATM
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants);
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             track,
@@ -288,8 +288,8 @@ class BridgeStorageProviderTest {
             bridgeTestnetInstance,
             activationsBeforeFork
         );
-        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
-        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
+        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(genesisFederation.getAddress())));
+        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(genesisFederation.getAddress())));
         provider0.save();
         track.commit();
 
