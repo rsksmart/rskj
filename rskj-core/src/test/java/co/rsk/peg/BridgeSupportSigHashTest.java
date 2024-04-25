@@ -6,7 +6,6 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
@@ -34,7 +33,6 @@ import static org.mockito.Mockito.*;
 class BridgeSupportSigHashTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
 
     private BridgeStorageProvider provider;
@@ -112,7 +110,7 @@ class BridgeSupportSigHashTest {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
         long newFedCreationBlockNumber = 5L;
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
@@ -178,7 +176,7 @@ class BridgeSupportSigHashTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(3)));
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
         long newFedCreationBlockNumber = 5L;
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),

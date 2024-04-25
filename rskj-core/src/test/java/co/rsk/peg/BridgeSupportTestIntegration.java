@@ -119,7 +119,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
-import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -3912,9 +3911,9 @@ public class BridgeSupportTestIntegration {
         BridgeEventLogger eventLogger) throws IOException {
 
         BridgeConstants constantsMock = mock(BridgeConstants.class);
-        try(MockedStatic<FederationTestUtils> federationTestUtils = Mockito.mockStatic(FederationTestUtils.class)){
-            federationTestUtils.when(() -> FederationTestUtils.getGenesisFederation(constantsMock))
-                    .thenReturn(mockedGenesisFederation);
+        if (mockedGenesisFederation != null) {
+            when(constantsMock.getGenesisFederationCreationTime()).thenReturn(mockedGenesisFederation.getCreationTime());
+            when(constantsMock.getGenesisFederationPublicKeys()).thenReturn(mockedGenesisFederation.getBtcPublicKeys());
         }
 
         when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
