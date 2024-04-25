@@ -74,7 +74,7 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
             }
 
             int numTxs = Helper.randomInRange(minNumTxs, maxNumTxs);
-            Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
             for (int i = 0; i < numTxs; i++) {
                 BtcTransaction releaseTx = new BtcTransaction(networkParameters);
 
@@ -89,10 +89,10 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                 for (int j = 0; j < numInputs; j++) {
                     Coin inputAmount = releaseAmount.divide(numInputs);
                     BtcTransaction inputTx = new BtcTransaction(networkParameters);
-                    inputTx.addOutput(inputAmount, federation.getAddress());
+                    inputTx.addOutput(inputAmount, genesisFederation.getAddress());
                     releaseTx
                             .addInput(inputTx.getOutput(0))
-                            .setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+                            .setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(genesisFederation));
                 }
 
 

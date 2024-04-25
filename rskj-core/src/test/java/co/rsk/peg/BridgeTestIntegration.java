@@ -1017,7 +1017,7 @@ public class BridgeTestIntegration {
     @Test
     void getFederationAddress() throws Exception {
         // Case with genesis federation
-        Federation federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -1033,7 +1033,7 @@ public class BridgeTestIntegration {
 
         byte[] data = Bridge.GET_FEDERATION_ADDRESS.encode();
 
-        Assertions.assertArrayEquals(Bridge.GET_FEDERATION_ADDRESS.encodeOutputs(federation.getAddress().toString()), bridge.execute(data));
+        Assertions.assertArrayEquals(Bridge.GET_FEDERATION_ADDRESS.encodeOutputs(genesisFederation.getAddress().toString()), bridge.execute(data));
     }
 
     @Test

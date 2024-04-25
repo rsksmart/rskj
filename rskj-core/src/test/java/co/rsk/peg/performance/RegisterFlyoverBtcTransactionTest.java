@@ -151,8 +151,8 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
 
                 int blocksToGenerate = Helper.randomInRange(minBtcBlocks, maxBtcBlocks);
                 BtcBlock lastBlock = Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
-                Federation federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
-                Script federationRedeemScript= federation.getRedeemScript();
+                Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+                Script federationRedeemScript= genesisFederation.getRedeemScript();
 
 
             Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
