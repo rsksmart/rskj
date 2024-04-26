@@ -43,8 +43,6 @@ import org.ethereum.crypto.ECKey;
 
 public final class FederationTestUtils {
 
-    public static final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
-
     private FederationTestUtils() {
     }
 
@@ -61,6 +59,7 @@ public final class FederationTestUtils {
     }
 
     public static Federation getGenesisFederation(BridgeConstants bridgeConstants) {
+        final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
         final List<BtcECKey> genesisFederationPublicKeys = bridgeConstants.getGenesisFederationPublicKeys();
         final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
         final Instant genesisFederationCreationTime = bridgeConstants.getGenesisFederationCreationTime();

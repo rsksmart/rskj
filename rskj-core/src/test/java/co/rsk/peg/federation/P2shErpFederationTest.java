@@ -338,8 +338,7 @@ class P2shErpFederationTest {
             // should add this case because adding erp to mainnet genesis federation
             // throws a validation error, so in that case we use the one set up before each test.
             // if using testnet constants, we can add them with no errors
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
-            defaultKeys = genesisFederation.getBtcPublicKeys();
+            defaultKeys = bridgeConstants.getGenesisFederationPublicKeys();
         }
 
         emergencyKeys = bridgeConstants.getErpFedPubKeysList();
