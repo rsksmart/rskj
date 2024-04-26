@@ -6,7 +6,6 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -32,8 +31,6 @@ import static org.mockito.Mockito.when;
 
 class PegUtilsTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
-
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
     private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
@@ -105,7 +102,7 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_below_minimum_active_fed() {
         // Arrange
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
@@ -197,7 +194,7 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_output_to_retiring_fed_and_other_addresses() {
         // Arrange
-        Federation retiringFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation retiringFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
@@ -516,7 +513,7 @@ class PegUtilsTest {
     void test_getTransactionType_migration_from_retired_fed() {
         // Arrange
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, genesisFederation.getP2SHScript());
@@ -599,7 +596,7 @@ class PegUtilsTest {
         NetworkParameters btcTestNetParams = bridgeTestNetConstants.getBtcParams();
         Context context = new Context(bridgeTestNetConstants.getBtcParams());
 
-        Federation retiringFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation retiringFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
