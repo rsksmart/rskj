@@ -6,6 +6,8 @@ import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 
+import java.util.Optional;
+
 import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB_ELECTION;
 import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB;
 
@@ -32,13 +34,13 @@ public class FeePerKbStorageProviderImpl implements FeePerKbStorageProvider {
     }
 
     @Override
-    public Coin getFeePerKb() {
+    public Optional<Coin> getFeePerKb() {
         if (feePerKb != null) {
-            return feePerKb;
+            return Optional.of(feePerKb);
         }
 
         feePerKb = bridgeStorageAccessor.safeGetFromRepository(FEE_PER_KB.getKey(), BridgeSerializationUtils::deserializeCoin);
-        return feePerKb;
+        return Optional.of(feePerKb);
     }
 
     private void saveFeePerKbElection() {
