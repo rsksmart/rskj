@@ -218,9 +218,9 @@ public class BridgeTestIntegration {
 
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmation() throws IOException, VMException {
-        BtcTransaction tx1 = createTransaction(2, bridgeRegTestConstants.getMinimumPegoutTxValueInSatoshis());
-        BtcTransaction tx2 = createTransaction(3, bridgeRegTestConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN));
-        BtcTransaction tx3 = createTransaction(4, bridgeRegTestConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN).add(Coin.MILLICOIN));
+        BtcTransaction tx1 = createTransaction(2, bridgeRegTestConstants.getMinimumPegoutTxValue());
+        BtcTransaction tx2 = createTransaction(3, bridgeRegTestConstants.getMinimumPegoutTxValue().add(Coin.MILLICOIN));
+        BtcTransaction tx3 = createTransaction(4, bridgeRegTestConstants.getMinimumPegoutTxValue().add(Coin.MILLICOIN).add(Coin.MILLICOIN));
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -274,9 +274,9 @@ public class BridgeTestIntegration {
 
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException, VMException {
-        BtcTransaction tx1 = createTransaction(2, bridgeRegTestConstants.getMinimumPegoutTxValueInSatoshis());
-        BtcTransaction tx2 = createTransaction(3, bridgeRegTestConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN));
-        BtcTransaction tx3 = createTransaction(4, bridgeRegTestConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.MILLICOIN).add(Coin.MILLICOIN));
+        BtcTransaction tx1 = createTransaction(2, bridgeRegTestConstants.getMinimumPegoutTxValue());
+        BtcTransaction tx2 = createTransaction(3, bridgeRegTestConstants.getMinimumPegoutTxValue().add(Coin.MILLICOIN));
+        BtcTransaction tx3 = createTransaction(4, bridgeRegTestConstants.getMinimumPegoutTxValue().add(Coin.MILLICOIN).add(Coin.MILLICOIN));
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();

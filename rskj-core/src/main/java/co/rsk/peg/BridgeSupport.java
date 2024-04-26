@@ -915,7 +915,7 @@ public class BridgeSupport {
                 ); // add the gap
 
             // The pegout value should be greater or equals than the max of these two values
-            Coin minValue = Coin.valueOf(Math.max(bridgeConstants.getMinimumPegoutTxValueInSatoshis().value, requireFundsForFee.value));
+            Coin minValue = Coin.valueOf(Math.max(bridgeConstants.getMinimumPegoutTxValue().value, requireFundsForFee.value));
 
             // Since Iris the peg-out the rule is that the minimum is inclusive
             if (value.isLessThan(minValue)) {
@@ -927,7 +927,7 @@ public class BridgeSupport {
             }
         } else {
             // For legacy peg-outs the rule stated that the minimum was exclusive
-            if (!value.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis())) {
+            if (!value.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValue())) {
                 optionalRejectedPegoutReason = Optional.of(RejectedPegoutReason.LOW_AMOUNT);
             }
         }

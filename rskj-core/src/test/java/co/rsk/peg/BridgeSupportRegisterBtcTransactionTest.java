@@ -1624,7 +1624,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
         }
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
         for (int i = 0; i < 10; i++) {
             btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
@@ -1705,7 +1705,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
         );
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
         for (int i = 0; i < 10; i++) {
             btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
@@ -1788,7 +1788,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
         }
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
 
         FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
@@ -1946,7 +1946,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
         }
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
         for (int i = 0; i < 10; i++) {
             btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
@@ -2013,7 +2013,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
         );
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
         for (int i = 0; i < 10; i++) {
             btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
@@ -2083,7 +2083,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
         }
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         btcTransaction.addOutput(minimumPegoutTxValue, activeFederation.getAddress());
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
