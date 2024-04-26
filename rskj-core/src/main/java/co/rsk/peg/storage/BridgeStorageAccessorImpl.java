@@ -1,13 +1,16 @@
 package co.rsk.peg.storage;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 
 import java.io.IOException;
 
 public class BridgeStorageAccessorImpl implements StorageAccessor {
 
     private final Repository repository;
+    RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
     public BridgeStorageAccessorImpl(Repository repository) {
         this.repository = repository;
