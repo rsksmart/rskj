@@ -67,8 +67,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         minimumPeginTxValue = Coin.valueOf(500_000);
-        legacyMinimumPegoutTxValueInSatoshis = Coin.valueOf(500_000);
-        minimumPegoutTxValueInSatoshis = Coin.valueOf(250_000);
+        legacyMinimumPegoutTxValue = Coin.valueOf(500_000);
+        minimumPegoutTxValue = Coin.valueOf(250_000);
 
         // Passphrases are kept private
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{

@@ -430,10 +430,10 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         // Get a value between old and new minimum pegout values
-        Coin middle = bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis().subtract(bridgeConstants.getMinimumPegoutTxValueInSatoshis()).div(2);
-        Coin value = bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(middle);
-        Assertions.assertTrue(value.isLessThan(bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis()));
-        Assertions.assertTrue(value.isGreaterThan(bridgeConstants.getMinimumPegoutTxValueInSatoshis()));
+        Coin middle = bridgeConstants.getLegacyMinimumPegoutTxValue().subtract(bridgeConstants.getMinimumPegoutTxValue()).div(2);
+        Coin value = bridgeConstants.getMinimumPegoutTxValue().add(middle);
+        Assertions.assertTrue(value.isLessThan(bridgeConstants.getLegacyMinimumPegoutTxValue()));
+        Assertions.assertTrue(value.isGreaterThan(bridgeConstants.getMinimumPegoutTxValue()));
         bridgeSupport.releaseBtc(buildReleaseRskTx(value));
 
         Transaction rskTx = buildUpdateTx();
@@ -465,10 +465,10 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         // Get a value between old and new minimum pegout values
-        Coin middle = bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis().subtract(bridgeConstants.getMinimumPegoutTxValueInSatoshis()).div(2);
-        Coin value = bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(middle);
-        Assertions.assertTrue(value.isLessThan(bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis()));
-        Assertions.assertTrue(value.isGreaterThan(bridgeConstants.getMinimumPegoutTxValueInSatoshis()));
+        Coin middle = bridgeConstants.getLegacyMinimumPegoutTxValue().subtract(bridgeConstants.getMinimumPegoutTxValue()).div(2);
+        Coin value = bridgeConstants.getMinimumPegoutTxValue().add(middle);
+        Assertions.assertTrue(value.isLessThan(bridgeConstants.getLegacyMinimumPegoutTxValue()));
+        Assertions.assertTrue(value.isGreaterThan(bridgeConstants.getMinimumPegoutTxValue()));
         bridgeSupport.releaseBtc(buildReleaseRskTx(value));
 
         Transaction rskTx = buildUpdateTx();
@@ -498,10 +498,10 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         // Get a value between old and new minimum pegout values
-        Coin middle = bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis().subtract(bridgeConstants.getMinimumPegoutTxValueInSatoshis()).div(2);
-        Coin value = bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(middle);
-        Assertions.assertTrue(value.isLessThan(bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis()));
-        Assertions.assertTrue(value.isGreaterThan(bridgeConstants.getMinimumPegoutTxValueInSatoshis()));
+        Coin middle = bridgeConstants.getLegacyMinimumPegoutTxValue().subtract(bridgeConstants.getMinimumPegoutTxValue()).div(2);
+        Coin value = bridgeConstants.getMinimumPegoutTxValue().add(middle);
+        Assertions.assertTrue(value.isLessThan(bridgeConstants.getLegacyMinimumPegoutTxValue()));
+        Assertions.assertTrue(value.isGreaterThan(bridgeConstants.getMinimumPegoutTxValue()));
         bridgeSupport.releaseBtc(buildReleaseRskTx(value));
 
         Transaction rskTx = buildUpdateTx();
@@ -525,7 +525,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         // Get a value exactly to legacy minimum
-        Coin value = bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis();
+        Coin value = bridgeConstants.getLegacyMinimumPegoutTxValue();
         bridgeSupport.releaseBtc(buildReleaseRskTx(value));
 
         Transaction rskTx = buildUpdateTx();
@@ -549,7 +549,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         // Get a value exactly to current minimum
-        Coin value = bridgeConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin value = bridgeConstants.getMinimumPegoutTxValue();
         bridgeSupport.releaseBtc(buildReleaseRskTx(value));
 
         Transaction rskTx = buildUpdateTx();
@@ -580,7 +580,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         // Get a value exactly to current minimum
-        Coin value = bridgeConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin value = bridgeConstants.getMinimumPegoutTxValue();
         bridgeSupport.releaseBtc(buildReleaseRskTx(value));
 
         Transaction rskTx = buildUpdateTx();
@@ -602,7 +602,7 @@ class BridgeSupportReleaseBtcTest {
 
     @Test
     void release_verify_fee_below_fee_is_rejected() throws IOException {
-        Coin value = bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.SATOSHI);
+        Coin value = bridgeConstants.getMinimumPegoutTxValue().add(Coin.SATOSHI);
 
         testPegoutMinimumWithFeeVerification(Coin.COIN, value, false);
     }
@@ -633,7 +633,7 @@ class BridgeSupportReleaseBtcTest {
     void release_verify_fee_above_fee_but_below_minimum_is_rejected() throws IOException {
         testPegoutMinimumWithFeeVerification(
             Coin.MILLICOIN,
-            bridgeConstants.getMinimumPegoutTxValueInSatoshis().minus(Coin.SATOSHI),
+            bridgeConstants.getMinimumPegoutTxValue().minus(Coin.SATOSHI),
             false
         );
     }
@@ -1147,7 +1147,7 @@ class BridgeSupportReleaseBtcTest {
         // if shouldPegout true then value should be greater or equals than both required fee plus gap and min pegout value
         // if shouldPegout false then value should be smaller than any of those minimums
         Assertions.assertEquals(!shouldPegout, value.isLessThan(minValueWithGapAboveFee) ||
-            value.isLessThan(bridgeConstants.getMinimumPegoutTxValueInSatoshis()));
+            value.isLessThan(bridgeConstants.getMinimumPegoutTxValue()));
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(value));
 
