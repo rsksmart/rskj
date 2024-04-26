@@ -4,11 +4,13 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 
+import java.util.Optional;
+
 public interface FeePerKbStorageProvider {
 
     void setFeePerKb(Coin feePerKb);
 
-    Coin getFeePerKb();
+    Optional<Coin> getFeePerKb();
 
     ABICallElection getFeePerKbElection(AddressBasedAuthorizer authorizer);
 
