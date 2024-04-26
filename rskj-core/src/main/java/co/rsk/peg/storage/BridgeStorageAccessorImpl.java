@@ -5,7 +5,7 @@ import org.ethereum.vm.DataWord;
 
 import java.io.IOException;
 
-public class BridgeStorageAccessorImpl implements BridgeStorageAccessor {
+public class BridgeStorageAccessorImpl implements StorageAccessor {
 
     private final Repository repository;
 
@@ -14,7 +14,7 @@ public class BridgeStorageAccessorImpl implements BridgeStorageAccessor {
     }
 
     @Override
-    public <T> T safeGetFromRepository(DataWord keyAddress, BridgeStorageAccessor.RepositoryDeserializer<T> deserializer) {
+    public <T> T safeGetFromRepository(DataWord keyAddress, StorageAccessor.RepositoryDeserializer<T> deserializer) {
         try {
             return getFromRepository(keyAddress, deserializer);
         } catch (IOException ioe) {
@@ -22,13 +22,13 @@ public class BridgeStorageAccessorImpl implements BridgeStorageAccessor {
         }
     }
 
-    private <T> T getFromRepository(DataWord keyAddress, BridgeStorageAccessor.RepositoryDeserializer<T> deserializer) throws IOException {
+    private <T> T getFromRepository(DataWord keyAddress, StorageAccessor.RepositoryDeserializer<T> deserializer) throws IOException {
         byte[] data = repository.getStorageBytes(contractAddress, keyAddress);
         return deserializer.deserialize(data);
     }
 
     @Override
-    public <T> void safeSaveToRepository(DataWord addressKey, T object, BridgeStorageAccessor.RepositorySerializer<T> serializer) {
+    public <T> void safeSaveToRepository(DataWord addressKey, T object, StorageAccessor.RepositorySerializer<T> serializer) {
         try {
             saveToRepository(addressKey, object, serializer);
         } catch (IOException ioe) {
@@ -36,7 +36,7 @@ public class BridgeStorageAccessorImpl implements BridgeStorageAccessor {
         }
     }
 
-    private <T> void saveToRepository(DataWord addressKey, T object, BridgeStorageAccessor.RepositorySerializer<T> serializer) throws IOException {
+    private <T> void saveToRepository(DataWord addressKey, T object, StorageAccessor.RepositorySerializer<T> serializer) throws IOException {
         byte[] data = null;
         if (object != null) {
             data = serializer.serialize(object);
