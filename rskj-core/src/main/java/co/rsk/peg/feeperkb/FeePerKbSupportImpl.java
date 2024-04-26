@@ -27,11 +27,8 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
     public Coin getFeePerKb() {
         Optional<Coin> currentFeePerKb = provider.getFeePerKb();
 
-        if (!currentFeePerKb.isPresent()) {
-            return feePerKbConstants.getGenesisFeePerKb();
-        }
+        return currentFeePerKb.orElseGet(feePerKbConstants::getGenesisFeePerKb);
 
-        return currentFeePerKb.get();
     }
 
     @Override
