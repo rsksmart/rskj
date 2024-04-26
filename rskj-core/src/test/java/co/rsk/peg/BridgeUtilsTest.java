@@ -1339,7 +1339,7 @@ class BridgeUtilsTest {
     }
 
     private void getAmountSentToAddresses_no_output_for_address_by_network(BridgeConstants bridgeConstants) {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet);
         Address receiver = genesisFederation.getAddress();
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
 
@@ -1363,7 +1363,7 @@ class BridgeUtilsTest {
     }
 
     private void getAmountSentToAddresses_output_value_is_0_by_network(BridgeConstants bridgeConstants) {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet);
         Address receiver = genesisFederation.getAddress();
 
         Coin valueToTransfer = Coin.ZERO;

@@ -2245,21 +2245,19 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType expectedType
     ) {
         // Arrange
-        BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
-        NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
-        Context.propagate(new Context(btcRegTestsParams));
+        Context.propagate(new Context(btcMainnetParams));
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
-        Federation retiredFederation = createFederation(bridgeRegTestConstants, fedKeys);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation retiredFederation = createFederation(bridgeMainnetConstants, fedKeys);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
         when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.empty());
 
-        BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
+        BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
         migrationTx.addInput(
             BitcoinTestUtils.createHash(1),
@@ -2279,7 +2277,7 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
-            bridgeRegTestConstants,
+            bridgeMainnetConstants,
             activeFederation,
             null,
             migrationTx,

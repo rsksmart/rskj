@@ -92,6 +92,7 @@ class BridgeSupportFlyoverTest {
     private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
     private final BridgeConstants bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
     protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
+    protected final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
     private BridgeSupportBuilder bridgeSupportBuilder;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
@@ -2804,12 +2805,12 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
         Context btcContext = mock(Context.class);
-        when(btcContext.getParams()).thenReturn(bridgeConstantsRegtest.getBtcParams());
+        when(btcContext.getParams()).thenReturn(bridgeConstantsMainnet.getBtcParams());
 
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
-            bridgeConstantsRegtest,
+            bridgeConstantsMainnet,
             mock(BridgeStorageProvider.class),
             mock(BridgeEventLogger.class),
             new BtcLockSenderProvider(),
@@ -2823,7 +2824,7 @@ class BridgeSupportFlyoverTest {
             signatureCache
         ));
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet);
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
@@ -2834,7 +2835,7 @@ class BridgeSupportFlyoverTest {
             any(RskAddress.class)
         );
 
-        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, new BtcECKey().toAddress(btcRegTestParams));
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, new BtcECKey().toAddress(btcMainnetParams));
         InternalTransaction rskTx = new InternalTransaction(
             Keccak256.ZERO_HASH.getBytes(),
             0,
