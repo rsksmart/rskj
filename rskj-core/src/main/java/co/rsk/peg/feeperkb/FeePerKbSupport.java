@@ -1,6 +1,5 @@
 package co.rsk.peg.feeperkb;
 
-import co.rsk.peg.storage.FeePerKbStorageProvider;
 import co.rsk.peg.vote.*;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.BridgeSerializationUtils;
