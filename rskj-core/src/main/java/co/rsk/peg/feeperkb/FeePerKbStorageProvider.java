@@ -1,7 +1,8 @@
-package co.rsk.peg.storage;
+package co.rsk.peg.feeperkb;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.storage.BridgeStorageAccessor;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 
@@ -17,7 +18,7 @@ public class FeePerKbStorageProvider {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
     }
 
-    public void setFeePerKb(Coin feePerKb) {
+    protected void setFeePerKb(Coin feePerKb) {
         this.feePerKb = feePerKb;
     }
 
@@ -29,7 +30,7 @@ public class FeePerKbStorageProvider {
         bridgeStorageAccessor.safeSaveToRepository(FEE_PER_KB.getKey(), feePerKb, BridgeSerializationUtils::serializeCoin);
     }
 
-    public Coin getFeePerKb() {
+    protected Coin getFeePerKb() {
         if (feePerKb != null) {
             return feePerKb;
         }
@@ -37,6 +38,7 @@ public class FeePerKbStorageProvider {
         feePerKb = bridgeStorageAccessor.safeGetFromRepository(FEE_PER_KB.getKey(), BridgeSerializationUtils::deserializeCoin);
         return feePerKb;
     }
+
     private void saveFeePerKbElection() {
         if (feePerKbElection == null) {
             return;
@@ -45,7 +47,7 @@ public class FeePerKbStorageProvider {
         bridgeStorageAccessor.safeSaveToRepository(FEE_PER_KB_ELECTION.getKey(), feePerKbElection, BridgeSerializationUtils::serializeElection);
     }
 
-    public ABICallElection getFeePerKbElection(AddressBasedAuthorizer authorizer) {
+    protected ABICallElection getFeePerKbElection(AddressBasedAuthorizer authorizer) {
         if (feePerKbElection != null) {
             return feePerKbElection;
         }
@@ -54,7 +56,7 @@ public class FeePerKbStorageProvider {
         return feePerKbElection;
     }
 
-    public void save() {
+    protected void save() {
         saveFeePerKb();
         saveFeePerKbElection();
     }
