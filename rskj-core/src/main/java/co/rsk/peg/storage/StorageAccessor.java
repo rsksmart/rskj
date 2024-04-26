@@ -16,5 +16,4 @@ public interface StorageAccessor {
     interface RepositorySerializer<T> {
         byte[] serialize(T object) throws IOException;
     }
-
 }
