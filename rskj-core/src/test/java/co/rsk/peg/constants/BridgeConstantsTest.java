@@ -158,4 +158,20 @@ class BridgeConstantsTest {
         // assert
         assertEquals(expectedValue, pegoutTxIndexGracePeriodInBtcBlocks);
     }
+
+    private static Stream<Arguments> getGenesisFederationCreationTimeTestProvider() {
+        return Stream.of(
+                Arguments.of(BridgeMainNetConstants.getInstance(), 1514948400L),
+                Arguments.of(BridgeTestNetConstants.getInstance(), 1538967600L),
+                Arguments.of(BridgeRegTestConstants.getInstance(), 1451606400L),
+                Arguments.of(BridgeDevNetConstants.getInstance(),1510617600L)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getGenesisFederationCreationTimeTestProvider")
+    void getGenesisFederationCreationTimeTest(BridgeConstants bridgeConstants, long expectedGenesisFederationCreationTime){
+        long actualGenesisFederationCreationTime = bridgeConstants.getGenesisFederationCreationTime().getEpochSecond();
+        assertEquals(expectedGenesisFederationCreationTime, actualGenesisFederationCreationTime);
+    }
 }

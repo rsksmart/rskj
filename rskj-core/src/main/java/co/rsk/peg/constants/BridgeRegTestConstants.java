@@ -22,19 +22,16 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationFactory;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 
 public class BridgeRegTestConstants extends BridgeConstants {
     // IMPORTANT: BTC, RSK and MST keys are the same.
@@ -53,12 +50,9 @@ public class BridgeRegTestConstants extends BridgeConstants {
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
 
-        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federationPublicKeys);
+        this.genesisFederationPublicKeys = federationPublicKeys;
 
-        Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
-
-        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreatedAt, 1L, getBtcParams());
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        genesisFederationCreationTime = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 3;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;

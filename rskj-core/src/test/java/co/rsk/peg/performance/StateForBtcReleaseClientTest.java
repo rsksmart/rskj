@@ -28,6 +28,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.federation.FederationTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
@@ -73,10 +74,9 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
             }
 
             int numTxs = Helper.randomInRange(minNumTxs, maxNumTxs);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
             for (int i = 0; i < numTxs; i++) {
                 BtcTransaction releaseTx = new BtcTransaction(networkParameters);
-
-                Federation federation = bridgeConstants.getGenesisFederation();
 
                 // Receiver and amounts
                 Address toAddress = new BtcECKey().toAddress(networkParameters);
@@ -89,10 +89,10 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                 for (int j = 0; j < numInputs; j++) {
                     Coin inputAmount = releaseAmount.divide(numInputs);
                     BtcTransaction inputTx = new BtcTransaction(networkParameters);
-                    inputTx.addOutput(inputAmount, federation.getAddress());
+                    inputTx.addOutput(inputAmount, genesisFederation.getAddress());
                     releaseTx
                             .addInput(inputTx.getOutput(0))
-                            .setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+                            .setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(genesisFederation));
                 }
 
 

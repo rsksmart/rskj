@@ -11,7 +11,6 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -50,6 +49,7 @@ class BridgeTest {
 
     private NetworkParameters networkParameters;
     private BridgeBuilder bridgeBuilder;
+    private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
 
     @BeforeEach
     void resetConfigToMainnet() {
@@ -76,7 +76,8 @@ class BridgeTest {
         CallTransaction.Function getActivePowpegRedeemScriptFunction = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Script activePowpegRedeemScript = BridgeRegTestConstants.getInstance().getGenesisFederation().getRedeemScript();
+        Script activePowpegRedeemScript = FederationTestUtils.getGenesisFederation(
+            bridgeMainNetConstants).getRedeemScript();
         when(bridgeSupportMock.getActivePowpegRedeemScript()).thenReturn(
             Optional.of(activePowpegRedeemScript)
         );
@@ -762,10 +763,12 @@ class BridgeTest {
     @Test
     void receiveHeaders_after_RSKIP200_notFederation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
-
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(
+            bridgeMainNetConstants);
+
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
-        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(genesisFederation);
 
         Transaction txMock = mock(Transaction.class);
         RskAddress txSender = new RskAddress(new ECKey().getAddress());

@@ -93,6 +93,7 @@ class BridgeStorageProviderTest {
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
     private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
     private final BridgeTestNetConstants bridgeTestnetInstance = BridgeTestNetConstants.getInstance();
+    private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final NetworkParameters networkParameters = bridgeTestnetInstance.getBtcParams();
 
     private int transactionOffset;
@@ -278,9 +279,8 @@ class BridgeStorageProviderTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = bridgeTestnetInstance;
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants);
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             track,
@@ -288,8 +288,8 @@ class BridgeStorageProviderTest {
             bridgeTestnetInstance,
             activationsBeforeFork
         );
-        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
-        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
+        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(genesisFederation.getAddress())));
+        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(genesisFederation.getAddress())));
         provider0.save();
         track.commit();
 
