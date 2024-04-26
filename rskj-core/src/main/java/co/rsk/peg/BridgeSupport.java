@@ -834,11 +834,12 @@ public class BridgeSupport {
      * @throws IOException
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
-        Coin pegoutValue = rskTx.getValue().toBitcoin();
+        final co.rsk.core.Coin pegoutValueInWeis = rskTx.getValue();
+        final Coin pegoutValueInSatoshis = pegoutValueInWeis.toBitcoin();
         final RskAddress senderAddress = rskTx.getSender(signatureCache);
         logger.debug(
             "[releaseBtc] Releasing {} RBTC from RSK address {} in tx {}",
-            pegoutValue,
+            pegoutValueInWeis,
             senderAddress,
             rskTx.getHash()
         );
@@ -850,7 +851,7 @@ public class BridgeSupport {
                 senderAddress
             );
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                emitRejectEvent(pegoutValue, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
+                emitRejectEvent(pegoutValueInSatoshis, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
                 return;
             } else {
                 String message = "Contract calling releaseBTC";
@@ -864,7 +865,7 @@ public class BridgeSupport {
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
         logger.debug("[releaseBtc] BTC destination address: {}", btcDestinationAddress);
 
-        requestRelease(btcDestinationAddress, pegoutValue, rskTx);
+        requestRelease(btcDestinationAddress, pegoutValueInSatoshis, rskTx);
     }
 
     private void refundAndEmitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
