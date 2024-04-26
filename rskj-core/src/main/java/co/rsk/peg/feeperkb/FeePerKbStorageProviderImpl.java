@@ -40,7 +40,7 @@ public class FeePerKbStorageProviderImpl implements FeePerKbStorageProvider {
         }
 
         feePerKb = bridgeStorageAccessor.safeGetFromRepository(FEE_PER_KB.getKey(), BridgeSerializationUtils::deserializeCoin);
-        return Optional.of(feePerKb);
+        return Optional.ofNullable(feePerKb);
     }
 
     private void saveFeePerKbElection() {
