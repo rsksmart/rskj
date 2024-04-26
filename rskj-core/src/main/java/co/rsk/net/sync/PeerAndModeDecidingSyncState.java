@@ -81,11 +81,11 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
             if (tryStartBlockForwardSync()) {
                 return;
             }
-
-            if (tryStartShortBackwardSync()) {
-                return;
-            }
         }
+        if (tryStartShortBackwardSync()) {
+            return;
+        }
+
 
         syncEventsHandler.onLongSyncUpdate(false, null);
     }
