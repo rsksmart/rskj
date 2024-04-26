@@ -6,7 +6,7 @@ import org.ethereum.vm.PrecompiledContracts;
 
 import java.io.IOException;
 
-public interface BridgeStorageAccessor {
+public interface StorageAccessor {
 
     RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 

@@ -22,11 +22,13 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
-import co.rsk.peg.storage.BridgeStorageAccessor;
-import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
@@ -64,7 +66,7 @@ public class BridgeSupportFactory {
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlock.getNumber());
         Context btcContext = new Context(bridgeConstants.getBtcParams());
 
-        BridgeStorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
@@ -107,9 +109,9 @@ public class BridgeSupportFactory {
         );
     }
 
-    private FeePerKbSupport newFeePerKbSupportInstance(BridgeStorageAccessor bridgeStorageAccessor, BridgeConstants bridgeConstants) {
+    private FeePerKbSupport newFeePerKbSupportInstance(StorageAccessor bridgeStorageAccessor, BridgeConstants bridgeConstants) {
         FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
-        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProvider(bridgeStorageAccessor);
-        return new FeePerKbSupport(feePerKbConstants, feePerKbStorageProvider);
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+        return new FeePerKbSupportImpl(feePerKbConstants, feePerKbStorageProvider);
     }
 }
