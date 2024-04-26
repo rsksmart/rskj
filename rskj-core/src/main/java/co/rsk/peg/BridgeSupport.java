@@ -792,7 +792,7 @@ public class BridgeSupport {
         final Coin pegoutValueInSatoshis = pegoutValueInWeis.toBitcoin();
         final RskAddress senderAddress = rskTx.getSender(signatureCache);
         logger.debug(
-            "[releaseBtc] Releasing {} RBTC from RSK address {} in tx {}",
+            "[releaseBtc] Releasing {} weis from RSK address {} in tx {}",
             pegoutValueInWeis,
             senderAddress,
             rskTx.getHash()
