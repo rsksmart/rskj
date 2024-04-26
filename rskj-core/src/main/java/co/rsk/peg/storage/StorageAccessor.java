@@ -8,8 +8,6 @@ import java.io.IOException;
 
 public interface StorageAccessor {
 
-    RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
-
     <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer);
 
     <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer);
