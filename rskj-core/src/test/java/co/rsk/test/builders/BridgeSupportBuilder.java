@@ -9,9 +9,11 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.storage.BridgeStorageAccessor;
-import co.rsk.peg.storage.FeePerKbStorageProvider;
-import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
+import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -93,7 +95,8 @@ public class BridgeSupportBuilder {
     }
 
     public BridgeSupport build() {
-        BridgeStorageAccessor bridgeStorageAccessor = new BridgeStorageAccessor(repository);
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
 
         return new BridgeSupport(
             bridgeConstants,
@@ -105,7 +108,7 @@ public class BridgeSupportBuilder {
             executionBlock,
             new Context(bridgeConstants.getBtcParams()),
             new FederationSupport(bridgeConstants, provider, executionBlock, activations),
-            new FeePerKbSupport(bridgeConstants.getFeePerKbConstants(), new FeePerKbStorageProvider(bridgeStorageAccessor)),
+            new FeePerKbSupportImpl(bridgeConstants.getFeePerKbConstants(), feePerKbStorageProvider),
             btcBlockStoreFactory,
             activations,
             signatureCache

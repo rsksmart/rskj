@@ -7,16 +7,17 @@ import org.ethereum.vm.PrecompiledContracts;
 
 import java.io.IOException;
 
-public class BridgeStorageAccessor {
+public class BridgeStorageAccessorImpl implements StorageAccessor {
 
+    private static final RskAddress CONTRACT_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
     private final Repository repository;
-    private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
-    public BridgeStorageAccessor(Repository repository) {
+    public BridgeStorageAccessorImpl(Repository repository) {
         this.repository = repository;
     }
 
-    protected <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
+    @Override
+    public <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
         try {
             return getFromRepository(keyAddress, deserializer);
         } catch (IOException ioe) {
@@ -25,11 +26,12 @@ public class BridgeStorageAccessor {
     }
 
     private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
-        byte[] data = repository.getStorageBytes(contractAddress, keyAddress);
+        byte[] data = repository.getStorageBytes(CONTRACT_ADDRESS, keyAddress);
         return deserializer.deserialize(data);
     }
 
-    protected <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
+    @Override
+    public <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
         try {
             saveToRepository(addressKey, object, serializer);
         } catch (IOException ioe) {
@@ -42,15 +44,6 @@ public class BridgeStorageAccessor {
         if (object != null) {
             data = serializer.serialize(object);
         }
-        repository.addStorageBytes(contractAddress, addressKey, data);
+        repository.addStorageBytes(CONTRACT_ADDRESS, addressKey, data);
     }
-
-    protected interface RepositoryDeserializer<T> {
-        T deserialize(byte[] data) throws IOException;
-    }
-
-    protected interface RepositorySerializer<T> {
-        byte[] serialize(T object) throws IOException;
-    }
-
 }

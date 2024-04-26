@@ -1,22 +1,26 @@
-package co.rsk.peg.storage;
+package co.rsk.peg.feeperkb;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+
+import java.util.Optional;
 
 import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB_ELECTION;
 import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB;
 
-public class FeePerKbStorageProvider {
-    private final BridgeStorageAccessor bridgeStorageAccessor;
+public class FeePerKbStorageProviderImpl implements FeePerKbStorageProvider {
+    private final StorageAccessor bridgeStorageAccessor;
     private Coin feePerKb;
     private ABICallElection feePerKbElection;
 
-    public FeePerKbStorageProvider(BridgeStorageAccessor bridgeStorageAccessor) {
+    public FeePerKbStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
     }
 
+    @Override
     public void setFeePerKb(Coin feePerKb) {
         this.feePerKb = feePerKb;
     }
@@ -29,14 +33,16 @@ public class FeePerKbStorageProvider {
         bridgeStorageAccessor.safeSaveToRepository(FEE_PER_KB.getKey(), feePerKb, BridgeSerializationUtils::serializeCoin);
     }
 
-    public Coin getFeePerKb() {
+    @Override
+    public Optional<Coin> getFeePerKb() {
         if (feePerKb != null) {
-            return feePerKb;
+            return Optional.of(feePerKb);
         }
 
         feePerKb = bridgeStorageAccessor.safeGetFromRepository(FEE_PER_KB.getKey(), BridgeSerializationUtils::deserializeCoin);
-        return feePerKb;
+        return Optional.ofNullable(feePerKb);
     }
+
     private void saveFeePerKbElection() {
         if (feePerKbElection == null) {
             return;
@@ -45,6 +51,7 @@ public class FeePerKbStorageProvider {
         bridgeStorageAccessor.safeSaveToRepository(FEE_PER_KB_ELECTION.getKey(), feePerKbElection, BridgeSerializationUtils::serializeElection);
     }
 
+    @Override
     public ABICallElection getFeePerKbElection(AddressBasedAuthorizer authorizer) {
         if (feePerKbElection != null) {
             return feePerKbElection;
@@ -54,6 +61,7 @@ public class FeePerKbStorageProvider {
         return feePerKbElection;
     }
 
+    @Override
     public void save() {
         saveFeePerKb();
         saveFeePerKbElection();
