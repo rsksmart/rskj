@@ -24,7 +24,8 @@ import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.storage.BridgeStorageAccessor;
-import co.rsk.peg.storage.FeePerKbStorageProvider;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -63,7 +64,7 @@ public class BridgeSupportFactory {
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlock.getNumber());
         Context btcContext = new Context(bridgeConstants.getBtcParams());
 
-        BridgeStorageAccessor bridgeStorageAccessor = new BridgeStorageAccessor(repository);
+        BridgeStorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
