@@ -1,10 +1,7 @@
 package co.rsk.peg.storage;
 
-import co.rsk.core.RskAddress;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.PrecompiledContracts;
-
 import java.io.IOException;
+import org.ethereum.vm.DataWord;
 
 public interface StorageAccessor {
 
