@@ -22,7 +22,7 @@ contact us to report a vulnerability.
 RskJ is licensed under the GNU Lesser General Public License v3.0, also included in our repository in the COPYING.LESSER file.
 
 # Your Pledge
-RskJ has been developed with the intention to foster the progress of society. By using RskJ, you make a pledge not to use it to incur in:
+RskJ has been developed with the intention of fostering the progress of society. By using RskJ, you make a pledge not to use it to incur in:
 - Any kind of illegal or criminal act, activity or business;
 - Any kind of act, activity or business that requires any kind of governmental authorization or license to legally occur or exist, without previously obtaining such authorization or license;
 - Any kind of act, activity or business that is expected to infringe upon intellectual property rights belonging to other people;
