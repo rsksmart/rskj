@@ -11,59 +11,58 @@ import java.util.List;
 public class BlockConnectorHelper {
     private static final Logger logger = LoggerFactory.getLogger("SnapBlockConnector");
     private final BlockStore blockStore;
-    private List<BlockAndDiff> blockDiffList;
-
-    private Block child;
-
-    public BlockConnectorHelper(BlockStore blockStore, List<BlockAndDiff> blockDiffList) {
+    private final List<BlockAndDifficulty> blockAndDifficultiesList;
+    public BlockConnectorHelper(BlockStore blockStore, List<BlockAndDifficulty> blockAndDifficultiesList) {
         this.blockStore = blockStore;
-        this.blockDiffList = blockDiffList;
-        blockDiffList.sort(new BlockAndDiffComparator());
+        this.blockAndDifficultiesList = blockAndDifficultiesList;
+        blockAndDifficultiesList.sort(new BlockAndDiffComparator());
     }
 
     public void startConnecting() {
+        Block child = null;
         logger.info("Start connecting Blocks");
-        if (blockDiffList.isEmpty()) {
+        if (blockAndDifficultiesList.isEmpty()) {
             return;
         }
-        int blockIndex = blockDiffList.size() - 1;
+        int blockIndex = blockAndDifficultiesList.size() - 1;
         if (blockStore.isEmpty()) {
-            child = blockDiffList.get(blockIndex).getBlock();
-            logger.info("BlockStore is empty, setting child block number the last block from the list: {}");
+            BlockAndDifficulty blockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
+            child = blockAndDifficulty.getBlock();
+            logger.debug("BlockStore is empty, setting child block number the last block from the list: {}",child.getNumber());
+            blockStore.saveBlock(child, blockAndDifficulty.getDifficulty(), true);
             blockIndex--;
-            blockStore.saveBlock(child, blockDiffList.get(blockIndex).getDifficulty(), true);
         } else {
-            logger.info("BlockStore is not empty, getting best block");
+            logger.debug("BlockStore is not empty, getting best block");
             child = blockStore.getBestBlock();
-            logger.info("Best block number: {}", child.getNumber());
+            logger.debug("Best block number: {}", child.getNumber());
         }
         while (blockIndex >= 0) {
-            Block block = blockDiffList.get(blockIndex).getBlock();
-            logger.info("Connecting block number: {}", block.getNumber());
+            BlockAndDifficulty currentBlockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
+            Block currentBlock = currentBlockAndDifficulty.getBlock();
+            logger.info("Connecting block number: {}", currentBlock.getNumber());
 
-            if (!block.isParentOf(child)) {
+            if (!currentBlock.isParentOf(child)) {
                 logger.error("Block is not parent of child");
-                throw new BlockConnectorException("Block is not parent of child. Block number: " + block.getNumber() + " Child number: " + child.getNumber());
+                throw new BlockConnectorException(currentBlock.getNumber(), child.getNumber());
             }
-            BlockDifficulty blockDifficulty = blockDiffList.get(blockIndex).getDifficulty();
-            blockStore.saveBlock(block, blockDifficulty, true);
-            child = block;
+            blockStore.saveBlock(currentBlock, currentBlockAndDifficulty.getDifficulty(), true);
+            child = currentBlock;
             blockIndex--;
         }
-        logger.info("Finished connecting blocks");
+        logger.debug("Finished connecting blocks");
     }
 
-    class BlockAndDiffComparator implements java.util.Comparator<BlockAndDiff> {
+    static class BlockAndDiffComparator implements java.util.Comparator<BlockAndDifficulty> {
         @Override
-        public int compare(BlockAndDiff o1, BlockAndDiff o2) {
+        public int compare(BlockAndDifficulty o1, BlockAndDifficulty o2) {
             return Long.compare(o1.getBlock().getNumber(),o2.getBlock().getNumber());
         }
     }
 
-    public static class BlockAndDiff {
-        public Block block;
-        public BlockDifficulty difficulty;
-        public BlockAndDiff(Block block, BlockDifficulty difficulty){
+    public static class BlockAndDifficulty {
+        private final Block block;
+        private final BlockDifficulty difficulty;
+        public BlockAndDifficulty(Block block, BlockDifficulty difficulty){
             this.block = block;
             this.difficulty = difficulty;
         }

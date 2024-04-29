@@ -54,7 +54,7 @@ public class SnapshotProcessor {
 
     private long remoteTrieSize;
     private byte[] remoteRootHash;
-    private List<BlockConnectorHelper.BlockAndDiff> blocks;
+    private List<BlockConnectorHelper.BlockAndDifficulty> blocks;
     private Block lastBlock;
     private BlockDifficulty lastBlockDifficulty;
 
@@ -162,7 +162,7 @@ public class SnapshotProcessor {
         this.remoteRootHash = this.lastBlock.getStateRoot();
         this.remoteTrieSize = responseMessage.getTrieSize();
         for (int i = 0; i < blocksFromResponse.size(); i++) {
-            this.blocks.add(new BlockConnectorHelper.BlockAndDiff(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
+            this.blocks.add(new BlockConnectorHelper.BlockAndDifficulty(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
         }
         logger.debug("CLIENT - Processing snapshot status response - last blockNumber: {} rootHash: {} triesize: {}", lastBlock.getNumber(), remoteRootHash, remoteTrieSize);
         requestBlocksChunk(sender, blocksFromResponse.get(0).getNumber());
@@ -196,7 +196,7 @@ public class SnapshotProcessor {
         List<Block> blocksFromResponse = snapBlocksResponseMessage.getBlocks();
         List<BlockDifficulty> difficultiesFromResponse = snapBlocksResponseMessage.getDifficulties();
         for (int i = 0; i < blocksFromResponse.size(); i++) {
-            this.blocks.add(new BlockConnectorHelper.BlockAndDiff(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
+            this.blocks.add(new BlockConnectorHelper.BlockAndDifficulty(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
         }
         long nextChunk = blocksFromResponse.get(0).getNumber();
         if (nextChunk > this.lastBlock.getNumber() - BLOCKS_REQUIRED) {

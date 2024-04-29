@@ -72,33 +72,29 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
 
-        if (bestPeerOpt.isPresent() && peerBestBlockNumOpt.isPresent()) {
-            logger.trace("Starting tryStartSyncing");
-            if (tryStartSnapshotSync()) {
-                return;
-            }
-
-            if (tryStartBlockForwardSync()) {
-                return;
-            }
+        logger.trace("Starting tryStartSyncing");
+        if (tryStartSnapshotSync(bestPeerOpt, peerBestBlockNumOpt)) {
+            return;
         }
+
+        if (tryStartBlockForwardSync(bestPeerOpt, peerBestBlockNumOpt)) {
+            return;
+        }
+
         if (tryStartShortBackwardSync()) {
             return;
         }
 
-
         syncEventsHandler.onLongSyncUpdate(false, null);
     }
 
-    private boolean tryStartSnapshotSync() {
+    private boolean tryStartSnapshotSync(Optional<Peer> bestPeerOpt, Optional<Long> peerBestBlockNumOpt) {
         if (!syncConfiguration.isSnapSyncEnabled()) {
             logger.trace("Snap syncing disabled");
             return false;
         }
 
         // TODO(snap-poc) deal with multiple peers logic here
-        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
-        Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
         // TODO: To be handled when we implement the multiple peers
         //List<Peer> bestPeers = peersInformation.getBestPeerCandidates();
 
@@ -127,9 +123,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         return true;
     }
 
-    private boolean tryStartBlockForwardSync() {
-        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
-        Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
+    private boolean tryStartBlockForwardSync(Optional<Peer> bestPeerOpt, Optional<Long> peerBestBlockNumOpt) {
         if (!bestPeerOpt.isPresent() || !peerBestBlockNumOpt.isPresent()) {
             logger.trace("Forward syncing not possible, no valid peer");
             return false;
