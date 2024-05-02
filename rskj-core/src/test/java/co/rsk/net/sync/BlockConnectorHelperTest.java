@@ -53,27 +53,34 @@ class BlockConnectorHelperTest {
 
         Block block1 = mock(Block.class);
         Block block2 = mock(Block.class);
+        Block block3 = mock(Block.class);
         when(block1.getNumber()).thenReturn(1L);
         when(block2.getNumber()).thenReturn(2L);
+        when(block3.getNumber()).thenReturn(3L);
         when(block1.isParentOf(block2)).thenReturn(true);
+        when(block2.isParentOf(block3)).thenReturn(true);
+
 
         BlockDifficulty diff1 = new BlockDifficulty(BigInteger.valueOf(1));
         BlockDifficulty diff2 = new BlockDifficulty(BigInteger.valueOf(2));
-        blockAndDifficultiesList = buildBlockDifficulties(Arrays.asList(block1, block2),
-                Arrays.asList(diff1, diff2));
+        BlockDifficulty diff3 = new BlockDifficulty(BigInteger.valueOf(3));
+        blockAndDifficultiesList = buildBlockDifficulties(Arrays.asList(block1, block2,block3),
+                Arrays.asList(diff1, diff2,diff3));
 
         blockConnectorHelper = new BlockConnectorHelper(blockStore, blockAndDifficultiesList);
 
         blockConnectorHelper.startConnecting();
 
-        verify(blockStore, times(2)).saveBlock(blockCaptor.capture(), difficultyCaptor.capture(), anyBoolean());
+        verify(blockStore, times(3)).saveBlock(blockCaptor.capture(), difficultyCaptor.capture(), anyBoolean());
         verify(blockStore, times(0)).getBestBlock();
         List<Block> savedBlocks = blockCaptor.getAllValues();
         List<BlockDifficulty> savedDifficulties = difficultyCaptor.getAllValues();
-        assertEquals(block2, savedBlocks.get(0));
-        assertEquals(diff2, savedDifficulties.get(0));
-        assertEquals(block1, savedBlocks.get(1));
-        assertEquals(diff1, savedDifficulties.get(1));
+        assertEquals(block3, savedBlocks.get(0));
+        assertEquals(diff3, savedDifficulties.get(0));
+        assertEquals(block2, savedBlocks.get(1));
+        assertEquals(diff2, savedDifficulties.get(1));
+        assertEquals(block1, savedBlocks.get(2));
+        assertEquals(diff1, savedDifficulties.get(2));
 
     }
 
