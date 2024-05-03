@@ -27,6 +27,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;

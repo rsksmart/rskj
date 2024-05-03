@@ -27,9 +27,12 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.vote.ABICallElection;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -68,7 +71,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
@@ -1847,7 +1849,7 @@ class BridgeStorageProviderTest {
 
         ABICallElection result = storageProvider.getFeePerKbElection(authorizerMock);
         MatcherAssert.assertThat(result.getVotes().isEmpty(), is(true));
-        MatcherAssert.assertThat(result.getWinner(), nullValue());
+        Assertions.assertFalse(result.getWinner().isPresent());
     }
 
     @Test
@@ -1879,7 +1881,7 @@ class BridgeStorageProviderTest {
 
         ABICallElection result = storageProvider.getFeePerKbElection(authorizerMock);
         MatcherAssert.assertThat(result.getVotes(), is(electionVotes));
-        MatcherAssert.assertThat(result.getWinner(), is(expectedWinner));
+        Assertions.assertEquals(expectedWinner, result.getWinner().get());
     }
 
     @Test

@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.vote;
 
 import com.google.common.primitives.SignedBytes;
 
@@ -34,18 +34,11 @@ import java.util.Objects;
  * @author Ariel Mendelzon
  */
 public final class ABICallSpec {
-    public static final Comparator<ABICallSpec> byBytesComparator = new Comparator<ABICallSpec>() {
-        @Override
-        public int compare(ABICallSpec specA, ABICallSpec specB) {
-            return SignedBytes.lexicographicalComparator().compare(
-                    specA.getEncoded(),
-                    specB.getEncoded()
-            );
-        }
-    };
+    public static final Comparator<ABICallSpec> byBytesComparator = (specA, specB)
+        -> SignedBytes.lexicographicalComparator().compare(specA.getEncoded(), specB.getEncoded());
 
-    private String function;
-    private byte[][] arguments;
+    private final String function;
+    private final byte[][] arguments;
 
     public ABICallSpec(String function, byte[][] arguments) {
         this.function = function;
@@ -100,7 +93,12 @@ public final class ABICallSpec {
 
     @Override
     public int hashCode() {
-        int[] argumentsHashes = Arrays.stream(arguments).map(argument -> Arrays.hashCode(argument)).mapToInt(Integer::intValue).toArray();
+        int[] argumentsHashes = Arrays
+                                .stream(arguments)
+                                .map(Arrays::hashCode)
+                                .mapToInt(Integer::intValue)
+                                .toArray();
+
         return Objects.hash(function, Arrays.hashCode(argumentsHashes));
     }
 

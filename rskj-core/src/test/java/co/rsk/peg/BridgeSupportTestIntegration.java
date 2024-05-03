@@ -22,16 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.AddressFormatException;
@@ -64,12 +55,15 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.vote.ABICallElection;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -2165,8 +2159,12 @@ public class BridgeSupportTestIntegration {
             return tx;
         }
 
-        public ABICallSpec getWinner() {
-            return winner;
+        public Optional<ABICallSpec> getWinner() {
+            if (winner == null) {
+                return Optional.empty();
+            }
+
+            return Optional.of(winner);
         }
 
         public void setWinner(ABICallSpec winner) {
@@ -3987,15 +3985,15 @@ public class BridgeSupportTestIntegration {
 
             return holder.getFederationElection();
         });
-        Mockito.doAnswer((InvocationOnMock m) -> {
+        doAnswer((InvocationOnMock m) -> {
             holder.setActiveFederation(m.<Federation>getArgument(0));
             return null;
         }).when(providerMock).setNewFederation(any());
-        Mockito.doAnswer((InvocationOnMock m) -> {
+        doAnswer((InvocationOnMock m) -> {
             holder.setRetiringFederation(m.<Federation>getArgument(0));
             return null;
         }).when(providerMock).setOldFederation(any());
-        Mockito.doAnswer((InvocationOnMock m) -> {
+        doAnswer((InvocationOnMock m) -> {
             holder.setPendingFederation(m.<PendingFederation>getArgument(0));
             return null;
         }).when(providerMock).setPendingFederation(any());

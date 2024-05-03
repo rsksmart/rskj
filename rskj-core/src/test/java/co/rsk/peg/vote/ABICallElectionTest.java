@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.vote;
 
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -73,8 +74,28 @@ class ABICallElectionTest {
     }
 
     @Test
-    void getVotes() {
-        Assertions.assertSame(votes, election.getVotes());
+    void getVotes_shouldNotBeSame_ButEqual_votes() {
+        Assertions.assertNotSame(votes, election.getVotes());
+        Assertions.assertEquals(votes, election.getVotes());
+    }
+
+    @Test
+    void modify_votes_shouldNotChange_electionVotes() {
+        votes.put(
+            spec_fnb,
+            new ArrayList<>(Arrays.asList(
+                createVoter("cc"),
+                createVoter("dd")
+            ))
+        );
+
+        Assertions.assertNotEquals(votes, election.getVotes());
+    }
+
+    @Test
+    void clear_electionVotes_shouldNotChange_votes() {
+        election.clear();
+        Assertions.assertNotEquals(votes, election.getVotes());
     }
 
     @Test
@@ -126,13 +147,13 @@ class ABICallElectionTest {
 
     @Test
     void getWinnerAndClearWinners_existingFn() {
-        Assertions.assertNull(election.getWinner());
+        Assertions.assertFalse(election.getWinner().isPresent());
         Assertions.assertTrue(election.vote(spec_fnb, createVoter("ee")));
-        Assertions.assertEquals(spec_fnb, election.getWinner());
+        Assertions.assertEquals(spec_fnb, election.getWinner().get());
 
         election.clearWinners();
 
-        Assertions.assertNull(election.getWinner());
+        Assertions.assertFalse(election.getWinner().isPresent());
         Assertions.assertEquals(1, election.getVotes().size());
         Assertions.assertEquals(Collections.emptyList(), election.getVotes().get(spec_fna));
     }
@@ -140,17 +161,17 @@ class ABICallElectionTest {
     @Test
     void getWinnerAndClearWinners_newFn() {
         ABICallSpec spec_fnc = new ABICallSpec("fn-c", new byte[][]{ Hex.decode("44") });
-        Assertions.assertNull(election.getWinner());
+        Assertions.assertFalse(election.getWinner().isPresent());
         Assertions.assertTrue(election.vote(spec_fnc, createVoter("ee")));
-        Assertions.assertNull(election.getWinner());
+        Assertions.assertFalse(election.getWinner().isPresent());
         Assertions.assertTrue(election.vote(spec_fnc, createVoter("cc")));
-        Assertions.assertNull(election.getWinner());
+        Assertions.assertFalse(election.getWinner().isPresent());
         Assertions.assertTrue(election.vote(spec_fnc, createVoter("aa")));
-        Assertions.assertEquals(spec_fnc, election.getWinner());
+        Assertions.assertEquals(spec_fnc, election.getWinner().get());
 
         election.clearWinners();
 
-        Assertions.assertNull(election.getWinner());
+        Assertions.assertFalse(election.getWinner().isPresent());
         Assertions.assertEquals(2, election.getVotes().size());
         Assertions.assertEquals(Collections.emptyList(), election.getVotes().get(spec_fna));
         Assertions.assertEquals(Arrays.asList(createVoter("aa"), createVoter("bb")), election.getVotes().get(spec_fnb));

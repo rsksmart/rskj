@@ -20,37 +20,11 @@ package co.rsk.peg;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP377;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.AddressFormatException;
-import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.BtcBlockChain;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.CheckpointManager;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.InsufficientMoneyException;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.StoredBlock;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.core.UTXOProviderException;
-import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
@@ -58,29 +32,18 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.bitcoin.BitcoinUtils;
-import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.bitcoin.MerkleBranch;
-import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
+import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
-import co.rsk.peg.pegin.PeginEvaluationResult;
-import co.rsk.peg.pegin.PeginProcessAction;
-import co.rsk.peg.pegin.RejectedPeginReason;
+import co.rsk.peg.pegin.*;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.BtcTransactionFormatUtils;
-import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
-import co.rsk.peg.utils.RejectedPegoutReason;
-import co.rsk.peg.utils.UnrefundablePeginReason;
-import co.rsk.peg.whitelist.LockWhitelist;
-import co.rsk.peg.whitelist.LockWhitelistEntry;
-import co.rsk.peg.whitelist.OneOffWhiteListEntry;
-import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import co.rsk.peg.utils.*;
+import co.rsk.peg.vote.*;
+import co.rsk.peg.whitelist.*;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
@@ -88,23 +51,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -153,7 +107,7 @@ public class BridgeSupport {
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
 
-    private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
+    private static final Logger logger = LoggerFactory.getLogger(BridgeSupport.class);
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
@@ -2298,8 +2252,9 @@ public class BridgeSupport {
         }
 
         // If enough votes have been reached, then actually execute the function
-        ABICallSpec winnerSpec = election.getWinner();
-        if (winnerSpec != null) {
+        Optional<ABICallSpec> winnerSpecOptional = election.getWinner();
+        if (winnerSpecOptional.isPresent()) {
+            ABICallSpec winnerSpec = winnerSpecOptional.get();
             try {
                 result = executeVoteFederationChangeFunction(false, winnerSpec);
             } catch (IOException e) {
@@ -2601,12 +2556,13 @@ public class BridgeSupport {
             return -1;
         }
 
-        ABICallSpec winner = feePerKbElection.getWinner();
-        if (winner == null) {
+        Optional<ABICallSpec> winnerOptional = feePerKbElection.getWinner();
+        if (!winnerOptional.isPresent()) {
             logger.info("Successful fee per kb vote for {}", feePerKb);
             return 1;
         }
 
+        ABICallSpec winner = winnerOptional.get();
         Coin winnerFee;
         try {
             winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);

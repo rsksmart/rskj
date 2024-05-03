@@ -21,7 +21,7 @@ package co.rsk.config;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.AddressBasedAuthorizer;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.FederationFactory;
