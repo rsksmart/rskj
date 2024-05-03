@@ -1,5 +1,7 @@
 package co.rsk.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.*;
 
 import javax.net.ssl.*;
@@ -10,9 +12,19 @@ import java.security.cert.X509Certificate;
 
 public class OkHttpClientTestFixture {
 
-    private OkHttpClientTestFixture(){
+    public static final String GET_BEST_BLOCK_CONTENT = "[{\n" +
+            "    \"method\": \"eth_getBlockByNumber\",\n" +
+            "    \"params\": [\n" +
+            "        \"latest\",\n" +
+            "        true\n" +
+            "    ],\n" +
+            "    \"id\": 1,\n" +
+            "    \"jsonrpc\": \"2.0\"\n" +
+            "}]";
 
+    private OkHttpClientTestFixture() {
     }
+
 
     public static OkHttpClient getUnsafeOkHttpClient() {
         try {
@@ -61,5 +73,14 @@ public class OkHttpClientTestFixture {
                 .addHeader("Accept-Encoding", "identity")
                 .post(requestBody).build();
         return getUnsafeOkHttpClient().newCall(request).execute();
+    }
+
+    public static Response sendJsonRpcGetBestBlockMessage(int port) throws IOException {
+        return sendJsonRpcMessage(GET_BEST_BLOCK_CONTENT, port);
+    }
+
+    public static JsonNode getJsonResponseForGetBestBlockMessage(int port) throws IOException {
+        Response response = sendJsonRpcGetBestBlockMessage(port);
+        return new ObjectMapper().readTree(response.body().string());
     }
 }
