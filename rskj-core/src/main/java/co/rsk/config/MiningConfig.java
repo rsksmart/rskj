@@ -19,6 +19,7 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
+import co.rsk.mine.gas.MinGasPriceProvider;
 
 /**
  * Wraps configuration for Mining, which is usually derived from configuration files.
@@ -29,25 +30,25 @@ public class MiningConfig {
     private final RskAddress coinbaseAddress;
     private final double minFeesNotifyInDollars;
     private final double minerGasUnitInDollars;
-    private final long minGasPriceTarget;
     private final int uncleListLimit;
     private final int uncleGenerationLimit;
     private final GasLimitConfig gasLimit;
     private final boolean isFixedClock;
     private final long workSubmissionRateLimitInMills;
+    private final MinGasPriceProvider minGasPriceProvider;
 
     public MiningConfig(RskAddress coinbaseAddress, double minFeesNotifyInDollars, double minerGasUnitInDollars,
-                        long minGasPriceTarget, int uncleListLimit, int uncleGenerationLimit, GasLimitConfig gasLimit,
-                        boolean isFixedClock, long workSubmissionRateLimitInMills) {
+                        int uncleListLimit, int uncleGenerationLimit, GasLimitConfig gasLimit,
+                        boolean isFixedClock, long workSubmissionRateLimitInMills, MinGasPriceProvider minGasPriceProvider) {
         this.coinbaseAddress = coinbaseAddress;
         this.minFeesNotifyInDollars = minFeesNotifyInDollars;
         this.minerGasUnitInDollars = minerGasUnitInDollars;
-        this.minGasPriceTarget= minGasPriceTarget;
         this.uncleListLimit = uncleListLimit;
         this.uncleGenerationLimit = uncleGenerationLimit;
         this.gasLimit = gasLimit;
         this.isFixedClock = isFixedClock;
         this.workSubmissionRateLimitInMills = workSubmissionRateLimitInMills;
+        this.minGasPriceProvider = minGasPriceProvider;
     }
 
     public RskAddress getCoinbaseAddress() {
@@ -60,10 +61,6 @@ public class MiningConfig {
 
     public double getGasUnitInDollars() {
         return minerGasUnitInDollars;
-    }
-
-    public long getMinGasPriceTarget() {
-        return minGasPriceTarget;
     }
 
     public int getUncleListLimit() {
@@ -84,5 +81,9 @@ public class MiningConfig {
 
     public long getWorkSubmissionRateLimitInMills() {
         return workSubmissionRateLimitInMills;
+    }
+
+    public MinGasPriceProvider getMinGasPriceProvider() {
+        return minGasPriceProvider;
     }
 }

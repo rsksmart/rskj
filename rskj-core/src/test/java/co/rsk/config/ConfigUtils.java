@@ -18,6 +18,7 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
+import co.rsk.mine.gas.DefaultMinGasPriceProvider;
 
 public class ConfigUtils {
     public static MiningConfig getDefaultMiningConfig() {
@@ -26,12 +27,12 @@ public class ConfigUtils {
                 new RskAddress(coinbaseAddress),
                 0.0,
                 1.0,
-                0,
                 10,
                 7,
                 new GasLimitConfig(3000000, 500000, true),
                 true,
-                0L
+                0L,
+                new DefaultMinGasPriceProvider(0)
         );
     }
 }

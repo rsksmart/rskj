@@ -40,6 +40,8 @@ import co.rsk.metrics.HashRateCalculator;
 import co.rsk.metrics.HashRateCalculatorMining;
 import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.mine.*;
+import co.rsk.mine.gas.DefaultMinGasPriceProvider;
+import co.rsk.mine.gas.MinGasPriceProvider;
 import co.rsk.net.*;
 import co.rsk.net.discovery.KnownPeersHandler;
 import co.rsk.net.discovery.PeerExplorer;
@@ -254,6 +256,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
+
+    private MinGasPriceProvider minGasPriceProvider;
 
     private volatile boolean closed;
 
@@ -1842,13 +1846,21 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getMinerClock(),
                     getBlockFactory(),
                     getBlockExecutor(),
-                    new MinimumGasPriceCalculator(Coin.valueOf(getMiningConfig().getMinGasPriceTarget())),
+                    new MinimumGasPriceCalculator(getMinGasPriceProvider()),
                     new MinerUtils(),
                     getBlockTxSignatureCache()
             );
         }
 
         return blockToMineBuilder;
+    }
+
+    private MinGasPriceProvider getMinGasPriceProvider() {
+        long minGasPrice = getRskSystemProperties().minerMinGasPrice();
+        if (minGasPriceProvider == null) {
+            minGasPriceProvider = new DefaultMinGasPriceProvider(minGasPrice);
+        }
+        return minGasPriceProvider;
     }
 
     private BlockNodeInformation getBlockNodeInformation() {
@@ -2142,7 +2154,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.coinbaseAddress(),
                     rskSystemProperties.minerMinFeesNotifyInDollars(),
                     rskSystemProperties.minerGasUnitInDollars(),
-                    rskSystemProperties.minerMinGasPrice(),
                     rskSystemProperties.getNetworkConstants().getUncleListLimit(),
                     rskSystemProperties.getNetworkConstants().getUncleGenerationLimit(),
                     new GasLimitConfig(
@@ -2151,7 +2162,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             rskSystemProperties.getForceTargetGasLimit()
                     ),
                     rskSystemProperties.isMinerServerFixedClock(),
-                    rskSystemProperties.workSubmissionRateLimitInMills()
+                    rskSystemProperties.workSubmissionRateLimitInMills(),
+                    getMinGasPriceProvider()
             );
         }
 

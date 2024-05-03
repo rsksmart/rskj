@@ -612,7 +612,7 @@ class TransactionModuleTest {
                         minerClock,
                         blockFactory,
                         blockExecutor,
-                        new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
+                        new MinimumGasPriceCalculator(miningConfig.getMinGasPriceProvider()),
                         new MinerUtils(),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
