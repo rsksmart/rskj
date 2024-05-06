@@ -16,7 +16,7 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
     private final FeePerKbStorageProvider provider;
     private final FeePerKbConstants feePerKbConstants;
     private static final Logger logger = LoggerFactory.getLogger(FeePerKbSupportImpl.class);
-    private static final String setFeePerKbAbiFunction = "setFeePerKb";
+    private static final String SET_FEE_PER_KB_ABI_FUNCTION = "setFeePerKb";
 
     public FeePerKbSupportImpl(FeePerKbConstants feePerKbConstants, FeePerKbStorageProvider provider) {
         this.provider = provider;
@@ -41,31 +41,31 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
 
         if (!authorizer.isAuthorized(tx, signatureCache)) {
             logger.warn("[voteFeePerKbChange] Unauthorized signature.");
-            return FeePerKbResponseCode.UNAUTHORIZED.getCode();
+            return FeePerKbResponseCode.UNAUTHORIZED_CALLER.getCode();
         }
 
         if (!feePerKb.isPositive()){
             logger.warn("[voteFeePerKbChange] Negative fee.");
-            return FeePerKbResponseCode.NEGATIVE.getCode();
+            return FeePerKbResponseCode.NEGATIVE_FEE_VOTED.getCode();
         }
 
         if (feePerKb.isGreaterThan(maxFeePerKb)) {
             logger.warn("[voteFeePerKbChange] Fee greater than maximum.");
-            return FeePerKbResponseCode.EXCESSIVE.getCode();
+            return FeePerKbResponseCode.EXCESSIVE_FEE_VOTED.getCode();
         }
 
         ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
-        ABICallSpec feeVote = new ABICallSpec(setFeePerKbAbiFunction, new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
+        ABICallSpec feeVote = new ABICallSpec(SET_FEE_PER_KB_ABI_FUNCTION, new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
         boolean successfulVote = feePerKbElection.vote(feeVote, tx.getSender(signatureCache));
         if (!successfulVote) {
             logger.warn("[voteFeePerKbChange] Unsuccessful {} vote", feeVote);
-            return FeePerKbResponseCode.UNSUCCESSFUL.getCode();
+            return FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
         }
 
         Optional<ABICallSpec> winnerOptional = feePerKbElection.getWinner();
         if (!winnerOptional.isPresent()) {
             logger.info("[voteFeePerKbChange] Successful fee per kb vote for {}", feePerKb);
-            return FeePerKbResponseCode.SUCCESSFUL.getCode();
+            return FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
         }
 
         ABICallSpec winner = winnerOptional.get();
@@ -74,12 +74,12 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
             winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);
         } catch (Exception e) {
             logger.warn("[voteFeePerKbChange] Exception deserializing winner feePerKb", e);
-            return FeePerKbResponseCode.GENERIC.getCode();
+            return FeePerKbResponseCode.GENERIC_ERROR.getCode();
         }
 
         if (winnerFee == null) {
             logger.warn("[voteFeePerKbChange] Invalid winner feePerKb: feePerKb can't be null");
-            return FeePerKbResponseCode.GENERIC.getCode();
+            return FeePerKbResponseCode.GENERIC_ERROR.getCode();
         }
 
         if (!winnerFee.equals(feePerKb)) {
@@ -90,7 +90,7 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
         provider.setFeePerKb(winnerFee);
         feePerKbElection.clear();
 
-        return FeePerKbResponseCode.SUCCESSFUL.getCode();
+        return FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
     }
 
     @Override
