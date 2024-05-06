@@ -1129,7 +1129,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             feePerKb = Coin.valueOf(((BigInteger) args[0]).longValueExact());
         } catch (Exception e) {
             logger.warn("Exception in voteFeePerKbChange", e);
-            return FeePerKbResponseCode.GENERIC.getCode();
+            return FeePerKbResponseCode.GENERIC_ERROR.getCode();
         }
 
         return bridgeSupport.voteFeePerKbChange(rskTx, feePerKb);
