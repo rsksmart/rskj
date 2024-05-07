@@ -21,8 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static co.rsk.util.FilesHelper.readBytesFromFile;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SnapshotSyncIntegrationTest {
+    private static final int TEN_MINUTES_IN_MILLISECONDS = 600000;
     private static final String TAG_TO_REPLACE_SERVER_RPC_PORT = "<SERVER_NODE_RPC_PORT>";
     private static final String TAG_TO_REPLACE_SERVER_PORT = "<SERVER_NODE_PORT>";
     private static final String TAG_TO_REPLACE_SERVER_DATABASE_PATH = "<SERVER_NODE_DATABASE_PATH>";
@@ -61,17 +63,33 @@ public class SnapshotSyncIntegrationTest {
         ThreadTimerHelper.waitForSeconds(20);
 
         //then
-        while (true) {
+        long startTime = System.currentTimeMillis();
+        long endTime = startTime + TEN_MINUTES_IN_MILLISECONDS;
+        boolean isClientSynced = false;
+
+        while (System.currentTimeMillis() < endTime) {
             if(clientNode.getOutput().contains("CLIENT - Starting Snapshot sync.") && clientNode.getOutput().contains("CLIENT - Snapshot sync finished!")) {
-                JsonNode jsonResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portClientHttp);
-                String bestBlockNumber = jsonResponse.get(0).get("result").get("transactions").get(0).get("blockNumber").asText();
-                if(bestBlockNumber.equals("0x1770")) { // We reached the tip of the test database imported on server on the client
-                    break;
+                try {
+                    JsonNode jsonResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portClientHttp);
+                    String bestBlockNumber = jsonResponse.get(0).get("result").get("transactions").get(0).get("blockNumber").asText();
+                    if(bestBlockNumber.equals("0x1770")) { // We reached the tip of the test database imported on server on the client
+                        isClientSynced = true;
+                        break;
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error while trying to get the best block number from the client: " + e.getMessage());
+                    System.out.println("We will try again in 10 seconds.");
+                    ThreadTimerHelper.waitForSeconds(10);
                 }
             }
         }
+
         serverNode.killNode();
         clientNode.killNode();
+
+        assertTrue(isClientSynced);
+        FilesHelper.deleteContents(Paths.get("./build/resources/integrationTest/").toFile());
+        FilesHelper.deleteContents(Paths.get("./build/libs/").toFile());
     }
 
     private void importTheExportedBlocksToRegtestNode() throws IOException, InterruptedException {
