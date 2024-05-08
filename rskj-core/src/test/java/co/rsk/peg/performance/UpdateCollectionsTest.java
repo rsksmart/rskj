@@ -18,14 +18,10 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BtcBlockStore;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
@@ -33,6 +29,8 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.ReleaseRequestQueue;
 import co.rsk.peg.PegoutsWaitingForConfirmations;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationTestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -70,6 +68,8 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
     private int maxHeight = 150;
     private int minCentOutput = 1;
     private int maxCentOutput = 100;
+    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+
 
     @Test
     void updateCollections() throws IOException, VMException {
@@ -188,13 +188,13 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
             // Generate some utxos
             int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
-
-            Script federationScript = BridgeRegTestConstants.getInstance().getGenesisFederation().getP2SHScript();
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+            Script federationP2SHScript = genesisFederation.getP2SHScript();
 
             for (int i = 0; i < numUTXOs; i++) {
                 Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 Coin value = Coin.MILLICOIN.multiply(Helper.randomInRange(minMilliBtc, maxMilliBtc));
-                utxos.add(new UTXO(hash, 0, value, 1, false, federationScript));
+                utxos.add(new UTXO(hash, 0, value, 1, false, federationP2SHScript));
             }
 
             // Generate some release requests to process
@@ -247,8 +247,10 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 throw new RuntimeException("Unable to gather release tx set");
             }
 
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+
             // Generate some txs waiting for signatures
-            Script genesisFederationScript = bridgeConstants.getGenesisFederation().getP2SHScript();
+            Script genesisFederationScript = genesisFederation.getP2SHScript();
             for (int i = 0; i < Helper.randomInRange(minTxsWaitingForSigs, maxTxsWaitingForSigs); i++) {
                 Keccak256 rskHash = new Keccak256(HashUtil.keccak256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 BtcTransaction btcTx = new BtcTransaction(networkParameters);
@@ -305,13 +307,13 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
             // Generate some utxos
             int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
-
-            Script federationScript = BridgeRegTestConstants.getInstance().getGenesisFederation().getP2SHScript();
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+            Script federationP2SHScript =  genesisFederation.getP2SHScript();
 
             for (int i = 0; i < numUTXOs; i++) {
                 Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 Coin value = Coin.MILLICOIN.multiply(Helper.randomInRange(minMilliBtc, maxMilliBtc));
-                utxos.add(new UTXO(hash, 0, value, 1, false, federationScript));
+                utxos.add(new UTXO(hash, 0, value, 1, false, federationP2SHScript));
             }
 
             // Generate some release requests to process

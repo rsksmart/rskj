@@ -1339,7 +1339,7 @@ class BridgeUtilsTest {
     }
 
     private void getAmountSentToAddresses_no_output_for_address_by_network(BridgeConstants bridgeConstants) {
-        Federation genesisFederation = bridgeConstants.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet);
         Address receiver = genesisFederation.getAddress();
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
 
@@ -1363,7 +1363,7 @@ class BridgeUtilsTest {
     }
 
     private void getAmountSentToAddresses_output_value_is_0_by_network(BridgeConstants bridgeConstants) {
-        Federation genesisFederation = bridgeConstants.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet);
         Address receiver = genesisFederation.getAddress();
 
         Coin valueToTransfer = Coin.ZERO;
@@ -1465,7 +1465,7 @@ class BridgeUtilsTest {
     }
 
     private ErpFederation createNonStandardErpFederation() {
-        Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         FederationArgs genesisFederationArgs = genesisFederation.getArgs();
         List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getErpFedPubKeysList();
         long activationDelay = bridgeConstantsRegtest.getErpFedActivationDelay();
@@ -1484,7 +1484,7 @@ class BridgeUtilsTest {
         byte[] program;
 
         if (federation == null) {
-            federation = BridgeRegTestConstants.getInstance().getGenesisFederation();
+            federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         }
 
         if (isFlyover) {
@@ -1679,15 +1679,6 @@ class BridgeUtilsTest {
         inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSig.encodeToBitcoin(), sigIndex, 1, 1);
 
         return inputScript;
-    }
-
-    private Federation getGenesisFederationForTest(BridgeConstants bridgeConstants, Context btcContext){
-        Federation federation = bridgeConstants.getGenesisFederation();
-        Wallet wallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
-        Address federationAddress = federation.getAddress();
-        wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
-
-        return federation;
     }
 
     @Test

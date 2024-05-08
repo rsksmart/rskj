@@ -119,9 +119,9 @@ class BridgeSupportProcessFundsMigrationTest {
         ActivationConfig.ForBlock activations,
         boolean inMigrationAge
     ) throws IOException {
-        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = bridgeConstants.getGenesisFederation();
+        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
         long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
 
         long federationCreationBlockNumber = 5L;

@@ -22,10 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationFactory;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -37,30 +34,24 @@ public class BridgeDevNetConstants extends BridgeConstants {
     // IMPORTANT: BTC, RSK and MST keys are the same.
     // Change upon implementation of the <INSERT FORK NAME HERE> fork.
     public static final List<BtcECKey> DEVNET_FEDERATION_PUBLIC_KEYS = Collections.unmodifiableList(Arrays.asList(
-            BtcECKey.fromPublicOnly(
-                    Hex.decode("03d68975ab0f6ab782febc37aaa486ae19cc5e72c6900e34e21317285c88915ed6")
-            ),
-            BtcECKey.fromPublicOnly(
-                    Hex.decode("02914c05df0b11862ac6931c226ad40ebc4f5624ee6dca34278d3bbfa73b914cbd")
-            ),
-            BtcECKey.fromPublicOnly(
-                    Hex.decode("0309d9df35855aa45235a04e30d228889eb03e462874588e631359d5f9cdea6519")
-            )
+        BtcECKey.fromPublicOnly(
+            Hex.decode("03d68975ab0f6ab782febc37aaa486ae19cc5e72c6900e34e21317285c88915ed6")
+        ),
+        BtcECKey.fromPublicOnly(
+            Hex.decode("02914c05df0b11862ac6931c226ad40ebc4f5624ee6dca34278d3bbfa73b914cbd")
+        ),
+        BtcECKey.fromPublicOnly(
+            Hex.decode("0309d9df35855aa45235a04e30d228889eb03e462874588e631359d5f9cdea6519")
+        )
     ));
+    private static final BridgeDevNetConstants instance = new BridgeDevNetConstants(DEVNET_FEDERATION_PUBLIC_KEYS);
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
 
-        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federationPublicKeys);
+        this.genesisFederationPublicKeys = federationPublicKeys;
 
-        // Currently set to:
-        // Monday, November 13, 2017 9:00:00 PM GMT-03:00
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1510617600l);
-
-        // Expected federation address is:
-        // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
-        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, getBtcParams());
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        genesisFederationCreationTime = ZonedDateTime.parse("2017-11-14T00:00:00Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 1;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
@@ -168,5 +159,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         btcHeightWhenPegoutTxIndexActivates = 1_000_000;
         pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
+    }
+    public static BridgeDevNetConstants getInstance() {
+        return instance;
     }
 }

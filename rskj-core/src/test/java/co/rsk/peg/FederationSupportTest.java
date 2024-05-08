@@ -17,13 +17,26 @@
  */
 package co.rsk.peg;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationArgs;
+import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationTestUtils;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -35,16 +48,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class FederationSupportTest {
 
@@ -62,7 +65,7 @@ class FederationSupportTest {
         activations = mock(ActivationConfig.ForBlock.class);
 
         federationSupport = new FederationSupport(
-            bridgeConstants,
+                bridgeConstants,
             provider,
             executionBlock,
             activations
@@ -71,11 +74,13 @@ class FederationSupportTest {
 
     @Test
     void whenNewFederationIsNullThenActiveFederationIsGenesisFederation() {
-        Federation genesisFederation = getNewFakeFederation(0);
-        when(provider.getNewFederation())
-            .thenReturn(null);
-        when(bridgeConstants.getGenesisFederation())
-            .thenReturn(genesisFederation);
+        final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+        final Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants);
+
+        when(provider.getNewFederation()).thenReturn(null);
+        when(bridgeConstants.getGenesisFederationCreationTime()).thenReturn(genesisFederation.getCreationTime());
+        when(bridgeConstants.getGenesisFederationPublicKeys()).thenReturn(genesisFederation.getBtcPublicKeys());
+        when(bridgeConstants.getBtcParams()).thenReturn(genesisFederation.getBtcParams());
 
         assertThat(federationSupport.getActiveFederation(), is(genesisFederation));
     }
