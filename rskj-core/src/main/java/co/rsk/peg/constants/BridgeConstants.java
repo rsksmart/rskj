@@ -43,8 +43,8 @@ public abstract class BridgeConstants {
 
     protected Coin legacyMinimumPeginTxValue;
     protected Coin minimumPeginTxValue;
-    protected Coin legacyMinimumPegoutTxValueInSatoshis;
-    protected Coin minimumPegoutTxValueInSatoshis;
+    protected Coin legacyMinimumPegoutTxValue;
+    protected Coin minimumPegoutTxValue;
 
     protected long federationActivationAge;
     protected long federationActivationAgeLegacy;
@@ -126,9 +126,9 @@ public abstract class BridgeConstants {
         return activations.isActive(ConsensusRule.RSKIP219) ? minimumPeginTxValue : legacyMinimumPeginTxValue;
     }
 
-    public Coin getLegacyMinimumPegoutTxValueInSatoshis() { return legacyMinimumPegoutTxValueInSatoshis; }
+    public Coin getLegacyMinimumPegoutTxValue() { return legacyMinimumPegoutTxValue; }
 
-    public Coin getMinimumPegoutTxValueInSatoshis() { return minimumPegoutTxValueInSatoshis; }
+    public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
 
     public long getFederationActivationAge(ActivationConfig.ForBlock activations) {
         return activations.isActive(ConsensusRule.RSKIP383)? federationActivationAge: federationActivationAgeLegacy;
