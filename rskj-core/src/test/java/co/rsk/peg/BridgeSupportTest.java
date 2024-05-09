@@ -30,6 +30,8 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
@@ -137,11 +139,12 @@ class BridgeSupportTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
         BridgeConstants constants = mock(BridgeConstants.class);
+        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
 
         when(provider.getFeePerKbElection(any())).thenReturn(new ABICallElection(null));
         when(tx.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(ByteUtil.leftPadBytes(new byte[]{0x43}, 20)));
-        when(constants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
+        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
         when(authorizer.isAuthorized(eq(tx), any())).thenReturn(true);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -159,12 +162,14 @@ class BridgeSupportTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
         BridgeConstants constants = mock(BridgeConstants.class);
+        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
+
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
 
         when(provider.getFeePerKbElection(any())).thenReturn(new ABICallElection(authorizer));
         when(tx.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(senderBytes));
-        when(constants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
+        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
         when(authorizer.isAuthorized(eq(tx), any())).thenReturn(false);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -182,10 +187,11 @@ class BridgeSupportTest {
         Transaction tx = mock(Transaction.class);
         BridgeConstants constants = mock(BridgeConstants.class);
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
+        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
 
         when(provider.getFeePerKbElection(any()))
             .thenReturn(new ABICallElection(authorizer));
-        when(constants.getFeePerKbChangeAuthorizer())
+        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer())
             .thenReturn(authorizer);
         when(authorizer.isAuthorized(eq(tx), any()))
             .thenReturn(true);
@@ -208,6 +214,7 @@ class BridgeSupportTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
         BridgeConstants constants = mock(BridgeConstants.class);
+        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
 
@@ -217,7 +224,7 @@ class BridgeSupportTest {
             .thenReturn(new ABICallElection(authorizer));
         when(tx.getSender(any(SignatureCache.class)))
             .thenReturn(sender);
-        when(constants.getFeePerKbChangeAuthorizer())
+        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer())
             .thenReturn(authorizer);
         when(authorizer.isAuthorized(eq(tx), any()))
             .thenReturn(true);
@@ -225,7 +232,7 @@ class BridgeSupportTest {
             .thenReturn(true);
         when(authorizer.getRequiredAuthorizedKeys())
             .thenReturn(2);
-        when(constants.getMaxFeePerKb())
+        when(feePerKbMainNetConstants.getMaxFeePerKb())
             .thenReturn(Coin.valueOf(MAX_FEE_PER_KB));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -244,6 +251,7 @@ class BridgeSupportTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
         BridgeConstants constants = mock(BridgeConstants.class);
+        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
 
@@ -253,7 +261,7 @@ class BridgeSupportTest {
             .thenReturn(new ABICallElection(authorizer));
         when(tx.getSender(any(SignatureCache.class)))
             .thenReturn(sender);
-        when(constants.getFeePerKbChangeAuthorizer())
+        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer())
             .thenReturn(authorizer);
         when(authorizer.isAuthorized(eq(tx), any()))
             .thenReturn(true);
@@ -261,7 +269,7 @@ class BridgeSupportTest {
             .thenReturn(true);
         when(authorizer.getRequiredAuthorizedKeys())
             .thenReturn(2);
-        when(constants.getMaxFeePerKb())
+        when(feePerKbMainNetConstants.getMaxFeePerKb())
             .thenReturn(Coin.valueOf(MAX_FEE_PER_KB));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -279,6 +287,7 @@ class BridgeSupportTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
         BridgeConstants constants = mock(BridgeConstants.class);
+        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
 
@@ -288,7 +297,7 @@ class BridgeSupportTest {
             .thenReturn(new ABICallElection(authorizer));
         when(tx.getSender(any(SignatureCache.class)))
             .thenReturn(sender);
-        when(constants.getFeePerKbChangeAuthorizer())
+        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer())
             .thenReturn(authorizer);
         when(authorizer.isAuthorized(eq(tx), any()))
             .thenReturn(true);
@@ -296,7 +305,7 @@ class BridgeSupportTest {
             .thenReturn(true);
         when(authorizer.getRequiredAuthorizedKeys())
             .thenReturn(1);
-        when(constants.getMaxFeePerKb())
+        when(feePerKbMainNetConstants.getMaxFeePerKb())
             .thenReturn(Coin.valueOf(MAX_FEE_PER_KB));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -6921,13 +6930,15 @@ class BridgeSupportTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(isLockingCapEnabled);
 
+        FeePerKbConstants feePerKbMainNetConstants = FeePerKbMainNetConstants.getInstance();
+        FeePerKbConstants feePerKbConstants = mock(FeePerKbMainNetConstants.class);
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
         when(bridgeConstants.getMinimumPeginTxValue(activations)).thenReturn(Coin.SATOSHI);
-        when(bridgeConstants.getBtcParams()).thenReturn(BridgeRegTestConstants.getInstance().getBtcParams());
+        when(bridgeConstants.getBtcParams()).thenReturn(BridgeMainNetConstants.getInstance().getBtcParams());
         when(bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()).thenReturn(1);
-        when(bridgeConstants.getGenesisFeePerKb()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFeePerKb());
-        when(bridgeConstants.getMaxRbtc()).thenReturn(BridgeRegTestConstants.getInstance().getMaxRbtc());
-        when(bridgeConstants.getOldFederationAddress()).thenReturn(BridgeRegTestConstants.getInstance().getOldFederationAddress());
+        when(feePerKbConstants.getGenesisFeePerKb()).thenReturn(feePerKbMainNetConstants.getGenesisFeePerKb());
+        when(bridgeConstants.getMaxRbtc()).thenReturn(BridgeMainNetConstants.getInstance().getMaxRbtc());
+        when(bridgeConstants.getOldFederationAddress()).thenReturn(BridgeMainNetConstants.getInstance().getOldFederationAddress());
 
         // Configure locking cap
         when(bridgeConstants.getInitialLockingCap()).thenReturn(lockingCap);
