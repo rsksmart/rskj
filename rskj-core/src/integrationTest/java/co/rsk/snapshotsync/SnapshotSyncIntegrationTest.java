@@ -33,7 +33,11 @@ public class SnapshotSyncIntegrationTest {
     private static final String TAG_TO_REPLACE_CLIENT_PORT = "<CLIENT_PORT>";
     private static final String TAG_TO_REPLACE_CLIENT_RPC_HTTP_PORT = "<CLIENT_RPC_HTTP_PORT>";
     private static final String TAG_TO_REPLACE_CLIENT_RPC_WS_PORT = "<CLIENT_RPC_WS_PORT>";
-    public static final String TMP_RSKJ_INTEGRATION_TEST_FOLDER = "rskj-integration-test-";
+    private static final String TMP_RSKJ_INTEGRATION_TEST_FOLDER = "rskj-integration-test-";
+
+    private static final String RSKJ_SERVER_CONF_FILE_NAME = "snap-sync-server-rskj.conf";
+    private static final String RSKJ_CLIENT_CONF_FILE_NAME = "snap-sync-client-rskj.conf";
+
     private final int portServer = RandomUtils.nextInt(1, 5000);
     private final int portClient = RandomUtils.nextInt(5001, 9999);
     private final int portClientHttp = portClient + 1;
@@ -88,8 +92,9 @@ public class SnapshotSyncIntegrationTest {
         clientNode.killNode();
 
         assertTrue(isClientSynced);
-        FilesHelper.deleteContents(Paths.get("./build/resources/integrationTest/").toFile());
-        FilesHelper.deleteContents(Paths.get("./build/libs/").toFile());
+        FilesHelper.deleteContents(Paths.get("./build/resources/integrationTest/" + RSKJ_SERVER_CONF_FILE_NAME ).toFile());
+        FilesHelper.deleteContents(Paths.get("./build/resources/integrationTest/" + RSKJ_CLIENT_CONF_FILE_NAME).toFile());
+
     }
 
     private void importTheExportedBlocksToRegtestNode() throws IOException, InterruptedException {
@@ -99,8 +104,7 @@ public class SnapshotSyncIntegrationTest {
     }
 
     private String configureServerWithGeneratedInformation(Path tempDirDatabaseServerPath) throws IOException {
-        String rskConfFileServerName = "snap-sync-server-rskj.conf";
-        String rskConfFileServer = FilesHelper.getAbsolutPathFromResourceFile(getClass(), rskConfFileServerName);
+        String rskConfFileServer = FilesHelper.getAbsolutPathFromResourceFile(getClass(), RSKJ_SERVER_CONF_FILE_NAME);
         List<Pair<String, String>> tagsWithValues = new ArrayList<>();
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_SERVER_DATABASE_PATH, tempDirDatabaseServerPath.toString()));
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_SERVER_PORT, String.valueOf(portServer)));
@@ -113,8 +117,7 @@ public class SnapshotSyncIntegrationTest {
 
     private String configureClientConfWithGeneratedInformation(Path tempDirDatabaseServerPath, String tempDirDatabasePath) throws IOException {
         String nodeId = readServerNodeId(tempDirDatabaseServerPath);
-        String rskConfFileClientName = "snap-sync-client-rskj.conf";
-        String rskConfFileClient = FilesHelper.getAbsolutPathFromResourceFile(getClass(), rskConfFileClientName);
+        String rskConfFileClient = FilesHelper.getAbsolutPathFromResourceFile(getClass(), RSKJ_CLIENT_CONF_FILE_NAME);
 
         List<Pair<String, String>> tagsWithValues = new ArrayList<>();
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_NODE_ID, nodeId));
