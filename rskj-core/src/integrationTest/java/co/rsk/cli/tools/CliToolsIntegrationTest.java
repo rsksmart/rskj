@@ -21,7 +21,7 @@ import co.rsk.RskContext;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import co.rsk.util.CommandLineFixture;
+import co.rsk.util.cli.CommandLineFixture;
 import co.rsk.util.DataBytesFixture;
 import co.rsk.util.HexUtils;
 import co.rsk.util.OkHttpClientTestFixture;
@@ -74,12 +74,13 @@ class CliToolsIntegrationTest  {
         String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
         String logbackXmlFile = String.format("%s/logback.xml", integrationTestResourcesPath);
         String rskConfFile = String.format("%s/integration-test-rskj.conf", integrationTestResourcesPath);
-        Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath));
-        jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
-                .map(p -> p.getFileName().toString())
-                .filter(fn -> fn.endsWith("-all.jar"))
-                .findFirst()
-                .get();
+        try (Stream<Path> pathsStream = Files.list(Paths.get(buildLibsPath))) {
+            jarName = pathsStream.filter(p -> !p.toFile().isDirectory())
+                    .map(p -> p.getFileName().toString())
+                    .filter(fn -> fn.endsWith("-all.jar"))
+                    .findFirst()
+                    .get();
+        }
         Path databaseDirPath = tempDir.resolve("database");
         databaseDir = databaseDirPath.toString();
         bloomsDbDir = databaseDirPath.resolve("blooms").toString();
@@ -93,20 +94,6 @@ class CliToolsIntegrationTest  {
         baseJavaCmd = String.format("java %s %s", String.format("-Dlogback.configurationFile=%s", logbackXmlFile), String.format("-Drsk.conf.file=%s", rskConfFile));
     }
 
-    private Response getBestBlock() throws IOException {
-        String content = "[{\n" +
-                "    \"method\": \"eth_getBlockByNumber\",\n" +
-                "    \"params\": [\n" +
-                "        \"latest\",\n" +
-                "        true\n" +
-                "    ],\n" +
-                "    \"id\": 1,\n" +
-                "    \"jsonrpc\": \"2.0\"\n" +
-                "}]";
-
-        return OkHttpClientTestFixture.sendJsonRpcMessage(content, port);
-    }
-
     @Test
     void whenExportBlocksRuns_shouldExportSpecifiedBlocks() throws Exception {
         Map<String, Response> responseMap = new HashMap<>();
@@ -117,7 +104,7 @@ class CliToolsIntegrationTest  {
                 TimeUnit.MINUTES,
                 proc -> {
                     try {
-                        Response response = getBestBlock();
+                        Response response = OkHttpClientTestFixture.sendJsonRpcGetBestBlockMessage(port);
                         responseMap.put("latestProcessedBlock", response);
                     } catch (IOException e) {
                         Assertions.fail(e);
@@ -192,7 +179,7 @@ class CliToolsIntegrationTest  {
                 1,
                 TimeUnit.MINUTES, proc -> {
                     try {
-                        Response response = getBestBlock();
+                        Response response = OkHttpClientTestFixture.sendJsonRpcGetBestBlockMessage(port);
                         responseMap.put("latestProcessedBlock", response);
                     } catch (IOException e) {
                         Assertions.fail(e);
@@ -225,7 +212,7 @@ class CliToolsIntegrationTest  {
                 1,
                 TimeUnit.MINUTES, proc -> {
                     try {
-                        Response response = getBestBlock();
+                        Response response = OkHttpClientTestFixture.sendJsonRpcGetBestBlockMessage(port);
                         responseMap.put("latestProcessedBlock", response);
                     } catch (IOException e) {
                         Assertions.fail(e);
@@ -351,7 +338,6 @@ class CliToolsIntegrationTest  {
         cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ImportState --file %s %s", baseJavaCmd, buildLibsPath, jarName, statesFile.getAbsolutePath(), strBaseArgs);
         CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
-        List<String> lines = Files.readAllLines(Paths.get(statesFile.getAbsolutePath()));
         Files.delete(Paths.get(statesFile.getAbsolutePath()));
 
         rskContext = new RskContext(baseArgs);
