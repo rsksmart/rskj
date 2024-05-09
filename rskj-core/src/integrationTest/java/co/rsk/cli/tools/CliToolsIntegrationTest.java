@@ -51,7 +51,7 @@ import java.util.stream.Stream;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class CliToolsIntegrationTest  {
+class CliToolsIntegrationTest {
 
     private String buildLibsPath;
     private String jarName;
