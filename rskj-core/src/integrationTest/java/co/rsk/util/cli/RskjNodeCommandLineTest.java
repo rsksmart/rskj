@@ -1,5 +1,6 @@
 package co.rsk.util.cli;
 
+import co.rsk.util.FilesHelper;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -11,7 +12,7 @@ class RskjNodeCommandLineTest {
     @Test
     void whenExecuteCommandConnectBlocks_thenOutputWithSuccess() throws IOException, InterruptedException {
         //given
-        String filePath = getIntegrationTestResourcesFullPath() + "server_blocks.csv";
+        String filePath = FilesHelper.getAbsolutPathFromResourceFile(getClass(), "server_blocks.csv");
         //when
         RskjCommandLineBase rskjCommandLineBase = new ConnectBlocksCommandLine(filePath);
         Process cliProcess = rskjCommandLineBase.executeCommand();
@@ -19,10 +20,5 @@ class RskjNodeCommandLineTest {
         //then
         assertTrue(output.contains("ConnectBlocks finished"));
         cliProcess.destroyForcibly();
-    }
-
-    private static String getIntegrationTestResourcesFullPath() {
-        String projectPath = System.getProperty("user.dir");
-        return String.format("%s/src/integrationTest/resources/", projectPath);
     }
 }
