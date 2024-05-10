@@ -60,7 +60,6 @@ public abstract class BridgeConstants {
     protected AddressBasedAuthorizer feePerKbChangeAuthorizer;
 
     protected Coin genesisFeePerKb;
-
     protected Coin maxFeePerKb;
 
     protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
@@ -76,7 +75,6 @@ public abstract class BridgeConstants {
     protected int maxDepthBlockchainAccepted;
 
     protected long erpFedActivationDelay;
-
     protected List<BtcECKey> erpFedPubKeysList;
 
     protected String oldFederationAddress;

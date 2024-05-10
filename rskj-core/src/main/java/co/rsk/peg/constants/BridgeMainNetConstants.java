@@ -41,8 +41,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
             federator9PublicKey, federator10PublicKey, federator11PublicKey,
             federator12PublicKey, federator13PublicKey, federator14PublicKey
         );
-
-        genesisFederationCreationTime = ZonedDateTime.parse("2018-01-03T03:00:00Z").toInstant();
+        genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 100;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;
@@ -96,7 +95,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
         );
 
         genesisFeePerKb = Coin.MILLICOIN.multiply(5);
-
         maxFeePerKb = Coin.valueOf(5_000_000L);
 
         List<ECKey> increaseLockingCapAuthorizedKeys = Arrays.stream(new String[]{

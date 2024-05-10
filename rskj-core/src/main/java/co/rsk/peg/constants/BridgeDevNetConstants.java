@@ -49,9 +49,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
 
-        this.genesisFederationPublicKeys = federationPublicKeys;
-
-        genesisFederationCreationTime = ZonedDateTime.parse("2017-11-14T00:00:00Z").toInstant();
+        genesisFederationPublicKeys = federationPublicKeys;
+        genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T11:36:57.600Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 1;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
@@ -110,7 +109,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
         );
 
         genesisFeePerKb = Coin.MILLICOIN;
-
         maxFeePerKb = Coin.valueOf(5_000_000L);
 
         // Key generated with GenNodeKey using generator 'auth-increase_locking_cap'
