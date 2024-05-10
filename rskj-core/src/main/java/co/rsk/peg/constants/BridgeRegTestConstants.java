@@ -49,8 +49,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
 
-        this.genesisFederationPublicKeys = federationPublicKeys;
-
+        genesisFederationPublicKeys = federationPublicKeys;
         genesisFederationCreationTime = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 3;
