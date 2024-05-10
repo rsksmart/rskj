@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Coin;
+import java.time.Instant;
 import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -160,17 +161,17 @@ class BridgeConstantsTest {
 
     private static Stream<Arguments> getGenesisFederationCreationTimeTestProvider() {
         return Stream.of(
-                Arguments.of(BridgeMainNetConstants.getInstance(), 1514948400L),
-                Arguments.of(BridgeTestNetConstants.getInstance(), 1538967600L),
-                Arguments.of(BridgeRegTestConstants.getInstance(), 1451606400L),
-                Arguments.of(BridgeDevNetConstants.getInstance(),1510617600L)
+            Arguments.of(BridgeMainNetConstants.getInstance(), Instant.ofEpochMilli(1514948400L)),
+            Arguments.of(BridgeTestNetConstants.getInstance(), Instant.ofEpochMilli(1538967600L)),
+            Arguments.of(BridgeRegTestConstants.getInstance(), Instant.ofEpochSecond(1451606400L)),
+            Arguments.of(BridgeDevNetConstants.getInstance(), Instant.ofEpochMilli(1510617600L))
         );
     }
 
     @ParameterizedTest
     @MethodSource("getGenesisFederationCreationTimeTestProvider")
-    void getGenesisFederationCreationTimeTest(BridgeConstants bridgeConstants, long expectedGenesisFederationCreationTime){
-        long actualGenesisFederationCreationTime = bridgeConstants.getGenesisFederationCreationTime().getEpochSecond();
+    void getGenesisFederationCreationTimeTest(BridgeConstants bridgeConstants, Instant expectedGenesisFederationCreationTime){
+        Instant actualGenesisFederationCreationTime = bridgeConstants.getGenesisFederationCreationTime();
         assertEquals(expectedGenesisFederationCreationTime, actualGenesisFederationCreationTime);
     }
 }
