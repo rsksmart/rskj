@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.peg.constants.BridgeDevNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.config.ConfigLoader;
+import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
@@ -128,10 +129,12 @@ public abstract class SystemProperties {
     protected SystemProperties(ConfigLoader loader) {
         try {
             this.configFromFiles = loader.getConfig();
-            logger.trace(
-                    "Config trace: {}",
-                    configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
-            );
+            if(logger.isTraceEnabled()){
+                logger.trace(
+                        "Config trace: {}",
+                        configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
+                );
+            }
 
             Properties props = new Properties();
             try (InputStream is = getClass().getResourceAsStream("/version.properties")) {
@@ -152,11 +155,11 @@ public abstract class SystemProperties {
             return "-.-.-";
         }
 
-        return versionNumber.replaceAll("'", "");
+        return versionNumber.replace("'", "");
     }
 
     private static String getProjectVersionModifier(Properties props) {
-        return props.getProperty("modifier").replaceAll("\"", "");
+        return props.getProperty("modifier").replace("\"", "");
     }
 
     public Config getConfig() {
@@ -406,7 +409,9 @@ public abstract class SystemProperties {
                 file.getParentFile().mkdirs();
                 try (FileWriter writer = new FileWriter(file)) {
                     props.store(writer, "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
-                    logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
+                    if(logger.isInfoEnabled()) {
+                        logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
+                    }
                     logger.info("Generated nodeID and its private key stored in {}", file);
                 }
             }
@@ -505,10 +510,8 @@ public abstract class SystemProperties {
             InetAddress resolvedIp = tryParseIpOrThrow(ipFromService);
             logger.info("Identified public IP: {}", resolvedIp);
             return resolvedIp;
-        } catch (IOException e) {
-            logger.error("Can't get public IP", e);
-        } catch (IllegalArgumentException e) {
-            logger.error("Can't get public IP", e);
+        } catch (IOException | IllegalArgumentException exception) {
+            logger.error("Can't get public IP", exception);
         }
 
         InetAddress bindAddress = getBindAddress();
@@ -768,5 +771,10 @@ public abstract class SystemProperties {
         }
 
         return configFromFiles.getInt(PROPERTY_RPC_MAX_RESPONSE_SIZE);
+    }
+
+    public StableMinGasPriceSystemConfig getStableGasPriceSystemConfig() {
+        Config config = configFromFiles.getConfig(StableMinGasPriceSystemConfig.STABLE_GAS_PRICE_CONFIG_PATH_PROPERTY);
+        return new StableMinGasPriceSystemConfig(config);
     }
 }

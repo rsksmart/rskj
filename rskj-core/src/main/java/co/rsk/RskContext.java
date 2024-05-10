@@ -21,6 +21,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.cli.CliArgs;
 import co.rsk.cli.RskCli;
 import co.rsk.config.*;
+import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
@@ -42,6 +43,7 @@ import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.mine.*;
 import co.rsk.mine.gas.DefaultMinGasPriceProvider;
 import co.rsk.mine.gas.MinGasPriceProvider;
+import co.rsk.mine.gas.StableMinGasPriceProviderFactory;
 import co.rsk.net.*;
 import co.rsk.net.discovery.KnownPeersHandler;
 import co.rsk.net.discovery.PeerExplorer;
@@ -1633,7 +1635,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (rskSystemProperties.usePeersFromLastSession()) {
             List<String> peerLastSession = knownPeersHandler.readPeers();
-            logger.debug("Loading peers from previous session: {}",peerLastSession);
+            logger.debug("Loading peers from previous session: {}", peerLastSession);
             initialBootNodes.addAll(peerLastSession);
         }
         return new ArrayList<>(initialBootNodes);
@@ -1856,10 +1858,13 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     }
 
     private MinGasPriceProvider getMinGasPriceProvider() {
-        long minGasPrice = getRskSystemProperties().minerMinGasPrice();
         if (minGasPriceProvider == null) {
-            minGasPriceProvider = new DefaultMinGasPriceProvider(minGasPrice);
+            long minGasPrice = getRskSystemProperties().minerMinGasPrice();
+            DefaultMinGasPriceProvider defaultMinGasPriceProvider = new DefaultMinGasPriceProvider(minGasPrice);
+            StableMinGasPriceSystemConfig stableGasPriceSystemConfig = getRskSystemProperties().getStableGasPriceSystemConfig();
+            minGasPriceProvider = stableGasPriceSystemConfig.isEnabled() ? StableMinGasPriceProviderFactory.create(stableGasPriceSystemConfig, defaultMinGasPriceProvider) : defaultMinGasPriceProvider;
         }
+        logger.debug("MinGasPriceProvider type: {}", minGasPriceProvider.getType().name());
         return minGasPriceProvider;
     }
 

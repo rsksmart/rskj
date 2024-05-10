@@ -19,7 +19,7 @@ class DefaultMinGasPriceProviderTest {
     void testGetType() {
         long minGasPrice = 100L;
         DefaultMinGasPriceProvider provider = new DefaultMinGasPriceProvider(minGasPrice);
-        assertEquals(GasPriceProviderType.DEFAULT, provider.getType());
+        assertEquals(MinGasPriceProviderType.DEFAULT, provider.getType());
     }
 
     @Test

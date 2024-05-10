@@ -6,7 +6,7 @@ public interface MinGasPriceProvider {
 
     long getMinGasPrice();
 
-    GasPriceProviderType getType();
+    MinGasPriceProviderType getType();
 
     Coin getMinGasPriceAsCoin();
 }

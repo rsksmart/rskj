@@ -17,8 +17,8 @@ public class DefaultMinGasPriceProvider implements MinGasPriceProvider {
     }
 
     @Override
-    public GasPriceProviderType getType() {
-        return GasPriceProviderType.DEFAULT;
+    public MinGasPriceProviderType getType() {
+        return MinGasPriceProviderType.DEFAULT;
     }
 
     @Override
