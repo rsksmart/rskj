@@ -17,6 +17,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.PeginEvaluationResult;
 import co.rsk.peg.pegin.PeginProcessAction;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
@@ -117,9 +118,10 @@ public class PegUtils {
             );
         } else {
             Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
+            FederationConstants federationConstants = bridgeConstants.getFederationConstants();
             Address oldFederationAddress = Address.fromBase58(
                 bridgeConstants.getBtcParams(),
-                bridgeConstants.getOldFederationAddress()
+                federationConstants.getOldFederationAddress()
             );
             Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 

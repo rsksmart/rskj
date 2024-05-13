@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -49,9 +48,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
-
-        genesisFederationPublicKeys = federationPublicKeys;
-        genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T11:36:57.600Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 1;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
@@ -92,13 +88,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
             AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
-        federationActivationAgeLegacy = 10L;
-        federationActivationAge = 20L;
-
-        fundsMigrationAgeSinceActivationBegin = 15L;
-        fundsMigrationAgeSinceActivationEnd = 100L;
-        specialCaseFundsMigrationAgeSinceActivationEnd = 100L;
-
         // Key generated with GenNodeKey using generator 'auth-increase_locking_cap'
         List<ECKey> increaseLockingCapAuthorizedKeys = Arrays.stream(new String[]{
             "04450bbaab83ec48b3cb8fbb077c950ee079733041c039a8c4f1539e5181ca1a27589eeaf0fbf430e49d2909f14c767bf6909ad6845831f683416ee12b832e36ed"
@@ -115,23 +104,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         btcHeightWhenBlockIndexActivates = 700_000;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
-
-        erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
-
-        // Keys generated with GenNodeKey using generators 'erp-fed-01' through 'erp-fed-05'
-        erpFedPubKeysList = Arrays.stream(new String[] {
-            "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
-            "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
-            "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd",
-            "03776b1fd8f86da3c1db3d69699e8250a15877d286734ea9a6da8e9d8ad25d16c1",
-            "03ab0e2cd7ed158687fc13b88019990860cdb72b1f5777b58513312550ea1584bc"
-        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
-
-        // Multisig address created in bitcoind with the following private keys:
-        // 47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83
-        // 9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35
-        // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
-        oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes
 
