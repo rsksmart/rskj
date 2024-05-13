@@ -398,6 +398,7 @@ public final class BridgeUtils {
         }
 
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         RskAddress senderAddress = rskTx.getSender(signatureCache);
 
         // Temporary assumption: if areBridgeTxsFree() is true then the current federation
@@ -407,7 +408,7 @@ public final class BridgeUtils {
            !activations.isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
            rskTx.acceptTransactionSignature(constants.getChainId()) &&
            (
-               isFromGenesisFederation(senderAddress, bridgeConstants.getGenesisFederationPublicKeys()) ||
+               isFromGenesisFederation(senderAddress, federationConstants.getGenesisFederationPublicKeys()) ||
                isFromAuthorizedSender(rskTx, bridgeConstants, signatureCache)
            );
     }
