@@ -24,6 +24,7 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.constants.FederationConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 
@@ -234,7 +235,8 @@ public class FederationSupport {
 
     private boolean shouldFederationBeActive(Federation federation) {
         long federationAge = executionBlock.getNumber() - federation.getCreationBlockNumber();
-        return federationAge >= bridgeConstants.getFederationActivationAge(activations);
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        return federationAge >= federationConstants.getFederationActivationAge(activations);
     }
 
     /**
@@ -244,9 +246,10 @@ public class FederationSupport {
      */
     private Federation getGenesisFederation() {
         final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
-        final List<BtcECKey> genesisFederationPublicKeys = bridgeConstants.getGenesisFederationPublicKeys();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        final List<BtcECKey> genesisFederationPublicKeys = federationConstants.getGenesisFederationPublicKeys();
         final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
-        final Instant genesisFederationCreationTime = bridgeConstants.getGenesisFederationCreationTime();
+        final Instant genesisFederationCreationTime = federationConstants.getGenesisFederationCreationTime();
         final FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, GENESIS_FEDERATION_CREATION_BLOCK_NUMBER, bridgeConstants.getBtcParams());
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
