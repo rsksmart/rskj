@@ -185,11 +185,10 @@ public abstract class SystemProperties {
                     );
                     break;
                 case "regtest":
-                    if (getGenesisFederationPublicKeys().isPresent()) {
-                        constants = Constants.regtestWithFederation(getGenesisFederationPublicKeys().get());
-                    } else {
-                        constants = Constants.regtest();
-                    }
+                    Optional<List<BtcECKey>> genesisFederationPublicKeysOptional = getGenesisFederationPublicKeys();
+                    constants = genesisFederationPublicKeysOptional
+                        .map(Constants::regtestWithFederation)
+                        .orElseGet(Constants::regtest);
                     break;
                 default:
                     throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
