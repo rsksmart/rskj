@@ -23,7 +23,6 @@ public class FederationConstants {
     protected long erpFedActivationDelay;
     protected List<BtcECKey> erpFedPubKeysList;
 
-
     public List<BtcECKey> getGenesisFederationPublicKeys() {
         return genesisFederationPublicKeys;
     }
@@ -39,6 +38,7 @@ public class FederationConstants {
     public long getFundsMigrationAgeSinceActivationBegin() {
         return fundsMigrationAgeSinceActivationBegin;
     }
+
     public long getFundsMigrationAgeSinceActivationEnd(ActivationConfig.ForBlock activations) {
         if (activations.isActive(ConsensusRule.RSKIP357) && !activations.isActive(ConsensusRule.RSKIP374)){
             return specialCaseFundsMigrationAgeSinceActivationEnd;
