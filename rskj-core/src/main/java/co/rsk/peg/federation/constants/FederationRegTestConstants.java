@@ -15,18 +15,19 @@ import java.util.stream.Collectors;
 
 public class FederationRegTestConstants extends FederationConstants {
 
-    public static final List<BtcECKey> defaultGenesisFederationPublicKeys =
-        Collections.unmodifiableList(getDefaultGenesisFederationPrivateKeys().stream()
+    public static final List<BtcECKey> defaultFederationPublicKeys =
+        Collections.unmodifiableList(getDefaultFederationPrivateKeys().stream()
         .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
         .collect(Collectors.toList()));
-    private static List<BtcECKey> getDefaultGenesisFederationPrivateKeys() {
+
+    private static List<BtcECKey> getDefaultFederationPrivateKeys() {
         BtcECKey federator0PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8)));
         BtcECKey federator1PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8)));
         BtcECKey federator2PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)));
         return Collections.unmodifiableList(Arrays.asList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey));
     }
 
-    private static final FederationRegTestConstants instance = new FederationRegTestConstants(defaultGenesisFederationPublicKeys);
+    private static final FederationRegTestConstants instance = new FederationRegTestConstants(defaultFederationPublicKeys);
 
     public FederationRegTestConstants(List<BtcECKey> federationPublicKeys) {
         // IMPORTANT: BTC, RSK and MST keys are the same.

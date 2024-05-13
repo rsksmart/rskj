@@ -187,7 +187,7 @@ public abstract class SystemProperties {
                     break;
                 case "regtest":
                     constants = Constants.regtestWithFederation(
-                            getGenesisFederationPublicKeys().orElse(FederationRegTestConstants.defaultGenesisFederationPublicKeys)
+                            getGenesisFederationPublicKeys().orElse(FederationRegTestConstants.defaultFederationPublicKeys)
                     );
                     break;
                 default:
