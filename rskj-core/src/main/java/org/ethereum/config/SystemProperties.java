@@ -22,7 +22,6 @@ package org.ethereum.config;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.peg.constants.BridgeDevNetConstants;
 import co.rsk.config.ConfigLoader;
-import co.rsk.peg.federation.constants.FederationRegTestConstants;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
@@ -186,9 +185,10 @@ public abstract class SystemProperties {
                     );
                     break;
                 case "regtest":
-                    constants = Constants.regtestWithFederation(
-                            getGenesisFederationPublicKeys().orElse(FederationRegTestConstants.defaultFederationPublicKeys)
-                    );
+                    Optional<List<BtcECKey>> genesisFederationPublicKeysOptional = getGenesisFederationPublicKeys();
+                    constants = genesisFederationPublicKeysOptional
+                        .map(Constants::regtestWithFederation)
+                        .orElseGet(Constants::regtest);
                     break;
                 default:
                     throw new RuntimeException(String.format("Unknown network name '%s'", netName()));

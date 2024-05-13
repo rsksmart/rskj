@@ -4,30 +4,12 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-
-import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class FederationRegTestConstants extends FederationConstants {
-
-    public static final List<BtcECKey> defaultFederationPublicKeys =
-        Collections.unmodifiableList(getDefaultFederationPrivateKeys().stream()
-        .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
-        .collect(Collectors.toList()));
-
-    private static List<BtcECKey> getDefaultFederationPrivateKeys() {
-        BtcECKey federator0PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8)));
-        BtcECKey federator1PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8)));
-        BtcECKey federator2PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)));
-        return Collections.unmodifiableList(Arrays.asList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey));
-    }
-
-    private static final FederationRegTestConstants instance = new FederationRegTestConstants(defaultFederationPublicKeys);
 
     public FederationRegTestConstants(List<BtcECKey> federationPublicKeys) {
         // IMPORTANT: BTC, RSK and MST keys are the same.
@@ -68,6 +50,4 @@ public class FederationRegTestConstants extends FederationConstants {
         // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
     }
-
-    public static FederationRegTestConstants getInstance() { return instance; }
 }
