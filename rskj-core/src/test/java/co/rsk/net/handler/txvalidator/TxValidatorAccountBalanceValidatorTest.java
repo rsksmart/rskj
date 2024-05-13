@@ -47,11 +47,11 @@ class TxValidatorAccountBalanceValidatorTest {
         Mockito.when(tx3.getGasPrice()).thenReturn(Coin.valueOf(5000));
         Mockito.when(as.getBalance()).thenReturn(Coin.valueOf(10000));
 
-        TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator(null, null, null);
+        TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
 
-        Assertions.assertTrue(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertTrue(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertTrue(tvabv.validate(tx3, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvabv.validate(tx1, null,  as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvabv.validate(tx2, null,  as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvabv.validate(tx3, null,  as, null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
@@ -66,10 +66,10 @@ class TxValidatorAccountBalanceValidatorTest {
         Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(10));
         Mockito.when(as.getBalance()).thenReturn(Coin.valueOf(19));
 
-        TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator(null, null, null);
+        TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
 
-        Assertions.assertFalse(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertFalse(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvabv.validate(tx1, null,  as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvabv.validate(tx2, null,  as, null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
@@ -87,9 +87,9 @@ class TxValidatorAccountBalanceValidatorTest {
 
         tx.sign(new ECKey().getPrivKeyBytes());
 
-        TxValidatorAccountBalanceValidator tv = new TxValidatorAccountBalanceValidator(null, null, null);
+        TxValidatorAccountBalanceValidator tv = new TxValidatorAccountBalanceValidator();
 
-        Assertions.assertTrue(tv.validate(tx, new AccountState(), BigInteger.ONE, Coin.valueOf(1L), Long.MAX_VALUE, true).transactionIsValid());
+        Assertions.assertTrue(tv.validate(tx, null,  new AccountState(), BigInteger.ONE, Coin.valueOf(1L), Long.MAX_VALUE, true).transactionIsValid());
     }
 
 }

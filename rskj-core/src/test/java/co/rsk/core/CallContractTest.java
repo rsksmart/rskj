@@ -82,8 +82,7 @@ class CallContractTest {
                     blockFactory,
                     new ProgramInvokeFactoryImpl(),
                     new PrecompiledContracts(config, bridgeSupportFactory, world.getBlockTxSignatureCache()),
-                    world.getBlockTxSignatureCache(),
-                    null
+                    world.getBlockTxSignatureCache()
             );
 
             org.ethereum.core.TransactionExecutor executor = transactionExecutorFactory

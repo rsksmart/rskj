@@ -26,7 +26,9 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.util.EthSwapUtil;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -62,13 +64,20 @@ public class BlockExecutor {
     private final Map<Keccak256, ProgramResult> transactionResults = new HashMap<>();
     private boolean registerProgramResults;
 
+    private final Constants constants;
+    private final SignatureCache signatureCache;
+
     public BlockExecutor(
             ActivationConfig activationConfig,
             RepositoryLocator repositoryLocator,
-            TransactionExecutorFactory transactionExecutorFactory) {
+            TransactionExecutorFactory transactionExecutorFactory,
+            Constants constants,
+            SignatureCache signatureCache) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.activationConfig = activationConfig;
+        this.constants = constants;
+        this.signatureCache = signatureCache;
     }
 
     /**
@@ -281,6 +290,14 @@ public class BlockExecutor {
 
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
+
+            if (EthSwapUtil.isClaimTx(tx, constants)
+                    && !EthSwapUtil.hasLockedFunds(tx,signatureCache, track)) {
+                logger.warn("block: [{}] discarded claim tx: [{}], because the funds it tries to claim no longer exist in contract",
+                        block.getNumber(),
+                        tx.getHash());
+                continue;
+            }
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,

@@ -17,8 +17,8 @@
  */
 package co.rsk.net.handler;
 
-import co.rsk.PropertyGetter;
 import co.rsk.core.Coin;
+import co.rsk.core.bc.ClaimTransactionInfoHolder;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
 import org.bouncycastle.util.BigIntegers;
@@ -53,7 +53,7 @@ public class TxPendingValidator {
 
     private final SignatureCache signatureCache;
 
-    public TxPendingValidator(Constants constants, ActivationConfig activationConfig, int accountSlots, SignatureCache signatureCache, PropertyGetter propertyGetter) {
+    public TxPendingValidator(Constants constants, ActivationConfig activationConfig, int accountSlots, SignatureCache signatureCache) {
         this.constants = constants;
         this.activationConfig = activationConfig;
         this.signatureCache = signatureCache;
@@ -61,16 +61,15 @@ public class TxPendingValidator {
         validatorSteps.add(new TxNotNullValidator());
         validatorSteps.add(new TxValidatorNotRemascTxValidator());
         validatorSteps.add(new TxValidatorGasLimitValidator());
-        validatorSteps.add(new TxValidatorAccountStateValidator());
         validatorSteps.add(new TxValidatorNonceRangeValidator(accountSlots));
-        validatorSteps.add(new TxValidatorAccountBalanceValidator(constants, signatureCache, propertyGetter));
+        validatorSteps.add(new TxValidatorAccountBalanceValidator());
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig, signatureCache));
         validatorSteps.add(new TxValidatorMaximumGasPriceValidator(activationConfig));
     }
 
 
-    public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
+    public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state, ClaimTransactionInfoHolder claimTransactionInfoHolder) {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
@@ -88,7 +87,7 @@ public class TxPendingValidator {
         }
 
         for (TxValidatorStep step : validatorSteps) {
-            TransactionValidationResult validationResult = step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0);
+            TransactionValidationResult validationResult = step.validate(tx, claimTransactionInfoHolder, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0);
             if (!validationResult.transactionIsValid()) {
                 logger.info("[tx={}] validation failed with error: {}", tx.getHash(), validationResult.getErrorMessage());
                 return validationResult;

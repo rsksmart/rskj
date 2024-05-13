@@ -475,8 +475,7 @@ class RskForksBridgeTest {
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory(), world.getBlockTxSignatureCache()),
-                world.getBlockTxSignatureCache(),
-                null
+                world.getBlockTxSignatureCache()
         );
         Repository track = repository.startTracking();
         TransactionExecutor executor = transactionExecutorFactory

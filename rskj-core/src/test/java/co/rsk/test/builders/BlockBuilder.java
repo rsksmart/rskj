@@ -105,6 +105,7 @@ public class BlockBuilder {
         if (blockChain != null) {
             final TestSystemProperties config = new TestSystemProperties();
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
+            BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(trieStore, stateRootHandler),
@@ -115,9 +116,10 @@ public class BlockBuilder {
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl(),
                             new PrecompiledContracts(config, bridgeSupportFactory, new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
-                            new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
-                            null
-                    )
+                            signatureCache
+                    ),
+                    config.getNetworkConstants(),
+                    signatureCache
             );
             executor.executeAndFill(block, parent.getHeader());
         }
