@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -49,9 +48,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
-
-        genesisFederationPublicKeys = federationPublicKeys;
-        genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T11:36:57.600Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 1;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
