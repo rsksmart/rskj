@@ -499,8 +499,7 @@ class TransactionTest {
                             blockFactory,
                             invokeFactory,
                             new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
-                            signatureCache,
-                            null);
+                            signatureCache);
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
@@ -848,8 +847,7 @@ class TransactionTest {
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
-                blockTxSignatureCache,
-                null);
+                blockTxSignatureCache);
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
 

@@ -124,8 +124,7 @@ public abstract class MinerServerTest {
                 10,
                 100,
                 mock(TxQuotaChecker.class),
-                mock(GasPriceTracker.class),
-                null);
+                mock(GasPriceTracker.class));
 
         transactionPool.processBest(standardBlockchain.getBestBlock());
 

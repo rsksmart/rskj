@@ -17,7 +17,6 @@
  */
 package co.rsk.core.bc;
 
-import co.rsk.PropertyGetter;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
@@ -27,7 +26,7 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.net.handler.quota.TxQuotaChecker;
-import co.rsk.util.ContractUtil;
+import co.rsk.util.EthSwapUtil;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -82,10 +81,8 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final GasPriceTracker gasPriceTracker;
 
-    private PropertyGetter propertyGetter;
-
     @java.lang.SuppressWarnings("squid:S107")
-    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker, PropertyGetter propertyGetter) {
+    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker) {
         this.config = config;
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
@@ -97,7 +94,6 @@ public class TransactionPoolImpl implements TransactionPool {
         this.outdatedTimeout = outdatedTimeout;
         this.quotaChecker = txQuotaChecker;
         this.gasPriceTracker = gasPriceTracker;
-        this.propertyGetter = propertyGetter;
 
         pendingTransactions = new TransactionSet(this.signatureCache);
         queuedTransactions = new TransactionSet(this.signatureCache);
@@ -106,8 +102,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 this.config.getNetworkConstants(),
                 this.config.getActivationConfig(),
                 this.config.getNumOfAccountSlots(),
-                signatureCache,
-                this.propertyGetter);
+                signatureCache);
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
@@ -466,7 +461,15 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
-        return validator.isValid(tx, bestBlock, currentRepository.getAccountState(tx.getSender(signatureCache)));
+        ClaimTransactionInfoHolder claimTransactionInfoHolder = new ClaimTransactionInfoHolder(
+                tx,
+                currentRepository,
+                signatureCache,
+                config.getNetworkConstants(),
+                bestBlock == null ? null : config.getActivationConfig().forBlock(bestBlock.getNumber())
+        );
+
+        return validator.isValid(tx, bestBlock, currentRepository.getAccountState(tx.getSender(signatureCache)), claimTransactionInfoHolder);
     }
 
     /**
@@ -493,7 +496,15 @@ public class TransactionPoolImpl implements TransactionPool {
             return true;
         }
 
-        return ContractUtil.isClaimTxAndValid(newTx, costWithNewTx, config.getNetworkConstants(), signatureCache, this.propertyGetter);
+        ClaimTransactionInfoHolder claimTransactionInfoHolder = new ClaimTransactionInfoHolder(
+                newTx,
+                currentRepository,
+                signatureCache,
+                config.getNetworkConstants(),
+                bestBlock == null ? null : config.getActivationConfig().forBlock(bestBlock.getNumber())
+        );
+
+        return EthSwapUtil.isClaimTxAndSenderCanPayAlongPendingTx(claimTransactionInfoHolder, transactions);
     }
 
     private Coin getTxBaseCost(Transaction tx) {

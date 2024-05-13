@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.core.bc.ClaimTransactionInfoHolder;
 import co.rsk.net.TransactionValidationResult;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -30,6 +31,11 @@ import java.math.BigInteger;
  * Simple check if the account can be used
  */
 public class TxValidatorAccountStateValidator implements TxValidatorStep {
+
+    @Override
+    public TransactionValidationResult validate(Transaction tx, ClaimTransactionInfoHolder claimTransactionInfoHolder, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+        return validate(tx, state, gasLimit, minimumGasPrice, bestBlockNumber, isFreeTx);
+    }
 
     @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
