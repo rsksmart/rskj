@@ -415,8 +415,9 @@ public final class BridgeUtils {
 
     private static boolean isFromAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConstants, SignatureCache signatureCache) {
         FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
-        return isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
+        return isFromFederationChangeAuthorizedSender(rskTx, federationConstants, signatureCache) ||
             isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
             isFromFeePerKbChangeAuthorizedSender(rskTx, feePerKbConstants, signatureCache);
     }
@@ -461,8 +462,7 @@ public final class BridgeUtils {
         }
     }
 
-    private static boolean isFromFederationChangeAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
-        FederationConstants federationConstants = bridgeConfiguration.getFederationConstants();
+    private static boolean isFromFederationChangeAuthorizedSender(Transaction rskTx, FederationConstants federationConstants, SignatureCache signatureCache) {
         AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
         return authorizer.isAuthorized(rskTx, signatureCache);
     }

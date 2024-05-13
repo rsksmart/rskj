@@ -66,5 +66,7 @@ public class FederationMainNetConstants extends FederationConstants {
         oldFederationAddress = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
     }
 
-    public static FederationMainNetConstants getInstance() { return instance; }
+    public static FederationMainNetConstants getInstance() {
+        return instance;
+    }
 }

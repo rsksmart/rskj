@@ -34,7 +34,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 
 public class BridgeRegTestConstants extends BridgeConstants {
-    private static final BridgeRegTestConstants instance = new BridgeRegTestConstants();
 
     public BridgeRegTestConstants() {
         this(getDefaultFederationPublicKeys());
@@ -53,7 +52,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
         feePerKbConstants = FeePerKbRegTestConstants.getInstance();
-        federationConstants = new FederationRegTestConstants(federationPublicKeys);
+        federationConstants = FederationRegTestConstants.getInstance(federationPublicKeys);
 
         btc2RskMinimumAcceptableConfirmations = 3;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
@@ -107,9 +106,5 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         btcHeightWhenPegoutTxIndexActivates = 250;
         pegoutTxIndexGracePeriodInBtcBlocks = 100;
-    }
-
-    public static BridgeRegTestConstants getInstance() {
-        return instance;
     }
 }

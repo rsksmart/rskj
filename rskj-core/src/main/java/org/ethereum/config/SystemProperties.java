@@ -185,8 +185,7 @@ public abstract class SystemProperties {
                     );
                     break;
                 case "regtest":
-                    Optional<List<BtcECKey>> genesisFederationPublicKeysOptional = getGenesisFederationPublicKeys();
-                    constants = genesisFederationPublicKeysOptional
+                    constants = getGenesisFederationPublicKeys()
                         .map(Constants::regtestWithFederation)
                         .orElseGet(Constants::regtest);
                     break;
