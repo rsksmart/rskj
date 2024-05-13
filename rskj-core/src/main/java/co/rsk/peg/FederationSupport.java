@@ -24,6 +24,7 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.constants.FederationConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 
@@ -234,7 +235,8 @@ public class FederationSupport {
 
     private boolean shouldFederationBeActive(Federation federation) {
         long federationAge = executionBlock.getNumber() - federation.getCreationBlockNumber();
-        return federationAge >= bridgeConstants.getFederationActivationAge(activations);
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        return federationAge >= federationConstants.getFederationActivationAge(activations);
     }
 
     /**
