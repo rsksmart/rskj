@@ -33,7 +33,7 @@ import java.math.BigInteger;
  */
 public interface TxValidatorStep {
 
-    TransactionValidationResult validate(Transaction tx, ClaimTransactionInfoHolder claimTransactionInfoHolder, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx);
+    TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, ClaimTransactionInfoHolder claimTransactionInfoHolder);
 
     TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx);
 }

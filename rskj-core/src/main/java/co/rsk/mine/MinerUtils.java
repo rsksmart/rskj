@@ -26,11 +26,9 @@ import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.util.EthSwapUtil;
 import co.rsk.util.HexUtils;
 import co.rsk.validators.TxGasPriceCap;
 import org.bouncycastle.util.Arrays;
-import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.SignatureCache;
@@ -172,10 +170,6 @@ public class MinerUtils {
     }
 
     public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, SignatureCache signatureCache) {
-        return filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice, isRskip252Enabled, signatureCache, null);
-    }
-
-    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, SignatureCache signatureCache, Constants constants) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
@@ -191,13 +185,6 @@ public class MinerUtils {
                     expectedNonce = accountNonces.get(txSender).add(BigInteger.ONE);
                 } else {
                     expectedNonce = originalRepo.getNonce(txSender);
-                }
-
-                if (EthSwapUtil.isClaimTx(tx, constants)
-                        && !EthSwapUtil.hasLockedFunds(tx, signatureCache, originalRepo)) {
-                    txsToRemove.add(tx);
-                    logger.warn("Rejected tx={} because the funds is trying to claim no longer exist, removing tx from pending state.", hash);
-                    continue;
                 }
 
                 if (isLowGasPriced(minGasPrice, tx)) {

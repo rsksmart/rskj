@@ -48,12 +48,6 @@ public class EthSwapUtilTest {
         signatureCache = new ReceivedTxSignatureCache();
         mockedRepository = mock(RepositorySnapshot.class);
         activations = mock(ActivationConfig.ForBlock.class);
-
-        when(mockedRepository.getStorageValue(
-                eq(new RskAddress(testConstants.getEtherSwapContractAddress())),
-                any(DataWord.class)))
-                .thenReturn(DataWord.valueOf(1));
-        when(mockedRepository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(3));
     }
 
     @Test
@@ -123,14 +117,15 @@ public class EthSwapUtilTest {
         List<Transaction> pendingTransactions = new ArrayList<>();
         pendingTransactions.add(mockedPendingClaimTx);
 
-        SignatureCache signatureCache = new ReceivedTxSignatureCache();
-        RepositorySnapshot mockedRepository = mock(RepositorySnapshot.class);
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-
         when(mockedClaimTx.transactionCost(testConstants, activations, signatureCache))
                 .thenReturn(5L);
         when(mockedPendingClaimTx.transactionCost(testConstants, activations, signatureCache))
                 .thenReturn(5L);
+        when(mockedRepository.getStorageValue(
+                eq(new RskAddress(testConstants.getEtherSwapContractAddress())),
+                any(DataWord.class)))
+                .thenReturn(DataWord.valueOf(1));
+        when(mockedRepository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(3));
 
         ClaimTransactionInfoHolder testClaimTransactionInfoHolder = new ClaimTransactionInfoHolder(
                 mockedClaimTx,

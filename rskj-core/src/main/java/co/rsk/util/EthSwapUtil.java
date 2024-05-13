@@ -103,6 +103,7 @@ public class EthSwapUtil {
 
     public static boolean isClaimTx(Transaction tx, Constants constants) {
         return tx.getReceiveAddress() != null
+                && !tx.getReceiveAddress().toHexString().isEmpty()
                 && tx.getData() != null
                 && tx.getReceiveAddress().toHexString().equalsIgnoreCase(constants.getEtherSwapContractAddress())
                 && Arrays.equals(Arrays.copyOfRange(tx.getData(), 0, 4), Constants.CLAIM_FUNCTION_SIGNATURE);
