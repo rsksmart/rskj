@@ -40,8 +40,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class EthSwapUtil {
-    private static final Logger logger = LoggerFactory.getLogger(EthSwapUtil.class);
-
     private static final String SWAPS_MAP_POSITION = "0000000000000000000000000000000000000000000000000000000000000000";
 
     private EthSwapUtil() {
