@@ -21,8 +21,8 @@ package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.peg.constants.BridgeDevNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.config.ConfigLoader;
+import co.rsk.peg.federation.constants.FederationRegTestConstants;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
@@ -187,7 +187,7 @@ public abstract class SystemProperties {
                     break;
                 case "regtest":
                     constants = Constants.regtestWithFederation(
-                            getGenesisFederationPublicKeys().orElse(BridgeRegTestConstants.REGTEST_FEDERATION_PUBLIC_KEYS)
+                            getGenesisFederationPublicKeys().orElse(FederationRegTestConstants.defaultGenesisFederationPublicKeys)
                     );
                     break;
                 default:
