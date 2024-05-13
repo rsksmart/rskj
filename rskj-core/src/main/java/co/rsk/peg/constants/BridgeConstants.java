@@ -18,25 +18,20 @@
 
 package co.rsk.peg.constants;
 
-import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import java.util.List;
 
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
-import java.time.Instant;
-
 public abstract class BridgeConstants {
     protected String btcParamsString;
 
     protected FeePerKbConstants feePerKbConstants;
-    protected List<BtcECKey> genesisFederationPublicKeys;
-    protected Instant genesisFederationCreationTime;
+
     protected FederationConstants federationConstants;
 
     protected int btc2RskMinimumAcceptableConfirmations;
@@ -87,14 +82,6 @@ public abstract class BridgeConstants {
 
     public String getBtcParamsString() {
         return btcParamsString;
-    }
-
-    public List<BtcECKey> getGenesisFederationPublicKeys() {
-        return genesisFederationPublicKeys;
-    }
-
-    public Instant getGenesisFederationCreationTime() {
-        return genesisFederationCreationTime;
     }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
