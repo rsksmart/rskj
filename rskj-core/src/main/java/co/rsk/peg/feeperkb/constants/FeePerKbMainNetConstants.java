@@ -20,15 +20,15 @@ public class FeePerKbMainNetConstants extends FeePerKbConstants {
             "04bb6435dc1ea12da843ebe213893d136c1624acd681fff82551498ae00bf28e9323164b00daf925fa75177463b8254a2aae8a1713e4d851a84ea369c193e9ce51"
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
-            feePerKbChangeAuthorizer = new AddressBasedAuthorizer(
-                feePerKbAuthorizedKeys,
-                AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
-            );
+        feePerKbChangeAuthorizer = new AddressBasedAuthorizer(
+            feePerKbAuthorizedKeys,
+            AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
+        );
 
-            genesisFeePerKb = Coin.MILLICOIN.multiply(5);
+        genesisFeePerKb = Coin.MILLICOIN.multiply(5);
 
-            maxFeePerKb = Coin.valueOf(5_000_000L);
-        }
+        maxFeePerKb = Coin.valueOf(5_000_000L);
+    }
 
     public static FeePerKbMainNetConstants getInstance() {
         return instance;
