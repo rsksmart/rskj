@@ -97,8 +97,7 @@ public class EthModuleTestUtils {
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(config, world.getBridgeSupportFactory(), world.getBlockTxSignatureCache()),
-                blockTxSignatureCache,
-                null
+                blockTxSignatureCache
         );
     }
 

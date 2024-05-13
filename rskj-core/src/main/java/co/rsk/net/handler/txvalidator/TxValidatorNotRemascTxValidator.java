@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.core.bc.ClaimTransactionInfoHolder;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.AccountState;
@@ -33,6 +34,11 @@ import java.math.BigInteger;
  * Transaction must not be null
  */
 public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
+    @Override
+    public TransactionValidationResult validate(Transaction tx, ClaimTransactionInfoHolder claimTransactionInfoHolder, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+        return validate(tx, state, gasLimit, minimumGasPrice, bestBlockNumber, isFreeTx);
+    }
+
     @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (!(tx instanceof RemascTransaction)) {

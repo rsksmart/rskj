@@ -493,9 +493,10 @@ class RemascStorageProviderTest {
                         new BlockFactory(config.getActivationConfig()),
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
-                        new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
-                        null
-                )
+                        new BlockTxSignatureCache(new ReceivedTxSignatureCache())
+                ),
+                config.getNetworkConstants(),
+                signatureCache
         );
 
         for (Block b : blocks) {

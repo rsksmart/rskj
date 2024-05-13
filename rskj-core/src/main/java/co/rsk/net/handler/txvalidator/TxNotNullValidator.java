@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.core.bc.ClaimTransactionInfoHolder;
 import co.rsk.net.TransactionValidationResult;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -34,6 +35,11 @@ import java.math.BigInteger;
 public class TxNotNullValidator implements  TxValidatorStep {
 
     @Override
+    public TransactionValidationResult validate(Transaction tx, ClaimTransactionInfoHolder claimTransactionInfoHolder, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+        return this.validate(tx, state, gasLimit, minimumGasPrice, bestBlockNumber, isFreeTx);
+    }
+
+    @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (tx != null) {
             return TransactionValidationResult.ok();
@@ -41,5 +47,6 @@ public class TxNotNullValidator implements  TxValidatorStep {
 
         return TransactionValidationResult.withError("transaction is null");
     }
+
 
 }

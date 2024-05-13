@@ -274,8 +274,7 @@ class TransactionTest {
                             blockFactory,
                             invokeFactory,
                             precompiledContracts,
-                            new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
-                            null
+                            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                     );
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)

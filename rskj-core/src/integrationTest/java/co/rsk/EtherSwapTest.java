@@ -20,7 +20,7 @@
 package co.rsk;
 
 import co.rsk.util.CommandLineFixture;
-import co.rsk.util.ContractUtil;
+import co.rsk.util.EthSwapUtil;
 import co.rsk.util.HexUtils;
 import co.rsk.util.OkHttpClientTestFixture;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -155,7 +155,7 @@ public class EtherSwapTest {
         String refundAddress = "0x7986b3df570230288501eea3d890bd66948c9b79";
         String claimAddress = "0x8486054b907b0d79569723c761b7113736d32c5a";
         byte[] preimage = "preimage".getBytes(StandardCharsets.UTF_8);
-        byte[] preimageHash = HashUtil.sha256(ContractUtil.encodePacked(preimage));
+        byte[] preimageHash = HashUtil.sha256(EthSwapUtil.encodePacked(preimage));
         BigInteger amount = BigInteger.valueOf(5000);
 
         byte[] lockData = CALL_LOCK_FUNCTION.encode(
@@ -207,7 +207,7 @@ public class EtherSwapTest {
         String refundAddress = "0x7986b3df570230288501eea3d890bd66948c9b79";
         String claimAddress = "0x8486054b907b0d79569723c761b7113736d32c5a";
         byte[] preimage = "preimage".getBytes(StandardCharsets.UTF_8);
-        byte[] preimageHash = HashUtil.sha256(ContractUtil.encodePacked(preimage));
+        byte[] preimageHash = HashUtil.sha256(EthSwapUtil.encodePacked(preimage));
         BigInteger amount = BigInteger.valueOf(500000);
 
         byte[] lockData = CALL_LOCK_FUNCTION.encode(
@@ -234,7 +234,7 @@ public class EtherSwapTest {
                         BigInteger balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
                         Assertions.assertEquals(0, balanceBigInt.compareTo(BigInteger.ZERO));
 
-                        Response lockResponse = lockTxRequest(refundAddress, lockData, amount);
+                        lockTxRequest(refundAddress, lockData, amount);
                         TimeUnit.SECONDS.sleep(5);
 
                         Response claimResponse = claimTxRequest(claimAddress, claimData);
@@ -254,6 +254,143 @@ public class EtherSwapTest {
                         balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
 
                         Assertions.assertEquals(0, balanceBigInt.compareTo(expectedBalance));
+                    } catch (IOException | InterruptedException e) {
+                        Assertions.fail(e);
+                    }
+                }
+        );
+    }
+
+    @Test
+    void whenClaimTxIsSentTwice_secondClaimTxShoulNotBeIncludedInMempool() throws Exception {
+        String refundAddress = "0x7986b3df570230288501eea3d890bd66948c9b79";
+        String claimAddress = "0x8486054b907b0d79569723c761b7113736d32c5a";
+        byte[] preimage = "preimage".getBytes(StandardCharsets.UTF_8);
+        byte[] preimageHash = HashUtil.sha256(EthSwapUtil.encodePacked(preimage));
+        BigInteger amount = BigInteger.valueOf(500000);
+
+        byte[] lockData = CALL_LOCK_FUNCTION.encode(
+                preimageHash,
+                claimAddress,
+                8000000);
+
+        byte[] claimData = CALL_CLAIM_FUNCTION.encode(
+                preimage,
+                amount,
+                refundAddress,
+                8000000);
+
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CommandLineFixture.runCommand(
+                cmd,
+                60,
+                TimeUnit.SECONDS,
+                proc -> {
+                    try {
+                        Response getBalanceResponse = getBalanceRequest(claimAddress);
+                        JsonNode jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
+                        JsonNode currentBalance = jsonRpcResponse.get(0).get("result");
+                        BigInteger balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
+                        Assertions.assertEquals(0, balanceBigInt.compareTo(BigInteger.ZERO));
+
+                        lockTxRequest(refundAddress, lockData, amount);
+                        TimeUnit.SECONDS.sleep(5);
+
+                        Response claimResponse = claimTxRequest(claimAddress, claimData);
+                        Response duplicatedClaimResponse = claimTxRequest(claimAddress, claimData);
+                        TimeUnit.SECONDS.sleep(5);
+
+                        jsonRpcResponse = objectMapper.readTree(claimResponse.body().string());
+                        JsonNode claimTxHash = jsonRpcResponse.get(0).get("result");
+
+                        Assertions.assertNotNull(claimTxHash);
+
+                        jsonRpcResponse = objectMapper.readTree(duplicatedClaimResponse.body().string());
+                        JsonNode duplicatedClaimTxHash = jsonRpcResponse.get(0).get("result");
+
+                        Assertions.assertNull(duplicatedClaimTxHash);
+                    } catch (IOException | InterruptedException e) {
+                        Assertions.fail(e);
+                    }
+                }
+        );
+    }
+
+    @Test
+    void whenTwoClaimTxAreSent_shouldCombineBothLockedAmountsToPayBothTx() throws Exception {
+        String refundAddress = "0x7986b3df570230288501eea3d890bd66948c9b79";
+        String claimAddress = "0x8486054b907b0d79569723c761b7113736d32c5a";
+        byte[] preimage = "preimage".getBytes(StandardCharsets.UTF_8);
+        byte[] preimageHash = HashUtil.sha256(EthSwapUtil.encodePacked(preimage));
+        BigInteger firstLockedAmount = BigInteger.valueOf(500000);
+        BigInteger secondLockedAmount = BigInteger.valueOf(5000);
+
+        byte[] lockData = CALL_LOCK_FUNCTION.encode(
+                preimageHash,
+                claimAddress,
+                8000000);
+
+        byte[] firstClaimTxData = CALL_CLAIM_FUNCTION.encode(
+                preimage,
+                firstLockedAmount,
+                refundAddress,
+                8000000);
+
+        byte[] secondClaimTxData = CALL_CLAIM_FUNCTION.encode(
+                preimage,
+                secondLockedAmount,
+                refundAddress,
+                8000000);
+
+        String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
+        CommandLineFixture.runCommand(
+                cmd,
+                60,
+                TimeUnit.SECONDS,
+                proc -> {
+                    try {
+                        Response getBalanceResponse = getBalanceRequest(claimAddress);
+                        JsonNode jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
+                        JsonNode currentBalance = jsonRpcResponse.get(0).get("result");
+                        BigInteger balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
+                        Assertions.assertEquals(0, balanceBigInt.compareTo(BigInteger.ZERO));
+
+                        lockTxRequest(refundAddress, lockData, firstLockedAmount);
+                        lockTxRequest(refundAddress, lockData, secondLockedAmount);
+                        TimeUnit.SECONDS.sleep(5);
+
+                        Response firstClaimTxResponse = claimTxRequest(claimAddress, firstClaimTxData);
+                        Response secondClaimTxResponse = claimTxRequest(claimAddress, secondClaimTxData);
+                        TimeUnit.SECONDS.sleep(5);
+
+                        // Get gas used by first claim tx
+                        jsonRpcResponse = objectMapper.readTree(firstClaimTxResponse.body().string());
+                        JsonNode firstClaimTxHash = jsonRpcResponse.get(0).get("result");
+
+                        Response getTxReceiptResponse = getTxReceiptRequest(firstClaimTxHash.asText());
+                        jsonRpcResponse = objectMapper.readTree(getTxReceiptResponse.body().string());
+                        BigInteger firstClaimTxGasUsed = new BigInteger(HexUtils.removeHexPrefix(jsonRpcResponse.get(0).get("result").get("gasUsed").asText()), 16);
+
+                        // Get gas used by second claim tx
+                        jsonRpcResponse = objectMapper.readTree(secondClaimTxResponse.body().string());
+                        JsonNode secondClaimTxHash = jsonRpcResponse.get(0).get("result");
+
+                        getTxReceiptResponse = getTxReceiptRequest(secondClaimTxHash.asText());
+                        jsonRpcResponse = objectMapper.readTree(getTxReceiptResponse.body().string());
+                        BigInteger secondClaimTxGasUsed = new BigInteger(HexUtils.removeHexPrefix(jsonRpcResponse.get(0).get("result").get("gasUsed").asText()), 16);
+
+                        // Add both locked amounts and subtract the total gas used to get the expected account balance
+                        BigInteger totalGasUsed = firstClaimTxGasUsed.add(secondClaimTxGasUsed);
+                        BigInteger expectedBalance = firstLockedAmount.add(secondLockedAmount).subtract(totalGasUsed);
+
+                        getBalanceResponse = getBalanceRequest(claimAddress);
+                        jsonRpcResponse = objectMapper.readTree(getBalanceResponse.body().string());
+                        currentBalance = jsonRpcResponse.get(0).get("result");
+                        balanceBigInt = new BigInteger(HexUtils.removeHexPrefix(currentBalance.asText()), 16);
+
+                        Assertions.assertEquals(0, balanceBigInt.compareTo(expectedBalance));
+
+
                     } catch (IOException | InterruptedException e) {
                         Assertions.fail(e);
                     }

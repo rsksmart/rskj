@@ -18,7 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.PropertyGetter;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import org.ethereum.core.*;
@@ -40,7 +39,6 @@ public class TransactionExecutorFactory {
     private final ProgramInvokeFactory programInvokeFactory;
     private final PrecompiledContracts precompiledContracts;
     private BlockTxSignatureCache blockTxSignatureCache;
-    private PropertyGetter propertyGetter;
 
     public TransactionExecutorFactory(
             RskSystemProperties config,
@@ -49,8 +47,7 @@ public class TransactionExecutorFactory {
             BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory,
             PrecompiledContracts precompiledContracts,
-            BlockTxSignatureCache blockTxSignatureCache,
-            PropertyGetter propertyGetter) {
+            BlockTxSignatureCache blockTxSignatureCache) {
         this.config = config;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
@@ -58,7 +55,6 @@ public class TransactionExecutorFactory {
         this.programInvokeFactory = programInvokeFactory;
         this.precompiledContracts = precompiledContracts;
         this.blockTxSignatureCache = blockTxSignatureCache;
-        this.propertyGetter = propertyGetter;
     }
 
     public TransactionExecutor newInstance(
@@ -113,8 +109,7 @@ public class TransactionExecutorFactory {
                 config.isRemascEnabled(),
                 precompiledContracts,
                 deletedAccounts,
-                blockTxSignatureCache,
-                propertyGetter
+                blockTxSignatureCache
         );
     }
 }

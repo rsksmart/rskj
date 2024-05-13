@@ -98,8 +98,7 @@ class TransactionPoolImplTest {
                 10,
                 100,
                 Mockito.mock(TxQuotaChecker.class),
-                Mockito.mock(GasPriceTracker.class),
-                null);
+                Mockito.mock(GasPriceTracker.class));
 
         quotaChecker = mock(TxQuotaChecker.class);
         when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);

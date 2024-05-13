@@ -257,8 +257,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private volatile boolean closed;
 
-    private final PropertyGetter propertyGetter = this::getWeb3InformationRetriever;
-
     /***** Constructors ***********************************************************************************************/
     public RskContext(String[] args) {
         RskCli rskCli = new RskCli();
@@ -389,8 +387,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.txOutdatedThreshold(),
                     rskSystemProperties.txOutdatedTimeout(),
                     getTxQuotaChecker(),
-                    getGasPriceTracker(),
-                    propertyGetter);
+                    getGasPriceTracker());
         }
 
         return transactionPool;
@@ -482,7 +479,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             blockExecutor = new BlockExecutor(
                     getRskSystemProperties().getActivationConfig(),
                     getRepositoryLocator(),
-                    getTransactionExecutorFactory()
+                    getTransactionExecutorFactory(),
+                    getRskSystemProperties().getNetworkConstants(),
+                    getBlockTxSignatureCache()
             );
         }
 
@@ -592,8 +591,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockFactory(),
                     getProgramInvokeFactory(),
                     getPrecompiledContracts(),
-                    getBlockTxSignatureCache(),
-                    propertyGetter
+                    getBlockTxSignatureCache()
             );
         }
 

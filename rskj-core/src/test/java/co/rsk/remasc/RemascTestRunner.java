@@ -146,9 +146,10 @@ class RemascTestRunner {
                         blockFactory,
                         programInvokeFactory,
                         precompiledContracts,
-                        blockTxSignatureCache,
-                        null
-                )
+                        blockTxSignatureCache
+                ),
+                builder.getConfig().getNetworkConstants(),
+                blockTxSignatureCache
         );
         Random random = new Random(RemascTestRunner.class.hashCode());
         for(int i = 0; i <= this.initialHeight; i++) {

@@ -150,12 +150,11 @@ public class TestRunner {
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
                 null,
-                blockTxSignatureCache,
-                null);
+                blockTxSignatureCache);
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class), null);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,
@@ -166,7 +165,9 @@ public class TestRunner {
                 new BlockExecutor(
                         config.getActivationConfig(),
                         new RepositoryLocator(trieStore, stateRootHandler),
-                        transactionExecutorFactory
+                        transactionExecutorFactory,
+                        config.getNetworkConstants(),
+                        blockTxSignatureCache
                 ),
                 stateRootHandler
         );

@@ -18,6 +18,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.core.bc.ClaimTransactionInfoHolder;
 import co.rsk.net.TransactionValidationResult;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -43,6 +44,11 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
         this.constants = constants;
         this.activationConfig = activationConfig;
         this.signatureCache = signatureCache;
+    }
+
+    @Override
+    public TransactionValidationResult validate(Transaction tx, ClaimTransactionInfoHolder claimTransactionInfoHolder, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+        return validate(tx, state, gasLimit, minimumGasPrice, bestBlockNumber, isFreeTx);
     }
 
     @Override

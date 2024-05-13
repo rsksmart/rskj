@@ -113,8 +113,7 @@ public class StateTestRunner {
             blockFactory,
             invokeFactory,
             precompiledContracts,
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
-                null
+            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
         );
         TransactionExecutor executor = transactionExecutorFactory.newInstance(
             transaction,
@@ -147,6 +146,7 @@ public class StateTestRunner {
         logger.info("transaction: {}", transaction);
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
+        BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         blockchain = new BlockChainImpl(
                 blockStore,
                 null,
@@ -163,9 +163,10 @@ public class StateTestRunner {
                                 blockFactory,
                                 new ProgramInvokeFactoryImpl(),
                                 precompiledContracts,
-                                new BlockTxSignatureCache(new ReceivedTxSignatureCache()),
-                                null
-                        )
+                                signatureCache
+                        ),
+                        config.getNetworkConstants(),
+                        signatureCache
                 ),
                 stateRootHandler
         );

@@ -31,6 +31,7 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -50,11 +51,13 @@ import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.AssertionsKt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -71,6 +74,12 @@ public class BlockExecutorTest {
     private static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     private static final TestSystemProperties CONFIG = new TestSystemProperties();
     private static final BlockFactory BLOCK_FACTORY = new BlockFactory(CONFIG.getActivationConfig());
+
+    private final CallTransaction.Function CLAIM_FUNCTION = CallTransaction.Function.fromSignature(
+            "claim",
+            new String[]{"bytes32", "uint256", "address", "uint256"},
+            new String[]{}
+    );
 
     @TempDir
     public Path tempDir;
@@ -537,6 +546,22 @@ public class BlockExecutorTest {
         Assertions.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
+    @Test
+    void executeBlockButRejectClaimTransaction() {
+        Block block = getBlockWithOneTransactionsAndOneClaimTransaction();
+        Block parent = blockchain.getBestBlock();
+
+        Transaction claimTx = block.getTransactionsList().get(1);
+
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
+
+        Assertions.assertEquals(1, result.getExecutedTransactions().size());
+
+        Transaction resultTx = result.getExecutedTransactions().get(0);
+
+        Assertions.assertNotEquals(claimTx.getHash(), resultTx.getHash());
+    }
+
     private static TestObjects generateBlockWithOneTransaction() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
@@ -655,6 +680,57 @@ public class BlockExecutorTest {
         List<Transaction> txs = Arrays.asList(
                 tx1,
                 tx
+        );
+
+        List<BlockHeader> uncles = new ArrayList<>();
+        return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
+    }
+
+    private Block getBlockWithOneTransactionsAndOneClaimTransaction() {
+        Repository track = repository.startTracking();
+
+        Account account = createAccount("acctest1", track, Coin.valueOf(60000));
+        Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
+
+        track.commit();
+
+        Assertions.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+
+        Block bestBlock = blockchain.getBestBlock();
+        bestBlock.setStateRoot(repository.getRoot());
+
+        byte[] callData = CLAIM_FUNCTION.encode(
+                "preimage".getBytes(StandardCharsets.UTF_8),
+                10,
+                account2.getAddress().toString(),
+                1000000);
+
+        Transaction tx = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx.sign(account.getEcKey().getPrivKeyBytes());
+
+        Transaction claimTx = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()).add(BigInteger.ONE))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(new RskAddress(Constants.regtest().getEtherSwapContractAddress()))
+                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .value(BigInteger.ZERO)
+                .data(callData)
+                .build();
+        claimTx.sign(account.getEcKey().getPrivKeyBytes());
+
+        List<Transaction> txs = Arrays.asList(
+                tx,
+                claimTx
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
@@ -867,9 +943,10 @@ public class BlockExecutorTest {
                         BLOCK_FACTORY,
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
-                        signatureCache,
-                        null
-                )
+                        signatureCache
+                ),
+                config.getNetworkConstants(),
+                signatureCache
         );
     }
 

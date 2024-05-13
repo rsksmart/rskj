@@ -18,13 +18,11 @@
 
 package co.rsk.net.handler.txvalidator;
 
-import co.rsk.PropertyGetter;
 import co.rsk.core.Coin;
+import co.rsk.core.bc.ClaimTransactionInfoHolder;
 import co.rsk.net.TransactionValidationResult;
-import co.rsk.util.ContractUtil;
-import org.ethereum.config.Constants;
+import co.rsk.util.EthSwapUtil;
 import org.ethereum.core.AccountState;
-import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 
 import javax.annotation.Nullable;
@@ -34,19 +32,8 @@ import java.math.BigInteger;
  * Checks if an account can pay the transaction execution cost
  */
 public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
-
-    private final Constants constants;
-    private final SignatureCache signatureCache;
-    private final PropertyGetter propertyGetter;
-
-    public TxValidatorAccountBalanceValidator(Constants constants, SignatureCache signatureCache, PropertyGetter propertyGetter) {
-        this.constants = constants;
-        this.signatureCache = signatureCache;
-        this.propertyGetter = propertyGetter;
-    }
-
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, ClaimTransactionInfoHolder claimTransactionInfoHolder, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (isFreeTx) {
             return TransactionValidationResult.ok();
         }
@@ -58,11 +45,15 @@ public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
         Coin maximumPrice = tx.getGasPrice().multiply(txGasLimit);
         if (state.getBalance().compareTo(maximumPrice) >= 0
-            || ContractUtil.isClaimTxAndValid(tx, maximumPrice, constants, signatureCache, propertyGetter)) {
+                || EthSwapUtil.isClaimTxAndValid(claimTransactionInfoHolder, maximumPrice)) {
             return TransactionValidationResult.ok();
         }
 
         return TransactionValidationResult.withError("insufficient funds");
     }
 
+    @Override
+    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+        return TransactionValidationResult.ok();
+    }
 }
