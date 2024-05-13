@@ -3,6 +3,7 @@ package co.rsk.peg.constants;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import com.google.common.collect.Lists;
 import java.time.ZonedDateTime;
