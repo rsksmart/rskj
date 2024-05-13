@@ -23,16 +23,32 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationRegTestConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import co.rsk.peg.feeperkb.constants.FeePerKbRegTestConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 
 public class BridgeRegTestConstants extends BridgeConstants {
+    private static final BridgeRegTestConstants instance = new BridgeRegTestConstants();
 
-    private static final BridgeRegTestConstants instance = new BridgeRegTestConstants(FederationRegTestConstants.defaultFederationPublicKeys);
+    public BridgeRegTestConstants() {
+        this(getDefaultFederationPublicKeys());
+    }
+    private static List<BtcECKey> getDefaultFederationPublicKeys() {
+        BtcECKey federator0PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8)));
+        BtcECKey federator1PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8)));
+        BtcECKey federator2PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)));
+        List<BtcECKey> defaultFederationPrivateKeys = Collections.unmodifiableList(Arrays.asList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey));
+
+        return Collections.unmodifiableList(defaultFederationPrivateKeys.stream()
+                .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
+                .collect(Collectors.toList()));
+    }
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
