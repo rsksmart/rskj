@@ -32,7 +32,7 @@ import org.ethereum.crypto.ECKey;
 
 public class BridgeRegTestConstants extends BridgeConstants {
 
-    private static final BridgeRegTestConstants instance = new BridgeRegTestConstants(FederationRegTestConstants.defaultGenesisFederationPublicKeys);
+    private static final BridgeRegTestConstants instance = new BridgeRegTestConstants(FederationRegTestConstants.defaultFederationPublicKeys);
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
