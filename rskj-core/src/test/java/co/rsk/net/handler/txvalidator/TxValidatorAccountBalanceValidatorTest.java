@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.util.EthSwapUtil;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
@@ -26,6 +27,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -49,9 +51,9 @@ class TxValidatorAccountBalanceValidatorTest {
 
         TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
 
-        Assertions.assertTrue(tvabv.validate(tx1, null,  as, null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertTrue(tvabv.validate(tx2, null,  as, null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertTrue(tvabv.validate(tx3, null,  as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
+        Assertions.assertTrue(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
+        Assertions.assertTrue(tvabv.validate(tx3, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
     }
 
     @Test
@@ -66,10 +68,15 @@ class TxValidatorAccountBalanceValidatorTest {
         Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(10));
         Mockito.when(as.getBalance()).thenReturn(Coin.valueOf(19));
 
-        TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
+        try (MockedStatic<EthSwapUtil> ethSwapUtilMocked = Mockito.mockStatic(EthSwapUtil.class)){
+            ethSwapUtilMocked.when(() -> EthSwapUtil.isClaimTx(Mockito.any(Transaction.class), Mockito.any(Constants.class)))
+                    .thenReturn(false);
 
-        Assertions.assertFalse(tvabv.validate(tx1, null,  as, null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertFalse(tvabv.validate(tx2, null,  as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+            TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
+
+            Assertions.assertFalse(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
+            Assertions.assertFalse(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
+        }
     }
 
     @Test
@@ -89,7 +96,7 @@ class TxValidatorAccountBalanceValidatorTest {
 
         TxValidatorAccountBalanceValidator tv = new TxValidatorAccountBalanceValidator();
 
-        Assertions.assertTrue(tv.validate(tx, null,  new AccountState(), BigInteger.ONE, Coin.valueOf(1L), Long.MAX_VALUE, true).transactionIsValid());
+        Assertions.assertTrue(tv.validate(tx, new AccountState(), BigInteger.ONE, Coin.valueOf(1L), Long.MAX_VALUE, true, null).transactionIsValid());
     }
 
 }
