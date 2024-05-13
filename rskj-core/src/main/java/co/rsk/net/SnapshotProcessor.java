@@ -10,6 +10,8 @@ import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
@@ -50,11 +52,11 @@ public class SnapshotProcessor {
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
     private SnapSyncState snapSyncState;
-    private List<TrieDTO> allNodes;
+    private final List<TrieDTO> allNodes;
 
     private long remoteTrieSize;
     private byte[] remoteRootHash;
-    private List<BlockConnectorHelper.BlockAndDifficulty> blocks;
+    private final List<Pair<Block,BlockDifficulty>> blocks;
     private Block lastBlock;
     private BlockDifficulty lastBlockDifficulty;
 
@@ -162,7 +164,7 @@ public class SnapshotProcessor {
         this.remoteRootHash = this.lastBlock.getStateRoot();
         this.remoteTrieSize = responseMessage.getTrieSize();
         for (int i = 0; i < blocksFromResponse.size(); i++) {
-            this.blocks.add(new BlockConnectorHelper.BlockAndDifficulty(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
+            this.blocks.add(new ImmutablePair<>(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
         }
         logger.debug("CLIENT - Processing snapshot status response - last blockNumber: {} rootHash: {} triesize: {}", lastBlock.getNumber(), remoteRootHash, remoteTrieSize);
         requestBlocksChunk(sender, blocksFromResponse.get(0).getNumber());
@@ -196,7 +198,7 @@ public class SnapshotProcessor {
         List<Block> blocksFromResponse = snapBlocksResponseMessage.getBlocks();
         List<BlockDifficulty> difficultiesFromResponse = snapBlocksResponseMessage.getDifficulties();
         for (int i = 0; i < blocksFromResponse.size(); i++) {
-            this.blocks.add(new BlockConnectorHelper.BlockAndDifficulty(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
+            this.blocks.add(new ImmutablePair<>(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
         }
         long nextChunk = blocksFromResponse.get(0).getNumber();
         if (nextChunk > this.lastBlock.getNumber() - BLOCKS_REQUIRED) {

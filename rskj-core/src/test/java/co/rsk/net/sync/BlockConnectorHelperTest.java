@@ -1,6 +1,8 @@
 package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,11 +35,11 @@ class BlockConnectorHelperTest {
     @Captor
     ArgumentCaptor<BlockDifficulty> difficultyCaptor;
     private BlockConnectorHelper blockConnectorHelper;
-    List<BlockConnectorHelper.BlockAndDifficulty> blockAndDifficultiesList;
+    List<Pair<Block,BlockDifficulty>> blockAndDifficultiesList;
 
     @BeforeEach
     void setUp() {
-        blockAndDifficultiesList = Arrays.asList(mock(BlockConnectorHelper.BlockAndDifficulty.class), mock(BlockConnectorHelper.BlockAndDifficulty.class), mock(BlockConnectorHelper.BlockAndDifficulty.class));
+        blockAndDifficultiesList = Arrays.asList(mock(Pair.class), mock(Pair.class), mock(Pair.class));
     }
 
     @Test
@@ -169,11 +171,11 @@ class BlockConnectorHelperTest {
         assertThrows(BlockConnectorException.class, () -> blockConnectorHelper.startConnecting());
     }
 
-    List<BlockConnectorHelper.BlockAndDifficulty> buildBlockDifficulties(List<Block> blocks, List<BlockDifficulty> difficulties) {
+    List<Pair<Block,BlockDifficulty>> buildBlockDifficulties(List<Block> blocks, List<BlockDifficulty> difficulties) {
         int i = 0;
-        List<BlockConnectorHelper.BlockAndDifficulty> list = new ArrayList<>();
+        List<Pair<Block,BlockDifficulty>> list = new ArrayList<>();
         for (Block block : blocks) {
-            list.add(new BlockConnectorHelper.BlockAndDifficulty(block, difficulties.get(i)));
+            list.add(new ImmutablePair<>(block, difficulties.get(i)));
             i++;
         }
         return list;
