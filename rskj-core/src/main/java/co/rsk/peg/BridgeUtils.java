@@ -30,6 +30,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -460,7 +461,8 @@ public final class BridgeUtils {
     }
 
     private static boolean isFromFederationChangeAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
-        AddressBasedAuthorizer authorizer = bridgeConfiguration.getFederationChangeAuthorizer();
+        FederationConstants federationConstants = bridgeConfiguration.getFederationConstants();
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
 

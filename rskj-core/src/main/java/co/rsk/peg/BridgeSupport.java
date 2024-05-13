@@ -39,6 +39,7 @@ import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
@@ -1006,18 +1007,22 @@ public class BridgeSupport {
     }
 
     private boolean federationIsInMigrationAge(Federation federation) {
-        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+
+        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageBegin = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationBegin();
-        long ageEnd = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations);
+        long ageBegin = federationActivationAge + federationConstants.getFundsMigrationAgeSinceActivationBegin();
+        long ageEnd = federationActivationAge + federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
 
         return federationAge > ageBegin && federationAge < ageEnd;
     }
 
     private boolean federationIsPastMigrationAge(Federation federation) {
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageEnd = bridgeConstants.getFederationActivationAge(activations) +
-            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations);
+        long ageEnd = federationConstants.getFederationActivationAge(activations) +
+            federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
 
         return federationAge >= ageEnd;
     }
@@ -1341,6 +1346,8 @@ public class BridgeSupport {
     }
 
     private void updateFederationCreationBlockHeights() {
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+
         if (!activations.isActive(RSKIP186)) {
             return;
         }
@@ -1350,7 +1357,7 @@ public class BridgeSupport {
             long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
             long curBlockHeight = rskExecutionBlock.getNumber();
 
-            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge(activations)) {
+            if (curBlockHeight >= nextFederationCreationBlockHeight + federationConstants.getFederationActivationAge(activations)) {
                 provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
                 provider.clearNextFederationCreationBlockHeight();
             }
@@ -2077,7 +2084,8 @@ public class BridgeSupport {
         provider.setPendingFederation(currentPendingFederation);
 
         // Clear votes on election
-        provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer()).clear();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        provider.getFederationElection(federationConstants.getFederationChangeAuthorizer()).clear();
 
         return 1;
     }
@@ -2172,7 +2180,8 @@ public class BridgeSupport {
         provider.setPendingFederation(null);
 
         // Clear votes on election
-        provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer()).clear();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        provider.getFederationElection(federationConstants.getFederationChangeAuthorizer()).clear();
 
         if (activations.isActive(RSKIP186)) {
             // Preserve federation change info
@@ -2209,7 +2218,8 @@ public class BridgeSupport {
         provider.setPendingFederation(null);
 
         // Clear votes on election
-        provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer()).clear();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        provider.getFederationElection(federationConstants.getFederationChangeAuthorizer()).clear();
 
         return 1;
     }
@@ -2220,7 +2230,8 @@ public class BridgeSupport {
             return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
 
-        AddressBasedAuthorizer authorizer = bridgeConstants.getFederationChangeAuthorizer();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
 
         // Must be authorized to vote (checking for signature)
         if (!authorizer.isAuthorized(tx, signatureCache)) {
@@ -2684,6 +2695,8 @@ public class BridgeSupport {
     }
 
     public long getActiveFederationCreationBlockHeight() {
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+
         if (!activations.isActive(RSKIP186)) {
             return 0L;
         }
@@ -2692,7 +2705,7 @@ public class BridgeSupport {
         if (nextFederationCreationBlockHeightOpt.isPresent()) {
             long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
             long curBlockHeight = rskExecutionBlock.getNumber();
-            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge(activations)) {
+            if (curBlockHeight >= nextFederationCreationBlockHeight + federationConstants.getFederationActivationAge(activations)) {
                 return nextFederationCreationBlockHeight;
             }
         }
