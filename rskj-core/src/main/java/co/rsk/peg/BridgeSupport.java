@@ -86,7 +86,6 @@ public class BridgeSupport {
 
     public static final int MAX_RELEASE_ITERATIONS = 30;
 
-    public static final Integer FEDERATION_CHANGE_GENERIC_ERROR_CODE = -10;
     public static final Integer LOCK_WHITELIST_GENERIC_ERROR_CODE = -10;
     public static final Integer LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
     public static final Integer LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE = -1;
