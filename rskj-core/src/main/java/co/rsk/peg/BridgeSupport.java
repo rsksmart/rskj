@@ -2073,26 +2073,26 @@ public class BridgeSupport {
      * -2 when a federation is to be activated,
      * and if -3 funds are still to be moved between federations.
      */
-    private Integer createFederation(boolean dryRun) {
+    private Integer createPendingFederation(boolean dryRun) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation != null) {
-            logger.warn("[createFederation] Already existing pending federation.");
-            return FederationChangeResponseCode.EXISTING_PENDING_FEDERATION.getCode();
+            logger.warn("[createPendingFederation] A pending federation already exists.");
+            return FederationChangeResponseCode.PENDING_FEDERATION_ALREADY_EXISTS.getCode();
         }
 
         if (federationSupport.amAwaitingFederationActivation()) {
-            logger.warn("[createFederation] Awaiting federation activation.");
-            return FederationChangeResponseCode.AWAITING_FEDERATION_ACTIVATION.getCode();
+            logger.warn("[createPendingFederation] There is an existing federation awaiting for activation.");
+            return FederationChangeResponseCode.EXISTING_FEDERATION_AWAITING_ACTIVATION.getCode();
         }
 
         if (getRetiringFederation() != null) {
-            logger.warn("[createFederation] Already existing retiring federation.");
+            logger.warn("[createPendingFederation] There is an existing retiring federation.");
             return FederationChangeResponseCode.EXISTING_RETIRING_FEDERATION.getCode();
         }
 
         if (dryRun) {
-            logger.info("[createFederation] DryRun execution successful.");
+            logger.info("[createPendingFederation] DryRun execution successful.");
             return FederationChangeResponseCode.SUCCESSFUL.getCode();
         }
 
@@ -2104,7 +2104,7 @@ public class BridgeSupport {
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         provider.getFederationElection(federationConstants.getFederationChangeAuthorizer()).clear();
 
-        logger.info("[createFederation] Federation created successfully.");
+        logger.info("[createPendingFederation] Pending federation created successfully.");
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
 
@@ -2122,7 +2122,7 @@ public class BridgeSupport {
 
         if (currentPendingFederation == null) {
             logger.warn("[addFederatorPublicKeyMultikey] Pending federation does not exist.");
-            return FederationChangeResponseCode.NON_EXISTING_PENDING_FEDERATION.getCode();
+            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
         }
 
         if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
@@ -2163,17 +2163,17 @@ public class BridgeSupport {
 
         if (currentPendingFederation == null) {
             logger.warn("[commitFederation] Pending federation does not exist.");
-            return FederationChangeResponseCode.NON_EXISTING_PENDING_FEDERATION.getCode();
+            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
         }
 
         if (!currentPendingFederation.isComplete()) {
-            logger.warn("[commitFederation] Pending federation does not have enough members.");
-            return FederationChangeResponseCode.UNSUFFICIENT_MEMBERS.getCode();
+            logger.warn("[commitFederation] Pending federation has {} members, so it does not meet the minimum required.", currentPendingFederation.getMembers().size());
+            return FederationChangeResponseCode.INSUFFICIENT_MEMBERS.getCode();
         }
 
         if (!hash.equals(currentPendingFederation.getHash())) {
-            logger.warn("[commitFederation] Provided hash does not match pending federation hash.");
-            return FederationChangeResponseCode.MISMATCHED_HASH.getCode();
+            logger.warn("[commitFederation] Provided hash {} does not match pending federation hash {}.", hash, currentPendingFederation.getHash());
+            return FederationChangeResponseCode.PENDING_FEDERATION_MISMATCHED_HASH.getCode();
         }
 
         if (dryRun) {
@@ -2234,7 +2234,7 @@ public class BridgeSupport {
 
         if (currentPendingFederation == null) {
             logger.warn("[rollbackFederation] Pending federation does not exist.");
-            return FederationChangeResponseCode.NON_EXISTING_PENDING_FEDERATION.getCode();
+            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
         }
 
         if (dryRun) {
@@ -2253,10 +2253,11 @@ public class BridgeSupport {
     }
 
     public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) throws BridgeIllegalArgumentException {
+        String calledFunction = callSpec.getFunction();
         // Must be on one of the allowed functions
-        if (!FEDERATION_CHANGE_FUNCTIONS.contains(callSpec.getFunction())) {
-            logger.warn("[voteFederationChange] Federation change function does not exist.");
-            return FederationChangeResponseCode.NON_EXISTING_FUNCTION.getCode();
+        if (!FEDERATION_CHANGE_FUNCTIONS.contains(calledFunction)) {
+            logger.warn("[voteFederationChange] Federation change function {} does not exist.", calledFunction);
+            return FederationChangeResponseCode.NON_EXISTING_FUNCTION_CALLED.getCode();
         }
 
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
@@ -2264,7 +2265,8 @@ public class BridgeSupport {
 
         // Must be authorized to vote (checking for signature)
         if (!authorizer.isAuthorized(tx, signatureCache)) {
-            logger.warn("[voteFederationChange] Unauthorized signature.");
+            RskAddress voter = tx.getSender(signatureCache);
+            logger.warn("[voteFederationChange] Unauthorized voter {}.", voter);
             return FederationChangeResponseCode.UNAUTHORIZED_CALLER.getCode();
         }
 
@@ -2280,7 +2282,7 @@ public class BridgeSupport {
 
         // Return if the dry run failed, or we are on a reversible execution
         if (!result.wasSuccessful()) {
-            logger.warn("[voteFederationChange] Unsuccessful execution.");
+            logger.warn("[voteFederationChange] Unsuccessful execution, voting result was {}.", result);
             return (Integer) result.getResult();
         }
 
@@ -2316,7 +2318,7 @@ public class BridgeSupport {
         Integer executionResult;
         switch (callSpec.getFunction()) {
             case "create":
-                executionResult = createFederation(dryRun);
+                executionResult = createPendingFederation(dryRun);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
             case "add":
