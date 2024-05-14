@@ -2064,15 +2064,15 @@ public class BridgeSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation != null) {
-            return FederationChangeResponseCode.EXISTING_PENDING.getCode();
+            return FederationChangeResponseCode.EXISTING_PENDING_FEDERATION.getCode();
         }
 
         if (federationSupport.amAwaitingFederationActivation()) {
-            return FederationChangeResponseCode.AWAITING_ACTIVATION.getCode();
+            return FederationChangeResponseCode.AWAITING_FEDERATION_ACTIVATION.getCode();
         }
 
         if (getRetiringFederation() != null) {
-            return FederationChangeResponseCode.EXISTING_RETIRING.getCode();
+            return FederationChangeResponseCode.EXISTING_RETIRING_FEDERATION.getCode();
         }
 
         if (dryRun) {
@@ -2103,7 +2103,7 @@ public class BridgeSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return FederationChangeResponseCode.NON_EXISTING_PENDING.getCode();
+            return FederationChangeResponseCode.NON_EXISTING_PENDING_FEDERATION.getCode();
         }
 
         if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
@@ -2141,15 +2141,15 @@ public class BridgeSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return FederationChangeResponseCode.NON_EXISTING_PENDING.getCode();
+            return FederationChangeResponseCode.NON_EXISTING_PENDING_FEDERATION.getCode();
         }
 
         if (!currentPendingFederation.isComplete()) {
-            return FederationChangeResponseCode.UNCOMPLETE_PENDING.getCode();
+            return FederationChangeResponseCode.UNCOMPLETE_PENDING_FEDERATION.getCode();
         }
 
         if (!hash.equals(currentPendingFederation.getHash())) {
-            return FederationChangeResponseCode.MISMATCHED_HASHES.getCode();
+            return FederationChangeResponseCode.MISMATCHED_HASH.getCode();
         }
 
         if (dryRun) {
@@ -2208,7 +2208,7 @@ public class BridgeSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return FederationChangeResponseCode.NON_EXISTING_PENDING.getCode();
+            return FederationChangeResponseCode.NON_EXISTING_PENDING_FEDERATION.getCode();
         }
 
         if (dryRun) {
