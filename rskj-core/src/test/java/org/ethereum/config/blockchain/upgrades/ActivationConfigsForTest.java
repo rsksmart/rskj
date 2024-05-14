@@ -191,6 +191,11 @@ public class ActivationConfigsForTest {
         return rskips;
     }
 
+    private static List<ConsensusRule> getTbd700Rskips() {
+        List<ConsensusRule> rskips = new ArrayList<>();
+        return rskips;
+    }
+
     public static ActivationConfig genesis() {
         return only();
     }
@@ -332,6 +337,30 @@ public class ActivationConfigsForTest {
 
         return enableTheseDisableThose(rskips, except);
     }
+
+    public static ActivationConfig tbd700(List<ConsensusRule> except) {
+        List<ConsensusRule> rskips = new ArrayList<>();
+        rskips.addAll(getPaidBridgeTxsRskip());
+        rskips.addAll(getOrchidRskips());
+        rskips.addAll(getOrchid060Rskips());
+        rskips.addAll(getWasabi100Rskips());
+        rskips.addAll(getBahamasRskips());
+        rskips.addAll(getTwoToThreeRskips());
+        rskips.addAll(getPapyrus200Rskips());
+        rskips.addAll(getIris300Rskips());
+        rskips.addAll(getHop400Rskips());
+        rskips.addAll(getHop401Rskips());
+        rskips.addAll(getFingerroot500Rskips());
+        rskips.addAll(getArrowhead600Rskips());
+        rskips.addAll(getTbd700Rskips());
+
+        return enableTheseDisableThose(rskips, except);
+    }
+
+    public static ActivationConfig tbd700() {
+        return tbd700(Collections.emptyList());
+    }
+
 
     public static ActivationConfig regtest() {
         return REGTEST;
