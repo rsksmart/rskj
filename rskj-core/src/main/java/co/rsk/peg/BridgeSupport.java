@@ -2064,19 +2064,19 @@ public class BridgeSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation != null) {
-            return -1;
+            return FederationChangeResponseCode.EXISTING_PENDING.getCode();
         }
 
         if (federationSupport.amAwaitingFederationActivation()) {
-            return -2;
+            return FederationChangeResponseCode.AWAITING_ACTIVATION.getCode();
         }
 
         if (getRetiringFederation() != null) {
-            return -3;
+            return FederationChangeResponseCode.EXISTING_RETIRING.getCode();
         }
 
         if (dryRun) {
-            return 1;
+            return FederationChangeResponseCode.SUCCESSFUL.getCode();
         }
 
         currentPendingFederation = new PendingFederation(Collections.emptyList());
@@ -2087,7 +2087,7 @@ public class BridgeSupport {
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         provider.getFederationElection(federationConstants.getFederationChangeAuthorizer()).clear();
 
-        return 1;
+        return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
 
     /**
@@ -2103,17 +2103,17 @@ public class BridgeSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return -1;
+            return FederationChangeResponseCode.NON_EXISTING_PENDING.getCode();
         }
 
         if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
             currentPendingFederation.getMembers().stream().map(FederationMember::getRskPublicKey).anyMatch(k -> k.equals(rskKey)) ||
             currentPendingFederation.getMembers().stream().map(FederationMember::getMstPublicKey).anyMatch(k -> k.equals(mstKey))) {
-            return -2;
+            return FederationChangeResponseCode.FEDERATOR_ALREADY_PRESENT.getCode();
         }
 
         if (dryRun) {
-            return 1;
+            return FederationChangeResponseCode.SUCCESSFUL.getCode();
         }
 
         FederationMember member = new FederationMember(btcKey, rskKey, mstKey);
@@ -2122,7 +2122,7 @@ public class BridgeSupport {
 
         provider.setPendingFederation(currentPendingFederation);
 
-        return 1;
+        return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
 
     /**
@@ -2141,19 +2141,19 @@ public class BridgeSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return -1;
+            return FederationChangeResponseCode.NON_EXISTING_PENDING.getCode();
         }
 
         if (!currentPendingFederation.isComplete()) {
-            return -2;
+            return FederationChangeResponseCode.UNCOMPLETE_PENDING.getCode();
         }
 
         if (!hash.equals(currentPendingFederation.getHash())) {
-            return -3;
+            return FederationChangeResponseCode.MISMATCHED_HASHES.getCode();
         }
 
         if (dryRun) {
-            return 1;
+            return FederationChangeResponseCode.SUCCESSFUL.getCode();
         }
 
         // Move UTXOs from the new federation into the old federation
@@ -2195,7 +2195,7 @@ public class BridgeSupport {
         logger.debug("[commitFederation] New Federation committed: {}", provider.getNewFederation().getAddress());
         eventLogger.logCommitFederation(rskExecutionBlock, provider.getOldFederation(), provider.getNewFederation());
 
-        return 1;
+        return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
 
     /**
@@ -2208,11 +2208,11 @@ public class BridgeSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return -1;
+            return FederationChangeResponseCode.NON_EXISTING_PENDING.getCode();
         }
 
         if (dryRun) {
-            return 1;
+            return FederationChangeResponseCode.SUCCESSFUL.getCode();
         }
 
         provider.setPendingFederation(null);
@@ -2221,13 +2221,13 @@ public class BridgeSupport {
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         provider.getFederationElection(federationConstants.getFederationChangeAuthorizer()).clear();
 
-        return 1;
+        return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
 
     public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) throws BridgeIllegalArgumentException {
         // Must be on one of the allowed functions
         if (!FEDERATION_CHANGE_FUNCTIONS.contains(callSpec.getFunction())) {
-            return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
+            return FederationChangeResponseCode.NON_EXISTING_FUNCTION.getCode();
         }
 
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
@@ -2235,7 +2235,7 @@ public class BridgeSupport {
 
         // Must be authorized to vote (checking for signature)
         if (!authorizer.isAuthorized(tx, signatureCache)) {
-            return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
+            return FederationChangeResponseCode.UNAUTHORIZED_CALLER.getCode();
         }
 
         // Try to do a dry-run and only register the vote if the
@@ -2244,7 +2244,7 @@ public class BridgeSupport {
         try {
             result = executeVoteFederationChangeFunction(true, callSpec);
         } catch (IOException | BridgeIllegalArgumentException e) {
-            result = new ABICallVoteResult(false, FEDERATION_CHANGE_GENERIC_ERROR_CODE);
+            result = new ABICallVoteResult(false, FederationChangeResponseCode.GENERIC_ERROR);
         }
 
         // Return if the dry run failed, or we are on a reversible execution
@@ -2256,7 +2256,7 @@ public class BridgeSupport {
         // Register the vote. It is expected to succeed, since all previous checks succeeded
         if (!election.vote(callSpec, tx.getSender(signatureCache))) {
             logger.warn("Unexpected federation change vote failure");
-            return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
+            return FederationChangeResponseCode.GENERIC_ERROR.getCode();
         }
 
         // If enough votes have been reached, then actually execute the function
@@ -2267,7 +2267,7 @@ public class BridgeSupport {
                 result = executeVoteFederationChangeFunction(false, winnerSpec);
             } catch (IOException e) {
                 logger.warn("Unexpected federation change vote exception: {}", e.getMessage());
-                return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
+                return FederationChangeResponseCode.GENERIC_ERROR.getCode();
             } finally {
                 // Clear the winner so that we don't repeat ourselves
                 election.clearWinners();
@@ -2335,7 +2335,7 @@ public class BridgeSupport {
                 break;
             default:
                 // Fail by default
-                result = new ABICallVoteResult(false, FEDERATION_CHANGE_GENERIC_ERROR_CODE);
+                result = new ABICallVoteResult(false, FederationChangeResponseCode.GENERIC_ERROR);
         }
 
         return result;
