@@ -2331,7 +2331,7 @@ public class BridgeSupport {
                 break;
             default:
                 // Fail by default
-                result = new ABICallVoteResult(false, FederationChangeResponseCode.GENERIC_ERROR);
+                result = new ABICallVoteResult(false, FederationChangeResponseCode.GENERIC_ERROR.getCode());
         }
 
         return result;
