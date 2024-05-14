@@ -30,6 +30,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -397,6 +398,7 @@ public final class BridgeUtils {
         }
 
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         RskAddress senderAddress = rskTx.getSender(signatureCache);
 
         // Temporary assumption: if areBridgeTxsFree() is true then the current federation
@@ -406,15 +408,16 @@ public final class BridgeUtils {
            !activations.isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
            rskTx.acceptTransactionSignature(constants.getChainId()) &&
            (
-               isFromGenesisFederation(senderAddress, bridgeConstants.getGenesisFederationPublicKeys()) ||
+               isFromGenesisFederation(senderAddress, federationConstants.getGenesisFederationPublicKeys()) ||
                isFromAuthorizedSender(rskTx, bridgeConstants, signatureCache)
            );
     }
 
     private static boolean isFromAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConstants, SignatureCache signatureCache) {
         FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
-        return isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
+        return isFromFederationChangeAuthorizedSender(rskTx, federationConstants, signatureCache) ||
             isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
             isFromFeePerKbChangeAuthorizedSender(rskTx, feePerKbConstants, signatureCache);
     }
@@ -459,8 +462,8 @@ public final class BridgeUtils {
         }
     }
 
-    private static boolean isFromFederationChangeAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
-        AddressBasedAuthorizer authorizer = bridgeConfiguration.getFederationChangeAuthorizer();
+    private static boolean isFromFederationChangeAuthorizedSender(Transaction rskTx, FederationConstants federationConstants, SignatureCache signatureCache) {
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
 

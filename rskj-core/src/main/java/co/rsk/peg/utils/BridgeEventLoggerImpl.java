@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -117,7 +118,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
-        long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge(activations);
+
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        long newFedActivationBlockNumber = executionBlock.getNumber() + federationConstants.getFederationActivationAge(activations);
 
         CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics();
