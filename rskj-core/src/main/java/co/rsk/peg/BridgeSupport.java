@@ -2244,7 +2244,7 @@ public class BridgeSupport {
         try {
             result = executeVoteFederationChangeFunction(true, callSpec);
         } catch (IOException | BridgeIllegalArgumentException e) {
-            result = new ABICallVoteResult(false, FederationChangeResponseCode.GENERIC_ERROR);
+            result = new ABICallVoteResult(false, FederationChangeResponseCode.GENERIC_ERROR.getCode());
         }
 
         // Return if the dry run failed, or we are on a reversible execution
