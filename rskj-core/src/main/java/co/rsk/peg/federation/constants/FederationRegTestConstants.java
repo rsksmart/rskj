@@ -11,9 +11,7 @@ import java.util.stream.Collectors;
 
 public class FederationRegTestConstants extends FederationConstants {
 
-    private static FederationRegTestConstants instance;
-
-    private FederationRegTestConstants(List<BtcECKey> federationPublicKeys) {
+    public FederationRegTestConstants(List<BtcECKey> federationPublicKeys) {
         // IMPORTANT: BTC, RSK and MST keys are the same.
         // Change upon implementation of the <INSERT FORK NAME HERE> fork.
         genesisFederationPublicKeys = federationPublicKeys;
@@ -51,13 +49,5 @@ public class FederationRegTestConstants extends FederationConstants {
         // 9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35
         // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
-    }
-
-    public static FederationRegTestConstants getInstance(List<BtcECKey> federationPublicKeys) {
-        if (instance == null) {
-            instance = new FederationRegTestConstants(federationPublicKeys);
-        }
-
-        return instance;
     }
 }
