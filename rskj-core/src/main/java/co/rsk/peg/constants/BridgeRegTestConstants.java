@@ -23,30 +23,24 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationRegTestConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import co.rsk.peg.feeperkb.constants.FeePerKbRegTestConstants;
+import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 
 public class BridgeRegTestConstants extends BridgeConstants {
 
-    public BridgeRegTestConstants() {
-        this(getDefaultFederationPublicKeys());
-    }
-    private static List<BtcECKey> getDefaultFederationPublicKeys() {
-        BtcECKey federator0PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8)));
-        BtcECKey federator1PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8)));
-        BtcECKey federator2PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)));
-        List<BtcECKey> defaultFederationPrivateKeys = Collections.unmodifiableList(Arrays.asList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey));
+    private static final List<BtcECKey> defaultFederationPublicKeys = Stream.of(
+        "0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124",
+        "03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db",
+        "02cd53fc53a07f211641a677d250f6de99caf620e8e77071e811a28b3bcddf0be1"
+    ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
-        return Collections.unmodifiableList(defaultFederationPrivateKeys.stream()
-                .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
-                .collect(Collectors.toList()));
+    public BridgeRegTestConstants() {
+        this(defaultFederationPublicKeys);
     }
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
