@@ -32,6 +32,7 @@ public interface FederationStorageProvider {
 
     Optional<Long> getNextFederationCreationBlockHeight(ActivationConfig.ForBlock activations);
     void setNextFederationCreationBlockHeight(long nextFederationCreationBlockHeight);
+    void clearNextFederationCreationBlockHeight();
 
     Optional<Script> getLastRetiredFederationP2SHScript(ActivationConfig.ForBlock activations);
     void setLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript);
