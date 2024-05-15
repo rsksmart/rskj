@@ -2247,7 +2247,8 @@ public class BridgeSupport {
 
         // Must be authorized to vote (checking for signature)
         if (!authorizer.isAuthorized(tx, signatureCache)) {
-            logger.warn("[voteFederationChange] Unauthorized voter {}.", tx.getSender(signatureCache));
+            RskAddress voter = tx.getSender(signatureCache);
+            logger.warn("[voteFederationChange] Unauthorized voter {}.", voter);
             return FederationChangeResponseCode.UNAUTHORIZED_CALLER.getCode();
         }
 
