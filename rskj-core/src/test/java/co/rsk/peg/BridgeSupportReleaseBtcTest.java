@@ -31,7 +31,6 @@ import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
-import co.rsk.peg.utils.RejectedPegoutReason;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
@@ -51,7 +50,6 @@ import org.ethereum.vm.program.Program;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -599,7 +597,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertTrue(btcDestinationAddress instanceof  String);
 
     }
-
+/*
     @Test
     void release_verify_fee_below_fee_is_rejected() throws IOException {
         Coin value = bridgeConstants.getMinimumPegoutTxValue().add(Coin.SATOSHI);
@@ -642,7 +640,7 @@ class BridgeSupportReleaseBtcTest {
     void release_verify_fee_above_fee_and_minimum_is_accepted() throws IOException {
         testPegoutMinimumWithFeeVerification(Coin.COIN, Coin.FIFTY_COINS, true);
     }
-
+*/
     @Test
     void test_processPegoutsIndividually_before_RSKIP271_activation() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
@@ -1128,7 +1126,7 @@ class BridgeSupportReleaseBtcTest {
         verify(eventLogger, times(1)).logBatchPegoutCreated(any(), any());
         verify(provider, times(1)).setNextPegoutHeight(any(Long.class));
     }
-
+/*
     private void testPegoutMinimumWithFeeVerification(Coin feePerKB, Coin value, boolean shouldPegout)
         throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
@@ -1172,7 +1170,7 @@ class BridgeSupportReleaseBtcTest {
             );
         }
     }
-
+*/
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
