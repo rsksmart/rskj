@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import co.rsk.peg.feeperkb.FeePerKbSupport;
 import java.time.Instant;
 import java.math.BigInteger;
 import java.util.*;
@@ -96,6 +97,7 @@ class BridgeSupportAddSignatureTest {
         Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(activeFedArgs);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         BridgeSupport bridgeSupport = new BridgeSupport(
             bridgeRegTestConstants,
             provider,
@@ -106,6 +108,7 @@ class BridgeSupportAddSignatureTest {
             mock(Block.class),
             new Context(bridgeRegTestConstants.getBtcParams()),
             mockFederationSupport,
+            feePerKbSupport,
             null,
             null,
             null
@@ -128,6 +131,7 @@ class BridgeSupportAddSignatureTest {
         //Setup
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         BridgeSupport bridgeSupport = new BridgeSupport(
                 bridgeRegTestConstants,
             provider,
@@ -138,6 +142,7 @@ class BridgeSupportAddSignatureTest {
             mock(Block.class),
             new Context(bridgeRegTestConstants.getBtcParams()),
             mockFederationSupport,
+            feePerKbSupport,
             null,
             null,
             null
@@ -191,6 +196,7 @@ class BridgeSupportAddSignatureTest {
         //Setup
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         BridgeSupport bridgeSupport = new BridgeSupport(
                 bridgeRegTestConstants,
             provider,
@@ -201,6 +207,7 @@ class BridgeSupportAddSignatureTest {
             mock(Block.class),
             new Context(bridgeRegTestConstants.getBtcParams()),
             mockFederationSupport,
+            feePerKbSupport,
             null,
             null,
             null

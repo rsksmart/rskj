@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FeePerKbConstantsTest {
@@ -52,7 +54,7 @@ class FeePerKbConstantsTest {
     void getFeePerKbChangeAuthorizer(FeePerKbConstants feePerKbConstants,
         AddressBasedAuthorizer expectedFeePerKbChangeAuthorizer) {
         AddressBasedAuthorizer actualFeePerKbChangeAuthorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
-        assertEquals(expectedFeePerKbChangeAuthorizer, actualFeePerKbChangeAuthorizer);
+        assertThat(expectedFeePerKbChangeAuthorizer, samePropertyValuesAs(actualFeePerKbChangeAuthorizer));
     }
 
     private static Stream<Arguments> getFeePerKbChangeAuthorizerProvider() {
