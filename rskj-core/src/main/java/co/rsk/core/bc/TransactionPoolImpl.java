@@ -75,7 +75,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private Block bestBlock;
 
-    private TxPendingValidator validator;
+    private final TxPendingValidator validator;
 
     private final TxQuotaChecker quotaChecker;
 
@@ -490,11 +490,6 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        boolean senderCanPay =  costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0;
-
-        if(senderCanPay) {
-            return true;
-        }
 
         ClaimTransactionInfoHolder claimTransactionInfoHolder = new ClaimTransactionInfoHolder(
                 newTx,
@@ -504,7 +499,8 @@ public class TransactionPoolImpl implements TransactionPool {
                 bestBlock == null ? null : config.getActivationConfig().forBlock(bestBlock.getNumber())
         );
 
-        return EthSwapUtil.isClaimTxAndSenderCanPayAlongPendingTx(claimTransactionInfoHolder, transactions);
+        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0
+                || EthSwapUtil.isClaimTxAndSenderCanPayAlongPendingTx(claimTransactionInfoHolder, transactions);
     }
 
     private Coin getTxBaseCost(Transaction tx) {
