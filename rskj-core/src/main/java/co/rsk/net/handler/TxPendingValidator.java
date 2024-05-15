@@ -68,7 +68,6 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorMaximumGasPriceValidator(activationConfig));
     }
 
-
     public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state, ClaimTransactionInfoHolder claimTransactionInfoHolder) {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
