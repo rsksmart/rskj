@@ -99,6 +99,12 @@ public enum BridgeEvents {
                     new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
                     new CallTransaction.Param(false, "pegoutCreationRskBlockNumber", SolidityType.getType(SolidityType.UINT256))
             }
+    ),
+    PEGOUT_TRANSACTION_CREATED("pegout_transaction_created",
+        new CallTransaction.Param[]{
+            new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
+            new CallTransaction.Param(false, Fields.UTXO_OUTPOINT_VALUES, SolidityType.getType(SolidityType.BYTES))
+        }
     );
 
     private String eventName;
@@ -121,5 +127,6 @@ public enum BridgeEvents {
         private static final String BTC_TX_HASH = "btcTxHash";
         private static final String RELEASE_RSK_TX_HASH = "releaseRskTxHash";
         private static final String RELEASE_RSK_TX_HASHES = "releaseRskTxHashes";
+        private static final String UTXO_OUTPOINT_VALUES = "utxoOutpointValues";
     }
 }
