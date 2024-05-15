@@ -1035,14 +1035,14 @@ public class BridgeStorageProvider {
         if (version == NON_STANDARD_ERP_FEDERATION.getFormatVersion()) {
             return BridgeSerializationUtils.deserializeNonStandardErpFederation(
                 data,
-                bridgeConstants,
+                bridgeConstants.getFederationConstants(),
                 activations
             );
         }
         if (version == P2SH_ERP_FEDERATION.getFormatVersion()) {
             return BridgeSerializationUtils.deserializeP2shErpFederation(
                 data,
-                bridgeConstants
+                bridgeConstants.getFederationConstants()
             );
         }
         // To keep backwards compatibility
