@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.List;
 
 public class FederationConstants {
-    protected static NetworkParameters btcParams;
+    protected NetworkParameters btcParams;
 
     protected List<BtcECKey> genesisFederationPublicKeys;
     protected Instant genesisFederationCreationTime;
