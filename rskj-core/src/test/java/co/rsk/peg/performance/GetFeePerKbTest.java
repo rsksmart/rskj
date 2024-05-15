@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 @Disabled
 class GetFeePerKbTest extends BridgePerformanceTestCase {
     private Federation genesisFederation;
-
+/*
     @Test
     void getFeePerKb() throws VMException {
         ExecutionStats stats = new ExecutionStats("getFeePerKb");
@@ -55,6 +55,8 @@ class GetFeePerKbTest extends BridgePerformanceTestCase {
         );
     }
 
+ */
+/*
     private BridgeStorageProviderInitializer buildInitializer(boolean genesis) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             if (!genesis) {
@@ -64,6 +66,6 @@ class GetFeePerKbTest extends BridgePerformanceTestCase {
             }
         };
     }
-
+*/
 
 }

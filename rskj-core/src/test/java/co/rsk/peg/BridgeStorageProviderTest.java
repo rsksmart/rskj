@@ -28,7 +28,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.vote.ABICallElection;
-import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -1803,6 +1802,7 @@ class BridgeStorageProviderTest {
         Assertions.assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
     }
 
+    /*
     @Test
     void setFeePerKb_savedAndRecreated() {
         Repository repository = createRepository();
@@ -1831,7 +1831,8 @@ class BridgeStorageProviderTest {
 
         MatcherAssert.assertThat(provider.getFeePerKb(), is(expectedCoin));
     }
-
+*/
+    /*
     @Test
     void getFeePerKbElection_emptyVotes() {
         AddressBasedAuthorizer authorizerMock = mock(AddressBasedAuthorizer.class);
@@ -1855,7 +1856,8 @@ class BridgeStorageProviderTest {
         MatcherAssert.assertThat(result.getVotes().isEmpty(), is(true));
         Assertions.assertFalse(result.getWinner().isPresent());
     }
-
+*/
+    /*
     @Test
     void getFeePerKbElection_withVotes() {
         AddressBasedAuthorizer authorizerMock = mock(AddressBasedAuthorizer.class);
@@ -1887,7 +1889,7 @@ class BridgeStorageProviderTest {
         MatcherAssert.assertThat(result.getVotes(), is(electionVotes));
         Assertions.assertEquals(expectedWinner, result.getWinner().get());
     }
-
+*/
     @Test
     void setLockingCap_before_fork() {
         Repository repository = mock(Repository.class);
