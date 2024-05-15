@@ -1,13 +1,13 @@
-package co.rsk.mine.gas;
+package co.rsk.mine.gas.provider;
 
 import co.rsk.core.Coin;
 
-public class DefaultMinGasPriceProvider implements MinGasPriceProvider {
+public class FixedMinGasPriceProvider implements MinGasPriceProvider {
 
 
     private final long minGasPrice;
 
-    public DefaultMinGasPriceProvider(long minGasPrice) {
+    public FixedMinGasPriceProvider(long minGasPrice) {
         this.minGasPrice = minGasPrice;
     }
 
@@ -18,7 +18,7 @@ public class DefaultMinGasPriceProvider implements MinGasPriceProvider {
 
     @Override
     public MinGasPriceProviderType getType() {
-        return MinGasPriceProviderType.DEFAULT;
+        return MinGasPriceProviderType.FIXED;
     }
 
     @Override

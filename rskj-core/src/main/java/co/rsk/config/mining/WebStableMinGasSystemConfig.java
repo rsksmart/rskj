@@ -2,8 +2,8 @@ package co.rsk.config.mining;
 
 import com.typesafe.config.Config;
 
-public class HttpGetStableMinGasSystemConfig {
-    public static final String HTTP_GET_STABLE_GAS_PRICE_CONFIG_PATH = "miner.httpGet";
+public class WebStableMinGasSystemConfig {
+    public static final String WEB_STABLE_GAS_PRICE_CONFIG_PATH = "web";
     private static final String URL_PROPERTY = "url";
     private static final String JSON_PATH_PROPERTY = "jsonPath";
     private static final String TIMEOUT_PROPERTY = "timeout";
@@ -14,7 +14,7 @@ public class HttpGetStableMinGasSystemConfig {
     private final int timeout;
     private final String apiKey;
 
-    public HttpGetStableMinGasSystemConfig(Config config) {
+    public WebStableMinGasSystemConfig(Config config) {
         this.url = config.getString(URL_PROPERTY);
         this.jsonPath = config.getString(JSON_PATH_PROPERTY);
         this.timeout = config.getInt(TIMEOUT_PROPERTY);

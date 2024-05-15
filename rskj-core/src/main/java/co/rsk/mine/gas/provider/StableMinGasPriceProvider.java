@@ -1,4 +1,4 @@
-package co.rsk.mine.gas;
+package co.rsk.mine.gas.provider;
 
 import co.rsk.core.Coin;
 import org.slf4j.Logger;
@@ -6,10 +6,9 @@ import org.slf4j.LoggerFactory;
 
 public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger("StableMinGasPrice");
-    private final DefaultMinGasPriceProvider fallBackProvider;
+    private final MinGasPriceProvider fallBackProvider;
 
-
-    StableMinGasPriceProvider(DefaultMinGasPriceProvider fallBackProvider) {
+    protected StableMinGasPriceProvider(MinGasPriceProvider fallBackProvider) {
         this.fallBackProvider = fallBackProvider;
     }
 

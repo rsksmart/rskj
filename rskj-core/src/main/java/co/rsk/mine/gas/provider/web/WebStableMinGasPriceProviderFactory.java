@@ -1,0 +1,25 @@
+package co.rsk.mine.gas.provider.web;
+
+import co.rsk.config.mining.WebStableMinGasSystemConfig;
+import co.rsk.config.mining.StableMinGasPriceSystemConfig;
+import co.rsk.mine.gas.provider.MinGasPriceProvider;
+import co.rsk.mine.gas.provider.StableMinGasPriceProvider;
+
+public class WebStableMinGasPriceProviderFactory {
+
+    private WebStableMinGasPriceProviderFactory() {
+    }
+
+    public static StableMinGasPriceProvider create(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallbackProvider) {
+        WebStableMinGasSystemConfig httpGetSystemConfig = config.getHttpGetConfig();
+        WebStableMinGasPriceConfig httpGetStableMinGasPriceConfig = WebStableMinGasPriceConfig.builder().setUrl(httpGetSystemConfig.getUrl())
+                .setJsonPath(httpGetSystemConfig.getJsonPath())
+                .setTimeout(httpGetSystemConfig.getTimeout())
+                .setApiKey(httpGetSystemConfig.getApiKey())
+                .setMinStableGasPrice(config.getMinStableGasPrice())
+                .setRefreshRate(config.getRefreshRate())
+                .build();
+        return new WebMinGasPriceProvider(fallbackProvider, httpGetStableMinGasPriceConfig);
+    }
+}
+

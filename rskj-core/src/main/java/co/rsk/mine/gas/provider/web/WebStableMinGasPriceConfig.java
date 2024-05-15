@@ -1,6 +1,6 @@
-package co.rsk.mine.gas;
+package co.rsk.mine.gas.provider.web;
 
-public class HttpGetStableMinGasPriceConfig {
+public class WebStableMinGasPriceConfig {
     private final String url;
     private final String jsonPath;
     private final int timeout;
@@ -8,7 +8,7 @@ public class HttpGetStableMinGasPriceConfig {
     private final long minStableGasPrice;
     private final int refreshRate;
 
-    public HttpGetStableMinGasPriceConfig(String url, String jsonPath, int timeout, String apiKey, long minStableGasPrice, int refreshRate) {
+    public WebStableMinGasPriceConfig(String url, String jsonPath, int timeout, String apiKey, long minStableGasPrice, int refreshRate) {
         this.url = url;
         this.jsonPath = jsonPath;
         this.timeout = timeout;
@@ -83,8 +83,8 @@ public class HttpGetStableMinGasPriceConfig {
             return this;
         }
 
-        public HttpGetStableMinGasPriceConfig build() {
-            return new HttpGetStableMinGasPriceConfig(url, jsonPath, timeout, apiKey, minStableGasPrice, refreshRate);
+        public WebStableMinGasPriceConfig build() {
+            return new WebStableMinGasPriceConfig(url, jsonPath, timeout, apiKey, minStableGasPrice, refreshRate);
         }
     }
 

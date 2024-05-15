@@ -1,6 +1,6 @@
 package co.rsk.config.mining;
 
-import co.rsk.mine.gas.MinGasPriceProviderType;
+import co.rsk.mine.gas.provider.MinGasPriceProviderType;
 import com.typesafe.config.Config;
 
 public class StableMinGasPriceSystemConfig {
@@ -40,9 +40,15 @@ public class StableMinGasPriceSystemConfig {
         return enabled;
     }
 
-    public HttpGetStableMinGasSystemConfig getHttpGetConfig() {
-        return new HttpGetStableMinGasSystemConfig(config.getConfig(HttpGetStableMinGasSystemConfig.HTTP_GET_STABLE_GAS_PRICE_CONFIG_PATH));
+    public WebStableMinGasSystemConfig getHttpGetConfig() {
+        return new WebStableMinGasSystemConfig(config.getConfig(WebStableMinGasSystemConfig.WEB_STABLE_GAS_PRICE_CONFIG_PATH));
     }
+
+    public OnChainMinGasPriceSystemConfig getOnChainConfig() {
+        return new OnChainMinGasPriceSystemConfig(config.getConfig(OnChainMinGasPriceSystemConfig.ONCHAIN_STABLE_GAS_PRICE_CONFIG_PATH));
+    }
+
+
 
     public MinGasPriceProviderType getMethod() {
         return method;

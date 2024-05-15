@@ -411,8 +411,8 @@ public abstract class SystemProperties {
                     props.store(writer, "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
                     if(logger.isInfoEnabled()) {
                         logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
+                        logger.info("Generated nodeID and its private key stored in {}", file);
                     }
-                    logger.info("Generated nodeID and its private key stored in {}", file);
                 }
             }
             return props.getProperty("nodeIdPrivateKey");

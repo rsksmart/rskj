@@ -19,7 +19,7 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
-import co.rsk.mine.gas.MinGasPriceProvider;
+import co.rsk.mine.gas.provider.MinGasPriceProvider;
 
 /**
  * Wraps configuration for Mining, which is usually derived from configuration files.

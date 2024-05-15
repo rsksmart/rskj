@@ -1,4 +1,4 @@
-package co.rsk.mine.gas;
+package co.rsk.mine.gas.provider;
 
 import co.rsk.core.Coin;
 

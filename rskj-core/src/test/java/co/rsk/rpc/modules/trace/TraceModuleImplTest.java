@@ -22,7 +22,7 @@ import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.mine.*;
-import co.rsk.mine.gas.DefaultMinGasPriceProvider;
+import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
@@ -437,7 +437,7 @@ class TraceModuleImplTest {
                 ),
                 rskSystemProperties.isMinerServerFixedClock(),
                 rskSystemProperties.workSubmissionRateLimitInMills(),
-                new DefaultMinGasPriceProvider(rskSystemProperties.minerMinGasPrice())
+                new FixedMinGasPriceProvider(rskSystemProperties.minerMinGasPrice())
         );
         BlockToMineBuilder builder = new BlockToMineBuilder(
                 rskSystemProperties.getActivationConfig(),

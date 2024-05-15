@@ -19,7 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.core.Coin;
-import co.rsk.mine.gas.MinGasPriceProvider;
+import co.rsk.mine.gas.provider.MinGasPriceProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

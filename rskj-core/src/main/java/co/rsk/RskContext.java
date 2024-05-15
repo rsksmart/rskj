@@ -41,9 +41,8 @@ import co.rsk.metrics.HashRateCalculator;
 import co.rsk.metrics.HashRateCalculatorMining;
 import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.mine.*;
-import co.rsk.mine.gas.DefaultMinGasPriceProvider;
-import co.rsk.mine.gas.MinGasPriceProvider;
-import co.rsk.mine.gas.StableMinGasPriceProviderFactory;
+import co.rsk.mine.gas.provider.MinGasPriceProvider;
+import co.rsk.mine.gas.provider.MinGasPriceProviderFactory;
 import co.rsk.net.*;
 import co.rsk.net.discovery.KnownPeersHandler;
 import co.rsk.net.discovery.PeerExplorer;
@@ -1860,9 +1859,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private MinGasPriceProvider getMinGasPriceProvider() {
         if (minGasPriceProvider == null) {
             long minGasPrice = getRskSystemProperties().minerMinGasPrice();
-            DefaultMinGasPriceProvider defaultMinGasPriceProvider = new DefaultMinGasPriceProvider(minGasPrice);
             StableMinGasPriceSystemConfig stableGasPriceSystemConfig = getRskSystemProperties().getStableGasPriceSystemConfig();
-            minGasPriceProvider = stableGasPriceSystemConfig.isEnabled() ? StableMinGasPriceProviderFactory.create(stableGasPriceSystemConfig, defaultMinGasPriceProvider) : defaultMinGasPriceProvider;
+            minGasPriceProvider = MinGasPriceProviderFactory.create(minGasPrice, stableGasPriceSystemConfig);
         }
         logger.debug("MinGasPriceProvider type: {}", minGasPriceProvider.getType().name());
         return minGasPriceProvider;

@@ -19,7 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.core.Coin;
-import co.rsk.mine.gas.MinGasPriceProvider;
+import co.rsk.mine.gas.provider.MinGasPriceProvider;
 
 /**
  * This is the implementation of RSKIP-09
