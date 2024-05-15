@@ -54,17 +54,36 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     private DataWord getStorageKeyForNewFederationBtcUtxos(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
-        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
-        if (networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
-            if (activations.isActive(RSKIP284)) {
-                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey();
-            }
-            if (activations.isActive(RSKIP293)) {
-                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP.getKey();
-            }
+
+        if (networkIsTestnet(networkParameters)) {
+            return getNewFederationBtcUtxosKeyForTestnet(activations);
         }
 
-        return key;
+        return NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
+    }
+
+    private boolean networkIsTestnet(NetworkParameters networkParameters) {
+        return networkParameters.getId().equals(NetworkParameters.ID_TESTNET);
+    }
+
+    private DataWord getNewFederationBtcUtxosKeyForTestnet(ActivationConfig.ForBlock activations) {
+        if (shouldUseGeneralKeyForTestnet(activations)) {
+            return NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
+        }
+
+        if (shouldUsePreHopKeyForTestnet(activations)) {
+            return NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey();
+        }
+
+        return NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP.getKey();
+    }
+
+    private boolean shouldUseGeneralKeyForTestnet(ActivationConfig.ForBlock activations) {
+        return !activations.isActive(RSKIP284);
+    }
+
+    private boolean shouldUsePreHopKeyForTestnet(ActivationConfig.ForBlock activations) {
+        return !activations.isActive(RSKIP293);
     }
 
     @Override
@@ -291,17 +310,17 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return;
         }
 
-        StorageAccessor.RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
-
-        if (activations.isActive(RSKIP123)) {
-            saveStorageVersion(
-                NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                newFederation.getFormatVersion()
-            );
-            serializer = BridgeSerializationUtils::serializeFederation;
+        if (!activations.isActive(RSKIP123)) {
+            bridgeStorageAccessor.safeSaveToRepository(NEW_FEDERATION_KEY.getKey(), newFederation, BridgeSerializationUtils::serializeFederationOnlyBtcKeys);
+            return;
         }
 
-        bridgeStorageAccessor.safeSaveToRepository(NEW_FEDERATION_KEY.getKey(), newFederation, serializer);
+        saveNewFederationFormatVersion();
+        bridgeStorageAccessor.safeSaveToRepository(NEW_FEDERATION_KEY.getKey(), newFederation, BridgeSerializationUtils::serializeFederation);
+    }
+
+    private void saveNewFederationFormatVersion() {
+        saveStorageVersion(NEW_FEDERATION_FORMAT_VERSION.getKey(), newFederation.getFormatVersion());
     }
 
     private void saveOldFederation(ActivationConfig.ForBlock activations) {
@@ -309,39 +328,47 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return;
         }
 
-        StorageAccessor.RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
-
-        if (activations.isActive(RSKIP123)) {
-            if (oldFederation != null) {
-                saveStorageVersion(
-                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    oldFederation.getFormatVersion()
-                );
-            } else {
-                // assume it is a standard federation to keep backwards compatibility
-                saveStorageVersion(
-                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
-                    STANDARD_MULTISIG_FEDERATION.getFormatVersion()
-                );
-            }
-            serializer = BridgeSerializationUtils::serializeFederation;
+        if (!activations.isActive(RSKIP123)) {
+            bridgeStorageAccessor.safeSaveToRepository(OLD_FEDERATION_KEY.getKey(), oldFederation, BridgeSerializationUtils::serializeFederationOnlyBtcKeys);
+            return;
         }
 
-        bridgeStorageAccessor.safeSaveToRepository(OLD_FEDERATION_KEY.getKey(), oldFederation, serializer);
+        saveOldFederationFormatVersion();
+        bridgeStorageAccessor.safeSaveToRepository(OLD_FEDERATION_KEY.getKey(), oldFederation, BridgeSerializationUtils::serializeFederation);
     }
 
-    // TODO
-/*    private void savePendingFederation() throws IOException {
-        if (shouldSavePendingFederation) {
-            if (activations.isActive(RSKIP123)) {
-                // we only need to save the standard part of the fed since the emergency part is constant
-                saveStorageVersion(
-                    PENDING_FEDERATION_FORMAT_VERSION.getKey(),
-                    STANDARD_MULTISIG_FEDERATION.getFormatVersion()
-                );
-            }
-            savePendingFederationToRepository(pendingFederation);
+    private void saveOldFederationFormatVersion() {
+        int oldFederationFormatVersion = getOldFederationFormatVersion();
+        saveStorageVersion(OLD_FEDERATION_FORMAT_VERSION.getKey(), oldFederationFormatVersion);
+    }
+
+    private int getOldFederationFormatVersion() {
+        if (oldFederation == null) {
+            // assume it is a standard federation to keep backwards compatibility
+            return STANDARD_MULTISIG_FEDERATION.getFormatVersion();
         }
+
+        return oldFederation.getFormatVersion();
+    }
+
+    // TODO: revisar
+/*    private void savePendingFederation(ActivationConfig.ForBlock activations) {
+
+        if (!shouldSavePendingFederation) {
+            return;
+        }
+
+        if (!activations.isActive(RSKIP123)) {
+            bridgeStorageAccessor.safeSaveToRepository(PENDING_FEDERATION_KEY.getKey(), pendingFederation, BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys);
+            return;
+        }
+
+        savePendingFederationFormatVersion();
+        bridgeStorageAccessor.safeSaveToRepository(PENDING_FEDERATION_KEY.getKey(), pendingFederation, BridgeSerializationUtils::serializePendingFederation);
+    }
+    private void savePendingFederationFormatVersion() {
+        // we only need to save the standard part of the fed since the emergency part is constant
+        saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION.getFormatVersion());
     }*/
 
     private void saveFederationElection() {
@@ -367,9 +394,10 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         if (nextFederationCreationBlockHeight == -1L) {
             bridgeStorageAccessor.safeSaveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), null, BridgeSerializationUtils::serializeLong);
-        } else {
-            bridgeStorageAccessor.safeSaveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), nextFederationCreationBlockHeight, BridgeSerializationUtils::serializeLong);
+            return;
         }
+
+        bridgeStorageAccessor.safeSaveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), nextFederationCreationBlockHeight, BridgeSerializationUtils::serializeLong);
     }
 
     private void saveLastRetiredFederationP2SHScript(ActivationConfig.ForBlock activations) {
