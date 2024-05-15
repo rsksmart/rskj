@@ -1,6 +1,7 @@
 package co.rsk.peg.federation.constants;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import com.google.common.collect.Lists;
 import org.bouncycastle.util.encoders.Hex;
@@ -16,6 +17,8 @@ public class FederationMainNetConstants extends FederationConstants {
     private static final FederationMainNetConstants instance = new FederationMainNetConstants();
 
     private FederationMainNetConstants() {
+        btcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344"));
         BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0355a2e9bf100c00fc0a214afd1bf272647c7824eb9cb055480962f0c382596a70"));

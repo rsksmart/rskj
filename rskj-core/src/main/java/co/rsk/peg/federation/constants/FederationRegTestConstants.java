@@ -1,6 +1,7 @@
 package co.rsk.peg.federation.constants;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
@@ -12,6 +13,8 @@ import java.util.stream.Collectors;
 public class FederationRegTestConstants extends FederationConstants {
 
     public FederationRegTestConstants(List<BtcECKey> federationPublicKeys) {
+        btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+
         // IMPORTANT: BTC, RSK and MST keys are the same.
         // Change upon implementation of the <INSERT FORK NAME HERE> fork.
         genesisFederationPublicKeys = federationPublicKeys;
