@@ -52,6 +52,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         newFederationBtcUTXOs = bridgeStorageAccessor.safeGetFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
         return newFederationBtcUTXOs;
     }
+
     private DataWord getStorageKeyForNewFederationBtcUtxos(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
         if (networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
@@ -99,6 +100,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         return newFederation;
     }
+
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
         if (!storageVersionEntries.containsKey(versionKey)) {
             Optional<Integer> version = bridgeStorageAccessor.safeGetFromRepository(versionKey, data -> {
@@ -143,6 +145,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         return oldFederation;
     }
+
     @Override
     public void setOldFederation(Federation federation) {
         shouldSaveOldFederation = true;
@@ -173,6 +176,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         return pendingFederation;
     }
+
     @Override
     public void setPendingFederation(PendingFederation federation) {
         shouldSavePendingFederation = true;
@@ -188,6 +192,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         federationElection = bridgeStorageAccessor.safeGetFromRepository(FEDERATION_ELECTION_KEY.getKey(), data -> (data == null)? new ABICallElection(authorizer) : BridgeSerializationUtils.deserializeElection(data, authorizer));
         return federationElection;
     }
+
     @Override
     public Optional<Long> getActiveFederationCreationBlockHeight(ActivationConfig.ForBlock activations) {
         if (!activations.isActive(RSKIP186)) {
@@ -201,6 +206,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         activeFederationCreationBlockHeight = bridgeStorageAccessor.safeGetFromRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), BridgeSerializationUtils::deserializeOptionalLong).orElse(null);
         return Optional.ofNullable(activeFederationCreationBlockHeight);
     }
+
     @Override
     public void setActiveFederationCreationBlockHeight(long activeFederationCreationBlockHeight) {
         this.activeFederationCreationBlockHeight = activeFederationCreationBlockHeight;
@@ -219,10 +225,13 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         nextFederationCreationBlockHeight = bridgeStorageAccessor.safeGetFromRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), BridgeSerializationUtils::deserializeOptionalLong).orElse(null);
         return Optional.ofNullable(nextFederationCreationBlockHeight);
     }
+
     @Override
     public void setNextFederationCreationBlockHeight(long nextFederationCreationBlockHeight) {
         this.nextFederationCreationBlockHeight = nextFederationCreationBlockHeight;
     }
+
+    @Override
     public void clearNextFederationCreationBlockHeight() {
         this.nextFederationCreationBlockHeight = -1L;
     }
@@ -240,6 +249,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         lastRetiredFederationP2SHScript = bridgeStorageAccessor.safeGetFromRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), BridgeSerializationUtils::deserializeScript);
         return Optional.ofNullable(lastRetiredFederationP2SHScript);
     }
+
     @Override
     public void setLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript) {
         this.lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScript;
@@ -266,6 +276,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         DataWord key = getStorageKeyForNewFederationBtcUtxos(networkParameters, activations);
         bridgeStorageAccessor.safeSaveToRepository(key, newFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
+
     private void saveOldFederationBtcUTXOs() {
         if (oldFederationBtcUTXOs == null) {
             return;
@@ -359,6 +370,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             bridgeStorageAccessor.safeSaveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), nextFederationCreationBlockHeight, BridgeSerializationUtils::serializeLong);
         }
     }
+
     private void saveLastRetiredFederationP2SHScript(ActivationConfig.ForBlock activations) {
         if (lastRetiredFederationP2SHScript == null || !activations.isActive(RSKIP186)) {
             return;
