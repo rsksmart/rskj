@@ -59,6 +59,7 @@ public class FederationSupportImpl implements FederationSupport {
                 return getGenesisFederation();
         }
     }
+
     /**
      * Returns the currently active federation reference.
      * Logic is as follows:
@@ -98,10 +99,12 @@ public class FederationSupportImpl implements FederationSupport {
 
         return StorageFederationReference.OLD;
     }
+
     private boolean shouldFederationBeActive(Federation federation) {
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
         return federationAge >= constants.getFederationActivationAge(activations);
     }
+
     private Federation getGenesisFederation() {
         long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
         List<BtcECKey> genesisFederationPublicKeys = constants.getGenesisFederationPublicKeys();
@@ -125,7 +128,7 @@ public class FederationSupportImpl implements FederationSupport {
 
     @Override
     public int getActiveFederationSize() {
-        return getActiveFederation().getBtcPublicKeys().size();
+        return getActiveFederation().getSize();
     }
 
     @Override
@@ -182,6 +185,7 @@ public class FederationSupportImpl implements FederationSupport {
                 return null;
         }
     }
+
     /**
      * Returns the currently retiring federation reference.
      * Logic is as follows:
@@ -229,7 +233,7 @@ public class FederationSupportImpl implements FederationSupport {
             return -1;
         }
 
-        return retiringFederation.getBtcPublicKeys().size();
+        return retiringFederation.getSize();
     }
 
     @Override
@@ -305,14 +309,14 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public byte[] getPendingFederationHash() {
+    public Keccak256 getPendingFederationHash() {
         PendingFederation currentPendingFederation = getPendingFederation();
 
         if (currentPendingFederation == null) {
             return null;
         }
 
-        return currentPendingFederation.getHash().getBytes();
+        return currentPendingFederation.getHash();
     }
 
     @Override
@@ -323,7 +327,7 @@ public class FederationSupportImpl implements FederationSupport {
             return -1;
         }
 
-        return currentPendingFederation.getBtcPublicKeys().size();
+        return currentPendingFederation.getSize();
     }
 
     @Override
@@ -412,9 +416,11 @@ public class FederationSupportImpl implements FederationSupport {
 
         return (int) result.getResult();
     }
+
     private boolean unknownFederationChangeFunction(String calledFunction) {
         return Arrays.stream(FederationChangeFunction.values()).noneMatch(fedChangeFunction -> fedChangeFunction.getKey().equals(calledFunction));
     }
+
     private ABICallVoteResult executeVoteFederationChangeFunction(boolean dryRun, ABICallSpec callSpec, BridgeEventLogger eventLogger) throws IOException, BridgeIllegalArgumentException {
         // Try to do a dry-run and only register the vote if the
         // call would be successful
@@ -525,12 +531,14 @@ public class FederationSupportImpl implements FederationSupport {
         logger.info("[createPendingFederation] Pending federation created successfully.");
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
+
     private boolean amAwaitingFederationActivation() {
         Federation newFederation = provider.getNewFederation(constants, activations);
         Federation oldFederation = provider.getOldFederation(constants, activations);
 
         return newFederation != null && oldFederation != null && !shouldFederationBeActive(newFederation);
     }
+
     /**
      * Adds the given keys to the current pending federation.
      *
@@ -568,6 +576,7 @@ public class FederationSupportImpl implements FederationSupport {
         logger.info("[addFederatorPublicKeyMultikey] Federator public key added successfully.");
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
+
     /**
      * Commits the currently pending federation.
      * That is, the retiring federation is set to be the currently active federation,
@@ -647,6 +656,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
+
     /**
      * Rolls back the currently pending federation
      * That is, the pending federation is wiped out.
