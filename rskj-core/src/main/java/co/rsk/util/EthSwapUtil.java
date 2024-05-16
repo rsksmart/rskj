@@ -134,9 +134,9 @@ public class EthSwapUtil {
         return txCost;
     }
 
-    public static boolean isClaimTxAndValid(ClaimTransactionInfoHolder claimTransactionInfoHolder,
-                                            Coin txCost) {
+    public static boolean isClaimTxAndValid(ClaimTransactionInfoHolder claimTransactionInfoHolder) {
         Transaction newTx = claimTransactionInfoHolder.getTx();
+        ActivationConfig.ForBlock activation = claimTransactionInfoHolder.getActivation();
         Constants constants = claimTransactionInfoHolder.getConstants();
         SignatureCache signatureCache = claimTransactionInfoHolder.getSignatureCache();
         RepositorySnapshot repositorySnapshot = claimTransactionInfoHolder.getRepositorySnapshot();
@@ -150,6 +150,8 @@ public class EthSwapUtil {
 
             Coin balanceWithClaim = repositorySnapshot.getBalance(newTx.getSender(signatureCache))
                     .add(lockedAmount);
+
+            Coin txCost = getTxCost(newTx, activation, constants, signatureCache);
 
             return txCost.compareTo(balanceWithClaim) <= 0;
         }
