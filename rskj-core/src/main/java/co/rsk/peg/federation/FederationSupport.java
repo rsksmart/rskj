@@ -18,7 +18,7 @@ public interface FederationSupport {
     Optional<Script> getActiveFederationRedeemScript();
     Address getActiveFederationAddress();
     int getActiveFederationSize();
-    Integer getActiveFederationThreshold();
+    int getActiveFederationThreshold();
     Instant getActiveFederationCreationTime();
     long getActiveFederationCreationBlockNumber();
     byte[] getActiveFederatorBtcPublicKey(int index);
@@ -28,8 +28,8 @@ public interface FederationSupport {
     @Nullable
     Federation getRetiringFederation();
     Address getRetiringFederationAddress();
-    Integer getRetiringFederationSize();
-    Integer getRetiringFederationThreshold();
+    int getRetiringFederationSize();
+    int getRetiringFederationThreshold();
     Instant getRetiringFederationCreationTime();
     long getRetiringFederationCreationBlockNumber();
     byte[] getRetiringFederatorPublicKey(int index);
@@ -39,10 +39,10 @@ public interface FederationSupport {
     @Nullable
     PendingFederation getPendingFederation();
     byte[] getPendingFederationHash();
-    Integer getPendingFederationSize();
+    int getPendingFederationSize();
     byte[] getPendingFederatorPublicKey(int index);
     byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
-    Integer voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache);
+    int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache);
     long getActiveFederationCreationBlockHeight();
 }
