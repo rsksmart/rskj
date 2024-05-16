@@ -2184,7 +2184,7 @@ public class BridgeSupport {
             currentPendingFederation.buildFederation(
                 creationTime,
                 rskExecutionBlock.getNumber(),
-                bridgeConstants,
+                bridgeConstants.getFederationConstants(),
                 activations
             )
         );
