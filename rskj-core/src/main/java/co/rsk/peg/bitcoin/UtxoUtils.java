@@ -2,13 +2,15 @@ package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.VarInt;
-import com.google.common.primitives.Bytes;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.spongycastle.util.encoders.Hex;
 
-public class UtxoUtils {
+public final class UtxoUtils {
 
     private UtxoUtils() {
     }
@@ -64,13 +66,22 @@ public class UtxoUtils {
             return new byte[]{};
         }
 
-        List<byte[]> encodedOutpointValues = new ArrayList<>();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         for (Coin outpointValue : outpointValues) {
             assertValidOutpointValue(outpointValue);
             VarInt varIntOutpointValue = new VarInt(outpointValue.getValue());
-            encodedOutpointValues.add(varIntOutpointValue.encode());
+            try {
+                outputStream.write(varIntOutpointValue.encode());
+            } catch (IOException ex) {
+                throw new InvalidOutpointValueException(
+                    String.format("I/O exception for value: %s",
+                        outpointValue
+                    ),
+                    ex
+                );
+            }
         }
-        return Bytes.concat(encodedOutpointValues.toArray(new byte[][]{}));
+        return outputStream.toByteArray();
     }
 
     private static void assertValidOutpointValue(Coin outpointValue) {
