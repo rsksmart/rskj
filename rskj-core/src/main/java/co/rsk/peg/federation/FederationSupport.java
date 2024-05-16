@@ -3,6 +3,7 @@ package co.rsk.peg.federation;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.vote.ABICallSpec;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -43,6 +44,6 @@ public interface FederationSupport {
     byte[] getPendingFederatorPublicKey(int index);
     byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
-    int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache);
+    int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache, BridgeEventLogger eventLogger);
     long getActiveFederationCreationBlockHeight();
 }
