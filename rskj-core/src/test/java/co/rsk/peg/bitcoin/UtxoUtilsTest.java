@@ -5,10 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.config.BridgeMainNetConstants;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -19,92 +22,71 @@ import org.spongycastle.util.encoders.Hex;
 
 class UtxoUtilsTest {
 
-    private final static Coin MAX_BTC = Coin.valueOf(21_000_000, 0);
+    private final static Coin MAX_BTC = BridgeMainNetConstants.getInstance().getMaxRbtc();
+
+    private static List<Coin> coinListOf(long ... valuesInSatoshis) {
+        return Arrays.stream(valuesInSatoshis)
+            .mapToObj(Coin::valueOf)
+            .collect(Collectors.toList());
+    }
 
     private static Stream<Arguments> validOutpointValues() {
         List<Arguments> arguments = new ArrayList<>();
 
-        final byte[] encodedZeroValue = Hex.decode("00");
-        List<Coin> decodedZeroOutpointValue = Collections.singletonList(Coin.ZERO);
-        arguments.add(Arguments.of(encodedZeroValue, decodedZeroOutpointValue));
+        arguments.add(Arguments.of(Hex.decode("00"), Collections.singletonList(Coin.ZERO)));
 
-        final byte[] encodedOneSatoshiValue = Hex.decode("01");
-        List<Coin> decodedOneSatoshiOutpointValue = Collections.singletonList(Coin.SATOSHI);
-        ;
-        arguments.add(Arguments.of(encodedOneSatoshiValue, decodedOneSatoshiOutpointValue));
+        arguments.add(Arguments.of(Hex.decode("01"), Collections.singletonList(Coin.SATOSHI)));
 
-        final byte[] encodedManySatoshiValues = Hex.decode("01010101010101010101");
-        List<Coin> decodedManySatoshiOutpointValues = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            decodedManySatoshiOutpointValues.add(Coin.SATOSHI);
-        }
-        arguments.add(Arguments.of(encodedManySatoshiValues, decodedManySatoshiOutpointValues));
+        arguments.add(Arguments.of(Hex.decode("01010101010101010101"), Stream.generate(() -> Coin.SATOSHI).limit(10).collect(Collectors.toList())));
 
-        final byte[] encoded252Value = Hex.decode("FC");
-        List<Coin> decoded252OutpointValue = Collections.singletonList(Coin.valueOf(252));
-        ;
-        arguments.add(Arguments.of(encoded252Value, decoded252OutpointValue));
+        arguments.add(Arguments.of(Hex.decode("FC"), coinListOf(252)));
 
-        final byte[] encodedMultipleValues = Hex.decode("FCFCBBBBBBFD1934FE9145DC00");
-        List<Coin> decodedMultipleOutpointValues = new ArrayList<>();
-        // 252 = FC in VarInt format
-        decodedMultipleOutpointValues.add(Coin.valueOf(252));
-        decodedMultipleOutpointValues.add(Coin.valueOf(252));
-        // 187 = BB in VarInt format
-        decodedMultipleOutpointValues.add(Coin.valueOf(187));
-        decodedMultipleOutpointValues.add(Coin.valueOf(187));
-        decodedMultipleOutpointValues.add(Coin.valueOf(187));
-        // 13_337 = FE9145DC00 in VarInt format
-        decodedMultipleOutpointValues.add(Coin.valueOf(13_337));
-        // 14_435_729 = FEDC4591 in VarInt format
-        decodedMultipleOutpointValues.add(Coin.valueOf(14_435_729));
-        arguments.add(Arguments.of(encodedMultipleValues, decodedMultipleOutpointValues));
+        arguments.add(Arguments.of(Hex.decode("FCFCBBBBBBFD1934FE9145DC00"),
+            coinListOf(
+                // 252 = FC in VarInt format
+                252,
+                252,
+                // 187 = BB in VarInt format
+                187,
+                187,
+                187,
+                // 13_337 = FE9145DC00 in VarInt format
+                13_337,
+                // 14_435_729 = FEDC4591 in VarInt format
+                14_435_729
+            ))
+        );
 
-        final byte[] encodedMaxBtcValue = Hex.decode("FF0040075AF0750700");
-        List<Coin> decodedMaxBtcOutpointValue = Collections.singletonList(MAX_BTC);
-        arguments.add(Arguments.of(encodedMaxBtcValue, decodedMaxBtcOutpointValue));
+        arguments.add(Arguments.of(Hex.decode("FF0040075AF0750700"), Collections.singletonList(MAX_BTC)));
 
-        final byte[] encodedManyMaxBtcValue = Hex.decode(
-            "FF0040075AF0750700FF0040075AF0750700FF0040075AF0750700");
-        List<Coin> decodedManyMaxBtcOutpointValues = new ArrayList<>();
-        decodedManyMaxBtcOutpointValues.add(MAX_BTC);
-        decodedManyMaxBtcOutpointValues.add(MAX_BTC);
-        decodedManyMaxBtcOutpointValues.add(MAX_BTC);
-        arguments.add(Arguments.of(encodedManyMaxBtcValue, decodedManyMaxBtcOutpointValues));
+        arguments.add(Arguments.of(Hex.decode("FF0040075AF0750700FF0040075AF0750700FF0040075AF0750700"), Arrays.asList(MAX_BTC, MAX_BTC, MAX_BTC)));
 
-        final byte[] encodedSurpassMaxBtcOutpointValue = Hex.decode("FF0140075AF0750700");
-        List<Coin> decodedSurpassMaxBtcOutpointValue = Collections.singletonList(
-            MAX_BTC.add(Coin.SATOSHI));
-        arguments.add(
-            Arguments.of(encodedSurpassMaxBtcOutpointValue, decodedSurpassMaxBtcOutpointValue));
+        arguments.add(Arguments.of(Hex.decode("FF0140075AF0750700"), Collections.singletonList(MAX_BTC.add(Coin.SATOSHI))));
 
-        final byte[] encodedMaxLongOutpointValue = Hex.decode("FFFFFFFFFFFFFFFF7F");
-        List<Coin> decodedMaxLongOutpointValue = Collections.singletonList(
-            Coin.valueOf(Long.MAX_VALUE));
-        arguments.add(Arguments.of(encodedMaxLongOutpointValue, decodedMaxLongOutpointValue));
+        arguments.add(Arguments.of(Hex.decode("FFFFFFFFFFFFFFFF7F"), coinListOf(Long.MAX_VALUE)));
 
-        String bigOutpointValuesAsHex = Stream.iterate("FCFCBBBBBBFD1934FE9145DC00", s -> s)
-            .limit(1000).collect(Collectors.joining());
-        final byte[] bigOutpointValueArray = Hex.decode(bigOutpointValuesAsHex);
-        List<Coin> decodedBigOutpointValueList = new ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
+        final byte[] bigOutpointValueArray = Hex.decode(Stream.iterate("FCFCBBBBBBFD1934FE9145DC00",
+                UnaryOperator.identity())
+            .limit(1000).collect(Collectors.joining()));
+        List<Coin> bigListOfOutpointValues = Stream.generate(() -> coinListOf(
             // 252 = FC in VarInt format
-            decodedBigOutpointValueList.add(Coin.valueOf(252));
-            decodedBigOutpointValueList.add(Coin.valueOf(252));
+            252,
+            252,
             // 187 = BB in VarInt format
-            decodedBigOutpointValueList.add(Coin.valueOf(187));
-            decodedBigOutpointValueList.add(Coin.valueOf(187));
-            decodedBigOutpointValueList.add(Coin.valueOf(187));
+            187,
+            187,
+            187,
             // 13_337 = FE9145DC00 in VarInt format
-            decodedBigOutpointValueList.add(Coin.valueOf(13_337));
+            13_337,
             // 14_435_729 = FEDC4591 in VarInt format
-            decodedBigOutpointValueList.add(Coin.valueOf(14_435_729));
-        }
-        arguments.add(Arguments.of(bigOutpointValueArray, decodedBigOutpointValueList));
+            14_435_729)
+        ).limit(1000).flatMap(Collection::stream).collect(Collectors.toList());
+        arguments.add(Arguments.of(
+            bigOutpointValueArray,
+            bigListOfOutpointValues
+        ));
 
-        final byte[] emptyArray = new byte[]{};
-        List<Coin> emptyList = Collections.EMPTY_LIST;
-        arguments.add(Arguments.of(emptyArray, emptyList));
+        arguments.add(Arguments.of(new byte[]{}, Collections.EMPTY_LIST));
 
         return arguments.stream();
     }
