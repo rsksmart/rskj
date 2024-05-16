@@ -61,11 +61,13 @@ public class EthSwapUtilTest {
 
     @Test
     public void whenIsClaimTxAndValidIsCalled_shouldReturnTrue() {
-        Transaction mockedClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 0);
-
-        Coin txCost = Coin.valueOf(5);
         SignatureCache signatureCache = new ReceivedTxSignatureCache();
+
+        Transaction mockedClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 0);
         RepositorySnapshot mockedRepository = mock(RepositorySnapshot.class);
+
+        when(mockedClaimTx.transactionCost(any(Constants.class), any(ActivationConfig.ForBlock.class), any(SignatureCache.class)))
+                .thenReturn(5L);
         when(mockedRepository.getStorageValue(eq(mockedClaimTx.getReceiveAddress()), any(DataWord.class)))
                 .thenReturn(DataWord.valueOf(1));
         when(mockedRepository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(3));
@@ -75,10 +77,10 @@ public class EthSwapUtilTest {
                 mockedRepository,
                 signatureCache,
                 testConstants,
-                null
+                mock(ActivationConfig.ForBlock.class)
         );
 
-        boolean result = EthSwapUtil.isClaimTxAndValid(testClaimTransactionInfoHolder, txCost);
+        boolean result = EthSwapUtil.isClaimTxAndValid(testClaimTransactionInfoHolder);
 
         assertTrue(result);
     }

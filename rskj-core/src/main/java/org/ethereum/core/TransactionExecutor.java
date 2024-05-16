@@ -182,7 +182,7 @@ public class TransactionExecutor {
                 activations
         );
 
-        if (!isCovers(senderBalance, totalCost) && !EthSwapUtil.isClaimTxAndValid(claimTransactionInfoHolder, totalCost)) {
+        if (!isCovers(senderBalance, totalCost) && !EthSwapUtil.isClaimTxAndValid(claimTransactionInfoHolder)) {
 
             logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, tx.getHash());
             logger.warn("Transaction Data: {}", tx);
