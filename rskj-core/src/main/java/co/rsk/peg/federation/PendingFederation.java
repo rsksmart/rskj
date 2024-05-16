@@ -20,7 +20,6 @@ package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -93,7 +92,7 @@ public final class PendingFederation {
     /**
      * Builds a Federation from this PendingFederation
      * @param creationTime the creation time for the new Federation
-     * @param bridgeConstants to get the bitcoin parameters for the new Federation,
+     * @param federationConstants to get the bitcoin parameters for the new Federation,
      * and the keys for creating an ERP Federation
      * @param activations Activation configuration to check hard fork
      * @return a Federation
@@ -101,14 +100,14 @@ public final class PendingFederation {
     public Federation buildFederation(
         Instant creationTime,
         long creationBlockNumber,
-        BridgeConstants bridgeConstants,
+        FederationConstants federationConstants,
         ActivationConfig.ForBlock activations
         ) {
         if (!this.isComplete()) {
             throw new IllegalStateException("PendingFederation is incomplete");
         }
 
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        NetworkParameters btcParams = federationConstants.getBtcParams();
         FederationArgs federationArgs = new FederationArgs(members, creationTime, creationBlockNumber, btcParams);
 
         if (shouldBuildStandardMultisigFederation(activations)){
@@ -116,7 +115,6 @@ public final class PendingFederation {
         }
 
         // should build an erp federation due to activations
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
         long activationDelay = federationConstants.getErpFedActivationDelay();
 
