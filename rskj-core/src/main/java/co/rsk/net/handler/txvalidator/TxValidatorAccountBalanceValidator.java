@@ -45,7 +45,7 @@ public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
         Coin maximumPrice = tx.getGasPrice().multiply(txGasLimit);
         if (state.getBalance().compareTo(maximumPrice) >= 0
-                || EthSwapUtil.isClaimTxAndValid(claimTransactionInfoHolder, maximumPrice)) {
+                || EthSwapUtil.isClaimTxAndValid(claimTransactionInfoHolder)) {
             return TransactionValidationResult.ok();
         }
 
