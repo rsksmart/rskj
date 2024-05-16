@@ -1,6 +1,6 @@
 package co.rsk.peg.bitcoin;
 
-public class InvalidOutpointValueException extends RuntimeException{
+public class InvalidOutpointValueException extends RuntimeException {
 
     public InvalidOutpointValueException(String message) {
         super(message);
