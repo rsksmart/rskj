@@ -116,6 +116,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         }
         return storageVersionEntries.get(versionKey);
     }
+
     @Override
     public void setNewFederation(Federation federation) {
         newFederation = federation;
