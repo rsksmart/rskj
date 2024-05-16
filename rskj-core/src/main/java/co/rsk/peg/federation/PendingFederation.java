@@ -67,6 +67,10 @@ public final class PendingFederation {
         return members;
     }
 
+    public int getSize() {
+        return members.size();
+    }
+
     public List<BtcECKey> getBtcPublicKeys() {
         // Copy keys since we don't control immutability of BtcECKey(s)
         return members.stream()
