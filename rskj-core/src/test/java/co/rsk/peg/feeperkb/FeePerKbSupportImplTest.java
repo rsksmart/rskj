@@ -12,14 +12,12 @@ import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.util.Objects;
 import java.util.Optional;
-import org.ethereum.core.BlockTxSignatureCache;
-import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.Test;
@@ -37,18 +35,33 @@ class FeePerKbSupportImplTest {
     @Mock
     FeePerKbStorageProvider provider;
     @Mock
-    FeePerKbConstants feePerKbConstants;
+    FeePerKbMainNetConstants feePerKbConstants;
     @InjectMocks
     FeePerKbSupportImpl feePerKbSupport;
 
 
     @Test
     void getFeePerKb() {
-        Coin mockCoin = mock(Coin.class);
-        Optional<Coin> currentFeePerKb = Optional.of(mockCoin);
+        Optional<Coin> currentFeePerKb = Optional.of(Coin.COIN);
         when(provider.getFeePerKb()).thenReturn(currentFeePerKb);
 
-        assertEquals(feePerKbSupport.getFeePerKb(), currentFeePerKb.get());
+        Coin expectedResult = currentFeePerKb.get();
+
+        Coin actualResult = feePerKbSupport.getFeePerKb();
+
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    void getFeePerKb_nullInStorageProvider() {
+        Optional<Coin> genesisFeePerKb = Optional.of(Coin.MILLICOIN.multiply(5));
+        when(provider.getFeePerKb()).thenReturn(genesisFeePerKb);
+
+        Coin expectedResult = genesisFeePerKb.get();
+
+        Coin actualResult = feePerKbSupport.getFeePerKb();
+
+        assertEquals(expectedResult, actualResult);
     }
 
     @Test
@@ -57,12 +70,14 @@ class FeePerKbSupportImplTest {
         when(feePerKbConstants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
 
         Transaction tx = mock(Transaction.class);
-        SignatureCache signatureCache = spy(
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        SignatureCache signatureCache = mock(SignatureCache.class);
         when(authorizer.isAuthorized(tx, signatureCache)).thenReturn(false);
 
-        assertEquals(Integer.valueOf(FeePerKbResponseCode.UNAUTHORIZED_CALLER.getCode()),
-            feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache));
+        Integer expectedResult = FeePerKbResponseCode.UNAUTHORIZED_CALLER.getCode();
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache);
+
+        assertEquals(expectedResult, actualResult);
     }
 
     @Test
@@ -70,15 +85,17 @@ class FeePerKbSupportImplTest {
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         when(feePerKbConstants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
         Transaction tx = mock(Transaction.class);
-        SignatureCache signatureCache = spy(
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        SignatureCache signatureCache = mock(SignatureCache.class);
         when(authorizer.isAuthorized(tx, signatureCache)).thenReturn(true);
 
-        Coin feePerKb = mock(Coin.class);
-        when(feePerKb.isPositive()).thenReturn(false);
+        Coin negativeFeePerKb = mock(Coin.class);
+        when(negativeFeePerKb.isPositive()).thenReturn(false);
 
-        assertEquals(Integer.valueOf(FeePerKbResponseCode.NEGATIVE_FEE_VOTED.getCode()),
-            feePerKbSupport.voteFeePerKbChange(tx, Coin.NEGATIVE_SATOSHI, signatureCache));
+        Integer expectedResult = FeePerKbResponseCode.NEGATIVE_FEE_VOTED.getCode();
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.NEGATIVE_SATOSHI, signatureCache);
+
+        assertEquals(expectedResult, actualResult);
     }
 
     @Test
@@ -87,8 +104,7 @@ class FeePerKbSupportImplTest {
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         when(feePerKbConstants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
         Transaction tx = mock(Transaction.class);
-        SignatureCache signatureCache = spy(
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        SignatureCache signatureCache = mock(SignatureCache.class);
         when(authorizer.isAuthorized(tx, signatureCache)).thenReturn(true);
 
         Coin feePerKb = mock(Coin.class);
@@ -98,8 +114,11 @@ class FeePerKbSupportImplTest {
         when(feePerKbConstants.getMaxFeePerKb()).thenReturn(maxFeePerKb);
         when(feePerKb.isGreaterThan(maxFeePerKb)).thenReturn(true);
 
-        assertEquals(Integer.valueOf(FeePerKbResponseCode.EXCESSIVE_FEE_VOTED.getCode()),
-            feePerKbSupport.voteFeePerKbChange(tx, Coin.valueOf(MAX_FEE_PER_KB), signatureCache));
+        Integer expectedResult = FeePerKbResponseCode.EXCESSIVE_FEE_VOTED.getCode();
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.valueOf(MAX_FEE_PER_KB), signatureCache);
+
+        assertEquals(expectedResult, actualResult);
     }
 
     @Test
@@ -108,8 +127,7 @@ class FeePerKbSupportImplTest {
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         when(feePerKbConstants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
         Transaction tx = mock(Transaction.class);
-        SignatureCache signatureCache = spy(
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        SignatureCache signatureCache = mock(SignatureCache.class);
         when(authorizer.isAuthorized(tx, signatureCache)).thenReturn(true);
 
         Coin feePerKb = mock(Coin.class);
@@ -126,8 +144,11 @@ class FeePerKbSupportImplTest {
             BridgeSerializationUtils.serializeCoin(feePerKb)}));
         when(feePerKbElection.vote(feeVote, tx.getSender(signatureCache))).thenReturn(false);
 
-        assertEquals(Integer.valueOf(FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode()),
-            feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache));
+        Integer expectedResult = FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache);
+
+        assertEquals(expectedResult, actualResult);
     }
 
     @Test
@@ -136,8 +157,7 @@ class FeePerKbSupportImplTest {
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         when(feePerKbConstants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
         Transaction tx = mock(Transaction.class);
-        SignatureCache signatureCache = spy(
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        SignatureCache signatureCache = mock(SignatureCache.class);
         when(authorizer.isAuthorized(tx, signatureCache)).thenReturn(true);
 
         Coin feePerKb = mock(Coin.class);
@@ -165,8 +185,11 @@ class FeePerKbSupportImplTest {
         provider.setFeePerKb(winnerFee);
         feePerKbElection.clear();
 
-        assertEquals(Integer.valueOf(FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode()),
-            feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache));
+        Integer expectedResult = FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache);
+
+        assertEquals(expectedResult, actualResult);
     }
 
     @Test
@@ -175,8 +198,7 @@ class FeePerKbSupportImplTest {
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         when(feePerKbConstants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
         Transaction tx = mock(Transaction.class);
-        SignatureCache signatureCache = spy(
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        SignatureCache signatureCache = mock(SignatureCache.class);
         when(authorizer.isAuthorized(tx, signatureCache)).thenReturn(true);
 
         Coin feePerKb = mock(Coin.class);
@@ -196,16 +218,18 @@ class FeePerKbSupportImplTest {
         Optional<ABICallSpec> winnerOptional = Optional.of(abiCallSpec);
         when(feePerKbElection.getWinner()).thenReturn(winnerOptional);
 
-        assertEquals(Integer.valueOf(FeePerKbResponseCode.GENERIC_ERROR.getCode()),
-            feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache));
+        Integer expectedResult = FeePerKbResponseCode.GENERIC_ERROR.getCode();
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache);
+
+        assertEquals(expectedResult, actualResult);
 
     }
 
     @Test
     void voteFeePerKbChange_nullFeeThrows() {
         Transaction tx = mock(Transaction.class);
-        SignatureCache signatureCache = spy(
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        SignatureCache signatureCache = mock(SignatureCache.class);
 
         assertThrows(NullPointerException.class,
             () -> feePerKbSupport.voteFeePerKbChange(tx, null, signatureCache));
@@ -215,7 +239,9 @@ class FeePerKbSupportImplTest {
     @Test
     void save() {
         doNothing().when(provider).save();
+
         feePerKbSupport.save();
+
         verify(provider, times(1)).save();
     }
 }
