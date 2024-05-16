@@ -23,6 +23,7 @@ class FeePerKbConstantsTest {
     @MethodSource("getGenesisFeePerKbProvider")
     void getGenesisFeePerKb(FeePerKbConstants feePerKbConstants, Coin expectedGenesisFeePerKb) {
         Coin actualGenesisFeePerKb = feePerKbConstants.getGenesisFeePerKb();
+
         assertEquals(expectedGenesisFeePerKb, actualGenesisFeePerKb);
     }
 
@@ -38,6 +39,7 @@ class FeePerKbConstantsTest {
     @MethodSource("getMaxFeePerKbProvider")
     void getMaxFeePerKb(FeePerKbConstants feePerKbConstants, Coin expectedMaxFeePerKb) {
         Coin actualMaxFeePerKb = feePerKbConstants.getMaxFeePerKb();
+
         assertEquals(expectedMaxFeePerKb, actualMaxFeePerKb);
     }
 
@@ -54,7 +56,8 @@ class FeePerKbConstantsTest {
     void getFeePerKbChangeAuthorizer(FeePerKbConstants feePerKbConstants,
         AddressBasedAuthorizer expectedFeePerKbChangeAuthorizer) {
         AddressBasedAuthorizer actualFeePerKbChangeAuthorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
-        assertThat(expectedFeePerKbChangeAuthorizer, samePropertyValuesAs(actualFeePerKbChangeAuthorizer));
+
+        assertThat(actualFeePerKbChangeAuthorizer, samePropertyValuesAs(expectedFeePerKbChangeAuthorizer));
     }
 
     private static Stream<Arguments> getFeePerKbChangeAuthorizerProvider() {

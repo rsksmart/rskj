@@ -41,10 +41,6 @@ class BridgeSupportSigHashTest {
     @BeforeEach
     void init() throws IOException {
         provider = mock(BridgeStorageProvider.class);
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-
-        when(feePerKbSupport.getFeePerKb())
-            .thenReturn(Coin.MILLICOIN);
 
         when(provider.getPegoutsWaitingForSignatures())
             .thenReturn(new TreeMap<>());
