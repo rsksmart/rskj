@@ -1,6 +1,6 @@
 package co.rsk.peg.federation;
 
-public enum FederationChangeFunctions {
+public enum FederationChangeFunction {
     CREATE("create"),
     ADD("add"),
     ADD_MULTI("add-multi"),
@@ -10,7 +10,7 @@ public enum FederationChangeFunctions {
 
     private final String key;
 
-    FederationChangeFunctions(String key) { this.key = key; }
+    FederationChangeFunction(String key) { this.key = key; }
 
     public String getKey() { return key; }
 }
