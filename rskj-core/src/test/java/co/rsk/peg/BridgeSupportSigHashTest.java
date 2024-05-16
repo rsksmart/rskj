@@ -10,7 +10,6 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationTestUtils;
-import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -41,10 +40,6 @@ class BridgeSupportSigHashTest {
     @BeforeEach
     void init() throws IOException {
         provider = mock(BridgeStorageProvider.class);
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-
-        when(feePerKbSupport.getFeePerKb())
-            .thenReturn(Coin.MILLICOIN);
 
         when(provider.getPegoutsWaitingForSignatures())
             .thenReturn(new TreeMap<>());
