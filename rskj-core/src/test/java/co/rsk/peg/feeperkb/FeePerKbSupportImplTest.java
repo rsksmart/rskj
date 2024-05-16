@@ -45,10 +45,9 @@ class FeePerKbSupportImplTest {
         Optional<Coin> currentFeePerKb = Optional.of(Coin.COIN);
         when(provider.getFeePerKb()).thenReturn(currentFeePerKb);
 
-        Coin expectedResult = currentFeePerKb.get();
-
         Coin actualResult = feePerKbSupport.getFeePerKb();
 
+        Coin expectedResult = currentFeePerKb.get();
         assertEquals(expectedResult, actualResult);
     }
 
@@ -57,10 +56,9 @@ class FeePerKbSupportImplTest {
         Optional<Coin> genesisFeePerKb = Optional.of(Coin.MILLICOIN.multiply(5));
         when(provider.getFeePerKb()).thenReturn(genesisFeePerKb);
 
-        Coin expectedResult = genesisFeePerKb.get();
-
         Coin actualResult = feePerKbSupport.getFeePerKb();
 
+        Coin expectedResult = genesisFeePerKb.get();
         assertEquals(expectedResult, actualResult);
     }
 
@@ -73,10 +71,9 @@ class FeePerKbSupportImplTest {
         SignatureCache signatureCache = mock(SignatureCache.class);
         when(authorizer.isAuthorized(tx, signatureCache)).thenReturn(false);
 
-        Integer expectedResult = FeePerKbResponseCode.UNAUTHORIZED_CALLER.getCode();
-
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache);
 
+        Integer expectedResult = FeePerKbResponseCode.UNAUTHORIZED_CALLER.getCode();
         assertEquals(expectedResult, actualResult);
     }
 
@@ -91,10 +88,9 @@ class FeePerKbSupportImplTest {
         Coin negativeFeePerKb = mock(Coin.class);
         when(negativeFeePerKb.isPositive()).thenReturn(false);
 
-        Integer expectedResult = FeePerKbResponseCode.NEGATIVE_FEE_VOTED.getCode();
-
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.NEGATIVE_SATOSHI, signatureCache);
 
+        Integer expectedResult = FeePerKbResponseCode.NEGATIVE_FEE_VOTED.getCode();
         assertEquals(expectedResult, actualResult);
     }
 
@@ -114,10 +110,9 @@ class FeePerKbSupportImplTest {
         when(feePerKbConstants.getMaxFeePerKb()).thenReturn(maxFeePerKb);
         when(feePerKb.isGreaterThan(maxFeePerKb)).thenReturn(true);
 
-        Integer expectedResult = FeePerKbResponseCode.EXCESSIVE_FEE_VOTED.getCode();
-
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.valueOf(MAX_FEE_PER_KB), signatureCache);
 
+        Integer expectedResult = FeePerKbResponseCode.EXCESSIVE_FEE_VOTED.getCode();
         assertEquals(expectedResult, actualResult);
     }
 
@@ -144,10 +139,9 @@ class FeePerKbSupportImplTest {
             BridgeSerializationUtils.serializeCoin(feePerKb)}));
         when(feePerKbElection.vote(feeVote, tx.getSender(signatureCache))).thenReturn(false);
 
-        Integer expectedResult = FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
-
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache);
 
+        Integer expectedResult = FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
         assertEquals(expectedResult, actualResult);
     }
 
@@ -185,10 +179,9 @@ class FeePerKbSupportImplTest {
         provider.setFeePerKb(winnerFee);
         feePerKbElection.clear();
 
-        Integer expectedResult = FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
-
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache);
 
+        Integer expectedResult = FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
         assertEquals(expectedResult, actualResult);
     }
 
@@ -218,12 +211,10 @@ class FeePerKbSupportImplTest {
         Optional<ABICallSpec> winnerOptional = Optional.of(abiCallSpec);
         when(feePerKbElection.getWinner()).thenReturn(winnerOptional);
 
-        Integer expectedResult = FeePerKbResponseCode.GENERIC_ERROR.getCode();
-
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.CENT, signatureCache);
 
+        Integer expectedResult = FeePerKbResponseCode.GENERIC_ERROR.getCode();
         assertEquals(expectedResult, actualResult);
-
     }
 
     @Test
