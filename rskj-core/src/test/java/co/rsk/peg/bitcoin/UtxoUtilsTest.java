@@ -170,34 +170,15 @@ class UtxoUtilsTest {
     private static Stream<Arguments> invalidEncodedOutpointValues() {
         List<Arguments> arguments = new ArrayList<>();
 
-        // {-100, -200, -300}
+        // -100, -200, -300
         final byte[] negativeOutpointValues = Hex.decode("FF9CFFFFFFFFFFFFFFFF38FFFFFFFFFFFFFFFFD4FEFFFFFFFFFFFF");
         String expectedMessageForNegativeOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -100);
         arguments.add(Arguments.of(negativeOutpointValues, expectedMessageForNegativeOutpointValues));
 
-        // {100, 200, 300, -400}
+        // 100, 200, 300, -400
         final byte[] negativeAndPositiveOutpointValues = Hex.decode("64C8FD2C01FF70FEFFFFFFFFFFFF");
         String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -400);
         arguments.add(Arguments.of(negativeAndPositiveOutpointValues, expectedMessageForNegativeAndPositiveOutpointValues));
-
-        return arguments.stream();
-    }
-
-    @ParameterizedTest
-    @MethodSource("invalidEncodedOutpointValues")
-    void decodeOutpointValues_invalidOutpointValues_shouldThrowInvalidOutpointValueException(byte[] encodedOutpointValues, String expectedMessage) {
-        // act
-        InvalidOutpointValueException invalidOutpointValueException = assertThrows(
-            InvalidOutpointValueException.class,
-            () -> UtxoUtils.decodeOutpointValues(encodedOutpointValues));
-        String actualMessage = invalidOutpointValueException.getMessage();
-
-        // assert
-        assertEquals(expectedMessage, actualMessage);
-    }
-
-    private static Stream<Arguments> invalidVarIntFormatOutpointValues() {
-        List<Arguments> arguments = new ArrayList<>();
 
         final byte[] invalidOutpointValues = Hex.decode("FC9145DC00FAFF00FE");
         String expectedMessageForInvalidOutpointValues = String.format("Invalid value with invalid VarInt format: %s", "FC9145DC00FAFF00FE");
@@ -211,8 +192,8 @@ class UtxoUtilsTest {
     }
 
     @ParameterizedTest
-    @MethodSource("invalidVarIntFormatOutpointValues")
-    void decodeOutpointValues_invalidVarIntFormatOutpointValues_shouldThrowInvalidOutpointValueException(byte[] encodedOutpointValues, String expectedMessage) {
+    @MethodSource("invalidEncodedOutpointValues")
+    void decodeOutpointValues_invalidOutpointValues_shouldThrowInvalidOutpointValueException(byte[] encodedOutpointValues, String expectedMessage) {
         // act
         InvalidOutpointValueException invalidOutpointValueException = assertThrows(
             InvalidOutpointValueException.class,
