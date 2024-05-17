@@ -41,21 +41,8 @@ class UtxoUtilsTest {
 
         arguments.add(Arguments.of(Hex.decode("FC"), coinListOf(252)));
 
-        arguments.add(Arguments.of(Hex.decode("FCFCBBBBBBFD1934FE9145DC00"),
-            coinListOf(
-                // 252 = FC in VarInt format
-                252,
-                252,
-                // 187 = BB in VarInt format
-                187,
-                187,
-                187,
-                // 13_337 = FE9145DC00 in VarInt format
-                13_337,
-                // 14_435_729 = FEDC4591 in VarInt format
-                14_435_729
-            ))
-        );
+        // 252 = FC, 187 = BB, 13_337 = FE9145DC00, 14_435_729 = FEDC4591
+        arguments.add(Arguments.of(Hex.decode("FCFCBBBBBBFD1934FE9145DC00"), coinListOf(252, 252, 187, 187, 187, 13_337, 14_435_729)));
 
         arguments.add(Arguments.of(Hex.decode("FF0040075AF0750700"), Collections.singletonList(MAX_BTC)));
 
@@ -65,80 +52,18 @@ class UtxoUtilsTest {
 
         arguments.add(Arguments.of(Hex.decode("FFFFFFFFFFFFFFFF7F"), coinListOf(Long.MAX_VALUE)));
 
-        final byte[] bigOutpointValueArray = Hex.decode(Stream.iterate("FCFCBBBBBBFD1934FE9145DC00",
-                UnaryOperator.identity())
-            .limit(1000).collect(Collectors.joining()));
-        List<Coin> bigListOfOutpointValues = Stream.generate(() -> coinListOf(
-            // 252 = FC in VarInt format
-            252,
-            252,
-            // 187 = BB in VarInt format
-            187,
-            187,
-            187,
-            // 13_337 = FE9145DC00 in VarInt format
-            13_337,
-            // 14_435_729 = FEDC4591 in VarInt format
-            14_435_729)
-        ).limit(1000).flatMap(Collection::stream).collect(Collectors.toList());
+        final byte[] bigOutpointValueArray = Hex.decode(
+            Stream.iterate("FCFCBBBBBBFD1934FE9145DC00", UnaryOperator.identity()).limit(1000)
+                .collect(Collectors.joining()));
+        List<Coin> bigListOfOutpointValues = Stream.generate(
+                () -> coinListOf(252, 252, 187, 187, 187, 13_337, 14_435_729)).limit(1000)
+            .flatMap(Collection::stream).collect(Collectors.toList());
         arguments.add(Arguments.of(
             bigOutpointValueArray,
             bigListOfOutpointValues
         ));
 
         arguments.add(Arguments.of(new byte[]{}, Collections.EMPTY_LIST));
-
-        return arguments.stream();
-    }
-
-    private static Stream<Arguments> invalidOutpointValues() {
-        List<Arguments> arguments = new ArrayList<>();
-
-        List<Coin> negativeOutpointValues = Arrays.asList(Coin.valueOf(-10), Coin.valueOf(-1000),
-            Coin.valueOf(-100));
-        String expectedMessageForNegativeOutpointValues = String.format(
-            "Invalid outpoint value: %s. Negative and null values are not allowed.", -10);
-        arguments.add(
-            Arguments.of(negativeOutpointValues, expectedMessageForNegativeOutpointValues));
-
-        List<Coin> negativeAndPositiveOutpointValues = Arrays.asList(Coin.valueOf(200),
-            Coin.valueOf(-100), Coin.valueOf(300));
-        String expectedMessageForNegativeAndPositiveOutpointValues = String.format(
-            "Invalid outpoint value: %s. Negative and null values are not allowed.", -100);
-        arguments.add(Arguments.of(negativeAndPositiveOutpointValues,
-            expectedMessageForNegativeAndPositiveOutpointValues));
-
-        return arguments.stream();
-    }
-
-    private static Stream<Arguments> invalidEncodedOutpointValues() {
-        List<Arguments> arguments = new ArrayList<>();
-
-        // -100, -200, -300
-        final byte[] negativeOutpointValues = Hex.decode(
-            "FF9CFFFFFFFFFFFFFFFF38FFFFFFFFFFFFFFFFD4FEFFFFFFFFFFFF");
-        String expectedMessageForNegativeOutpointValues = String.format(
-            "Invalid outpoint value: %s. Negative and null values are not allowed.", -100);
-        arguments.add(
-            Arguments.of(negativeOutpointValues, expectedMessageForNegativeOutpointValues));
-
-        // 100, 200, 300, -400
-        final byte[] negativeAndPositiveOutpointValues = Hex.decode("64C8FD2C01FF70FEFFFFFFFFFFFF");
-        String expectedMessageForNegativeAndPositiveOutpointValues = String.format(
-            "Invalid outpoint value: %s. Negative and null values are not allowed.", -400);
-        arguments.add(Arguments.of(negativeAndPositiveOutpointValues,
-            expectedMessageForNegativeAndPositiveOutpointValues));
-
-        final byte[] invalidOutpointValues = Hex.decode("FC9145DC00FAFF00FE");
-        String expectedMessageForInvalidOutpointValues = String.format(
-            "Invalid value with invalid VarInt format: %s", "FC9145DC00FAFF00FE");
-        arguments.add(Arguments.of(invalidOutpointValues, expectedMessageForInvalidOutpointValues));
-
-        final byte[] anotherInvalidOutpointValues = Hex.decode("FB8267DC00FCFF00FE");
-        String expectedMessageForAnotherInvalidOutpointValue = String.format(
-            "Invalid value with invalid VarInt format: %s", "FB8267DC00FCFF00FE");
-        arguments.add(Arguments.of(anotherInvalidOutpointValues,
-            expectedMessageForAnotherInvalidOutpointValue));
 
         return arguments.stream();
     }
@@ -153,16 +78,6 @@ class UtxoUtilsTest {
         assertArrayEquals(expectedDecodedValues.toArray(), decodeOutpointValues.toArray());
     }
 
-    @Test
-    void decodeOutpointValues_nullEncodedValues_shouldReturnEmptyList() {
-        // act
-        List<Coin> decodeOutpointValues = UtxoUtils.decodeOutpointValues(null);
-
-        // assert
-        List<Coin> expectedDecodedValues = Collections.EMPTY_LIST;
-        assertArrayEquals(expectedDecodedValues.toArray(), decodeOutpointValues.toArray());
-    }
-
     @ParameterizedTest
     @MethodSource("validOutpointValues")
     void encodeOutpointValues(byte[] expectedEncodedOutpointValues, List<Coin> outpointValues) {
@@ -174,13 +89,23 @@ class UtxoUtilsTest {
     }
 
     @Test
-    void decodeOutpointValues_nullOutpointValues_shouldReturnEmptyArray() {
+    void decodeOutpointValues_null_shouldReturnEmptyList() {
         // act
-        List<Coin> outpointValues = UtxoUtils.decodeOutpointValues(null);
+        List<Coin> decodeOutpointValues = UtxoUtils.decodeOutpointValues(null);
 
         // assert
         List<Coin> expectedDecodedValues = Collections.EMPTY_LIST;
-        assertArrayEquals(expectedDecodedValues.toArray(), outpointValues.toArray());
+        assertArrayEquals(expectedDecodedValues.toArray(), decodeOutpointValues.toArray());
+    }
+
+    @Test
+    void encodeOutpointValues_null_shouldReturnEmptyArray() {
+        // act
+        byte[] outpointValues = UtxoUtils.encodeOutpointValues(null);
+
+        // assert
+        byte[] expectedEncodedValues = new byte[]{};
+        assertArrayEquals(expectedEncodedValues, outpointValues);
     }
 
     @ParameterizedTest
@@ -197,6 +122,20 @@ class UtxoUtilsTest {
         assertEquals(expectedMessage, actualMessage);
     }
 
+    private static Stream<Arguments> invalidOutpointValues() {
+        List<Arguments> arguments = new ArrayList<>();
+
+        List<Coin> negativeOutpointValues = Arrays.asList(Coin.valueOf(-10), Coin.valueOf(-1000), Coin.valueOf(-100));
+        String expectedMessageForNegativeOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -10);
+        arguments.add(Arguments.of(negativeOutpointValues, expectedMessageForNegativeOutpointValues));
+
+        List<Coin> negativeAndPositiveOutpointValues = Arrays.asList(Coin.valueOf(200), Coin.valueOf(-100), Coin.valueOf(300));
+        String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -100);
+        arguments.add(Arguments.of(negativeAndPositiveOutpointValues, expectedMessageForNegativeAndPositiveOutpointValues));
+
+        return arguments.stream();
+    }
+
     @ParameterizedTest
     @MethodSource("invalidEncodedOutpointValues")
     void decodeOutpointValues_invalidOutpointValues_shouldThrowInvalidOutpointValueException(
@@ -209,5 +148,29 @@ class UtxoUtilsTest {
 
         // assert
         assertEquals(expectedMessage, actualMessage);
+    }
+
+    private static Stream<Arguments> invalidEncodedOutpointValues() {
+        List<Arguments> arguments = new ArrayList<>();
+
+        // -100, -200, -300
+        final byte[] negativeOutpointValues = Hex.decode("FF9CFFFFFFFFFFFFFFFF38FFFFFFFFFFFFFFFFD4FEFFFFFFFFFFFF");
+        String expectedMessageForNegativeOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -100);
+        arguments.add(Arguments.of(negativeOutpointValues, expectedMessageForNegativeOutpointValues));
+
+        // 100, 200, 300, -400
+        final byte[] negativeAndPositiveOutpointValues = Hex.decode("64C8FD2C01FF70FEFFFFFFFFFFFF");
+        String expectedMessageForNegativeAndPositiveOutpointValues = String.format("Invalid outpoint value: %s. Negative and null values are not allowed.", -400);
+        arguments.add(Arguments.of(negativeAndPositiveOutpointValues, expectedMessageForNegativeAndPositiveOutpointValues));
+
+        final byte[] invalidOutpointValues = Hex.decode("FC9145DC00FAFF00FE");
+        String expectedMessageForInvalidOutpointValues = String.format("Invalid value with invalid VarInt format: %s", "FC9145DC00FAFF00FE");
+        arguments.add(Arguments.of(invalidOutpointValues, expectedMessageForInvalidOutpointValues));
+
+        final byte[] anotherInvalidOutpointValues = Hex.decode("FB8267DC00FCFF00FE");
+        String expectedMessageForAnotherInvalidOutpointValue = String.format("Invalid value with invalid VarInt format: %s", "FB8267DC00FCFF00FE");
+        arguments.add(Arguments.of(anotherInvalidOutpointValues, expectedMessageForAnotherInvalidOutpointValue));
+
+        return arguments.stream();
     }
 }
