@@ -93,6 +93,7 @@ public class PegUtils {
         BridgeConstants bridgeConstants,
         Federation activeFederation,
         Federation retiringFederation,
+        Script retiredFederationP2SHScript,
         BtcTransaction btcTransaction,
         long btcTransactionHeight
     ) {
@@ -101,7 +102,8 @@ public class PegUtils {
         if (retiringFederation != null){
             liveFeds.add(retiringFederation);
         }
-        Wallet liveFederationsWallet = new BridgeBtcWallet(Context.getOrCreate(bridgeConstants.getBtcParams()), liveFeds);
+        Context context = Context.getOrCreate(bridgeConstants.getBtcParams());
+        Wallet liveFederationsWallet = new BridgeBtcWallet(context, liveFeds);
 
         int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -123,7 +125,6 @@ public class PegUtils {
                 bridgeConstants.getBtcParams(),
                 federationConstants.getOldFederationAddress()
             );
-            Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 
             return PegUtilsLegacy.getTransactionType(
                 btcTransaction,

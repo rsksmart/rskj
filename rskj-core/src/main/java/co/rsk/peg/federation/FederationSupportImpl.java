@@ -175,6 +175,11 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
+    public void clearRetiredFederation() {
+        provider.setOldFederation(null);
+    }
+
+    @Override
     @Nullable
     public Federation getRetiringFederation() {
         switch (getRetiringFederationReference()) {
@@ -300,6 +305,12 @@ public class FederationSupportImpl implements FederationSupport {
             default:
                 return Collections.emptyList();
         }
+    }
+
+
+    @Override
+    public List<UTXO> getNewFederationBtcUTXOs() {
+        return provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations);
     }
 
     @Nullable
@@ -588,7 +599,7 @@ public class FederationSupportImpl implements FederationSupport {
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    private Integer commitFederation(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) throws IOException {
+    private Integer commitFederation(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -718,5 +729,44 @@ public class FederationSupportImpl implements FederationSupport {
         }
 
         return members.get(index).getPublicKey(keyType).getPubKey(true);
+    }
+
+    @Override
+    public Optional<Script> getLastRetiredFederationP2SHScript() {
+        return provider.getLastRetiredFederationP2SHScript(activations);
+    }
+
+    @Override
+    public void updateFederationCreationBlockHeights() {
+        if (!activations.isActive(RSKIP186)) {
+            return;
+        }
+
+        Optional<Long> nextFederationCreationBlockHeightOpt = provider.getNextFederationCreationBlockHeight(activations);
+        if (thereIsNoNextFederationCreation(nextFederationCreationBlockHeightOpt)) {
+            return;
+        }
+
+        long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
+        long currentBlockHeight = rskExecutionBlock.getNumber();
+
+        if (newFederationShouldNotBeActiveYet(currentBlockHeight, nextFederationCreationBlockHeight)) {
+            return;
+        }
+
+        provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+        provider.clearNextFederationCreationBlockHeight();
+    }
+
+    private boolean thereIsNoNextFederationCreation(Optional<Long> nextFederationCreationBlockHeight) {
+        return !nextFederationCreationBlockHeight.isPresent();
+    }
+
+    private boolean newFederationShouldNotBeActiveYet(long currentBlockHeight, long nextFederationCreationBlockHeight) {
+        return currentBlockHeight < nextFederationCreationBlockHeight + constants.getFederationActivationAge(activations);
+    }
+
+    public void save() {
+        provider.save(constants.getBtcParams(), activations);
     }
 }
