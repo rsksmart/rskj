@@ -6,9 +6,11 @@ import co.rsk.mine.gas.provider.MinGasPriceProviderType;
 import co.rsk.mine.gas.provider.StableMinGasPriceProvider;
 
 public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
+    private final String address;
 
-    OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, OnChainMinGasPriceSystemConfig config) {
+    protected OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, OnChainMinGasPriceSystemConfig config) {
         super(fallBackProvider);
+        this.address = config.getAddress();
     }
 
     @Override
@@ -19,5 +21,9 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
     @Override
     public Long getStableMinGasPrice() {
         return null;
+    }
+
+    public String getAddress() {
+        return address;
     }
 }
