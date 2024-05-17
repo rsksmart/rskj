@@ -11,6 +11,7 @@ import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.DataWord;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -281,7 +282,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         saveOldFederationBtcUTXOs();
         saveNewFederation(activations);
         saveOldFederation(activations);
-        //savePendingFederation(activations);
+        savePendingFederation(activations);
         saveFederationElection();
         saveActiveFederationCreationBlockHeight(activations);
         saveNextFederationCreationBlockHeight(activations);
@@ -315,12 +316,8 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return;
         }
 
-        saveNewFederationFormatVersion();
         bridgeStorageAccessor.safeSaveToRepository(NEW_FEDERATION_KEY.getKey(), newFederation, BridgeSerializationUtils::serializeFederation);
-    }
-
-    private void saveNewFederationFormatVersion() {
-        saveStorageVersion(NEW_FEDERATION_FORMAT_VERSION.getKey(), newFederation.getFormatVersion());
+        saveFederationFormatVersion(NEW_FEDERATION_FORMAT_VERSION.getKey(), newFederation.getFormatVersion());
     }
 
     private void saveOldFederation(ActivationConfig.ForBlock activations) {
@@ -333,13 +330,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return;
         }
 
-        saveOldFederationFormatVersion();
-        bridgeStorageAccessor.safeSaveToRepository(OLD_FEDERATION_KEY.getKey(), oldFederation, BridgeSerializationUtils::serializeFederation);
-    }
-
-    private void saveOldFederationFormatVersion() {
         int oldFederationFormatVersion = getOldFederationFormatVersion();
-        saveStorageVersion(OLD_FEDERATION_FORMAT_VERSION.getKey(), oldFederationFormatVersion);
+        bridgeStorageAccessor.safeSaveToRepository(OLD_FEDERATION_KEY.getKey(), oldFederation, BridgeSerializationUtils::serializeFederation);
+        saveFederationFormatVersion(OLD_FEDERATION_FORMAT_VERSION.getKey(), oldFederationFormatVersion);
     }
 
     private int getOldFederationFormatVersion() {
@@ -351,25 +344,34 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         return oldFederation.getFormatVersion();
     }
 
-    // TODO: revisar
-/*    private void savePendingFederation(ActivationConfig.ForBlock activations) {
-
+    private void savePendingFederation(ActivationConfig.ForBlock activations) {
         if (!shouldSavePendingFederation) {
             return;
         }
 
+        byte[] serializedPendingFederation = serializePendingFederation(activations);
+        bridgeStorageAccessor.safeSaveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedPendingFederation);
         if (!activations.isActive(RSKIP123)) {
-            bridgeStorageAccessor.safeSaveToRepository(PENDING_FEDERATION_KEY.getKey(), pendingFederation, BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys);
             return;
         }
 
-        savePendingFederationFormatVersion();
-        bridgeStorageAccessor.safeSaveToRepository(PENDING_FEDERATION_KEY.getKey(), pendingFederation, BridgeSerializationUtils::serializePendingFederation);
-    }
-    private void savePendingFederationFormatVersion() {
         // we only need to save the standard part of the fed since the emergency part is constant
-        saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION.getFormatVersion());
-    }*/
+        saveFederationFormatVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION.getFormatVersion());
+    }
+
+    @Nullable
+    private byte[] serializePendingFederation(ActivationConfig.ForBlock activations) {
+        if (pendingFederation == null) {
+            return null;
+        }
+
+        return pendingFederation.serialize(activations);
+    }
+
+    private void saveFederationFormatVersion(DataWord versionKey, Integer version) {
+        bridgeStorageAccessor.safeSaveToRepository(versionKey, version, BridgeSerializationUtils::serializeInteger);
+        storageVersionEntries.put(versionKey, Optional.of(version));
+    }
 
     private void saveFederationElection() {
         if (federationElection == null) {
@@ -408,8 +410,5 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         bridgeStorageAccessor.safeSaveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), lastRetiredFederationP2SHScript, BridgeSerializationUtils::serializeScript);
     }
 
-    private void saveStorageVersion(DataWord versionKey, Integer version) {
-        bridgeStorageAccessor.safeSaveToRepository(versionKey, version, BridgeSerializationUtils::serializeInteger);
-        storageVersionEntries.put(versionKey, Optional.of(version));
-    }
+
 }
