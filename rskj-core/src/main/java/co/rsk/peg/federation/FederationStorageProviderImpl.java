@@ -280,12 +280,18 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     public void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         saveNewFederationBtcUTXOs(networkParameters, activations);
         saveOldFederationBtcUTXOs();
+
         saveNewFederation(activations);
         saveOldFederation(activations);
+
         savePendingFederation(activations);
+
         saveFederationElection();
+
         saveActiveFederationCreationBlockHeight(activations);
+
         saveNextFederationCreationBlockHeight(activations);
+
         saveLastRetiredFederationP2SHScript(activations);
     }
 

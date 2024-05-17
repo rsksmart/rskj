@@ -23,8 +23,13 @@ import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.FederationSupport;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -35,7 +40,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -208,15 +212,11 @@ public class Remasc {
 
     private Coin payToFederation(Constants constants, Block processingBlock, Coin syntheticReward) {
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
-
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                PrecompiledContracts.BRIDGE_ADDR,
-                bridgeConstants,
+        FederationSupport federationSupport = newFederationSupportInstance(
+            bridgeConstants,
+            processingBlock,
             activations
         );
-
-        FederationSupport federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock, activations);
 
         RemascFederationProvider federationProvider = new RemascFederationProvider(activations, federationSupport);
         Coin federationReward = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
@@ -251,6 +251,23 @@ public class Remasc {
         }
 
         return federationReward;
+    }
+
+    private FederationSupport newFederationSupportInstance(
+        BridgeConstants bridgeConstants,
+        Block rskExecutionBlock,
+        ActivationConfig.ForBlock activations) {
+
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+
+        return new FederationSupportImpl(
+            federationConstants,
+            federationStorageProvider,
+            rskExecutionBlock,
+            activations
+        );
     }
 
     /**
@@ -303,6 +320,4 @@ public class Remasc {
             provider.addToBurnBalance(lateInclusionPunishment);
         }
     }
-
 }
-
