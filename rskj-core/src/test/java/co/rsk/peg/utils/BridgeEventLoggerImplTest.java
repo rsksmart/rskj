@@ -25,9 +25,13 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.InvalidOutpointValueException;
+import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
+import java.util.ArrayList;
+import java.util.Collections;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -52,9 +56,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static co.rsk.peg.bitcoin.UtxoTestUtils.coinListOf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -507,6 +513,48 @@ class BridgeEventLoggerImplTest {
         assertTopics(2, eventLogs);
 
         assertEvent(eventLogs, 0, BridgeEvents.PEGOUT_CONFIRMED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{pegoutCreationRskBlockNumber});
+    }
+
+    private static Stream<Arguments> logPegoutTransactionCreatedValidArgProvider() {
+        List<Arguments> args = new ArrayList<>();
+
+        args.add(Arguments.of(Sha256Hash.ZERO_HASH, Collections.singletonList(Coin.SATOSHI)));
+        args.add(Arguments.of(BitcoinTestUtils.createHash(5), coinListOf(500_000, 400_000, 1_000)));
+        args.add(Arguments.of(BitcoinTestUtils.createHash(10), Collections.singletonList(Coin.ZERO)));
+        args.add(Arguments.of(BitcoinTestUtils.createHash(10), Collections.EMPTY_LIST));
+        args.add(Arguments.of(BitcoinTestUtils.createHash(15), null));
+
+        return args.stream();
+    }
+
+    @ParameterizedTest()
+    @MethodSource("logPegoutTransactionCreatedValidArgProvider")
+    void logPegoutTransactionCreated_ok(Sha256Hash btcTxHash, List<Coin> outpointValues) {
+        eventLogger.logPegoutTransactionCreated(btcTxHash, outpointValues);
+        commonAssertLogs(eventLogs);
+
+        assertTopics(2, eventLogs);
+        assertEvent(eventLogs, 0, BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent(), new Object[]{btcTxHash.getBytes()}, new Object[]{
+            UtxoUtils.encodeOutpointValues(outpointValues)}
+        );
+    }
+
+    private static Stream<Arguments> logPegoutTransactionCreatedInvalidArgProvider() {
+        List<Arguments> args = new ArrayList<>();
+
+        args.add(Arguments.of(null, Collections.singletonList(null), IllegalArgumentException.class));
+        args.add(Arguments.of(null, Collections.singletonList(Coin.SATOSHI), IllegalArgumentException.class));
+        args.add(Arguments.of(Sha256Hash.ZERO_HASH, Collections.singletonList(null), InvalidOutpointValueException.class));
+        args.add(Arguments.of(BitcoinTestUtils.createHash(1), coinListOf(-100), InvalidOutpointValueException.class));
+        args.add(Arguments.of(BitcoinTestUtils.createHash(2), coinListOf(100, -200, 300), InvalidOutpointValueException.class));
+
+        return args.stream();
+    }
+
+    @ParameterizedTest()
+    @MethodSource("logPegoutTransactionCreatedInvalidArgProvider")
+    void logPegoutTransactionCreated_invalidBtcTxHashOrOutpointValues_shouldFail(Sha256Hash btcTxHash, List<Coin> outpointValues, Class<? extends  Exception> expectedException) {
+        assertThrows(expectedException, () -> eventLogger.logPegoutTransactionCreated(btcTxHash, outpointValues));
     }
 
     /**********************************

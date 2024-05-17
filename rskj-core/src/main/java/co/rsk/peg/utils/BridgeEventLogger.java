@@ -78,4 +78,8 @@ public interface BridgeEventLogger {
     default void logPegoutConfirmed(Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
         throw new UnsupportedOperationException();
     }
+
+    default void logPegoutTransactionCreated(Sha256Hash btcTxHash, List<Coin> outpointValues) {
+        throw new UnsupportedOperationException();
+    }
 }

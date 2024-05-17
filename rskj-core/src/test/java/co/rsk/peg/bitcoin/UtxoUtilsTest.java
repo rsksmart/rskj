@@ -1,5 +1,6 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.peg.bitcoin.UtxoTestUtils.coinListOf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,12 +24,6 @@ import org.spongycastle.util.encoders.Hex;
 class UtxoUtilsTest {
 
     private final static Coin MAX_BTC = BridgeMainNetConstants.getInstance().getMaxRbtc();
-
-    private static List<Coin> coinListOf(long ... valuesInSatoshis) {
-        return Arrays.stream(valuesInSatoshis)
-            .mapToObj(Coin::valueOf)
-            .collect(Collectors.toList());
-    }
 
     private static Stream<Arguments> validOutpointValues() {
         List<Arguments> arguments = new ArrayList<>();
