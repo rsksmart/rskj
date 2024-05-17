@@ -240,6 +240,8 @@ dependencies {
     integrationTestImplementation "${testLibs.mockitoJupiter}"
     integrationTestImplementation "${testLibs.jacksonLib}"
     integrationTestImplementation "${testLibs.okhttpWsLib}"
+    integrationTestImplementation "${libs.commonsLang3Lib}"
+
 }
 
 javadoc {
