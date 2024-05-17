@@ -47,11 +47,10 @@ public class BridgeState {
     private final PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
     private final ActivationConfig.ForBlock activations;
 
-    private BridgeState(int btcBlockchainBestChainHeight,
+    protected BridgeState(int btcBlockchainBestChainHeight,
                         long nextPegoutCreationBlockNumber,
                         List<UTXO> activeFederationBtcUTXOs,
-                        SortedMap<Keccak256,
-                        BtcTransaction> rskTxsWaitingForSignatures,
+                        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures,
                         ReleaseRequestQueue releaseRequestQueue,
                         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
                         @Nullable ActivationConfig.ForBlock activations) {
@@ -62,16 +61,6 @@ public class BridgeState {
         this.releaseRequestQueue = releaseRequestQueue;
         this.pegoutsWaitingForConfirmations = pegoutsWaitingForConfirmations;
         this.activations = activations;
-    }
-
-    public BridgeState(int btcBlockchainBestChainHeight, BridgeStorageProvider provider, ActivationConfig.ForBlock activations) throws IOException {
-        this(btcBlockchainBestChainHeight,
-                provider.getNextPegoutHeight().orElse(0L),
-                provider.getNewFederationBtcUTXOs(),
-                provider.getPegoutsWaitingForSignatures(),
-                provider.getReleaseRequestQueue(),
-                provider.getPegoutsWaitingForConfirmations(),
-                activations);
     }
 
     public int getBtcBlockchainBestChainHeight() {
