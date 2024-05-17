@@ -773,26 +773,26 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public String getFederationAddress(Object[] args) {
         logger.trace("getFederationAddress");
 
-        return bridgeSupport.getFederationAddress().toBase58();
+        return bridgeSupport.getActiveFederationAddress().toBase58();
     }
 
     public Integer getFederationSize(Object[] args) {
         logger.trace("getFederationSize");
 
-        return bridgeSupport.getFederationSize();
+        return bridgeSupport.getActiveFederationSize();
     }
 
     public Integer getFederationThreshold(Object[] args) {
         logger.trace("getFederationThreshold");
 
-        return bridgeSupport.getFederationThreshold();
+        return bridgeSupport.getActiveFederationThreshold();
     }
 
     public byte[] getFederatorPublicKey(Object[] args) {
         logger.trace("getFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        return bridgeSupport.getFederatorPublicKey(index);
+        return bridgeSupport.getActiveFederatorPublicKey(index);
     }
 
     public byte[] getFederatorPublicKeyOfType(Object[] args) throws VMException {
@@ -808,19 +808,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new VMException("Exception in getFederatorPublicKeyOfType", e);
         }
 
-        return bridgeSupport.getFederatorPublicKeyOfType(index, keyType);
+        return bridgeSupport.getActiveFederatorPublicKeyOfType(index, keyType);
     }
 
     public Long getFederationCreationTime(Object[] args) {
         logger.trace("getFederationCreationTime");
 
         // Return the creation time in milliseconds from the epoch
-        return bridgeSupport.getFederationCreationTime().toEpochMilli();
+        return bridgeSupport.getActiveFederationCreationTime().toEpochMilli();
     }
 
     public long getFederationCreationBlockNumber(Object[] args) {
         logger.trace("getFederationCreationBlockNumber");
-        return bridgeSupport.getFederationCreationBlockNumber();
+        return bridgeSupport.getActiveFederationCreationBlockNumber();
     }
 
     public String getRetiringFederationAddress(Object[] args) {
@@ -975,7 +975,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public byte[] getPendingFederationHash(Object[] args) {
         logger.trace("getPendingFederationHash");
 
-        byte[] hash = bridgeSupport.getPendingFederationHash();
+        byte[] hash = bridgeSupport.getPendingFederationHash().getBytes();
 
         if (hash == null) {
             // Empty array is returned when pending federation is not present
@@ -1152,7 +1152,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public byte[] getActivePowpegRedeemScript(Object[] args) {
         logger.debug("[getActivePowpegRedeemScript] started");
         try {
-            Optional<Script> redeemScript = bridgeSupport.getActivePowpegRedeemScript();
+            Optional<Script> redeemScript = bridgeSupport.getActiveFederationRedeemScript();
             logger.debug("[getActivePowpegRedeemScript] finished");
             return redeemScript.orElse(new Script(new byte[]{})).getProgram();
         } catch (Exception ex) {

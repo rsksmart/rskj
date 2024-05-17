@@ -23,8 +23,13 @@ import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.FederationSupport;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -35,7 +40,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -208,15 +212,9 @@ public class Remasc {
 
     private Coin payToFederation(Constants constants, Block processingBlock, Coin syntheticReward) {
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
 
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                PrecompiledContracts.BRIDGE_ADDR,
-                bridgeConstants,
-            activations
-        );
-
-        FederationSupport federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock, activations);
+        FederationSupport federationSupport = newFederationSupportInstance(bridgeStorageAccessor, bridgeConstants, processingBlock, activations);
 
         RemascFederationProvider federationProvider = new RemascFederationProvider(activations, federationSupport);
         Coin federationReward = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
@@ -251,6 +249,12 @@ public class Remasc {
         }
 
         return federationReward;
+    }
+
+    private FederationSupport newFederationSupportInstance(StorageAccessor bridgeStorageAccessor, BridgeConstants bridgeConstants, Block rskExecutionBlock, ActivationConfig.ForBlock activations) {
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        return new FederationSupportImpl(federationConstants, federationStorageProvider, rskExecutionBlock, activations);
     }
 
     /**
