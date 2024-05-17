@@ -1,16 +1,11 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
@@ -27,23 +22,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class BridgeSupportSigHashTest {
 
@@ -75,10 +60,12 @@ class BridgeSupportSigHashTest {
     @ParameterizedTest
     @MethodSource("pegoutTxIndexArgsProvider")
     void test_pegoutTxIndex_when_pegout_batch_is_created(ActivationConfig.ForBlock activations) throws IOException {
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Address federationAddress = genesisFederation.getAddress();
         // Arrange
         List<UTXO> fedUTXOs = PegTestUtils.createUTXOs(
             10,
-            bridgeMainnetConstants.getGenesisFederation().getAddress()
+            federationAddress
         );
         when(provider.getNewFederationBtcUTXOs())
             .thenReturn(fedUTXOs);
@@ -123,7 +110,7 @@ class BridgeSupportSigHashTest {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
-        Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
         long newFedCreationBlockNumber = 5L;
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
@@ -189,7 +176,7 @@ class BridgeSupportSigHashTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(3)));
 
-        Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
         long newFedCreationBlockNumber = 5L;
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),

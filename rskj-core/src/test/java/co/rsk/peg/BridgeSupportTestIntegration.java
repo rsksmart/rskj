@@ -47,9 +47,9 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.BridgeTestNetConstants;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -386,7 +386,7 @@ public class BridgeSupportTestIntegration {
     @Test
     void callUpdateCollectionsFundsEnoughForJustTheSmallerTx() throws IOException {
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -404,7 +404,7 @@ public class BridgeSupportTestIntegration {
                 Coin.valueOf(12, 0),
                 0,
                 false,
-                ScriptBuilder.createOutputScript(federation.getAddress())
+                ScriptBuilder.createOutputScript(genesisFederation.getAddress())
         ));
 
         provider0.save();
@@ -458,7 +458,7 @@ public class BridgeSupportTestIntegration {
     @Test
     void callUpdateCollectionsThrowsCouldNotAdjustDownwards() throws IOException {
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -473,7 +473,7 @@ public class BridgeSupportTestIntegration {
                 Coin.valueOf(1000000),
                 0,
                 false,
-                ScriptBuilder.createOutputScript(federation.getAddress())
+                ScriptBuilder.createOutputScript(genesisFederation.getAddress())
         ));
 
         provider0.save();
@@ -538,7 +538,7 @@ public class BridgeSupportTestIntegration {
     @Test
     void callUpdateCollectionsThrowsExceededMaxTransactionSize() throws IOException {
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -553,7 +553,7 @@ public class BridgeSupportTestIntegration {
                     Coin.CENT,
                     0,
                     false,
-                    ScriptBuilder.createOutputScript(federation.getAddress())
+                    ScriptBuilder.createOutputScript(genesisFederation.getAddress())
             ));
         }
 
@@ -618,7 +618,7 @@ public class BridgeSupportTestIntegration {
 
     @Test
     void minimumProcessFundsMigrationValue() throws IOException {
-        Federation oldFederation = bridgeConstants.getGenesisFederation();
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
         BtcECKey key = new BtcECKey(new SecureRandom());
         FederationMember member = new FederationMember(key, new ECKey(), new ECKey());
         FederationArgs newFederationArgs = new FederationArgs(
@@ -712,7 +712,7 @@ public class BridgeSupportTestIntegration {
     @Test
     void callUpdateCollectionsChangeGetsOutOfDust() throws IOException {
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
 
         Map<byte[], BigInteger> preMineMap = new HashMap<>();
         preMineMap.put(PrecompiledContracts.BRIDGE_ADDR.getBytes(), LIMIT_MONETARY_BASE.asBigInteger());
@@ -737,7 +737,7 @@ public class BridgeSupportTestIntegration {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN);
-        provider0.getNewFederationBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
+        provider0.getNewFederationBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(genesisFederation.getAddress())));
 
         provider0.save();
 
@@ -1276,7 +1276,7 @@ public class BridgeSupportTestIntegration {
     @Test
     void registerBtcTransactionReleaseTx() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
         Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Repository track = repository.startTracking();
@@ -1287,29 +1287,29 @@ public class BridgeSupportTestIntegration {
         BtcTransaction tx = new BtcTransaction(this.btcParams);
         Address address = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey())).getToAddress(btcParams);
         tx.addOutput(Coin.COIN, address);
-        Address address2 = federation.getAddress();
+        Address address2 = genesisFederation.getAddress();
         tx.addOutput(Coin.COIN, address2);
 
         // Create previous tx
         BtcTransaction prevTx = new BtcTransaction(btcParams);
-        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
+        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, genesisFederation.getAddress());
         prevTx.addOutput(prevOut);
         // Create tx input
         tx.addInput(prevOut);
         // Create tx input base script sig
-        Script scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
+        Script scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(genesisFederation);
         // Create sighash
-        Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
+        Script redeemScript = ScriptBuilder.createRedeemScript(genesisFederation.getNumberOfSignaturesRequired(), genesisFederation.getBtcPublicKeys());
         Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
         // Sign by federator 0
         BtcECKey.ECDSASignature sig0 = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).sign(sighash);
         TransactionSignature txSig0 = new TransactionSignature(sig0, BtcTransaction.SigHash.ALL, false);
-        int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, federation.getBtcPublicKeys().get(0));
+        int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, genesisFederation.getBtcPublicKeys().get(0));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig0.encodeToBitcoin(), sigIndex0, 1, 1);
         // Sign by federator 1
         BtcECKey.ECDSASignature sig1 = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(1).sign(sighash);
         TransactionSignature txSig1 = new TransactionSignature(sig1, BtcTransaction.SigHash.ALL, false);
-        int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, federation.getBtcPublicKeys().get(1));
+        int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, genesisFederation.getBtcPublicKeys().get(1));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig1.encodeToBitcoin(), sigIndex1, 1, 1);
         // Set scipt sign to tx input
         tx.getInput(0).setScriptSig(scriptSig);
@@ -1794,10 +1794,13 @@ public class BridgeSupportTestIntegration {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
-            activeFedArgs
+                activeFedArgs
         );
-
-        FederationArgs genesisFedArgs = new FederationArgs(FederationTestUtils.getFederationMembers(6),
+        FederationArgs genesisFedArgs = new FederationArgs(FederationTestUtils.getFederationMembersWithKeys(
+            Stream.iterate(1, i -> i + 1)
+                .limit(6)
+                .map(i -> BtcECKey.fromPrivate(BigInteger.valueOf((i) * 100)))
+                .collect(Collectors.toList())),
             Instant.ofEpochMilli(1000),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -1810,7 +1813,8 @@ public class BridgeSupportTestIntegration {
         Assertions.assertEquals(6, bridgeSupport.getFederationSize().intValue());
         Assertions.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
         Assertions.assertEquals(genesisFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
-        List<FederationMember> members = FederationTestUtils.getFederationMembers(6);
+
+        List<FederationMember> members = genesisFederation.getMembers();
         for (int i = 0; i < 6; i++) {
             Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
             Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
@@ -3909,7 +3913,10 @@ public class BridgeSupportTestIntegration {
         BridgeEventLogger eventLogger) throws IOException {
 
         BridgeConstants constantsMock = mock(BridgeConstants.class);
-        when(constantsMock.getGenesisFederation()).thenReturn((StandardMultisigFederation) mockedGenesisFederation);
+        if (mockedGenesisFederation != null) {
+            when(constantsMock.getGenesisFederationCreationTime()).thenReturn(mockedGenesisFederation.getCreationTime());
+            when(constantsMock.getGenesisFederationPublicKeys()).thenReturn(mockedGenesisFederation.getBtcPublicKeys());
+        }
 
         when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         when(constantsMock.getFederationChangeAuthorizer()).thenReturn(bridgeConstants.getFederationChangeAuthorizer());

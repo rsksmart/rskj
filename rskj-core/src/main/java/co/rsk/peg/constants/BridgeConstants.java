@@ -16,23 +16,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.config;
+package co.rsk.peg.constants;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import co.rsk.peg.federation.Federation;
 import java.util.List;
 
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
+import java.time.Instant;
+
 public abstract class BridgeConstants {
     protected String btcParamsString;
-
-    protected Federation genesisFederation;
-
+    protected List<BtcECKey> genesisFederationPublicKeys;
+    protected Instant genesisFederationCreationTime;
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
     protected int rsk2BtcMinimumAcceptableConfirmations;
@@ -43,8 +43,8 @@ public abstract class BridgeConstants {
 
     protected Coin legacyMinimumPeginTxValue;
     protected Coin minimumPeginTxValue;
-    protected Coin legacyMinimumPegoutTxValueInSatoshis;
-    protected Coin minimumPegoutTxValueInSatoshis;
+    protected Coin legacyMinimumPegoutTxValue;
+    protected Coin minimumPegoutTxValue;
 
     protected long federationActivationAge;
     protected long federationActivationAgeLegacy;
@@ -60,7 +60,6 @@ public abstract class BridgeConstants {
     protected AddressBasedAuthorizer feePerKbChangeAuthorizer;
 
     protected Coin genesisFeePerKb;
-
     protected Coin maxFeePerKb;
 
     protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
@@ -76,7 +75,6 @@ public abstract class BridgeConstants {
     protected int maxDepthBlockchainAccepted;
 
     protected long erpFedActivationDelay;
-
     protected List<BtcECKey> erpFedPubKeysList;
 
     protected String oldFederationAddress;
@@ -98,7 +96,13 @@ public abstract class BridgeConstants {
         return btcParamsString;
     }
 
-    public Federation getGenesisFederation() { return genesisFederation; }
+    public List<BtcECKey> getGenesisFederationPublicKeys() {
+        return genesisFederationPublicKeys;
+    }
+
+    public Instant getGenesisFederationCreationTime() {
+        return genesisFederationCreationTime;
+    }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;
@@ -120,9 +124,9 @@ public abstract class BridgeConstants {
         return activations.isActive(ConsensusRule.RSKIP219) ? minimumPeginTxValue : legacyMinimumPeginTxValue;
     }
 
-    public Coin getLegacyMinimumPegoutTxValueInSatoshis() { return legacyMinimumPegoutTxValueInSatoshis; }
+    public Coin getLegacyMinimumPegoutTxValue() { return legacyMinimumPegoutTxValue; }
 
-    public Coin getMinimumPegoutTxValueInSatoshis() { return minimumPegoutTxValueInSatoshis; }
+    public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
 
     public long getFederationActivationAge(ActivationConfig.ForBlock activations) {
         return activations.isActive(ConsensusRule.RSKIP383)? federationActivationAge: federationActivationAgeLegacy;

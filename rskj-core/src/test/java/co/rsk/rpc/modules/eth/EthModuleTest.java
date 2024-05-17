@@ -17,7 +17,7 @@
  */
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;

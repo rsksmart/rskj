@@ -28,7 +28,7 @@ import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
@@ -788,11 +788,12 @@ public class BridgeSupport {
      * @throws IOException
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
-        Coin pegoutValue = rskTx.getValue().toBitcoin();
+        final co.rsk.core.Coin pegoutValueInWeis = rskTx.getValue();
+        final Coin pegoutValueInSatoshis = pegoutValueInWeis.toBitcoin();
         final RskAddress senderAddress = rskTx.getSender(signatureCache);
         logger.debug(
-            "[releaseBtc] Releasing {} RBTC from RSK address {} in tx {}",
-            pegoutValue,
+            "[releaseBtc] Releasing {} weis from RSK address {} in tx {}",
+            pegoutValueInWeis,
             senderAddress,
             rskTx.getHash()
         );
@@ -804,7 +805,7 @@ public class BridgeSupport {
                 senderAddress
             );
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                emitRejectEvent(pegoutValue, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
+                emitRejectEvent(pegoutValueInSatoshis, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
                 return;
             } else {
                 String message = "Contract calling releaseBTC";
@@ -818,7 +819,7 @@ public class BridgeSupport {
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
         logger.debug("[releaseBtc] BTC destination address: {}", btcDestinationAddress);
 
-        requestRelease(btcDestinationAddress, pegoutValue, rskTx);
+        requestRelease(btcDestinationAddress, pegoutValueInSatoshis, rskTx);
     }
 
     private void refundAndEmitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
@@ -868,7 +869,7 @@ public class BridgeSupport {
                 ); // add the gap
 
             // The pegout value should be greater or equals than the max of these two values
-            Coin minValue = Coin.valueOf(Math.max(bridgeConstants.getMinimumPegoutTxValueInSatoshis().value, requireFundsForFee.value));
+            Coin minValue = Coin.valueOf(Math.max(bridgeConstants.getMinimumPegoutTxValue().value, requireFundsForFee.value));
 
             // Since Iris the peg-out the rule is that the minimum is inclusive
             if (value.isLessThan(minValue)) {
@@ -880,7 +881,7 @@ public class BridgeSupport {
             }
         } else {
             // For legacy peg-outs the rule stated that the minimum was exclusive
-            if (!value.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis())) {
+            if (!value.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValue())) {
                 optionalRejectedPegoutReason = Optional.of(RejectedPegoutReason.LOW_AMOUNT);
             }
         }

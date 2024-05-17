@@ -1,29 +1,76 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
+import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
+import static co.rsk.peg.PegTestUtils.createBech32Output;
+import static co.rsk.peg.PegTestUtils.createFederation;
+import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
+import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
+import static co.rsk.peg.pegin.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
+import static co.rsk.peg.utils.UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.core.TransactionWitness;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
-import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.federation.*;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationArgs;
+import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.test.builders.BridgeSupportBuilder;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
@@ -33,24 +80,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Stream;
-
-import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
-import static co.rsk.peg.PegTestUtils.*;
-import static co.rsk.peg.pegin.RejectedPeginReason.*;
-import static co.rsk.peg.utils.UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
 class BridgeSupportRegisterBtcTransactionTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
-
     private static final ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
     private static final ActivationConfig.ForBlock arrowhead600Activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
@@ -1591,7 +1624,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
         }
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
         for (int i = 0; i < 10; i++) {
             btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
@@ -1672,7 +1705,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
         );
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
         for (int i = 0; i < 10; i++) {
             btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "user" + i));
@@ -1755,7 +1788,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
         }
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         btcTransaction.addOutput(minimumPegoutTxValue, userAddress);
 
         FederationTestUtils.addSignatures(activeFederation, activeFedSigners, btcTransaction);
@@ -1913,7 +1946,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
         }
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
         for (int i = 0; i < 10; i++) {
             btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
@@ -1980,7 +2013,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             ScriptBuilder.createP2SHMultiSigInputScript(null, retiringFederation.getRedeemScript())
         );
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         Coin quarterMinimumPegoutTxValue = minimumPegoutTxValue.div(4);
         for (int i = 0; i < 10; i++) {
             btcTransaction.addOutput(quarterMinimumPegoutTxValue.add(Coin.CENT), activeFederation.getAddress());
@@ -2050,7 +2083,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
         }
 
-        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValueInSatoshis();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         btcTransaction.addOutput(minimumPegoutTxValue, activeFederation.getAddress());
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
@@ -2422,7 +2455,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         Federation oldFederation = createFederation(bridgeRegTestConstants, REGTEST_OLD_FEDERATION_PRIVATE_KEYS);
-        Federation activeFederation = bridgeRegTestConstants.getGenesisFederation();
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
 
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
         migrationTx.addInput(
