@@ -40,7 +40,7 @@ public class StableMinGasPriceSystemConfig {
         return enabled;
     }
 
-    public WebStableMinGasSystemConfig getHttpGetConfig() {
+    public WebStableMinGasSystemConfig getWebConfig() {
         return new WebStableMinGasSystemConfig(config.getConfig(WebStableMinGasSystemConfig.WEB_STABLE_GAS_PRICE_CONFIG_PATH));
     }
 

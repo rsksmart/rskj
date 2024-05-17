@@ -11,9 +11,9 @@ public class WebStableMinGasPriceProviderFactory {
     }
 
     public static StableMinGasPriceProvider create(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallbackProvider) {
-        WebStableMinGasSystemConfig httpGetSystemConfig = config.getHttpGetConfig();
+        WebStableMinGasSystemConfig httpGetSystemConfig = config.getWebConfig();
         WebStableMinGasPriceConfig httpGetStableMinGasPriceConfig = WebStableMinGasPriceConfig.builder().setUrl(httpGetSystemConfig.getUrl())
-                .setJsonPath(httpGetSystemConfig.getJsonPath())
+                .setJsonPath(httpGetSystemConfig.getRequestPath())
                 .setTimeout(httpGetSystemConfig.getTimeout())
                 .setApiKey(httpGetSystemConfig.getApiKey())
                 .setMinStableGasPrice(config.getMinStableGasPrice())
