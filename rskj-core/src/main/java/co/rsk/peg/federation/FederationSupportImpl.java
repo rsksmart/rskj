@@ -41,8 +41,8 @@ public class FederationSupportImpl implements FederationSupport {
     private final ActivationConfig.ForBlock activations;
 
     public FederationSupportImpl(FederationConstants constants, FederationStorageProvider provider, Block rskExecutionBlock, ActivationConfig.ForBlock activations) {
-        this.provider = provider;
         this.constants = constants;
+        this.provider = provider;
         this.rskExecutionBlock = rskExecutionBlock;
         this.activations = activations;
     }
