@@ -93,6 +93,7 @@ public class PegUtils {
         BridgeConstants bridgeConstants,
         Federation activeFederation,
         Federation retiringFederation,
+        Optional<Script> retiredFederationP2SHScriptOptional,
         BtcTransaction btcTransaction,
         long btcTransactionHeight
     ) {
@@ -123,7 +124,7 @@ public class PegUtils {
                 bridgeConstants.getBtcParams(),
                 federationConstants.getOldFederationAddress()
             );
-            Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
+            Script retiredFederationP2SHScript = retiredFederationP2SHScriptOptional.orElse(null);
 
             return PegUtilsLegacy.getTransactionType(
                 btcTransaction,
