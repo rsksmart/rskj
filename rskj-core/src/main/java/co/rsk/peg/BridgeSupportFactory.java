@@ -22,6 +22,11 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
@@ -75,7 +80,7 @@ public class BridgeSupportFactory {
             activations
         );
 
-        FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock, activations);
+        FederationSupport federationSupport = newFederationSupportInstance(bridgeStorageAccessor, bridgeConstants, executionBlock, activations);
         FeePerKbSupport feePerKbSupport = newFeePerKbSupportInstance(bridgeStorageAccessor, bridgeConstants);
 
         BridgeEventLogger eventLogger;
@@ -113,5 +118,11 @@ public class BridgeSupportFactory {
         FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
         FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
         return new FeePerKbSupportImpl(feePerKbConstants, feePerKbStorageProvider);
+    }
+
+    private FederationSupport newFederationSupportInstance(StorageAccessor bridgeStorageAccessor, BridgeConstants bridgeConstants, Block rskExecutionBlock, ActivationConfig.ForBlock activations) {
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        return new FederationSupportImpl(federationConstants, federationStorageProvider, rskExecutionBlock, activations);
     }
 }
