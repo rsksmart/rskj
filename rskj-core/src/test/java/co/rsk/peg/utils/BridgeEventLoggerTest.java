@@ -7,6 +7,7 @@ import co.rsk.peg.PegTestUtils;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.peg.pegin.RejectedPeginReason;
+import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -103,4 +104,11 @@ class BridgeEventLoggerTest {
         });
     }
 
+    @Test
+    void logPegoutTransactionCreated() {
+        Sha256Hash btcTxHash = btcTxMock.getHash();
+        assertThrows(UnsupportedOperationException.class, () -> {
+            eventLogger.logPegoutTransactionCreated(btcTxHash, Arrays.asList(Coin.COIN, Coin.SATOSHI, Coin.FIFTY_COINS));
+        });
+    }
 }

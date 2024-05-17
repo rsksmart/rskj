@@ -22,6 +22,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;
+import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.pegin.RejectedPeginReason;
@@ -242,6 +243,21 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTxHash.getBytes());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
         byte[] encodedData = event.encodeEventData(pegoutCreationRskBlockNumber);
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
+
+    @Override
+    public void logPegoutTransactionCreated(Sha256Hash btcTxHash, List<Coin> outpointValues) {
+        if (btcTxHash == null){
+            throw new IllegalArgumentException("btcTxHash param cannot be null");
+        }
+
+        CallTransaction.Function event = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTxHash.getBytes());
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+
+        byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
+        byte[] encodedData = event.encodeEventData(serializedOutpointValues);
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
