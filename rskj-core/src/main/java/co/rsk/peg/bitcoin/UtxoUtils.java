@@ -19,8 +19,8 @@ public final class UtxoUtils {
      * Decode a {@code byte[]} of encoded outpoint values.
      *
      * @param encodedOutpointValues
-     * @return {@code List<Coin>} the list of outpoint values decoded in the same ordered they were
-     * before encoding. Or an {@code Collections.EMPTY_LIST} when {@code encodedOutpointValues} is
+     * @return {@code List<Coin>} the list of outpoint values decoded preserving
+     * the order of the entries. Or an {@code Collections.EMPTY_LIST} when {@code encodedOutpointValues} is
      * {@code null} or {@code empty byte[]}.
      */
     public static List<Coin> decodeOutpointValues(byte[] encodedOutpointValues) {
@@ -45,7 +45,7 @@ public final class UtxoUtils {
 
             offset += valueAsVarInt.getSizeInBytes();
             Coin outpointValue = Coin.valueOf(valueAsVarInt.value);
-            assertValidOutpointValue(outpointValue);
+            validateOutpointValue(outpointValue);
 
             outpointValues.add(outpointValue);
         }
@@ -68,7 +68,7 @@ public final class UtxoUtils {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         for (Coin outpointValue : outpointValues) {
-            assertValidOutpointValue(outpointValue);
+            validateOutpointValue(outpointValue);
             VarInt varIntOutpointValue = new VarInt(outpointValue.getValue());
             try {
                 outputStream.write(varIntOutpointValue.encode());
@@ -84,7 +84,7 @@ public final class UtxoUtils {
         return outputStream.toByteArray();
     }
 
-    private static void assertValidOutpointValue(Coin outpointValue) {
+    private static void validateOutpointValue(Coin outpointValue) {
         if (outpointValue == null || outpointValue.isNegative()) {
             throw new InvalidOutpointValueException(String.format(
                 "Invalid outpoint value: %s. Negative and null values are not allowed.",
