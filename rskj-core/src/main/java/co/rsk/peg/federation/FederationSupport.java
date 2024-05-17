@@ -38,8 +38,6 @@ public interface FederationSupport {
     byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
     List<UTXO> getRetiringFederationBtcUTXOs();
 
-    @Nullable
-    PendingFederation getPendingFederation();
     Keccak256 getPendingFederationHash();
     int getPendingFederationSize();
     byte[] getPendingFederatorPublicKey(int index);
