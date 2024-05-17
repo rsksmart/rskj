@@ -175,6 +175,11 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
+    public void clearRetiredFederation() {
+        provider.setOldFederation(null);
+    }
+
+    @Override
     @Nullable
     public Federation getRetiringFederation() {
         switch (getRetiringFederationReference()) {
@@ -300,6 +305,12 @@ public class FederationSupportImpl implements FederationSupport {
             default:
                 return Collections.emptyList();
         }
+    }
+
+
+    @Override
+    public List<UTXO> getNewFederationBtcUTXOs() {
+        return provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations);
     }
 
     @Nullable
@@ -718,5 +729,39 @@ public class FederationSupportImpl implements FederationSupport {
         }
 
         return members.get(index).getPublicKey(keyType).getPubKey(true);
+    }
+
+    @Override
+    public void updateFederationCreationBlockHeights() {
+        if (!activations.isActive(RSKIP186)) {
+            return;
+        }
+
+        Optional<Long> nextFederationCreationBlockHeightOpt = provider.getNextFederationCreationBlockHeight(activations);
+        if (thereIsNoNextFederationCreation(nextFederationCreationBlockHeightOpt)) {
+            return;
+        }
+
+        long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
+        long currentBlockHeight = rskExecutionBlock.getNumber();
+
+        if (newFederationShouldNotBeActiveYet(currentBlockHeight, nextFederationCreationBlockHeight)) {
+            return;
+        }
+
+        provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+        provider.clearNextFederationCreationBlockHeight();
+    }
+
+    private boolean thereIsNoNextFederationCreation(Optional<Long> nextFederationCreationBlockHeight) {
+        return !nextFederationCreationBlockHeight.isPresent();
+    }
+
+    private boolean newFederationShouldNotBeActiveYet(long currentBlockHeight, long nextFederationCreationBlockHeight) {
+        return currentBlockHeight < nextFederationCreationBlockHeight + constants.getFederationActivationAge(activations);
+    }
+
+    public void save() {
+        provider.save(constants.getBtcParams(), activations);
     }
 }

@@ -27,6 +27,8 @@ public interface FederationSupport {
     byte[] getActiveFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
     List<UTXO> getActiveFederationBtcUTXOs();
 
+    void clearRetiredFederation();
+
     @Nullable
     Federation getRetiringFederation();
     Address getRetiringFederationAddress();
@@ -38,6 +40,8 @@ public interface FederationSupport {
     byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
     List<UTXO> getRetiringFederationBtcUTXOs();
 
+    List<UTXO> getNewFederationBtcUTXOs();
+
     Keccak256 getPendingFederationHash();
     int getPendingFederationSize();
     byte[] getPendingFederatorPublicKey(int index);
@@ -45,4 +49,8 @@ public interface FederationSupport {
 
     int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache, BridgeEventLogger eventLogger);
     long getActiveFederationCreationBlockHeight();
+
+    void updateFederationCreationBlockHeights();
+
+    void save();
 }
