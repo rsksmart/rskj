@@ -185,6 +185,7 @@ public class BridgeSupport {
     public void save() throws IOException {
         provider.save();
         feePerKbSupport.save();
+        federationSupport.save();
     }
 
     /**
@@ -378,6 +379,7 @@ public class BridgeSupport {
                 bridgeConstants,
                 getActiveFederation(),
                 getRetiringFederation(),
+                federationSupport.getLastRetiredFederationP2SHScript(),
                 btcTx,
                 height
             );
@@ -931,7 +933,7 @@ public class BridgeSupport {
 
         processConfirmedPegouts(rskTx);
 
-        updateFederationCreationBlockHeights();
+        federationSupport.updateFederationCreationBlockHeights();
     }
 
     private void processFundsMigration(Transaction rskTx) throws IOException {
@@ -988,7 +990,7 @@ public class BridgeSupport {
                 "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
                 availableUTXOs.size()
             );
-            provider.setOldFederation(null);
+            federationSupport.clearRetiredFederation();
         }
     }
 
@@ -1331,25 +1333,6 @@ public class BridgeSupport {
         }
     }
 
-    private void updateFederationCreationBlockHeights() {
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-
-        if (!activations.isActive(RSKIP186)) {
-            return;
-        }
-
-        Optional<Long> nextFederationCreationBlockHeightOpt = provider.getNextFederationCreationBlockHeight();
-        if (nextFederationCreationBlockHeightOpt.isPresent()) {
-            long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
-            long curBlockHeight = rskExecutionBlock.getNumber();
-
-            if (curBlockHeight >= nextFederationCreationBlockHeight + federationConstants.getFederationActivationAge(activations)) {
-                provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
-                provider.clearNextFederationCreationBlockHeight();
-            }
-        }
-    }
-
     /**
      * If federation change output value had to be increased to be non-dust, the federation now has
      * more BTC than it should. So, we burn some sBTC to make balances match.
@@ -1574,7 +1557,15 @@ public class BridgeSupport {
      * @return a BridgeState serialized in RLP
      */
     public byte[] getStateForDebugging() throws IOException, BlockStoreException {
-        BridgeState stateForDebugging = new BridgeState(getBtcBlockchainBestChainHeight(), provider, activations);
+        long nextPegoutCreationBlockNumber = provider.getNextPegoutHeight().orElse(0L);
+        List<UTXO> newFederationBtcUTXOs = federationSupport.getNewFederationBtcUTXOs();
+        SortedMap<Keccak256, BtcTransaction> pegoutsWaitingForSignatures = provider.getPegoutsWaitingForSignatures();
+        ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
+
+        BridgeState stateForDebugging = new BridgeState(
+            getBtcBlockchainBestChainHeight(), nextPegoutCreationBlockNumber, newFederationBtcUTXOs,
+            pegoutsWaitingForSignatures, releaseRequestQueue, pegoutsWaitingForConfirmations, activations);
 
         return stateForDebugging.getEncoded();
     }
