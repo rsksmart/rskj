@@ -2,6 +2,7 @@ package org.ethereum.rpc.exception;
 
 import co.rsk.core.exception.InvalidRskAddressException;
 import co.rsk.jsonrpc.JsonRpcError;
+import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
@@ -31,7 +32,10 @@ public class RskErrorResolver implements ErrorResolver {
                     "invalid argument 0: hex string has length " + arguments.get(0).asText().replace("0x", "").length() + ", want 40 for RSK address",
                     null);
         } else if (t instanceof RskJsonRpcRequestException) {
-            error = new JsonError(((RskJsonRpcRequestException) t).getCode(), t.getMessage(), null);
+            RskJsonRpcRequestException rskJsonRpcRequestException = (RskJsonRpcRequestException) t;
+            byte[] revertData = rskJsonRpcRequestException.getRevertData();
+            String errorDataHexString = revertData == null ? null : HexUtils.toUnformattedJsonHex(revertData);
+            error = new JsonError(rskJsonRpcRequestException.getCode(), t.getMessage(), errorDataHexString);
         } else if (t instanceof InvalidFormatException) {
             error = new JsonError(JsonRpcError.INTERNAL_ERROR, "Internal server error, probably due to invalid parameter type", null);
         } else if (t instanceof UnrecognizedPropertyException) {
