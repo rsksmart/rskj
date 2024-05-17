@@ -599,7 +599,7 @@ public class FederationSupportImpl implements FederationSupport {
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    private Integer commitFederation(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) throws IOException {
+    private Integer commitFederation(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -729,6 +729,11 @@ public class FederationSupportImpl implements FederationSupport {
         }
 
         return members.get(index).getPublicKey(keyType).getPubKey(true);
+    }
+
+    @Override
+    public Optional<Script> getLastRetiredFederationP2SHScript() {
+        return provider.getLastRetiredFederationP2SHScript(activations);
     }
 
     @Override

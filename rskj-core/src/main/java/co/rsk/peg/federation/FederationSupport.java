@@ -49,6 +49,7 @@ public interface FederationSupport {
 
     int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache, BridgeEventLogger eventLogger);
     long getActiveFederationCreationBlockHeight();
+    Optional<Script> getLastRetiredFederationP2SHScript();
 
     void updateFederationCreationBlockHeights();
 
