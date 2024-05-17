@@ -18,10 +18,11 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.*;
@@ -68,13 +69,14 @@ public class BridgeSupportFactory {
 
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlock.getNumber());
         Context btcContext = new Context(bridgeConstants.getBtcParams());
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
 
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
             contractAddress,
-            bridgeConstants,
+            networkParameters,
             activations
         );
 
