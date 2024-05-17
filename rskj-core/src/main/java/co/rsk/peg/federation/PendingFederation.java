@@ -176,17 +176,22 @@ public final class PendingFederation {
         return serializeFromMembers();
     }
 
-    public static PendingFederation deserialize(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-        List<FederationMember> deserializedMembers = new ArrayList<>();
-
-        for (int k = 0; k < rlpList.size(); k++) {
-            RLPElement element = rlpList.get(k);
-            FederationMember member = FederationMember.deserialize(element.getRLPData());
-            deserializedMembers.add(member);
-        }
-
-        return new PendingFederation(deserializedMembers);
+    /**
+     * A pending federation is serialized as the
+     * public keys conforming it.
+     * A list of btc public keys is serialized as
+     * [pubkey1, pubkey2, ..., pubkeyn], sorted
+     * using the lexicographical order of the public keys
+     * (see BtcECKey.PUBKEY_COMPARATOR).
+     * This is a legacy format for blocks before the Wasabi
+     * network upgrade.
+     */
+    private byte[] serializeOnlyBtcKeys() {
+        List<byte[]> encodedKeys = this.getBtcPublicKeys().stream()
+            .sorted(BtcECKey.PUBKEY_COMPARATOR)
+            .map(key -> RLP.encodeElement(key.getPubKey()))
+            .collect(Collectors.toList());
+        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
     /**
@@ -206,22 +211,17 @@ public final class PendingFederation {
         return RLP.encodeList(encodedMembers.toArray(new byte[0][]));
     }
 
-    /**
-     * A pending federation is serialized as the
-     * public keys conforming it.
-     * A list of btc public keys is serialized as
-     * [pubkey1, pubkey2, ..., pubkeyn], sorted
-     * using the lexicographical order of the public keys
-     * (see BtcECKey.PUBKEY_COMPARATOR).
-     * This is a legacy format for blocks before the Wasabi
-     * network upgrade.
-     */
-    private byte[] serializeOnlyBtcKeys() {
-        List<byte[]> encodedKeys = this.getBtcPublicKeys().stream()
-            .sorted(BtcECKey.PUBKEY_COMPARATOR)
-            .map(key -> RLP.encodeElement(key.getPubKey()))
-            .collect(Collectors.toList());
-        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
+    public static PendingFederation deserialize(byte[] data) {
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        List<FederationMember> deserializedMembers = new ArrayList<>();
+
+        for (int k = 0; k < rlpList.size(); k++) {
+            RLPElement element = rlpList.get(k);
+            FederationMember member = FederationMember.deserialize(element.getRLPData());
+            deserializedMembers.add(member);
+        }
+
+        return new PendingFederation(deserializedMembers);
     }
 
     public static PendingFederation deserializeFromBtcKeysOnly(byte[] data) {
