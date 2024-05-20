@@ -2,12 +2,7 @@ package co.rsk.peg.feeperkb;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.core.RskAddress;
@@ -22,7 +17,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -61,13 +55,11 @@ class FeePerKbSupportImplTest {
 
     @Test
     void voteFeePerKbChange_withUnauthorizedSignature_shouldReturnUnauthorizedCallerResponseCode() {
-        byte[] unauthorizedKey = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
-        Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
-        RskAddress sender = new RskAddress(unauthorizedKey);
-        when(tx.getSender(signatureCache)).thenReturn(sender);
+        Transaction tx = getTransactionFromUnauthorizedCaller(signatureCache);
+        Coin feePerKbVote = Coin.valueOf(50_000L);
 
-        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.valueOf(50_000L), signatureCache);
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, feePerKbVote, signatureCache);
 
         Integer expectedResult = FeePerKbResponseCode.UNAUTHORIZED_CALLER.getCode();
         assertEquals(expectedResult, actualResult);
@@ -170,5 +162,15 @@ class FeePerKbSupportImplTest {
         feePerKbSupport.save();
 
         verify(storageProvider, times(1)).save();
+    }
+
+    private Transaction getTransactionFromUnauthorizedCaller(SignatureCache signatureCache) {
+        ECKey unauthorizedKey = ECKey.fromPublicOnly(Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2"));
+        RskAddress unauthorizedCallerAddress = new RskAddress(unauthorizedKey.getAddress());
+
+        Transaction txFromUnauthorizedCaller = mock(Transaction.class);
+        when(txFromUnauthorizedCaller.getSender(signatureCache)).thenReturn(unauthorizedCallerAddress);
+
+        return txFromUnauthorizedCaller;
     }
 }
