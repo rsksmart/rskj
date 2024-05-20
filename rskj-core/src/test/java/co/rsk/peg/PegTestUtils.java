@@ -260,7 +260,8 @@ public final class PegTestUtils {
         for (int i = 0; i < amount; i++) {
             ReleaseRequestQueue.Entry entry = new ReleaseRequestQueue.Entry(
                 createRandomP2PKHBtcAddress(RegTestParams.get()),
-                Coin.COIN.add(Coin.valueOf(i))
+                Coin.COIN.add(Coin.valueOf(i)),
+                createHash3(i)
             );
             entries.add(entry);
         }
