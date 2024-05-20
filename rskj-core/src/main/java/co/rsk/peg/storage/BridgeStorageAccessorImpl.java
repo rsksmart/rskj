@@ -49,8 +49,8 @@ public class BridgeStorageAccessorImpl implements StorageAccessor {
         return data;
     }
 
+    @Override
     public void saveToRepository(DataWord addressKey, byte[] serializedData) {
         repository.addStorageBytes(CONTRACT_ADDRESS, addressKey, serializedData);
     }
-
 }
