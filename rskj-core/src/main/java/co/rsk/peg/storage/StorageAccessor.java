@@ -8,7 +8,7 @@ public interface StorageAccessor {
 
     <T> void safeSaveToRepository(DataWord key, T value, RepositorySerializer<T> serializer);
 
-    void safeSaveToRepository(DataWord addressKey, byte[] data);
+    void safeSaveToRepository(DataWord key, byte[] data);
 
     interface RepositoryDeserializer<T> {
         T deserialize(byte[] value);
