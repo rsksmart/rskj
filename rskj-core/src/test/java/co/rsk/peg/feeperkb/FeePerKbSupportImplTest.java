@@ -25,31 +25,25 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 class FeePerKbSupportImplTest {
 
-    private FeePerKbStorageProvider provider;
+    private FeePerKbStorageProvider storageProvider;
     private FeePerKbConstants feePerKbConstants;
     private FeePerKbSupportImpl feePerKbSupport;
     private static final ECKey feePerKbAuthorizedKey = ECKey.fromPublicOnly(Hex.decode("0448f51638348b034995b1fd934fe14c92afde783e69f120a46ee16eb6bdc2e4f6b5e37772094c68c0dea2b1be3d96ea9651a9eebda7304914c8047f4e3e251378"));
 
     @BeforeEach
     void setUp() {
-        provider = mock(FeePerKbStorageProvider.class);
+        storageProvider = mock(FeePerKbStorageProvider.class);
         feePerKbConstants = FeePerKbMainNetConstants.getInstance();
-        feePerKbSupport = new FeePerKbSupportImpl(feePerKbConstants, provider);
+        feePerKbSupport = new FeePerKbSupportImpl(feePerKbConstants, storageProvider);
     }
 
     @Test
     void getFeePerKb() {
         Optional<Coin> currentFeePerKb = Optional.of(Coin.valueOf(50_000L));
-        when(provider.getFeePerKb()).thenReturn(currentFeePerKb);
+        when(storageProvider.getFeePerKb()).thenReturn(currentFeePerKb);
 
         Coin actualResult = feePerKbSupport.getFeePerKb();
 
@@ -113,7 +107,7 @@ class FeePerKbSupportImplTest {
         when(tx.getSender(signatureCache)).thenReturn(sender);
         ABICallElection feePerKbElection = mock(ABICallElection.class);
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
-        when(provider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
+        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
 
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.valueOf(50_000L), signatureCache);
 
@@ -129,7 +123,7 @@ class FeePerKbSupportImplTest {
         when(tx.getSender(signatureCache)).thenReturn(sender);
         ABICallElection feePerKbElection = mock(ABICallElection.class);
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
-        when(provider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
+        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
         when(feePerKbElection.vote(any(), any())).thenReturn(true);
 
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.valueOf(50_000L), signatureCache);
@@ -148,7 +142,7 @@ class FeePerKbSupportImplTest {
         when(tx.getSender(signatureCache)).thenReturn(sender);
         ABICallElection feePerKbElection = mock(ABICallElection.class);
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
-        when(provider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
+        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
         when(feePerKbElection.vote(any(), any())).thenReturn(true);
         ABICallSpec feeVote = new ABICallSpec(SET_FEE_PER_KB_ABI_FUNCTION, new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
         when(feePerKbElection.getWinner()).thenReturn(Optional.of(feeVote));
@@ -166,15 +160,15 @@ class FeePerKbSupportImplTest {
 
         assertThrows(NullPointerException.class,
             () -> feePerKbSupport.voteFeePerKbChange(tx, null, signatureCache));
-        verify(provider, never()).setFeePerKb(any());
+        verify(storageProvider, never()).setFeePerKb(any());
     }
 
     @Test
     void save() {
-        doNothing().when(provider).save();
+        doNothing().when(storageProvider).save();
 
         feePerKbSupport.save();
 
-        verify(provider, times(1)).save();
+        verify(storageProvider, times(1)).save();
     }
 }
