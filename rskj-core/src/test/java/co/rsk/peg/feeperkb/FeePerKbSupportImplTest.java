@@ -113,12 +113,15 @@ class FeePerKbSupportImplTest {
     void voteFeePerKbChange_successfulFeePerKbVote_shouldReturnSuccessfulFeeVotedResponseCode() {
         SignatureCache signatureCache = mock(SignatureCache.class);
         Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+
         ABICallElection feePerKbElection = mock(ABICallElection.class);
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
         when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
         when(feePerKbElection.vote(any(), any())).thenReturn(true);
 
-        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.valueOf(50_000L), signatureCache);
+        Coin feePerKbVote = Coin.valueOf(50_000L);
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, feePerKbVote, signatureCache);
 
         Integer expectedResult = FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
         assertEquals(expectedResult, actualResult);
@@ -127,17 +130,21 @@ class FeePerKbSupportImplTest {
     @Test
     void voteFeePerKbChange_successfulFeePerKbChanged_shouldReturnSuccessfulFeeVotedResponseCode() {
         final String SET_FEE_PER_KB_ABI_FUNCTION = "setFeePerKb";
-        final Coin feePerKb = Coin.valueOf(50_000L);
+        final Coin feePerKbVote = Coin.valueOf(50_000L);
+
         SignatureCache signatureCache = mock(SignatureCache.class);
         Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+
         ABICallElection feePerKbElection = mock(ABICallElection.class);
+        when(feePerKbElection.vote(any(), any())).thenReturn(true);
+
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
         when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
-        when(feePerKbElection.vote(any(), any())).thenReturn(true);
-        ABICallSpec feeVote = new ABICallSpec(SET_FEE_PER_KB_ABI_FUNCTION, new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
+
+        ABICallSpec feeVote = new ABICallSpec(SET_FEE_PER_KB_ABI_FUNCTION, new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKbVote)});
         when(feePerKbElection.getWinner()).thenReturn(Optional.of(feeVote));
 
-        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, feePerKb, signatureCache);
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, feePerKbVote, signatureCache);
 
         Integer expectedResult = FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
         assertEquals(expectedResult, actualResult);
@@ -148,8 +155,9 @@ class FeePerKbSupportImplTest {
         Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
 
-        assertThrows(NullPointerException.class,
-            () -> feePerKbSupport.voteFeePerKbChange(tx, null, signatureCache));
+        Coin feePerKbVote = null;
+
+        assertThrows(NullPointerException.class, () -> feePerKbSupport.voteFeePerKbChange(tx, feePerKbVote, signatureCache));
         verify(storageProvider, never()).setFeePerKb(any());
     }
 
