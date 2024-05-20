@@ -47,13 +47,15 @@ public class BridgeState {
     private final PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
     private final ActivationConfig.ForBlock activations;
 
-    protected BridgeState(int btcBlockchainBestChainHeight,
-                        long nextPegoutCreationBlockNumber,
-                        List<UTXO> activeFederationBtcUTXOs,
-                        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures,
-                        ReleaseRequestQueue releaseRequestQueue,
-                        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
-                        @Nullable ActivationConfig.ForBlock activations) {
+    protected BridgeState(
+        int btcBlockchainBestChainHeight,
+        long nextPegoutCreationBlockNumber,
+        List<UTXO> activeFederationBtcUTXOs,
+        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures,
+        ReleaseRequestQueue releaseRequestQueue,
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
+        @Nullable ActivationConfig.ForBlock activations) {
+
         this.btcBlockchainBestChainHeight = btcBlockchainBestChainHeight;
         this.nextPegoutCreationBlockNumber = nextPegoutCreationBlockNumber;
         this.activeFederationBtcUTXOs = activeFederationBtcUTXOs;
