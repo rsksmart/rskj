@@ -94,11 +94,16 @@ class FeePerKbSupportImplTest {
     void voteFeePerKbChange_unsuccessfulVote_shouldReturnUnsuccessfulFeeVotedResponseCode() {
         SignatureCache signatureCache = mock(SignatureCache.class);
         Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+
         ABICallElection feePerKbElection = mock(ABICallElection.class);
+        when(feePerKbElection.vote(any(), any())).thenReturn(false);
+
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
         when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
 
-        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.valueOf(50_000L), signatureCache);
+        Coin feePerKbVote = Coin.valueOf(50_000L);
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, feePerKbVote, signatureCache);
 
         Integer expectedResult = FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
         assertEquals(expectedResult, actualResult);
