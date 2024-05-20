@@ -1557,6 +1557,7 @@ public class BridgeSupport {
      * @return a BridgeState serialized in RLP
      */
     public byte[] getStateForDebugging() throws IOException, BlockStoreException {
+        int btcBlockchainBestChainHeight = getBtcBlockchainBestChainHeight();
         long nextPegoutCreationBlockNumber = provider.getNextPegoutHeight().orElse(0L);
         List<UTXO> newFederationBtcUTXOs = federationSupport.getNewFederationBtcUTXOs();
         SortedMap<Keccak256, BtcTransaction> pegoutsWaitingForSignatures = provider.getPegoutsWaitingForSignatures();
@@ -1564,8 +1565,14 @@ public class BridgeSupport {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
         BridgeState stateForDebugging = new BridgeState(
-            getBtcBlockchainBestChainHeight(), nextPegoutCreationBlockNumber, newFederationBtcUTXOs,
-            pegoutsWaitingForSignatures, releaseRequestQueue, pegoutsWaitingForConfirmations, activations);
+            btcBlockchainBestChainHeight,
+            nextPegoutCreationBlockNumber,
+            newFederationBtcUTXOs,
+            pegoutsWaitingForSignatures,
+            releaseRequestQueue,
+            pegoutsWaitingForConfirmations,
+            activations
+        );
 
         return stateForDebugging.getEncoded();
     }
