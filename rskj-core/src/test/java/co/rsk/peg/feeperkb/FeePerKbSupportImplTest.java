@@ -32,20 +32,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class FeePerKbSupportImplTest {
 
-    @Mock
-    FeePerKbStorageProvider provider;
-    FeePerKbConstants feePerKbConstants;
-    @InjectMocks
-    FeePerKbSupportImpl feePerKbSupport;
+    private FeePerKbStorageProvider provider;
+    private FeePerKbConstants feePerKbConstants;
+    private FeePerKbSupportImpl feePerKbSupport;
     private static final ECKey feePerKbAuthorizedKey = ECKey.fromPublicOnly(Hex.decode("0448f51638348b034995b1fd934fe14c92afde783e69f120a46ee16eb6bdc2e4f6b5e37772094c68c0dea2b1be3d96ea9651a9eebda7304914c8047f4e3e251378"));
-
 
     @BeforeEach
     void setUp() {
+        provider = mock(FeePerKbStorageProvider.class);
         feePerKbConstants = FeePerKbMainNetConstants.getInstance();
         feePerKbSupport = new FeePerKbSupportImpl(feePerKbConstants, provider);
     }
