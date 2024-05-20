@@ -380,7 +380,7 @@ public class BridgeSupport {
                 bridgeConstants,
                 getActiveFederation(),
                 getRetiringFederation(),
-                federationSupport.getLastRetiredFederationP2SHScript(),
+                federationSupport.getLastRetiredFederationP2SHScript().orElse(null),
                 btcTx,
                 height
             );
