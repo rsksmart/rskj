@@ -9,7 +9,7 @@ public interface StorageAccessor {
 
     <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer);
 
-    void saveToRepository(DataWord addressKey, byte[] data) throws IOException;
+    void saveToRepository(DataWord addressKey, byte[] data);
 
     interface RepositoryDeserializer<T> {
         T deserialize(byte[] data) throws IOException;
