@@ -31,9 +31,13 @@ public class BridgeStorageAccessorImpl implements StorageAccessor {
     }
 
     @Override
-    public <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) throws IOException {
-        byte[] serializedData = getSerializedData(object, serializer);
-        safeSaveToRepository(addressKey, serializedData);
+    public <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
+        try {
+            byte[] serializedData = getSerializedData(object, serializer);
+            saveToRepository(addressKey, serializedData);
+        } catch (IOException ioe) {
+            throw new StorageAccessException("Unable to save to repository: " + addressKey, ioe);
+        }
     }
 
     private <T> byte[] getSerializedData(T object, RepositorySerializer<T> serializer) throws IOException {
@@ -45,13 +49,8 @@ public class BridgeStorageAccessorImpl implements StorageAccessor {
         return data;
     }
 
-    @Override
-    public void safeSaveToRepository(DataWord addressKey, byte[] serializedData) throws IOException {
-        try {
-            repository.addStorageBytes(CONTRACT_ADDRESS, addressKey, serializedData);
-        } catch (RuntimeException e) {
-            throw new IOException("Unable to save serialized data " + serializedData + "to repository", e);
-        }
+    public void saveToRepository(DataWord addressKey, byte[] serializedData) {
+        repository.addStorageBytes(CONTRACT_ADDRESS, addressKey, serializedData);
     }
 
 }
