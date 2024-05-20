@@ -1,6 +1,7 @@
 package co.rsk.peg.feeperkb;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -25,7 +26,6 @@ class FeePerKbSupportImplTest {
     private FeePerKbStorageProvider storageProvider;
     private FeePerKbConstants feePerKbConstants;
     private FeePerKbSupportImpl feePerKbSupport;
-    private static final ECKey feePerKbAuthorizedKey = ECKey.fromPublicOnly(Hex.decode("0448f51638348b034995b1fd934fe14c92afde783e69f120a46ee16eb6bdc2e4f6b5e37772094c68c0dea2b1be3d96ea9651a9eebda7304914c8047f4e3e251378"));
 
     @BeforeEach
     void setUp() {
@@ -67,12 +67,11 @@ class FeePerKbSupportImplTest {
 
     @Test
     void voteFeePerKbChange_negativeFeePerKbValue_shouldReturnNegativeFeeVotedResponseCode() {
-        Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
-        RskAddress sender = new RskAddress(feePerKbAuthorizedKey.getAddress());
-        when(tx.getSender(signatureCache)).thenReturn(sender);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+        Coin negativeFeePerKbVote = Coin.NEGATIVE_SATOSHI;
 
-        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.NEGATIVE_SATOSHI, signatureCache);
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, negativeFeePerKbVote, signatureCache);
 
         Integer expectedResult = FeePerKbResponseCode.NEGATIVE_FEE_VOTED.getCode();
         assertEquals(expectedResult, actualResult);
@@ -80,10 +79,8 @@ class FeePerKbSupportImplTest {
 
     @Test
     void voteFeePerKbChange_excessiveFeePerKbValue_shouldReturnExcessiveFeeVotedResponseCode() {
-        Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
-        RskAddress sender = new RskAddress(feePerKbAuthorizedKey.getAddress());
-        when(tx.getSender(signatureCache)).thenReturn(sender);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
 
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.COIN, signatureCache);
 
@@ -93,10 +90,8 @@ class FeePerKbSupportImplTest {
 
     @Test
     void voteFeePerKbChange_unsuccessfulVote_shouldReturnUnsuccessfulFeeVotedResponseCode() {
-        Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
-        RskAddress sender = new RskAddress(feePerKbAuthorizedKey.getAddress());
-        when(tx.getSender(signatureCache)).thenReturn(sender);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
         ABICallElection feePerKbElection = mock(ABICallElection.class);
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
         when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
@@ -109,10 +104,8 @@ class FeePerKbSupportImplTest {
 
     @Test
     void voteFeePerKbChange_successfulFeePerKbVote_shouldReturnSuccessfulFeeVotedResponseCode() {
-        Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
-        RskAddress sender = new RskAddress(feePerKbAuthorizedKey.getAddress());
-        when(tx.getSender(signatureCache)).thenReturn(sender);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
         ABICallElection feePerKbElection = mock(ABICallElection.class);
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
         when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
@@ -128,10 +121,8 @@ class FeePerKbSupportImplTest {
     void voteFeePerKbChange_successfulFeePerKbChanged_shouldReturnSuccessfulFeeVotedResponseCode() {
         final String SET_FEE_PER_KB_ABI_FUNCTION = "setFeePerKb";
         final Coin feePerKb = Coin.valueOf(50_000L);
-        Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
-        RskAddress sender = new RskAddress(feePerKbAuthorizedKey.getAddress());
-        when(tx.getSender(signatureCache)).thenReturn(sender);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
         ABICallElection feePerKbElection = mock(ABICallElection.class);
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
         when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
@@ -172,5 +163,14 @@ class FeePerKbSupportImplTest {
         when(txFromUnauthorizedCaller.getSender(signatureCache)).thenReturn(unauthorizedCallerAddress);
 
         return txFromUnauthorizedCaller;
+    }
+
+    private Transaction getTransactionFromAuthorizedCaller(SignatureCache signatureCache) {
+        RskAddress authorizedCallerAddress = new RskAddress("a02db0ed94a5894bc6f9079bb9a2d93ada1917f3");
+
+        Transaction txFromAuthorizedCaller = mock(Transaction.class);
+        when(txFromAuthorizedCaller.getSender(signatureCache)).thenReturn(authorizedCallerAddress);
+
+        return txFromAuthorizedCaller;
     }
 }
