@@ -12,7 +12,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -278,7 +277,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
-    public void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) throws IOException {
+    public void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         saveNewFederationBtcUTXOs(networkParameters, activations);
         saveOldFederationBtcUTXOs();
         saveNewFederation(activations);
@@ -345,13 +344,14 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         return oldFederation.getFormatVersion();
     }
 
-    private void savePendingFederation(ActivationConfig.ForBlock activations) throws IOException {
+    private void savePendingFederation(ActivationConfig.ForBlock activations) {
         if (!shouldSavePendingFederation) {
             return;
         }
 
         byte[] serializedPendingFederation = serializePendingFederation(activations);
         bridgeStorageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedPendingFederation);
+
         if (!activations.isActive(RSKIP123)) {
             return;
         }

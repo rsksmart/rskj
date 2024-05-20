@@ -8,7 +8,6 @@ import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,5 +37,5 @@ public interface FederationStorageProvider {
     Optional<Script> getLastRetiredFederationP2SHScript(ActivationConfig.ForBlock activations);
     void setLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript);
 
-    void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) throws IOException;
+    void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations);
 }
