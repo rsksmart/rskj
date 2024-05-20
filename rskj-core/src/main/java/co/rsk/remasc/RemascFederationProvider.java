@@ -18,7 +18,7 @@
 package co.rsk.remasc;
 
 import co.rsk.core.RskAddress;
-import co.rsk.peg.FederationSupport;
+import co.rsk.peg.federation.FederationSupport;
 import co.rsk.peg.federation.FederationMember;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -40,7 +40,7 @@ public class RemascFederationProvider {
     }
 
     public int getFederationSize() {
-        return this.federationSupport.getFederationSize();
+        return this.federationSupport.getActiveFederationSize();
     }
 
     public RskAddress getFederatorAddress(int n) {
@@ -51,12 +51,12 @@ public class RemascFederationProvider {
     }
 
     private RskAddress getRskAddressFromBtcKey(int n) {
-        byte[] btcPublicKey = this.federationSupport.getFederatorBtcPublicKey(n);
+        byte[] btcPublicKey = this.federationSupport.getActiveFederatorBtcPublicKey(n);
         return getRskAddressFromKey(btcPublicKey);
     }
 
     private RskAddress getRskAddressFromRskKey(int n) {
-        byte[] rskPublicKey = this.federationSupport.getFederatorPublicKeyOfType(n, FederationMember.KeyType.RSK);
+        byte[] rskPublicKey = this.federationSupport.getActiveFederatorPublicKeyOfType(n, FederationMember.KeyType.RSK);
         return getRskAddressFromKey(rskPublicKey);
     }
 

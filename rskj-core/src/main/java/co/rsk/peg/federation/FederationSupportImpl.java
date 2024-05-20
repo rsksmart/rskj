@@ -40,9 +40,9 @@ public class FederationSupportImpl implements FederationSupport {
     private final Block rskExecutionBlock;
     private final ActivationConfig.ForBlock activations;
 
-    public FederationSupportImpl(FederationStorageProvider provider, FederationConstants constants, Block rskExecutionBlock, ActivationConfig.ForBlock activations) {
-        this.provider = provider;
+    public FederationSupportImpl(FederationConstants constants, FederationStorageProvider provider, Block rskExecutionBlock, ActivationConfig.ForBlock activations) {
         this.constants = constants;
+        this.provider = provider;
         this.rskExecutionBlock = rskExecutionBlock;
         this.activations = activations;
     }
@@ -303,8 +303,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Nullable
-    @Override
-    public PendingFederation getPendingFederation() {
+    private PendingFederation getPendingFederation() {
         return provider.getPendingFederation();
     }
 
