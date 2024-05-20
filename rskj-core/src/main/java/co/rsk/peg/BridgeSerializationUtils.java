@@ -20,7 +20,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
@@ -49,6 +48,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static co.rsk.peg.federation.FederationFormatVersion.*;
 
 /**
  * Created by mario on 20/04/17.
@@ -304,6 +305,38 @@ public class BridgeSerializationUtils {
             FederationMember::serialize
         );
     }
+    public static Federation deserializeFederationAccordingToVersion(
+        byte[] data,
+        int version,
+        FederationConstants federationConstants,
+        ActivationConfig.ForBlock activations
+    ) {
+        NetworkParameters networkParameters = federationConstants.getBtcParams();
+        if (version == STANDARD_MULTISIG_FEDERATION.getFormatVersion()) {
+            return BridgeSerializationUtils.deserializeStandardMultisigFederation(
+                data,
+                networkParameters
+            );
+        }
+        if (version == NON_STANDARD_ERP_FEDERATION.getFormatVersion()) {
+            return BridgeSerializationUtils.deserializeNonStandardErpFederation(
+                data,
+                federationConstants,
+                activations
+            );
+        }
+        if (version == P2SH_ERP_FEDERATION.getFormatVersion()) {
+            return BridgeSerializationUtils.deserializeP2shErpFederation(
+                data,
+                federationConstants
+            );
+        }
+        // To keep backwards compatibility
+        return BridgeSerializationUtils.deserializeStandardMultisigFederation(
+            data,
+            networkParameters
+        );
+    }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederation
     public static StandardMultisigFederation deserializeStandardMultisigFederation(
@@ -318,17 +351,16 @@ public class BridgeSerializationUtils {
     }
     public static ErpFederation deserializeNonStandardErpFederation(
         byte[] data,
-        BridgeConstants bridgeConstants,
+        FederationConstants federationConstants,
         ActivationConfig.ForBlock activations
     ) {
         Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
-            bridgeConstants.getBtcParams(),
+            federationConstants.getBtcParams(),
             FederationMember::deserialize
         );
 
         FederationArgs federationArgs = federation.getArgs();
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
         long activationDelay = federationConstants.getErpFedActivationDelay();
 
@@ -337,16 +369,15 @@ public class BridgeSerializationUtils {
 
     public static ErpFederation deserializeP2shErpFederation(
         byte[] data,
-        BridgeConstants bridgeConstants
+        FederationConstants federationConstants
     ) {
         Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
-            bridgeConstants.getBtcParams(),
+            federationConstants.getBtcParams(),
             FederationMember::deserialize
         );
 
         FederationArgs federationArgs = federation.getArgs();
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
         long activationDelay = federationConstants.getErpFedActivationDelay();
 
