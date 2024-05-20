@@ -212,9 +212,11 @@ public class Remasc {
 
     private Coin payToFederation(Constants constants, Block processingBlock, Coin syntheticReward) {
         BridgeConstants bridgeConstants = constants.getBridgeConstants();
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-
-        FederationSupport federationSupport = newFederationSupportInstance(bridgeStorageAccessor, bridgeConstants, processingBlock, activations);
+        FederationSupport federationSupport = newFederationSupportInstance(
+            bridgeConstants,
+            processingBlock,
+            activations
+        );
 
         RemascFederationProvider federationProvider = new RemascFederationProvider(activations, federationSupport);
         Coin federationReward = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
@@ -251,10 +253,21 @@ public class Remasc {
         return federationReward;
     }
 
-    private FederationSupport newFederationSupportInstance(StorageAccessor bridgeStorageAccessor, BridgeConstants bridgeConstants, Block rskExecutionBlock, ActivationConfig.ForBlock activations) {
+    private FederationSupport newFederationSupportInstance(
+        BridgeConstants bridgeConstants,
+        Block rskExecutionBlock,
+        ActivationConfig.ForBlock activations) {
+
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-        return new FederationSupportImpl(federationConstants, federationStorageProvider, rskExecutionBlock, activations);
+
+        return new FederationSupportImpl(
+            federationConstants,
+            federationStorageProvider,
+            rskExecutionBlock,
+            activations
+        );
     }
 
     /**
@@ -307,6 +320,4 @@ public class Remasc {
             provider.addToBurnBalance(lateInclusionPunishment);
         }
     }
-
 }
-
