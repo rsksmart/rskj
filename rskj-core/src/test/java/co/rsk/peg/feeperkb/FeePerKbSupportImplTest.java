@@ -78,14 +78,16 @@ class FeePerKbSupportImplTest {
     }
 
     @Test
-    void voteFeePerKbChange_excessiveFeePerKbValue_shouldReturnExcessiveFeeVotedResponseCode() {
+    void voteFeePerKbChange_aboveMaxFeePerKbValue_shouldReturnExcessiveFeeVotedResponseCode() {
         SignatureCache signatureCache = mock(SignatureCache.class);
         Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+        Coin maxFeePerKb = feePerKbConstants.getMaxFeePerKb();
+        Coin excessiveFeePerKbVote = maxFeePerKb.add(Coin.SATOSHI);
 
-        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, Coin.COIN, signatureCache);
+        Integer aboveMaxValueVotedResult = feePerKbSupport.voteFeePerKbChange(tx, excessiveFeePerKbVote, signatureCache);
 
         Integer expectedResult = FeePerKbResponseCode.EXCESSIVE_FEE_VOTED.getCode();
-        assertEquals(expectedResult, actualResult);
+        assertEquals(expectedResult, aboveMaxValueVotedResult);
     }
 
     @Test
