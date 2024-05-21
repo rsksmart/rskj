@@ -111,8 +111,8 @@ class BridgeEventLoggerTest {
     @Test
     void logPegoutTransactionCreated() {
         Sha256Hash btcTxHash = btcTxMock.getHash();
+        List<Coin> outpointValues = Arrays.asList(Coin.COIN, Coin.SATOSHI, Coin.FIFTY_COINS);
         assertThrows(UnsupportedOperationException.class,
-            () -> eventLogger.logPegoutTransactionCreated(btcTxHash,
-                Arrays.asList(Coin.COIN, Coin.SATOSHI, Coin.FIFTY_COINS)));
+            () -> eventLogger.logPegoutTransactionCreated(btcTxHash, outpointValues));
     }
 }
