@@ -18,7 +18,7 @@
 package co.rsk.net.handler;
 
 import co.rsk.core.Coin;
-import co.rsk.core.bc.ClaimTransactionInfoHolder;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
 import org.bouncycastle.util.BigIntegers;
@@ -62,13 +62,13 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorNotRemascTxValidator());
         validatorSteps.add(new TxValidatorGasLimitValidator());
         validatorSteps.add(new TxValidatorNonceRangeValidator(accountSlots));
-        validatorSteps.add(new TxValidatorAccountBalanceValidator());
+        validatorSteps.add(new TxValidatorAccountBalanceValidator(constants, signatureCache));
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig, signatureCache));
         validatorSteps.add(new TxValidatorMaximumGasPriceValidator(activationConfig));
     }
 
-    public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state, ClaimTransactionInfoHolder claimTransactionInfoHolder) {
+    public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state, RepositorySnapshot repositorySnapshot) {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
@@ -86,7 +86,7 @@ public class TxPendingValidator {
         }
 
         for (TxValidatorStep step : validatorSteps) {
-            TransactionValidationResult validationResult = step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0, claimTransactionInfoHolder);
+            TransactionValidationResult validationResult = step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0, repositorySnapshot);
             if (!validationResult.transactionIsValid()) {
                 logger.info("[tx={}] validation failed with error: {}", tx.getHash(), validationResult.getErrorMessage());
                 return validationResult;
