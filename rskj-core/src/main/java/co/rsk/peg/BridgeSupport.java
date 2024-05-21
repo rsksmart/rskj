@@ -1197,70 +1197,78 @@ public class BridgeSupport {
         long currentBlockNumber = rskExecutionBlock.getNumber();
         long nextPegoutCreationBlockNumber = getNextPegoutCreationBlockNumber();
 
-        if (currentBlockNumber >= nextPegoutCreationBlockNumber) {
-            List<ReleaseRequestQueue.Entry> pegoutEntries = pegoutRequests.getEntries();
-            Coin totalPegoutValue = pegoutEntries
-                .stream()
-                .map(ReleaseRequestQueue.Entry::getAmount)
-                .reduce(Coin.ZERO, Coin::add);
+        if (isCurrentBlockBelowNextPegoutCreationBlockNumber(currentBlockNumber, nextPegoutCreationBlockNumber)) {
+            return;
+        }
+        
+        List<ReleaseRequestQueue.Entry> pegoutEntries = pegoutRequests.getEntries();
+        Coin totalPegoutValue = pegoutEntries
+            .stream()
+            .map(ReleaseRequestQueue.Entry::getAmount)
+            .reduce(Coin.ZERO, Coin::add);
 
-            if (wallet.getBalance().isLessThan(totalPegoutValue)) {
-                logger.warn("[processPegoutsInBatch] wallet balance {} is less than the totalPegoutValue {}", wallet.getBalance(), totalPegoutValue);
+        if (wallet.getBalance().isLessThan(totalPegoutValue)) {
+            logger.warn("[processPegoutsInBatch] wallet balance {} is less than the totalPegoutValue {}", wallet.getBalance(), totalPegoutValue);
+            return;
+        }
+
+        if (pegoutEntries.isEmpty()) {
+            logger.warn("[processPegoutsInBatch] No pegout requests to process");
+        } else {
+            logger.info("[processPegoutsInBatch] going to create a batched pegout transaction for {} requests, total amount {}", pegoutEntries.size(), totalPegoutValue);
+            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
+
+            while (pegoutEntries.size() > 1 && result.getResponseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
+                logger.info("[processPegoutsInBatch] Max size exceeded, going to divide {} requests in half", pegoutEntries.size());
+                int firstHalfSize = pegoutEntries.size() / 2;
+                pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
+                result = txBuilder.buildBatchedPegouts(pegoutEntries);
+            }
+
+            if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+                logger.warn(
+                    "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
+                    pegoutRequests.getEntries().size(),
+                    totalPegoutValue,
+                    result.getResponseCode());
                 return;
             }
 
-            if (!pegoutEntries.isEmpty()) {
-                logger.info("[processPegoutsInBatch] going to create a batched pegout transaction for {} requests, total amount {}", pegoutEntries.size(), totalPegoutValue);
-                ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
+            logger.info("[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}", result.getBtcTx().getHash(), result.getResponseCode());
 
-                while (pegoutEntries.size() > 1 && result.getResponseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
-                    logger.info("[processPegoutsInBatch] Max size exceeded, going to divide {} requests in half", pegoutEntries.size());
-                    int firstHalfSize = pegoutEntries.size() / 2;
-                    pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
-                    result = txBuilder.buildBatchedPegouts(pegoutEntries);
-                }
+            BtcTransaction batchPegoutTransaction = result.getBtcTx();
+            addToPegoutsWaitingForConfirmations(batchPegoutTransaction, pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
+            savePegoutTxSigHash(batchPegoutTransaction);
 
-                if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
-                    logger.warn(
-                        "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
-                        pegoutRequests.getEntries().size(),
-                        totalPegoutValue,
-                        result.getResponseCode());
-                    return;
-                }
+            // Remove batched requests from the queue after successfully batching pegouts
+            pegoutRequests.removeEntries(pegoutEntries);
 
-                logger.info("[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}", result.getBtcTx().getHash(), result.getResponseCode());
+            // Mark UTXOs as spent
+            List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
+            logger.debug("[processPegoutsInBatch] used {} UTXOs for this pegout", selectedUTXOs.size());
+            availableUTXOs.removeAll(selectedUTXOs);
 
-                BtcTransaction batchPegoutTransaction = result.getBtcTx();
-                addToPegoutsWaitingForConfirmations(batchPegoutTransaction, pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
-                savePegoutTxSigHash(batchPegoutTransaction);
+            eventLogger.logBatchPegoutCreated(batchPegoutTransaction.getHash(),
+                pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
 
-                // Remove batched requests from the queue after successfully batching pegouts
-                pegoutRequests.removeEntries(pegoutEntries);
-
-                // Mark UTXOs as spent
-                List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
-                logger.debug("[processPegoutsInBatch] used {} UTXOs for this pegout", selectedUTXOs.size());
-                availableUTXOs.removeAll(selectedUTXOs);
-
-                eventLogger.logBatchPegoutCreated(batchPegoutTransaction.getHash(),
-                    pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
-
-                if (activations.isActive(RSKIP428)) {
-                    List<Coin> outpointValues = extractOutpointValues(batchPegoutTransaction);
-                    eventLogger.logPegoutTransactionCreated(batchPegoutTransaction.getHash(), outpointValues);
-                }
-
-                adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, totalPegoutValue, wallet);
+            if (activations.isActive(RSKIP428)) {
+                List<Coin> outpointValues = extractOutpointValues(batchPegoutTransaction);
+                eventLogger.logPegoutTransactionCreated(batchPegoutTransaction.getHash(), outpointValues);
             }
 
-            // update next Pegout height even if there were no request in queue
-            if (pegoutRequests.getEntries().isEmpty()) {
-                long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
-                provider.setNextPegoutHeight(nextPegoutHeight);
-                logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
-            }
+            adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, totalPegoutValue, wallet);
         }
+
+        // update next Pegout height even if there were no request in queue
+        if (pegoutRequests.getEntries().isEmpty()) {
+            long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
+            provider.setNextPegoutHeight(nextPegoutHeight);
+            logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
+        }
+    }
+
+    private static boolean isCurrentBlockBelowNextPegoutCreationBlockNumber(long currentBlockNumber, long nextPegoutCreationBlockNumber) {
+        return currentBlockNumber < nextPegoutCreationBlockNumber;
     }
 
     private void savePegoutTxSigHash(BtcTransaction pegoutTx) {
