@@ -19,10 +19,12 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
-import co.rsk.core.bc.ClaimTransactionInfoHolder;
+import co.rsk.core.bc.ClaimTransactionValidator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
-import co.rsk.util.EthSwapUtil;
+import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 
 import javax.annotation.Nullable;
@@ -32,8 +34,17 @@ import java.math.BigInteger;
  * Checks if an account can pay the transaction execution cost
  */
 public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
+
+    private ClaimTransactionValidator claimTransactionValidator;
+
+    public TxValidatorAccountBalanceValidator(
+            Constants constants,
+            SignatureCache signatureCache) {
+        this.claimTransactionValidator = new ClaimTransactionValidator(signatureCache, constants);
+    }
+
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, ClaimTransactionInfoHolder claimTransactionInfoHolder) {
+    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, RepositorySnapshot repositorySnapshot) {
         if (isFreeTx) {
             return TransactionValidationResult.ok();
         }
@@ -45,7 +56,7 @@ public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
         Coin maximumPrice = tx.getGasPrice().multiply(txGasLimit);
         if (state.getBalance().compareTo(maximumPrice) >= 0
-                || EthSwapUtil.isClaimTxAndValid(claimTransactionInfoHolder)) {
+                || claimTransactionValidator.isClaimTxAndValid(tx, repositorySnapshot)) {
             return TransactionValidationResult.ok();
         }
 

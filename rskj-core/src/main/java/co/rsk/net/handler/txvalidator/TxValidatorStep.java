@@ -19,7 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
-import co.rsk.core.bc.ClaimTransactionInfoHolder;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -33,7 +33,7 @@ import java.math.BigInteger;
  */
 public interface TxValidatorStep {
 
-    TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, ClaimTransactionInfoHolder claimTransactionInfoHolder);
+    TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, RepositorySnapshot repositorySnapshot);
 
     TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx);
 }

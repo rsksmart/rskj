@@ -19,20 +19,34 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
-import co.rsk.util.EthSwapUtil;
+import co.rsk.core.RskAddress;
+import co.rsk.db.RepositorySnapshot;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
 
 class TxValidatorAccountBalanceValidatorTest {
+
+    private Constants constants;
+    private SignatureCache signatureCache;
+
+    @BeforeEach
+    void setUp() {
+        constants = Constants.regtest();
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+    }
 
     @Test
     void validAccountBalance() {
@@ -49,7 +63,7 @@ class TxValidatorAccountBalanceValidatorTest {
         Mockito.when(tx3.getGasPrice()).thenReturn(Coin.valueOf(5000));
         Mockito.when(as.getBalance()).thenReturn(Coin.valueOf(10000));
 
-        TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
+        TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator(constants, signatureCache);
 
         Assertions.assertTrue(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
         Assertions.assertTrue(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
@@ -61,22 +75,21 @@ class TxValidatorAccountBalanceValidatorTest {
         Transaction tx1 = Mockito.mock(Transaction.class);
         Transaction tx2 = Mockito.mock(Transaction.class);
         AccountState as = Mockito.mock(AccountState.class);
+        RepositorySnapshot rs = Mockito.mock(RepositorySnapshot.class);
+
 
         Mockito.when(tx1.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(1));
         Mockito.when(tx2.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(2));
         Mockito.when(tx1.getGasPrice()).thenReturn(Coin.valueOf(20));
         Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(10));
         Mockito.when(as.getBalance()).thenReturn(Coin.valueOf(19));
+        Mockito.when(rs.getStorageValue(Mockito.any(RskAddress.class), Mockito.any(DataWord.class))).thenReturn(null);
+        Mockito.when(rs.getBalance(Mockito.any(RskAddress.class))).thenReturn(Coin.valueOf(19));
 
-        try (MockedStatic<EthSwapUtil> ethSwapUtilMocked = Mockito.mockStatic(EthSwapUtil.class)){
-            ethSwapUtilMocked.when(() -> EthSwapUtil.isClaimTx(Mockito.any(Transaction.class), Mockito.any(Constants.class)))
-                    .thenReturn(false);
+        TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator(constants, signatureCache);
 
-            TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
-
-            Assertions.assertFalse(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
-            Assertions.assertFalse(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
-        }
+        Assertions.assertFalse(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false, rs).transactionIsValid());
+        Assertions.assertFalse(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false, rs).transactionIsValid());
     }
 
     @Test
@@ -94,7 +107,7 @@ class TxValidatorAccountBalanceValidatorTest {
 
         tx.sign(new ECKey().getPrivKeyBytes());
 
-        TxValidatorAccountBalanceValidator tv = new TxValidatorAccountBalanceValidator();
+        TxValidatorAccountBalanceValidator tv = new TxValidatorAccountBalanceValidator(constants, signatureCache);
 
         Assertions.assertTrue(tv.validate(tx, new AccountState(), BigInteger.ONE, Coin.valueOf(1L), Long.MAX_VALUE, true, null).transactionIsValid());
     }

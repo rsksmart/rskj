@@ -19,15 +19,17 @@
 
 package co.rsk;
 
+import co.rsk.core.bc.ClaimTransactionValidator;
 import co.rsk.util.CommandLineFixture;
-import co.rsk.util.EthSwapUtil;
 import co.rsk.util.HexUtils;
 import co.rsk.util.OkHttpClientTestFixture;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.Response;
 import org.ethereum.config.Constants;
+import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Assertions;
@@ -44,7 +46,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-public class EtherSwapTest {
+public class ClaimTransactionTest {
     private static final int LOCAL_PORT = 4444;
 
     private static final CallTransaction.Function CALL_LOCK_FUNCTION = CallTransaction.Function.fromSignature(
@@ -68,6 +70,8 @@ public class EtherSwapTest {
     private String strBaseArgs;
     private String baseJavaCmd;
 
+    private ClaimTransactionValidator claimTransactionValidator;
+
     @BeforeEach
     public void setup() throws IOException {
         String projectPath = System.getProperty("user.dir");
@@ -85,6 +89,8 @@ public class EtherSwapTest {
         baseArgs = new String[]{"--regtest"};
         strBaseArgs = String.join(" ", baseArgs);
         baseJavaCmd = String.format("java %s", String.format("-Drsk.conf.file=%s", rskConfFile));
+
+        claimTransactionValidator = new ClaimTransactionValidator( new BlockTxSignatureCache(new ReceivedTxSignatureCache()), Constants.regtest());
     }
 
     private Response lockTxRequest(String refundAddress, byte[] lockData, BigInteger amount) throws IOException {
@@ -155,7 +161,7 @@ public class EtherSwapTest {
         String refundAddress = "0x7986b3df570230288501eea3d890bd66948c9b79";
         String claimAddress = "0x8486054b907b0d79569723c761b7113736d32c5a";
         byte[] preimage = "preimage".getBytes(StandardCharsets.UTF_8);
-        byte[] preimageHash = HashUtil.sha256(EthSwapUtil.encodePacked(preimage));
+        byte[] preimageHash = HashUtil.sha256(claimTransactionValidator.encodePacked(preimage));
         BigInteger amount = BigInteger.valueOf(5000);
 
         byte[] lockData = CALL_LOCK_FUNCTION.encode(
@@ -207,7 +213,7 @@ public class EtherSwapTest {
         String refundAddress = "0x7986b3df570230288501eea3d890bd66948c9b79";
         String claimAddress = "0x8486054b907b0d79569723c761b7113736d32c5a";
         byte[] preimage = "preimage".getBytes(StandardCharsets.UTF_8);
-        byte[] preimageHash = HashUtil.sha256(EthSwapUtil.encodePacked(preimage));
+        byte[] preimageHash = HashUtil.sha256(claimTransactionValidator.encodePacked(preimage));
         BigInteger amount = BigInteger.valueOf(500000);
 
         byte[] lockData = CALL_LOCK_FUNCTION.encode(
@@ -262,11 +268,11 @@ public class EtherSwapTest {
     }
 
     @Test
-    void whenClaimTxIsSentTwice_secondClaimTxShoulNotBeIncludedInMempool() throws Exception {
+    void whenClaimTxIsSentTwice_secondClaimTxShouldNotBeIncludedInMempool() throws Exception {
         String refundAddress = "0x7986b3df570230288501eea3d890bd66948c9b79";
         String claimAddress = "0x8486054b907b0d79569723c761b7113736d32c5a";
         byte[] preimage = "preimage".getBytes(StandardCharsets.UTF_8);
-        byte[] preimageHash = HashUtil.sha256(EthSwapUtil.encodePacked(preimage));
+        byte[] preimageHash = HashUtil.sha256(claimTransactionValidator.encodePacked(preimage));
         BigInteger amount = BigInteger.valueOf(500000);
 
         byte[] lockData = CALL_LOCK_FUNCTION.encode(

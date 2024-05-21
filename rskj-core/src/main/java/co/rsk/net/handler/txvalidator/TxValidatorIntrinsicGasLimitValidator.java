@@ -18,7 +18,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
-import co.rsk.core.bc.ClaimTransactionInfoHolder;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -47,7 +47,7 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
     }
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, ClaimTransactionInfoHolder claimTransactionInfoHolder) {
+    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, RepositorySnapshot repositorySnapshot) {
         return validate(tx, state, gasLimit, minimumGasPrice, bestBlockNumber, isFreeTx);
     }
 
