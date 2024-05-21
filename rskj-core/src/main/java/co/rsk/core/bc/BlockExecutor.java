@@ -26,7 +26,6 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.util.EthSwapUtil;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -66,6 +65,7 @@ public class BlockExecutor {
 
     private final Constants constants;
     private final SignatureCache signatureCache;
+    private final ClaimTransactionValidator claimTransactionValidator;
 
     public BlockExecutor(
             ActivationConfig activationConfig,
@@ -78,6 +78,7 @@ public class BlockExecutor {
         this.activationConfig = activationConfig;
         this.constants = constants;
         this.signatureCache = signatureCache;
+        this.claimTransactionValidator = new ClaimTransactionValidator(signatureCache, constants);
     }
 
     /**
@@ -291,8 +292,8 @@ public class BlockExecutor {
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
-            if (EthSwapUtil.isClaimTx(tx, constants)
-                    && !EthSwapUtil.hasLockedFunds(tx,signatureCache, track)) {
+            if (claimTransactionValidator.isClaimTx(tx)
+                    && !claimTransactionValidator.hasLockedFunds(tx, track)) {
                 logger.warn("block: [{}] discarded claim tx: [{}], because the funds it tries to claim no longer exist in contract",
                         block.getNumber(),
                         tx.getHash());

@@ -26,7 +26,6 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.net.handler.quota.TxQuotaChecker;
-import co.rsk.util.EthSwapUtil;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -81,6 +80,8 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final GasPriceTracker gasPriceTracker;
 
+    private final ClaimTransactionValidator claimTxValidator;
+
     @java.lang.SuppressWarnings("squid:S107")
     public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker) {
         this.config = config;
@@ -111,6 +112,8 @@ public class TransactionPoolImpl implements TransactionPool {
         if (this.quotaChecker != null && this.config.isAccountTxRateLimitEnabled() && this.config.accountTxRateLimitCleanerPeriod() > 0) {
             this.accountTxRateLimitCleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxQuotaCleanerTimer"));
         }
+
+        this.claimTxValidator = new ClaimTransactionValidator(this.signatureCache, this.config.getNetworkConstants());
     }
 
     @Override
@@ -461,15 +464,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
-        ClaimTransactionInfoHolder claimTransactionInfoHolder = new ClaimTransactionInfoHolder(
-                tx,
-                currentRepository,
-                signatureCache,
-                config.getNetworkConstants(),
-                bestBlock == null ? null : config.getActivationConfig().forBlock(bestBlock.getNumber())
-        );
-
-        return validator.isValid(tx, bestBlock, currentRepository.getAccountState(tx.getSender(signatureCache)), claimTransactionInfoHolder);
+        return validator.isValid(tx, bestBlock, currentRepository.getAccountState(tx.getSender(signatureCache)), currentRepository);
     }
 
     /**
@@ -491,16 +486,8 @@ public class TransactionPoolImpl implements TransactionPool {
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
 
-        ClaimTransactionInfoHolder claimTransactionInfoHolder = new ClaimTransactionInfoHolder(
-                newTx,
-                currentRepository,
-                signatureCache,
-                config.getNetworkConstants(),
-                bestBlock == null ? null : config.getActivationConfig().forBlock(bestBlock.getNumber())
-        );
-
         return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0
-                || EthSwapUtil.isClaimTxAndSenderCanPayAlongPendingTx(claimTransactionInfoHolder, transactions);
+                || claimTxValidator.canPayPendingAndNewClaimTx(newTx, currentRepository, transactions);
     }
 
     private Coin getTxBaseCost(Transaction tx) {
