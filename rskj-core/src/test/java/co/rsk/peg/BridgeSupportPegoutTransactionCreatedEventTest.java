@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.extractOutpointValues;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -14,7 +15,6 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.wallet.Wallet;
@@ -77,11 +77,6 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         );
     }
 
-    private List<Coin> extractOutpointValues(BtcTransaction generatedTransaction) {
-        return generatedTransaction.getInputs().stream().map(TransactionInput::getValue).collect(
-            Collectors.toList());
-    }
-
     @ParameterizedTest
     @MethodSource("pegoutTransactionCreatedEventArgsProvider")
     void test_pegoutTransactionCreatedEvent_when_pegout_batch_is_created(ActivationConfig.ForBlock activations) throws IOException {
@@ -129,10 +124,10 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
         List<Keccak256> pegoutRequestRskTxHashes = pegoutRequests.stream().map(Entry::getRskTxHash).collect(
             Collectors.toList());
-        Coin totalTransactionInputAmount = pegoutRequests.stream().map(Entry::getAmount).reduce(Coin.ZERO, Coin::add);
+        Coin totalTransactionAmount = pegoutRequests.stream().map(Entry::getAmount).reduce(Coin.ZERO, Coin::add);
 
         verify(eventLogger, times(1)).logBatchPegoutCreated(btcTxHash, pegoutRequestRskTxHashes);
-        verify(eventLogger, times(1)).logReleaseBtcRequested(pegoutCreationRskTxHash.getBytes(), pegoutBatchTransaction, totalTransactionInputAmount);
+        verify(eventLogger, times(1)).logReleaseBtcRequested(pegoutCreationRskTxHash.getBytes(), pegoutBatchTransaction, totalTransactionAmount);
 
         if (activations.isActive(ConsensusRule.RSKIP428)){
             verify(eventLogger, times(1)).logPegoutTransactionCreated(btcTxHash, outpointValues);

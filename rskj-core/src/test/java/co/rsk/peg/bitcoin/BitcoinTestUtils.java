@@ -2,6 +2,7 @@ package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
@@ -77,5 +78,10 @@ public class BitcoinTestUtils {
         return Arrays.stream(values)
             .mapToObj(Coin::valueOf)
             .collect(Collectors.toList());
+    }
+
+    public static List<Coin> extractOutpointValues(BtcTransaction btcTransaction) {
+        return btcTransaction.getInputs().stream().map(TransactionInput::getValue).collect(
+            Collectors.toList());
     }
 }

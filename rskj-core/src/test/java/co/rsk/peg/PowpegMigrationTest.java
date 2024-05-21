@@ -10,6 +10,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
@@ -473,9 +475,19 @@ class PowpegMigrationTest {
 
         // Assert sigHashes were added for each new migration tx created
         bridgeSupport.save();
-        bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().stream()
-            .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
-            .forEach(pegoutTx -> verifyPegoutTxSigHashIndex(activations, bridgeStorageProvider, pegoutTx));
+        List<BtcTransaction> pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
+            .getEntries().stream()
+            .map(Entry::getBtcTransaction).collect(Collectors.toList());
+
+        pegoutsTxs.stream().peek(
+            pegoutTx -> verifyPegoutTxSigHashIndex(activations, bridgeStorageProvider, pegoutTx));
+
+        if (activations.isActive(ConsensusRule.RSKIP428)) {
+            pegoutsTxs.stream()
+                .peek(pegoutTx -> verifyPegoutTransactionCreatedEvent(bridgeEventLogger, pegoutTx));
+        } else {
+            verify(bridgeEventLogger, never()).logPegoutTransactionCreated(any(), any());
+        }
 
         verifyPegouts(bridgeStorageProvider);
 
@@ -605,6 +617,10 @@ class PowpegMigrationTest {
                 assertEquals(lastRetiredFederationP2SHScript, getFederationDefaultP2SHScript(originalPowpeg));
             }
         }
+    }
+
+    private void verifyPegoutTransactionCreatedEvent(BridgeEventLogger bridgeEventLogger, BtcTransaction pegoutTx) {
+        verify(bridgeEventLogger, times(1)).logPegoutTransactionCreated(pegoutTx.getHash(), BitcoinTestUtils.extractOutpointValues(pegoutTx));
     }
 
     private void verifyPegoutTxSigHashIndex(ActivationConfig.ForBlock activations, BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTx) {
@@ -762,6 +778,12 @@ class PowpegMigrationTest {
         verifyPegouts(bridgeStorageProvider);
         // Assert sigHash was added
         verifyPegoutTxSigHashIndex(activations, bridgeStorageProvider, lastPegout.getBtcTransaction());
+
+        if (activations.isActive(ConsensusRule.RSKIP428)) {
+            verifyPegoutTransactionCreatedEvent(bridgeEventLogger, lastPegout.getBtcTransaction());
+        } else {
+            verify(bridgeEventLogger, never()).logPegoutTransactionCreated(any(), any());
+        }
 
         // Confirm the peg-outs
         blockNumber = blockNumber + bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
@@ -1551,6 +1573,54 @@ class PowpegMigrationTest {
     void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg_post_RSKIP_379_pegout_tx_index() throws Exception {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest
             .arrowhead600()
+            .forBlock(0);
+
+        Address originalPowpegAddress = Address.fromBase58(
+            bridgeConstants.getBtcParams(),
+            "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
+        );
+        List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
+
+        List<Triple<BtcECKey, ECKey, ECKey>> newPowPegKeys = new ArrayList<>();
+        newPowPegKeys.add(Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
+            ECKey.fromPublicOnly(Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2")),
+            ECKey.fromPublicOnly(Hex.decode("02be1c54e8582e744d0d5d6a9b8e4a6d810029bcefc30e39b54688c4f1b718c0ee"))
+        ));
+        newPowPegKeys.add(Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("0231a395e332dde8688800a0025cccc5771ea1aa874a633b8ab6e5c89d300c7c36")),
+            ECKey.fromPublicOnly(Hex.decode("02e3f03aa985357dc356c2a763b44310b22be3b960303a67cde948fcfba97f5309")),
+            ECKey.fromPublicOnly(Hex.decode("029963d972f8a4ccac4bad60ed8b20ec83f6a15ca7076e057cccb4a34eed1a14d0"))
+        ));
+        newPowPegKeys.add(Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
+            ECKey.fromPublicOnly(Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
+            ECKey.fromPublicOnly(Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
+        ));
+
+        Address newPowPegAddress = Address.fromBase58(
+            bridgeConstants.getBtcParams(),
+            "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
+        );
+
+        testChangePowpeg(
+            FederationType.p2shErp,
+            getMainnetPowpegKeys(),
+            originalPowpegAddress,
+            utxos,
+            FederationType.p2shErp,
+            newPowPegKeys,
+            newPowPegAddress,
+            bridgeConstants,
+            activations,
+            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations)
+        );
+    }
+
+    @Test
+    void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg_post_RSKIP428_pegout_transaction_created_event() throws Exception {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest
+            .lovell700()
             .forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(
