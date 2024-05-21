@@ -2,6 +2,7 @@ package co.rsk.net;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.messages.*;
+import co.rsk.net.sync.BlockConnectorHelper;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SnapSyncState;
 import co.rsk.trie.TrieDTO;
@@ -9,6 +10,8 @@ import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
@@ -49,12 +52,11 @@ public class SnapshotProcessor {
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
     private SnapSyncState snapSyncState;
-    private List<TrieDTO> allNodes;
+    private final List<TrieDTO> allNodes;
 
     private long remoteTrieSize;
     private byte[] remoteRootHash;
-    private List<Block> blocks;
-    private List<BlockDifficulty> difficulties;
+    private final List<Pair<Block,BlockDifficulty>> blocks;
     private Block lastBlock;
     private BlockDifficulty lastBlockDifficulty;
 
@@ -87,7 +89,6 @@ public class SnapshotProcessor {
         this.allNodes = Lists.newArrayList();
         this.blockStore = blockStore;
         this.blocks = Lists.newArrayList();
-        this.difficulties = Lists.newArrayList();
         this.transactionPool = transactionPool;
         this.parallel = isParallelEnabled;
         this.syncing = false;
@@ -162,9 +163,10 @@ public class SnapshotProcessor {
         this.lastBlockDifficulty = lastBlock.getCumulativeDifficulty();
         this.remoteRootHash = this.lastBlock.getStateRoot();
         this.remoteTrieSize = responseMessage.getTrieSize();
-        this.blocks.addAll(blocksFromResponse);
-        this.difficulties.addAll(difficultiesFromResponse);
-        logger.debug("CLIENT - Processing snapshot status response - blockNumber: {} rootHash: {} triesize: {}", lastBlock.getNumber(), remoteRootHash, remoteTrieSize);
+        for (int i = 0; i < blocksFromResponse.size(); i++) {
+            this.blocks.add(new ImmutablePair<>(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
+        }
+        logger.debug("CLIENT - Processing snapshot status response - last blockNumber: {} rootHash: {} triesize: {}", lastBlock.getNumber(), remoteRootHash, remoteTrieSize);
         requestBlocksChunk(sender, blocksFromResponse.get(0).getNumber());
         generateChunkRequestTasks();
         startRequestingChunks();
@@ -195,8 +197,9 @@ public class SnapshotProcessor {
         logger.debug("CLIENT - Processing snap blocks response");
         List<Block> blocksFromResponse = snapBlocksResponseMessage.getBlocks();
         List<BlockDifficulty> difficultiesFromResponse = snapBlocksResponseMessage.getDifficulties();
-        this.blocks.addAll(blocksFromResponse);
-        this.difficulties.addAll(difficultiesFromResponse);
+        for (int i = 0; i < blocksFromResponse.size(); i++) {
+            this.blocks.add(new ImmutablePair<>(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
+        }
         long nextChunk = blocksFromResponse.get(0).getNumber();
         if (nextChunk > this.lastBlock.getNumber() - BLOCKS_REQUIRED) {
             requestBlocksChunk(sender, nextChunk);
@@ -371,9 +374,8 @@ public class SnapshotProcessor {
 
         logger.debug("CLIENT - Saving previous blocks...");
         this.blockchain.removeBlocksByNumber(0);
-        for (int i = 0; i < this.blocks.size(); i++) {
-            this.blockStore.saveBlock(this.blocks.get(i), this.difficulties.get(i), true);
-        }
+        BlockConnectorHelper blockConnector = new BlockConnectorHelper(this.blockStore, this.blocks);
+        blockConnector.startConnecting();
         logger.debug("CLIENT - Setting last block as best block...");
         this.blockchain.setStatus(this.lastBlock, this.lastBlockDifficulty);
         this.transactionPool.setBestBlock(this.lastBlock);
