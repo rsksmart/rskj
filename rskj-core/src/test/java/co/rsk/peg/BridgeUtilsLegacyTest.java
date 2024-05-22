@@ -32,7 +32,7 @@ class BridgeUtilsLegacyTest {
     @BeforeEach
     void setup() {
         activations = mock(ActivationConfig.ForBlock.class);
-        bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+        bridgeConstantsRegtest = new BridgeRegTestConstants();
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
     }
 

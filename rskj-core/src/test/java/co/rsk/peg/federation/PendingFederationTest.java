@@ -24,6 +24,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.resources.TestConstants;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -412,7 +413,7 @@ class PendingFederationTest {
         Federation builtFederation = otherPendingFederation.buildFederation(
             creationTime,
             0L,
-            bridgeConstants,
+            bridgeConstants.getFederationConstants(),
             activations
         );
 
@@ -421,8 +422,9 @@ class PendingFederationTest {
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
 
-        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
-        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
 
         if (expectedFederationShouldBeStandardMultisig(isRskip201Active)) {
             expectedFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
