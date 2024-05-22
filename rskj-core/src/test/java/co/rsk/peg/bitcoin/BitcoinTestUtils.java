@@ -2,6 +2,7 @@ package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
@@ -70,5 +71,11 @@ public class BitcoinTestUtils {
             }
         }
         return signatures;
+    }
+
+    public static List<Coin> coinListOf(long ... values) {
+        return Arrays.stream(values)
+            .mapToObj(Coin::valueOf)
+            .collect(Collectors.toList());
     }
 }
