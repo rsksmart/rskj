@@ -488,7 +488,9 @@ public class TransactionPoolImpl implements TransactionPool {
 
         if(costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0) {
             return true;
-        } if(claimTxValidator.isFeatureActive(config.getActivationConfig().forBlock(bestBlock.getNumber()))) {
+        }
+
+        if(claimTxValidator.isFeatureActive(config.getActivationConfig().forBlock(bestBlock.getNumber()))) {
             return claimTxValidator.canPayPendingAndNewClaimTx(newTx, currentRepository, transactions);
         }
 

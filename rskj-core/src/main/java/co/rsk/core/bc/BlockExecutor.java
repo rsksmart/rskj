@@ -63,8 +63,6 @@ public class BlockExecutor {
     private final Map<Keccak256, ProgramResult> transactionResults = new HashMap<>();
     private boolean registerProgramResults;
 
-    private final Constants constants;
-    private final SignatureCache signatureCache;
     private final ClaimTransactionValidator claimTransactionValidator;
 
     public BlockExecutor(
@@ -76,8 +74,6 @@ public class BlockExecutor {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.activationConfig = activationConfig;
-        this.constants = constants;
-        this.signatureCache = signatureCache;
         this.claimTransactionValidator = new ClaimTransactionValidator(signatureCache, constants);
     }
 
