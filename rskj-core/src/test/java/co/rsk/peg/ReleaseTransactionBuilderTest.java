@@ -77,10 +77,10 @@ class ReleaseTransactionBuilderTest {
         wallet = mock(Wallet.class);
         changeAddress = mockAddress(1000);
         activations = mock(ActivationConfig.ForBlock.class);
-        bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+        bridgeRegTestConstants = new BridgeRegTestConstants();
         networkParameters = bridgeRegTestConstants.getBtcParams();
         btcContext = new Context(networkParameters);
-        federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
         builder = new ReleaseTransactionBuilder(
             networkParameters,
             wallet,
@@ -183,8 +183,8 @@ class ReleaseTransactionBuilderTest {
         FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 0, bridgeConstants.getBtcParams());
 
         ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs,
-            bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay(), activations);
+            bridgeConstants.getFederationConstants().getErpFedPubKeysList(),
+            bridgeConstants.getFederationConstants().getErpFedActivationDelay(), activations);
 
         List<UTXO> utxos = Arrays.asList(
             new UTXO(

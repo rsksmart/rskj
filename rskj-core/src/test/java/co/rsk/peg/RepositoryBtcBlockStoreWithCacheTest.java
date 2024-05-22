@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
 
 class RepositoryBtcBlockStoreWithCacheTest {
 
-    private final BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+    private final BridgeConstants bridgeConstants = new BridgeRegTestConstants();
     private final NetworkParameters networkParameters = bridgeConstants.getBtcParams();
 
     @Test

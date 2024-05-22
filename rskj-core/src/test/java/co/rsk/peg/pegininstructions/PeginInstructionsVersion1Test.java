@@ -5,7 +5,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.PegTestUtils;
 import java.util.Arrays;
@@ -14,7 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class PeginInstructionsVersion1Test {
-    private final NetworkParameters params = BridgeRegTestConstants.getInstance().getBtcParams();
+    private final NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
     @Test
     void validateDataLength_invalidLengthTooLarge() {

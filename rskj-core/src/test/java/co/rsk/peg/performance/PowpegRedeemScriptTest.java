@@ -27,7 +27,7 @@ class PowpegRedeemScriptTest extends BridgePerformanceTestCase {
     void getActivePowpegRedeemScriptTest() throws VMException {
         ExecutionStats stats = new ExecutionStats("getActivePowpegRedeemScript");
         ABIEncoder abiEncoder = (int executionIndex) -> BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode();
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
         Script federationRedeemScript= genesisFederation.getRedeemScript();
         byte[] federationRedeemScriptProgram = federationRedeemScript.getProgram();
 

@@ -87,7 +87,7 @@ class AddSignatureTest extends BridgePerformanceTestCase {
     }
 
     private void addSignature_fullySigned(int times, ExecutionStats stats) throws VMException {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
         int numberOfSignaturesRequired = genesisFederation.getNumberOfSignaturesRequired();
         executeAndAverage(
                 "addSignature-fullySigned",
@@ -115,7 +115,7 @@ class AddSignatureTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             releaseTx = new BtcTransaction(networkParameters);
 
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
 
             // Receiver and amounts
             BtcECKey to = new BtcECKey();

@@ -55,7 +55,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
     @BeforeAll
      static void setupB() {
-        bridgeConstants = BridgeRegTestConstants.getInstance();
+        bridgeConstants = new BridgeRegTestConstants();
         networkParameters = bridgeConstants.getBtcParams();
         btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
     }
@@ -226,7 +226,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 storageProvider = new BridgeStorageProvider(
                         repository,
                         PrecompiledContracts.BRIDGE_ADDR,
-                        bridgeConstants,
+                        bridgeConstants.getBtcParams(),
                         activationConfig.forBlock((long) executionIndex)
                 );
                 BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(

@@ -77,8 +77,8 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Script activePowpegRedeemScript = FederationTestUtils.getGenesisFederation(
-            bridgeMainNetConstants).getRedeemScript();
-        when(bridgeSupportMock.getActivePowpegRedeemScript()).thenReturn(
+            bridgeMainNetConstants.getFederationConstants()).getRedeemScript();
+        when(bridgeSupportMock.getActiveFederationRedeemScript()).thenReturn(
             Optional.of(activePowpegRedeemScript)
         );
 
@@ -764,8 +764,7 @@ class BridgeTest {
     void receiveHeaders_after_RSKIP200_notFederation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(
-            bridgeMainNetConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants.getFederationConstants());
 
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(genesisFederation);
@@ -1527,7 +1526,7 @@ class BridgeTest {
 
         Address federationAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getFederationAddress()).thenReturn(federationAddress);
+        when(bridgeSupportMock.getActiveFederationAddress()).thenReturn(federationAddress);
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)
             .activationConfig(activationConfig)
@@ -1544,7 +1543,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationAddress();
+            verify(bridgeSupportMock, times(1)).getActiveFederationAddress();
         }
     }
 
@@ -1571,7 +1570,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationCreationBlockNumber();
+            verify(bridgeSupportMock, times(1)).getActiveFederationCreationBlockNumber();
         }
     }
 
@@ -1582,7 +1581,7 @@ class BridgeTest {
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getFederationCreationTime()).thenReturn(Instant.ofEpochSecond(100_000L));
+        when(bridgeSupportMock.getActiveFederationCreationTime()).thenReturn(Instant.ofEpochSecond(100_000L));
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)
             .activationConfig(activationConfig)
@@ -1599,7 +1598,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationCreationTime();
+            verify(bridgeSupportMock, times(1)).getActiveFederationCreationTime();
         }
     }
 
@@ -1626,7 +1625,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationSize();
+            verify(bridgeSupportMock, times(1)).getActiveFederationSize();
         }
     }
 
@@ -1653,7 +1652,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationThreshold();
+            verify(bridgeSupportMock, times(1)).getActiveFederationThreshold();
         }
     }
 
@@ -1680,7 +1679,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederatorPublicKey(federatorIndex);
+            verify(bridgeSupportMock, times(1)).getActiveFederatorPublicKey(federatorIndex);
         }
     }
 
@@ -1710,7 +1709,7 @@ class BridgeTest {
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
                 bridge.execute(data);
-                verify(bridgeSupportMock, times(1)).getFederatorPublicKeyOfType(
+                verify(bridgeSupportMock, times(1)).getActiveFederatorPublicKeyOfType(
                     federatorIndex,
                     keyType
                 );
@@ -2057,7 +2056,7 @@ class BridgeTest {
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getFederationCreationTime()).thenReturn(Instant.ofEpochSecond(100_000L));
+        when(bridgeSupportMock.getActiveFederationCreationTime()).thenReturn(Instant.ofEpochSecond(100_000L));
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)
             .activationConfig(activationConfig)
@@ -2293,7 +2292,7 @@ class BridgeTest {
         Integer[] activeMemberPKs = new Integer[]{ 100, 200, 300, 400, 500, 600 };
         Federation activeFederation = FederationTestUtils.getFederation(activeMemberPKs);
         Script activePowpegRedeemScript = activeFederation.getRedeemScript();
-        when(bridgeSupportMock.getActivePowpegRedeemScript()).thenReturn(Optional.of(activePowpegRedeemScript));
+        when(bridgeSupportMock.getActiveFederationRedeemScript()).thenReturn(Optional.of(activePowpegRedeemScript));
 
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -2311,7 +2310,7 @@ class BridgeTest {
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
                 bridge.execute(data);
-                verify(bridgeSupportMock, times(1)).getActivePowpegRedeemScript();
+                verify(bridgeSupportMock, times(1)).getActiveFederationRedeemScript();
             }
         } else {
             // Pre RSKIP293 this method is not enabled, should fail for all message types

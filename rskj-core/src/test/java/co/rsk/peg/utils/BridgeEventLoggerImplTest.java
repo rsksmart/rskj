@@ -29,6 +29,7 @@ import co.rsk.peg.bitcoin.InvalidOutpointValueException;
 import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,7 +75,9 @@ import static org.mockito.Mockito.when;
 
 class BridgeEventLoggerImplTest {
 
-    private static final BridgeRegTestConstants CONSTANTS = BridgeRegTestConstants.getInstance();
+    private static final BridgeRegTestConstants bridgeRegtestConstants = new BridgeRegTestConstants();
+    private static final FederationConstants federationRegtestConstants = bridgeRegtestConstants.getFederationConstants();
+    private static final NetworkParameters regtestParameters = bridgeRegtestConstants.getBtcParams();
     private final ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
     private List<LogInfo> eventLogs;
@@ -87,9 +90,9 @@ class BridgeEventLoggerImplTest {
     void setup() {
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         eventLogs = new LinkedList<>();
-        eventLogger = new BridgeEventLoggerImpl(CONSTANTS, activations, eventLogs, signatureCache);
+        eventLogger = new BridgeEventLoggerImpl(bridgeRegtestConstants, activations, eventLogs, signatureCache);
         btcTxMock = mock(BtcTransaction.class);
-        btcTx = new BtcTransaction(CONSTANTS.getBtcParams());
+        btcTx = new BtcTransaction(regtestParameters);
     }
 
     @Test
@@ -115,7 +118,7 @@ class BridgeEventLoggerImplTest {
 
     @Test
     void logLockBtc_with_segwit_address() {
-        Address senderAddress = new Address(CONSTANTS.getBtcParams(), CONSTANTS.getBtcParams().getP2SHHeader(), Hex.decode("c99a8f22127007255b4a9d8d57b0892ae2103f2d"));
+        Address senderAddress = new Address(regtestParameters, regtestParameters.getP2SHHeader(), Hex.decode("c99a8f22127007255b4a9d8d57b0892ae2103f2d"));
 
         RskAddress rskAddress = mock(RskAddress.class);
         when(rskAddress.toString()).thenReturn("0x00000000000000000000000000000000000000");
@@ -307,7 +310,7 @@ class BridgeEventLoggerImplTest {
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
-        long newFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activations);
+        long newFedActivationBlockNumber = executionBlock.getNumber() + federationRegtestConstants.getFederationActivationAge(activations);
 
         Object[] data = new Object[]{
             oldFederationFlatPubKeys,
@@ -332,14 +335,14 @@ class BridgeEventLoggerImplTest {
             ActivationConfig.ForBlock activationsForLegacyFedActivationAge = mock(ActivationConfig.ForBlock.class);
             when(activationsForLegacyFedActivationAge.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
 
-            long legacyFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activationsForLegacyFedActivationAge);
+            long legacyFedActivationBlockNumber = executionBlock.getNumber() + federationRegtestConstants.getFederationActivationAge(activationsForLegacyFedActivationAge);
 
             assertNotEquals(loggedFedActivationBlockNumber, legacyFedActivationBlockNumber);
         } else {
             ActivationConfig.ForBlock activationsForDefaultFedActivationAge = mock(ActivationConfig.ForBlock.class);
             when(activationsForDefaultFedActivationAge.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
 
-            long defaultFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge(activationsForDefaultFedActivationAge);
+            long defaultFedActivationBlockNumber = executionBlock.getNumber() + federationRegtestConstants.getFederationActivationAge(activationsForDefaultFedActivationAge);
             assertNotEquals(loggedFedActivationBlockNumber, defaultFedActivationBlockNumber);
         }
     }
@@ -364,7 +367,7 @@ class BridgeEventLoggerImplTest {
 
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs, signatureCache);
 
-        BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
+        BtcTransaction btcTx = new BtcTransaction(regtestParameters);
 
         eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_CAP_SURPASSED);
 
@@ -398,7 +401,7 @@ class BridgeEventLoggerImplTest {
 
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs, signatureCache);
 
-        BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
+        BtcTransaction btcTx = new BtcTransaction(regtestParameters);
 
         eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
 
@@ -430,7 +433,7 @@ class BridgeEventLoggerImplTest {
     void testLogReleaseBtcRequestReceivedBeforeRSKIP326HardFork() {
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
         String sender = "0x00000000000000000000000000000000000000";
-        Address btcRecipientAddress = new Address(CONSTANTS.getBtcParams(), CONSTANTS.getBtcParams().getP2SHHeader(), Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83"));
+        Address btcRecipientAddress = new Address(regtestParameters, regtestParameters.getP2SHHeader(), Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83"));
         Coin amount = Coin.COIN;
 
         eventLogger.logReleaseBtcRequestReceived(sender, btcRecipientAddress, amount);
@@ -444,7 +447,7 @@ class BridgeEventLoggerImplTest {
     void testLogReleaseBtcRequestReceivedAfterRSKIP326HardFork() {
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
         String sender = "0x00000000000000000000000000000000000000";
-        Address btcRecipientAddress = new Address(CONSTANTS.getBtcParams(), CONSTANTS.getBtcParams().getP2SHHeader(), Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83"));
+        Address btcRecipientAddress = new Address(regtestParameters, regtestParameters.getP2SHHeader(), Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83"));
         Coin amount = Coin.COIN;
 
         eventLogger.logReleaseBtcRequestReceived(sender, btcRecipientAddress, amount);

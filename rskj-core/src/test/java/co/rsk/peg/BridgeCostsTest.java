@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
@@ -20,6 +21,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP124;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP132;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -28,6 +32,11 @@ import static org.mockito.Mockito.*;
 
 class BridgeCostsTest {
     private static BridgeRegTestConstants bridgeConstants;
+    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
+        BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
+        BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
+    );
     private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
     private ActivationConfig activationConfig;
@@ -36,7 +45,7 @@ class BridgeCostsTest {
 
     @BeforeAll
      static void setUpBeforeClass() {
-        bridgeConstants = BridgeRegTestConstants.getInstance();
+        bridgeConstants = new BridgeRegTestConstants();
     }
 
     @BeforeEach
@@ -140,7 +149,7 @@ class BridgeCostsTest {
                 0,
                 Bridge.UPDATE_COLLECTIONS,
                 Constants.REGTEST_CHAIN_ID);
-        rskTx.sign(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
 
@@ -243,7 +252,7 @@ class BridgeCostsTest {
             );
         }
 
-        rskTx.sign(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));

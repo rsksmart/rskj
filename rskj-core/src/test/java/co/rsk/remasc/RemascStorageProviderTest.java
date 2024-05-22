@@ -30,6 +30,13 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.peg.*;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import org.ethereum.TestUtils;
@@ -51,6 +58,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -59,12 +67,12 @@ import static org.mockito.Mockito.when;
  */
 class RemascStorageProviderTest {
 
-    private ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
-    private Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
-    private long initialGasLimit = 10000000L;
-    private byte[] cowAddress = cowKey.getAddress();
-    private Map<byte[], BigInteger> preMineMap = Collections.singletonMap(cowAddress, cowInitialBalance.asBigInteger());
-    private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
+    private final ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
+    private final Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
+    private final long initialGasLimit = 10000000L;
+    private final byte[] cowAddress = cowKey.getAddress();
+    private final Map<byte[], BigInteger> preMineMap = Collections.singletonMap(cowAddress, cowInitialBalance.asBigInteger());
+    private final Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
 
     private void validateRemascsStorageIsCorrect(RemascStorageProvider provider, Coin expectedRewardBalance, Coin expectedBurnedBalance, long expectedSiblingsSize) {
         assertEquals(expectedRewardBalance, provider.getRewardBalance());
@@ -205,7 +213,7 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void setSaveRetrieveAndGetSiblingsBeforeRFS() throws IOException {
+    void setSaveRetrieveAndGetSiblingsBeforeRFS() {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
         long minerFee = 21000;
@@ -227,7 +235,7 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void setSaveRetrieveAndGetSiblingsAfterRFS() throws IOException {
+    void setSaveRetrieveAndGetSiblingsAfterRFS() {
         long minerFee = 21000;
         long txValue = 10000;
 
@@ -252,7 +260,7 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void alwaysPaysBeforeRFS() throws IOException {
+    void alwaysPaysBeforeRFS() {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -274,7 +282,7 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void alwaysPaysFedBeforeRFS() throws IOException {
+    void alwaysPaysFedBeforeRFS() {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -295,15 +303,13 @@ class RemascStorageProviderTest {
         Block executionBlock = testRunner.getBlockChain().getBestBlock();
 
         ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(executionBlock.getNumber());
+        Repository track = repository.startTracking();
 
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository.startTracking(),
-                PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(),
-                activations
-        );
+        FederationConstants federationConstants = config.getNetworkConstants().getBridgeConstants().getFederationConstants();
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(track);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
-        FederationSupport federationSupport = new FederationSupport(config.getNetworkConstants().getBridgeConstants(), bridgeStorageProvider, executionBlock, activations);
+        FederationSupport federationSupport = new FederationSupportImpl(federationConstants, federationStorageProvider, executionBlock, activations);
 
         RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig().forBlock(executionBlock.getNumber()), federationSupport);
         assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(repository).getFederationBalance());
@@ -312,7 +318,7 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void doesntPayFedBelowMinimumRewardAfterRFS() throws IOException {
+    void doesntPayFedBelowMinimumRewardAfterRFS() {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -335,23 +341,21 @@ class RemascStorageProviderTest {
         Block executionBlock = testRunner.getBlockChain().getBestBlock();
 
         ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(executionBlock.getNumber());
+        Repository track = repository.startTracking();
 
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository.startTracking(),
-                PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(),
-                activations
-        );
+        FederationConstants federationConstants = config.getNetworkConstants().getBridgeConstants().getFederationConstants();
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(track);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
-        FederationSupport federationSupport = new FederationSupport(config.getNetworkConstants().getBridgeConstants(), bridgeStorageProvider, executionBlock, activations);
+        FederationSupport federationSupport = new FederationSupportImpl(federationConstants, federationStorageProvider, executionBlock, activations);
 
         RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig().forBlock(executionBlock.getNumber()), federationSupport);
         assertEquals(Coin.valueOf(336), this.getRemascStorageProvider(repository).getFederationBalance());
-        assertEquals(null, RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
+        assertNull(RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
     }
 
     @Test
-    void doesntPayBelowMinimumRewardAfterRFS() throws IOException {
+    void doesntPayBelowMinimumRewardAfterRFS() {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -374,7 +378,7 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void paysFedWhenHigherThanMinimumRewardAfterRFS() throws IOException {
+    void paysFedWhenHigherThanMinimumRewardAfterRFS() {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -398,15 +402,13 @@ class RemascStorageProviderTest {
         Block executionBlock = testRunner.getBlockChain().getBestBlock();
 
         ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(executionBlock.getNumber());
+        Repository track = repository.startTracking();
 
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository.startTracking(),
-                PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(),
-                activations
-        );
+        FederationConstants federationConstants = config.getNetworkConstants().getBridgeConstants().getFederationConstants();
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(track);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
-        FederationSupport federationSupport = new FederationSupport(config.getNetworkConstants().getBridgeConstants(), bridgeStorageProvider, executionBlock, activations);
+        FederationSupport federationSupport = new FederationSupportImpl(federationConstants, federationStorageProvider, executionBlock, activations);
 
         RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig().forBlock(executionBlock.getNumber()), federationSupport);
         long federatorBalance = (1680 / federationProvider.getFederationSize()) * 2;
@@ -415,7 +417,7 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void paysWhenHigherThanMinimumRewardAfterRFS() throws IOException {
+    void paysWhenHigherThanMinimumRewardAfterRFS() {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -440,7 +442,7 @@ class RemascStorageProviderTest {
     }
 
     @Test
-    void paysOnlyBlocksWithEnoughBalanceAccumulatedAfterRFS() throws IOException {
+    void paysOnlyBlocksWithEnoughBalanceAccumulatedAfterRFS() {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);

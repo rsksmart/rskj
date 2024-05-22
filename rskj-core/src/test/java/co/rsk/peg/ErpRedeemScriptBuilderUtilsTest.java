@@ -8,6 +8,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilderUtils;
 import co.rsk.peg.bitcoin.RedeemScriptCreationException;
+import co.rsk.peg.federation.constants.FederationConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ class ErpRedeemScriptBuilderUtilsTest {
     @BeforeEach
     void setup() {
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344"));
@@ -44,9 +46,9 @@ class ErpRedeemScriptBuilderUtilsTest {
             federator3PublicKey, federator4PublicKey
         );
         defaultThreshold = defaultKeys.size() / 2 + 1;
-        emergencyKeys = bridgeConstants.getErpFedPubKeysList();
+        emergencyKeys = federationConstants.getErpFedPubKeysList();
         emergencyThreshold = emergencyKeys.size() / 2 + 1;
-        activationDelayValue = bridgeConstants.getErpFedActivationDelay();
+        activationDelayValue = federationConstants.getErpFedActivationDelay();
     }
 
     @Test

@@ -142,7 +142,7 @@ class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 stats,
                 (environment, executionResult) -> {
                     try {
-                        BridgeStorageProvider provider = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0));
+                        BridgeStorageProvider provider = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants().getBtcParams(), activationConfig.forBlock(0));
                         Optional<Long> height = provider.getHeightIfBtcTxhashIsAlreadyProcessed(txToLock.getHash());
                         Assertions.assertTrue(height.isPresent());
 
@@ -174,7 +174,7 @@ class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 stats,
                 (environment, executionResult) -> {
                     try {
-                        BridgeStorageProvider provider = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0));
+                        BridgeStorageProvider provider = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants().getBtcParams(), activationConfig.forBlock(0));
 
                         Optional<Long> height = provider.getHeightIfBtcTxhashIsAlreadyProcessed(txToLock.getHash());
                         Assertions.assertTrue(height.isPresent());
@@ -242,7 +242,7 @@ class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             BtcTransaction inputTx = new BtcTransaction(networkParameters);
             inputTx.addOutput(fromAmount, fromAddress);
 
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
             Address federationAddress = genesisFederation.getAddress();
 
             // Lock tx that uses the input tx

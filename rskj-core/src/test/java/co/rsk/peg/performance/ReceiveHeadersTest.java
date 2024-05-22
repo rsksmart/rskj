@@ -18,10 +18,7 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.BtcBlockChain;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.constants.BridgeRegTestConstants;
@@ -128,15 +125,17 @@ class ReceiveHeadersTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
+                    NetworkParameters btcParams = constants.getBridgeConstants().getBtcParams();
                     BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                             (Repository) environment.getBenchmarkedRepository(),
                             PrecompiledContracts.BRIDGE_ADDR,
-                            constants.getBridgeConstants(),
+                            btcParams,
                             activationConfig.forBlock(0)
                     );
 
+                    NetworkParameters btcRegtestParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
                     btcBlockStore = new RepositoryBtcBlockStoreWithCache(
-                        BridgeRegTestConstants.getInstance().getBtcParams(),
+                        btcRegtestParams,
                         (Repository) environment.getBenchmarkedRepository(),
                         new HashMap<>(),
                         PrecompiledContracts.BRIDGE_ADDR,

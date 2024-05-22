@@ -43,7 +43,7 @@ class PeginInformationTest {
 
     @BeforeAll
      static void setup() {
-        bridgeConstants = BridgeRegTestConstants.getInstance();
+        bridgeConstants = new BridgeRegTestConstants();
         networkParameters = bridgeConstants.getBtcParams();
     }
 

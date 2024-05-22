@@ -15,6 +15,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
+import co.rsk.peg.federation.constants.FederationConstants;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,6 +48,7 @@ class P2shErpFederationTest {
     @BeforeEach
     void setup() {
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344"));
@@ -71,9 +73,9 @@ class P2shErpFederationTest {
             federator9PublicKey
         );
         defaultThreshold = defaultKeys.size() / 2 + 1;
-        emergencyKeys = bridgeConstants.getErpFedPubKeysList();
+        emergencyKeys = federationConstants.getErpFedPubKeysList();
         emergencyThreshold = emergencyKeys.size() / 2 + 1;
-        activationDelayValue = bridgeConstants.getErpFedActivationDelay();
+        activationDelayValue = federationConstants.getErpFedActivationDelay();
 
         networkParameters = bridgeConstants.getBtcParams();
 
@@ -334,15 +336,17 @@ class P2shErpFederationTest {
     @ParameterizedTest
     @MethodSource("getRedeemScriptArgsProvider")
     void getRedeemScript(BridgeConstants bridgeConstants) {
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+
         if (!(bridgeConstants instanceof BridgeMainNetConstants)) {
             // should add this case because adding erp to mainnet genesis federation
             // throws a validation error, so in that case we use the one set up before each test.
             // if using testnet constants, we can add them with no errors
-            defaultKeys = bridgeConstants.getGenesisFederationPublicKeys();
+            defaultKeys = federationConstants.getGenesisFederationPublicKeys();
         }
 
-        emergencyKeys = bridgeConstants.getErpFedPubKeysList();
-        activationDelayValue = bridgeConstants.getErpFedActivationDelay();
+        emergencyKeys = federationConstants.getErpFedPubKeysList();
+        activationDelayValue = federationConstants.getErpFedActivationDelay();
 
         ErpFederation p2shErpFederation = createDefaultP2shErpFederation();
         validateP2shErpRedeemScript(
@@ -355,7 +359,7 @@ class P2shErpFederationTest {
 
     @Test
     void getStandardRedeemScript() {
-        NetworkParameters btcParams = BridgeRegTestConstants.getInstance().getBtcParams();
+        NetworkParameters btcParams = (new BridgeRegTestConstants()).getBtcParams();
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             Arrays.asList(new BtcECKey(), new BtcECKey(), new BtcECKey())
         );
@@ -377,9 +381,10 @@ class P2shErpFederationTest {
     void createdFederationInfo_withRealValues_equalsExistingFederationInfo_testnet() {
         // these values belong to a real federation
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
+        FederationConstants federationTestnetConstants = bridgeTestNetConstants.getFederationConstants();
         networkParameters = bridgeTestNetConstants.getBtcParams();
-        emergencyKeys = bridgeTestNetConstants.getErpFedPubKeysList();
-        activationDelayValue = bridgeTestNetConstants.getErpFedActivationDelay();
+        emergencyKeys = federationTestnetConstants.getErpFedPubKeysList();
+        activationDelayValue = federationTestnetConstants.getErpFedActivationDelay();
 
         defaultKeys = Arrays.stream(new String[]{
             "02099fd69cf6a350679a05593c3ff814bfaa281eb6dde505c953cf2875979b1209",
@@ -408,9 +413,10 @@ class P2shErpFederationTest {
     void createdFederationInfo_withRealValues_equalsExistingFederationInfo_mainnet() {
         // these values belong to a real federation
         BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+        FederationConstants federationMainnetConstants = bridgeMainNetConstants.getFederationConstants();
         networkParameters = bridgeMainNetConstants.getBtcParams();
-        emergencyKeys = bridgeMainNetConstants.getErpFedPubKeysList();
-        activationDelayValue = bridgeMainNetConstants.getErpFedActivationDelay();
+        emergencyKeys = federationMainnetConstants.getErpFedPubKeysList();
+        activationDelayValue = federationMainnetConstants.getErpFedActivationDelay();
 
         defaultKeys = Arrays.stream(new String[]{
             "020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c",
@@ -647,27 +653,29 @@ class P2shErpFederationTest {
 
     private static Stream<Arguments> spendFromP2shErpFedArgsProvider() {
         BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+        FederationConstants federationMainnetConstants = bridgeMainNetConstants.getFederationConstants();
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
+        FederationConstants federationTestnetConstants = bridgeTestNetConstants.getFederationConstants();
 
         return Stream.of(
             Arguments.of(
                 bridgeMainNetConstants.getBtcParams(),
-                bridgeMainNetConstants.getErpFedActivationDelay(),
+                federationMainnetConstants.getErpFedActivationDelay(),
                 false
             ),
             Arguments.of(
                 bridgeTestNetConstants.getBtcParams(),
-                bridgeTestNetConstants.getErpFedActivationDelay(),
+                federationTestnetConstants.getErpFedActivationDelay(),
                 false
             ),
             Arguments.of(
                 bridgeMainNetConstants.getBtcParams(),
-                bridgeMainNetConstants.getErpFedActivationDelay(),
+                federationMainnetConstants.getErpFedActivationDelay(),
                 true
             ),
             Arguments.of(
                 bridgeTestNetConstants.getBtcParams(),
-                bridgeTestNetConstants.getErpFedActivationDelay(),
+                federationTestnetConstants.getErpFedActivationDelay(),
                 true
             )
         );

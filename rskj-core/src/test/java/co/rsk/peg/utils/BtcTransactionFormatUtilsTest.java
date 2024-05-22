@@ -33,7 +33,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 class BtcTransactionFormatUtilsTest {
-    private final NetworkParameters params = BridgeRegTestConstants.getInstance().getBtcParams();
+    private final NetworkParameters params = (new BridgeRegTestConstants()).getBtcParams();
 
     @Test
     void calculateBtcTxHash() {

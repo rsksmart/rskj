@@ -9,19 +9,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.ScriptException;
-import co.rsk.bitcoinj.core.Utils;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.federation.constants.FederationMainNetConstants;
+import co.rsk.peg.federation.constants.FederationTestNetConstants;
 import co.rsk.peg.resources.TestConstants;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -61,7 +55,7 @@ class NonStandardErpFederationsTest {
 
     @BeforeEach
     void setup() {
-        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+        FederationConstants federationMainNetConstants = FederationMainNetConstants.getInstance();
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344"));
@@ -80,10 +74,10 @@ class NonStandardErpFederationsTest {
             federator9PublicKey
         );
         defaultThreshold = defaultKeys.size() / 2 + 1;
-        emergencyKeys = bridgeConstants.getErpFedPubKeysList();
+        emergencyKeys = federationMainNetConstants.getErpFedPubKeysList();
         emergencyThreshold = emergencyKeys.size() / 2 + 1;
-        activationDelayValue = bridgeConstants.getErpFedActivationDelay();
-        networkParameters = bridgeConstants.getBtcParams();
+        activationDelayValue = federationMainNetConstants.getErpFedActivationDelay();
+        networkParameters = federationMainNetConstants.getBtcParams();
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
@@ -167,7 +161,7 @@ class NonStandardErpFederationsTest {
 
         // Also check the builder is the expected one considering the activations
         ErpRedeemScriptBuilder builder = nonStandardErpFederation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilder);
+        assertInstanceOf(NonStandardErpRedeemScriptBuilder.class, builder);
     }
 
     @Test
@@ -182,7 +176,7 @@ class NonStandardErpFederationsTest {
 
         // Also check the builder is the expected one considering the activations
         ErpRedeemScriptBuilder builder = nonStandardErpFederation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
+        assertInstanceOf(NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE.class, builder);
     }
 
     @ParameterizedTest
@@ -465,10 +459,10 @@ class NonStandardErpFederationsTest {
     @Test
     void createdFederationInfo_withRealValues_equalsExistingFederationInfo_testnet() {
         // values from last real non-standard erp fed in testnet
-        BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
-        networkParameters = bridgeTestNetConstants.getBtcParams();
-        emergencyKeys = bridgeTestNetConstants.getErpFedPubKeysList();
-        activationDelayValue = bridgeTestNetConstants.getErpFedActivationDelay();
+        FederationConstants federationTestNetConstants = FederationTestNetConstants.getInstance();
+        networkParameters = federationTestNetConstants.getBtcParams();
+        emergencyKeys = federationTestNetConstants.getErpFedPubKeysList();
+        activationDelayValue = federationTestNetConstants.getErpFedActivationDelay();
 
         defaultKeys = Arrays.stream(new String[]{
             "0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce",
@@ -611,7 +605,6 @@ class NonStandardErpFederationsTest {
     @Test
     void getRedeemScript_before_RSKIP_284_testnet() {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
         nonStandardErpFederation = createDefaultNonStandardErpFederation();
 
@@ -621,7 +614,6 @@ class NonStandardErpFederationsTest {
     @Test
     void getRedeemScript_before_RSKIP_284_mainnet() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-        //when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
         nonStandardErpFederation = createDefaultNonStandardErpFederation();
 
         Assertions.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, nonStandardErpFederation.getRedeemScript());
@@ -639,8 +631,8 @@ class NonStandardErpFederationsTest {
         nonStandardErpFederation = createDefaultNonStandardErpFederation();
 
         ErpRedeemScriptBuilder builder = nonStandardErpFederation.getErpRedeemScriptBuilder();
-        assertTrue(builder instanceof NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE);
-        Assertions.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, nonStandardErpFederation.getRedeemScript());
+        assertInstanceOf(NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE.class, builder);
+        assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, nonStandardErpFederation.getRedeemScript());
 
         validateErpRedeemScript(
             nonStandardErpFederation.getRedeemScript(),
@@ -724,15 +716,15 @@ class NonStandardErpFederationsTest {
 
     @Test
     void spendFromNonStandardErpFed_before_RSKIP293_testnet_using_erp_multisig_can_spend() {
-        BridgeConstants constants = BridgeTestNetConstants.getInstance();
+        FederationTestNetConstants federationTestNetConstants = FederationTestNetConstants.getInstance();
 
         // The CSV value defined in BridgeTestnetConstants,
         // actually allows the emergency multisig to spend before the expected amount of blocks
         // Since it's encoded as BE and decoded as LE, the result is a number lower than the one defined in the constant
         assertDoesNotThrow(() ->
             spendFromNonStandardErpFed(
-                constants.getBtcParams(),
-                constants.getErpFedActivationDelay(),
+                federationTestNetConstants.getBtcParams(),
+                federationTestNetConstants.getErpFedActivationDelay(),
                 false,
                 true
             ));
@@ -740,14 +732,13 @@ class NonStandardErpFederationsTest {
 
     @Test
     void spendFromNonStandardErpFed_before_RSKIP293_testnet_using_erp_multisig_cant_spend() {
-        BridgeConstants constants = BridgeTestNetConstants.getInstance();
+        NetworkParameters btcParamsTestnet = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         // Should fail due to the wrong encoding of the CSV value
         // In this case, the value 300 when encoded as BE and decoded as LE results in a larger number
         // This causes the validation to fail
-        NetworkParameters btcParams = constants.getBtcParams();
         assertThrows(ScriptException.class, () -> spendFromNonStandardErpFed(
-            btcParams,
+            btcParamsTestnet,
             300,
             false,
             true
@@ -756,12 +747,12 @@ class NonStandardErpFederationsTest {
 
     @Test
     void spendFromNonStandardErpFed_before_RSKIP293_testnet_using_standard_multisig_can_spend() {
-        BridgeConstants constants = BridgeTestNetConstants.getInstance();
+        FederationTestNetConstants federationTestNetConstants = FederationTestNetConstants.getInstance();
 
         // Should validate since it's not executing the path of the script with the CSV value
         assertDoesNotThrow(() -> spendFromNonStandardErpFed(
-            constants.getBtcParams(),
-            constants.getErpFedActivationDelay(),
+            federationTestNetConstants.getBtcParams(),
+            federationTestNetConstants.getErpFedActivationDelay(),
             false,
             false
         ));
@@ -769,14 +760,14 @@ class NonStandardErpFederationsTest {
 
     @Test
     void spendFromNonStandardErpFed_before_RSKIP293_mainnet_using_erp_multisig_can_spend() {
-        BridgeConstants constants = BridgeMainNetConstants.getInstance();
+        FederationMainNetConstants federationMainNetConstants = FederationMainNetConstants.getInstance();
 
         // The CSV value defined in BridgeMainnetConstants,
         // actually allows the emergency multisig to spend before the expected amount of blocks
         // Since it's encoded as BE and decoded as LE, the result is a number lower than the one defined in the constant
         assertDoesNotThrow(() -> spendFromNonStandardErpFed(
-            constants.getBtcParams(),
-            constants.getErpFedActivationDelay(),
+            federationMainNetConstants.getBtcParams(),
+            federationMainNetConstants.getErpFedActivationDelay(),
             false,
             true
         ));
@@ -799,12 +790,12 @@ class NonStandardErpFederationsTest {
 
     @Test
     void spendFromNonStandardErpFed_before_RSKIP293_mainnet_using_standard_multisig_can_spend() {
-        BridgeConstants constants = BridgeMainNetConstants.getInstance();
+        FederationMainNetConstants federationMainNetConstants = FederationMainNetConstants.getInstance();
 
         // Should validate since it's not executing the path of the script with the CSV value
         assertDoesNotThrow(() -> spendFromNonStandardErpFed(
-            constants.getBtcParams(),
-            constants.getErpFedActivationDelay(),
+            federationMainNetConstants.getBtcParams(),
+            federationMainNetConstants.getErpFedActivationDelay(),
             false,
             false
         ));
@@ -812,12 +803,12 @@ class NonStandardErpFederationsTest {
 
     @Test
     void spendFromNonStandardErpFed_after_RSKIP293_testnet_using_erp_multisig_can_spend() {
-        BridgeConstants constants = BridgeTestNetConstants.getInstance();
+        FederationTestNetConstants federationTestNetConstants = FederationTestNetConstants.getInstance();
 
         // Post RSKIP293 activation it should encode the CSV value correctly
         assertDoesNotThrow(() -> spendFromNonStandardErpFed(
-            constants.getBtcParams(),
-            constants.getErpFedActivationDelay(),
+            federationTestNetConstants.getBtcParams(),
+            federationTestNetConstants.getErpFedActivationDelay(),
             true,
             true
         ));
@@ -825,11 +816,11 @@ class NonStandardErpFederationsTest {
 
     @Test
     void spendFromNonStandardErpFed_after_RSKIP293_testnet_using_standard_multisig_can_spend() {
-        BridgeConstants constants = BridgeTestNetConstants.getInstance();
+        FederationTestNetConstants federationTestNetConstants = FederationTestNetConstants.getInstance();
 
         assertDoesNotThrow(() -> spendFromNonStandardErpFed(
-            constants.getBtcParams(),
-            constants.getErpFedActivationDelay(),
+            federationTestNetConstants.getBtcParams(),
+            federationTestNetConstants.getErpFedActivationDelay(),
             true,
             false
         ));
@@ -837,12 +828,12 @@ class NonStandardErpFederationsTest {
 
     @Test
     void spendFromNonStandardErpFed_after_RSKIP293_mainnet_using_erp_multisig_can_spend() {
-        BridgeConstants constants = BridgeMainNetConstants.getInstance();
+        FederationMainNetConstants federationMainNetConstants = FederationMainNetConstants.getInstance();
 
         // Post RSKIP293 activation it should encode the CSV value correctly
         assertDoesNotThrow(() -> spendFromNonStandardErpFed(
-            constants.getBtcParams(),
-            constants.getErpFedActivationDelay(),
+            federationMainNetConstants.getBtcParams(),
+            federationMainNetConstants.getErpFedActivationDelay(),
             true,
             true
         ));
@@ -850,11 +841,11 @@ class NonStandardErpFederationsTest {
 
     @Test
     void spendFromNonStandardErpFed_after_RSKIP293_mainnet_using_standard_multisig_can_spend() {
-        BridgeConstants constants = BridgeMainNetConstants.getInstance();
+        FederationMainNetConstants federationMainNetConstants = FederationMainNetConstants.getInstance();
 
         assertDoesNotThrow(() -> spendFromNonStandardErpFed(
-            constants.getBtcParams(),
-            constants.getErpFedActivationDelay(),
+            federationMainNetConstants.getBtcParams(),
+            federationMainNetConstants.getErpFedActivationDelay(),
             true,
             false
         ));
@@ -1005,7 +996,7 @@ class NonStandardErpFederationsTest {
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
 
         assertEquals(ScriptOpCodes.OP_ENDIF, script[index++]);
-        assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKMULTISIG).byteValue(), script[index++]);
+        assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKMULTISIG).byteValue(), script[index]);
     }
 
     private static class RawGeneratedRedeemScript {

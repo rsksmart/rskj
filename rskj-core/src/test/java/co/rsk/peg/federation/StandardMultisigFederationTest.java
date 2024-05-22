@@ -56,7 +56,7 @@ class StandardMultisigFederationTest {
     @BeforeEach
     void setUp() {
         networkParameters = bridgeMainNetConstants.getBtcParams();
-        federation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants);
+        federation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants.getFederationConstants());
 
         keys = federation.getBtcPublicKeys();
         sortedPublicKeys = keys.stream()

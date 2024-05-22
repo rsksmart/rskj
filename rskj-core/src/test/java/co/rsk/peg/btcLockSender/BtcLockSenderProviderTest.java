@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BtcLockSenderProviderTest {
 
-    private NetworkParameters params = BridgeRegTestConstants.getInstance().getBtcParams();
+    private final NetworkParameters params = (new BridgeRegTestConstants()).getBtcParams();
 
     @Test
     void gets_null_if_btc_transaction_is_not_valid() {
@@ -41,7 +41,7 @@ class BtcLockSenderProviderTest {
                 "97e022067901051359d85760a2649c08c5a230e712c5ba6a7d89be0cd65f52ff352e2bd01feffffff0200e1f505000000001976a9149a81fd1d49be2ee5" +
                 "ada2bc96c2e0363f27f2e1dd88ac6c3d7d010000000017a914d7f3aadae6afc7b55c75675a42010c7c67450c6c8700000000";
 
-        BtcTransaction tx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams(), Hex.decode(rawTx));
+        BtcTransaction tx = new BtcTransaction(params, Hex.decode(rawTx));
 
         org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(Hex.decode("027bb07922f9266efc9eb650d94133b995bfcfa80d49011d52807c81ab700247ac"));
         RskAddress senderAddress = new RskAddress(key.getAddress());
@@ -60,7 +60,7 @@ class BtcLockSenderProviderTest {
         BtcLockSenderProvider provider = new BtcLockSenderProvider();
 
         String rawTx = "020000000001017001d967a340069c0b169fcbeb9cb6e0d78a27c94a41acbce762abc695aefab10000000017160014cfa63de9979e2a8005e6cb516b86202860ff3971ffffffff0200c2eb0b0000000017a914291a7ddc558810708149a731f39cd3c3a8782cfd870896e1110000000017a91425a2e67511a0207c4387ce8d3eeef498a4782e64870247304402207e0615f440bbc50351fb5d8839b3fae6c74f652c9ffc9291008f4ea39f9565980220354c734511a0560367b300eecb1a7472317a995462622e06ee91cbe0517c17e1012102e87cd90f3cb0d64eeba797fbb8f8ceaadc09e0128afbaefb0ee9535875ea395400000000";
-        BtcTransaction tx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams(), Hex.decode(rawTx));
+        BtcTransaction tx = new BtcTransaction(params, Hex.decode(rawTx));
 
         Optional<BtcLockSender> result = provider.tryGetBtcLockSender(tx);
         assertTrue(result.isPresent());

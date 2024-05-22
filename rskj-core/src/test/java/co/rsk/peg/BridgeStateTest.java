@@ -18,12 +18,21 @@
 
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
@@ -32,6 +41,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.SortedMap;
 
 /**
  * Created by ajlopez on 16/04/2017.
@@ -43,12 +54,22 @@ class BridgeStateTest {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
-        BridgeStorageProvider provider = new BridgeStorageProvider(
-                repository, PrecompiledContracts.BRIDGE_ADDR,
-                bridgeConstants, config.getActivationConfig().forBlock(0L)
-        );
 
-        BridgeState state = new BridgeState(42, provider, null);
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+        ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(0L);
+
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, networkParameters, activations);
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+
+        int btcBlockchainBestChainHeight = 42;
+        long nextPegoutCreationBlockNumber = bridgeStorageProvider.getNextPegoutHeight().get();
+        List<UTXO> activeFederationBtcUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
+        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = bridgeStorageProvider.getPegoutsWaitingForSignatures();
+        ReleaseRequestQueue releaseRequestQueue = bridgeStorageProvider.getReleaseRequestQueue();
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+
+        BridgeState state = new BridgeState(btcBlockchainBestChainHeight, nextPegoutCreationBlockNumber, activeFederationBtcUTXOs, rskTxsWaitingForSignatures, releaseRequestQueue, pegoutsWaitingForConfirmations, null);
 
         BridgeState clone = BridgeState.create(bridgeConstants, state.getEncoded(), null);
 
