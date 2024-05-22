@@ -47,7 +47,7 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
     }
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, RepositorySnapshot repositorySnapshot) {
+    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, RepositorySnapshot repositorySnapshot, ActivationConfig.ForBlock activationConfig) {
         return validate(tx, state, gasLimit, minimumGasPrice, bestBlockNumber, isFreeTx);
     }
 
