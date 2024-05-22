@@ -1,20 +1,26 @@
 package co.rsk.remasc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.FederationSupport;
 import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.federation.constants.FederationMainNetConstants;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.util.HexUtils;
 import org.ethereum.config.blockchain.upgrades.*;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
-import org.ethereum.vm.PrecompiledContracts;
-import org.junit.jupiter.api.Assertions;
+import org.ethereum.core.Repository;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -30,81 +36,84 @@ class RemascFederationProviderTest {
     @Test
     void getDefaultFederationSize() {
         RemascFederationProvider provider = getRemascFederationProvider();
-        Assertions.assertEquals(15, provider.getFederationSize());
+        assertEquals(15, provider.getFederationSize());
     }
 
     @Test
     void getFederatorAddress_preRSKIP415_returnsRskAddressDerivedFromBtcPublicKey() {
-
         int federatorIndex = 0;
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP415)).thenReturn(false);
 
-        FederationSupport federationSupport =  mock(FederationSupport.class);
-
         byte[] btcPublicKey = HexUtils.strHexOrStrNumberToByteArray(BTC_PUBLIC_KEY);
-
-        when(federationSupport.getFederatorBtcPublicKey(federatorIndex))
-                .thenReturn(btcPublicKey);
+        FederationSupport federationSupport =  mock(FederationSupport.class);
+        when(federationSupport.getActiveFederatorBtcPublicKey(federatorIndex)).thenReturn(btcPublicKey);
 
         RemascFederationProvider provider = new RemascFederationProvider(activations, federationSupport);
 
         RskAddress actualRskAddress = provider.getFederatorAddress(federatorIndex);
 
-        Assertions.assertEquals(RSK_ADDRESS_FROM_BTC_PUBLIC_KEY, actualRskAddress.toHexString());
-        verify(federationSupport, never()).getFederatorPublicKeyOfType(federatorIndex, FederationMember.KeyType.RSK);
-        verify(federationSupport, times(1)).getFederatorBtcPublicKey(federatorIndex);
-
+        assertEquals(RSK_ADDRESS_FROM_BTC_PUBLIC_KEY, actualRskAddress.toHexString());
+        verify(federationSupport, never()).getActiveFederatorPublicKeyOfType(federatorIndex, FederationMember.KeyType.RSK);
+        verify(federationSupport, times(1)).getActiveFederatorBtcPublicKey(federatorIndex);
     }
 
     @Test
     void getFederatorAddress_postRSKIP415_returnsRskAddressDerivedFromRskPublicKey() {
-
         int federatorIndex = 0;
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP415)).thenReturn(true);
 
-        FederationSupport federationSupport =  mock(FederationSupport.class);
-
         byte[] rskPublicKey = HexUtils.strHexOrStrNumberToByteArray(RSK_PUBLIC_KEY);
-
-        when(federationSupport.getFederatorPublicKeyOfType(federatorIndex, FederationMember.KeyType.RSK))
-                .thenReturn(rskPublicKey);
+        FederationSupport federationSupport =  mock(FederationSupport.class);
+        when(federationSupport.getActiveFederatorPublicKeyOfType(
+            federatorIndex,
+            FederationMember.KeyType.RSK
+        )).thenReturn(rskPublicKey);
 
         RemascFederationProvider provider = new RemascFederationProvider(activations, federationSupport);
 
         RskAddress actualRskAddress = provider.getFederatorAddress(federatorIndex);
 
-        Assertions.assertEquals(RSK_ADDRESS_FROM_RSK_PUBLIC_KEY, actualRskAddress.toHexString());
-        verify(federationSupport, times(1)).getFederatorPublicKeyOfType(federatorIndex, FederationMember.KeyType.RSK);
-        verify(federationSupport, never()).getFederatorBtcPublicKey(federatorIndex);
-
+        assertEquals(RSK_ADDRESS_FROM_RSK_PUBLIC_KEY, actualRskAddress.toHexString());
+        verify(federationSupport, times(1)).getActiveFederatorPublicKeyOfType(
+            federatorIndex,
+            FederationMember.KeyType.RSK
+        );
+        verify(federationSupport, never()).getActiveFederatorBtcPublicKey(federatorIndex);
     }
 
     private static RemascFederationProvider getRemascFederationProvider() {
-
         Genesis genesisBlock = new BlockGenerator().getGenesisBlock();
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
         Blockchain blockchain = builder.build();
 
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(blockchain.getBestBlock().getNumber());
 
-        BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
-
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                builder.getRepository(),
-                PrecompiledContracts.BRIDGE_ADDR,
-                bridgeMainNetConstants,
-                activations
+        final FederationSupport federationSupport = getFederationSupport(
+            builder.getRepository(),
+            blockchain,
+            activations
         );
 
-        FederationSupport federationSupport = new FederationSupport(bridgeMainNetConstants, bridgeStorageProvider, blockchain.getBestBlock(), activations);
-
         return new RemascFederationProvider(
-                activations,
-                federationSupport
+            activations,
+            federationSupport
+        );
+    }
+
+    private static FederationSupport getFederationSupport(Repository repository, Blockchain blockchain, ForBlock activations) {
+        FederationConstants federationMainNetConstants = FederationMainNetConstants.getInstance();
+        StorageAccessor storageAccessor = new BridgeStorageAccessorImpl(repository);
+        FederationStorageProvider storageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        return new FederationSupportImpl(
+            federationMainNetConstants,
+            storageProvider,
+            blockchain.getBestBlock(),
+            activations
         );
     }
 }
