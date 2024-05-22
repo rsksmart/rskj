@@ -1,6 +1,6 @@
 package co.rsk.peg.bitcoin;
 
-import static co.rsk.peg.bitcoin.UtxoTestUtils.coinListOf;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
