@@ -21,7 +21,7 @@ class P2shP2wpkhBtcLockSenderTest {
 
     @BeforeAll
      static void setup() {
-        bridgeConstants = BridgeRegTestConstants.getInstance();
+        bridgeConstants = new BridgeRegTestConstants();
         networkParameters = bridgeConstants.getBtcParams();
     }
 
