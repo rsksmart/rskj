@@ -7,10 +7,16 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
-import co.rsk.peg.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
@@ -98,7 +104,10 @@ public class BridgeSupportBuilder {
     }
 
     public BridgeSupport build() {
-      return new BridgeSupport(
+        Context context = new Context(bridgeConstants.getBtcParams());
+        FederationSupport federationSupport = newFederationSupportInstance();
+
+        return new BridgeSupport(
             bridgeConstants,
             provider,
             eventLogger,
@@ -106,12 +115,20 @@ public class BridgeSupportBuilder {
             peginInstructionsProvider,
             repository,
             executionBlock,
-            new Context(bridgeConstants.getBtcParams()),
-            new FederationSupport(bridgeConstants, provider, executionBlock, activations),
+            context,
+            federationSupport,
             feePerKbSupport,
             btcBlockStoreFactory,
             activations,
             signatureCache
         );
+    }
+
+    private FederationSupport newFederationSupportInstance() {
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+
+        return new FederationSupportImpl(federationConstants, federationStorageProvider, executionBlock, activations);
     }
 }
