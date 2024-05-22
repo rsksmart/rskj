@@ -25,6 +25,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
@@ -1145,15 +1146,17 @@ class BridgeSerializationUtilsTest {
                 BridgeSerializationUtils.deserializeStandardMultisigFederation(serializedTestStandardMultisigFederation, bridgeConstants.getBtcParams());
             FederationArgs deserializedTestStandardMultisigFederationArgs = deserializedTestStandardMultisigFederation.getArgs();
 
-            List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
-            long activationDelay = bridgeConstants.getErpFedActivationDelay();
+            FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+
+            List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+            long activationDelay = federationConstants.getErpFedActivationDelay();
             Federation testNonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(deserializedTestStandardMultisigFederationArgs,
                 erpPubKeys, activationDelay, activations);
             byte[] serializedTestNonStandardErpFederation = BridgeSerializationUtils.serializeFederation(testNonStandardErpFederation);
 
             ErpFederation deserializedTestNonStandardErpFederation = BridgeSerializationUtils.deserializeNonStandardErpFederation(
                 serializedTestNonStandardErpFederation,
-                bridgeConstants,
+                federationConstants,
                 activations
             );
 
@@ -1173,7 +1176,7 @@ class BridgeSerializationUtilsTest {
 
                 Federation deserializedTestP2shErpFederation = BridgeSerializationUtils.deserializeP2shErpFederation(
                     serializedTestP2shErpFederation,
-                    bridgeConstants
+                    federationConstants
                 );
 
                 assertEquals(testP2shErpFederation, deserializedTestP2shErpFederation);
