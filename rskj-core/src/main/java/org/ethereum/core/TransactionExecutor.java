@@ -176,7 +176,7 @@ public class TransactionExecutor {
 
         Coin senderBalance = track.getBalance(tx.getSender(signatureCache));
 
-        if (!isCovers(senderBalance, totalCost) && !claimTransactionValidator.isClaimTxAndValid(tx, track)) {
+        if (!isCovers(senderBalance, totalCost) && !claimTransactionValidator.isClaimTxAndValid(tx, track, activations)) {
 
             logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, tx.getHash());
             logger.warn("Transaction Data: {}", tx);

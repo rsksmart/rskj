@@ -326,6 +326,7 @@ class RemascStorageProviderTest {
         when(constants.getFederatorMinimumPayableGas()).thenReturn(BigInteger.valueOf(10000L));
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(constants);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP00));
         long minerFee = 21000;
         long txValue = 10000;
         long gasPrice = 1L;
@@ -362,6 +363,7 @@ class RemascStorageProviderTest {
         when(constants.getMinimumPayableGas()).thenReturn(BigInteger.valueOf(10000L));
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(constants);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP00));
         long minerFee = 21000;
         long txValue = 10000;
         long gasPrice = 1L;
@@ -386,6 +388,7 @@ class RemascStorageProviderTest {
         when(constants.getFederatorMinimumPayableGas()).thenReturn(BigInteger.valueOf(10L));
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(constants);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP00));
         long minerFee = 21000;
         long txValue = 10000;
         long gasPrice = 10L;
@@ -425,6 +428,7 @@ class RemascStorageProviderTest {
         when(constants.getFederatorMinimumPayableGas()).thenReturn(BigInteger.valueOf(10L));
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(constants);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP00));
         long minerFee = 21000;
         long txValue = 10000;
         long gasPrice = 10L;
@@ -449,6 +453,7 @@ class RemascStorageProviderTest {
         when(constants.getMinimumPayableGas()).thenReturn(BigInteger.valueOf(21000L));
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(constants);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP00));
         long txValue = 10000;
         long gasLimit = 100000L;
         long gasPrice = 10L;

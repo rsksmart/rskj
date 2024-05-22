@@ -7,6 +7,7 @@ import co.rsk.db.RepositorySnapshot;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.SignatureCache;
@@ -63,18 +64,19 @@ public class ClaimTransactionValidatorTest {
 
     @Test
     public void whenIsClaimTxAndValidIsCalled_shouldReturnTrue() {
-        SignatureCache signatureCache = new ReceivedTxSignatureCache();
-
         Transaction mockedClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 0);
         RepositorySnapshot mockedRepository = mock(RepositorySnapshot.class);
+        ActivationConfig.ForBlock mockedActivationConfig = mock(ActivationConfig.ForBlock.class);
 
         when(mockedClaimTx.transactionCost(any(Constants.class), any(ActivationConfig.ForBlock.class), any(SignatureCache.class)))
                 .thenReturn(5L);
         when(mockedRepository.getStorageValue(eq(mockedClaimTx.getReceiveAddress()), any(DataWord.class)))
                 .thenReturn(DataWord.valueOf(1));
         when(mockedRepository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(3));
+        when(mockedActivationConfig.isActive(ConsensusRule.RSKIP00)).thenReturn(true);
 
-        boolean result = claimTransactionValidator.isClaimTxAndValid(mockedClaimTx, mockedRepository);
+
+        boolean result = claimTransactionValidator.isClaimTxAndValid(mockedClaimTx, mockedRepository, mockedActivationConfig);
 
         assertTrue(result);
     }

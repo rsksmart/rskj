@@ -292,12 +292,14 @@ public class BlockExecutor {
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
-            if (claimTransactionValidator.isClaimTx(tx)
-                    && !claimTransactionValidator.hasLockedFunds(tx, track)) {
-                logger.warn("block: [{}] discarded claim tx: [{}], because the funds it tries to claim no longer exist in contract",
-                        block.getNumber(),
-                        tx.getHash());
-                continue;
+            if (claimTransactionValidator.isFeatureActive(activationConfig.forBlock(block.getNumber()))) {
+                if(claimTransactionValidator.isClaimTx(tx)
+                        && !claimTransactionValidator.hasLockedFunds(tx, track)) {
+                    logger.warn("block: [{}] discarded claim tx: [{}], because the funds it tries to claim no longer exist in contract",
+                            block.getNumber(),
+                            tx.getHash());
+                    continue;
+                }
             }
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(

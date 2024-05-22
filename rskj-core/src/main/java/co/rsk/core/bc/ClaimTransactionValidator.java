@@ -5,6 +5,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.util.HexUtils;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -24,7 +26,6 @@ public class ClaimTransactionValidator {
     private static final String SWAPS_MAP_POSITION = "0000000000000000000000000000000000000000000000000000000000000000";
     private static final String CLAIM_METHOD_ABI = "[{\"constant\":false,\"inputs\":[{\"name\":\"preimage\",\"type\":\"bytes32\"}, {\"name\":\"amount\",\"type\":\"uint256\"}, {\"name\":\"address\",\"type\":\"address\"}, {\"name\":\"timelock\",\"type\":\"uint256\"}],\"name\":\"claim\",\"outputs\":[],\"payable\":false,\"type\":\"function\"}]";
 
-    @Nonnull
     private final SignatureCache signatureCache;
 
     @Nonnull
@@ -32,9 +33,9 @@ public class ClaimTransactionValidator {
 
     private final CallTransaction.Contract contract = new CallTransaction.Contract(CLAIM_METHOD_ABI);;
 
-    public ClaimTransactionValidator(@Nonnull SignatureCache signatureCache,
+    public ClaimTransactionValidator(SignatureCache signatureCache,
                                       @Nonnull Constants constants) {
-        this.signatureCache = Objects.requireNonNull(signatureCache);
+        this.signatureCache = signatureCache;
         this.constants = Objects.requireNonNull(constants);
     }
 
@@ -125,7 +126,14 @@ public class ClaimTransactionValidator {
         return swapRecord != null;
     }
 
-    public boolean isClaimTxAndValid(Transaction tx, RepositorySnapshot repositorySnapshot) {
+    public boolean isFeatureActive (ActivationConfig.ForBlock activationConfig) {
+        return activationConfig.isActive(ConsensusRule.RSKIP00);
+    }
+
+    public boolean isClaimTxAndValid(Transaction tx, RepositorySnapshot repositorySnapshot, ActivationConfig.ForBlock activationConfig) {
+        if(!isFeatureActive(activationConfig)) {
+            return false;
+        }
 
         if(!isClaimTx(tx)) {
             return false;
@@ -181,7 +189,6 @@ public class ClaimTransactionValidator {
         return balanceAfterPendingTx.add(totalLockedAmount).compareTo(totalClaimTxCost) >= 0;
     }
 
-    @Nonnull
     public SignatureCache getSignatureCache() {
         return signatureCache;
     }

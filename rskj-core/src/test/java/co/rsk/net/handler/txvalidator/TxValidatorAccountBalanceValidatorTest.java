@@ -23,6 +23,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.RepositorySnapshot;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
@@ -41,11 +43,13 @@ class TxValidatorAccountBalanceValidatorTest {
 
     private Constants constants;
     private SignatureCache signatureCache;
+    private ActivationConfig.ForBlock activationConfig;
 
     @BeforeEach
     void setUp() {
         constants = Constants.regtest();
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        activationConfig = Mockito.mock(ActivationConfig.ForBlock.class);
     }
 
     @Test
@@ -62,12 +66,13 @@ class TxValidatorAccountBalanceValidatorTest {
         Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(10000));
         Mockito.when(tx3.getGasPrice()).thenReturn(Coin.valueOf(5000));
         Mockito.when(as.getBalance()).thenReturn(Coin.valueOf(10000));
+        Mockito.when(activationConfig.isActive(ConsensusRule.RSKIP00)).thenReturn(false);
 
         TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator(constants, signatureCache);
 
-        Assertions.assertTrue(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
-        Assertions.assertTrue(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
-        Assertions.assertTrue(tvabv.validate(tx3, as, null, null, Long.MAX_VALUE, false, null).transactionIsValid());
+        Assertions.assertTrue(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false, null, activationConfig).transactionIsValid());
+        Assertions.assertTrue(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false, null, activationConfig).transactionIsValid());
+        Assertions.assertTrue(tvabv.validate(tx3, as, null, null, Long.MAX_VALUE, false, null, activationConfig).transactionIsValid());
     }
 
     @Test
@@ -85,11 +90,12 @@ class TxValidatorAccountBalanceValidatorTest {
         Mockito.when(as.getBalance()).thenReturn(Coin.valueOf(19));
         Mockito.when(rs.getStorageValue(Mockito.any(RskAddress.class), Mockito.any(DataWord.class))).thenReturn(null);
         Mockito.when(rs.getBalance(Mockito.any(RskAddress.class))).thenReturn(Coin.valueOf(19));
+        Mockito.when(activationConfig.isActive(ConsensusRule.RSKIP00)).thenReturn(true);
 
         TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator(constants, signatureCache);
 
-        Assertions.assertFalse(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false, rs).transactionIsValid());
-        Assertions.assertFalse(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false, rs).transactionIsValid());
+        Assertions.assertFalse(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false, rs, activationConfig).transactionIsValid());
+        Assertions.assertFalse(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false, rs, activationConfig).transactionIsValid());
     }
 
     @Test
@@ -109,7 +115,7 @@ class TxValidatorAccountBalanceValidatorTest {
 
         TxValidatorAccountBalanceValidator tv = new TxValidatorAccountBalanceValidator(constants, signatureCache);
 
-        Assertions.assertTrue(tv.validate(tx, new AccountState(), BigInteger.ONE, Coin.valueOf(1L), Long.MAX_VALUE, true, null).transactionIsValid());
+        Assertions.assertTrue(tv.validate(tx, new AccountState(), BigInteger.ONE, Coin.valueOf(1L), Long.MAX_VALUE, true, null, null).transactionIsValid());
     }
 
 }
