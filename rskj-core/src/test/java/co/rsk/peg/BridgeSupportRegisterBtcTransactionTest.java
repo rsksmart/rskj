@@ -199,16 +199,14 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, expectedRejectedPeginReason);
         verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(rskTx.getHash().getBytes(), refundPegout, sentAmount);
 
+        verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
+        verify(provider, never()).setPegoutTxSigHash(any());
+
         if(activations == lovell700Activations) {
             verify(bridgeEventLogger, times(1)).logPegoutTransactionCreated(refundPegoutHash, refundPegoutOutpointValues);
         } else {
             verify(bridgeEventLogger, never()).logPegoutTransactionCreated(any(), any());
         }
-
-        verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        verify(provider, never()).setPegoutTxSigHash(any());
-
-
     }
 
     // Before arrowhead600Activations is activated

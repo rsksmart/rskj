@@ -79,7 +79,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
     @ParameterizedTest
     @MethodSource("pegoutTransactionCreatedEventArgsProvider")
-    void test_pegoutTransactionCreatedEvent_when_pegout_batch_is_created(ActivationConfig.ForBlock activations) throws IOException {
+    void updateCollections_whenPegoutBatchIsCreated_shouldLogPegoutTransactionCreatedEvent(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
         List<UTXO> fedUTXOs = PegTestUtils.createUTXOs(
             10,
@@ -138,7 +138,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
     @ParameterizedTest
     @MethodSource("pegoutTransactionCreatedEventArgsProvider")
-    void test_pegoutTransactionCreatedEvent_when_migration_tx_is_created(ActivationConfig.ForBlock activations) throws IOException {
+    void updateCollections_whenPegoutMigrationIsCreated_shouldLogPegoutTransactionCreatedEvent(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
@@ -212,7 +212,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
     @ParameterizedTest
     @MethodSource("pegoutTransactionCreatedEventArgsProvider")
-    void test_pegoutTransactionCreatedEvent_when_migration_and_pegout_batch_tx_are_created(ActivationConfig.ForBlock activations) throws IOException {
+    void updateCollections_whenPegoutMigrationAndBatchAreCreated_shouldLogPegoutTransactionCreatedEvent(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
