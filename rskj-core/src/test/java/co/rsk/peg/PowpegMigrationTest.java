@@ -620,7 +620,9 @@ class PowpegMigrationTest {
     }
 
     private void verifyPegoutTransactionCreatedEvent(BridgeEventLogger bridgeEventLogger, BtcTransaction pegoutTx) {
-        verify(bridgeEventLogger, times(1)).logPegoutTransactionCreated(pegoutTx.getHash(), BitcoinTestUtils.extractOutpointValues(pegoutTx));
+        Sha256Hash pegoutTxHash = pegoutTx.getHash();
+        List<Coin> outpointValues = BitcoinTestUtils.extractOutpointValues(pegoutTx);
+        verify(bridgeEventLogger, times(1)).logPegoutTransactionCreated(pegoutTxHash, outpointValues);
     }
 
     private void verifyPegoutTxSigHashIndex(ActivationConfig.ForBlock activations, BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTx) {
