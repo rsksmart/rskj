@@ -41,9 +41,6 @@ class BridgeSupportSigHashTest {
     void init() throws IOException {
         provider = mock(BridgeStorageProvider.class);
 
-        when(provider.getFeePerKb())
-            .thenReturn(Coin.MILLICOIN);
-
         when(provider.getPegoutsWaitingForSignatures())
             .thenReturn(new TreeMap<>());
 

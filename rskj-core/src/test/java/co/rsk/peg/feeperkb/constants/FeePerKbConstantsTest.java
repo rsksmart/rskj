@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FeePerKbConstantsTest {
@@ -21,6 +23,7 @@ class FeePerKbConstantsTest {
     @MethodSource("getGenesisFeePerKbProvider")
     void getGenesisFeePerKb(FeePerKbConstants feePerKbConstants, Coin expectedGenesisFeePerKb) {
         Coin actualGenesisFeePerKb = feePerKbConstants.getGenesisFeePerKb();
+
         assertEquals(expectedGenesisFeePerKb, actualGenesisFeePerKb);
     }
 
@@ -36,6 +39,7 @@ class FeePerKbConstantsTest {
     @MethodSource("getMaxFeePerKbProvider")
     void getMaxFeePerKb(FeePerKbConstants feePerKbConstants, Coin expectedMaxFeePerKb) {
         Coin actualMaxFeePerKb = feePerKbConstants.getMaxFeePerKb();
+
         assertEquals(expectedMaxFeePerKb, actualMaxFeePerKb);
     }
 
@@ -52,7 +56,8 @@ class FeePerKbConstantsTest {
     void getFeePerKbChangeAuthorizer(FeePerKbConstants feePerKbConstants,
         AddressBasedAuthorizer expectedFeePerKbChangeAuthorizer) {
         AddressBasedAuthorizer actualFeePerKbChangeAuthorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
-        assertEquals(expectedFeePerKbChangeAuthorizer, actualFeePerKbChangeAuthorizer);
+
+        assertThat(actualFeePerKbChangeAuthorizer, samePropertyValuesAs(expectedFeePerKbChangeAuthorizer));
     }
 
     private static Stream<Arguments> getFeePerKbChangeAuthorizerProvider() {
