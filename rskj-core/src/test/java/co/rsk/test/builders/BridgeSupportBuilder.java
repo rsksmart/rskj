@@ -7,14 +7,15 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
-import co.rsk.peg.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
-import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
-import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -104,7 +105,12 @@ public class BridgeSupportBuilder {
 
     public BridgeSupport build() {
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+        FederationSupport federationSupport = newFederationSupportInstance(
+            bridgeStorageAccessor,
+            bridgeConstants.getFederationConstants(),
+            executionBlock,
+            activations
+        );
 
         return new BridgeSupport(
             bridgeConstants,
@@ -115,11 +121,16 @@ public class BridgeSupportBuilder {
             repository,
             executionBlock,
             new Context(bridgeConstants.getBtcParams()),
-            new FederationSupport(bridgeConstants, provider, executionBlock, activations),
-            new FeePerKbSupportImpl(bridgeConstants.getFeePerKbConstants(), feePerKbStorageProvider),
+            federationSupport,
+            feePerKbSupport,
             btcBlockStoreFactory,
             activations,
             signatureCache
         );
+    }
+
+    private FederationSupport newFederationSupportInstance(StorageAccessor bridgeStorageAccessor, FederationConstants federationConstants, Block rskExecutionBlock, ActivationConfig.ForBlock activations) {
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        return new FederationSupportImpl(federationConstants, federationStorageProvider, rskExecutionBlock, activations);
     }
 }
