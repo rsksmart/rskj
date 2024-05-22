@@ -26,7 +26,8 @@ public class BitcoinTestUtils {
     public static List<BtcECKey> getBtcEcKeysFromSeeds(String[] seeds, boolean sorted) {
         List<BtcECKey> keys = Arrays
             .stream(seeds)
-            .map(seed -> BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
+            .map(seed -> BtcECKey.fromPrivate(
+                HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
             .collect(Collectors.toList());
 
         if (sorted) {
@@ -37,11 +38,13 @@ public class BitcoinTestUtils {
     }
 
     public static Address createP2PKHAddress(NetworkParameters networkParameters, String seed) {
-        BtcECKey key = BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
+        BtcECKey key = BtcECKey.fromPrivate(
+            HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
         return key.toAddress(networkParameters);
     }
 
-    public static Address createP2SHMultisigAddress(NetworkParameters networkParameters, List<BtcECKey> keys) {
+    public static Address createP2SHMultisigAddress(NetworkParameters networkParameters,
+        List<BtcECKey> keys) {
         Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
 
@@ -58,7 +61,8 @@ public class BitcoinTestUtils {
         return Sha256Hash.wrap(bytes);
     }
 
-    public static List<BtcECKey.ECDSASignature> extractSignaturesFromTxInput(TransactionInput txInput) {
+    public static List<BtcECKey.ECDSASignature> extractSignaturesFromTxInput(
+        TransactionInput txInput) {
         Script scriptSig = txInput.getScriptSig();
         List<ScriptChunk> chunks = scriptSig.getChunks();
         Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
@@ -74,7 +78,7 @@ public class BitcoinTestUtils {
         return signatures;
     }
 
-    public static List<Coin> coinListOf(long ... values) {
+    public static List<Coin> coinListOf(long... values) {
         return Arrays.stream(values)
             .mapToObj(Coin::valueOf)
             .collect(Collectors.toList());
