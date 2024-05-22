@@ -361,7 +361,6 @@ public class ActivationConfigsForTest {
         return lovell700(Collections.emptyList());
     }
 
-
     public static ActivationConfig regtest() {
         return REGTEST;
     }

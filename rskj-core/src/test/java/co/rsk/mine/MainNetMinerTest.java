@@ -36,6 +36,7 @@ import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.BlockStore;
@@ -76,7 +77,7 @@ class MainNetMinerTest {
     void setup() {
         config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(Constants.mainnet());
-        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.all());
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP00));
         RskTestFactory factory = new RskTestFactory(tempDir, config) {
             @Override
             public GenesisLoader buildGenesisLoader() {

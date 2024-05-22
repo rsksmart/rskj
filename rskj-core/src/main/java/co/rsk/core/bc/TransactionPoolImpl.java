@@ -486,8 +486,13 @@ public class TransactionPoolImpl implements TransactionPool {
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
 
-        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0
-                || claimTxValidator.canPayPendingAndNewClaimTx(newTx, currentRepository, transactions);
+        if(costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0) {
+            return true;
+        } if(claimTxValidator.isFeatureActive(config.getActivationConfig().forBlock(bestBlock.getNumber()))) {
+            return claimTxValidator.canPayPendingAndNewClaimTx(newTx, currentRepository, transactions);
+        }
+
+        return false;
     }
 
     private Coin getTxBaseCost(Transaction tx) {

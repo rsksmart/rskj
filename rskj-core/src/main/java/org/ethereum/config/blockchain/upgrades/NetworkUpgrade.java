@@ -32,7 +32,8 @@ public enum NetworkUpgrade {
     HOP401("hop401"),
     FINGERROOT500("fingerroot500"),
     ARROWHEAD600("arrowhead600"),
-    LOVELL700("lovell700");
+    LOVELL700("lovell700"),
+    TBD000("tbd000");
 
     private String name;
 
