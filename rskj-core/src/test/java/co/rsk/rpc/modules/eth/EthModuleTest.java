@@ -17,7 +17,7 @@
  */
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
@@ -160,7 +160,7 @@ class EthModuleTest {
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
-        byte[] hreturn = Hex.decode(
+        byte[] hReturn = Hex.decode(
                 "08c379a000000000000000000000000000000000000000000000000000000000" +
                         "0000002000000000000000000000000000000000000000000000000000000000" +
                         "0000000f6465706f73697420746f6f2062696700000000000000000000000000" +
@@ -168,7 +168,7 @@ class EthModuleTest {
         ProgramResult executorResult = mock(ProgramResult.class);
         when(executorResult.isRevert()).thenReturn(true);
         when(executorResult.getHReturn())
-                .thenReturn(hreturn);
+                .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
@@ -189,10 +189,69 @@ class EthModuleTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
 
-        try {
-            eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
-        } catch (RskJsonRpcRequestException e) {
-            assertThat(e.getMessage(), Matchers.containsString("deposit too big"));
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+        RskJsonRpcRequestException exception = assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> eth.call(
+                        callArgumentsParam,
+                        blockIdentifierParam
+                )
+        );
+        assertThat(exception.getMessage(), Matchers.containsString("deposit too big"));
+        assertNotNull(exception.getRevertData());
+        assertArrayEquals(hReturn, exception.getRevertData());
+    }
+
+    @Test
+    void test_revertedTransactionWithNoRevertDataOrSizeLowerThan4() {
+        CallArguments args = new CallArguments();
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.isRevert()).thenReturn(true);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                (byte) 0,
+                null,
+                null,
+                executor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        List<byte[]> hReturns = Arrays.asList(null, new byte[0], Hex.decode("08"), Hex.decode("08c3"), Hex.decode("08c379"));
+        for (byte[] hReturn : hReturns) {
+            when(executorResult.getHReturn()).thenReturn(hReturn);
+
+            RskJsonRpcRequestException exception = assertThrows(
+                    RskJsonRpcRequestException.class,
+                    () -> eth.call(
+                            callArgumentsParam,
+                            blockIdentifierParam
+                    )
+            );
+            assertArrayEquals(hReturn, exception.getRevertData());
         }
     }
 

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ser.DefaultSerializerProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.spongycastle.util.encoders.Hex;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -33,10 +34,11 @@ class RskErrorResolverTest {
     }
 
     @Test
-    void test_resolveError_givenRskJsonRpcRequestException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenRskJsonRpcRequestExceptionWithoutData_returnsJsonErrorAsExpected() throws NoSuchMethodException {
         // Given
         Integer code = 1;
         String message = "message";
+        String expectedData = null;
         RskJsonRpcRequestException exception = new RskJsonRpcRequestException(code, message);
 
         Method methodMock = this.getClass().getMethod("mockMethod");
@@ -49,7 +51,33 @@ class RskErrorResolverTest {
         Assertions.assertNotNull(result);
         Assertions.assertEquals(code, (Integer) result.code);
         Assertions.assertEquals(message, result.message);
-        Assertions.assertNull(result.data);
+        Assertions.assertEquals(expectedData, result.data);
+    }
+
+    @Test
+    void test_resolveError_givenRskJsonRpcRequestExceptionWithData_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+        // Given
+        Integer code = 1;
+        String message = "message";
+        String dataString = "08c379a000000000000000000000000000000000000000000000000000000000" +
+                "0000002000000000000000000000000000000000000000000000000000000000" +
+                "0000000f6465706f73697420746f6f2062696700000000000000000000000000" +
+                "00000000";
+        byte[] data = Hex.decode(dataString);
+        String expectedData = "0x" + dataString;
+        RskJsonRpcRequestException exception = new RskJsonRpcRequestException(code, data, message);
+
+        Method methodMock = this.getClass().getMethod("mockMethod");
+        List<JsonNode> jsonNodeListMock = new ArrayList<>();
+
+        // When
+        JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
+
+        // Then
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(code, (Integer) result.code);
+        Assertions.assertEquals(message, result.message);
+        Assertions.assertEquals(expectedData, result.data);
     }
 
     @Test

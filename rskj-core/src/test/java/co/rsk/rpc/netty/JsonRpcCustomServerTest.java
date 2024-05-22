@@ -22,9 +22,15 @@ package co.rsk.rpc.netty;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.exception.JsonRpcResponseLimitError;
 import co.rsk.rpc.exception.JsonRpcTimeoutError;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonResponse;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.rpc.exception.RskErrorResolver;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -38,6 +44,7 @@ import static org.ethereum.TestUtils.waitFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -57,7 +64,7 @@ class JsonRpcCustomServerTest {
         JsonNode request = objectMapper.readTree(FIRST_METHOD_REQUEST);
         String response = "test_method_response";
         Web3Test handler = mock(Web3Test.class);
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, modules);
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, modules, objectMapper);
 
         when(handler.test_first(anyString())).thenReturn(response);
 
@@ -71,23 +78,24 @@ class JsonRpcCustomServerTest {
         JsonNode request = objectMapper.readTree(FIRST_METHOD_REQUEST);
         Web3Test handler = mock(Web3Test.class);
         //expected response would be {"jsonrpc":"2.0","id":1,"result":"test_method_response"} with 56 bytes
-        ResponseSizeLimitContext.createResponseSizeContext(55);
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, modules);
+        try (ResponseSizeLimitContext ignored = ResponseSizeLimitContext.createResponseSizeContext(55)) {
+            jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, modules, objectMapper);
 
-        when(handler.test_first(anyString())).thenReturn(response);
+            when(handler.test_first(anyString())).thenReturn(response);
 
-        assertThrows(JsonRpcResponseLimitError.class, () -> jsonRpcCustomServer.handleJsonNodeRequest(request));
+            assertThrows(JsonRpcResponseLimitError.class, () -> jsonRpcCustomServer.handleJsonNodeRequest(request));
+        }
     }
 
     @Test
     void testHandleJsonNodeRequest_WithMethodModule() throws Exception {
         JsonNode request = objectMapper.readTree(SECOND_METHOD_REQUEST);
         Web3Test handler = mock(Web3Test.class);
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(0, 125));
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(0, 125), objectMapper);
         String response = "test_method_response";
 
         when(handler.test_second("param", "param2")).thenAnswer(invocation -> {
-           waitFor(150);
+            waitFor(150);
             return response;
         });
 
@@ -99,7 +107,7 @@ class JsonRpcCustomServerTest {
     void testHandleJsonNodeRequest_WithMethodTimeout() throws Exception {
         JsonNode request = objectMapper.readTree(SECOND_METHOD_REQUEST);
         Web3Test handler = mock(Web3Test.class);
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(125, 0));
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(125, 0), objectMapper);
 
         when(handler.test_second(anyString(), anyString())).thenAnswer(invocation -> {
             waitFor(150);
@@ -113,7 +121,7 @@ class JsonRpcCustomServerTest {
     void testHandleJsonNodeRequest_methodTimeoutOverModule() throws Exception {
         JsonNode request = objectMapper.readTree(SECOND_METHOD_REQUEST);
         Web3Test handler = mock(Web3Test.class);
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(500, 100));
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(500, 100), objectMapper);
         String response = "test_method_response";
 
         when(handler.test_second("param", "param2")).thenAnswer(invocation -> {
@@ -158,7 +166,7 @@ class JsonRpcCustomServerTest {
         JsonNode request = objectMapper.readTree(jsonRequest);
         Web3Test handler = mock(Web3Test.class);
 
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(timeoutPerMethod, 0));
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(timeoutPerMethod, 0), objectMapper);
 
         when(handler.test_second(anyString(), anyString())).thenAnswer(invocation -> {
             waitFor(sleepTimePerRequest);
@@ -198,7 +206,7 @@ class JsonRpcCustomServerTest {
         JsonNode request = objectMapper.readTree(jsonRequest);
         Web3Test handler = mock(Web3Test.class);
 
-        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(timeoutPerMethod, 0));
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, getModulesWithMethodTimeout(timeoutPerMethod, 0), objectMapper);
 
         when(handler.test_second(anyString(), anyString())).thenAnswer(invocation -> {
             waitFor(sleepTimePerRequest);
@@ -209,6 +217,51 @@ class JsonRpcCustomServerTest {
         verify(handler, times(1)).test_second(anyString(), anyString());
     }
 
+    @Test
+    void sendingRequestWithNonDeclaredMethodShouldFail() throws Exception {
+        String jsonRequest = "    {\n" +
+                "      \"jsonrpc\": \"2.0\",\n" +
+                "      \"method\": \"invalid_method\",\n" +
+                "      \"params\": [],\n" +
+                "      \"id\": 1\n" +
+                "    }";
+
+        String expectedResponse = "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"method not found\"}}";
+        JsonNode request = objectMapper.readTree(jsonRequest);
+        Web3Test handler = mock(Web3Test.class);
+
+        jsonRpcCustomServer = new JsonRpcCustomServer(handler, Web3Test.class, modules, objectMapper);
+
+        JsonResponse actualResponse = jsonRpcCustomServer.handleJsonNodeRequest(request);
+        assertEquals(expectedResponse, actualResponse.getResponse().toString());
+    }
+
+    @Test
+    void failedEthCall_givenRskErrorResolver_shouldThrowWithData() throws JsonProcessingException {
+        String jsonRequest = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_call\",\"params\":[{\"to\": \"0x77045E71a7A2c50903d88e564cD72fab11e82051\", \"data\": \"0x00004\"}, \"latest\"],\"id\":1}";
+        byte[] revertBytes = Hex.decode(
+                "08c379a000000000000000000000000000000000000000000000000000000000" +
+                        "0000002000000000000000000000000000000000000000000000000000000000" +
+                        "0000000f6465706f73697420746f6f2062696700000000000000000000000000" +
+                        "00000000");
+        String expectedData = "0x" + Hex.toHexString(revertBytes);
+        JsonNode request = objectMapper.readTree(jsonRequest);
+
+        FakeWeb3ForEthCall web3ForEthCall = mock(FakeWeb3ForEthCall.class);
+        RskJsonRpcRequestException exception = RskJsonRpcRequestException.transactionRevertedExecutionError("deposit too big", revertBytes);
+        when(web3ForEthCall.eth_call(any(), any())).thenThrow(exception);
+        jsonRpcCustomServer = new JsonRpcCustomServer(web3ForEthCall, FakeWeb3ForEthCall.class, modules, objectMapper);
+        jsonRpcCustomServer.setErrorResolver(new RskErrorResolver());
+
+        JsonResponse actualResponse = jsonRpcCustomServer.handleJsonNodeRequest(request);
+        String actualData = actualResponse.getResponse().get("error").get("data").asText();
+
+        assertEquals(expectedData, actualData);
+    }
+
+    public interface FakeWeb3ForEthCall {
+        String eth_call(CallArgumentsParam args, BlockIdentifierParam bnOrId);
+    }
 
     public interface Web3Test {
         String test_first(String param1);

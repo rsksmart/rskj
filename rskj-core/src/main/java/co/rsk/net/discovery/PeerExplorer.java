@@ -93,10 +93,20 @@ public class PeerExplorer {
 
     private UDPChannel udpChannel;
 
+    private final KnownPeersHandler knownPeersHandler;
+
     public PeerExplorer(List<String> initialBootNodes,
                         Node localNode, NodeDistanceTable distanceTable, ECKey key,
                         long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
                         PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHostPort, long maxBootRetries) {
+        this(initialBootNodes, localNode, distanceTable, key, reqTimeOut, updatePeriod, cleanPeriod, networkId, peerScoringManager, allowMultipleConnectionsPerHostPort, maxBootRetries, null);
+    }
+
+    public PeerExplorer(List<String> initialBootNodes,
+                        Node localNode, NodeDistanceTable distanceTable, ECKey key,
+                        long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
+                        PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHostPort,
+                        long maxBootRetries, KnownPeersHandler knownPeersHandler) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
@@ -108,13 +118,13 @@ public class PeerExplorer {
         this.cleaner = new PeerExplorerCleaner(updatePeriod, cleanPeriod, this);
         this.challengeManager = new NodeChallengeManager();
         this.requestTimeout = reqTimeOut;
-
         this.peerScoringManager = peerScoringManager;
 
         this.knownHosts = new ConcurrentHashMap<>();
         this.allowMultipleConnectionsPerHostPort = allowMultipleConnectionsPerHostPort;
 
         this.maxBootRetries = maxBootRetries;
+        this.knownPeersHandler = knownPeersHandler;
     }
 
     void start() {
@@ -142,6 +152,13 @@ public class PeerExplorer {
         }
         state = ExecState.FINISHED;
 
+        if (knownPeersHandler != null) {
+            Map<String, String> knownPeers = getKnownHosts().entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getValue().toString(), Map.Entry::getKey));
+            if (knownPeers.size() > 0) {
+                knownPeersHandler.savePeers(knownPeers);
+            }
+        }
         this.cleaner.dispose();
     }
 
@@ -242,7 +259,7 @@ public class PeerExplorer {
             this.pendingPingRequests.remove(message.getMessageId());
             NodeChallenge challenge = this.challengeManager.removeChallenge(message.getMessageId());
             if (challenge == null) {
-                this.addConnection(message, request.getAddress().getHostString(), request.getAddress().getPort());
+                this.addConnection(message, request.getAddress().getAddress().getHostAddress(), request.getAddress().getPort());
             }
         } else {
             logger.debug("handlePong - Peer discovery request with id [{}] is either null or invalid", message.getMessageId());
@@ -600,5 +617,9 @@ public class PeerExplorer {
         }
 
         return address != null && this.peerScoringManager.isAddressBanned(address) || this.peerScoringManager.isNodeIDBanned(node.getId());
+    }
+
+    Map<String, NodeID> getKnownHosts() {
+        return knownHosts;
     }
 }

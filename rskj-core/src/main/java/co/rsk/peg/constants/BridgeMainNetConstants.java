@@ -1,14 +1,11 @@
-package co.rsk.config;
+package co.rsk.peg.constants;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.AddressBasedAuthorizer;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationFactory;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import com.google.common.collect.Lists;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,24 +34,14 @@ public class BridgeMainNetConstants extends BridgeConstants {
         BtcECKey federator13PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02c6018fcbd3e89f3cf9c7f48b3232ea3638eb8bf217e59ee290f5f0cfb2fb9259"));
         BtcECKey federator14PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"));
 
-        List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
+        genesisFederationPublicKeys = Lists.newArrayList(
             federator0PublicKey, federator1PublicKey, federator2PublicKey,
             federator3PublicKey, federator4PublicKey, federator5PublicKey,
             federator6PublicKey, federator7PublicKey, federator8PublicKey,
             federator9PublicKey, federator10PublicKey, federator11PublicKey,
             federator12PublicKey, federator13PublicKey, federator14PublicKey
         );
-
-        // IMPORTANT: BTC, RSK and MST keys are the same.
-        // Change upon implementation of the <INSERT FORK NAME HERE> fork.
-        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
-
-        // Currently set to:
-        // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400L);
-
-        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationAddressCreatedAt, 1L, getBtcParams());
-        genesisFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 100;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;
@@ -65,9 +52,9 @@ public class BridgeMainNetConstants extends BridgeConstants {
         maxBtcHeadersPerRskBlock = 500;
 
         legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
-        legacyMinimumPegoutTxValueInSatoshis = Coin.valueOf(800_000);
+        legacyMinimumPegoutTxValue = Coin.valueOf(800_000);
         minimumPeginTxValue = Coin.valueOf(500_000);
-        minimumPegoutTxValueInSatoshis = Coin.valueOf(400_000);
+        minimumPegoutTxValue = Coin.valueOf(400_000);
 
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
             "04e593d4cde25137b13f19462bc4c02e97ba2ed5a3860813497abf9b4eeb9259e37e0384d12cfd2d9a7a0ba606b31ee34317a9d7f4a8591c6bcf5dfd5563248b2f",
@@ -108,7 +95,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
         );
 
         genesisFeePerKb = Coin.MILLICOIN.multiply(5);
-
         maxFeePerKb = Coin.valueOf(5_000_000L);
 
         List<ECKey> increaseLockingCapAuthorizedKeys = Arrays.stream(new String[]{

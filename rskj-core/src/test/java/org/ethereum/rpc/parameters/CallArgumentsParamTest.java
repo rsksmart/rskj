@@ -7,9 +7,7 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CallArgumentsParamTest {
 
@@ -148,7 +146,7 @@ public class CallArgumentsParamTest {
     }
 
     @Test
-    public void testToCallArguments() {
+    public void testToCallArgumentsWithData() {
         CallArgumentsParam callArgumentsParam = new CallArgumentsParam(
                 new HexAddressParam(FROM),
                 new HexAddressParam(TO),
@@ -158,6 +156,35 @@ public class CallArgumentsParamTest {
                 new HexNumberParam(NONCE),
                 new HexNumberParam(CHAIN_ID),
                 new HexNumberParam(VALUE),
+                new HexDataParam(DATA),
+                null
+        );
+
+        CallArguments callArguments = callArgumentsParam.toCallArguments();
+
+        assertEquals(FROM, callArguments.getFrom());
+        assertEquals(TO, callArguments.getTo());
+        assertEquals(GAS, callArguments.getGas());
+        assertEquals(GAS_PRICE, callArguments.getGasPrice());
+        assertEquals(NONCE, callArguments.getNonce());
+        assertEquals(CHAIN_ID, callArguments.getChainId());
+        assertEquals(VALUE, callArguments.getValue());
+        assertEquals(DATA, callArguments.getData());
+        assertEquals(DATA, callArguments.getInput());
+    }
+
+    @Test
+    public void testToCallArgumentsWithInput() {
+        CallArgumentsParam callArgumentsParam = new CallArgumentsParam(
+                new HexAddressParam(FROM),
+                new HexAddressParam(TO),
+                new HexNumberParam(GAS),
+                new HexNumberParam(GAS_PRICE),
+                null,
+                new HexNumberParam(NONCE),
+                new HexNumberParam(CHAIN_ID),
+                new HexNumberParam(VALUE),
+                null,
                 new HexDataParam(DATA)
         );
 
@@ -171,5 +198,6 @@ public class CallArgumentsParamTest {
         assertEquals(CHAIN_ID, callArguments.getChainId());
         assertEquals(VALUE, callArguments.getValue());
         assertEquals(DATA, callArguments.getData());
+        assertEquals(DATA, callArguments.getInput());
     }
 }

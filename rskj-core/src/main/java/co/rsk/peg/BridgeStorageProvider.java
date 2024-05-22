@@ -20,13 +20,15 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.PendingFederation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;

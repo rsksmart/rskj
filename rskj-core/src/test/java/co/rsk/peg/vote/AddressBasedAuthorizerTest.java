@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.vote;
 
 import co.rsk.core.RskAddress;
 import org.ethereum.core.BlockTxSignatureCache;
