@@ -26,6 +26,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.federation.constants.FederationConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -160,7 +161,8 @@ class BridgeEventLoggerLegacyImplTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         // Act
-        BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
+        NetworkParameters regtestParameters = (new BridgeRegTestConstants()).getBtcParams();
+        BtcTransaction btcTx = new BtcTransaction(regtestParameters);
 
         eventLogger.logReleaseBtc(btcTx, rskTxHash.getBytes());
 
@@ -270,7 +272,8 @@ class BridgeEventLoggerLegacyImplTest {
         }
 
         // Assert new federation activation block number
-        Assertions.assertEquals(15L + constantsMock.getFederationActivationAge(activations), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
+        FederationConstants federationConstants = constantsMock.getFederationConstants();
+        Assertions.assertEquals(15L + federationConstants.getFederationActivationAge(activations), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
     }
 
     @Test
