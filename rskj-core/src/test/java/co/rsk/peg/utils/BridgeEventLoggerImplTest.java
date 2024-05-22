@@ -37,6 +37,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.core.CallTransaction.Function;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -534,9 +535,12 @@ class BridgeEventLoggerImplTest {
         commonAssertLogs(eventLogs);
 
         assertTopics(2, eventLogs);
-        assertEvent(eventLogs, 0, BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent(), new Object[]{btcTxHash.getBytes()}, new Object[]{
-            UtxoUtils.encodeOutpointValues(outpointValues)}
-        );
+
+        int index = 0;
+        Function expectedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
+        Object[] topics = {btcTxHash.getBytes()};
+        Object[] params = {UtxoUtils.encodeOutpointValues(outpointValues)};
+        assertEvent(eventLogs, index, expectedEvent, topics, params);
     }
 
     private static Stream<Arguments> logPegoutTransactionCreatedInvalidArgProvider() {
