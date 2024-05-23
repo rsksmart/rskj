@@ -45,8 +45,13 @@ import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
+import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.whitelist.LockWhitelist;
@@ -508,6 +513,10 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(repository.getBalance(PrecompiledContracts.BRIDGE_ADDR)).thenReturn(co.rsk.core.Coin.fromBitcoin(bridgeMainnetConstants.getMaxRbtc()));
         when(provider.getLockingCap()).thenReturn(bridgeMainnetConstants.getMaxRbtc());
 
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+        new FeePerKbSupportImpl(bridgeMainnetConstants.getFeePerKbConstants(), feePerKbStorageProvider);
+
         return new BridgeSupportBuilder()
             .withBtcBlockStoreFactory(mockFactory)
             .withBridgeConstants(bridgeMainnetConstants)
@@ -519,6 +528,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             .withBtcLockSenderProvider(btcLockSenderProvider)
             .withPeginInstructionsProvider(peginInstructionsProvider)
             .withExecutionBlock(rskExecutionBlock)
+            .withFeePerKbSupport(new FeePerKbSupportImpl(bridgeMainnetConstants.getFeePerKbConstants(), feePerKbStorageProvider))
             .build();
     }
 
