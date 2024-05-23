@@ -38,7 +38,7 @@ class BridgeSupportRSKIP220NewMethodsTest {
 
     @BeforeEach
     void setUpOnEachTest() throws BlockStoreException {
-        bridgeConstants = BridgeRegTestConstants.getInstance();
+        bridgeConstants = new BridgeRegTestConstants();
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
