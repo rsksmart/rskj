@@ -19,17 +19,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.StoredBlock;
-import co.rsk.bitcoinj.core.TransactionWitness;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -42,13 +32,10 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
@@ -61,23 +48,13 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockTxSignatureCache;
-import org.ethereum.core.ReceivedTxSignatureCache;
-import org.ethereum.core.Repository;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
@@ -552,7 +529,10 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
-        new FeePerKbSupportImpl(bridgeMainnetConstants.getFeePerKbConstants(), feePerKbStorageProvider);
+        FeePerKbSupport feePerKbSupport =  new FeePerKbSupportImpl(
+            bridgeMainnetConstants.getFeePerKbConstants(),
+            feePerKbStorageProvider
+        );
 
         return new BridgeSupportBuilder()
             .withBtcBlockStoreFactory(mockFactory)
@@ -565,7 +545,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             .withBtcLockSenderProvider(btcLockSenderProvider)
             .withPeginInstructionsProvider(peginInstructionsProvider)
             .withExecutionBlock(rskExecutionBlock)
-            .withFeePerKbSupport(new FeePerKbSupportImpl(bridgeMainnetConstants.getFeePerKbConstants(), feePerKbStorageProvider))
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
     }
 
