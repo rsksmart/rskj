@@ -81,19 +81,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Stream;
-
-import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
-import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.extractOutpointValues;
-import static co.rsk.peg.pegin.RejectedPeginReason.*;
-import static co.rsk.peg.utils.UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 class BridgeSupportRegisterBtcTransactionTest {
 
