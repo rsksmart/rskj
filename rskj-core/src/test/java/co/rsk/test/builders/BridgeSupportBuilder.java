@@ -10,6 +10,7 @@ import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
@@ -30,6 +31,7 @@ public class BridgeSupportBuilder {
     private Factory btcBlockStoreFactory;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
+    private FeePerKbSupport feePerKbSupport;
 
     public BridgeSupportBuilder() {
         this.bridgeConstants = mock(BridgeConstants.class);
@@ -42,6 +44,7 @@ public class BridgeSupportBuilder {
         this.btcBlockStoreFactory = mock(Factory.class);
         this.activations = mock(ActivationConfig.ForBlock.class);
         this.signatureCache = mock(BlockTxSignatureCache.class);
+        this.feePerKbSupport = mock(FeePerKbSupport.class);
     }
 
     public BridgeSupportBuilder withBridgeConstants(BridgeConstants bridgeConstants) {
@@ -91,6 +94,11 @@ public class BridgeSupportBuilder {
 
     public BridgeSupportBuilder withSignatureCache(SignatureCache signatureCache) {
         this.signatureCache = signatureCache;
+        return this;
+    }
+
+    public BridgeSupportBuilder withFeePerKbSupport(FeePerKbSupport feePerKbSupport) {
+        this.feePerKbSupport = feePerKbSupport;
         return this;
     }
 
