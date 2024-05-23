@@ -73,6 +73,11 @@ class BridgeUtilsTest {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
     private static final byte[] MISSING_SIGNATURE = new byte[0];
+    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
+        BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
+        BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
+    );
 
     private Constants constants;
     private ActivationConfig activationConfig;
@@ -86,7 +91,7 @@ class BridgeUtilsTest {
         constants = Constants.regtest();
         activationConfig = spy(ActivationConfigsForTest.all());
         activations = mock(ActivationConfig.ForBlock.class);
-        bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+        bridgeConstantsRegtest = new BridgeRegTestConstants();
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
         networkParameters = bridgeConstantsRegtest.getBtcParams();
     }
@@ -315,19 +320,19 @@ class BridgeUtilsTest {
     @Test
     void isFreeBridgeTxTrue() {
         activationConfig = ActivationConfigsForTest.bridgeUnitTest();
-        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     void isFreeBridgeTxOtherContract() {
         activationConfig = ActivationConfigsForTest.bridgeUnitTest();
-        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     void isFreeBridgeTxFreeTxDisabled() {
         activationConfig = ActivationConfigsForTest.only(ConsensusRule.ARE_BRIDGE_TXS_PAID);
-        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
@@ -1414,7 +1419,7 @@ class BridgeUtilsTest {
 
         BridgeConstants bridgeConstants = networkId.equals(NetworkParameters.ID_MAINNET) ?
             BridgeMainNetConstants.getInstance() :
-            BridgeRegTestConstants.getInstance();
+            new BridgeRegTestConstants();
 
         Address address = BridgeUtils.deserializeBtcAddressWithVersion(
             bridgeConstants.getBtcParams(),
@@ -1467,8 +1472,8 @@ class BridgeUtilsTest {
     private ErpFederation createNonStandardErpFederation() {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         FederationArgs genesisFederationArgs = genesisFederation.getArgs();
-        List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getErpFedPubKeysList();
-        long activationDelay = bridgeConstantsRegtest.getErpFedActivationDelay();
+        List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getFederationConstants().getErpFedPubKeysList();
+        long activationDelay = bridgeConstantsRegtest.getFederationConstants().getErpFedActivationDelay();
 
         return FederationFactory.buildNonStandardErpFederation(genesisFederationArgs, erpPubKeys, activationDelay, activations);
     }
