@@ -27,7 +27,7 @@ class LockingCapTest extends BridgePerformanceTestCase {
     private static final ECKey authorizedLockingCapChanger = ECKey.fromPrivate(Hex.decode("da6a5451bfd74829307ec6d4a8c55174d4859169f162a8ed8fcba8f7636e77cc"));
     private static final ECKey unauthorizedLockingCapChanger = ECKey.fromPrivate(Hex.decode("f18ad1e830dd746ba350f4a43b3067e85634b5138a8515246441a453ec7460e9"));
 
-    private static final Coin INITIAL_LOCKING_CAP = BridgeRegTestConstants.getInstance().getInitialLockingCap();
+    private static final Coin INITIAL_LOCKING_CAP = (new BridgeRegTestConstants()).getInitialLockingCap();
 
     private ECKey sender;
 
