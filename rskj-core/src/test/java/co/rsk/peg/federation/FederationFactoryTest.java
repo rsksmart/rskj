@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
+import co.rsk.peg.federation.constants.FederationConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 class FederationFactoryTest {
     private BridgeConstants bridgeConstants;
+    private FederationConstants federationConstants;
     private NetworkParameters networkParameters;
     private List<FederationMember> federationMembers;
     private List<BtcECKey> defaultKeys;
@@ -74,8 +76,9 @@ class FederationFactoryTest {
         @BeforeEach
         @Tag("erpFeds")
         void setUp() {
-            emergencyKeys = bridgeConstants.getErpFedPubKeysList();
-            activationDelayValue = bridgeConstants.getErpFedActivationDelay();
+            FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+            emergencyKeys = federationConstants.getErpFedPubKeysList();
+            activationDelayValue = federationConstants.getErpFedActivationDelay();
             activations = mock(ActivationConfig.ForBlock.class);
         }
 
