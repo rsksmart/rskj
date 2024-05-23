@@ -16,7 +16,6 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import co.rsk.peg.constants.BridgeRegTestConstants;
@@ -243,7 +242,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveNewFederation_before_RSKIP123_should_allow_to_save_any_fed_type() throws IOException {
+    void saveNewFederation_before_RSKIP123_should_allow_to_save_any_fed_type() {
         testSaveNewFederation(
             STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
             createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
@@ -261,7 +260,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP123_should_save_standard_multisig_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP123_should_save_standard_multisig_fed_format() {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveNewFederation(
             STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
@@ -270,7 +269,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP201_should_save_standard_multisig_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP201_should_save_standard_multisig_fed_format() {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -282,7 +281,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP353_should_save_standard_multisig_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP353_should_save_standard_multisig_fed_format() {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -295,7 +294,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP201_should_save_non_standard_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP201_should_save_non_standard_erp_fed_format() {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -307,7 +306,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP353_should_save_non_standard_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP353_should_save_non_standard_erp_fed_format() {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -320,7 +319,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -335,7 +334,7 @@ class FederationStorageProviderTests {
     @Test
     void saveNewFederation_before_RSKIP123_should_not_save_null() {
         Repository repository = mock(Repository.class);
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
 
         // Act
@@ -401,7 +400,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveOldFederation_before_RSKIP123_should_allow_to_save_any_fed_type() throws IOException {
+    void saveOldFederation_before_RSKIP123_should_allow_to_save_any_fed_type() {
         activations = ActivationConfigsForTest.only().forBlock(0);
         testSaveOldFederation(
             STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
@@ -420,7 +419,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP123_should_save_standard_multisig_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP123_should_save_standard_multisig_fed_format() {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveOldFederation(
             STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
@@ -429,7 +428,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP201_should_save_standard_multisig_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP201_should_save_standard_multisig_fed_format() {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -441,7 +440,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP353_should_save_standard_multisig_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP353_should_save_standard_multisig_fed_format() {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -454,7 +453,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP201_should_save_non_standard_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP201_should_save_non_standard_erp_fed_format() {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -466,7 +465,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP353_should_save_non_standard_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP353_should_save_non_standard_erp_fed_format() {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -479,7 +478,7 @@ class FederationStorageProviderTests {
     }
 
     @Test
-    void saveOldFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
