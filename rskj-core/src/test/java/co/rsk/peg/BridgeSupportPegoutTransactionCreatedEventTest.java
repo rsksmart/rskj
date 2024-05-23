@@ -19,10 +19,10 @@ import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.ReleaseRequestQueue.Entry;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
@@ -50,6 +50,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 class BridgeSupportPegoutTransactionCreatedEventTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+    public static final Federation GENESIS_FEDERATION = FederationTestUtils.getGenesisFederation(
+        bridgeMainnetConstants);
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
 
     private BridgeStorageProvider provider;
@@ -83,7 +85,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         // Arrange
         List<UTXO> fedUTXOs = PegTestUtils.createUTXOs(
             10,
-            bridgeMainnetConstants.getGenesisFederation().getAddress()
+            GENESIS_FEDERATION.getAddress()
         );
         when(provider.getNewFederationBtcUTXOs())
             .thenReturn(fedUTXOs);
@@ -145,7 +147,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
-        Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
+        Federation oldFederation = GENESIS_FEDERATION;
         long newFedCreationBlockNumber = 5L;
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
@@ -220,7 +222,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(pegoutRequests));
 
-        Federation oldFederation = bridgeMainnetConstants.getGenesisFederation();
+        Federation oldFederation = GENESIS_FEDERATION;
 
         long newFedCreationBlockNumber = 5L;
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
