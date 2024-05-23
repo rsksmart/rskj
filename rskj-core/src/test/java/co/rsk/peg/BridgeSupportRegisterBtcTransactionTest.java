@@ -40,11 +40,8 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -83,6 +80,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class BridgeSupportRegisterBtcTransactionTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+    private static final FederationConstants federationMainnetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
     private static final ActivationConfig.ForBlock arrowhead600Activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
@@ -94,6 +92,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final int FIRST_INPUT_INDEX = 0;
 
     private BridgeStorageProvider provider;
+    private FederationStorageProvider federationStorageProvider;
     private Address userAddress;
 
     private List<BtcECKey> retiredFedSigners;
@@ -386,8 +385,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         List<FederationMember> retiringFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(retiringFedSigners);
         Instant creationTime = Instant.ofEpochMilli(1000L);
         long retiringFedCreationBlockNumber = 1;
-        List<BtcECKey> erpPubKeys = bridgeMainnetConstants.getErpFedPubKeysList();
-        long activationDelay = bridgeMainnetConstants.getErpFedActivationDelay();
+        List<BtcECKey> erpPubKeys = federationMainnetConstants.getErpFedPubKeysList();
+        long activationDelay = federationMainnetConstants.getErpFedActivationDelay();
 
         FederationArgs retiringFedArgs =
             new FederationArgs(retiringFedMembers, creationTime, retiringFedCreationBlockNumber, btcParams);
@@ -418,20 +417,21 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
         when(provider.getLockWhitelist()).thenReturn(lockWhitelist);
 
-        when(provider.getOldFederationBtcUTXOs())
+        federationStorageProvider = mock(FederationStorageProvider.class);
+        when(federationStorageProvider.getOldFederationBtcUTXOs())
             .thenReturn(retiringFederationUtxos);
-        when(provider.getNewFederationBtcUTXOs())
+        when(federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, any()))
             .thenReturn(activeFederationUtxos);
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
-        when(provider.getNewFederation()).thenReturn(activeFederation);
+        when(federationStorageProvider.getNewFederation(federationMainnetConstants, any())).thenReturn(activeFederation);
 
         // Set executionBlock right after the migration should start
         long blockNumber = activeFederation.getCreationBlockNumber() +
-                               bridgeMainnetConstants.getFederationActivationAge(arrowhead600Activations) +
-                               bridgeMainnetConstants.getFundsMigrationAgeSinceActivationBegin() +
+            federationMainnetConstants.getFederationActivationAge(arrowhead600Activations) +
+            federationMainnetConstants.getFundsMigrationAgeSinceActivationBegin() +
                                1;
         rskExecutionBlock = mock(Block.class);
 
@@ -547,7 +547,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         // act
@@ -607,7 +607,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         // act
@@ -663,7 +663,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         // act
@@ -711,7 +711,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         // act
@@ -752,7 +752,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         // act
@@ -792,7 +792,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         // act
@@ -832,7 +832,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         // act
@@ -870,7 +870,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         // act
@@ -908,7 +908,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         // act
@@ -950,7 +950,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         // act
@@ -986,7 +986,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
@@ -1024,7 +1024,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
@@ -1060,7 +1060,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
@@ -1105,7 +1105,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
@@ -1157,7 +1157,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
@@ -1297,7 +1297,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmtWithWitness = createPmtWithWitness(btcTransaction);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
@@ -1343,7 +1343,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
@@ -1387,7 +1387,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
@@ -1534,7 +1534,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
@@ -1583,7 +1583,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
@@ -1659,7 +1659,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
@@ -1740,7 +1740,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
@@ -1806,7 +1806,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
@@ -1859,7 +1859,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -1906,7 +1906,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, arrowhead600Activations)).thenReturn(retiringFederation);
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(arrowhead600Activations);
@@ -1968,7 +1968,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -2037,7 +2037,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -2090,7 +2090,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -2130,7 +2130,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
@@ -2198,7 +2198,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
         if (existsRetiringFederation) {
-            when(provider.getOldFederation()).thenReturn(retiringFederation);
+            when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
         }
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
@@ -2268,7 +2268,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
@@ -2345,7 +2345,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
-        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
@@ -2432,7 +2432,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         // arrange
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
-        BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+        BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
         Context.propagate(new Context(btcRegTestsParams));
 
@@ -2448,7 +2448,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
         when(provider.getLockWhitelist()).thenReturn(lockWhitelist);
 
-        when(provider.getNewFederationBtcUTXOs())
+        when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, activations))
             .thenReturn(activeFederationUtxos);
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
@@ -2593,7 +2593,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
         }
 
-        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFed.getP2SHScript()));
+        when(federationStorageProvider.getLastRetiredFederationP2SHScript(activations)).thenReturn(Optional.of(retiredFed.getP2SHScript()));
 
         // act
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
