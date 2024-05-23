@@ -1,6 +1,7 @@
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
+import static co.rsk.peg.storage.FederationStorageIndexKey.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -12,12 +13,16 @@ import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -26,13 +31,15 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
 import org.mockito.verification.VerificationMode;
 
-class BridgeStorageProviderFederationTests {
+class FederationStorageProviderTests {
 
     private static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = STANDARD_MULTISIG_FEDERATION.getFormatVersion();
     private static final int NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION = NON_STANDARD_ERP_FEDERATION.getFormatVersion();
     private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = P2SH_ERP_FEDERATION.getFormatVersion();
 
-    private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+    private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
+    private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
+    private final NetworkParameters regtestBtcParams = bridgeConstantsRegtest.getBtcParams();
     private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
     @Test
@@ -91,7 +98,7 @@ class BridgeStorageProviderFederationTests {
         // Mock federation format in storage
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey())
+            NEW_FEDERATION_FORMAT_VERSION.getKey())
         ).thenReturn(BridgeSerializationUtils.serializeInteger(federationFormat));
 
         // Mock federation
@@ -102,29 +109,24 @@ class BridgeStorageProviderFederationTests {
 
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey())
+            NEW_FEDERATION_KEY.getKey())
         ).thenReturn(serializedFederation);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository,
-            PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstantsRegtest,
-            activations
-        );
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
 
         // Act
-        Federation obtainedFederation = provider.getNewFederation();
+        Federation obtainedFederation = federationStorageProvider.getNewFederation(federationConstantsRegtest, activations);
 
         // Assert
 
         // Assert that the NEW_FEDERATION_FORMAT_VERSION key is read from the storage
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey()
+            NEW_FEDERATION_FORMAT_VERSION.getKey()
         );
 
         // Call getNewFederation again and assert the same federation is returned
-        assertEquals(obtainedFederation, provider.getNewFederation());
+        assertEquals(obtainedFederation, federationStorageProvider.getNewFederation(federationConstantsRegtest, activations));
 
         // The second call to getNewFederation() should return the federation stored in memory
         int timesFederationIsReadFromRepository = 1;
@@ -134,7 +136,7 @@ class BridgeStorageProviderFederationTests {
         }
         verify(repository, times(timesFederationIsReadFromRepository)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey()
+            NEW_FEDERATION_KEY.getKey()
         );
 
         assertEquals(storedFederation, obtainedFederation);
@@ -196,7 +198,7 @@ class BridgeStorageProviderFederationTests {
         // Mock federation format in storage
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.OLD_FEDERATION_FORMAT_VERSION.getKey())
+            OLD_FEDERATION_FORMAT_VERSION.getKey())
         ).thenReturn(BridgeSerializationUtils.serializeInteger(federationFormat));
 
         // Mock federation
@@ -207,29 +209,24 @@ class BridgeStorageProviderFederationTests {
 
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.OLD_FEDERATION_KEY.getKey())
+            OLD_FEDERATION_KEY.getKey())
         ).thenReturn(serializedFederation);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(
-            repository,
-            PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstantsRegtest,
-            activations
-        );
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
 
         // Act
-        Federation obtainedFederation = provider.getOldFederation();
+        Federation obtainedFederation = federationStorageProvider.getOldFederation(federationConstantsRegtest, activations);
 
         // Assert
 
         // Assert that the OLD_FEDERATION_FORMAT_VERSION key is read from the storage
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.OLD_FEDERATION_FORMAT_VERSION.getKey()
+            OLD_FEDERATION_FORMAT_VERSION.getKey()
         );
 
         // Call getNewFederation again and assert the same federation is returned
-        assertEquals(obtainedFederation, provider.getOldFederation());
+        assertEquals(obtainedFederation, federationStorageProvider.getOldFederation(federationConstantsRegtest, activations));
 
         // The second call to getNewFederation() should return the federation stored in memory
         int timesFederationIsReadFromRepository = 1;
@@ -239,7 +236,7 @@ class BridgeStorageProviderFederationTests {
         }
         verify(repository, times(timesFederationIsReadFromRepository)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.OLD_FEDERATION_KEY.getKey()
+            OLD_FEDERATION_KEY.getKey()
         );
 
         assertEquals(storedFederation, obtainedFederation);
@@ -336,18 +333,15 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederation_before_RSKIP123_should_not_save_null() throws IOException {
+    void saveNewFederation_before_RSKIP123_should_not_save_null() {
         Repository repository = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
-            repository,
-            PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstantsRegtest,
-            mock(ActivationConfig.ForBlock.class)
-        );
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
 
         // Act
-        storageProvider.setNewFederation(null);
-        storageProvider.save();
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
+        federationStorageProvider.setNewFederation(null);
+        federationStorageProvider.save(regtestBtcParams, activations);
 
         verify(repository, never()).addStorageBytes(
             any(),
@@ -357,21 +351,15 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederation_after_RSKIP123_should_not_save_null() throws IOException {
+    void saveNewFederation_after_RSKIP123_should_not_save_null() {
         Repository repository = mock(Repository.class);
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        activations = ActivationConfigsForTest.only().forBlock(0);
 
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
-            repository,
-            PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstantsRegtest,
-            activations
-        );
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
 
         // Act
-        storageProvider.setNewFederation(null);
-        storageProvider.save();
+        federationStorageProvider.setNewFederation(null);
+        federationStorageProvider.save(regtestBtcParams, activations);
 
         verify(repository, never()).addStorageBytes(
             any(),
@@ -383,19 +371,14 @@ class BridgeStorageProviderFederationTests {
     private void testSaveNewFederation(
         int expectedFormatToSave,
         Federation federationToSave
-    ) throws IOException {
+    ) {
         // Arrange
         Repository repository = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
-            repository,
-            PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstantsRegtest,
-            activations
-        );
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
 
         // Act
-        storageProvider.setNewFederation(federationToSave);
-        storageProvider.save();
+        federationStorageProvider.setNewFederation(federationToSave);
+        federationStorageProvider.save(regtestBtcParams, activations);
 
         // Assert
         byte[] serializedFederation = activations.isActive(ConsensusRule.RSKIP123) ?
@@ -407,12 +390,12 @@ class BridgeStorageProviderFederationTests {
 
         verify(repository, shouldSaveNewFederationFormatVersion).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey(),
+            NEW_FEDERATION_FORMAT_VERSION.getKey(),
             BridgeSerializationUtils.serializeInteger(expectedFormatToSave)
         );
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey(),
+            NEW_FEDERATION_KEY.getKey(),
             serializedFederation
         );
     }
@@ -509,57 +492,47 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveOldFederation_before_RSKIP123_should_save_null() throws IOException {
+    void saveOldFederation_before_RSKIP123_should_save_null() {
         activations = ActivationConfigsForTest.only().forBlock(0);
         Repository repository = mock(Repository.class);
 
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
-            repository,
-            PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstantsRegtest,
-            activations
-        );
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
 
         // Act
-        storageProvider.setOldFederation(null);
-        storageProvider.save();
+        federationStorageProvider.setOldFederation(null);
+        federationStorageProvider.save(regtestBtcParams, activations);
 
         verify(repository, never()).addStorageBytes(
             eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(BridgeStorageIndexKey.OLD_FEDERATION_FORMAT_VERSION.getKey()),
+            eq(OLD_FEDERATION_FORMAT_VERSION.getKey()),
             any()
         );
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.OLD_FEDERATION_KEY.getKey(),
+            OLD_FEDERATION_KEY.getKey(),
             null
         );
     }
 
     @Test
-    void saveOldFederation_after_RSKIP123_should_save_null() throws IOException {
+    void saveOldFederation_after_RSKIP123_should_save_null() {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         Repository repository = mock(Repository.class);
 
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
-            repository,
-            PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstantsRegtest,
-            activations
-        );
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
 
         // Act
-        storageProvider.setOldFederation(null);
-        storageProvider.save();
+        federationStorageProvider.setOldFederation(null);
+        federationStorageProvider.save(regtestBtcParams, activations);
 
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.OLD_FEDERATION_FORMAT_VERSION.getKey(),
+            OLD_FEDERATION_FORMAT_VERSION.getKey(),
             BridgeSerializationUtils.serializeInteger(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
         );
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.OLD_FEDERATION_KEY.getKey(),
+            OLD_FEDERATION_KEY.getKey(),
             null
         );
     }
@@ -567,19 +540,15 @@ class BridgeStorageProviderFederationTests {
     private void testSaveOldFederation(
         int expectedFormat,
         Federation federationToSave
-    ) throws IOException {
+    ) {
         // Arrange
         Repository repository = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
-            repository,
-            PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstantsRegtest,
-            activations
-        );
+
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
 
         // Act
-        storageProvider.setOldFederation(federationToSave);
-        storageProvider.save();
+        federationStorageProvider.setOldFederation(federationToSave);
+        federationStorageProvider.save(regtestBtcParams, activations);
 
         // Assert
         byte[] serializedFederation = activations.isActive(ConsensusRule.RSKIP123) ?
@@ -591,12 +560,12 @@ class BridgeStorageProviderFederationTests {
 
         verify(repository, shouldSaveOldFederationFormatVersion).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.OLD_FEDERATION_FORMAT_VERSION.getKey(),
+            OLD_FEDERATION_FORMAT_VERSION.getKey(),
             BridgeSerializationUtils.serializeInteger(expectedFormat)
         );
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.OLD_FEDERATION_KEY.getKey(),
+            OLD_FEDERATION_KEY.getKey(),
             serializedFederation
         );
     }
@@ -605,16 +574,15 @@ class BridgeStorageProviderFederationTests {
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
         );
-        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
 
-        FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 1L, btcParams);
+        FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 1L, regtestBtcParams);
         if (version == STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION) {
             return FederationFactory.buildStandardMultiSigFederation(federationArgs);
         }
 
         // version should be erp
-        List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getErpFedPubKeysList();
-        long activationDelay = bridgeConstantsRegtest.getErpFedActivationDelay();
+        List<BtcECKey> erpPubKeys = federationConstantsRegtest.getErpFedPubKeysList();
+        long activationDelay = federationConstantsRegtest.getErpFedActivationDelay();
 
         if (version == NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION) {
             return FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
@@ -624,5 +592,10 @@ class BridgeStorageProviderFederationTests {
         }
         // To keep backwards compatibility
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
+    }
+
+    private FederationStorageProvider createFederationStorageProvider(Repository repository) {
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        return new FederationStorageProviderImpl(bridgeStorageAccessor);
     }
 }
