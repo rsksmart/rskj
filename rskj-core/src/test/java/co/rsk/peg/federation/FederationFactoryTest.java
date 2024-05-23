@@ -2,9 +2,9 @@ package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeTestNetConstants;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.federation.constants.FederationMainNetConstants;
+import co.rsk.peg.federation.constants.FederationTestNetConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -25,10 +25,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class FederationFactoryTest {
-    private BridgeConstants bridgeConstants;
+    private FederationConstants federationConstants;
     private NetworkParameters networkParameters;
     private List<FederationMember> federationMembers;
-    private List<BtcECKey> defaultKeys;
     private Instant creationTime;
     private long creationBlockNumber;
     private List<BtcECKey> emergencyKeys;
@@ -47,7 +46,7 @@ class FederationFactoryTest {
         BtcECKey federator7PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02ac1901b6fba2c1dbd47d894d2bd76c8ba1d296d65f6ab47f1c6b22afb53e73eb"));
         BtcECKey federator8PublicKey = BtcECKey.fromPublicOnly(Hex.decode("031aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d26"));
         BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea"));
-        defaultKeys = Arrays.asList(
+        List<BtcECKey> defaultKeys = Arrays.asList(
             federator0PublicKey, federator1PublicKey, federator2PublicKey,
             federator3PublicKey, federator4PublicKey, federator5PublicKey,
             federator6PublicKey, federator7PublicKey, federator8PublicKey,
@@ -56,8 +55,8 @@ class FederationFactoryTest {
         federationMembers = FederationTestUtils.getFederationMembersWithKeys(defaultKeys);
         creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         creationBlockNumber = 0L;
-        bridgeConstants = BridgeMainNetConstants.getInstance();
-        networkParameters = bridgeConstants.getBtcParams();
+        federationConstants = FederationMainNetConstants.getInstance();
+        networkParameters = federationConstants.getBtcParams();
     }
 
     @Test
@@ -74,8 +73,8 @@ class FederationFactoryTest {
         @BeforeEach
         @Tag("erpFeds")
         void setUp() {
-            emergencyKeys = bridgeConstants.getErpFedPubKeysList();
-            activationDelayValue = bridgeConstants.getErpFedActivationDelay();
+            emergencyKeys = federationConstants.getErpFedPubKeysList();
+            activationDelayValue = federationConstants.getErpFedActivationDelay();
             activations = mock(ActivationConfig.ForBlock.class);
         }
 
@@ -92,8 +91,8 @@ class FederationFactoryTest {
 
         @Test
         void differentNonStandardErpFederations_areNotEqualFeds_butHaveSameNonStandardFedFormat_testnet() {
-            bridgeConstants = BridgeTestNetConstants.getInstance();
-            networkParameters = bridgeConstants.getBtcParams();
+            federationConstants = FederationTestNetConstants.getInstance();
+            networkParameters = federationConstants.getBtcParams();
 
             int version;
 
@@ -162,30 +161,44 @@ class FederationFactoryTest {
             assertEquals(P2SH_ERP_FEDERATION.getFormatVersion(), version);
 
             // testnet
-            bridgeConstants = BridgeTestNetConstants.getInstance();
-            networkParameters = bridgeConstants.getBtcParams();
+            federationConstants = FederationTestNetConstants.getInstance();
+            networkParameters = federationConstants.getBtcParams();
             federation = createP2shErpFederation();
             version = federation.getFormatVersion();
             assertEquals(P2SH_ERP_FEDERATION.getFormatVersion(), version);
         }
-
     }
 
     private Federation createStandardMultisigFederation() {
-        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, creationBlockNumber, networkParameters);
+        FederationArgs federationArgs = new FederationArgs(
+            federationMembers,
+            creationTime,
+            creationBlockNumber,
+            networkParameters
+        );
+
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
     private ErpFederation createNonStandardErpFederation() {
-        FederationArgs federationArgs =
-            new FederationArgs(federationMembers, creationTime, creationBlockNumber, networkParameters);
+        FederationArgs federationArgs = new FederationArgs(
+            federationMembers,
+            creationTime,
+            creationBlockNumber,
+            networkParameters
+        );
+
         return FederationFactory.buildNonStandardErpFederation(federationArgs, emergencyKeys, activationDelayValue, activations);
     }
 
     private ErpFederation createP2shErpFederation() {
-        FederationArgs federationArgs =
-            new FederationArgs(federationMembers, creationTime, creationBlockNumber, networkParameters);
+        FederationArgs federationArgs = new FederationArgs(
+            federationMembers,
+            creationTime,
+            creationBlockNumber,
+            networkParameters
+        );
+
         return FederationFactory.buildP2shErpFederation(federationArgs, emergencyKeys, activationDelayValue);
     }
-
 }
