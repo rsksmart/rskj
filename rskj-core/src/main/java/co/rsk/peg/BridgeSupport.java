@@ -1067,11 +1067,6 @@ public class BridgeSupport {
             pegoutsWaitingForConfirmations.add(migrationTransaction, rskExecutionBlock.getNumber());
         }
 
-        if (activations.isActive(RSKIP428)) {
-            List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
-            eventLogger.logPegoutTransactionCreated(migrationTransaction.getHash(), outpointValues);
-        }
-
         // Store pegoutTxSigHash to be able to identify the tx type
         savePegoutTxSigHash(migrationTransaction);
 
@@ -1079,6 +1074,13 @@ public class BridgeSupport {
         availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
             utxo.getHash().equals(selectedUtxo.getHash()) && utxo.getIndex() == selectedUtxo.getIndex()
         ));
+
+        if (!activations.isActive(RSKIP428)) {
+            return;
+        }
+
+        List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
+        eventLogger.logPegoutTransactionCreated(migrationTransaction.getHash(), outpointValues);
     }
 
     private List<Coin> extractOutpointValues(BtcTransaction generatedTransaction) {
@@ -1197,7 +1199,7 @@ public class BridgeSupport {
         long currentBlockNumber = rskExecutionBlock.getNumber();
         long nextPegoutCreationBlockNumber = getNextPegoutCreationBlockNumber();
 
-        if (isCurrentBlockBelowNextPegoutCreationBlockNumber(currentBlockNumber, nextPegoutCreationBlockNumber)) {
+        if (currentBlockNumber < nextPegoutCreationBlockNumber) {
             return;
         }
         
@@ -1212,9 +1214,7 @@ public class BridgeSupport {
             return;
         }
 
-        if (pegoutEntries.isEmpty()) {
-            logger.warn("[processPegoutsInBatch] No pegout requests to process");
-        } else {
+        if (!pegoutEntries.isEmpty()) {
             logger.info("[processPegoutsInBatch] going to create a batched pegout transaction for {} requests, total amount {}", pegoutEntries.size(), totalPegoutValue);
             ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
@@ -1234,10 +1234,13 @@ public class BridgeSupport {
                 return;
             }
 
-            logger.info("[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}", result.getBtcTx().getHash(), result.getResponseCode());
+            logger.info(
+                "[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}",
+                result.getBtcTx().getHash(), result.getResponseCode());
 
             BtcTransaction batchPegoutTransaction = result.getBtcTx();
-            addToPegoutsWaitingForConfirmations(batchPegoutTransaction, pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
+            addToPegoutsWaitingForConfirmations(batchPegoutTransaction,
+                pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
             savePegoutTxSigHash(batchPegoutTransaction);
 
             // Remove batched requests from the queue after successfully batching pegouts
@@ -1259,16 +1262,12 @@ public class BridgeSupport {
             adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, totalPegoutValue, wallet);
         }
 
-        // update next Pegout height even if there were no request in queue
+        // set the next pegout creation block number when there are no pending pegout requests to be processed or they have been already processed
         if (pegoutRequests.getEntries().isEmpty()) {
             long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
             provider.setNextPegoutHeight(nextPegoutHeight);
             logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
         }
-    }
-
-    private static boolean isCurrentBlockBelowNextPegoutCreationBlockNumber(long currentBlockNumber, long nextPegoutCreationBlockNumber) {
-        return currentBlockNumber < nextPegoutCreationBlockNumber;
     }
 
     private void savePegoutTxSigHash(BtcTransaction pegoutTx) {
@@ -3242,26 +3241,7 @@ public class BridgeSupport {
         );
 
         ReleaseTransactionBuilder.BuildResult buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
-        if (buildReturnResult.getResponseCode() == ReleaseTransactionBuilder.Response.SUCCESS) {
-            BtcTransaction refundPegoutTransaction = buildReturnResult.getBtcTx();
-            if (activations.isActive(ConsensusRule.RSKIP146)) {
-                provider.getPegoutsWaitingForConfirmations().add(refundPegoutTransaction, rskExecutionBlock.getNumber(), rskTxHash);
-                eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), refundPegoutTransaction, totalAmount);
-
-                if (activations.isActive(RSKIP428)) {
-                    List<Coin> outpointValues = extractOutpointValues(refundPegoutTransaction);
-                    eventLogger.logPegoutTransactionCreated(refundPegoutTransaction.getHash(), outpointValues);
-                }
-            } else {
-                provider.getPegoutsWaitingForConfirmations().add(refundPegoutTransaction, rskExecutionBlock.getNumber());
-            }
-            logger.info(
-                "[generateRejectionRelease] Rejecting peg-in tx built successfully: Refund to address: {}. RskTxHash: {}. Value {}.",
-                btcRefundAddress,
-                rskTxHash,
-                totalAmount
-            );
-        } else {
+        if (buildReturnResult.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             logger.warn(
                 "[generateRejectionRelease] Rejecting peg-in tx could not be built due to {}: Btc peg-in txHash {}. Refund to address: {}. RskTxHash: {}. Value: {}",
                 buildReturnResult.getResponseCode(),
@@ -3271,7 +3251,28 @@ public class BridgeSupport {
                 totalAmount
             );
             panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.getResponseCode()));
+            return;
         }
+
+        BtcTransaction refundPegoutTransaction = buildReturnResult.getBtcTx();
+        if (activations.isActive(ConsensusRule.RSKIP146)) {
+            provider.getPegoutsWaitingForConfirmations().add(refundPegoutTransaction, rskExecutionBlock.getNumber(), rskTxHash);
+            eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), refundPegoutTransaction, totalAmount);
+        } else {
+            provider.getPegoutsWaitingForConfirmations().add(refundPegoutTransaction, rskExecutionBlock.getNumber());
+        }
+
+        if (activations.isActive(RSKIP428)) {
+            List<Coin> outpointValues = extractOutpointValues(refundPegoutTransaction);
+            eventLogger.logPegoutTransactionCreated(refundPegoutTransaction.getHash(), outpointValues);
+        }
+
+        logger.info(
+            "[generateRejectionRelease] Rejecting peg-in tx built successfully: Refund to address: {}. RskTxHash: {}. Value {}.",
+            btcRefundAddress,
+            rskTxHash,
+            totalAmount
+        );
     }
 
     private void generateRejectionRelease(

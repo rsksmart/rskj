@@ -475,16 +475,17 @@ class PowpegMigrationTest {
 
         // Assert sigHashes were added for each new migration tx created
         bridgeSupport.save();
+
         List<BtcTransaction> pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
             .getEntries().stream()
             .map(Entry::getBtcTransaction).collect(Collectors.toList());
 
-        pegoutsTxs.stream().peek(
+        pegoutsTxs.forEach(
             pegoutTx -> verifyPegoutTxSigHashIndex(activations, bridgeStorageProvider, pegoutTx));
 
         if (activations.isActive(ConsensusRule.RSKIP428)) {
-            pegoutsTxs.stream()
-                .peek(pegoutTx -> verifyPegoutTransactionCreatedEvent(bridgeEventLogger, pegoutTx));
+            pegoutsTxs
+                .forEach(pegoutTx -> verifyPegoutTransactionCreatedEvent(bridgeEventLogger, pegoutTx));
         } else {
             verify(bridgeEventLogger, never()).logPegoutTransactionCreated(any(), any());
         }
