@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
