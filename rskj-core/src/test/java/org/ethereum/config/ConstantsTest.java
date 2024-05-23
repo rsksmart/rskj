@@ -51,7 +51,7 @@ class ConstantsTest {
     private final ActivationConfig activationConfig = mock(ActivationConfig.class);
     private final ActivationConfig.ForBlock preRskip297Config = mock(ActivationConfig.ForBlock.class);
     private final ActivationConfig.ForBlock postRskip297Config = mock(ActivationConfig.ForBlock.class);
-    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+    private final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
 
 
     @BeforeEach
