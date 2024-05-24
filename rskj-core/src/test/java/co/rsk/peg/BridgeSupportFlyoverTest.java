@@ -33,6 +33,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
@@ -108,7 +109,7 @@ class BridgeSupportFlyoverTest {
     }
 
     private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
-        return PegTestUtils.createBtcTransactionWithOutputToAddress(btcRegTestParams, amount, btcAddress);
+        return BitcoinTestUtils.createBtcTransactionWithOutputToAddress(btcRegTestParams, amount, btcAddress);
     }
 
     private BigInteger sendFundsToActiveFederation(
