@@ -5493,14 +5493,10 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        BridgeSupport bridgeSupport = getBridgeSupport(
-            bridgeConstants,
-            mock(BridgeStorageProvider.class),
-            mock(Repository.class),
-            mock(BridgeEventLogger.class),
-            null,
-            mockFactory
-        );
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(mockFactory)
+            .build();
 
         assertThrows(BridgeIllegalArgumentException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(
             btcTx.getHash(),
@@ -5536,16 +5532,12 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        BridgeSupport bridgeSupport = getBridgeSupport(
-            bridgeConstants,
-            mock(BridgeStorageProvider.class),
-            mock(Repository.class),
-            mock(BridgeEventLogger.class),
-            null,
-            mockFactory
-        );
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(mockFactory)
+            .build();
 
-        Assertions.assertFalse(bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
+        assertFalse(bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
     }
 
     @Test
@@ -5571,16 +5563,13 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(mockFactory)
+            .build();
+
         assertThrows(BridgeIllegalArgumentException.class, () -> {
-            BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants,
-                mock(BridgeStorageProvider.class),
-                mock(Repository.class),
-                mock(BridgeEventLogger.class),
-                null,
-                mockFactory
-            );
-            Assertions.assertFalse(bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
+            bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize());
         });
     }
 
@@ -5614,20 +5603,21 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        BridgeSupport bridgeSupport = getBridgeSupport(
-            bridgeConstants,
-            mock(BridgeStorageProvider.class),
-            mock(Repository.class),
-            mock(BridgeEventLogger.class),
-            null,
-            mockFactory,
-            activations
-        );
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(mockFactory)
+            .withActivations(activations)
+            .build();
 
         Sha256Hash hash = btcTx.getHash();
         byte[] pmtSerialized = pmt.bitcoinSerialize();
         byte[] btcTxSerialized = btcTx.bitcoinSerialize();
-        assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(hash, btcTxHeight, pmtSerialized, btcTxSerialized));
+        assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(
+            hash,
+            btcTxHeight,
+            pmtSerialized,
+            btcTxSerialized
+        ));
     }
 
     @Test
@@ -5659,20 +5649,21 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        BridgeSupport bridgeSupport = getBridgeSupport(
-            bridgeConstants,
-            mock(BridgeStorageProvider.class),
-            mock(Repository.class),
-            mock(BridgeEventLogger.class),
-            null,
-            mockFactory,
-            activations
-        );
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(mockFactory)
+            .withActivations(activations)
+            .build();
 
         Sha256Hash hash = btcTx.getHash();
         byte[] pmtSerialized = pmt.bitcoinSerialize();
         byte[] decode = Hex.decode("00000000000100");
-        assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(hash, 0, pmtSerialized, decode));
+        assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(
+            hash,
+            0,
+            pmtSerialized,
+            decode
+        ));
     }
 
     @Test
@@ -7028,22 +7019,6 @@ class BridgeSupportTest {
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-        BridgeEventLogger eventLogger, Block executionBlock,
-        BtcBlockStoreWithCache.Factory blockStoreFactory,
-        ActivationConfig.ForBlock activations) {
-        return bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .withRepository(track)
-            .withEventLogger(eventLogger)
-            .withBtcLockSenderProvider(new BtcLockSenderProvider())
-            .withExecutionBlock(executionBlock)
-            .withBtcBlockStoreFactory(blockStoreFactory)
-            .withActivations(activations)
-            .build();
-    }
-
-    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
         BtcLockSenderProvider btcLockSenderProvider, PeginInstructionsProvider peginInstructionsProvider,
         Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory,
         ActivationConfig.ForBlock activations, SignatureCache signatureCache) {
@@ -7073,20 +7048,6 @@ class BridgeSupportTest {
             activations,
             signatureCache
         );
-    }
-
-    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-        BridgeEventLogger eventLogger, Block executionBlock,
-        BtcBlockStoreWithCache.Factory blockStoreFactory) {
-        return bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .withRepository(track)
-            .withEventLogger(eventLogger)
-            .withBtcLockSenderProvider(new BtcLockSenderProvider())
-            .withExecutionBlock(executionBlock)
-            .withBtcBlockStoreFactory(blockStoreFactory)
-            .build();
     }
 
     private BridgeSupport getBridgeSupportConfiguredToTestReceiveHeader(
@@ -7131,15 +7092,13 @@ class BridgeSupportTest {
 
         when(rskBlock.getTimestamp()).thenReturn(1611169584L);
 
-        return getBridgeSupport(
-            bridgeConstantsRegtest,
-            provider,
-            mock(Repository.class),
-            mock(BridgeEventLogger.class),
-            rskBlock,
-            mockFactory,
-            activation
-        );
+        return bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstantsRegtest)
+            .withProvider(provider)
+            .withExecutionBlock(rskBlock)
+            .withBtcBlockStoreFactory(mockFactory)
+            .withActivations(activation)
+            .build();
     }
 
     private BtcLockSenderProvider getBtcLockSenderProvider(BtcLockSender.TxSenderAddressType txSenderAddressType, Address btcAddress, RskAddress rskAddress) {
