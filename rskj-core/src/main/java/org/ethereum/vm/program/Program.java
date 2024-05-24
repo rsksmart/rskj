@@ -957,7 +957,11 @@ public class Program {
     }
 
     public byte[] getCode() {
-        return Arrays.copyOf(ops, ops.length);
+        return ops;
+    }
+
+    public int getCodeLength() {
+        return ops.length;
     }
 
     public Keccak256 getCodeHashAt(RskAddress addr, boolean standard) {

@@ -775,7 +775,7 @@ public class VM {
         // EXECUTION PHASE
         DataWord codeLength;
         if (op == OpCode.CODESIZE) {
-            codeLength = DataWord.valueOf(program.getCode().length); // during initialization it will return the initialization code size
+            codeLength = DataWord.valueOf(program.getCodeLength()); // during initialization it will return the initialization code size
         } else {
             DataWord address = program.stackPop();
             codeLength = DataWord.valueOf(program.getCodeLengthAt(address));
@@ -879,13 +879,14 @@ public class VM {
         int lengthData = lengthDataDW.intValueSafe(); // amount of bytes to copy
 
         int sizeToBeCopied;
-        if ((long) codeOffset + lengthData > fullCode.length) {
+        int fullCodeLength = fullCode.length;
+        if ((long) codeOffset + lengthData > fullCodeLength) {
             // if user wants to read more info from code what actual code has then..
             // if all code that users wants lies after code has ended..
-            if (codeOffset >=fullCode.length) {
+            if (codeOffset >= fullCodeLength) {
                 sizeToBeCopied=0; // do not copy anything
             } else {
-                sizeToBeCopied = fullCode.length - codeOffset; // copy only the remaining
+                sizeToBeCopied = fullCodeLength - codeOffset; // copy only the remaining
             }
 
         } else
@@ -898,7 +899,7 @@ public class VM {
         // enough space to contain filling also.
         byte[] codeCopy = new byte[lengthData];
 
-        if (codeOffset < fullCode.length) {
+        if (codeOffset < fullCodeLength) {
             System.arraycopy(fullCode, codeOffset, codeCopy, 0, sizeToBeCopied);
         }
 
