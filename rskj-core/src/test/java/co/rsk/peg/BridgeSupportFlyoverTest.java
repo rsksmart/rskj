@@ -39,9 +39,9 @@ import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationSupport;
 import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
@@ -90,7 +90,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.*;
 
 class BridgeSupportFlyoverTest {
 
-    private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+    private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private final BridgeConstants bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
     protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     protected final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
@@ -121,7 +121,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn((new BridgeRegTestConstants()).getFederationConstants().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -263,7 +263,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(new BridgeRegTestConstants().getFederationConstants().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -407,7 +407,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(new BridgeRegTestConstants().getFederationConstants().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -575,7 +575,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(new BridgeRegTestConstants().getFederationConstants().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -1611,7 +1611,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(new BridgeRegTestConstants().getFederationConstants().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -1619,7 +1619,7 @@ class BridgeSupportFlyoverTest {
         Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
         Repository repository = createRepository();
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
         provider.setNewFederation(activeFederation);
 
         Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -1795,7 +1795,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(new BridgeRegTestConstants().getFederationConstants().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -1989,7 +1989,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(new BridgeRegTestConstants().getFederationConstants().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2001,7 +2001,7 @@ class BridgeSupportFlyoverTest {
         // This simulates that no pegin has ever been processed
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
         provider.setNewFederation(activeFederation);
 
         Coin lockingCapValue = Coin.COIN;
@@ -2183,7 +2183,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(new BridgeRegTestConstants().getFederationConstants().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2194,7 +2194,7 @@ class BridgeSupportFlyoverTest {
         // This simulates that no pegin has ever been processed
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
         provider.setNewFederation(activeFederation);
 
         Coin lockingCapValue = Coin.COIN;
@@ -2350,7 +2350,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(new BridgeRegTestConstants().getFederationConstants().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2361,7 +2361,7 @@ class BridgeSupportFlyoverTest {
         // This simulates that no pegin has ever been processed
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
         provider.setNewFederation(activeFederation);
 
         Coin lockingCapValue = Coin.COIN;
@@ -2532,7 +2532,7 @@ class BridgeSupportFlyoverTest {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(new BridgeRegTestConstants().getFederationConstants().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2540,7 +2540,7 @@ class BridgeSupportFlyoverTest {
         Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
         Repository repository = createRepository();
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
         provider.setNewFederation(activeFederation);
 
         Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -3171,7 +3171,7 @@ class BridgeSupportFlyoverTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
             PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstantsRegtest,
+            bridgeConstantsRegtest.getBtcParams(),
             activations
         );
 
@@ -3432,7 +3432,7 @@ class BridgeSupportFlyoverTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
             PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstantsRegtest,
+            bridgeConstantsRegtest.getBtcParams(),
             activations
         );
         BridgeSupport bridgeSupport = bridgeSupportBuilder

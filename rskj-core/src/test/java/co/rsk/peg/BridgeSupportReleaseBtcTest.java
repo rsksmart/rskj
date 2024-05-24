@@ -25,10 +25,9 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.federation.*;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.test.builders.BridgeSupportBuilder;
@@ -90,7 +89,7 @@ class BridgeSupportReleaseBtcTest {
     @BeforeEach
     void setUpOnEachTest() throws IOException {
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
-        bridgeConstants = BridgeRegTestConstants.getInstance();
+        bridgeConstants = new BridgeRegTestConstants();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activeFederation = getFederation();
         repository = spy(createRepository());
@@ -1240,11 +1239,12 @@ class BridgeSupportReleaseBtcTest {
             .build();
     }
 
-    private BridgeStorageProvider initProvider(Repository repository, ActivationConfig.ForBlock activationMock) throws IOException {
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationMock);
-        provider.getNewFederationBtcUTXOs().add(utxo);
-        provider.setNewFederation(activeFederation);
-        return provider;
+    private FederationStorageProvider initProvider(Repository repository, ActivationConfig.ForBlock activationMock) throws IOException {
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        federationStorageProvider.getNewFederationBtcUTXOs(bridgeConstants.getBtcParams(), activationMock).add(utxo);
+        federationStorageProvider.setNewFederation(activeFederation);
+        return federationStorageProvider;
     }
 
     private static Repository createRepository() {
