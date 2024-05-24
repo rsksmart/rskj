@@ -920,10 +920,6 @@ public class BridgeSupport {
         }
     }
 
-    public Coin getFeePerKb() {
-        return feePerKbSupport.getFeePerKb();
-    }
-
     /**
      * Executed every now and then.
      * Performs a few tasks: processing of any pending btc funds
@@ -2526,12 +2522,10 @@ public class BridgeSupport {
         }
     }
 
-    /**
-     * Votes for a fee per kb value.
-     *
-     * @return 1 upon successful vote, -1 when the vote was unsuccessful,
-     * FEE_PER_KB_GENERIC_ERROR_CODE when there was an un expected error.
-     */
+    public Coin getFeePerKb() {
+        return feePerKbSupport.getFeePerKb();
+    }
+
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb) {
         return feePerKbSupport.voteFeePerKbChange(tx, feePerKb, signatureCache);
     }
