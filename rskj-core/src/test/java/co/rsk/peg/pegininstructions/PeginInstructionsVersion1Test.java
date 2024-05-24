@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class PeginInstructionsVersion1Test {
-    private final NetworkParameters params = BridgeRegTestConstants.getInstance().getBtcParams();
+    private final NetworkParameters params = (new BridgeRegTestConstants()).getBtcParams();
 
     @Test
     void validateDataLength_invalidLengthTooLarge() {
