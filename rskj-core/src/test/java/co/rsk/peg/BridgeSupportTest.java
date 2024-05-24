@@ -27,6 +27,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.feeperkb.FeePerKbResponseCode;
 import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
@@ -126,27 +127,34 @@ class BridgeSupportTest {
     }
 
     @Test
-    void voteFeePerKbChange_nullFeeThrows() {
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        FeePerKbStorageProvider feePerKbStorageProvider = mock(FeePerKbStorageProvider.class);
-        Transaction tx = mock(Transaction.class);
-        BridgeConstants constants = mock(BridgeConstants.class);
-        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
-        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-
-        when(feePerKbStorageProvider.getFeePerKbElection(any())).thenReturn(new ABICallElection(null));
-        when(tx.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(ByteUtil.leftPadBytes(new byte[]{0x43}, 20)));
-        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
-        when(authorizer.isAuthorized(eq(tx), any())).thenReturn(true);
+    void getFeePerKb() {
+        Coin feePerKb = Coin.valueOf(10_000L);
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
 
-        assertThrows(NullPointerException.class, () -> bridgeSupport.voteFeePerKbChange(tx, null));
+        Coin result = bridgeSupport.getFeePerKb();
 
-        verify(feePerKbStorageProvider, never()).setFeePerKb(any());
+        assertEquals(feePerKb, result);
+    }
+
+    @Test
+    void voteFeePerKbChange_success() {
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.voteFeePerKbChange(any(), any(), any())).thenReturn(1);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withFeePerKbSupport(feePerKbSupport)
+            .build();
+
+        Transaction tx = mock(Transaction.class);
+        Coin feePerKbVote = Coin.CENT;
+        int result = bridgeSupport.voteFeePerKbChange(tx, feePerKbVote);
+
+        assertEquals(FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode(), result);
     }
 
     @Test
