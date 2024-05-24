@@ -10,6 +10,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
@@ -115,6 +116,9 @@ class PowpegMigrationTest {
         Block initialBlock = mock(Block.class);
         when(initialBlock.getNumber()).thenReturn(blockNumber);
 
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
@@ -124,6 +128,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
 
         List<FederationMember> originalPowpegMembers = oldPowPegKeys.stream().map(theseKeys ->
@@ -139,8 +144,12 @@ class PowpegMigrationTest {
 
         Federation originalPowpeg;
         Instant creationTime = Instant.now();
-        FederationArgs federationArgs =
-            new FederationArgs(originalPowpegMembers, creationTime, 0, btcParams);
+        FederationArgs federationArgs = new FederationArgs(
+            originalPowpegMembers,
+            creationTime,
+            0,
+            btcParams
+        );
         switch (oldPowPegFederationType) {
             case nonStandardErp:
                 originalPowpeg = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
@@ -303,6 +312,7 @@ class PowpegMigrationTest {
                 .withBridgeConstants(bridgeConstants)
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withFeePerKbSupport(feePerKbSupport)
                 .build();
 
             assertEquals(oldPowPegAddress, bridgeSupport.getFederationAddress());
@@ -318,6 +328,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
 
         // New active powpeg and retiring powpeg
@@ -379,6 +390,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
 
         // New active powpeg and retiring powpeg
@@ -517,6 +529,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
 
         // New active powpeg and retiring powpeg is still there
@@ -549,6 +562,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
 
         // New active powpeg and retiring powpeg is still there
@@ -695,6 +709,9 @@ class PowpegMigrationTest {
             )
         );
 
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+
         if (activations.isActive(ConsensusRule.RSKIP271)) {
             // Peg-out batching is enabled need to move the height to the next pegout event
             blockNumber = bridgeSupport.getNextPegoutCreationBlockNumber();
@@ -711,6 +728,7 @@ class PowpegMigrationTest {
                 .withBridgeConstants(bridgeConstants)
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withFeePerKbSupport(feePerKbSupport)
                 .build();
         }
 
@@ -778,6 +796,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
 
         int confirmedPegouts = bridgeStorageProvider.getPegoutsWaitingForSignatures().size();
