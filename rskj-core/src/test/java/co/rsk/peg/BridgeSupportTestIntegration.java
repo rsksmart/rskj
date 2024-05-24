@@ -622,16 +622,11 @@ public class BridgeSupportTestIntegration {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb())
-                .thenReturn(Coin.MILLICOIN);
-        when(provider.getReleaseRequestQueue())
-                .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getPegoutsWaitingForConfirmations())
-                .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
-        when(federationStorageProvider.getOldFederation(federationConstants, activationsBeforeForks))
-                .thenReturn(oldFederation);
-        when(federationStorageProvider.getNewFederation(federationConstants, activationsBeforeForks))
-                .thenReturn(newFederation);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(federationStorageProvider.getOldFederation(federationConstants, activationsBeforeForks)).thenReturn(oldFederation);
+        when(federationStorageProvider.getNewFederation(federationConstants, activationsBeforeForks)).thenReturn(newFederation);
 
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 35
@@ -662,8 +657,7 @@ public class BridgeSupportTestIntegration {
         // and so it won't be removed from the old federation UTXOs list for migration.
         List<UTXO> unsufficientUTXOsForMigration1 = new ArrayList<>();
         unsufficientUTXOsForMigration1.add(createUTXO(Coin.MICROCOIN, oldFederation.getAddress()));
-        when(federationStorageProvider.getOldFederationBtcUTXOs())
-                .thenReturn(unsufficientUTXOsForMigration1);
+        when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(unsufficientUTXOsForMigration1);
         bridgeSupport.updateCollections(tx);
         assertThat(unsufficientUTXOsForMigration1.size(), is(1));
 
@@ -671,8 +665,7 @@ public class BridgeSupportTestIntegration {
         // and it will be removed from the old federation UTXOs list for migration.
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
         sufficientUTXOsForMigration1.add(createUTXO(Coin.MILLICOIN, oldFederation.getAddress()));
-        when(federationStorageProvider.getOldFederationBtcUTXOs())
-                .thenReturn(sufficientUTXOsForMigration1);
+        when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration1);
 
         bridgeSupport.updateCollections(tx);
         assertThat(sufficientUTXOsForMigration1.size(), is(0));
@@ -681,8 +674,7 @@ public class BridgeSupportTestIntegration {
         List<UTXO> sufficientUTXOsForMigration2 = new ArrayList<>();
         sufficientUTXOsForMigration2.add(createUTXO(Coin.MILLICOIN.divide(2), oldFederation.getAddress()));
         sufficientUTXOsForMigration2.add(createUTXO(Coin.MILLICOIN.divide(2), oldFederation.getAddress()));
-        when(federationStorageProvider.getOldFederationBtcUTXOs())
-                .thenReturn(sufficientUTXOsForMigration2);
+        when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration2);
 
         bridgeSupport.updateCollections(tx);
         assertThat(sufficientUTXOsForMigration2.size(), is(0));
@@ -690,10 +682,8 @@ public class BridgeSupportTestIntegration {
         // higher fee per kb prevents funds migration
         List<UTXO> unsufficientUTXOsForMigration2 = new ArrayList<>();
         unsufficientUTXOsForMigration2.add(createUTXO(Coin.MILLICOIN, oldFederation.getAddress()));
-        when(federationStorageProvider.getOldFederationBtcUTXOs())
-                .thenReturn(unsufficientUTXOsForMigration2);
-        when(feePerKbSupport.getFeePerKb())
-                .thenReturn(Coin.COIN);
+        when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(unsufficientUTXOsForMigration2);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.COIN);
 
         bridgeSupport.updateCollections(tx);
         assertThat(unsufficientUTXOsForMigration2.size(), is(1));
