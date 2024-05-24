@@ -603,50 +603,50 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertTrue(btcDestinationAddress instanceof  String);
 
     }
-    /*
-        @Test
-        void release_verify_fee_below_fee_is_rejected() throws IOException {
-            Coin value = bridgeConstants.getMinimumPegoutTxValue().add(Coin.SATOSHI);
+/*
+    @Test
+    void release_verify_fee_below_fee_is_rejected() throws IOException {
+        Coin value = bridgeConstants.getMinimumPegoutTxValue().add(Coin.SATOSHI);
 
-            testPegoutMinimumWithFeeVerification(Coin.COIN, value, false);
-        }
+        testPegoutMinimumWithFeeVerification(Coin.COIN, value, false);
+    }
 
-        @Test
-        void release_verify_fee_above_fee_but_below_gap_is_rejected_before_rskip_271() throws IOException {
-            when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
-            Coin feePerKB = Coin.COIN;
+    @Test
+    void release_verify_fee_above_fee_but_below_gap_is_rejected_before_rskip_271() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+        Coin feePerKB = Coin.COIN;
 
-            int pegoutSize = BridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
-            Coin value = feePerKB.div(1000).times(pegoutSize);
+        int pegoutSize = BridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
+        Coin value = feePerKB.div(1000).times(pegoutSize);
 
-            testPegoutMinimumWithFeeVerification(feePerKB, value, false);
-        }
+        testPegoutMinimumWithFeeVerification(feePerKB, value, false);
+    }
 
-        @Test
-        void release_verify_fee_above_fee_but_below_gap_is_rejected_after_rskip_271() throws IOException {
-            when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-            Coin feePerKB = Coin.COIN;
+    @Test
+    void release_verify_fee_above_fee_but_below_gap_is_rejected_after_rskip_271() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        Coin feePerKB = Coin.COIN;
 
-            int pegoutSize = BridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
-            Coin value = feePerKB.div(1000).times(pegoutSize);
+        int pegoutSize = BridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
+        Coin value = feePerKB.div(1000).times(pegoutSize);
 
-            testPegoutMinimumWithFeeVerification(feePerKB, value, false);
-        }
+        testPegoutMinimumWithFeeVerification(feePerKB, value, false);
+    }
 
-        @Test
-        void release_verify_fee_above_fee_but_below_minimum_is_rejected() throws IOException {
-            testPegoutMinimumWithFeeVerification(
-                Coin.MILLICOIN,
-                bridgeConstants.getMinimumPegoutTxValue().minus(Coin.SATOSHI),
-                false
-            );
-        }
+    @Test
+    void release_verify_fee_above_fee_but_below_minimum_is_rejected() throws IOException {
+        testPegoutMinimumWithFeeVerification(
+            Coin.MILLICOIN,
+            bridgeConstants.getMinimumPegoutTxValue().minus(Coin.SATOSHI),
+            false
+        );
+    }
 
-        @Test
-        void release_verify_fee_above_fee_and_minimum_is_accepted() throws IOException {
-            testPegoutMinimumWithFeeVerification(Coin.COIN, Coin.FIFTY_COINS, true);
-        }
-    */
+    @Test
+    void release_verify_fee_above_fee_and_minimum_is_accepted() throws IOException {
+        testPegoutMinimumWithFeeVerification(Coin.COIN, Coin.FIFTY_COINS, true);
+    }
+*/
     @Test
     void test_processPegoutsIndividually_before_RSKIP271_activation() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
