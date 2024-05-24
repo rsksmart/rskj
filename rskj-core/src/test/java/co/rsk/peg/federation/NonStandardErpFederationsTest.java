@@ -55,7 +55,7 @@ class NonStandardErpFederationsTest {
 
     @BeforeEach
     void setup() {
-        FederationConstants federationConstants = FederationMainNetConstants.getInstance();
+        FederationConstants federationMainNetConstants = FederationMainNetConstants.getInstance();
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344"));
@@ -74,10 +74,10 @@ class NonStandardErpFederationsTest {
             federator9PublicKey
         );
         defaultThreshold = defaultKeys.size() / 2 + 1;
-        emergencyKeys = federationConstants.getErpFedPubKeysList();
+        emergencyKeys = federationMainNetConstants.getErpFedPubKeysList();
         emergencyThreshold = emergencyKeys.size() / 2 + 1;
-        activationDelayValue = federationConstants.getErpFedActivationDelay();
-        networkParameters = federationConstants.getBtcParams();
+        activationDelayValue = federationMainNetConstants.getErpFedActivationDelay();
+        networkParameters = federationMainNetConstants.getBtcParams();
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
