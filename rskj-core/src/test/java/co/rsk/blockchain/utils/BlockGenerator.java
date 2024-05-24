@@ -26,7 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinimumGasPriceCalculator;
-import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
+import co.rsk.mine.minGasPrice.MinGasPriceProvider;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
@@ -314,7 +314,7 @@ public class BlockGenerator {
         }
 
         Coin previousMGP = parent.getMinimumGasPrice() != null ? parent.getMinimumGasPrice() : Coin.valueOf(10L);
-        Coin minimumGasPrice = new MinimumGasPriceCalculator(new FixedMinGasPriceProvider(100L)).calculate(previousMGP);
+        Coin minimumGasPrice = new MinimumGasPriceCalculator(new MinGasPriceProvider(100L)).calculate(previousMGP);
 
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
 

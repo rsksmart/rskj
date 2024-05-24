@@ -19,7 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.core.Coin;
-import co.rsk.mine.gas.provider.MinGasPriceProvider;
+import co.rsk.mine.minGasPrice.MinGasPriceProvider;
 
 /**
  * This is the implementation of RSKIP-09
@@ -27,7 +27,7 @@ import co.rsk.mine.gas.provider.MinGasPriceProvider;
  */
 public class MinimumGasPriceCalculator {
 
-    private MinGasPriceProvider minGasPriceProvider;
+    private final MinGasPriceProvider minGasPriceProvider;
 
     public MinimumGasPriceCalculator(MinGasPriceProvider minGasPriceProvider) {
         this.minGasPriceProvider = minGasPriceProvider;

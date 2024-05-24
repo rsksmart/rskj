@@ -18,7 +18,7 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
-import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
+import co.rsk.mine.minGasPrice.MinGasPriceProvider;
 
 public class ConfigUtils {
     public static MiningConfig getDefaultMiningConfig() {
@@ -31,8 +31,7 @@ public class ConfigUtils {
                 7,
                 new GasLimitConfig(3000000, 500000, true),
                 true,
-                0L,
-                new FixedMinGasPriceProvider(0)
+                0L
         );
     }
 }

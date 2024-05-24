@@ -20,9 +20,10 @@ package co.rsk.rpc.modules.trace;
 import co.rsk.config.GasLimitConfig;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.mine.*;
-import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
+import co.rsk.mine.minGasPrice.MinGasPriceProvider;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
@@ -34,10 +35,7 @@ import co.rsk.validators.DummyBlockValidationRule;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.ethereum.core.Account;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
@@ -48,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -428,7 +427,7 @@ class TraceModuleImplTest {
                 rskSystemProperties.coinbaseAddress(),
                 rskSystemProperties.minerMinFeesNotifyInDollars(),
                 rskSystemProperties.minerGasUnitInDollars(),
-                                rskSystemProperties.getNetworkConstants().getUncleListLimit(),
+                rskSystemProperties.getNetworkConstants().getUncleListLimit(),
                 rskSystemProperties.getNetworkConstants().getUncleGenerationLimit(),
                 new GasLimitConfig(
                         rskSystemProperties.getNetworkConstants().getMinGasLimit(),
@@ -436,8 +435,7 @@ class TraceModuleImplTest {
                         rskSystemProperties.getForceTargetGasLimit()
                 ),
                 rskSystemProperties.isMinerServerFixedClock(),
-                rskSystemProperties.workSubmissionRateLimitInMills(),
-                new FixedMinGasPriceProvider(rskSystemProperties.minerMinGasPrice())
+                rskSystemProperties.workSubmissionRateLimitInMills()
         );
         BlockToMineBuilder builder = new BlockToMineBuilder(
                 rskSystemProperties.getActivationConfig(),
@@ -455,7 +453,14 @@ class TraceModuleImplTest {
                 new MinerClock(miningConfig.isFixedClock(), Clock.systemUTC()),
                 new BlockFactory(rskSystemProperties.getActivationConfig()),
                 world.getBlockExecutor(),
-                new MinimumGasPriceCalculator(miningConfig.getMinGasPriceProvider()),
+
+                new MinimumGasPriceCalculator(new MinGasPriceProvider(
+                        rskSystemProperties.minerStableGasPriceEnabled(),
+                        rskSystemProperties.minerMinGasPrice(),
+                        rskSystemProperties.minerStableGasPriceMinStableGasPrice(),
+                        rskSystemProperties.minerStableGasPriceRefreshRate(),
+                        rskSystemProperties.minerStableGasPriceSources()
+                )),
                 new MinerUtils(),
                 world.getBlockTxSignatureCache()
         );

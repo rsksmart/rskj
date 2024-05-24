@@ -29,7 +29,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
+import co.rsk.mine.minGasPrice.MinGasPriceProvider;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.handler.quota.TxQuotaChecker;
@@ -131,7 +131,7 @@ public abstract class MinerServerTest {
 
         blockFactory = rskTestContext.getBlockFactory();
         blockExecutor = rskTestContext.getBlockExecutor();
-        minimumGasPriceCalculator = new MinimumGasPriceCalculator(new FixedMinGasPriceProvider(0L));
+        minimumGasPriceCalculator = new MinimumGasPriceCalculator(new MinGasPriceProvider(0L));
         minerUtils = new MinerUtils();
     }
 

@@ -22,6 +22,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueType;
@@ -165,6 +166,22 @@ public class RskSystemProperties extends SystemProperties {
 
     public long minerMinGasPrice() {
         return configFromFiles.getLong("miner.minGasPrice");
+    }
+
+    public boolean minerStableGasPriceEnabled(){
+        return configFromFiles.getBoolean("miner.stableGasPrice.enabled");
+    }
+
+    public long minerStableGasPriceMinStableGasPrice(){
+        return configFromFiles.getLong("miner.stableGasPrice.minStableGasPrice");
+    }
+
+    public Duration minerStableGasPriceRefreshRate(){
+        return configFromFiles.getDuration("miner.stableGasPrice.refreshRate");
+    }
+
+    public ConfigList minerStableGasPriceSources(){
+        return configFromFiles.getList("miner.stableGasPrice.sources");
     }
 
     public double minerGasUnitInDollars() {

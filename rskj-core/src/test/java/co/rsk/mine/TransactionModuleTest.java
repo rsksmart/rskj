@@ -26,6 +26,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
+import co.rsk.mine.minGasPrice.MinGasPriceProvider;
 import co.rsk.net.TransactionGateway;
 import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.peg.BridgeSupportFactory;
@@ -612,7 +613,13 @@ class TransactionModuleTest {
                         minerClock,
                         blockFactory,
                         blockExecutor,
-                        new MinimumGasPriceCalculator(miningConfig.getMinGasPriceProvider()),
+                        new MinimumGasPriceCalculator(new MinGasPriceProvider(
+                                config.minerStableGasPriceEnabled(),
+                                config.minerMinGasPrice(),
+                                config.minerStableGasPriceMinStableGasPrice(),
+                                config.minerStableGasPriceRefreshRate(),
+                                config.minerStableGasPriceSources()
+                        )),
                         new MinerUtils(),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
