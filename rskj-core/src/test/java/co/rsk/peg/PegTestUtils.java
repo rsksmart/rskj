@@ -319,15 +319,6 @@ public final class PegTestUtils {
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
-    public static BtcTransaction createBtcTransactionWithOutputToAddress(NetworkParameters networkParameters, Coin amount, Address btcAddress) {
-        BtcTransaction tx = new BtcTransaction(networkParameters);
-        tx.addOutput(amount, btcAddress);
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1),
-            0, ScriptBuilder.createInputScript(null, srcKey));
-        return tx;
-    }
-
     public static Transaction getMockedRskTxWithHash(String s) {
         byte[] hash = Keccak256Helper.keccak256(s);
         return new SimpleRskTransaction(hash);

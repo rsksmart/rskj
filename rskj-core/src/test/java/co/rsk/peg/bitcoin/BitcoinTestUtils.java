@@ -2,6 +2,8 @@ package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
@@ -10,6 +12,7 @@ import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.peg.PegTestUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import co.rsk.bitcoinj.script.ScriptChunk;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 
 public class BitcoinTestUtils {
@@ -71,4 +75,22 @@ public class BitcoinTestUtils {
         }
         return signatures;
     }
+
+    public static BtcTransaction createBtcTransactionWithOutputToAddress(
+        NetworkParameters networkParameters,
+        Coin amount,
+        Address btcAddress) {
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(amount, btcAddress);
+        BtcECKey srcKey = BtcECKey.fromPublicOnly(Hex.decode("02550cc87fa9061162b1dd395a16662529c9d8094c0feca17905a3244713d65fe8"));
+        tx.addInput(
+            createHash(100),
+            0,
+            ScriptBuilder.createInputScript(null, srcKey)
+        );
+
+        return tx;
+    }
+
 }
