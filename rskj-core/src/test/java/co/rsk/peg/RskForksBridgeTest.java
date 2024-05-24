@@ -34,6 +34,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -44,13 +45,20 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 class RskForksBridgeTest {
+    public static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Collections.unmodifiableList(Arrays.asList(
+        BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))),
+        BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8))),
+        BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)))
+    ));
     private static ECKey fedECPrivateKey = ECKey.fromPrivate(
-            BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKey()
+            REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKey()
     );
 
     private RepositoryLocator repositoryLocator;
@@ -82,7 +90,7 @@ class RskForksBridgeTest {
         co.rsk.core.Coin balance = new co.rsk.core.Coin(new BigInteger("10000000000000000000"));
         repository.addBalance(new RskAddress(fedECPrivateKey.getAddress()), balance);
 
-        co.rsk.core.Coin bridgeBalance = co.rsk.core.Coin .fromBitcoin(BridgeRegTestConstants.getInstance().getMaxRbtc());
+        co.rsk.core.Coin bridgeBalance = co.rsk.core.Coin .fromBitcoin((new BridgeRegTestConstants()).getMaxRbtc());
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, bridgeBalance);
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();
