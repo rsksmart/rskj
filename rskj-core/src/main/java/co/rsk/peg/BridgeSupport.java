@@ -920,10 +920,6 @@ public class BridgeSupport {
         }
     }
 
-    public Coin getFeePerKb() {
-        return feePerKbSupport.getFeePerKb();
-    }
-
     /**
      * Executed every now and then.
      * Performs a few tasks: processing of any pending btc funds
@@ -2526,11 +2522,20 @@ public class BridgeSupport {
         }
     }
 
+    public Coin getFeePerKb() {
+        return feePerKbSupport.getFeePerKb();
+    }
+
     /**
      * Votes for a fee per kb value.
      *
-     * @return 1 upon successful vote, -1 when the vote was unsuccessful,
-     * FEE_PER_KB_GENERIC_ERROR_CODE when there was an un expected error.
+     * @return
+     * UNAUTHORIZED fee per kb response code when the signature is not authorized to vote.
+     * NEGATIVE fee per kb response code when fee is not positive.
+     * EXCESSIVE fee per kb response code when fee is greater than the maximum fee allowed.
+     * UNSUCCESSFUL fee per kb response code when the vote was unsuccessful.
+     * GENERIC fee per kb response code when there was an unexpected error.
+     * SUCCESSFUL fee per kb response code when the vote was successful.
      */
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb) {
         return feePerKbSupport.voteFeePerKbChange(tx, feePerKb, signatureCache);

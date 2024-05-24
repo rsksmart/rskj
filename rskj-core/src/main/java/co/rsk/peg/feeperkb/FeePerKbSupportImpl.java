@@ -13,10 +13,11 @@ import java.util.Optional;
 
 public class FeePerKbSupportImpl implements FeePerKbSupport {
 
-    private final FeePerKbStorageProvider provider;
-    private final FeePerKbConstants feePerKbConstants;
     private static final Logger logger = LoggerFactory.getLogger(FeePerKbSupportImpl.class);
     private static final String SET_FEE_PER_KB_ABI_FUNCTION = "setFeePerKb";
+
+    private final FeePerKbStorageProvider provider;
+    private final FeePerKbConstants feePerKbConstants;
 
     public FeePerKbSupportImpl(FeePerKbConstants feePerKbConstants, FeePerKbStorageProvider provider) {
         this.provider = provider;
@@ -28,7 +29,6 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
         Optional<Coin> currentFeePerKb = provider.getFeePerKb();
 
         return currentFeePerKb.orElseGet(feePerKbConstants::getGenesisFeePerKb);
-
     }
 
     @Override
