@@ -1,9 +1,7 @@
 package co.rsk.test.builders;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.BridgeStorageProvider;
@@ -11,12 +9,7 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
-import co.rsk.peg.storage.StorageAccessor;
-import co.rsk.peg.storage.BridgeStorageAccessorImpl;
-import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
-import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -105,11 +98,7 @@ public class BridgeSupportBuilder {
     }
 
     public BridgeSupport build() {
-//        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-//        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
-//        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.CENT);
-
-        return new BridgeSupport(
+      return new BridgeSupport(
             bridgeConstants,
             provider,
             eventLogger,

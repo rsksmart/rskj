@@ -2544,17 +2544,6 @@ public class BridgeSupport {
         return feePerKbSupport.getFeePerKb();
     }
 
-    /**
-     * Votes for a fee per kb value.
-     *
-     * @return
-     * UNAUTHORIZED fee per kb response code when the signature is not authorized to vote.
-     * NEGATIVE fee per kb response code when fee is not positive.
-     * EXCESSIVE fee per kb response code when fee is greater than the maximum fee allowed.
-     * UNSUCCESSFUL fee per kb response code when the vote was unsuccessful.
-     * GENERIC fee per kb response code when there was an unexpected error.
-     * SUCCESSFUL fee per kb response code when the vote was successful.
-     */
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb) {
         return feePerKbSupport.voteFeePerKbChange(tx, feePerKb, signatureCache);
     }
