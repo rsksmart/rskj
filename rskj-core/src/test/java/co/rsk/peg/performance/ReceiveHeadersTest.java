@@ -131,12 +131,12 @@ class ReceiveHeadersTest extends BridgePerformanceTestCase {
                     BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                             (Repository) environment.getBenchmarkedRepository(),
                             PrecompiledContracts.BRIDGE_ADDR,
-                            constants.getBridgeConstants(),
+                            constants.getBridgeConstants().getBtcParams(),
                             activationConfig.forBlock(0)
                     );
 
                     btcBlockStore = new RepositoryBtcBlockStoreWithCache(
-                        BridgeRegTestConstants.getInstance().getBtcParams(),
+                        (new BridgeRegTestConstants()).getBtcParams(),
                         (Repository) environment.getBenchmarkedRepository(),
                         new HashMap<>(),
                         PrecompiledContracts.BRIDGE_ADDR,

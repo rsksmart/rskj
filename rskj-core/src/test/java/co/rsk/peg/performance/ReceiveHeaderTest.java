@@ -60,7 +60,7 @@ class ReceiveHeaderTest extends BridgePerformanceTestCase {
                         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                                 (Repository) environment.getBenchmarkedRepository(),
                                 PrecompiledContracts.BRIDGE_ADDR,
-                                constants.getBridgeConstants(),
+                                constants.getBridgeConstants().getBtcParams(),
                                 activationConfig.forBlock(0)
                         );
 
