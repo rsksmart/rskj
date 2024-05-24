@@ -30,6 +30,7 @@ import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
@@ -105,6 +106,7 @@ import static co.rsk.peg.PegTestUtils.createUTXO;
 @Disabled
 class BridgeSupportTest {
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
+    private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
     protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     private BridgeSupportBuilder bridgeSupportBuilder;
 
@@ -365,7 +367,7 @@ class BridgeSupportTest {
     @Test
     void getActivePowpegRedeemScript_after_RSKIP293_activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -596,7 +598,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
@@ -657,7 +659,7 @@ class BridgeSupportTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
 
@@ -732,7 +734,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP181)).thenReturn(false);
 
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
@@ -802,7 +804,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP181)).thenReturn(true);
 
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
@@ -872,7 +874,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(false);
 
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
@@ -936,7 +938,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(true);
 
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
@@ -1471,7 +1473,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
@@ -1539,7 +1541,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
@@ -1609,7 +1611,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
@@ -1677,7 +1679,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
@@ -1746,7 +1748,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
@@ -1814,7 +1816,7 @@ class BridgeSupportTest {
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
@@ -2201,7 +2203,7 @@ class BridgeSupportTest {
         ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
 
         // Set state to make concur a pegout migration tx and pegout batch creation on the same updateCollection
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
@@ -2576,7 +2578,7 @@ class BridgeSupportTest {
             executionBlock,
             mockFactory,
             activations,
-                signatureCache
+            signatureCache
         );
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -5905,7 +5907,7 @@ class BridgeSupportTest {
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
@@ -6051,7 +6053,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(false);
 
         Repository repository = createRepository();
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         Address federationAddress = genesisFederation.getAddress();
 
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
@@ -6103,7 +6105,7 @@ class BridgeSupportTest {
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
         RskAddress rskAddress = new RskAddress(key.getAddress());
         Address btcSenderAddress = srcKey1.toAddress(btcRegTestParams);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         Address federationAddress = genesisFederation.getAddress();
 
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
@@ -6439,7 +6441,7 @@ class BridgeSupportTest {
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
         Address btcAddress = srcKey1.toAddress(btcRegTestParams);
         RskAddress rskAddress = new RskAddress(key.getAddress());
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         Address federationAddress = genesisFederation.getAddress();
 
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
@@ -6684,7 +6686,8 @@ class BridgeSupportTest {
             PegTestUtils.createRandomBtcECKeys(7)
         );
 
-        Federation standardFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstants);
 
         ActivationConfig.ForBlock preRSKIP271_activations = mock(ActivationConfig.ForBlock.class);
         when(preRSKIP271_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
@@ -6746,7 +6749,8 @@ class BridgeSupportTest {
             PegTestUtils.createRandomBtcECKeys(7)
         );
 
-        Federation standardFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstants);
 
         ActivationConfig.ForBlock preRSKIP385_activations = mock(ActivationConfig.ForBlock.class);
         when(preRSKIP385_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
@@ -6812,7 +6816,8 @@ class BridgeSupportTest {
         when(postRSKIP385_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
         when(postRSKIP385_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(true);
 
-        Federation standardFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstants);
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
         );
@@ -6931,7 +6936,7 @@ class BridgeSupportTest {
         List<ConsensusRule> consensusRules)
         throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         Address federationAddress = genesisFederation.getAddress();
 
         // Arrange
@@ -7218,9 +7223,9 @@ class BridgeSupportTest {
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-        BridgeEventLogger eventLogger, Block executionBlock,
-        BtcBlockStoreWithCache.Factory blockStoreFactory,
-        ActivationConfig.ForBlock activations) {
+                                           BridgeEventLogger eventLogger, Block executionBlock,
+                                           BtcBlockStoreWithCache.Factory blockStoreFactory,
+                                           ActivationConfig.ForBlock activations) {
         return bridgeSupportBuilder
             .withBridgeConstants(constants)
             .withProvider(provider)
