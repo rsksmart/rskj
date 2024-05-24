@@ -960,6 +960,10 @@ public class Program {
         return Arrays.copyOf(ops, ops.length);
     }
 
+    public int getCodeLength() {
+        return ops.length;
+    }
+
     public Keccak256 getCodeHashAt(RskAddress addr, boolean standard) {
         if(standard) {
             return invoke.getRepository().getCodeHashStandard(addr);
