@@ -24,10 +24,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.peg.constants.BridgeTestNetConstants;
+import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
@@ -42,10 +39,7 @@ import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
-import co.rsk.peg.pegininstructions.PeginInstructions;
-import co.rsk.peg.pegininstructions.PeginInstructionsException;
-import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.pegininstructions.PeginInstructionsVersion1;
+import co.rsk.peg.pegininstructions.*;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
@@ -69,7 +63,6 @@ import org.ethereum.vm.exception.VMException;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -88,19 +81,13 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.createUTXO;
 
-@Disabled
 class BridgeSupportTest {
     private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
     protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
@@ -161,167 +148,7 @@ class BridgeSupportTest {
 
         verify(feePerKbStorageProvider, never()).setFeePerKb(any());
     }
-/*
-    @Test
-    void voteFeePerKbChange_unsuccessfulVote_unauthorized() {
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        Transaction tx = mock(Transaction.class);
-        BridgeConstants constants = mock(BridgeConstants.class);
-        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
 
-        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-        byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
-
-        when(provider.getFeePerKbElection(any())).thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(senderBytes));
-        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
-        when(authorizer.isAuthorized(eq(tx), any())).thenReturn(false);
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .build();
-
-        MatcherAssert.assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(-10));
-        verify(provider, never()).setFeePerKb(any());
-    }
-
-    @Test
-    void voteFeePerKbChange_unsuccessfulVote_negativeFeePerKb() {
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        Transaction tx = mock(Transaction.class);
-        BridgeConstants constants = mock(BridgeConstants.class);
-        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
-
-        when(provider.getFeePerKbElection(any()))
-            .thenReturn(new ABICallElection(authorizer));
-        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer())
-            .thenReturn(authorizer);
-        when(authorizer.isAuthorized(eq(tx), any()))
-            .thenReturn(true);
-        when(authorizer.getRequiredAuthorizedKeys())
-            .thenReturn(2);
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .build();
-
-        MatcherAssert.assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.NEGATIVE_SATOSHI), is(-1));
-        MatcherAssert.assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.ZERO), is(-1));
-        verify(provider, never()).setFeePerKb(any());
-    }
-
-    @Test
-    void voteFeePerKbChange_unsuccessfulVote_excessiveFeePerKb() {
-        final long MAX_FEE_PER_KB = 5_000_000L;
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        Transaction tx = mock(Transaction.class);
-        BridgeConstants constants = mock(BridgeConstants.class);
-        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
-        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-        byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
-
-        RskAddress sender = new RskAddress(senderBytes);
-
-        when(provider.getFeePerKbElection(any()))
-            .thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender(any(SignatureCache.class)))
-            .thenReturn(sender);
-        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer())
-            .thenReturn(authorizer);
-        when(authorizer.isAuthorized(eq(tx), any()))
-            .thenReturn(true);
-        when(authorizer.isAuthorized(sender))
-            .thenReturn(true);
-        when(authorizer.getRequiredAuthorizedKeys())
-            .thenReturn(2);
-        when(feePerKbMainNetConstants.getMaxFeePerKb())
-            .thenReturn(Coin.valueOf(MAX_FEE_PER_KB));
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .build();
-
-        MatcherAssert.assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.valueOf(MAX_FEE_PER_KB)), is(1));
-        MatcherAssert.assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.valueOf(MAX_FEE_PER_KB + 1)), is(-2));
-        verify(provider, never()).setFeePerKb(any());
-    }
-
-    @Test
-    void voteFeePerKbChange_successfulVote() {
-        final long MAX_FEE_PER_KB = 5_000_000L;
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        Transaction tx = mock(Transaction.class);
-        BridgeConstants constants = mock(BridgeConstants.class);
-        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
-        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-        byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
-
-        RskAddress sender = new RskAddress(senderBytes);
-
-        when(provider.getFeePerKbElection(any()))
-            .thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender(any(SignatureCache.class)))
-            .thenReturn(sender);
-        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer())
-            .thenReturn(authorizer);
-        when(authorizer.isAuthorized(eq(tx), any()))
-            .thenReturn(true);
-        when(authorizer.isAuthorized(sender))
-            .thenReturn(true);
-        when(authorizer.getRequiredAuthorizedKeys())
-            .thenReturn(2);
-        when(feePerKbMainNetConstants.getMaxFeePerKb())
-            .thenReturn(Coin.valueOf(MAX_FEE_PER_KB));
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .build();
-
-        MatcherAssert.assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
-        verify(provider, never()).setFeePerKb(any());
-    }
-
-    @Test
-    void voteFeePerKbChange_successfulVoteWithFeeChange() {
-        final long MAX_FEE_PER_KB = 5_000_000L;
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        Transaction tx = mock(Transaction.class);
-        BridgeConstants constants = mock(BridgeConstants.class);
-        FeePerKbConstants feePerKbMainNetConstants = mock(FeePerKbMainNetConstants.class);
-        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-        byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
-
-        RskAddress sender = new RskAddress(senderBytes);
-
-        when(provider.getFeePerKbElection(any()))
-            .thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender(any(SignatureCache.class)))
-            .thenReturn(sender);
-        when(feePerKbMainNetConstants.getFeePerKbChangeAuthorizer())
-            .thenReturn(authorizer);
-        when(authorizer.isAuthorized(eq(tx), any()))
-            .thenReturn(true);
-        when(authorizer.isAuthorized(sender))
-            .thenReturn(true);
-        when(authorizer.getRequiredAuthorizedKeys())
-            .thenReturn(1);
-        when(feePerKbMainNetConstants.getMaxFeePerKb())
-            .thenReturn(Coin.valueOf(MAX_FEE_PER_KB));
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .build();
-
-        MatcherAssert.assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
-        verify(provider).setFeePerKb(Coin.CENT);
-    }
-*/
     @Test
     void getLockingCap() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -5001,7 +4828,7 @@ class BridgeSupportTest {
     }
 
     @Test
-    void when_RegisterBtcCoinbaseTransaction_wrong_witnessReservedValue_noSent() throws BlockStoreException, AddressFormatException, VMException {
+    void when_RegisterBtcCoinbaseTransaction_wrong_witnessReservedValue_noSent() throws BlockStoreException, AddressFormatException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -5055,7 +4882,7 @@ class BridgeSupportTest {
     }
 
     @Test
-    void when_RegisterBtcCoinbaseTransaction_MerkleTreeWrongFormat_noSent() throws BlockStoreException, AddressFormatException, VMException {
+    void when_RegisterBtcCoinbaseTransaction_MerkleTreeWrongFormat_noSent() throws BlockStoreException, AddressFormatException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -5169,7 +4996,7 @@ class BridgeSupportTest {
     }
 
     @Test
-    void when_RegisterBtcCoinbaseTransaction_notVerify_noSent() throws BlockStoreException, AddressFormatException, VMException {
+    void when_RegisterBtcCoinbaseTransaction_notVerify_noSent() throws BlockStoreException, AddressFormatException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -5597,7 +5424,7 @@ class BridgeSupportTest {
     }
 
     @Test
-    void validationsForRegisterBtcTransaction_invalid_pmt() throws BlockStoreException, BridgeIllegalArgumentException {
+    void validationsForRegisterBtcTransaction_invalid_pmt() throws BlockStoreException {
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
 
@@ -6033,8 +5860,8 @@ class BridgeSupportTest {
             Assertions.fail(); // Should have thrown a RegisterBtcTransactionException
         } catch (Exception e) {
             // Assert
-            Assertions.assertTrue(e instanceof RegisterBtcTransactionException);
-            Assertions.assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
+            assertInstanceOf(RegisterBtcTransactionException.class, e);
+            assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
         }
     }
 
@@ -6091,8 +5918,8 @@ class BridgeSupportTest {
             Assertions.fail(); // Should have thrown a RegisterBtcTransactionException
         } catch (Exception ex) {
             // Assert
-            Assertions.assertTrue(ex instanceof RegisterBtcTransactionException);
-            Assertions.assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+            assertInstanceOf(RegisterBtcTransactionException.class, ex);
+            assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
 
             // Check rejection tx input was created from btc tx and sent to the btc refund address indicated by the user
             boolean successfulRejection = false;
@@ -6361,7 +6188,6 @@ class BridgeSupportTest {
             activationsAfterForks
         );
 
-        // when(btcBlockStore.get(any())).thenReturn(nul);
         int result = bridgeSupport.receiveHeader(btcBlock);
 
         // Calls put when is adding the block header. (Saves his storedBlock)
