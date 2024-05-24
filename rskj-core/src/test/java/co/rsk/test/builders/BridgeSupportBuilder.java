@@ -1,7 +1,9 @@
 package co.rsk.test.builders;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.BridgeStorageProvider;
@@ -103,8 +105,9 @@ public class BridgeSupportBuilder {
     }
 
     public BridgeSupport build() {
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+//        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+//        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+//        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.CENT);
 
         return new BridgeSupport(
             bridgeConstants,
@@ -116,7 +119,7 @@ public class BridgeSupportBuilder {
             executionBlock,
             new Context(bridgeConstants.getBtcParams()),
             new FederationSupport(bridgeConstants, provider, executionBlock, activations),
-            new FeePerKbSupportImpl(bridgeConstants.getFeePerKbConstants(), feePerKbStorageProvider),
+            feePerKbSupport,
             btcBlockStoreFactory,
             activations,
             signatureCache
