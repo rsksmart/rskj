@@ -605,7 +605,6 @@ class NonStandardErpFederationsTest {
     @Test
     void getRedeemScript_before_RSKIP_284_testnet() {
         networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
-        activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
         nonStandardErpFederation = createDefaultNonStandardErpFederation();
 
