@@ -620,20 +620,20 @@ class BridgeSupportReleaseBtcTest {
         testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(Coin.COIN, value);
     }
 
-        @Test
-        void release_verify_fee_above_fee_but_below_gap_is_rejected_before_rskip_271() throws IOException {
-            when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
-            Coin feePerKB = Coin.COIN;
+    @Test
+    void release_verify_fee_above_fee_but_below_gap_is_rejected_before_rskip_271() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+        Coin feePerKB = Coin.COIN;
 
         int pegoutSize = BridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
         Coin value = feePerKB.div(1000).times(pegoutSize);
         testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(feePerKB, value);
     }
 
-        @Test
-        void release_verify_fee_above_fee_but_below_gap_is_rejected_after_rskip_271() throws IOException {
-            when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-            Coin feePerKB = Coin.COIN;
+    @Test
+    void release_verify_fee_above_fee_but_below_gap_is_rejected_after_rskip_271() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        Coin feePerKB = Coin.COIN;
 
         int pegoutSize = BridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
         Coin value = feePerKB.div(1000).times(pegoutSize);
