@@ -32,7 +32,6 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import java.math.BigInteger;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -48,23 +47,20 @@ public final class FederationTestUtils {
     private FederationTestUtils() {
     }
 
-    public static final List<BtcECKey> TEST_GENESIS_FED_SIGNERS = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-        new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
-    );
+    public static ErpFederation getErpFederation(NetworkParameters networkParameters) {
+        final List<BtcECKey> fedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
+        );
+        final List<BtcECKey> erpSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fb01", "fb02", "fb03"}, true
+        );
 
-    public static List<BtcECKey> TEST_GENESIS_ERP_SIGNERS = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-        new String[]{"fb01", "fb02", "fb03"}, true
-    );
-
-    public static ErpFederation getTestGenesisErpFederation(NetworkParameters networkParameters) {
         List<FederationMember> fedMember = FederationTestUtils.getFederationMembersWithBtcKeys(
-            TEST_GENESIS_FED_SIGNERS);
-
-        Instant fedCreationTime30daysAgo = Instant.now().minus(Duration.ofDays(30));
+            fedSigners);
 
         FederationArgs federationArgs = new FederationArgs(
             fedMember,
-            fedCreationTime30daysAgo,
+            ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant(),
             0,
             networkParameters
         );
@@ -73,7 +69,7 @@ public final class FederationTestUtils {
 
         return FederationFactory.buildP2shErpFederation(
             federationArgs,
-            TEST_GENESIS_ERP_SIGNERS,
+            erpSigners,
             erpFedActivationDelay
         );
     }
