@@ -54,7 +54,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
-    private static final ErpFederation TEST_ERP_FEDERATION = FederationTestUtils.getTestGenesisErpFederation(btcMainnetParams);
+    private static final ErpFederation ERP_FEDERATION = FederationTestUtils.getErpFederation(btcMainnetParams);
 
     private BridgeStorageProvider provider;
     private BridgeEventLogger eventLogger;
@@ -78,15 +78,15 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
         List<UTXO> fedUTXOs = createUTXOs(
             10,
-            TEST_ERP_FEDERATION.getAddress()
+            ERP_FEDERATION.getAddress()
         );
         when(provider.getNewFederationBtcUTXOs())
             .thenReturn(fedUTXOs);
         when(provider.getNewFederation())
-            .thenReturn(TEST_ERP_FEDERATION);
+            .thenReturn(ERP_FEDERATION);
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        rskCurrentBlock = blockGenerator.createBlock(TEST_ERP_FEDERATION.getCreationBlockNumber(), 1);
+        rskCurrentBlock = blockGenerator.createBlock(ERP_FEDERATION.getCreationBlockNumber(), 1);
 
         pegoutCreationRskTxHash = PegTestUtils.createHash3(1);
         executionRskTx = mock(Transaction.class);
@@ -152,7 +152,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
-        Federation oldFederation = TEST_ERP_FEDERATION;
+        Federation oldFederation = ERP_FEDERATION;
         when(provider.getOldFederation())
             .thenReturn(oldFederation);
 
@@ -226,7 +226,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(pegoutRequests));
 
-        Federation oldFederation = TEST_ERP_FEDERATION;
+        Federation oldFederation = ERP_FEDERATION;
         when(provider.getOldFederation())
             .thenReturn(oldFederation);
 
