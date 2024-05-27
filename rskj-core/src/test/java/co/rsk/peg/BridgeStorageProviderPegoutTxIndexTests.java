@@ -1,8 +1,8 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -18,11 +18,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.stream.Stream;
 
 import static co.rsk.peg.BridgeStorageIndexKey.PEGOUT_TX_SIG_HASH;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP134;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;

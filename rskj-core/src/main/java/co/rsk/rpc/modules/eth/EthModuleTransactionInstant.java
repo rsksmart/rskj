@@ -18,11 +18,14 @@
 
 package co.rsk.rpc.modules.eth;
 
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionRevertedExecutionError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
-
-import java.util.Optional;
-
+import co.rsk.core.Wallet;
+import co.rsk.core.bc.BlockExecutor;
+import co.rsk.crypto.Keccak256;
+import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerServer;
+import co.rsk.net.TransactionGateway;
+import co.rsk.util.HexUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
@@ -32,13 +35,8 @@ import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.vm.program.ProgramResult;
 
-import co.rsk.core.Wallet;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.crypto.Keccak256;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
-import co.rsk.net.TransactionGateway;
-import co.rsk.util.HexUtils;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionRevertedExecutionError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
 
 public class EthModuleTransactionInstant extends EthModuleTransactionBase {
 
@@ -115,13 +113,18 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
         ProgramResult programResult = this.blockExecutor.getProgramResult(hash);
 
         if (programResult != null && programResult.isRevert()) {
-            Optional<String> revertReason = EthModule.decodeRevertReason(programResult);
-
-            if (revertReason.isPresent()) {
-                throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason.get());
-            } else {
+            Pair<String, byte[]> programRevert = EthModule.decodeProgramRevert(programResult);
+            String revertReason = programRevert.getLeft();
+            byte[] revertData = programRevert.getRight();
+            if (revertData == null) {
                 throw RskJsonRpcRequestException.transactionRevertedExecutionError();
             }
+
+            if (revertReason == null) {
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertData);
+            }
+
+            throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason, revertData);
         }
 
         if (!transactionInfo.getReceipt().isSuccessful()) {

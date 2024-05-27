@@ -10,8 +10,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
-import co.rsk.config.*;
 import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeTestNetConstants;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -335,7 +338,7 @@ class P2shErpFederationTest {
             // should add this case because adding erp to mainnet genesis federation
             // throws a validation error, so in that case we use the one set up before each test.
             // if using testnet constants, we can add them with no errors
-            defaultKeys = bridgeConstants.getGenesisFederation().getBtcPublicKeys();
+            defaultKeys = bridgeConstants.getGenesisFederationPublicKeys();
         }
 
         emergencyKeys = bridgeConstants.getErpFedPubKeysList();

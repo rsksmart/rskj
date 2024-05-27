@@ -14,7 +14,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import java.util.ArrayList;
 import java.util.Arrays;

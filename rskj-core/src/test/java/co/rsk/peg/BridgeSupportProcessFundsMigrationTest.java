@@ -4,9 +4,9 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
-import co.rsk.config.BridgeTestNetConstants;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
@@ -119,9 +119,9 @@ class BridgeSupportProcessFundsMigrationTest {
         ActivationConfig.ForBlock activations,
         boolean inMigrationAge
     ) throws IOException {
-        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
-        Federation oldFederation = bridgeConstants.getGenesisFederation();
+        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
         long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
 
         long federationCreationBlockNumber = 5L;

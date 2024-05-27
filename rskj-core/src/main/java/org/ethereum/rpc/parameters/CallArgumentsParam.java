@@ -38,10 +38,11 @@ public class CallArgumentsParam {
     private final HexNumberParam chainId;
     private final HexNumberParam value;
     private final HexDataParam data;
+    private final HexDataParam input;
 
     public CallArgumentsParam(HexAddressParam from, HexAddressParam to, HexNumberParam gas,
                               HexNumberParam gasPrice, HexNumberParam gasLimit, HexNumberParam nonce,
-                              HexNumberParam chainId, HexNumberParam value, HexDataParam data) {
+                              HexNumberParam chainId, HexNumberParam value, HexDataParam data, HexDataParam input) {
         this.from = from;
         this.to = to;
         this.gas = gas;
@@ -51,6 +52,7 @@ public class CallArgumentsParam {
         this.chainId = chainId;
         this.value = value;
         this.data = data;
+        this.input = input;
     }
 
     public HexAddressParam getFrom() {
@@ -89,8 +91,11 @@ public class CallArgumentsParam {
         return data;
     }
 
-    public CallArguments toCallArguments() {
+    public HexDataParam getInput() {
+        return input;
+    }
 
+    public CallArguments toCallArguments() {
         String caFrom = this.from == null ? null : this.from.getAddress().toJsonString();
         String caTo = this.to == null ? null : this.to.getAddress().toJsonString();
         String caGas = this.gas == null ? null : this.gas.getHexNumber();
@@ -100,6 +105,7 @@ public class CallArgumentsParam {
         String caChainId = this.chainId == null ? null : this.chainId.getHexNumber();
         String caValue = this.value == null ? null : this.value.getHexNumber();
         String caData = this.data == null ? null : this.data.getAsHexString();
+        String caInput = this.input == null ? null : this.input.getAsHexString();
 
         CallArguments callArguments = new CallArguments();
         callArguments.setFrom(caFrom);
@@ -110,7 +116,12 @@ public class CallArgumentsParam {
         callArguments.setNonce(caNonce);
         callArguments.setChainId(caChainId);
         callArguments.setValue(caValue);
-        callArguments.setData(caData);
+        if (caData != null) {
+            callArguments.setData(caData);
+        }
+        if (caInput != null) {
+            callArguments.setInput(caInput);
+        }
 
         return callArguments;
     }
@@ -126,8 +137,6 @@ public class CallArgumentsParam {
         public CallArgumentsParam deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
             JsonNode node =  jp.getCodec().readTree(jp);
 
-            BlockIdentifierParam fromBlock = node.has("fromBlock") ? new BlockIdentifierParam(node.get("fromBlock").asText()) : null;
-
             HexAddressParam from = node.has("from") ? new HexAddressParam(node.get("from").asText()) : null;
             HexAddressParam to = node.has("to") ? new HexAddressParam(node.get("to").asText()) : null;
             HexNumberParam gas = node.has("gas") ? new HexNumberParam(node.get("gas").asText()) : null;
@@ -137,8 +146,9 @@ public class CallArgumentsParam {
             HexNumberParam chainId = node.has("chainId") ? new HexNumberParam(node.get("chainId").asText()) : null;
             HexNumberParam value = node.has("value") ? new HexNumberParam(node.get("value").asText()) : null;
             HexDataParam data = node.has("data") ? new HexDataParam(node.get("data").asText()) : null;
+            HexDataParam input = node.has("input") ? new HexDataParam(node.get("input").asText()) : null;
 
-            return new CallArgumentsParam(from, to, gas, gasPrice, gasLimit, nonce, chainId, value, data);
+            return new CallArgumentsParam(from, to, gas, gasPrice, gasLimit, nonce, chainId, value, data, input);
         }
     }
 }

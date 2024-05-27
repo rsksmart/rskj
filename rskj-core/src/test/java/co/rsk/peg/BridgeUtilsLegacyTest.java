@@ -1,9 +1,9 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import java.time.Instant;
 import java.util.List;
 import co.rsk.peg.federation.Federation;

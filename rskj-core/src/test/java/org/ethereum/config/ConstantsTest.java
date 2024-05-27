@@ -28,6 +28,11 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationTestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
@@ -46,6 +51,8 @@ class ConstantsTest {
     private final ActivationConfig activationConfig = mock(ActivationConfig.class);
     private final ActivationConfig.ForBlock preRskip297Config = mock(ActivationConfig.ForBlock.class);
     private final ActivationConfig.ForBlock postRskip297Config = mock(ActivationConfig.ForBlock.class);
+    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+
 
     @BeforeEach
     void setUp() {
@@ -55,11 +62,12 @@ class ConstantsTest {
 
     @Test
     void devnetWithFederationTest() {
-        Constants constants = Constants.devnetWithFederation(TEST_FED_KEYS.subList(0, 3));
-        assertThat(constants.getBridgeConstants().getGenesisFederation().hasBtcPublicKey(TEST_FED_KEYS.get(0)), is(true));
-        assertThat(constants.getBridgeConstants().getGenesisFederation().hasBtcPublicKey(TEST_FED_KEYS.get(1)), is(true));
-        assertThat(constants.getBridgeConstants().getGenesisFederation().hasBtcPublicKey(TEST_FED_KEYS.get(2)), is(true));
-        assertThat(constants.getBridgeConstants().getGenesisFederation().hasBtcPublicKey(TEST_FED_KEYS.get(3)), is(false));
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+
+        assertThat(genesisFederation.hasBtcPublicKey(TEST_FED_KEYS.get(0)), is(true));
+        assertThat(genesisFederation.hasBtcPublicKey(TEST_FED_KEYS.get(1)), is(true));
+        assertThat(genesisFederation.hasBtcPublicKey(TEST_FED_KEYS.get(2)), is(true));
+        assertThat(genesisFederation.hasBtcPublicKey(TEST_FED_KEYS.get(3)), is(false));
     }
 
     @Test

@@ -2,8 +2,8 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;

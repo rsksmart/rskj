@@ -60,7 +60,7 @@ public final class FederationMember {
         RSK("rsk"),
         MST("mst");
 
-        private String value;
+        private final String value;
 
         KeyType(String value) {
             this.value = value;

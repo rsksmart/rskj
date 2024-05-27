@@ -3,10 +3,10 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
-import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.federation.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -65,7 +65,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         );
 
         List<FederationMember> federationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(standardKeys);
-        Federation genesisFederation = bridgeMainnetConstants.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
         List<BtcECKey> erpPubKeys = bridgeMainnetConstants.getErpFedPubKeysList();
         long activationDelay = bridgeMainnetConstants.getErpFedActivationDelay();
         FederationArgs activeFedArgs =
@@ -131,12 +131,17 @@ class PegUtilsLegacyGetTransactionTypeTest {
             BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
         );
 
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        List<FederationMember> federationMembers = genesisFederation.getMembers();
+        Instant federationCreationTime = genesisFederation.getCreationTime();
+        NetworkParameters networkParameters = genesisFederation.getBtcParams();
+
         // Arrange
         FederationArgs federationArgs = new FederationArgs(
-            bridgeRegTestConstants.getGenesisFederation().getMembers(),
-            bridgeRegTestConstants.getGenesisFederation().getCreationTime(),
+            federationMembers,
+            federationCreationTime,
             5L,
-            bridgeRegTestConstants.getGenesisFederation().getBtcParams()
+            networkParameters
         );
         Federation activeFederation = FederationFactory.buildStandardMultiSigFederation(
             federationArgs
@@ -153,14 +158,14 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
-            migrationTx,
-            activeFederation,
-            null,
-            activations.isActive(RSKIP186)? retiredFederation.getP2SHScript(): null,
-            oldFederationAddress,
-            activations,
-            bridgeRegTestConstants.getMinimumPeginTxValue(activations),
-            new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation))
+                migrationTx,
+                activeFederation,
+                null,
+                activations.isActive(RSKIP186) ? retiredFederation.getP2SHScript() : null,
+                oldFederationAddress,
+                activations,
+                bridgeRegTestConstants.getMinimumPeginTxValue(activations),
+                new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation))
         );
 
         // Assert
@@ -173,7 +178,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
 
-        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
         List<BtcECKey> unknownFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"key1", "key2", "key3"}, true
@@ -539,7 +544,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
     @Test
     void test_unknown_tx() {
         // Arrange
-        Federation activeFederation = bridgeMainnetConstants.getGenesisFederation();
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 

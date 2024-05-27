@@ -18,7 +18,7 @@
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;

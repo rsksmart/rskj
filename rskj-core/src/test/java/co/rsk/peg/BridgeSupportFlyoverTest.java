@@ -33,15 +33,16 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
@@ -91,6 +92,7 @@ class BridgeSupportFlyoverTest {
     private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
     private final BridgeConstants bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
     protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
+    protected final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
     private BridgeSupportBuilder bridgeSupportBuilder;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
@@ -2803,12 +2805,12 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
         Context btcContext = mock(Context.class);
-        when(btcContext.getParams()).thenReturn(bridgeConstantsRegtest.getBtcParams());
+        when(btcContext.getParams()).thenReturn(bridgeConstantsMainnet.getBtcParams());
 
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
-            bridgeConstantsRegtest,
+            bridgeConstantsMainnet,
             mock(BridgeStorageProvider.class),
             mock(BridgeEventLogger.class),
             new BtcLockSenderProvider(),
@@ -2822,7 +2824,9 @@ class BridgeSupportFlyoverTest {
             signatureCache
         ));
 
-        doReturn(bridgeConstantsRegtest.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet);
+
+        doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
         doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
             any(Keccak256.class),
@@ -2831,7 +2835,7 @@ class BridgeSupportFlyoverTest {
             any(RskAddress.class)
         );
 
-        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, new BtcECKey().toAddress(btcRegTestParams));
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, new BtcECKey().toAddress(btcMainnetParams));
         InternalTransaction rskTx = new InternalTransaction(
             Keccak256.ZERO_HASH.getBytes(),
             0,
@@ -2897,8 +2901,9 @@ class BridgeSupportFlyoverTest {
             activations,
             signatureCache
         ));
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
 
-        doReturn(bridgeConstantsRegtest.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
+        doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
         doReturn(Coin.COIN).when(bridgeSupport).getLockingCap();
         doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
@@ -2985,7 +2990,9 @@ class BridgeSupportFlyoverTest {
             signatureCache
         ));
 
-        doReturn(bridgeConstantsRegtest.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+
+        doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
         doReturn(Coin.COIN).when(bridgeSupport).getLockingCap();
         doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
@@ -3072,8 +3079,9 @@ class BridgeSupportFlyoverTest {
             activations,
             signatureCache
         ));
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
 
-        doReturn(bridgeConstantsRegtest.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
+        doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
         doReturn(
             Coin.COIN, // The first time we simulate a lower locking cap than the value to register, to force the reimburse
@@ -3179,7 +3187,9 @@ class BridgeSupportFlyoverTest {
             signatureCache
         ));
 
-        doReturn(bridgeConstantsRegtest.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+
+        doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
         doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
             any(Keccak256.class),
@@ -3266,9 +3276,9 @@ class BridgeSupportFlyoverTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
-        Federation fed = bridgeConstantsRegtest.getGenesisFederation();
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         FederationSupport federationSupport = mock(FederationSupport.class);
-        when(federationSupport.getActiveFederation()).thenReturn(fed);
+        when(federationSupport.getActiveFederation()).thenReturn(activeFederation);
 
         BridgeSupport bridgeSupport = new BridgeSupport(
             bridgeConstantsRegtest,
@@ -3285,8 +3295,11 @@ class BridgeSupportFlyoverTest {
             signatureCache
         );
 
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Script federationRedeemScript = genesisFederation.getRedeemScript();
+
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            bridgeConstantsRegtest.getGenesisFederation().getRedeemScript(),
+            federationRedeemScript,
             PegTestUtils.createHash(1)
         );
 
@@ -3295,7 +3308,7 @@ class BridgeSupportFlyoverTest {
 
         FlyoverFederationInformation expectedFlyoverFederationInformation =
             new FlyoverFederationInformation(derivationHash,
-                fed.getP2SHScript().getPubKeyHash(),
+                activeFederation.getP2SHScript().getPubKeyHash(),
                 flyoverP2SH.getPubKeyHash()
             );
 
@@ -3331,11 +3344,11 @@ class BridgeSupportFlyoverTest {
             signatureCache
         );
 
-        Federation fed = bridgeConstantsRegtest.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
 
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            fed.getRedeemScript(),
+            genesisFederation.getRedeemScript(),
             Sha256Hash.wrap(derivationHash.getBytes())
         );
 
@@ -3344,7 +3357,7 @@ class BridgeSupportFlyoverTest {
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
                 derivationHash,
-                fed.getP2SHScript().getPubKeyHash(),
+                genesisFederation.getP2SHScript().getPubKeyHash(),
                 flyoverP2SH.getPubKeyHash()
             );
 
@@ -3447,8 +3460,11 @@ class BridgeSupportFlyoverTest {
     }
 
     private Address getFlyoverFederationAddress() {
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Script federationRedeemScript = genesisFederation.getRedeemScript();
+
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            bridgeConstantsRegtest.getGenesisFederation().getRedeemScript(),
+            federationRedeemScript,
             PegTestUtils.createHash(1)
         );
 

@@ -21,7 +21,7 @@ package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.DifficultyUtils;

@@ -19,14 +19,17 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationArgs;
+import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationMember;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
@@ -110,7 +113,7 @@ public class FederationSupport {
                 return provider.getOldFederation();
             case GENESIS:
             default:
-                return bridgeConstants.getGenesisFederation();
+                return this.getGenesisFederation();
         }
     }
 
@@ -232,5 +235,19 @@ public class FederationSupport {
     private boolean shouldFederationBeActive(Federation federation) {
         long federationAge = executionBlock.getNumber() - federation.getCreationBlockNumber();
         return federationAge >= bridgeConstants.getFederationActivationAge(activations);
+    }
+
+    /**
+     * Get the Genesis Federation from a List of Genesis Federation Public Keys
+     *
+     * @return Federation
+     */
+    private Federation getGenesisFederation() {
+        final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
+        final List<BtcECKey> genesisFederationPublicKeys = bridgeConstants.getGenesisFederationPublicKeys();
+        final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
+        final Instant genesisFederationCreationTime = bridgeConstants.getGenesisFederationCreationTime();
+        final FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, GENESIS_FEDERATION_CREATION_BLOCK_NUMBER, bridgeConstants.getBtcParams());
+        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 }

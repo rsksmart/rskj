@@ -18,7 +18,7 @@
 
 package co.rsk.remasc;
 
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;

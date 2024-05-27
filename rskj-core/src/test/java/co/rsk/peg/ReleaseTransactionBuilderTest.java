@@ -41,9 +41,9 @@ import co.rsk.bitcoinj.core.UTXOProviderException;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -69,7 +69,7 @@ class ReleaseTransactionBuilderTest {
     private ActivationConfig.ForBlock activations;
     private Context btcContext;
     private NetworkParameters networkParameters;
-    private BridgeConstants bridgeConstants;
+    private BridgeConstants bridgeRegTestConstants;
     private Federation federation;
 
     @BeforeEach
@@ -77,10 +77,10 @@ class ReleaseTransactionBuilderTest {
         wallet = mock(Wallet.class);
         changeAddress = mockAddress(1000);
         activations = mock(ActivationConfig.ForBlock.class);
-        bridgeConstants = BridgeRegTestConstants.getInstance();
-        networkParameters = bridgeConstants.getBtcParams();
+        bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+        networkParameters = bridgeRegTestConstants.getBtcParams();
         btcContext = new Context(networkParameters);
-        federation = bridgeConstants.getGenesisFederation();
+        federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
         builder = new ReleaseTransactionBuilder(
             networkParameters,
             wallet,

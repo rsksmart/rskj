@@ -23,7 +23,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
 import java.util.Optional;

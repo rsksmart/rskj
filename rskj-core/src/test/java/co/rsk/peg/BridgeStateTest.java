@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;

@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.bitcoin.ScriptCreationException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -51,13 +51,12 @@ class StandardMultisigFederationTest {
     private List<BtcECKey> keys;
     private List<BtcECKey> sortedPublicKeys;
     private List<byte[]> rskAddresses;
+    private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
 
     @BeforeEach
     void setUp() {
-        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
-
-        networkParameters = bridgeConstants.getBtcParams();
-        federation = bridgeConstants.getGenesisFederation();
+        networkParameters = bridgeMainNetConstants.getBtcParams();
+        federation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants);
 
         keys = federation.getBtcPublicKeys();
         sortedPublicKeys = keys.stream()

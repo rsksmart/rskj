@@ -20,8 +20,8 @@
 package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.config.*;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.peg.constants.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;

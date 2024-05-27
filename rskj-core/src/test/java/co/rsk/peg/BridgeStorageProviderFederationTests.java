@@ -12,11 +12,11 @@ import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.config.BridgeConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.federation.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;

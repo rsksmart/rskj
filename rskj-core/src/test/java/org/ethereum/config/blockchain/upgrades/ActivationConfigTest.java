@@ -43,6 +43,7 @@ class ActivationConfigTest {
             "    hop401: 0",
             "    fingerroot500: 0",
             "    arrowhead600: 0",
+            "    lovell700: 0",
             "},",
             "consensusRules: {",
             "    areBridgeTxsPaid: afterBridgeSync,",

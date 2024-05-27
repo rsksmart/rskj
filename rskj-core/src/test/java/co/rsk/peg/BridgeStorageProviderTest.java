@@ -27,9 +27,16 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.vote.ABICallElection;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -68,7 +75,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
@@ -89,6 +95,7 @@ class BridgeStorageProviderTest {
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
     private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
     private final BridgeTestNetConstants bridgeTestnetInstance = BridgeTestNetConstants.getInstance();
+    private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final NetworkParameters networkParameters = bridgeTestnetInstance.getBtcParams();
 
     private int transactionOffset;
@@ -274,9 +281,8 @@ class BridgeStorageProviderTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = bridgeTestnetInstance;
         // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants);
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             track,
@@ -284,8 +290,8 @@ class BridgeStorageProviderTest {
             bridgeTestnetInstance,
             activationsBeforeFork
         );
-        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
-        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
+        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(genesisFederation.getAddress())));
+        provider0.getNewFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(genesisFederation.getAddress())));
         provider0.save();
         track.commit();
 
@@ -1847,7 +1853,7 @@ class BridgeStorageProviderTest {
 
         ABICallElection result = storageProvider.getFeePerKbElection(authorizerMock);
         MatcherAssert.assertThat(result.getVotes().isEmpty(), is(true));
-        MatcherAssert.assertThat(result.getWinner(), nullValue());
+        Assertions.assertFalse(result.getWinner().isPresent());
     }
 
     @Test
@@ -1879,7 +1885,7 @@ class BridgeStorageProviderTest {
 
         ABICallElection result = storageProvider.getFeePerKbElection(authorizerMock);
         MatcherAssert.assertThat(result.getVotes(), is(electionVotes));
-        MatcherAssert.assertThat(result.getWinner(), is(expectedWinner));
+        Assertions.assertEquals(expectedWinner, result.getWinner().get());
     }
 
     @Test

@@ -1,37 +1,66 @@
 package org.ethereum.rpc.exception;
 
-public class RskJsonRpcRequestException extends RuntimeException {
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
+public class RskJsonRpcRequestException extends RuntimeException {
     private final Integer code;
 
-    protected RskJsonRpcRequestException(Integer code, String message, Exception e) {
+    @Nullable
+    private final byte[] revertData;
+
+    protected RskJsonRpcRequestException(Integer code, @Nullable byte[] revertData, String message, Exception e) {
         super(message, e);
         this.code = code;
+        this.revertData = revertData;
+    }
+
+    protected RskJsonRpcRequestException(Integer code, String message, Exception e) {
+        this(code, null, message, e);
+    }
+
+    public RskJsonRpcRequestException(Integer code, @Nullable byte[] revertData, String message) {
+        super(message);
+        this.code = code;
+        this.revertData = revertData;
     }
 
     public RskJsonRpcRequestException(Integer code, String message) {
-        super(message);
-        this.code = code;
+        this(code, null, message);
     }
 
     public Integer getCode() {
         return code;
     }
 
-    public static RskJsonRpcRequestException transactionRevertedExecutionError() {
-        return executionError("transaction reverted");
+    public byte[] getRevertData() {
+        return revertData;
     }
 
-    public static RskJsonRpcRequestException transactionRevertedExecutionError(String revertReason) {
-        return executionError("revert " + revertReason);
+    public static RskJsonRpcRequestException transactionRevertedExecutionError() {
+        return executionError("transaction reverted", null);
+    }
+
+    public static RskJsonRpcRequestException transactionRevertedExecutionError(@Nonnull byte[] revertData) {
+        return executionError("transaction reverted", revertData);
+    }
+
+    public static RskJsonRpcRequestException transactionRevertedExecutionError(
+            @Nonnull String revertReason,
+            @Nonnull byte[] revertData
+    ) {
+        return executionError(
+                "revert " + revertReason,
+                revertData
+        );
     }
 
     public static RskJsonRpcRequestException unknownError(String message) {
         return new RskJsonRpcRequestException(-32009, message);
     }
 
-    private static RskJsonRpcRequestException executionError(String message) {
-        return new RskJsonRpcRequestException(-32015, String.format("VM Exception while processing transaction: %s", message));
+    private static RskJsonRpcRequestException executionError(String message, byte[] revertData) {
+        return new RskJsonRpcRequestException(-32015, revertData, String.format("VM Exception while processing transaction: %s", message));
     }
 
     public static RskJsonRpcRequestException transactionError(String message) {

@@ -131,7 +131,8 @@ public class TransactionFactoryHelper {
                 Optional.ofNullable(args.getNonce()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getChainId()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
                 Optional.ofNullable(args.getValue()).filter(p -> !p.isEmpty()).map(HexNumberParam::new).orElse(null),
-                Optional.ofNullable(args.getData()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null)
+                Optional.ofNullable(args.getData()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null),
+                Optional.ofNullable(args.getInput()).filter(p -> !p.isEmpty()).map(HexDataParam::new).orElse(null)
         );
     }
 
