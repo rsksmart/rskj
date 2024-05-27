@@ -154,15 +154,11 @@ class FeePerKbSupportImplTest {
     void voteFeePerKbChange_zeroFeePerKbValue_shouldReturnUnsuccessfulFeeVotedResponseCode() {
         SignatureCache signatureCache = mock(SignatureCache.class);
         Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
-        ABICallElection feePerKbElection = mock(ABICallElection.class);
-        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
-        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
-        when(feePerKbElection.vote(any(), any())).thenReturn(false);
         Coin zeroFeePerKb = Coin.ZERO;
 
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, zeroFeePerKb, signatureCache);
 
-        Integer expectedResult = FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
+        Integer expectedResult = FeePerKbResponseCode.NEGATIVE_FEE_VOTED.getCode();
         assertEquals(expectedResult, actualResult);
     }
 
@@ -170,14 +166,14 @@ class FeePerKbSupportImplTest {
     void voteFeePerKbChange_veryLowFeePerKbValue_shouldReturnUnsuccessfulFeeVotedResponseCode() {
         SignatureCache signatureCache = mock(SignatureCache.class);
         Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
-        ABICallElection feePerKbElection = mock(ABICallElection.class);
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
+        ABICallElection feePerKbElection = new ABICallElection(authorizer);
         when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
         Coin veryLowFeePerKb = Coin.SATOSHI;
 
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, veryLowFeePerKb, signatureCache);
 
-        Integer expectedResult = FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
+        Integer expectedResult = FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
         assertEquals(expectedResult, actualResult);
     }
 
@@ -185,10 +181,9 @@ class FeePerKbSupportImplTest {
     void voteFeePerKbChange_equalMaxFeePerKbValue_shouldReturnSuccessfulFeeVotedResponseCode() {
         SignatureCache signatureCache = mock(SignatureCache.class);
         Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
-        ABICallElection feePerKbElection = mock(ABICallElection.class);
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
+        ABICallElection feePerKbElection = new ABICallElection(authorizer);
         when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
-        when(feePerKbElection.vote(any(), any())).thenReturn(true);
         Coin maxFeePerKb = feePerKbConstants.getMaxFeePerKb();
 
         Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, maxFeePerKb, signatureCache);
@@ -218,21 +213,25 @@ class FeePerKbSupportImplTest {
     }
 
     private Transaction getTransactionFromUnauthorizedCaller(SignatureCache signatureCache) {
-        ECKey unauthorizedKey = ECKey.fromPublicOnly(Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2"));
-        RskAddress unauthorizedCallerAddress = new RskAddress(unauthorizedKey.getAddress());
-
         Transaction txFromUnauthorizedCaller = mock(Transaction.class);
-        when(txFromUnauthorizedCaller.getSender(signatureCache)).thenReturn(unauthorizedCallerAddress);
+        when(txFromUnauthorizedCaller.getSender(signatureCache)).thenReturn(this.getUnauthorizedRskAddress());
 
         return txFromUnauthorizedCaller;
     }
 
     private Transaction getTransactionFromAuthorizedCaller(SignatureCache signatureCache) {
-        RskAddress authorizedCallerAddress = new RskAddress("a02db0ed94a5894bc6f9079bb9a2d93ada1917f3");
-
         Transaction txFromAuthorizedCaller = mock(Transaction.class);
-        when(txFromAuthorizedCaller.getSender(signatureCache)).thenReturn(authorizedCallerAddress);
+        when(txFromAuthorizedCaller.getSender(signatureCache)).thenReturn(this.getAuthorizedRskAddress());
 
         return txFromAuthorizedCaller;
+    }
+
+    private RskAddress getUnauthorizedRskAddress(){
+        ECKey unauthorizedKey = ECKey.fromPublicOnly(Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2"));
+        return new RskAddress(unauthorizedKey.getAddress());
+    }
+
+    private RskAddress getAuthorizedRskAddress(){
+        return new RskAddress("a02db0ed94a5894bc6f9079bb9a2d93ada1917f3");
     }
 }
