@@ -232,10 +232,26 @@ public final class PegTestUtils {
         return new RskAddress(key.getAddress());
     }
 
+    /**
+     *
+     * @deprecated Use {@link co.rsk.peg.bitcoin.BitcoinTestUtils#createUTXO(int, long, Coin, Address)} instead.
+     * @param nHash
+     * @param index
+     * @param value
+     * @return
+     */
     public static UTXO createUTXO(int nHash, long index, Coin value) {
         return createUTXO(nHash, index, value, createRandomP2PKHBtcAddress(RegTestParams.get()));
     }
 
+    /**
+     * @deprecated Use {@link co.rsk.peg.bitcoin.BitcoinTestUtils#createUTXO(int, long, Coin, Address)} instead.
+     * @param nHash
+     * @param index
+     * @param value
+     * @param address
+     * @return
+     */
     public static UTXO createUTXO(int nHash, long index, Coin value, Address address) {
         return new UTXO(
             createHash(nHash),
@@ -246,6 +262,13 @@ public final class PegTestUtils {
             ScriptBuilder.createOutputScript(address));
     }
 
+    /**
+     *
+     * @deprecated Use {@link co.rsk.peg.bitcoin.BitcoinTestUtils#createUTXOs(int, Address)} instead.
+     * @param amount
+     * @param address
+     * @return
+     */
     public static List<UTXO> createUTXOs(int amount, Address address) {
         List<UTXO> utxos = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
@@ -253,6 +276,25 @@ public final class PegTestUtils {
         }
 
         return utxos;
+    }
+
+    /**
+     *
+     * @deprecated Use {@link co.rsk.peg.bitcoin.BitcoinTestUtils#createUTXO(int, long, Coin, Address)} instead.
+     * @param btcHash
+     * @param index
+     * @param value
+     * @return
+     */
+    public static UTXO createUTXO(Sha256Hash btcHash, long index, Coin value) {
+        return new UTXO(
+            btcHash,
+            index,
+            value,
+            10,
+            false,
+            ScriptBuilder.createOutputScript(new BtcECKey())
+        );
     }
 
     public static List<ReleaseRequestQueue.Entry> createReleaseRequestQueueEntries(int amount) {
@@ -267,17 +309,6 @@ public final class PegTestUtils {
         }
 
         return entries;
-    }
-
-    public static UTXO createUTXO(Sha256Hash btcHash, long index, Coin value) {
-        return new UTXO(
-            btcHash,
-            index,
-            value,
-            10,
-            false,
-            ScriptBuilder.createOutputScript(new BtcECKey())
-        );
     }
 
     public static Address getFlyoverAddressFromRedeemScript(BridgeConstants bridgeConstants, Script redeemScript, Sha256Hash derivationArgumentHash) {

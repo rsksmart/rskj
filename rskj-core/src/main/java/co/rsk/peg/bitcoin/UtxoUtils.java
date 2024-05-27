@@ -1,6 +1,8 @@
 package co.rsk.peg.bitcoin;
 
+import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.core.VarInt;
 
 import java.io.ByteArrayOutputStream;
@@ -8,6 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.spongycastle.util.encoders.Hex;
 
 public final class UtxoUtils {
@@ -90,5 +93,14 @@ public final class UtxoUtils {
                 "Invalid outpoint value: %s. Negative and null values are not allowed.",
                 outpointValue));
         }
+    }
+
+    public static List<Coin> extractOutpointValues(BtcTransaction generatedTransaction) {
+        if (generatedTransaction == null) {
+            return Collections.emptyList();
+        }
+
+        return generatedTransaction.getInputs().stream().map(TransactionInput::getValue).collect(
+            Collectors.toList());
     }
 }

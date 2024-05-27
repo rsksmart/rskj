@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.extractOutpointValues;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createUTXOs;
+import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.ReleaseRequestQueue.Entry;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
@@ -41,6 +43,7 @@ import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -50,12 +53,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 class BridgeSupportPegoutTransactionCreatedEventTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-    public static final Federation GENESIS_FEDERATION = FederationTestUtils.getGenesisFederation(
-        bridgeMainnetConstants);
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
+    private static final ErpFederation TEST_ERP_FEDERATION = FederationTestUtils.getTestGenesisErpFederation(btcMainnetParams);
 
     private BridgeStorageProvider provider;
     private BridgeEventLogger eventLogger;
+    private Block rskCurrentBlock;
+    private Keccak256 pegoutCreationRskTxHash;
+    private Transaction executionRskTx;
 
     @BeforeEach
     void init() throws IOException {
@@ -70,9 +75,25 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
         when(provider.getPegoutsWaitingForConfirmations())
             .thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>()));
+
+        List<UTXO> fedUTXOs = createUTXOs(
+            10,
+            TEST_ERP_FEDERATION.getAddress()
+        );
+        when(provider.getNewFederationBtcUTXOs())
+            .thenReturn(fedUTXOs);
+        when(provider.getNewFederation())
+            .thenReturn(TEST_ERP_FEDERATION);
+
+        BlockGenerator blockGenerator = new BlockGenerator();
+        rskCurrentBlock = blockGenerator.createBlock(TEST_ERP_FEDERATION.getCreationBlockNumber(), 1);
+
+        pegoutCreationRskTxHash = PegTestUtils.createHash3(1);
+        executionRskTx = mock(Transaction.class);
+        when(executionRskTx.getHash()).thenReturn(pegoutCreationRskTxHash);
     }
 
-    private static Stream<Arguments> pegoutTransactionCreatedEventArgsProvider() {
+    private static Stream<Arguments> activationsProvider() {
         return Stream.of(
             Arguments.of(ActivationConfigsForTest.arrowhead600().forBlock(0)),
             Arguments.of(ActivationConfigsForTest.lovell700().forBlock(0))
@@ -80,16 +101,9 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
     }
 
     @ParameterizedTest
-    @MethodSource("pegoutTransactionCreatedEventArgsProvider")
+    @MethodSource("activationsProvider")
     void updateCollections_whenPegoutBatchIsCreated_shouldLogPegoutTransactionCreatedEvent(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
-        List<UTXO> fedUTXOs = PegTestUtils.createUTXOs(
-            10,
-            GENESIS_FEDERATION.getAddress()
-        );
-        when(provider.getNewFederationBtcUTXOs())
-            .thenReturn(fedUTXOs);
-
         List<Entry> pegoutRequests = PegTestUtils.createReleaseRequestQueueEntries(3);
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(pegoutRequests));
@@ -100,46 +114,37 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(provider)
             .withEventLogger(eventLogger)
+            .withExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .build();
-
-        Keccak256 pegoutCreationRskTxHash = PegTestUtils.createHash3(1);
-
-        Transaction executionRskTx = mock(Transaction.class);
-        when(executionRskTx.getHash()).thenReturn(pegoutCreationRskTxHash);
 
         // Act
         bridgeSupport.updateCollections(executionRskTx);
 
         // Assertions
-
         // Assert one pegout tx was added to pegoutsWaitingForConfirmations from the creation of a pegout batch
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
 
         PegoutsWaitingForConfirmations.Entry pegoutEntry = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
-
         BtcTransaction pegoutBatchTransaction = pegoutEntry.getBtcTransaction();
-
-        Sha256Hash btcTxHash = pegoutBatchTransaction.getHash();
-
+        Sha256Hash pegoutTxHash = pegoutBatchTransaction.getHash();
         List<Coin> outpointValues = extractOutpointValues(pegoutBatchTransaction);
-
         List<Keccak256> pegoutRequestRskTxHashes = pegoutRequests.stream().map(Entry::getRskTxHash).collect(
             Collectors.toList());
         Coin totalTransactionAmount = pegoutRequests.stream().map(Entry::getAmount).reduce(Coin.ZERO, Coin::add);
 
-        verify(eventLogger, times(1)).logBatchPegoutCreated(btcTxHash, pegoutRequestRskTxHashes);
+        verify(eventLogger, times(1)).logBatchPegoutCreated(pegoutTxHash, pegoutRequestRskTxHashes);
         verify(eventLogger, times(1)).logReleaseBtcRequested(pegoutCreationRskTxHash.getBytes(), pegoutBatchTransaction, totalTransactionAmount);
 
         if (activations.isActive(ConsensusRule.RSKIP428)){
-            verify(eventLogger, times(1)).logPegoutTransactionCreated(btcTxHash, outpointValues);
+            verify(eventLogger, times(1)).logPegoutTransactionCreated(pegoutTxHash, outpointValues);
         } else {
             verify(eventLogger, never()).logPegoutTransactionCreated(any(), any());
         }
     }
 
     @ParameterizedTest
-    @MethodSource("pegoutTransactionCreatedEventArgsProvider")
+    @MethodSource("activationsProvider")
     void updateCollections_whenPegoutMigrationIsCreated_shouldLogPegoutTransactionCreatedEvent(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
         when(provider.getReleaseRequestQueue())
@@ -147,29 +152,32 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
-        Federation oldFederation = GENESIS_FEDERATION;
-        long newFedCreationBlockNumber = 5L;
+        Federation oldFederation = TEST_ERP_FEDERATION;
+        when(provider.getOldFederation())
+            .thenReturn(oldFederation);
 
+
+        long newFedCreationBlockNumber = 5L;
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH, newFedCreationBlockNumber, btcMainnetParams);
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFederationArgs);
-        when(provider.getOldFederation())
-            .thenReturn(oldFederation);
+
         when(provider.getNewFederation())
             .thenReturn(newFederation);
 
         // Utxos to migrate
-        List<UTXO> utxos = PegTestUtils.createUTXOs(10, oldFederation.getAddress());
-        Coin totalTransactionInputAmount = utxos.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        List<UTXO> utxosToMigrate = createUTXOs(10, oldFederation.getAddress());
+        Coin totalTransactionInputAmount = utxosToMigrate.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
         when(provider.getOldFederationBtcUTXOs())
-            .thenReturn(utxos);
+            .thenReturn(utxosToMigrate);
 
         // Advance blockchain to migration phase. Migration phase starts 1 block after migration age is reached.
         long migrationAge = bridgeMainnetConstants.getFederationActivationAge(activations) +
                                 bridgeMainnetConstants.getFundsMigrationAgeSinceActivationBegin() +
                                 newFedCreationBlockNumber + 1;
+
         BlockGenerator blockGenerator = new BlockGenerator();
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(migrationAge, 1);
+        rskCurrentBlock = blockGenerator.createBlock(migrationAge, 1);
 
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBridgeConstants(bridgeMainnetConstants)
@@ -178,10 +186,6 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             .withExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .build();
-
-        Keccak256 pegoutCreationRskTxHash = PegTestUtils.createHash3(1);
-        Transaction executionRskTx = mock(Transaction.class);
-        when(executionRskTx.getHash()).thenReturn(pegoutCreationRskTxHash);
 
         // Act
         bridgeSupport.updateCollections(executionRskTx);
@@ -213,7 +217,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
     }
 
     @ParameterizedTest
-    @MethodSource("pegoutTransactionCreatedEventArgsProvider")
+    @MethodSource("activationsProvider")
     void updateCollections_whenPegoutMigrationAndBatchAreCreated_shouldLogPegoutTransactionCreatedEvent(ActivationConfig.ForBlock activations) throws IOException {
         // Arrange
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
@@ -222,27 +226,28 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(pegoutRequests));
 
-        Federation oldFederation = GENESIS_FEDERATION;
+        Federation oldFederation = TEST_ERP_FEDERATION;
+        when(provider.getOldFederation())
+            .thenReturn(oldFederation);
 
         long newFedCreationBlockNumber = 5L;
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH, newFedCreationBlockNumber, btcMainnetParams);
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
             newFederationArgs);
-        when(provider.getOldFederation())
-            .thenReturn(oldFederation);
+
         when(provider.getNewFederation())
             .thenReturn(newFederation);
 
         // Utxos to migrate
-        List<UTXO> utxos = PegTestUtils.createUTXOs(10, oldFederation.getAddress());
+        List<UTXO> utxosToMigrate = createUTXOs(10, oldFederation.getAddress());
         when(provider.getOldFederationBtcUTXOs())
-            .thenReturn(utxos);
-        Coin migrationTotalAmount = utxos.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+            .thenReturn(utxosToMigrate);
+        Coin migrationTotalAmount = utxosToMigrate.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
 
-        List<UTXO> utxosNew = PegTestUtils.createUTXOs(10, newFederation.getAddress());
+        List<UTXO> utxosNewFederation = createUTXOs(10, newFederation.getAddress());
         when(provider.getNewFederationBtcUTXOs())
-            .thenReturn(utxosNew);
+            .thenReturn(utxosNewFederation);
 
         // Advance blockchain to migration phase. Migration phase starts 1 block after migration age is reached.
         long migrationAge = bridgeMainnetConstants.getFederationActivationAge(activations) +
@@ -250,7 +255,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
                                 newFedCreationBlockNumber + 1;
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(migrationAge, 1);
+        rskCurrentBlock = blockGenerator.createBlock(migrationAge, 1);
 
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBridgeConstants(bridgeMainnetConstants)

@@ -5,8 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.federation.ErpFederation;
+import co.rsk.peg.federation.FederationTestUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,6 +22,8 @@ import java.util.List;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -24,6 +33,11 @@ import org.spongycastle.util.encoders.Hex;
 class UtxoUtilsTest {
 
     private final static Coin MAX_BTC = BridgeMainNetConstants.getInstance().getMaxRbtc();
+    private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+    private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
+    private static final ErpFederation TEST_ERP_FEDERATION = FederationTestUtils.getTestGenesisErpFederation(btcMainnetParams);
+    private static final int FIRST_OUTPUT_INDEX = 0;
+    private static final Address testAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "test");
 
     private static Stream<Arguments> validOutpointValues() {
         List<Arguments> arguments = new ArrayList<>();
@@ -89,7 +103,7 @@ class UtxoUtilsTest {
         List<Coin> decodeOutpointValues = UtxoUtils.decodeOutpointValues(null);
 
         // assert
-        List<Coin> expectedDecodedValues = Collections.EMPTY_LIST;
+        List<Coin> expectedDecodedValues = Collections.emptyList();
         assertArrayEquals(expectedDecodedValues.toArray(), decodeOutpointValues.toArray());
     }
 
@@ -167,5 +181,76 @@ class UtxoUtilsTest {
         arguments.add(Arguments.of(anotherInvalidOutpointValues, expectedMessageForAnotherInvalidOutpointValue));
 
         return arguments.stream();
+    }
+
+    @Test
+    void extractOutpointValues_validBtcTransaction_shouldReturnOutpointValues() {
+        Coin amountToSend = Coin.COIN;
+
+        BtcTransaction fundingTransaction = new BtcTransaction(btcMainnetParams);
+        fundingTransaction.addInput(
+            BitcoinTestUtils.createHash(1),
+            FIRST_OUTPUT_INDEX,
+            new Script(new byte[]{})
+        );
+        fundingTransaction.addOutput(amountToSend, TEST_ERP_FEDERATION.getAddress());
+
+        BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
+        pegout.addInput(fundingTransaction.getOutput(FIRST_OUTPUT_INDEX));
+        pegout.addOutput(amountToSend, testAddress);
+
+        List<Coin> actualOutpointValues = UtxoUtils.extractOutpointValues(pegout);
+
+        // assert
+        List<Coin> expectedOutpointValues = Collections.singletonList(Coin.COIN);
+        assertArrayEquals(expectedOutpointValues.toArray(), actualOutpointValues.toArray());
+    }
+
+    @Test
+    void extractOutpoint_noInputs_shouldReturnEmptyList() {
+        BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
+        pegout.addOutput(Coin.COIN, testAddress);
+
+        List<Coin> actualOutpointValues = UtxoUtils.extractOutpointValues(pegout);
+
+        // assert
+        List<Coin> expectedOutpointValues = Collections.emptyList();
+        assertArrayEquals(expectedOutpointValues.toArray(), actualOutpointValues.toArray());
+    }
+
+    @Test
+    void extractOutpoint_null_shouldReturnEmptyList() {
+        List<Coin> actualOutpointValues = UtxoUtils.extractOutpointValues(null);
+
+        // assert
+        List<Coin> expectedOutpointValues = Collections.emptyList();
+        assertArrayEquals(expectedOutpointValues.toArray(), actualOutpointValues.toArray());
+    }
+
+    @Test
+    void extractOutpoint_txWithManyInputs_shouldReturnListOfManyOutpointValues() {
+        ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0);
+        Coin amountToSend = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+
+        BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
+        pegout.addOutput(amountToSend, testAddress);
+
+
+        for (int i = 0; i < 1000; i++) {
+            BtcTransaction fundingTransaction = new BtcTransaction(btcMainnetParams);
+            fundingTransaction.addInput(
+                BitcoinTestUtils.createHash(i),
+                FIRST_OUTPUT_INDEX,
+                new Script(new byte[]{})
+            );
+            fundingTransaction.addOutput(amountToSend, TEST_ERP_FEDERATION.getAddress());
+            pegout.addInput(fundingTransaction.getOutput(FIRST_OUTPUT_INDEX));
+        }
+        List<Coin> actualOutpointValues = UtxoUtils.extractOutpointValues(pegout);
+
+        // assert
+        List<Coin> expectedOutpointValues = Stream.generate(() -> amountToSend).limit(1000)
+            .collect(Collectors.toList());
+        assertArrayEquals(expectedOutpointValues.toArray(), actualOutpointValues.toArray());
     }
 }
