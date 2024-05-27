@@ -19,6 +19,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
@@ -1081,10 +1082,6 @@ public class BridgeSupport {
 
         List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
         eventLogger.logPegoutTransactionCreated(migrationTransaction.getHash(), outpointValues);
-    }
-
-    private List<Coin> extractOutpointValues(BtcTransaction generatedTransaction) {
-        return generatedTransaction.getInputs().stream().map(TransactionInput::getValue).collect(Collectors.toList());
     }
 
     /**
