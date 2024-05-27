@@ -20,7 +20,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
@@ -40,7 +39,7 @@ class StateForFederatorTest {
     private static final String SHA3_3 = "3333333333333333333333333333333333333333333333333333333333333333";
     private static final String SHA3_4 = "4444444444444444444444444444444444444444444444444444444444444444";
 
-    private static final NetworkParameters NETWORK_PARAMETERS = BridgeRegTestConstants.getInstance().getBtcParams();
+    private static final NetworkParameters NETWORK_PARAMETERS = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
     @Test
     void serialize() {
