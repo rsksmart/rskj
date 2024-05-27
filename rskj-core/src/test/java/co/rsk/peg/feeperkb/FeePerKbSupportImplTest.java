@@ -14,10 +14,8 @@ import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.util.Optional;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -151,7 +149,7 @@ class FeePerKbSupportImplTest {
     }
 
     @Test
-    void voteFeePerKbChange_zeroFeePerKbValue_shouldReturnUnsuccessfulFeeVotedResponseCode() {
+    void voteFeePerKbChange_zeroFeePerKbValue_shouldReturnNegativeFeeVotedResponseCode() {
         SignatureCache signatureCache = mock(SignatureCache.class);
         Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
         Coin zeroFeePerKb = Coin.ZERO;
@@ -163,7 +161,7 @@ class FeePerKbSupportImplTest {
     }
 
     @Test
-    void voteFeePerKbChange_veryLowFeePerKbValue_shouldReturnUnsuccessfulFeeVotedResponseCode() {
+    void voteFeePerKbChange_veryLowFeePerKbValue_shouldReturnSuccessfulFeeVotedResponseCode() {
         SignatureCache signatureCache = mock(SignatureCache.class);
         Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
@@ -197,9 +195,7 @@ class FeePerKbSupportImplTest {
         Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
 
-        Coin feePerKbVote = null;
-
-        assertThrows(NullPointerException.class, () -> feePerKbSupport.voteFeePerKbChange(tx, feePerKbVote, signatureCache));
+        assertThrows(NullPointerException.class, () -> feePerKbSupport.voteFeePerKbChange(tx, null, signatureCache));
         verify(storageProvider, never()).setFeePerKb(any());
     }
 
@@ -227,8 +223,7 @@ class FeePerKbSupportImplTest {
     }
 
     private RskAddress getUnauthorizedRskAddress(){
-        ECKey unauthorizedKey = ECKey.fromPublicOnly(Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2"));
-        return new RskAddress(unauthorizedKey.getAddress());
+        return new RskAddress("e2a5070b4e2cb77fe22dff05d9dcdc4d3eaa6ead");
     }
 
     private RskAddress getAuthorizedRskAddress(){
