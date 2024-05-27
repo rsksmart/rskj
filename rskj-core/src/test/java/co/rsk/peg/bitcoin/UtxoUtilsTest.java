@@ -35,7 +35,7 @@ class UtxoUtilsTest {
     private final static Coin MAX_BTC = BridgeMainNetConstants.getInstance().getMaxRbtc();
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
-    private static final ErpFederation TEST_ERP_FEDERATION = FederationTestUtils.getTestGenesisErpFederation(btcMainnetParams);
+    private static final ErpFederation TEST_ERP_FEDERATION = FederationTestUtils.getErpFederation(btcMainnetParams);
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final Address testAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "test");
 
