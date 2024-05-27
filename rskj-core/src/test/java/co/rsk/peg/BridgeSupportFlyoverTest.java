@@ -1616,6 +1616,9 @@ class BridgeSupportFlyoverTest {
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
 
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
@@ -1623,6 +1626,7 @@ class BridgeSupportFlyoverTest {
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
