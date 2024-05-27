@@ -29,8 +29,11 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
+import co.rsk.peg.utils.RejectedPegoutReason;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
@@ -60,6 +63,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.mockito.ArgumentCaptor;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -86,6 +90,7 @@ class BridgeSupportReleaseBtcTest {
     private Transaction releaseTx;
     private BridgeSupportBuilder bridgeSupportBuilder;
     private SignatureCache signatureCache;
+    private FeePerKbSupport feePerKbSupport;
 
     @BeforeEach
     void setUpOnEachTest() throws IOException {
@@ -98,6 +103,7 @@ class BridgeSupportReleaseBtcTest {
         utxo = buildUTXO();
         provider = initProvider(repository, activationMock);
         bridgeSupportBuilder = new BridgeSupportBuilder();
+        feePerKbSupport = mock(FeePerKbSupportImpl.class);
         bridgeSupport = spy(initBridgeSupport(eventLogger, activationMock));
         releaseTx = buildReleaseRskTx();
     }
@@ -597,7 +603,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertTrue(btcDestinationAddress instanceof  String);
 
     }
-/*
+
     @Test
     void release_verify_fee_below_fee_is_rejected() throws IOException {
         Coin value = bridgeConstants.getMinimumPegoutTxValue().add(Coin.SATOSHI);
@@ -640,7 +646,7 @@ class BridgeSupportReleaseBtcTest {
     void release_verify_fee_above_fee_and_minimum_is_accepted() throws IOException {
         testPegoutMinimumWithFeeVerification(Coin.COIN, Coin.FIFTY_COINS, true);
     }
-*/
+
     @Test
     void test_processPegoutsIndividually_before_RSKIP271_activation() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
@@ -1126,7 +1132,7 @@ class BridgeSupportReleaseBtcTest {
         verify(eventLogger, times(1)).logBatchPegoutCreated(any(), any());
         verify(provider, times(1)).setNextPegoutHeight(any(Long.class));
     }
-/*
+
     private void testPegoutMinimumWithFeeVerification(Coin feePerKB, Coin value, boolean shouldPegout)
         throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
@@ -1136,11 +1142,10 @@ class BridgeSupportReleaseBtcTest {
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
-
-        provider.setFeePerKb(feePerKB);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKB);
 
         int pegoutSize = BridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
-        Coin minValueAccordingToFee = provider.getFeePerKb().div(1000).times(pegoutSize);
+        Coin minValueAccordingToFee = feePerKbSupport.getFeePerKb().div(1000).times(pegoutSize);
         Coin minValueWithGapAboveFee = minValueAccordingToFee.add(minValueAccordingToFee.times(bridgeConstants.getMinimumPegoutValuePercentageToReceiveAfterFee()).div(100));
         // if shouldPegout true then value should be greater or equals than both required fee plus gap and min pegout value
         // if shouldPegout false then value should be smaller than any of those minimums
@@ -1170,7 +1175,7 @@ class BridgeSupportReleaseBtcTest {
             );
         }
     }
-*/
+
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
@@ -1230,6 +1235,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private BridgeSupport initBridgeSupport(BridgeEventLogger eventLogger, ActivationConfig.ForBlock activationMock) {
+        when(feePerKbSupport.getFeePerKb()).thenReturn(bridgeConstants.getFeePerKbConstants().getGenesisFeePerKb());
         return bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
@@ -1237,6 +1243,7 @@ class BridgeSupportReleaseBtcTest {
             .withEventLogger(eventLogger)
             .withActivations(activationMock)
             .withSignatureCache(signatureCache)
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
     }
 
