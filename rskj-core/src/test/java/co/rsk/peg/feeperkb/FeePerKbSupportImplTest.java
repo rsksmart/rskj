@@ -151,6 +151,53 @@ class FeePerKbSupportImplTest {
     }
 
     @Test
+    void voteFeePerKbChange_zeroFeePerKbValue_shouldReturnUnsuccessfulFeeVotedResponseCode() {
+        SignatureCache signatureCache = mock(SignatureCache.class);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+        ABICallElection feePerKbElection = mock(ABICallElection.class);
+        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
+        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
+        when(feePerKbElection.vote(any(), any())).thenReturn(false);
+        Coin zeroFeePerKb = Coin.ZERO;
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, zeroFeePerKb, signatureCache);
+
+        Integer expectedResult = FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    void voteFeePerKbChange_veryLowFeePerKbValue_shouldReturnUnsuccessfulFeeVotedResponseCode() {
+        SignatureCache signatureCache = mock(SignatureCache.class);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+        ABICallElection feePerKbElection = mock(ABICallElection.class);
+        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
+        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
+        Coin veryLowFeePerKb = Coin.SATOSHI;
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, veryLowFeePerKb, signatureCache);
+
+        Integer expectedResult = FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    void voteFeePerKbChange_equalMaxFeePerKbValue_shouldReturnSuccessfulFeeVotedResponseCode() {
+        SignatureCache signatureCache = mock(SignatureCache.class);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+        ABICallElection feePerKbElection = mock(ABICallElection.class);
+        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
+        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
+        when(feePerKbElection.vote(any(), any())).thenReturn(true);
+        Coin maxFeePerKb = feePerKbConstants.getMaxFeePerKb();
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, maxFeePerKb, signatureCache);
+
+        Integer expectedResult = FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
     void voteFeePerKbChange_nullFeeThrows() {
         Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
