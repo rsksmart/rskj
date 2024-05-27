@@ -3,7 +3,9 @@ package co.rsk.peg;
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createFederation;
-import static co.rsk.peg.PegTestUtils.createP2shErpFederation;
+import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -30,6 +32,7 @@ import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import java.util.Arrays;
 import java.util.List;
@@ -50,6 +53,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class PegUtilsGetTransactionTypeTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
+    private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
     private static final int FIRST_OUTPUT_INDEX = 0;
@@ -78,17 +82,17 @@ class PegUtilsGetTransactionTypeTest {
         retiredFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa09", "fa10", "fa00"}, true
         );
-        retiredFed = createP2shErpFederation(bridgeMainnetConstants, retiredFedSigners);
+        retiredFed = createP2shErpFederation(federationMainNetConstants, retiredFedSigners);
 
         retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa06", "fa07", "fa08"}, true
         );
-        retiringFederation = createP2shErpFederation(bridgeMainnetConstants, retiringFedSigners);
+        retiringFederation = createP2shErpFederation(federationMainNetConstants, retiringFedSigners);
 
         activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true
         );
-        activeFederation = createP2shErpFederation(bridgeMainnetConstants, activeFedSigners);
+        activeFederation = createP2shErpFederation(federationMainNetConstants, activeFedSigners);
 
         int btcHeightWhenPegoutTxIndexActivates = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -198,12 +202,9 @@ class PegUtilsGetTransactionTypeTest {
         boolean existsRetiringFederation,
         PegTxType expectedPegTxType
     ) {
-
-        if (existsRetiringFederation){
-            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiringFederation.getP2SHScript()));
-        } else {
-            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
-        }
+        Script lastRetiredFederationP2SHScript = existsRetiringFederation ?
+            retiringFederation.getP2SHScript() :
+            retiredFed.getP2SHScript();
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
@@ -219,12 +220,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             existsRetiringFederation? retiringFederation: null,
+            lastRetiredFederationP2SHScript,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedPegTxType, pegTxType);
+        assertEquals(expectedPegTxType, pegTxType);
     }
 
     // Pegin tests
@@ -274,12 +276,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
@@ -310,12 +313,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
@@ -348,12 +352,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
@@ -374,12 +379,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
@@ -403,12 +409,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
@@ -432,17 +439,18 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     private static Stream<Arguments> pegin_multiple_outputs_to_active_fed_sum_amount_equal_to_minimum_pegin_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -451,12 +459,12 @@ class PegUtilsGetTransactionTypeTest {
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 PegTxType.PEGIN
             )
@@ -488,12 +496,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedTxType, pegTxType);
+        assertEquals(expectedTxType, pegTxType);
     }
 
     @ParameterizedTest
@@ -516,12 +525,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
@@ -542,12 +552,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     private static Stream<Arguments> pegin_retired_args() {
@@ -581,11 +592,11 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType expectedType
     ) {
         // Arrange
-        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
-
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
         btcTransaction.addOutput(Coin.COIN, retiredFed.getAddress());
+
+        Script lastRetiredFederationP2SHScript = retiredFed.getP2SHScript();
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionType(
@@ -594,12 +605,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            lastRetiredFederationP2SHScript,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        assertEquals(expectedType, pegTxType);
     }
 
     @ParameterizedTest
@@ -623,12 +635,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
@@ -651,12 +664,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @ParameterizedTest
@@ -681,12 +695,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     // Pegins sending equal to, below and above the minimum amount
@@ -706,68 +721,71 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
     void anyAddressToAnyAddress_pegin_before_RSKIP379() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(fingerrootActivations);
 
         BtcTransaction anyToAnyTx = new BtcTransaction(btcMainnetParams);
         anyToAnyTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         anyToAnyTx.addOutput(minimumPeginTxValue, new Script(new byte[]{}) );
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
-            activations,
+            fingerrootActivations,
             mock(BridgeStorageProvider.class),
             bridgeMainnetConstants,
             activeFederation,
+            null,
             null,
             anyToAnyTx,
             1
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, transactionType);
+        assertEquals(PegTxType.PEGIN, transactionType);
     }
 
     @Test
     void pegin_anyAddressToAnyAddress_below_minimum_pegin_before_RSIP379() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
 
-        Coin belowMinimum = bridgeMainnetConstants.getMinimumPeginTxValue(activations).minus(Coin.SATOSHI);
+        Coin belowMinimum = bridgeMainnetConstants.getMinimumPeginTxValue(fingerrootActivations).minus(Coin.SATOSHI);
 
         BtcTransaction anyToAnyTx = new BtcTransaction(btcMainnetParams);
         anyToAnyTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         anyToAnyTx.addOutput(belowMinimum, new Script(new byte[]{}));
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
-            activations,
+            fingerrootActivations,
             mock(BridgeStorageProvider.class),
             bridgeMainnetConstants,
             activeFederation,
+            null,
             null,
             anyToAnyTx,
             1
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, transactionType);
+        assertEquals(PegTxType.PEGIN, transactionType);
     }
 
     @Test
@@ -781,7 +799,7 @@ class PegUtilsGetTransactionTypeTest {
         anyToAnyTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         anyToAnyTx.addOutput(minimumPeginTxValue, new Script(new byte[]{}) );
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
@@ -790,12 +808,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             anyToAnyTx,
             heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.UNKNOWN, transactionType);
+        assertEquals(PegTxType.UNKNOWN, transactionType);
     }
 
     @Test
@@ -809,7 +828,7 @@ class PegUtilsGetTransactionTypeTest {
         anyToAnyTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         anyToAnyTx.addOutput(belowMinimum, new Script(new byte[]{}));
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
@@ -818,12 +837,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             anyToAnyTx,
             heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.UNKNOWN, transactionType);
+        assertEquals(PegTxType.UNKNOWN, transactionType);
     }
 
     private static Stream<Arguments> sending_funds_below_minimum_args() {
@@ -860,7 +880,7 @@ class PegUtilsGetTransactionTypeTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Coin belowMinimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations).div(10);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
         peginTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -876,12 +896,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             peginTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, transactionType);
+        assertEquals(expectedType, transactionType);
     }
 
     @ParameterizedTest
@@ -895,7 +916,7 @@ class PegUtilsGetTransactionTypeTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Coin belowMinimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations).div(10);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
         peginTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -913,12 +934,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             peginTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, transactionType);
+        assertEquals(expectedType, transactionType);
     }
 
     private static Stream<Arguments> sending_funds_equal_or_above_to_minimum_args() {
@@ -951,7 +973,7 @@ class PegUtilsGetTransactionTypeTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
         peginTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -964,12 +986,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             peginTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, transactionType);
+        assertEquals(PegTxType.PEGIN, transactionType);
     }
 
     @ParameterizedTest
@@ -982,7 +1005,7 @@ class PegUtilsGetTransactionTypeTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations).add(Coin.CENT);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
         peginTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -995,12 +1018,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             peginTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, transactionType);
+        assertEquals(PegTxType.PEGIN, transactionType);
     }
 
     // Pegout tests
@@ -1060,12 +1084,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -1087,12 +1112,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.UNKNOWN, pegTxType);
+        assertEquals(PegTxType.UNKNOWN, pegTxType);
     }
 
     @ParameterizedTest
@@ -1148,12 +1174,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @ParameterizedTest
@@ -1207,12 +1234,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @ParameterizedTest
@@ -1253,12 +1281,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -1281,12 +1310,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     // Migration tests
@@ -1320,12 +1350,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -1350,12 +1381,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
@@ -1386,12 +1418,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     private static Stream<Arguments> migration_args() {
@@ -1471,12 +1504,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        assertEquals(expectedType, pegTxType);
     }
 
     @ParameterizedTest
@@ -1532,12 +1566,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        assertEquals(expectedType, pegTxType);
     }
 
     @ParameterizedTest
@@ -1579,12 +1614,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedType, pegTxType);
+        assertEquals(expectedType, pegTxType);
     }
 
     // Flyover tests
@@ -1693,11 +1729,9 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType expectedPegTxType
     ) {
         // Arrange
-        if (existsRetiringFederation){
-            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiringFederation.getP2SHScript()));
-        } else {
-            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
-        }
+        Script lastRetiredFederationP2SHScript = existsRetiringFederation ?
+            retiringFederation.getP2SHScript() :
+            retiredFed.getP2SHScript();
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
@@ -1736,12 +1770,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             existsRetiringFederation? retiringFederation: null,
+            lastRetiredFederationP2SHScript,
             btcTransaction,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedPegTxType, pegTxType);
+        assertEquals(expectedPegTxType, pegTxType);
     }
 
     @ParameterizedTest
@@ -1754,11 +1789,9 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType expectedPegTxType
     ) {
         // Arrange
-        if (existsRetiringFederation){
-            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiringFederation.getP2SHScript()));
-        } else {
-            when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(retiredFed.getP2SHScript()));
-        }
+        Script lastRetiredFederationP2SHScript = existsRetiringFederation ?
+            retiringFederation.getP2SHScript() :
+            retiredFed.getP2SHScript();
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
@@ -1797,13 +1830,14 @@ class PegUtilsGetTransactionTypeTest {
             provider,
             bridgeMainnetConstants,
             activeFederation,
-            existsRetiringFederation? retiringFederation: null,
+            existsRetiringFederation ? retiringFederation : null,
+            lastRetiredFederationP2SHScript,
             btcTransaction,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(expectedPegTxType, pegTxType);
+        assertEquals(expectedPegTxType, pegTxType);
     }
 
     private static Stream<Arguments> flyover_migration_args() {
@@ -1891,12 +1925,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             migrationTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @ParameterizedTest
@@ -1970,12 +2005,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             migrationTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @ParameterizedTest
@@ -2050,12 +2086,13 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             retiringFederation,
+            null,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     // old fed
@@ -2091,7 +2128,7 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType expectedType
     ) {
         // Arrange
-        BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+        BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
         Context.propagate(new Context(btcRegTestsParams));
 
@@ -2104,9 +2141,9 @@ class PegUtilsGetTransactionTypeTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         Federation oldFederation = createFederation(bridgeRegTestConstants, REGTEST_OLD_FEDERATION_PRIVATE_KEYS);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
 
-        Assertions.assertEquals(oldFederation.getAddress().toString(), bridgeRegTestConstants.getOldFederationAddress());
+        assertEquals(oldFederation.getAddress().toString(), bridgeRegTestConstants.getFederationConstants().getOldFederationAddress());
 
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
 
@@ -2119,7 +2156,7 @@ class PegUtilsGetTransactionTypeTest {
 
         FederationTestUtils.addSignatures(oldFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
 
-        Assertions.assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.getAddress()));
+        assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.getAddress()));
 
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
@@ -2128,8 +2165,9 @@ class PegUtilsGetTransactionTypeTest {
             bridgeRegTestConstants,
             activeFederation,
             null,
+            null,
             migrationTx,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex: 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -2138,7 +2176,7 @@ class PegUtilsGetTransactionTypeTest {
         } else {
             verify(provider, times(1)).getLastRetiredFederationP2SHScript();
         }
-        Assertions.assertEquals(expectedType, transactionType);
+        assertEquals(expectedType, transactionType);
     }
 
     // retired fed
@@ -2176,7 +2214,7 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiredFed.getDefaultP2SHScript()));
+        Script lastRetiredFederationP2SHScript = retiredFed.getP2SHScript();
 
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
@@ -2190,7 +2228,7 @@ class PegUtilsGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, migrationTx);
 
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx);
-        Assertions.assertTrue(firstInputSigHash.isPresent());
+        assertTrue(firstInputSigHash.isPresent());
 
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
 
@@ -2201,8 +2239,9 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            lastRetiredFederationP2SHScript,
             migrationTx,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex: 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -2211,7 +2250,7 @@ class PegUtilsGetTransactionTypeTest {
         } else {
             verify(provider, times(1)).getLastRetiredFederationP2SHScript();
         }
-        Assertions.assertEquals(expectedType, transactionType);
+        assertEquals(expectedType, transactionType);
     }
 
     private static Stream<Arguments> retired_fed_no_existing_in_the_storage_to_live_fed_args() {
@@ -2255,8 +2294,6 @@ class PegUtilsGetTransactionTypeTest {
         Federation retiredFederation = createFederation(bridgeMainnetConstants, fedKeys);
         Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
 
-        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.empty());
-
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
         migrationTx.addInput(
@@ -2269,7 +2306,7 @@ class PegUtilsGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiredFederation, fedKeys, migrationTx);
 
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx);
-        Assertions.assertTrue(firstInputSigHash.isPresent());
+        assertTrue(firstInputSigHash.isPresent());
 
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
 
@@ -2280,8 +2317,9 @@ class PegUtilsGetTransactionTypeTest {
             bridgeMainnetConstants,
             activeFederation,
             null,
+            null,
             migrationTx,
-            shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex: 0
+            shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
 
         // Assert
@@ -2290,6 +2328,6 @@ class PegUtilsGetTransactionTypeTest {
         } else {
             verify(provider, times(1)).getLastRetiredFederationP2SHScript();
         }
-        Assertions.assertEquals(expectedType, transactionType);
+        assertEquals(expectedType, transactionType);
     }
 }
