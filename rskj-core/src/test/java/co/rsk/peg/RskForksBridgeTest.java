@@ -18,14 +18,14 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.bitcoinj.core.AddressFormatException;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieStore;
