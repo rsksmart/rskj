@@ -104,6 +104,7 @@ class BridgeSupportReleaseBtcTest {
         provider = initProvider(repository, activationMock);
         bridgeSupportBuilder = new BridgeSupportBuilder();
         feePerKbSupport = mock(FeePerKbSupportImpl.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(bridgeConstants.getFeePerKbConstants().getGenesisFeePerKb());
         bridgeSupport = spy(initBridgeSupport(eventLogger, activationMock));
         releaseTx = buildReleaseRskTx();
     }
@@ -1235,7 +1236,6 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private BridgeSupport initBridgeSupport(BridgeEventLogger eventLogger, ActivationConfig.ForBlock activationMock) {
-        when(feePerKbSupport.getFeePerKb()).thenReturn(bridgeConstants.getFeePerKbConstants().getGenesisFeePerKb());
         return bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)

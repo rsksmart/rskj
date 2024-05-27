@@ -6,10 +6,17 @@ import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
+import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 
 import java.math.BigInteger;
 
@@ -35,4 +42,11 @@ public final class BridgeSupportTestUtil {
         when(btcBlockStore.getChainHead()).thenReturn(currentStored);
         when(currentStored.getHeight()).thenReturn(headHeight);
     }
+
+    public static FeePerKbSupport getFeePerKbSupport() {
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(createRepository());
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+        return new FeePerKbSupportImpl(BridgeMainNetConstants.getInstance().getFeePerKbConstants(), feePerKbStorageProvider);
+    }
+
 }

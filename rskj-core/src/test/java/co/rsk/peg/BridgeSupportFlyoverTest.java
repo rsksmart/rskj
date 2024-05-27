@@ -1623,6 +1623,7 @@ class BridgeSupportFlyoverTest {
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
+            .withFeePerKbSupport(BridgeSupportTestUtil.getFeePerKbSupport())
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
