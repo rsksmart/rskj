@@ -11,7 +11,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
@@ -53,6 +52,7 @@ import java.util.stream.Stream;
 
 import static co.rsk.peg.PegTestUtils.BTC_TX_LEGACY_VERSION;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -622,7 +622,7 @@ class PowpegMigrationTest {
 
     private void verifyPegoutTransactionCreatedEvent(BridgeEventLogger bridgeEventLogger, BtcTransaction pegoutTx) {
         Sha256Hash pegoutTxHash = pegoutTx.getHash();
-        List<Coin> outpointValues = BitcoinTestUtils.extractOutpointValues(pegoutTx);
+        List<Coin> outpointValues = extractOutpointValues(pegoutTx);
         verify(bridgeEventLogger, times(1)).logPegoutTransactionCreated(pegoutTxHash, outpointValues);
     }
 

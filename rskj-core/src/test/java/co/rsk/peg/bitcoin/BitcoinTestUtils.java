@@ -2,11 +2,12 @@ package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
+
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
@@ -43,8 +44,7 @@ public class BitcoinTestUtils {
         return key.toAddress(networkParameters);
     }
 
-    public static Address createP2SHMultisigAddress(NetworkParameters networkParameters,
-        List<BtcECKey> keys) {
+    public static Address createP2SHMultisigAddress(NetworkParameters networkParameters, List<BtcECKey> keys) {
         Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
 
@@ -61,8 +61,7 @@ public class BitcoinTestUtils {
         return Sha256Hash.wrap(bytes);
     }
 
-    public static List<BtcECKey.ECDSASignature> extractSignaturesFromTxInput(
-        TransactionInput txInput) {
+    public static List<BtcECKey.ECDSASignature> extractSignaturesFromTxInput(TransactionInput txInput) {
         Script scriptSig = txInput.getScriptSig();
         List<ScriptChunk> chunks = scriptSig.getChunks();
         Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
@@ -84,8 +83,22 @@ public class BitcoinTestUtils {
             .collect(Collectors.toList());
     }
 
-    public static List<Coin> extractOutpointValues(BtcTransaction btcTransaction) {
-        return btcTransaction.getInputs().stream().map(TransactionInput::getValue).collect(
-            Collectors.toList());
+    public static UTXO createUTXO(int nHash, long index, Coin value, Address address) {
+        return new UTXO(
+            createHash(nHash),
+            index,
+            value,
+            10,
+            false,
+            ScriptBuilder.createOutputScript(address));
+    }
+
+    public static List<UTXO> createUTXOs(int amount, Address address) {
+        List<UTXO> utxos = new ArrayList<>();
+        for (int i = 0; i < amount; i++) {
+            utxos.add(createUTXO(i + 1, 0, Coin.COIN, address));
+        }
+
+        return utxos;
     }
 }
