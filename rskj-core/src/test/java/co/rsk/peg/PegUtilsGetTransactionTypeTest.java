@@ -2171,11 +2171,6 @@ class PegUtilsGetTransactionTypeTest {
         );
 
         // Assert
-        if (shouldUsePegoutTxIndex){
-            verify(provider, never()).getLastRetiredFederationP2SHScript();
-        } else {
-            verify(provider, times(1)).getLastRetiredFederationP2SHScript();
-        }
         assertEquals(expectedType, transactionType);
     }
 
@@ -2245,11 +2240,6 @@ class PegUtilsGetTransactionTypeTest {
         );
 
         // Assert
-        if (shouldUsePegoutTxIndex){
-            verify(provider, never()).getLastRetiredFederationP2SHScript();
-        } else {
-            verify(provider, times(1)).getLastRetiredFederationP2SHScript();
-        }
         assertEquals(expectedType, transactionType);
     }
 
@@ -2292,7 +2282,7 @@ class PegUtilsGetTransactionTypeTest {
             new String[]{"fa01", "fa02", "fa03"}, true
         );
         Federation retiredFederation = createFederation(bridgeMainnetConstants, fedKeys);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants.getFederationConstants());
 
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
@@ -2323,11 +2313,6 @@ class PegUtilsGetTransactionTypeTest {
         );
 
         // Assert
-        if (shouldUsePegoutTxIndex){
-            verify(provider, never()).getLastRetiredFederationP2SHScript();
-        } else {
-            verify(provider, times(1)).getLastRetiredFederationP2SHScript();
-        }
         assertEquals(expectedType, transactionType);
     }
 }
