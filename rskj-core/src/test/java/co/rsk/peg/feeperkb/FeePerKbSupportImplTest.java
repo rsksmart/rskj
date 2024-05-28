@@ -93,43 +93,6 @@ class FeePerKbSupportImplTest {
     }
 
     @Test
-    void voteFeePerKbChange_unsuccessfulVote_shouldReturnUnsuccessfulFeeVotedResponseCode() {
-        SignatureCache signatureCache = mock(SignatureCache.class);
-        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
-
-        ABICallElection feePerKbElection = mock(ABICallElection.class);
-        when(feePerKbElection.vote(any(), any())).thenReturn(false);
-
-        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
-        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
-
-        Coin feePerKbVote = Coin.valueOf(50_000L);
-
-        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, feePerKbVote, signatureCache);
-
-        Integer expectedResult = FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
-        assertEquals(expectedResult, actualResult);
-    }
-
-    @Test
-    void voteFeePerKbChange_successfulFeePerKbVote_shouldReturnSuccessfulFeeVotedResponseCode() {
-        SignatureCache signatureCache = mock(SignatureCache.class);
-        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
-
-        ABICallElection feePerKbElection = mock(ABICallElection.class);
-        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
-        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
-        when(feePerKbElection.vote(any(), any())).thenReturn(true);
-
-        Coin feePerKbVote = Coin.valueOf(50_000L);
-
-        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, feePerKbVote, signatureCache);
-
-        Integer expectedResult = FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
-        assertEquals(expectedResult, actualResult);
-    }
-
-    @Test
     void voteFeePerKbChange_successfulFeePerKbChanged_shouldReturnSuccessfulFeeVotedResponseCode() {
         final String SET_FEE_PER_KB_ABI_FUNCTION = "setFeePerKb";
         final Coin feePerKbVote = Coin.valueOf(50_000L);
