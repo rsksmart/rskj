@@ -612,8 +612,7 @@ class BridgeSupportReleaseBtcTest {
     @Test
     void release_verify_fee_below_fee_is_rejected() throws IOException {
         Coin value = bridgeConstants.getMinimumPegoutTxValue().add(Coin.SATOSHI);
-
-        testPegoutMinimumWithFeeVerificationRejected(Coin.COIN, value);
+        testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(Coin.COIN, value);
     }
 
     @Test
@@ -623,8 +622,7 @@ class BridgeSupportReleaseBtcTest {
 
         int pegoutSize = BridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
         Coin value = feePerKB.div(1000).times(pegoutSize);
-
-        testPegoutMinimumWithFeeVerificationRejected(feePerKB, value);
+        testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(feePerKB, value);
     }
 
     @Test
@@ -634,13 +632,12 @@ class BridgeSupportReleaseBtcTest {
 
         int pegoutSize = BridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
         Coin value = feePerKB.div(1000).times(pegoutSize);
-
-        testPegoutMinimumWithFeeVerificationRejected(feePerKB, value);
+        testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(feePerKB, value);
     }
 
     @Test
     void release_verify_fee_above_fee_but_below_minimum_is_rejected() throws IOException {
-        testPegoutMinimumWithFeeVerificationRejected(
+        testPegoutMinimumWithFeeVerificationRejectedByLowAmount(
             Coin.MILLICOIN,
             bridgeConstants.getMinimumPegoutTxValue().minus(Coin.SATOSHI)
         );
@@ -1171,11 +1168,13 @@ class BridgeSupportReleaseBtcTest {
 
     }
 
-    private void testPegoutMinimumWithFeeVerificationRejected(Coin feePerKB, Coin value)
+    private void testPegoutMinimumWithFeeVerificationRejectedByLowAmount(Coin feePerKB, Coin value)
         throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+
+        RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
 
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
@@ -1186,29 +1185,68 @@ class BridgeSupportReleaseBtcTest {
         Coin minValueAccordingToFee = feePerKbSupport.getFeePerKb().div(1000).times(pegoutSize);
         Coin minValueWithGapAboveFee = minValueAccordingToFee.add(minValueAccordingToFee.times(bridgeConstants.getMinimumPegoutValuePercentageToReceiveAfterFee()).div(100));
 
-        assertTrue(value.isLessThan(minValueWithGapAboveFee) ||
-            value.isLessThan(bridgeConstants.getMinimumPegoutTxValue()));
+        assertTrue(value.isGreaterThan(minValueWithGapAboveFee));
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(value));
+
+        RskAddress senderAddress = new RskAddress(SENDER.getAddress());
 
         Transaction rskTx = buildUpdateTx();
         rskTx.sign(SENDER.getPrivKeyBytes());
 
-        verify(repository, times(1)).transfer(any(), any(), any());
+        co.rsk.core.Coin coin = co.rsk.core.Coin.fromBitcoin(value);
+
+        verify(repository, times(1)).transfer(eq(bridgeAddress), eq(senderAddress), eq(coin));
 
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
-        ArgumentCaptor<RejectedPegoutReason> argumentCaptor = ArgumentCaptor.forClass(RejectedPegoutReason.class);
-        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), argumentCaptor.capture());
 
-        assertEquals(
-            value.isLessThan(minValueWithGapAboveFee) ?
-                RejectedPegoutReason.FEE_ABOVE_VALUE :
-                RejectedPegoutReason.LOW_AMOUNT,
-            argumentCaptor.getValue()
-        );
+        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+
+        verify(eventLogger, times(1))
+            .logReleaseBtcRequestRejected(eq(senderAddress.toHexString()), eq(value), eq(RejectedPegoutReason.LOW_AMOUNT));
+
+    }
+
+    private void testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(Coin feePerKB, Coin value)
+        throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+
+        RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
+
+        List<LogInfo> logInfo = new ArrayList<>();
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKB);
+
+        int pegoutSize = BridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
+        Coin minValueAccordingToFee = feePerKbSupport.getFeePerKb().div(1000).times(pegoutSize);
+        Coin minValueWithGapAboveFee = minValueAccordingToFee.add(minValueAccordingToFee.times(bridgeConstants.getMinimumPegoutValuePercentageToReceiveAfterFee()).div(100));
+
+        assertTrue(value.isLessThan(minValueWithGapAboveFee));
+
+        bridgeSupport.releaseBtc(buildReleaseRskTx(value));
+
+        RskAddress senderAddress = new RskAddress(SENDER.getAddress());
+
+        Transaction rskTx = buildUpdateTx();
+        rskTx.sign(SENDER.getPrivKeyBytes());
+
+        co.rsk.core.Coin coin = co.rsk.core.Coin.fromBitcoin(value);
+
+        verify(repository, times(1)).transfer(eq(bridgeAddress), eq(senderAddress), eq(coin));
+
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+
+        assertEquals(1, logInfo.size());
+
+        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+
+        verify(eventLogger, times(1))
+            .logReleaseBtcRequestRejected(eq(senderAddress.toHexString()), eq(value), eq(RejectedPegoutReason.FEE_ABOVE_VALUE));
 
     }
 
