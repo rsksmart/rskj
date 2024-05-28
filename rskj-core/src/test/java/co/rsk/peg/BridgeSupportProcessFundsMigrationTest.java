@@ -121,7 +121,7 @@ class BridgeSupportProcessFundsMigrationTest {
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
         long federationActivationAge = federationConstants.getFederationActivationAge(activations);
 
         long federationCreationBlockNumber = 5L;
