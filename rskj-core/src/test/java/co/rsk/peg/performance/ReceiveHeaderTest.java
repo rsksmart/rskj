@@ -57,10 +57,11 @@ class ReceiveHeaderTest extends BridgePerformanceTestCase {
                         // Working fine.
                         int result = new BigInteger(executionResult).intValue();
                         Assertions.assertEquals(0, result);
+                        NetworkParameters btcParams = constants.getBridgeConstants().getBtcParams();
                         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                                 (Repository) environment.getBenchmarkedRepository(),
                                 PrecompiledContracts.BRIDGE_ADDR,
-                                constants.getBridgeConstants().getBtcParams(),
+                                btcParams,
                                 activationConfig.forBlock(0)
                         );
 
