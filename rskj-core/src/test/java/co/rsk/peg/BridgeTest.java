@@ -77,7 +77,7 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Script activePowpegRedeemScript = FederationTestUtils.getGenesisFederation(
-            bridgeMainNetConstants).getRedeemScript();
+            bridgeMainNetConstants.getFederationConstants()).getRedeemScript();
         when(bridgeSupportMock.getActiveFederationRedeemScript()).thenReturn(
             Optional.of(activePowpegRedeemScript)
         );
@@ -764,8 +764,7 @@ class BridgeTest {
     void receiveHeaders_after_RSKIP200_notFederation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(
-            bridgeMainNetConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants.getFederationConstants());
 
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(genesisFederation);
