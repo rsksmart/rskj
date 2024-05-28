@@ -3,6 +3,8 @@ package co.rsk.mine.minGasPrice;
 import co.rsk.core.Coin;
 import co.rsk.rpc.modules.eth.EthModule;
 import com.typesafe.config.ConfigList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -19,6 +21,8 @@ public class MinGasPriceProvider {
     private long cachedPrice = 0;
     private long lastRefreshInSeconds = 0;
 
+    private static final Logger logger = LoggerFactory.getLogger(MinGasPriceProvider.class);
+
     @FunctionalInterface
     public interface GetContextCallback {
         EthModule getEthModule();
@@ -30,7 +34,8 @@ public class MinGasPriceProvider {
             long minStableGasPrice,
             Duration refreshRate,
             ConfigList exchangeRateSources,
-            GetContextCallback getContextCallback
+            GetContextCallback getContextCallback // TODO: I think this is not very Java-esque (though I guess that's what FunctionalInterface is meant for).
+            // TODO: What would be a better appraoch, given that at the time of construction the EthModule is not instantiated yet?
     ) {
         this.enabled = isStableMinGasPrice;
         this.minFixedGasPriceTarget = minFixedGasPriceTarget;
@@ -78,7 +83,7 @@ public class MinGasPriceProvider {
         if (timeNowInSeconds - lastRefreshInSeconds < refreshRate.getSeconds()) {
             return cachedPrice;
         }
-        cachedPrice = findFirstNonZeroExchangeRate();
+        cachedPrice = getFirstNonZeroExchangeRate();
         lastRefreshInSeconds = Instant.now().getEpochSecond();
 
         return cachedPrice;
@@ -88,16 +93,17 @@ public class MinGasPriceProvider {
         return Coin.valueOf(getMinGasPrice());
     }
 
-    private long findFirstNonZeroExchangeRate() {
+    private long getFirstNonZeroExchangeRate() {
         ProviderContext context = new ProviderContext(
                 getContextCallback.getEthModule()
                 // Http Module of some kind
         );
         for (ExchangeRateProvider provider : providers) {
-            long gasPrice = provider.getPrice(context);
-            if (gasPrice > 0) {
+            long price = provider.getPrice(context);
+            if (price > 0) {
+                logger.debug("{} updated exchange rate: {}", provider.getType(), price);
 
-                return gasPrice;
+                return price;
             }
         }
 

@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigObject;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 public class StableMinGasPriceSourceConfig
@@ -35,18 +36,28 @@ public class StableMinGasPriceSourceConfig
         return sourceConfig.getDuration("timeout");
     }
 
+    public String sourceFrom() {
+        if (!sourceConfig.hasPath("from")) {
+            throw new IllegalArgumentException("From address config is required");
+        }
+        return sourceConfig.getString("from");
+    }
+
     public String sourceContract() {
-        if (!sourceConfig.hasPath("contract")) {
+        if (!sourceConfig.hasPath("contract")) { // TODO: I suspect that there is better way to handle this?
             throw new IllegalArgumentException("Contract config is required");
         }
         return sourceConfig.getString("contract");
     }
 
     public String sourceContractMethod() {
+        if (!sourceConfig.hasPath("method")) {
+            throw new IllegalArgumentException("Method config is required");
+        }
         return sourceConfig.getString("method");
     }
 
     public List<String> sourceContractMethodParams() {
-        return sourceConfig.getStringList("params");
+        return !sourceConfig.hasPath("params") ? sourceConfig.getStringList("params") : new ArrayList<>();
     }
 }

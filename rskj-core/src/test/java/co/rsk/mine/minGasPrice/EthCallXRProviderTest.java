@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 public class EthCallXRProviderTest {
     private EthModule ethModuleMock;
 
+    private String from_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
     private String oracle_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
     private String oracle_method = "getPrice()(bytes32)";
     private String[] oracle_params = new String[]{};
@@ -36,6 +37,7 @@ public class EthCallXRProviderTest {
     @Test
     public void getPrice_failedCallReturnsZero() {
         EthCallXRProvider ethCallProvider = new EthCallXRProvider(
+                from_address,
                 oracle_address,
                 oracle_method,
                 Arrays.asList(oracle_params)
@@ -53,6 +55,7 @@ public class EthCallXRProviderTest {
     public void getPrice_successCallReturnsPrice() {
         String expectedPrice = "0x21";
         EthCallXRProvider ethCallXRProvider = new EthCallXRProvider(
+                from_address,
                 oracle_address,
                 oracle_method,
                 Arrays.asList(oracle_params)
