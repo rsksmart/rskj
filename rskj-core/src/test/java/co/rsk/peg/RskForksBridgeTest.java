@@ -57,7 +57,7 @@ class RskForksBridgeTest {
         BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8))),
         BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)))
     ));
-    private static ECKey fedECPrivateKey = ECKey.fromPrivate(
+    private static final ECKey fedECPrivateKey = ECKey.fromPrivate(
             REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKey()
     );
 
@@ -66,7 +66,6 @@ class RskForksBridgeTest {
     private Repository repository;
     //private ECKey keyHoldingRSKs;
     private ECKey whitelistManipulationKey;
-    private Genesis genesis;
     private BlockChainImpl blockChain;
     private Block blockBase;
     private World world;
@@ -85,8 +84,7 @@ class RskForksBridgeTest {
 
         whitelistManipulationKey = ECKey.fromPrivate(Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
 
-        genesis = (Genesis)blockChain.getBestBlock();
-        //keyHoldingRSKs = new ECKey();
+        Genesis genesis = (Genesis) blockChain.getBestBlock();
         co.rsk.core.Coin balance = new co.rsk.core.Coin(new BigInteger("10000000000000000000"));
         repository.addBalance(new RskAddress(fedECPrivateKey.getAddress()), balance);
 
@@ -382,7 +380,7 @@ class RskForksBridgeTest {
                 "03000000f979f676d5f876651021bb44d7d27e6bddac42448518827fe90035bbc9128d3dbc4563a6745a9a07474c4c353df7bbd587857a777bf56051b2363ab015d15ef132c6f156ffff7f2001000000",
                 "03000000bf03ac3aa5359892f8e2b8e133e9264b5c2903afea69d182fa17d919971e5d1ce4063a2efb1c4772df46ec7a5f234d89872e88c8a27a2ae2a061b245fe502fe58b77d857ffff7f2001000000"
         };
-        Object[] headerArray = Arrays.stream(serializedHeaders).map(h -> Hex.decode(h)).toArray();
+        Object[] headerArray = Arrays.stream(serializedHeaders).map(Hex::decode).toArray();
         long nonce = 0;
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
