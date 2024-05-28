@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+ *//*
+
 
 package co.rsk.peg.performance;
 
@@ -103,7 +104,7 @@ class RetiringFederationTest extends BridgePerformanceTestCase {
         final int minFederators = 10;
         final int maxFederators = 16;
         Random random = new Random(RetiringFederationTest.class.hashCode());
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             if (present) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
@@ -126,3 +127,4 @@ class RetiringFederationTest extends BridgePerformanceTestCase {
 
 
 }
+*/

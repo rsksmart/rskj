@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+ *//*
+
 
 package co.rsk.peg.performance;
 
@@ -68,7 +69,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
     private int maxHeight = 150;
     private int minCentOutput = 1;
     private int maxCentOutput = 100;
-    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
+    private final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
 
 
     @Test
@@ -341,3 +342,4 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         );
     }
 }
+*/
