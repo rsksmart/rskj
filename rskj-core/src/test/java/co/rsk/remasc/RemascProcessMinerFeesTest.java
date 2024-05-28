@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
@@ -33,6 +34,13 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.peg.*;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -967,15 +975,13 @@ class RemascProcessMinerFeesTest {
     private void validateFederatorsBalanceIsCorrect(RepositorySnapshot repository, long federationReward, Block executionBlock) {
 
         ActivationConfig.ForBlock activations = config.getActivationConfig().forBlock(executionBlock.getNumber());
+        Repository track = repository.startTracking();
 
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository.startTracking(),
-                PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(),
-                activations
-        );
+        FederationConstants federationConstants = config.getNetworkConstants().getBridgeConstants().getFederationConstants();
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(track);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
-        FederationSupport federationSupport = new FederationSupport(config.getNetworkConstants().getBridgeConstants(), bridgeStorageProvider, executionBlock, activations);
+        FederationSupport federationSupport = new FederationSupportImpl(federationConstants, federationStorageProvider, executionBlock, activations);
 
         RemascFederationProvider provider = new RemascFederationProvider(config.getActivationConfig().forBlock(executionBlock.getNumber()), federationSupport);
 
