@@ -80,7 +80,7 @@ class ReleaseTransactionBuilderTest {
         bridgeRegTestConstants = new BridgeRegTestConstants();
         networkParameters = bridgeRegTestConstants.getBtcParams();
         btcContext = new Context(networkParameters);
-        federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
         builder = new ReleaseTransactionBuilder(
             networkParameters,
             wallet,
