@@ -286,7 +286,7 @@ class BridgeStorageProviderTest {
         Repository track = repository.startTracking();
 
         // Federation is the genesis federation ATM
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeTestnetInstance);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeTestnetInstance.getFederationConstants());
 
         FederationStorageProvider federationStorageProvider = createFederationStorageProvider(track);
 
