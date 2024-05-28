@@ -1,6 +1,6 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.PegTestUtils.createP2shErpFederation;
+import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -63,7 +63,7 @@ class PegUtilsEvaluatePeginTest {
         List<BtcECKey> activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true
         );
-        activeFederation = createP2shErpFederation(bridgeMainnetConstants, activeFedSigners);
+        activeFederation = createP2shErpFederation(bridgeMainnetConstants.getFederationConstants(), activeFedSigners);
 
         minimumPegInTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
         activeFedWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
@@ -264,26 +264,22 @@ class PegUtilsEvaluatePeginTest {
         when(peginInformation.getProtocolVersion()).thenReturn(1);
 
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
-
-        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "add1");
-
         btcTx.addInput(
-                BitcoinTestUtils.createHash(1),
-                0,
-                ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
+            BitcoinTestUtils.createHash(1),
+            0,
+            ScriptBuilder.createP2SHMultiSigInputScript(null, activeFederation.getRedeemScript())
         ); // Fed spending utxo
 
         btcTx.addOutput(minimumPegInTxValue, activeFederation.getAddress());
 
         PeginEvaluationResult peginEvaluationResult = PegUtils.evaluatePegin(
-                btcTx,
-                peginInformation,
-                minimumPegInTxValue,
-                activeFedWallet,
-                activations
+            btcTx,
+            peginInformation,
+            minimumPegInTxValue,
+            activeFedWallet,
+            activations
         );
 
         assertEquals(PeginProcessAction.CAN_BE_REGISTERED, peginEvaluationResult.getPeginProcessAction());
     }
-
 }

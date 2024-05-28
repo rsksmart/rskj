@@ -105,6 +105,19 @@ public final class FederationTestUtils {
         return new FederationMember(pk, ethKey, ethKey);
     }
 
+    public static ErpFederation createP2shErpFederation(FederationConstants federationConstants, List<BtcECKey> federationKeys) {
+        federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        List<FederationMember> fedMembers = getFederationMembersWithBtcKeys(federationKeys);
+        Instant creationTime = Instant.ofEpochMilli(1000L);
+        NetworkParameters btcParams = federationConstants.getBtcParams();
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
+
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
+        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
+    }
+
+
     public static void spendFromErpFed(
         NetworkParameters networkParameters,
         ErpFederation federation,

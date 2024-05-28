@@ -307,18 +307,6 @@ public final class PegTestUtils {
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
-    public static ErpFederation createP2shErpFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
-        federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys);
-        Instant creationTime = Instant.ofEpochMilli(1000L);
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
-        long activationDelay = bridgeConstants.getErpFedActivationDelay();
-
-        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
-        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
-    }
-
     public static Transaction getMockedRskTxWithHash(String s) {
         byte[] hash = Keccak256Helper.keccak256(s);
         return new SimpleRskTransaction(hash);
