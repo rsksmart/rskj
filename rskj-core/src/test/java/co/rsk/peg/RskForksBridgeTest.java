@@ -19,7 +19,6 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
