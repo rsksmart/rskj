@@ -244,7 +244,7 @@ class TransactionTest {
         // Why? I don't know. Maybe just to test if the returned value is the correct one.
         List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")) {
             @Override
-            protected ProgramResult executeTransaction(Transaction tx) {
+            protected ProgramResult executeTransaction() {
                 // first emulating the constant call (Ethereum.callConstantFunction)
                 // to ensure it doesn't affect the final state
 
@@ -287,7 +287,7 @@ class TransactionTest {
                 }
 
                 // now executing the JSON test transaction
-                return super.executeTransaction(tx);
+                return super.executeTransaction();
             }
         }.setstateTestUSeREMASC(true).runImpl();
         Assertions.assertTrue(res.isEmpty(), res.toString());
