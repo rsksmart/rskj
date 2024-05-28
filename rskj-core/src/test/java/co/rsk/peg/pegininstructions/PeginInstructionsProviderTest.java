@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class PeginInstructionsProviderTest {
-    private final NetworkParameters params = (new BridgeRegTestConstants()).getBtcParams();
+    private final NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
     @Test
     void buildPeginInstructions_nullOpReturnData() throws Exception {
