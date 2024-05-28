@@ -13,6 +13,10 @@ import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -191,6 +195,76 @@ class FeePerKbSupportImplTest {
     }
 
     @Test
+    void voteFeePerKbChange_repeatedVote_sameRskAddressSameFeePerKbValue_shouldReturnUnsuccessfulFeeVotedResponseCode() {
+        final String SET_FEE_PER_KB_ABI_FUNCTION = "setFeePerKb";
+        SignatureCache signatureCache = mock(SignatureCache.class);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+
+        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
+        Coin feePerKb = Coin.valueOf(50_000L);
+        Map<ABICallSpec, List<RskAddress>> votes = new HashMap<>();
+        ABICallSpec feeVote = new ABICallSpec(SET_FEE_PER_KB_ABI_FUNCTION, new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
+        List<RskAddress> rskAddress = new ArrayList<>();
+        rskAddress.add(this.getAuthorizedRskAddress());
+        votes.put(feeVote,rskAddress);
+
+        ABICallElection feePerKbElection = new ABICallElection(authorizer, votes);
+        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, feePerKb, signatureCache);
+
+        Integer expectedResult = FeePerKbResponseCode.UNSUCCESSFUL_VOTE.getCode();
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    void voteFeePerKbChange_repeatedVote_sameRskAddressDifferentFeePerKbValue_shouldReturnSuccessfulFeeVotedResponseCode() {
+        final String SET_FEE_PER_KB_ABI_FUNCTION = "setFeePerKb";
+        SignatureCache signatureCache = mock(SignatureCache.class);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+
+        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
+        Coin firstFeePerKb = Coin.valueOf(50_000L);
+        Map<ABICallSpec, List<RskAddress>> votes = new HashMap<>();
+        ABICallSpec feeVote = new ABICallSpec(SET_FEE_PER_KB_ABI_FUNCTION, new byte[][]{BridgeSerializationUtils.serializeCoin(firstFeePerKb)});
+        List<RskAddress> rskAddress = new ArrayList<>();
+        rskAddress.add(this.getAuthorizedRskAddress());
+        votes.put(feeVote,rskAddress);
+
+        ABICallElection feePerKbElection = new ABICallElection(authorizer, votes);
+        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
+        Coin secondFeePerKb = feePerKbConstants.getMaxFeePerKb();
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, secondFeePerKb, signatureCache);
+
+        Integer expectedResult = FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    void voteFeePerKbChange_winnerFeePerKbValue_shouldReturnSuccessfulFeeVotedResponseCode() {
+        final String SET_FEE_PER_KB_ABI_FUNCTION = "setFeePerKb";
+        SignatureCache signatureCache = mock(SignatureCache.class);
+        Transaction tx = getTransactionFromAuthorizedCaller(signatureCache);
+
+        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
+        Coin feePerKb = Coin.valueOf(50_000L);
+        Map<ABICallSpec, List<RskAddress>> votes = new HashMap<>();
+        ABICallSpec feeVote = new ABICallSpec(SET_FEE_PER_KB_ABI_FUNCTION, new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
+        List<RskAddress> rskAddress = new ArrayList<>();
+        rskAddress.add(this.getSecondAuthorizedRskAddress());
+        votes.put(feeVote,rskAddress);
+
+        ABICallElection feePerKbElection = new ABICallElection(authorizer, votes);
+        when(storageProvider.getFeePerKbElection(authorizer)).thenReturn(feePerKbElection);
+
+        Integer actualResult = feePerKbSupport.voteFeePerKbChange(tx, feePerKb, signatureCache);
+
+        Integer expectedResult = FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
     void voteFeePerKbChange_nullFeeThrows() {
         Transaction tx = mock(Transaction.class);
         SignatureCache signatureCache = mock(SignatureCache.class);
@@ -228,5 +302,9 @@ class FeePerKbSupportImplTest {
 
     private RskAddress getAuthorizedRskAddress(){
         return new RskAddress("a02db0ed94a5894bc6f9079bb9a2d93ada1917f3");
+    }
+
+    private RskAddress getSecondAuthorizedRskAddress(){
+        return new RskAddress("180a7edda4e640ea5a3e495e17a1efad260c39e9");
     }
 }
