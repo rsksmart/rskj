@@ -1344,7 +1344,7 @@ class BridgeUtilsTest {
     }
 
     private void getAmountSentToAddresses_no_output_for_address_by_network(BridgeConstants bridgeConstants) {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet.getFederationConstants());
         Address receiver = genesisFederation.getAddress();
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
 
@@ -1368,7 +1368,7 @@ class BridgeUtilsTest {
     }
 
     private void getAmountSentToAddresses_output_value_is_0_by_network(BridgeConstants bridgeConstants) {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsMainnet.getFederationConstants());
         Address receiver = genesisFederation.getAddress();
 
         Coin valueToTransfer = Coin.ZERO;
@@ -1470,7 +1470,7 @@ class BridgeUtilsTest {
     }
 
     private ErpFederation createNonStandardErpFederation() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest.getFederationConstants());
         FederationArgs genesisFederationArgs = genesisFederation.getArgs();
         List<BtcECKey> erpPubKeys = bridgeConstantsRegtest.getFederationConstants().getErpFedPubKeysList();
         long activationDelay = bridgeConstantsRegtest.getFederationConstants().getErpFedActivationDelay();
@@ -1489,7 +1489,7 @@ class BridgeUtilsTest {
         byte[] program;
 
         if (federation == null) {
-            federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+            federation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest.getFederationConstants());
         }
 
         if (isFlyover) {
