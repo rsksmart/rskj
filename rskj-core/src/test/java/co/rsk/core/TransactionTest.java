@@ -101,11 +101,11 @@ class TransactionTest {
         assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826",
                 ByteUtil.toHexString(key.getAddress()));
 
-        System.out.println(tx.toString());
+        System.out.println(tx);
     }
 
     @Test  /* achieve public key of the sender */
-    void testSenderShouldChangeWhenReSigningTx() throws Exception {
+    void testSenderShouldChangeWhenReSigningTx() {
         BigInteger value = new BigInteger("1000000000000000000000");
 
         byte[] privateKey = HashUtil.keccak256("cat".getBytes());
@@ -145,7 +145,7 @@ class TransactionTest {
         // Verify sender changed
         assertNotEquals(sender, newSender);
 
-        System.out.println(tx.toString());
+        System.out.println(tx);
     }
 
     @Test
@@ -449,7 +449,7 @@ class TransactionTest {
 
         Constants constants = Mockito.mock(Constants.class);
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        Mockito.doReturn(false).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP400));
+        Mockito.doReturn(false).when(activations).isActive(ConsensusRule.RSKIP400);
 
         Assertions.assertEquals(21068L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }
@@ -461,7 +461,7 @@ class TransactionTest {
 
         Constants constants = Mockito.mock(Constants.class);
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP400));
+        Mockito.doReturn(true).when(activations).isActive(ConsensusRule.RSKIP400);
 
         Assertions.assertEquals(21016L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }
