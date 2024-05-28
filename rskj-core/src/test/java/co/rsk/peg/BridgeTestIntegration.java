@@ -380,7 +380,7 @@ public class BridgeTestIntegration {
         BridgeSupportFactory bridgeSupportFactory = mock(BridgeSupportFactory.class);
         BridgeSupport bridgeSupport = mock(BridgeSupport.class);
         when(bridgeSupportFactory.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupport);
-        when(bridgeSupport.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants));
+        when(bridgeSupport.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory, signatureCache);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -1022,7 +1022,7 @@ public class BridgeTestIntegration {
     @Test
     void getFederationAddress() throws Exception {
         // Case with genesis federation
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -3147,7 +3147,7 @@ public class BridgeTestIntegration {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
-        when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants));
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
@@ -3182,7 +3182,7 @@ public class BridgeTestIntegration {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
-        when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants));
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants()));
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
