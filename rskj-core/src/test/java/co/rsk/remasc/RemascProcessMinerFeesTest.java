@@ -70,24 +70,23 @@ class RemascProcessMinerFeesTest {
     private static RemascConfig remascConfig;
     private static TestSystemProperties config;
 
-    private Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
-    private long initialGasLimit = 10000000L;
-    private long minerFee = 21000;
-    private long txValue = 10000;
-    private ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
-    private byte[] cowAddress = cowKey.getAddress();
-    private static RskAddress coinbaseA = TestUtils.generateAddress("coinbaseA");
-    private static RskAddress coinbaseB = TestUtils.generateAddress("coinbaseB");
-    private static RskAddress coinbaseC = TestUtils.generateAddress("coinbaseC");
-    private static RskAddress coinbaseD = TestUtils.generateAddress("coinbaseD");
-    private static RskAddress coinbaseE = TestUtils.generateAddress("coinbaseE");
+    private final Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
+    private final long initialGasLimit = 10000000L;
+    private final long minerFee = 21000;
+    private final long txValue = 10000;
+    private final ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
+    private final byte[] cowAddress = cowKey.getAddress();
+    private final static RskAddress coinbaseA = TestUtils.generateAddress("coinbaseA");
+    private final static RskAddress coinbaseB = TestUtils.generateAddress("coinbaseB");
+    private final static RskAddress coinbaseC = TestUtils.generateAddress("coinbaseC");
+    private final static RskAddress coinbaseD = TestUtils.generateAddress("coinbaseD");
+    private final static RskAddress coinbaseE = TestUtils.generateAddress("coinbaseE");
     private static List<byte[]> accountsAddressesUpToD;
 
-    private Map<byte[], BigInteger> preMineMap = Collections.singletonMap(cowAddress, cowInitialBalance.asBigInteger());
+    private final Map<byte[], BigInteger> preMineMap = Collections.singletonMap(cowAddress, cowInitialBalance.asBigInteger());
 
-    private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
+    private final Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
     private BlockChainBuilder blockchainBuilder;
-    private StateRootHandler stateRootHandler;
     private BlockFactory blockFactory;
 
     @BeforeAll
@@ -106,7 +105,7 @@ class RemascProcessMinerFeesTest {
     @BeforeEach
     void setup() {
         blockFactory = new BlockFactory(config.getActivationConfig());
-        stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         blockchainBuilder = new BlockChainBuilder()
                 .setStateRootHandler(stateRootHandler)
                 .setGenesis(genesisBlock)
@@ -578,7 +577,7 @@ class RemascProcessMinerFeesTest {
         this.validateRemascsStorageIsCorrect(getRemascStorageProvider(repository), expectedRewardBalance, Coin.valueOf(1), 0L);
 
         // add block to pay fees of blocks on blockchain's height 6
-        Block blockToPayFeesOnHeightSix = RemascTestRunner.createBlock(this.genesisBlock, blockToPayFeesOnHeightFive, PegTestUtils.createHash3(NHASH++), TestUtils.generateAddress("blockToPayFeesOnHeightSix"), Collections.emptyList(), null);
+        Block blockToPayFeesOnHeightSix = RemascTestRunner.createBlock(this.genesisBlock, blockToPayFeesOnHeightFive, PegTestUtils.createHash3(NHASH), TestUtils.generateAddress("blockToPayFeesOnHeightSix"), Collections.emptyList(), null);
         blockExecutor.executeAndFillAll(blockToPayFeesOnHeightSix, blockchain.getBestBlock().getHeader());
         importResult = blockchain.tryToConnect(blockToPayFeesOnHeightSix);
         assertTrue(importResult.isSuccessful());
