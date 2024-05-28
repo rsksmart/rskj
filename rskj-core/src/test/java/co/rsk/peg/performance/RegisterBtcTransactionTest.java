@@ -242,7 +242,7 @@ class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             BtcTransaction inputTx = new BtcTransaction(networkParameters);
             inputTx.addOutput(fromAmount, fromAddress);
 
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
             Address federationAddress = genesisFederation.getAddress();
 
             // Lock tx that uses the input tx
