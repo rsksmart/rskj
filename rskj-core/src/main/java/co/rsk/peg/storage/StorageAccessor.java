@@ -1,6 +1,5 @@
 package co.rsk.peg.storage;
 
-import java.io.IOException;
 import org.ethereum.vm.DataWord;
 
 public interface StorageAccessor {
@@ -10,10 +9,10 @@ public interface StorageAccessor {
     <T> void safeSaveToRepository(DataWord key, T value, RepositorySerializer<T> serializer);
 
     interface RepositoryDeserializer<T> {
-        T deserialize(byte[] value) throws IOException;
+        T deserialize(byte[] value);
     }
 
     interface RepositorySerializer<T> {
-        byte[] serialize(T value) throws IOException;
+        byte[] serialize(T value);
     }
 }
