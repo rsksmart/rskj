@@ -41,6 +41,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
+        this.storageVersionEntries = new HashMap<>();
     }
 
     @Override
@@ -122,19 +123,19 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
-        if (!storageVersionEntries.containsKey(versionKey)) {
-            Optional<Integer> version = bridgeStorageAccessor.safeGetFromRepository(versionKey, data -> {
-                if (data == null || data.length == 0) {
-                    return Optional.empty();
-                }
-
-                return Optional.of(BridgeSerializationUtils.deserializeInteger(data));
-            });
-
-            storageVersionEntries.put(versionKey, version);
-            return version;
+        if (storageVersionEntries.containsKey(versionKey)) {
+            return storageVersionEntries.get(versionKey);
         }
-        return storageVersionEntries.get(versionKey);
+
+        Optional<Integer> version = bridgeStorageAccessor.safeGetFromRepository(versionKey, data -> {
+            if (data == null || data.length == 0) {
+                return Optional.empty();
+            }
+
+            return Optional.of(BridgeSerializationUtils.deserializeInteger(data));
+        });
+        storageVersionEntries.put(versionKey, version);
+        return version;
     }
 
     @Override
