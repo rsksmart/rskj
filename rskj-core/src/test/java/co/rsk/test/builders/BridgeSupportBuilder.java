@@ -47,7 +47,7 @@ public class BridgeSupportBuilder {
         this.activations = mock(ActivationConfig.ForBlock.class);
         this.signatureCache = mock(BlockTxSignatureCache.class);
         this.feePerKbSupport = mock(FeePerKbSupport.class);
-        this.federationSupport = defaultFederationSupportInstance();
+        this.federationSupport = mock(FederationSupport.class);
     }
 
     public BridgeSupportBuilder withBridgeConstants(BridgeConstants bridgeConstants) {
@@ -128,13 +128,5 @@ public class BridgeSupportBuilder {
             activations,
             signatureCache
         );
-    }
-
-    private FederationSupport defaultFederationSupportInstance() {
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-
-        return new FederationSupportImpl(federationConstants, federationStorageProvider, executionBlock, activations);
     }
 }
