@@ -10,7 +10,7 @@ import org.ethereum.vm.DataWord;
  * This is an In-Memory Storage Simulator to be used in Unit Tests to reduce the use of mocks, thus
  * improving the Unit Tests reliability.
  */
-public class InMemoryStorageSimulator implements StorageAccessor {
+public class InMemoryStorage implements StorageAccessor {
 
     private final Map<DataWord, byte[]> storage = new HashMap<>();
 
