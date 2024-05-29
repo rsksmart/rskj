@@ -86,7 +86,8 @@ class PendingFederationTest extends BridgePerformanceTestCase {
             if (present) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
                 pendingFederation = new PendingFederation(ActiveFederationTest.getNRandomFederationMembers(numFederators));
-                provider.setPendingFederation(pendingFederation);
+                // TODO: This logic needs to be adjusted to use the new FederationStorageProvider class
+//                provider.setPendingFederation(pendingFederation);
             } else {
                 pendingFederation = null;
             }
