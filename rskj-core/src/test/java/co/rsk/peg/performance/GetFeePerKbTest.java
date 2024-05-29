@@ -18,7 +18,6 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
@@ -33,7 +32,7 @@ import org.junit.jupiter.api.Test;
 @Disabled
 class GetFeePerKbTest extends BridgePerformanceTestCase {
     private Federation genesisFederation;
-/*
+
     @Test
     void getFeePerKb() throws VMException {
         ExecutionStats stats = new ExecutionStats("getFeePerKb");
@@ -55,17 +54,14 @@ class GetFeePerKbTest extends BridgePerformanceTestCase {
         );
     }
 
- */
-/*
     private BridgeStorageProviderInitializer buildInitializer(boolean genesis) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             if (!genesis) {
-                provider.setFeePerKb(Helper.randomCoin(Coin.MILLICOIN, 1, 100));
+                // TODO: This logic needs to be adjusted to use the new FeePerKbStorageProvider class
+//                provider.setFeePerKb(Helper.randomCoin(Coin.MILLICOIN, 1, 100));
             } else {
                 genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
             }
         };
     }
-*/
-
 }
