@@ -3,6 +3,7 @@ package co.rsk.peg;
 import co.rsk.peg.storage.StorageAccessor;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import org.ethereum.vm.DataWord;
 
 /**
@@ -21,7 +22,10 @@ public class InMemoryStorageSimulator implements StorageAccessor {
 
     @Override
     public <T> void safeSaveToRepository(DataWord key, T value, RepositorySerializer<T> serializer) {
-            byte[] data = serializer.serialize(value);
-            storage.put(key, data);
+        byte[] data = null;
+        if (!Objects.isNull(value)) {
+            data = serializer.serialize(value);
+        }
+        storage.put(key, data);
     }
 }
