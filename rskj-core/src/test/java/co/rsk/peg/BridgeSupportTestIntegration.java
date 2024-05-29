@@ -117,7 +117,6 @@ import org.ethereum.vm.program.Program;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -131,7 +130,7 @@ import org.mockito.quality.Strictness;
 /**
  * Created by ajlopez on 6/9/2016.
  */
-@Disabled
+
 @ExtendWith(MockitoExtension.class)
 // to avoid Junit5 unnecessary stub error due to some setup generalizations
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -153,6 +152,7 @@ public class BridgeSupportTestIntegration {
     private ActivationConfig.ForBlock activationsBeforeForks;
 
     private SignatureCache signatureCache;
+    private FeePerKbSupport feePerKbSupport;
 
     @BeforeEach
     void setUpOnEachTest() {
@@ -160,6 +160,8 @@ public class BridgeSupportTestIntegration {
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
     }
 
     @Test
@@ -200,7 +202,7 @@ public class BridgeSupportTestIntegration {
 
         Assertions.assertEquals(checkpoint.getHeight(), bridgeSupport.getBtcBlockchainBestChainHeight());
     }
-/*
+
     @Test
     void feePerKbFromStorageProvider() {
         Repository repository = createRepository();
@@ -209,14 +211,14 @@ public class BridgeSupportTestIntegration {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
         Coin expected = Coin.MILLICOIN;
-        provider.setFeePerKb(expected);
-        provider.saveFeePerKb();
+
+        when(feePerKbSupport.getFeePerKb()).thenReturn(expected);
 
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track);
 
         Assertions.assertEquals(expected, bridgeSupport.getFeePerKb());
     }
-*/
+
     @Test
     void testGetBtcBlockchainBlockLocatorWithoutBtcCheckpoints() throws Exception {
         Repository repository = createRepository();
@@ -387,7 +389,7 @@ public class BridgeSupportTestIntegration {
         bridgeSupport.updateCollections(tx);
         verify(eventLogger, times(1)).logUpdateCollections(tx);
     }
-/*
+
     @Test
     void callUpdateCollectionsFundsEnoughForJustTheSmallerTx() throws IOException {
         // Federation is the genesis federation ATM
@@ -401,7 +403,6 @@ public class BridgeSupportTestIntegration {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(30, 0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(20, 0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(10, 0));
-        provider0.setFeePerKb(Coin.MILLICOIN);
 
         provider0.getNewFederationBtcUTXOs().add(new UTXO(
                 PegTestUtils.createHash(),
@@ -459,8 +460,7 @@ public class BridgeSupportTestIntegration {
         // Check the wallet has been emptied
         Assertions.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
-*/
-    /*
+
     @Test
     void callUpdateCollectionsThrowsCouldNotAdjustDownwards() throws IOException {
         // Federation is the genesis federation ATM
@@ -472,7 +472,7 @@ public class BridgeSupportTestIntegration {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(37500));
-        provider0.setFeePerKb(Coin.MILLICOIN);
+
         provider0.getNewFederationBtcUTXOs().add(new UTXO(
                 PegTestUtils.createHash(),
                 1,
@@ -540,7 +540,7 @@ public class BridgeSupportTestIntegration {
         // Check the wallet has not been emptied
         Assertions.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
     }
-*/
+
     @Test
     void callUpdateCollectionsThrowsExceededMaxTransactionSize() throws IOException {
         // Federation is the genesis federation ATM
@@ -597,6 +597,7 @@ public class BridgeSupportTestIntegration {
                 bridgeConstants,
                 activationsBeforeForks
         );
+
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
                 providerForSupport,
@@ -638,9 +639,7 @@ public class BridgeSupportTestIntegration {
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb())
-                .thenReturn(Coin.MILLICOIN);
+
         when(provider.getReleaseRequestQueue())
                 .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForConfirmations())
@@ -666,6 +665,7 @@ public class BridgeSupportTestIntegration {
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
+
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
                 provider,
@@ -715,7 +715,7 @@ public class BridgeSupportTestIntegration {
         bridgeSupport.updateCollections(tx);
         assertThat(unsufficientUTXOsForMigration2.size(), is(1));
     }
-/*
+
     @Test
     void callUpdateCollectionsChangeGetsOutOfDust() throws IOException {
         // Federation is the genesis federation ATM
@@ -795,7 +795,7 @@ public class BridgeSupportTestIntegration {
         // Check the wallet has been emptied
         Assertions.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
-*/
+
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException {
         try (MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class)) {
@@ -4138,7 +4138,7 @@ public class BridgeSupportTestIntegration {
         if (blockStoreFactory == null) {
             blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
         }
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+
         return new BridgeSupport(
                 constants,
                 provider,
