@@ -18,8 +18,8 @@
 
 package org.ethereum.rpc.Simples;
 
-import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.Status;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.net.simples.SimpleNodeChannel;
@@ -34,8 +34,6 @@ import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * Created by Ruben on 09/06/2016.
