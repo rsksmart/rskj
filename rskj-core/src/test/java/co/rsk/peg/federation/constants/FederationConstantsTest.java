@@ -98,10 +98,9 @@ class FederationConstantsTest {
 
     private static Stream<Arguments> getGenesisFederationCreationTimeTestProvider() {
         return Stream.of(
-            Arguments.of(BridgeMainNetConstants.getInstance(), Instant.ofEpochMilli(1514948400L)),
-            Arguments.of(BridgeTestNetConstants.getInstance(), Instant.ofEpochMilli(1538967600L)),
-            Arguments.of(new BridgeRegTestConstants(), Instant.ofEpochSecond(1451606400L)),
-            Arguments.of(BridgeDevNetConstants.getInstance(), Instant.ofEpochMilli(1510617600L))
+            Arguments.of(BridgeMainNetConstants.getInstance().getFederationConstants(), Instant.ofEpochMilli(1514948400L)),
+            Arguments.of(BridgeTestNetConstants.getInstance().getFederationConstants(), Instant.ofEpochMilli(1538967600L)),
+            Arguments.of((new BridgeRegTestConstants()).getFederationConstants(), Instant.ofEpochSecond(1451606400L))
         );
     }
 
