@@ -1,11 +1,11 @@
 package co.rsk.mine.minGasPrice;
 
 import co.rsk.core.Coin;
+import co.rsk.rpc.modules.eth.EthModule;
 import com.typesafe.config.ConfigList;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalTime;
 import java.util.List;
 
 public class MinGasPriceProvider {
@@ -14,26 +14,44 @@ public class MinGasPriceProvider {
     private final long minStableGasPrice;
     private final Duration refreshRate;
     private final List<ExchangeRateProvider> providers;
+    private final GetContextCallback getContextCallback;
 
     private long cachedPrice = 0;
     private long lastRefreshInSeconds = 0;
+
+    @FunctionalInterface
+    public interface GetContextCallback {
+        EthModule getEthModule();
+    }
 
     public MinGasPriceProvider(
             boolean isStableMinGasPrice,
             long minFixedGasPriceTarget,
             long minStableGasPrice,
             Duration refreshRate,
-            ConfigList exchangeRateSources
+            ConfigList exchangeRateSources,
+            GetContextCallback getContextCallback
     ) {
         this.enabled = isStableMinGasPrice;
         this.minFixedGasPriceTarget = minFixedGasPriceTarget;
         this.minStableGasPrice = minStableGasPrice;
         this.refreshRate = refreshRate;
         this.providers = ExchangeRateProviderFactory.getProvidersFromSourceConfig(exchangeRateSources);
+        this.getContextCallback = getContextCallback;
     }
 
     public MinGasPriceProvider(long minFixedGasPriceTarget) {
-        this(false, minFixedGasPriceTarget, 0, Duration.ZERO, null);
+        this(false, minFixedGasPriceTarget, 0, Duration.ZERO, null, null);
+    }
+
+    public static class ProviderContext {
+        EthModule ethModule;
+        // Http Module of some kind
+
+        public ProviderContext(EthModule ethModule) {
+            this.ethModule = ethModule;
+            // Http Module of some kind
+        }
     }
 
     public boolean isEnabled() {
@@ -71,8 +89,12 @@ public class MinGasPriceProvider {
     }
 
     private long findFirstNonZeroExchangeRate() {
+        ProviderContext context = new ProviderContext(
+                getContextCallback.getEthModule()
+                // Http Module of some kind
+        );
         for (ExchangeRateProvider provider : providers) {
-            long gasPrice = provider.getPrice();
+            long gasPrice = provider.getPrice(context);
             if (gasPrice > 0) {
 
                 return gasPrice;

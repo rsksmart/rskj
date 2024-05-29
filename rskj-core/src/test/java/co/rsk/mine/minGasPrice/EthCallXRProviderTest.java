@@ -33,8 +33,10 @@ public class EthCallXRProviderTest {
 
     @Test
     public void getPrice() {
-        EthCallXRProvider ethCallProvider = new EthCallXRProvider(oracle_address, oracle_method, Arrays.asList(oracle_params));
-        assert ethCallProvider.getPrice() == 0;
+        EthCallXRProvider ethCallProvider = new EthCallXRProvider(oracle_address, oracle_method, Arrays.asList(oracle_params), null, null);
+        assert ethCallProvider.getPrice(new MinGasPriceProvider.ProviderContext(
+                null
+        )) == 0;
     }
 
 }

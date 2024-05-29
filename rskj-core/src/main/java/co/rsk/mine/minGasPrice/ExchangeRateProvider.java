@@ -11,6 +11,6 @@ public abstract class ExchangeRateProvider {
         return type;
     }
 
-    public abstract long getPrice();
+    public abstract long getPrice(MinGasPriceProvider.ProviderContext context);
 
 }

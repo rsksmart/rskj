@@ -21,7 +21,6 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockChainStatus;
@@ -240,7 +239,8 @@ class Web3ImplSnapshotTest {
                                 config.minerMinGasPrice(),
                                 config.minerStableGasPriceMinStableGasPrice(),
                                 config.minerStableGasPriceRefreshRate(),
-                                config.minerStableGasPriceSources()
+                                config.minerStableGasPriceSources(),
+                                () -> null
                         )),
                         new MinerUtils(),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())

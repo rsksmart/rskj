@@ -245,7 +245,8 @@ class MainNetMinerTest {
                         config.minerMinGasPrice(),
                         config.minerStableGasPriceMinStableGasPrice(),
                         config.minerStableGasPriceRefreshRate(),
-                        config.minerStableGasPriceSources()
+                        config.minerStableGasPriceSources(),
+                        () -> null
                 )),
                 new MinerUtils(),
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache())

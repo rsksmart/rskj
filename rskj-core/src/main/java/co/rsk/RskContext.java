@@ -1860,7 +1860,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.minerMinGasPrice(),
                     rskSystemProperties.minerStableGasPriceMinStableGasPrice(),
                     rskSystemProperties.minerStableGasPriceRefreshRate(),
-                    rskSystemProperties.minerStableGasPriceSources()
+                    rskSystemProperties.minerStableGasPriceSources(),
+                    this::getEthModule
             );
         }
 

@@ -459,7 +459,8 @@ class TraceModuleImplTest {
                         rskSystemProperties.minerMinGasPrice(),
                         rskSystemProperties.minerStableGasPriceMinStableGasPrice(),
                         rskSystemProperties.minerStableGasPriceRefreshRate(),
-                        rskSystemProperties.minerStableGasPriceSources()
+                        rskSystemProperties.minerStableGasPriceSources(),
+                        () -> null
                 )),
                 new MinerUtils(),
                 world.getBlockTxSignatureCache()

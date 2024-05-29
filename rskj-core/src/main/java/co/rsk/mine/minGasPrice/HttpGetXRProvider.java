@@ -51,7 +51,7 @@ public class HttpGetXRProvider extends ExchangeRateProvider {
     }
 
     @Override
-    public long getPrice() {
+    public long getPrice(MinGasPriceProvider.ProviderContext context) {
         return 0;
     }
 }

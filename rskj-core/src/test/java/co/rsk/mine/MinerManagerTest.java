@@ -297,7 +297,8 @@ public class MinerManagerTest {
                                 config.minerMinGasPrice(),
                                 config.minerStableGasPriceMinStableGasPrice(),
                                 config.minerStableGasPriceRefreshRate(),
-                                config.minerStableGasPriceSources()
+                                config.minerStableGasPriceSources(),
+                                () -> null
                         )),
                         new MinerUtils(),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache()) // TODO -> should it be ReceivedTxSignatureCache? See Miner Server Test for reference
