@@ -8,15 +8,9 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.federation.FederationStorageProvider;
-import co.rsk.peg.federation.FederationStorageProviderImpl;
 import co.rsk.peg.federation.FederationSupport;
-import co.rsk.peg.federation.FederationSupportImpl;
-import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.storage.BridgeStorageAccessorImpl;
-import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
@@ -47,7 +41,7 @@ public class BridgeSupportBuilder {
         this.activations = mock(ActivationConfig.ForBlock.class);
         this.signatureCache = mock(BlockTxSignatureCache.class);
         this.feePerKbSupport = mock(FeePerKbSupport.class);
-        this.federationSupport = defaultFederationSupportInstance();
+        this.federationSupport = mock(FederationSupport.class);
     }
 
     public BridgeSupportBuilder withBridgeConstants(BridgeConstants bridgeConstants) {
@@ -128,13 +122,5 @@ public class BridgeSupportBuilder {
             activations,
             signatureCache
         );
-    }
-
-    private FederationSupport defaultFederationSupportInstance() {
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-
-        return new FederationSupportImpl(federationConstants, federationStorageProvider, executionBlock, activations);
     }
 }
