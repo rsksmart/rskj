@@ -64,5 +64,38 @@ public class EthCallXRProvider extends ExchangeRateProvider {
 
 
     @Override
-    public long getPrice(MinGasPriceProvider.ProviderContext context) { return 0; }
+    public long getPrice(MinGasPriceProvider.ProviderContext context) {
+        EthModule ethModule = context.ethModule;
+
+        CallTransaction.Function function = CallTransaction.Function.fromSignature(
+                method,
+                inputTypes.toArray(new String[0]),
+                outputTypes.toArray(new String[0])
+        );
+//        byte[] encodedParams = function.encodeArguments(params);
+//        byte[] data = function.encode(encodedParams);
+//        byte[] fullData = new byte[data.length + encodedParams.length];
+//        System.arraycopy(data, 0, fullData, 0, data.length);
+//        System.arraycopy(encodedParams, 0, fullData, data.length, encodedParams.length);
+        HexDataParam dataHex = new HexDataParam(String.join("", params));
+        HexAddressParam oracleAddress = new HexAddressParam(address);
+        HexNumberParam chainId = new HexNumberParam(ethModule.chainId());
+
+        CallArgumentsParam callArguments = new CallArgumentsParam(
+                null,
+                oracleAddress,
+                null,
+                null,
+                null,
+                null,
+                chainId,
+                null,
+                dataHex,
+                null
+        );
+
+        String hReturn = ethModule.call(callArguments, new BlockIdentifierParam("latest"));
+
+        return HexUtils.jsonHexToLong(hReturn);
+    }
 }
