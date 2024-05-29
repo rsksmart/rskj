@@ -18,6 +18,8 @@
 
 package co.rsk.peg.performance;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.*;
@@ -27,11 +29,9 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,38 +49,38 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
     private Federation federation;
 
     @Test
-    void getFederationAddress() throws IOException, VMException {
+    void getFederationAddress() throws VMException {
         executeTestCase(Bridge.GET_FEDERATION_ADDRESS);
     }
 
     @Test
-    void getFederationSize() throws IOException, VMException {
+    void getFederationSize() throws VMException {
         executeTestCase(Bridge.GET_FEDERATION_SIZE);
     }
 
     @Test
-    void getFederationThreshold() throws IOException, VMException {
+    void getFederationThreshold() throws VMException {
         executeTestCase(Bridge.GET_FEDERATION_THRESHOLD);
     }
 
     @Test
-    void getFederationCreationTime() throws IOException, VMException {
+    void getFederationCreationTime() throws VMException {
         executeTestCase(Bridge.GET_FEDERATION_CREATION_TIME);
     }
 
     @Test
-    void getFederationCreationBlockNumber() throws IOException, VMException {
+    void getFederationCreationBlockNumber() throws VMException {
         executeTestCase(Bridge.GET_FEDERATION_CREATION_BLOCK_NUMBER);
     }
 
     @Test
-    void getFederatorPublicKey() throws IOException, VMException {
+    void getFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("getFederatorPublicKey");
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, federation.getBtcPublicKeys().size()-1)});
         executeTestCaseSection(abiEncoder, "getFederatorPublicKey", true,50, stats);
         executeTestCaseSection(abiEncoder, "getFederatorPublicKey", false,500, stats);
 
-        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
+        assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCase(CallTransaction.Function fn) throws VMException {
@@ -88,7 +88,7 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
         executeTestCaseSection(fn,true,50, stats);
         executeTestCaseSection(fn,false,500, stats);
 
-        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
+        assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws VMException {
@@ -97,12 +97,12 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
 
     private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
-                String.format("%s-%s", name, genesis ? "genesis" : "non-genesis"),
-                times, abiEncoder,
-                buildInitializer(genesis),
-                Helper.getZeroValueRandomSenderTxBuilder(),
-                Helper.getRandomHeightProvider(10),
-                stats
+            String.format("%s-%s", name, genesis ? "genesis" : "non-genesis"),
+            times, abiEncoder,
+            buildInitializer(genesis),
+            Helper.getZeroValueRandomSenderTxBuilder(),
+            Helper.getRandomHeightProvider(10),
+            stats
         );
     }
 
@@ -124,9 +124,10 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
                 federation = FederationFactory.buildStandardMultiSigFederation(
                     federationArgs
                 );
-                provider.setNewFederation(federation);
+                // TODO: This logic needs to be adjusted to use the new FederationStorageProvider class
+//                provider.setNewFederation(federation);
             } else {
-                federation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+                federation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
             }
         };
     }
