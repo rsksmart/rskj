@@ -3,20 +3,14 @@ package co.rsk.test.builders;
 import static org.mockito.Mockito.mock;
 
 import co.rsk.bitcoinj.core.Context;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.federation.FederationStorageProvider;
-import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.FederationSupport;
-import co.rsk.peg.federation.FederationSupportImpl;
-import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.storage.BridgeStorageAccessorImpl;
-import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.whitelist.WhitelistSupport;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -32,6 +26,7 @@ public class BridgeSupportBuilder {
     private Block executionBlock;
     private FeePerKbSupport feePerKbSupport;
     private WhitelistSupport whitelistSupport;
+    private FederationSupport federationSupport;
     private Factory btcBlockStoreFactory;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
@@ -46,6 +41,7 @@ public class BridgeSupportBuilder {
         this.executionBlock = mock(Block.class);
         this.feePerKbSupport = mock(FeePerKbSupport.class);
         this.whitelistSupport = mock(WhitelistSupport.class);
+        this.federationSupport = mock(FederationSupport.class);
         this.btcBlockStoreFactory = mock(Factory.class);
         this.activations = mock(ActivationConfig.ForBlock.class);
         this.signatureCache = mock(BlockTxSignatureCache.class);
@@ -96,6 +92,11 @@ public class BridgeSupportBuilder {
         return this;
     }
 
+    public BridgeSupportBuilder withFederationSupport(FederationSupport federationSupport) {
+        this.federationSupport = federationSupport;
+        return this;
+    }
+
     public BridgeSupportBuilder withBtcBlockStoreFactory(Factory btcBlockStoreFactory) {
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         return this;
@@ -113,7 +114,6 @@ public class BridgeSupportBuilder {
 
     public BridgeSupport build() {
         Context context = new Context(bridgeConstants.getBtcParams());
-        FederationSupport federationSupport = newFederationSupportInstance();
 
         return new BridgeSupport(
             bridgeConstants,
@@ -124,20 +124,12 @@ public class BridgeSupportBuilder {
             repository,
             executionBlock,
             context,
-            federationSupport,
             feePerKbSupport,
             whitelistSupport,
+            federationSupport,
             btcBlockStoreFactory,
             activations,
             signatureCache
         );
-    }
-
-    private FederationSupport newFederationSupportInstance() {
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-
-        return new FederationSupportImpl(federationConstants, federationStorageProvider, executionBlock, activations);
     }
 }
