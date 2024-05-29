@@ -18,6 +18,8 @@
 
 package co.rsk.peg.performance;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
@@ -25,7 +27,6 @@ import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +44,7 @@ class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
         AtomicReference<Long> newValue = new AtomicReference<>();
         ABIEncoder abiEncoder = (int executionIndex) -> {
             newValue.set(Helper.randomCoin(Coin.MILLICOIN, 1, 50).getValue());
-            return Bridge.VOTE_FEE_PER_KB.encode(BigInteger.valueOf(newValue.get().longValue()));
+            return Bridge.VOTE_FEE_PER_KB.encode(BigInteger.valueOf(newValue.get()));
         };
 
         TxBuilder txBuilder = (int executionIndex) -> {
@@ -55,16 +56,18 @@ class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
 
         ExecutionStats stats = new ExecutionStats("voteFeePerKbChange");
         executeAndAverage(
-                "voteFeePerKbChange",
-                1000,
-                abiEncoder,
-                storageInitializer,
-                txBuilder,
-                Helper.getRandomHeightProvider(10),
-                stats,
-                ((environment, callResult) -> {
-                    Assertions.assertEquals(newValue.get().longValue(),((Bridge)environment.getContract()).getFeePerKb(null));
-                }));
+            "voteFeePerKbChange",
+            1000,
+            abiEncoder,
+            storageInitializer,
+            txBuilder,
+            Helper.getRandomHeightProvider(10),
+            stats,
+            (environment, callResult) -> assertEquals(
+                newValue.get().longValue(),
+                ((Bridge)environment.getContract()).getFeePerKb(null)
+            )
+        );
 
         BridgePerformanceTest.addStats(stats);
     }
@@ -86,16 +89,17 @@ class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
 
         ExecutionStats stats = new ExecutionStats("voteFeePerKbChange_unauthorized");
         executeAndAverage(
-                "voteFeePerKbChange_unauthorized",
-                1000,
-                abiEncoder,
-                storageInitializer,
-                txBuilder,
-                Helper.getRandomHeightProvider(10),
-                stats,
-                ((environment, callResult) -> {
-                    Assertions.assertEquals(genesisFeePerKB.getValue(),((Bridge)environment.getContract()).getFeePerKb(null));
-                })
+            "voteFeePerKbChange_unauthorized",
+            1000,
+            abiEncoder,
+            storageInitializer,
+            txBuilder,
+            Helper.getRandomHeightProvider(10),
+            stats,
+            (environment, callResult) -> assertEquals(
+                genesisFeePerKB.getValue(),
+                ((Bridge)environment.getContract()).getFeePerKb(null)
+            )
         );
 
         BridgePerformanceTest.addStats(stats);

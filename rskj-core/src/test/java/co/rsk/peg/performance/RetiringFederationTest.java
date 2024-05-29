@@ -103,7 +103,7 @@ class RetiringFederationTest extends BridgePerformanceTestCase {
         final int minFederators = 10;
         final int maxFederators = 16;
         Random random = new Random(RetiringFederationTest.class.hashCode());
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             if (present) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
@@ -116,13 +116,12 @@ class RetiringFederationTest extends BridgePerformanceTestCase {
                 retiringFederation = FederationFactory.buildStandardMultiSigFederation(
                     federationArgs
                 );
-                provider.setNewFederation(genesisFederation);
-                provider.setOldFederation(retiringFederation);
+                // TODO: This logic needs to be adjusted to use the new FederationStorageProvider class
+//                provider.setNewFederation(genesisFederation);
+//                provider.setOldFederation(retiringFederation);
             } else {
                 retiringFederation = null;
             }
         };
     }
-
-
 }

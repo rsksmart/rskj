@@ -18,6 +18,8 @@
 
 package co.rsk.peg.performance;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BtcBlockStore;
@@ -31,6 +33,7 @@ import co.rsk.peg.ReleaseRequestQueue;
 import co.rsk.peg.PegoutsWaitingForConfirmations;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationTestUtils;
+import java.util.Collections;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -68,11 +71,10 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
     private int maxHeight = 150;
     private int minCentOutput = 1;
     private int maxCentOutput = 100;
-    private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
-
+    private final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
 
     @Test
-    void updateCollections() throws IOException, VMException {
+    void updateCollections() throws VMException {
         ExecutionStats stats = new ExecutionStats("updateCollections");
 
         updateCollections_nothing(stats, 1000);
@@ -99,11 +101,11 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         maxCentOutput = 100;
         updateCollections_confirmTxs(stats, 300);
 
-        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
+        assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
-    void updateCollectionsUsingPegoutBatching() throws IOException, VMException {
+    void updateCollectionsUsingPegoutBatching() throws VMException {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
 
@@ -133,11 +135,10 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         maxCentOutput = 100;
         updateCollections_confirmTxs(stats, 300);
 
-        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
+        assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void updateCollections_nothing(ExecutionStats stats, int numCases) throws IOException, VMException {
-        final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+    private void updateCollections_nothing(ExecutionStats stats, int numCases) throws VMException {
         final BridgeStorageProvider[] providerArrayWrapper = new BridgeStorageProvider[1];
         final Repository[] repositoryArrayWrapper = new Repository[1];
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
@@ -156,7 +157,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
             Helper.getRandomHeightProvider(10), stats,
             (environment, executionResult) -> {
                 try {
-                    Assertions.assertTrue(providerArrayWrapper[0].getReleaseRequestQueue().getEntries().isEmpty());
+                    assertTrue(providerArrayWrapper[0].getReleaseRequestQueue().getEntries().isEmpty());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -164,18 +165,19 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void updateCollections_buildPegoutsWaitingForConfirmations(ExecutionStats stats, int numCases) throws IOException, VMException {
+    private void updateCollections_buildPegoutsWaitingForConfirmations(ExecutionStats stats, int numCases) throws VMException {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         final BridgeStorageProvider[] providerArrayWrapper = new BridgeStorageProvider[1];
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             Random rnd = new Random(numCases);
-            List<UTXO> utxos;
+            List<UTXO> utxos = Collections.emptyList();
             ReleaseRequestQueue queue;
 
             providerArrayWrapper[0] = provider;
 
             try {
-                utxos = provider.getNewFederationBtcUTXOs();
+                // TODO: This logic needs to be adjusted to use the new FederationStorageProvider class
+//                utxos = provider.getNewFederationBtcUTXOs();
             } catch (Exception e) {
                 throw new RuntimeException("Unable to gather active federation btc utxos");
             }
@@ -188,7 +190,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
             // Generate some utxos
             int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
             Script federationP2SHScript = genesisFederation.getP2SHScript();
 
             for (int i = 0; i < numUTXOs; i++) {
@@ -229,7 +231,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void updateCollections_confirmTxs(ExecutionStats stats, int numCases) throws IOException, VMException {
+    private void updateCollections_confirmTxs(ExecutionStats stats, int numCases) throws VMException {
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             Random rnd = new Random(numCases);
             SortedMap<Keccak256, BtcTransaction> txsWaitingForSignatures;
@@ -247,7 +249,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 throw new RuntimeException("Unable to gather release tx set");
             }
 
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
 
             // Generate some txs waiting for signatures
             Script genesisFederationScript = genesisFederation.getP2SHScript();
@@ -286,15 +288,16 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void updateCollections_buildPegoutWaitingForConfirmationsForBatchingPegouts(ExecutionStats stats, int numCases) throws IOException, VMException {
+    private void updateCollections_buildPegoutWaitingForConfirmationsForBatchingPegouts(ExecutionStats stats, int numCases) throws VMException {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             Random rnd = new Random(numCases);
-            List<UTXO> utxos;
+            List<UTXO> utxos = Collections.emptyList();
             ReleaseRequestQueue queue;
 
             try {
-                utxos = provider.getNewFederationBtcUTXOs();
+                // TODO: This logic needs to be adjusted to use the new FederationStorageProvider class
+//                utxos = provider.getNewFederationBtcUTXOs();
             } catch (Exception e) {
                 throw new RuntimeException("Unable to gather active federation btc utxos");
             }
@@ -307,7 +310,7 @@ class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
             // Generate some utxos
             int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
             Script federationP2SHScript =  genesisFederation.getP2SHScript();
 
             for (int i = 0; i < numUTXOs; i++) {
