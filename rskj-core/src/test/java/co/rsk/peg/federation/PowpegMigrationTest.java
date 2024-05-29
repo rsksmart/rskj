@@ -1,21 +1,24 @@
-package co.rsk.peg;
+package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
+import co.rsk.peg.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
-import co.rsk.peg.federation.*;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
@@ -63,7 +66,7 @@ class PowpegMigrationTest {
      * I can use this to validate that a certain redeemscript trying to spend this utxo generates the corresponding address
      */
     private final Map<Sha256Hash, Address> whoCanSpendTheseUtxos = new HashMap<>();
-    private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+    private final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
 
     private void testChangePowpeg(
         FederationType oldPowPegFederationType,
@@ -77,13 +80,14 @@ class PowpegMigrationTest {
         ActivationConfig.ForBlock activations,
         long migrationShouldFinishAfterThisAmountOfBlocks
     ) throws Exception {
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Repository repository = new MutableRepository(
             new MutableTrieCache(new MutableTrieImpl(null, new Trie()))
         );
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
             repository,
             PrecompiledContracts.BRIDGE_ADDR,
-            bridgeConstants,
+            btcParams,
             activations
         );
 
@@ -91,7 +95,7 @@ class PowpegMigrationTest {
         bridgeStorageProvider.setLockingCap(bridgeConstants.getMaxRbtc());
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
-            bridgeConstants.getBtcParams(),
+            btcParams,
             100,
             100
         );
@@ -138,9 +142,8 @@ class PowpegMigrationTest {
                 theseKeys.getRight()
             )
         ).collect(Collectors.toList());
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
-        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+        List<BtcECKey> erpPubKeys = bridgeConstants.getFederationConstants().getErpFedPubKeysList();
+        long activationDelay = bridgeConstants.getFederationConstants().getErpFedActivationDelay();
 
         Federation originalPowpeg;
         Instant creationTime = Instant.now();
@@ -166,9 +169,12 @@ class PowpegMigrationTest {
 
         assertEquals(oldPowPegAddress, originalPowpeg.getAddress());
 
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+
         // Set original powpeg information
-        bridgeStorageProvider.setNewFederation(originalPowpeg);
-        bridgeStorageProvider.getNewFederationBtcUTXOs().addAll(existingUtxos);
+        federationStorageProvider.setNewFederation(originalPowpeg);
+        federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activations).addAll(existingUtxos);
 
         // Create Pending federation (doing this to avoid voting the pending Federation)
         List<FederationMember> newPowpegMembers = newPowPegKeys.stream().map(newPowpegKey ->
@@ -183,16 +189,17 @@ class PowpegMigrationTest {
         Federation newFederation = pendingFederation.buildFederation(
             Instant.now(),
             0,
-            bridgeConstants,
+            bridgeConstants.getFederationConstants(),
             activations
         );
 
         // Set pending powpeg information
-        bridgeStorageProvider.setPendingFederation(pendingFederation);
-        bridgeStorageProvider.save();
+        federationStorageProvider.setPendingFederation(pendingFederation);
+        federationStorageProvider.save(btcParams, activations);
 
         // Proceed with the powpeg change
-        bridgeSupport.commitFederation(false, pendingFederation.getHash());
+        FederationSupportImpl federationSupport = new FederationSupportImpl(bridgeConstants.getFederationConstants(), federationStorageProvider, initialBlock, activations);
+        federationSupport.commitFederation(false, pendingFederation.getHash(), bridgeEventLogger);
 
         ArgumentCaptor<Federation> argumentCaptor = ArgumentCaptor.forClass(Federation.class);
         verify(bridgeEventLogger).logCommitFederation(
@@ -223,18 +230,18 @@ class PowpegMigrationTest {
         }
 
         // Verify UTXOs were moved to pending POWpeg
-        List<UTXO> utxosToMigrate = bridgeStorageProvider.getOldFederationBtcUTXOs();
+        List<UTXO> utxosToMigrate = federationStorageProvider.getOldFederationBtcUTXOs();
         for (UTXO utxo : existingUtxos) {
             assertTrue(utxosToMigrate.stream().anyMatch(storedUtxo -> storedUtxo.equals(utxo)));
         }
-        assertTrue(bridgeStorageProvider.getNewFederationBtcUTXOs().isEmpty());
+        assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activations).isEmpty());
 
         // Trying to create a new powpeg again should fail
         // -2 corresponds to a new powpeg was elected and the Bridge is waiting for this new powpeg to activate
         attemptToCreateNewFederation(bridgeSupport, -2);
 
         // No change in active powpeg
-        assertEquals(oldPowPegAddress, bridgeSupport.getFederationAddress());
+        assertEquals(oldPowPegAddress, bridgeSupport.getActiveFederationAddress());
         assertNull(bridgeSupport.getRetiringFederationAddress());
 
         // Update collections should not trigger migration
@@ -248,7 +255,7 @@ class PowpegMigrationTest {
             activations,
             bridgeSupport,
             bridgeConstants,
-            bridgeStorageProvider,
+            federationStorageProvider,
             btcBlockStore,
             oldPowPegAddress,
             newPowPegAddress,
@@ -257,9 +264,11 @@ class PowpegMigrationTest {
         );
 
         testFlyoverPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
+            federationStorageProvider,
             btcBlockStore,
             originalPowpeg,
             newFederation,
@@ -273,6 +282,7 @@ class PowpegMigrationTest {
         testPegouts(
             bridgeSupport,
             bridgeStorageProvider,
+            federationStorageProvider,
             bridgeConstants,
             activations,
             blockNumber,
@@ -287,7 +297,7 @@ class PowpegMigrationTest {
          */
         // Move the required blocks ahead for the new powpeg to become active
         // (overriding block number to ensure we don't move beyond the activation phase)
-        blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activations);
+        blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationConstants().getFederationActivationAge(activations);
         Block activationBlock = mock(Block.class);
         doReturn(blockNumber).when(activationBlock).getNumber();
 
@@ -297,7 +307,7 @@ class PowpegMigrationTest {
             ActivationConfig.ForBlock activationsBeforeRSKIP383 = mock(ActivationConfig.ForBlock.class);
             when(activationsBeforeRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
 
-            long legacyFedActivationBlockNumber = initialBlock.getNumber() + bridgeConstants.getFederationActivationAge(activationsBeforeRSKIP383);
+            long legacyFedActivationBlockNumber = initialBlock.getNumber() + bridgeConstants.getFederationConstants().getFederationActivationAge(activationsBeforeRSKIP383);
             Assertions.assertTrue(blockNumber > legacyFedActivationBlockNumber);
 
             Block legacyFedActivationBlock = mock(Block.class);
@@ -315,7 +325,7 @@ class PowpegMigrationTest {
                 .withFeePerKbSupport(feePerKbSupport)
                 .build();
 
-            assertEquals(oldPowPegAddress, bridgeSupport.getFederationAddress());
+            assertEquals(oldPowPegAddress, bridgeSupport.getActiveFederationAddress());
             assertNull(bridgeSupport.getRetiringFederation());
         }
 
@@ -332,10 +342,10 @@ class PowpegMigrationTest {
             .build();
 
         // New active powpeg and retiring powpeg
-        assertEquals(newPowPegAddress, bridgeSupport.getFederationAddress());
+        assertEquals(newPowPegAddress, bridgeSupport.getActiveFederationAddress());
         assertEquals(oldPowPegAddress, bridgeSupport.getRetiringFederationAddress());
 
-        if (bridgeConstants.getFundsMigrationAgeSinceActivationBegin() > 0) {
+        if (bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationBegin() > 0) {
             // No migration yet
             assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
             updateCollectionsTx = Transaction.builder().nonce(new BtcECKey().getPrivKey()).build();
@@ -352,7 +362,7 @@ class PowpegMigrationTest {
             activations,
             bridgeSupport,
             bridgeConstants,
-            bridgeStorageProvider,
+            federationStorageProvider,
             btcBlockStore,
             oldPowPegAddress,
             newPowPegAddress,
@@ -361,9 +371,11 @@ class PowpegMigrationTest {
         );
 
         testFlyoverPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
+            federationStorageProvider,
             btcBlockStore,
             originalPowpeg,
             newFederation,
@@ -376,7 +388,7 @@ class PowpegMigrationTest {
          */
 
         // Move the required blocks ahead for the new powpeg to start migrating
-        blockNumber = blockNumber + bridgeConstants.getFundsMigrationAgeSinceActivationBegin() + 1;
+        blockNumber = blockNumber + bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationBegin() + 1;
         Block migrationBlock = mock(Block.class);
         // Adding 1 as the migration is exclusive
         doReturn(blockNumber).when(migrationBlock).getNumber();
@@ -394,7 +406,7 @@ class PowpegMigrationTest {
             .build();
 
         // New active powpeg and retiring powpeg
-        assertEquals(newPowPegAddress, bridgeSupport.getFederationAddress());
+        assertEquals(newPowPegAddress, bridgeSupport.getActiveFederationAddress());
         assertEquals(oldPowPegAddress, bridgeSupport.getRetiringFederationAddress());
 
         // Trying to create a new powpeg again should fail
@@ -410,7 +422,7 @@ class PowpegMigrationTest {
             : 1;
 
         // Migrate while there are still utxos to migrate
-        while (!bridgeStorageProvider.getOldFederationBtcUTXOs().isEmpty()) {
+        while (!federationStorageProvider.getOldFederationBtcUTXOs().isEmpty()) {
             updateCollectionsTx = Transaction.builder().nonce(new BtcECKey().getPrivKey()).build();
             bridgeSupport.updateCollections(updateCollectionsTx);
         }
@@ -441,14 +453,14 @@ class PowpegMigrationTest {
             }
         }
 
-        verifyPegouts(bridgeStorageProvider);
+        verifyPegouts(bridgeStorageProvider, federationStorageProvider, bridgeConstants.getFederationConstants(), activations);
 
         // peg-in during migration
         testPegins(
             activations,
             bridgeSupport,
             bridgeConstants,
-            bridgeStorageProvider,
+            federationStorageProvider,
             btcBlockStore,
             oldPowPegAddress,
             newPowPegAddress,
@@ -457,9 +469,11 @@ class PowpegMigrationTest {
         );
 
         testFlyoverPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
+            federationStorageProvider,
             btcBlockStore,
             originalPowpeg,
             newFederation,
@@ -469,11 +483,11 @@ class PowpegMigrationTest {
 
         // Should be migrated
         int newlyAddedUtxos = activations.isActive(ConsensusRule.RSKIP294) ?
-            (int) Math.ceil((double) bridgeStorageProvider.getOldFederationBtcUTXOs().size() / bridgeConstants.getMaxInputsPerPegoutTransaction()) :
+            (int) Math.ceil((double) federationStorageProvider.getOldFederationBtcUTXOs().size() / bridgeConstants.getMaxInputsPerPegoutTransaction()) :
             1;
 
         // Migrate while there are still utxos to migrate
-        while (!bridgeStorageProvider.getOldFederationBtcUTXOs().isEmpty()) {
+        while (!federationStorageProvider.getOldFederationBtcUTXOs().isEmpty()) {
             updateCollectionsTx = Transaction.builder().nonce(new BtcECKey().getPrivKey()).build();
             bridgeSupport.updateCollections(updateCollectionsTx);
         }
@@ -489,7 +503,7 @@ class PowpegMigrationTest {
             .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
             .forEach(pegoutTx -> verifyPegoutTxSigHashIndex(activations, bridgeStorageProvider, pegoutTx));
 
-        verifyPegouts(bridgeStorageProvider);
+        verifyPegouts(bridgeStorageProvider, federationStorageProvider, bridgeConstants.getFederationConstants(), activations);
 
         // peg-out during migration
         assertTrue(bridgeStorageProvider.getReleaseRequestQueue().getEntries().isEmpty());
@@ -497,6 +511,7 @@ class PowpegMigrationTest {
         testPegouts(
             bridgeSupport,
             bridgeStorageProvider,
+            federationStorageProvider,
             bridgeConstants,
             activations,
             blockNumber,
@@ -511,13 +526,13 @@ class PowpegMigrationTest {
          */
 
         // Move the height to the block previous to the migration finishing, it should keep on migrating
-        blockNumber = blockNumber + bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations) - 2;
+        blockNumber = blockNumber + bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations) - 2;
         Block migrationFinishingBlock = mock(Block.class);
         // Substracting 2 as the previous height was activation + 1 and migration is exclusive
         doReturn(blockNumber).when(migrationFinishingBlock).getNumber();
         assertEquals(
             migrationShouldFinishAfterThisAmountOfBlocks,
-            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations)
+            bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
 
         bridgeSupport = new BridgeSupportBuilder()
@@ -533,7 +548,7 @@ class PowpegMigrationTest {
             .build();
 
         // New active powpeg and retiring powpeg is still there
-        assertEquals(newPowPegAddress, bridgeSupport.getFederationAddress());
+        assertEquals(newPowPegAddress, bridgeSupport.getActiveFederationAddress());
         assertEquals(oldPowPegAddress, bridgeSupport.getRetiringFederationAddress());
 
         // Last update collections before the migration finishes
@@ -541,7 +556,7 @@ class PowpegMigrationTest {
         bridgeSupport.updateCollections(updateCollectionsTx);
 
         // New active powpeg and retiring powpeg is still there
-        assertEquals(newPowPegAddress, bridgeSupport.getFederationAddress());
+        assertEquals(newPowPegAddress, bridgeSupport.getActiveFederationAddress());
         assertEquals(oldPowPegAddress, bridgeSupport.getRetiringFederationAddress());
 
         // Move the height to the block after the migration finishes
@@ -550,7 +565,7 @@ class PowpegMigrationTest {
         doReturn(blockNumber).when(migrationFinishedBlock).getNumber();
         assertEquals(
             migrationShouldFinishAfterThisAmountOfBlocks,
-            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations)
+            bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
 
         bridgeSupport = new BridgeSupportBuilder()
@@ -566,7 +581,7 @@ class PowpegMigrationTest {
             .build();
 
         // New active powpeg and retiring powpeg is still there
-        assertEquals(newPowPegAddress, bridgeSupport.getFederationAddress());
+        assertEquals(newPowPegAddress, bridgeSupport.getActiveFederationAddress());
         assertEquals(oldPowPegAddress, bridgeSupport.getRetiringFederationAddress());
 
         // The first update collections after the migration finished should get rid of the retiring powpeg
@@ -574,7 +589,7 @@ class PowpegMigrationTest {
         bridgeSupport.updateCollections(updateCollectionsTx);
 
         // New active powpeg still there, retiring powpeg no longer there
-        assertEquals(newPowPegAddress, bridgeSupport.getFederationAddress());
+        assertEquals(newPowPegAddress, bridgeSupport.getActiveFederationAddress());
         assertNull(bridgeSupport.getRetiringFederationAddress());
 
         // peg-in after migration
@@ -582,7 +597,7 @@ class PowpegMigrationTest {
             activations,
             bridgeSupport,
             bridgeConstants,
-            bridgeStorageProvider,
+            federationStorageProvider,
             btcBlockStore,
             oldPowPegAddress,
             newPowPegAddress,
@@ -591,9 +606,11 @@ class PowpegMigrationTest {
         );
 
         testFlyoverPegins(
+            activations,
             bridgeSupport,
             bridgeConstants,
             bridgeStorageProvider,
+            federationStorageProvider,
             btcBlockStore,
             originalPowpeg,
             newFederation,
@@ -601,7 +618,7 @@ class PowpegMigrationTest {
             true
         );
 
-        Optional<Script> lastRetiredFederationP2SHScriptOptional = bridgeStorageProvider.getLastRetiredFederationP2SHScript();
+        Optional<Script> lastRetiredFederationP2SHScriptOptional = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
         assertTrue(lastRetiredFederationP2SHScriptOptional.isPresent());
         Script lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScriptOptional.get();
 
@@ -631,9 +648,9 @@ class PowpegMigrationTest {
         }
     }
 
-    private void verifyPegouts(BridgeStorageProvider bridgeStorageProvider) throws IOException {
-        Federation activeFederation = bridgeStorageProvider.getNewFederation();
-        Federation retiringFederation = bridgeStorageProvider.getOldFederation();
+    private void verifyPegouts(BridgeStorageProvider bridgeStorageProvider, FederationStorageProvider federationStorageProvider, FederationConstants federationConstants, ActivationConfig.ForBlock activations) throws IOException {
+        Federation activeFederation = federationStorageProvider.getNewFederation(federationConstants, activations);
+        Federation retiringFederation = federationStorageProvider.getOldFederation(federationConstants, activations);
 
         for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
             BtcTransaction pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
@@ -677,6 +694,7 @@ class PowpegMigrationTest {
     private void testPegouts(
         BridgeSupport bridgeSupport,
         BridgeStorageProvider bridgeStorageProvider,
+        FederationStorageProvider federationStorageProvider,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,
         long blockNumber,
@@ -777,7 +795,7 @@ class PowpegMigrationTest {
             }
         }
 
-        verifyPegouts(bridgeStorageProvider);
+        verifyPegouts(bridgeStorageProvider, federationStorageProvider, bridgeConstants.getFederationConstants(), activations);
         // Assert sigHash was added
         verifyPegoutTxSigHashIndex(activations, bridgeStorageProvider, lastPegout.getBtcTransaction());
 
@@ -819,7 +837,7 @@ class PowpegMigrationTest {
         ActivationConfig.ForBlock activations,
         BridgeSupport bridgeSupport,
         BridgeConstants bridgeConstants,
-        BridgeStorageProvider bridgeStorageProvider,
+        FederationStorageProvider federationStorageProvider,
         BtcBlockStore btcBlockStore,
         Address oldPowPegAddress,
         Address newPowPegAddress,
@@ -843,7 +861,7 @@ class PowpegMigrationTest {
             true
         );
         Sha256Hash peginToRetiringPowPegHash = peginToRetiringPowPeg.getHash();
-        boolean isPeginToRetiringPowPegRegistered = bridgeStorageProvider.getOldFederationBtcUTXOs()
+        boolean isPeginToRetiringPowPegRegistered = federationStorageProvider.getOldFederationBtcUTXOs()
             .stream()
             .anyMatch(utxo -> utxo.getHash().equals(peginToRetiringPowPegHash));
 
@@ -854,7 +872,7 @@ class PowpegMigrationTest {
         }
 
         assertEquals(shouldPeginToOldPowpegWork, isPeginToRetiringPowPegRegistered);
-        assertFalse(bridgeStorageProvider.getNewFederationBtcUTXOs().stream().anyMatch(utxo ->
+        assertFalse(federationStorageProvider.getNewFederationBtcUTXOs(bridgeConstants.getBtcParams(), activations).stream().anyMatch(utxo ->
             utxo.getHash().equals(peginToRetiringPowPegHash))
         );
 
@@ -875,7 +893,7 @@ class PowpegMigrationTest {
                 true
             );
             Sha256Hash peginToFuturePowPegHash = peginToFuturePowPeg.getHash();
-            boolean isPeginToNewPowPegRegistered = bridgeStorageProvider.getNewFederationBtcUTXOs()
+            boolean isPeginToNewPowPegRegistered = federationStorageProvider.getNewFederationBtcUTXOs(bridgeConstants.getBtcParams(), activations)
                 .stream()
                 .anyMatch(utxo -> utxo.getHash().equals(peginToFuturePowPegHash));
 
@@ -886,7 +904,7 @@ class PowpegMigrationTest {
                 assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFuturePowPegHash));
             }
 
-            assertFalse(bridgeStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo ->
+            assertFalse(federationStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo ->
                 utxo.getHash().equals(peginToFuturePowPegHash))
             );
             assertEquals(shouldPeginToNewPowpegWork, isPeginToNewPowPegRegistered);
@@ -917,9 +935,11 @@ class PowpegMigrationTest {
     }
 
     private void testFlyoverPegins(
+        ActivationConfig.ForBlock activations,
         BridgeSupport bridgeSupport,
         BridgeConstants bridgeConstants,
         BridgeStorageProvider bridgeStorageProvider,
+        FederationStorageProvider federationStorageProvider,
         BtcBlockStore btcBlockStore,
         Federation recipientOldFederation,
         Federation recipientNewFederation,
@@ -945,11 +965,11 @@ class PowpegMigrationTest {
         );
         assertEquals(
             shouldPeginToOldPowpegWork,
-            bridgeStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo ->
+            federationStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo ->
                 utxo.getHash().equals(flyoverPeginToRetiringPowpeg.getLeft().getHash())
             )
         );
-        assertFalse(bridgeStorageProvider.getNewFederationBtcUTXOs().stream().anyMatch(utxo ->
+        assertFalse(federationStorageProvider.getNewFederationBtcUTXOs(bridgeConstants.getBtcParams(), activations).stream().anyMatch(utxo ->
             utxo.getHash().equals(flyoverPeginToRetiringPowpeg.getLeft().getHash())
         ));
 
@@ -970,12 +990,12 @@ class PowpegMigrationTest {
                 flyoverPeginToNewPowpeg.getRight()
             )
         );
-        assertFalse(bridgeStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo ->
+        assertFalse(federationStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo ->
             utxo.getHash().equals(flyoverPeginToNewPowpeg.getLeft().getHash())
         ));
         assertEquals(
             shouldPeginToNewPowpegWork,
-            bridgeStorageProvider.getNewFederationBtcUTXOs().stream().anyMatch(utxo ->
+            federationStorageProvider.getNewFederationBtcUTXOs(bridgeConstants.getBtcParams(), activations).stream().anyMatch(utxo ->
                 utxo.getHash().equals(flyoverPeginToNewPowpeg.getLeft().getHash())
             )
         );
@@ -1262,7 +1282,7 @@ class PowpegMigrationTest {
 
     private Address getMainnetPowpegAddress() {
         return Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3DsneJha6CY6X9gU2M9uEc4nSdbYECB4Gh"
         );
     }
@@ -1363,7 +1383,7 @@ class PowpegMigrationTest {
         ));
 
         Address newPowpegAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3Lqn662zEgbPU4nRYowUo9UY7HNRkbBNgN"
         );
 
@@ -1375,9 +1395,9 @@ class PowpegMigrationTest {
             FederationType.nonStandardErp,
             newPowpegKeys,
             newPowpegAddress,
-            bridgeConstants,
+            bridgeMainnetConstants,
             activations,
-            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations)
+            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1389,7 +1409,7 @@ class PowpegMigrationTest {
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
 
         Address newPowpegAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
 
@@ -1401,9 +1421,9 @@ class PowpegMigrationTest {
             FederationType.p2shErp,
             getMainnetPowpegKeys(), // Using same keys as the original powpeg, should result in a different address since it will create a p2sh erp federation
             newPowpegAddress,
-            bridgeConstants,
+            bridgeMainnetConstants,
             activations,
-            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations)
+            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1412,7 +1432,7 @@ class PowpegMigrationTest {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
@@ -1435,7 +1455,7 @@ class PowpegMigrationTest {
         ));
 
         Address newPowPegAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
         );
 
@@ -1447,9 +1467,9 @@ class PowpegMigrationTest {
             FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
-            bridgeConstants,
+            bridgeMainnetConstants,
             activations,
-            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations)
+            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1477,7 +1497,7 @@ class PowpegMigrationTest {
     @MethodSource("activationsArgProvider")
     void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg(ActivationConfig.ForBlock activations) throws Exception {
         Address originalPowpegAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
@@ -1500,7 +1520,7 @@ class PowpegMigrationTest {
         ));
 
         Address newPowPegAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
         );
 
@@ -1512,9 +1532,9 @@ class PowpegMigrationTest {
             FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
-            bridgeConstants,
+            bridgeMainnetConstants,
             activations,
-            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations)
+            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1525,7 +1545,7 @@ class PowpegMigrationTest {
             .forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
@@ -1548,7 +1568,7 @@ class PowpegMigrationTest {
         ));
 
         Address newPowPegAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
         );
 
@@ -1560,9 +1580,9 @@ class PowpegMigrationTest {
             FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
-            bridgeConstants,
+            bridgeMainnetConstants,
             activations,
-            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations)
+            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1573,7 +1593,7 @@ class PowpegMigrationTest {
             .forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
@@ -1596,7 +1616,7 @@ class PowpegMigrationTest {
         ));
 
         Address newPowPegAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
+            bridgeMainnetConstants.getBtcParams(),
             "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
         );
 
@@ -1608,9 +1628,9 @@ class PowpegMigrationTest {
             FederationType.p2shErp,
             newPowPegKeys,
             newPowPegAddress,
-            bridgeConstants,
+            bridgeMainnetConstants,
             activations,
-            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations)
+            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
