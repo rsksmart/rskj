@@ -69,12 +69,6 @@ public class RocksDbDataSource implements KeyValueDataSource {
         logger.info("New RocksDbDataSource: {}", name);
     }
 
-    public static KeyValueDataSource makeDataSource(Path datasourcePath) {
-        KeyValueDataSource ds = new RocksDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
-        ds.init();
-        return ds;
-    }
-
     @Override
     public void init() {
         resetDbLock.writeLock().lock();
