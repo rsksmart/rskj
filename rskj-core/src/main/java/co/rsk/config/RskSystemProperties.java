@@ -546,5 +546,4 @@ public class RskSystemProperties extends SystemProperties {
                 .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), Long.parseLong(entry.getValue().toString())))
                 .forEach(entry -> methodTimeoutMap.put(entry.getKey(), entry.getValue()));
     }
-
 }

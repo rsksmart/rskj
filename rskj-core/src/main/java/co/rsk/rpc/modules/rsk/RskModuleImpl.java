@@ -1,12 +1,12 @@
 package co.rsk.rpc.modules.rsk;
 
-import co.rsk.Flusher;
-import co.rsk.core.bc.BlockHashesHelper;
-import co.rsk.crypto.Keccak256;
-import co.rsk.rpc.Web3InformationRetriever;
-import co.rsk.trie.Trie;
-import co.rsk.util.HexUtils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
 import co.rsk.util.NodeStopper;
+import co.rsk.Flusher;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -18,10 +18,11 @@ import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.crypto.Keccak256;
+import co.rsk.rpc.Web3InformationRetriever;
+import co.rsk.trie.Trie;
+import co.rsk.util.HexUtils;
 
 public class RskModuleImpl implements RskModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -31,6 +32,7 @@ public class RskModuleImpl implements RskModule {
     private final ReceiptStore receiptStore;
     private final Web3InformationRetriever web3InformationRetriever;
     private final Flusher flusher;
+
     private final NodeStopper nodeStopper;
 
     public RskModuleImpl(Blockchain blockchain,

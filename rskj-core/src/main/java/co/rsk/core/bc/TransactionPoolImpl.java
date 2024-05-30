@@ -158,7 +158,6 @@ public class TransactionPoolImpl implements TransactionPool {
         this.bestBlock = bestBlock;
     }
 
-
     @Override
     public synchronized PendingState getPendingState() {
         return getPendingState(getCurrentRepository());

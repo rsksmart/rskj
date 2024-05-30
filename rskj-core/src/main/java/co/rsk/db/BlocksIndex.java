@@ -88,7 +88,6 @@ public interface BlocksIndex {
 
     void close();
 
-    void remove(long number);
     /**
      * Removes the block with the given number and hash from the storage.
      *

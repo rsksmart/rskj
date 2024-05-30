@@ -30,6 +30,7 @@ import java.util.Optional;
 public class SnapSyncState extends BaseSyncState {
 
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
+
     private final SnapshotProcessor snapshotProcessor;
     private final PeersInformation peers;
 

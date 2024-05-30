@@ -131,7 +131,7 @@ public class MessageQueue {
             }
 
             if (waitingMessage.getAnswerMessage() != null
-                    && waitingMessage.getAnswerMessage() == msg.getClass()) {
+                    && msg.getClass() == waitingMessage.getAnswerMessage()) {
                 messageRoundtrip.answer();
                 if (waitingMessage instanceof EthMessage) {
                     channel.getPeerStats().pong(messageRoundtrip.lastTimestamp);
