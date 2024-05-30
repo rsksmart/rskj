@@ -384,12 +384,13 @@ public class BridgeSupportTestIntegration {
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activationsBeforeForks);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(new BridgeStorageAccessorImpl(track));
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(30, 0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(20, 0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(10, 0));
 
-        provider0.getNewFederationBtcUTXOs().add(new UTXO(
+        federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(new UTXO(
                 PegTestUtils.createHash(),
                 1,
                 Coin.valueOf(12, 0),
@@ -443,7 +444,7 @@ public class BridgeSupportTestIntegration {
         // Check value sent to user is 10 BTC minus fee
         assertEquals(Coin.valueOf(999962800L), provider.getPegoutsWaitingForConfirmations().getEntries().iterator().next().getBtcTransaction().getOutput(0).getValue());
         // Check the wallet has been emptied
-        assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
+        assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
     }
 
     @Test
@@ -455,10 +456,11 @@ public class BridgeSupportTestIntegration {
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activationsBeforeForks);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(new BridgeStorageAccessorImpl(track));
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(37500));
 
-        provider0.getNewFederationBtcUTXOs().add(new UTXO(
+        federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(new UTXO(
                 PegTestUtils.createHash(),
                 1,
                 Coin.valueOf(1000000),
@@ -523,7 +525,7 @@ public class BridgeSupportTestIntegration {
         assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
         assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
         // Check the wallet has not been emptied
-        Assertions.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
+        Assertions.assertFalse(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
     }
 
     @Test
@@ -626,7 +628,7 @@ public class BridgeSupportTestIntegration {
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class)
+        FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
         when(federationStorageProvider.getOldFederation(federationConstants, activationsBeforeForks)).thenReturn(oldFederation);
@@ -720,9 +722,10 @@ public class BridgeSupportTestIntegration {
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activationsBeforeForks);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(new BridgeStorageAccessorImpl(track));
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN);
-        provider0.getNewFederationBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(genesisFederation.getAddress())));
+        federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(genesisFederation.getAddress())));
 
         provider0.save();
 
@@ -771,7 +774,7 @@ public class BridgeSupportTestIntegration {
         assertEquals(LIMIT_MONETARY_BASE.subtract(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600))), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600)), repository.getBalance(BridgeSupport.BURN_ADDRESS));
         // Check the wallet has been emptied
-        assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
+        assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).isEmpty());
     }
 
     @Test
