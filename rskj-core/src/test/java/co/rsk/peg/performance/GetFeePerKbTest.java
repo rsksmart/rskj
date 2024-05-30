@@ -60,7 +60,7 @@ class GetFeePerKbTest extends BridgePerformanceTestCase {
                 // TODO: This logic needs to be adjusted to use the new FeePerKbStorageProvider class
 //                provider.setFeePerKb(Helper.randomCoin(Coin.MILLICOIN, 1, 100));
             } else {
-                genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+                genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
             }
         };
     }

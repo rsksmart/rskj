@@ -43,6 +43,7 @@ import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.whitelist.WhitelistSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -81,6 +82,7 @@ class BridgeSupportFlyoverTest {
     protected final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
     private BridgeSupportBuilder bridgeSupportBuilder;
     private WhitelistSupport whitelistSupport;
+    private FederationSupportBuilder federationSupportBuilder;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
 
@@ -92,6 +94,7 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         bridgeSupportBuilder = new BridgeSupportBuilder();
         whitelistSupport = mock(WhitelistSupport.class);
+        federationSupportBuilder = new FederationSupportBuilder();
     }
 
     private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
@@ -104,12 +107,10 @@ class BridgeSupportFlyoverTest {
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
 
-        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        long federationActivationAge = federationConstantsRegtest.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(bridgeConstants.getFederationConstants()).getFederationActivationAge(activations);
+        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -130,6 +131,12 @@ class BridgeSupportFlyoverTest {
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
 
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
@@ -137,6 +144,7 @@ class BridgeSupportFlyoverTest {
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
+            .withFederationSupport(federationSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -248,12 +256,10 @@ class BridgeSupportFlyoverTest {
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
 
-        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        long federationActivationAge = federationConstantsRegtest.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(bridgeConstants.getFederationConstants()).getFederationActivationAge(activations);
+        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -263,8 +269,8 @@ class BridgeSupportFlyoverTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
-        when(federationStorageProvider.getNewFederation(federationConstantsRegtest, activations)).thenReturn(activeFederation);
-        when(federationStorageProvider.getOldFederation(federationConstantsRegtest, activations)).thenReturn(retiringFederation);
+        when(federationStorageProvider.getNewFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(activeFederation);
+        when(federationStorageProvider.getOldFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(retiringFederation);
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
@@ -276,6 +282,13 @@ class BridgeSupportFlyoverTest {
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
 
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(executionBlock)
+            .withActivations(activations)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
@@ -283,6 +296,7 @@ class BridgeSupportFlyoverTest {
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
+            .withFederationSupport(federationSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -395,12 +409,10 @@ class BridgeSupportFlyoverTest {
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
 
-        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        long federationActivationAge = federationConstantsRegtest.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(bridgeConstants.getFederationConstants()).getFederationActivationAge(activations);
+        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -410,8 +422,8 @@ class BridgeSupportFlyoverTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
-        when(federationStorageProvider.getNewFederation(federationConstantsRegtest, activations)).thenReturn(activeFederation);
-        when(federationStorageProvider.getOldFederation(federationConstantsRegtest, activations)).thenReturn(retiringFederation);
+        when(federationStorageProvider.getNewFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(activeFederation);
+        when(federationStorageProvider.getOldFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(retiringFederation);
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
@@ -423,6 +435,13 @@ class BridgeSupportFlyoverTest {
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
 
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(executionBlock)
+            .withActivations(activations)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
@@ -430,6 +449,7 @@ class BridgeSupportFlyoverTest {
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
+            .withFederationSupport(federationSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -567,11 +587,13 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
 
         BridgeConstants bridgeConstants = spy(constants);
+        FederationConstants federationConstantsSpy = spy(bridgeConstants.getFederationConstants());
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
         long federationActivationAge = federationConstantsRegtest.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(bridgeConstants.getFederationConstants()).getFederationActivationAge(activations);
+        doReturn(federationActivationAge).when(federationConstantsSpy).getFederationActivationAge(activations);
+        when(bridgeConstants.getFederationConstants()).thenReturn(federationConstantsSpy);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -581,8 +603,8 @@ class BridgeSupportFlyoverTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
-        when(federationStorageProvider.getNewFederation(federationConstantsRegtest, activations)).thenReturn(activeFederation);
-        when(federationStorageProvider.getOldFederation(federationConstantsRegtest, activations)).thenReturn(retiringFederation);
+        when(federationStorageProvider.getNewFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(activeFederation);
+        when(federationStorageProvider.getOldFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(retiringFederation);
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
@@ -594,8 +616,16 @@ class BridgeSupportFlyoverTest {
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
 
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstantsSpy)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .withRskExecutionBlock(executionBlock)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
+            .withFederationSupport(federationSupport)
             .withBridgeConstants(bridgeConstants)
             .withActivations(activations)
             .withBtcBlockStoreFactory(mockFactory)
@@ -701,8 +731,8 @@ class BridgeSupportFlyoverTest {
         Federation retiringFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa01", "fa02");
 
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
-        when(federationStorageProvider.getNewFederation(federationConstantsRegtest, activations)).thenReturn(activeFederation);
-        when(federationStorageProvider.getOldFederation(federationConstantsRegtest, activations)).thenReturn(retiringFederation);
+        when(federationStorageProvider.getNewFederation(bridgeConstantsRegtest.getFederationConstants(), activations)).thenReturn(activeFederation);
+        when(federationStorageProvider.getOldFederation(bridgeConstantsRegtest.getFederationConstants(), activations)).thenReturn(retiringFederation);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getLockingCap()).thenReturn(lockingCapValue);
@@ -728,8 +758,16 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstantsRegtest)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(executionBlock)
+            .withActivations(activations)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
+            .withFederationSupport(federationSupport)
             .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
             .withBtcBlockStoreFactory(mockFactory)
@@ -1611,12 +1649,10 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
-        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        long federationActivationAge = federationConstantsRegtest.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(bridgeConstants.getFederationConstants()).getFederationActivationAge(activations);
+        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -1640,6 +1676,11 @@ class BridgeSupportFlyoverTest {
 
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
@@ -1649,6 +1690,7 @@ class BridgeSupportFlyoverTest {
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
             .withFeePerKbSupport(feePerKbSupport)
+            .withFederationSupport(federationSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -1803,11 +1845,13 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
         BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
+        FederationConstants federationConstantsSpy = spy(bridgeConstants.getFederationConstants());
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
         long federationActivationAge = federationConstantsRegtest.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(bridgeConstants.getFederationConstants()).getFederationActivationAge(activations);
+        doReturn(federationActivationAge).when(federationConstantsSpy).getFederationActivationAge(activations);
+        when(bridgeConstants.getFederationConstants()).thenReturn(federationConstantsSpy);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -1842,6 +1886,13 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstantsSpy)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .withRskExecutionBlock(executionBlock)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
@@ -1849,6 +1900,7 @@ class BridgeSupportFlyoverTest {
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
+            .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
@@ -2003,12 +2055,10 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
-        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        long federationActivationAge = federationConstantsRegtest.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(bridgeConstants.getFederationConstants()).getFederationActivationAge(activations);
+        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2043,6 +2093,12 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
@@ -2051,6 +2107,7 @@ class BridgeSupportFlyoverTest {
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
             .withFeePerKbSupport(feePerKbSupport)
+            .withFederationSupport(federationSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -2209,11 +2266,13 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
         BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
+        FederationConstants federationConstantsSpy = spy(bridgeConstants.getFederationConstants());
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
         long federationActivationAge = federationConstantsRegtest.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(bridgeConstants.getFederationConstants()).getFederationActivationAge(activations);
+        doReturn(federationActivationAge).when(federationConstantsSpy).getFederationActivationAge(activations);
+        when(bridgeConstants.getFederationConstants()).thenReturn(federationConstantsSpy);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2247,6 +2306,13 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstantsSpy)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .withRskExecutionBlock(executionBlock)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
@@ -2254,6 +2320,7 @@ class BridgeSupportFlyoverTest {
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
+            .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
@@ -2387,11 +2454,13 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
         BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
+        FederationConstants federationConstantsSpy = spy(bridgeConstants.getFederationConstants());
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
         long federationActivationAge = federationConstantsRegtest.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(bridgeConstants.getFederationConstants()).getFederationActivationAge(activations);
+        doReturn(federationActivationAge).when(federationConstantsSpy).getFederationActivationAge(activations);
+        when(bridgeConstants.getFederationConstants()).thenReturn(federationConstantsSpy);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2425,6 +2494,13 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstantsSpy)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .withRskExecutionBlock(executionBlock)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
@@ -2432,6 +2508,7 @@ class BridgeSupportFlyoverTest {
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
+            .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
@@ -2579,12 +2656,10 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
-        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        long federationActivationAge = federationConstantsRegtest.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(bridgeConstants.getFederationConstants()).getFederationActivationAge(activations);
+        BridgeConstants bridgeConstants = spy(this.bridgeConstantsRegtest);
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2606,6 +2681,12 @@ class BridgeSupportFlyoverTest {
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
 
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
@@ -2613,6 +2694,7 @@ class BridgeSupportFlyoverTest {
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
+            .withFederationSupport(federationSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -2874,9 +2956,9 @@ class BridgeSupportFlyoverTest {
             mock(Repository.class),
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
             feePerKbSupport,
             whitelistSupport,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -2957,9 +3039,9 @@ class BridgeSupportFlyoverTest {
             repository,
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
             feePerKbSupport,
             whitelistSupport,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3050,7 +3132,6 @@ class BridgeSupportFlyoverTest {
             repository,
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
             feePerKbSupport,
             whitelistSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
@@ -3145,9 +3226,9 @@ class BridgeSupportFlyoverTest {
             repository,
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
             feePerKbSupport,
             whitelistSupport,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3418,9 +3499,9 @@ class BridgeSupportFlyoverTest {
             mock(Repository.class),
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
             feePerKbSupport,
             whitelistSupport,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3508,11 +3589,18 @@ class BridgeSupportFlyoverTest {
 
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-        
+
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(bridgeConstantsRegtest.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .build();
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(provider)
             .withActivations(activations)
+            .withFederationSupport(federationSupport)
             .build();
 
         Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
