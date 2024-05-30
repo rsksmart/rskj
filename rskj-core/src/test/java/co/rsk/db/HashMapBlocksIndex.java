@@ -70,11 +70,6 @@ public class HashMapBlocksIndex implements BlocksIndex {
     }
 
     @Override
-    public void remove(long number) {
-        index.remove(number);
-    }
-
-    @Override
     public void removeBlock(long blockNumber, Keccak256 blockHash) {
         if (!index.containsKey(blockNumber)) {
             return;
@@ -99,4 +94,5 @@ public class HashMapBlocksIndex implements BlocksIndex {
             index.remove(blockNumber);
         }
     }
+
 }

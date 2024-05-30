@@ -109,6 +109,7 @@
     <logger name="altbn128" level="INFO" />
     <logger name="co.rsk.net.discovery.PeerExplorer" level="INFO" />
     <logger name="co.rsk.net.discovery.NodeChallengeManager" level="INFO" />
+    <logger name="co.rsk.RskContext" level="INFO" />
 
     <!-- Use INFO or upper levels for production environments. -->
     <logger name="com.googlecode.jsonrpc4j" level="INFO" />

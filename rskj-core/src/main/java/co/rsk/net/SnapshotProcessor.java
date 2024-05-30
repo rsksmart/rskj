@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2023 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.net;
 
 import co.rsk.core.BlockDifficulty;
@@ -39,6 +57,7 @@ import java.util.stream.Collectors;
 public class SnapshotProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
+
     public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
@@ -356,7 +375,6 @@ public class SnapshotProcessor {
         }
     }
 
-
     /**
      * Once state share is received, rebuild the trie, save it in db and save all the blocks.
      */
@@ -380,7 +398,6 @@ public class SnapshotProcessor {
         this.blockchain.setStatus(this.lastBlock, this.lastBlockDifficulty);
         this.transactionPool.setBestBlock(this.lastBlock);
     }
-
 
     private void generateChunkRequestTasks() {
         long from = 0;
@@ -434,5 +451,4 @@ public class SnapshotProcessor {
     private static byte[] getBytes(byte[] result) {
         return result != null ? result : new byte[0];
     }
-
 }

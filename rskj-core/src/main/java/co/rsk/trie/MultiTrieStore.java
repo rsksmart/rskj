@@ -65,6 +65,7 @@ public class MultiTrieStore implements TrieStore {
     public void saveDTO(TrieDTO trieDTO) {
         getCurrentStore().saveDTO(trieDTO);
     }
+
     /**
      * It's not enough to just flush the current one b/c it may occur, if the epoch size doesn't match the flush size,
      * that some epoch may never get flushed

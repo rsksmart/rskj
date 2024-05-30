@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2023 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.net.messages;
 
 import org.bouncycastle.util.BigIntegers;
@@ -9,13 +27,13 @@ import java.math.BigInteger;
 
 public class SnapStateChunkResponseMessage extends MessageWithId {
     private final long to;
-    private long id;
-    private byte[] chunkOfTrieKeyValue;
+    private final long id;
+    private final byte[] chunkOfTrieKeyValue;
 
-    private long from;
+    private final long from;
 
-    private boolean complete;
-    private long blockNumber;
+    private final boolean complete;
+    private final long blockNumber;
 
     public SnapStateChunkResponseMessage(long id, byte[] chunkOfTrieKeyValue, long blockNumber, long from, long to, boolean complete) {
         this.id = id;

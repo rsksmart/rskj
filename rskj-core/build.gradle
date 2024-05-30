@@ -178,6 +178,7 @@ ext {
             commonsCodecLib         : "commons-codec:commons-codec:${testLibVersions.commonsCodecVer}",
             jacksonLib              : "com.fasterxml.jackson.core:jackson-databind:${testLibVersions.jacksonVer}",
             okhttpWsLib             : "com.squareup.okhttp:okhttp-ws:${testLibVersions.okhttpWsVer}",
+
             rskLllLib               : "co.rsk:lll-compiler:${testLibVersions.rskLllVer}",
     ]
 

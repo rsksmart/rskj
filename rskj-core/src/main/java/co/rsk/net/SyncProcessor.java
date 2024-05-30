@@ -137,6 +137,7 @@ public class SyncProcessor implements SyncEventsHandler {
         this.snapshotProcessor = snapshotProcessor;
         setSyncState(new PeerAndModeDecidingSyncState(syncConfiguration, this, peersInformation, blockStore));
     }
+
     public void processStatus(Peer sender, Status status) {
         logger.debug("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.toPrintableHash(status.getBestBlockHash()));
         peersInformation.registerPeer(sender).setStatus(status);
