@@ -12,6 +12,7 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -155,6 +156,14 @@ class BridgeSupportProcessFundsMigrationTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(rskCurrentBlock)
+            .withActivations(activations)
+            .build();
+
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
@@ -162,6 +171,7 @@ class BridgeSupportProcessFundsMigrationTest {
             .withExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .withFeePerKbSupport(feePerKbSupport)
+            .withFederationSupport(federationSupport)
             .build();
 
         List<UTXO> sufficientUTXOsForMigration = new ArrayList<>();

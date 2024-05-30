@@ -97,7 +97,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> unknown_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -130,28 +130,28 @@ class PegUtilsGetTransactionTypeTest {
             ),
 
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 false,
                 false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 true,
                 false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 true,
                 true,
                 PegTxType.PEGIN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 false,
                 true,
@@ -159,28 +159,28 @@ class PegUtilsGetTransactionTypeTest {
             ),
 
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 false,
                 false,
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 true,
                 false,
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 true,
                 true,
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 false,
                 true,
@@ -228,7 +228,7 @@ class PegUtilsGetTransactionTypeTest {
     // Pegin tests
     private static Stream<Arguments> pegin_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -236,11 +236,11 @@ class PegUtilsGetTransactionTypeTest {
                 false
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true
             )
         );
@@ -559,7 +559,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> pegin_retired_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -568,12 +568,12 @@ class PegUtilsGetTransactionTypeTest {
                 PegTxType.PEGIN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 PegTxType.UNKNOWN
             )
@@ -844,7 +844,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> sending_funds_below_minimum_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -853,12 +853,12 @@ class PegUtilsGetTransactionTypeTest {
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 PegTxType.PEGIN
             )
@@ -941,7 +941,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> sending_funds_equal_or_above_to_minimum_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -949,11 +949,11 @@ class PegUtilsGetTransactionTypeTest {
                 false
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true
             )
         );
@@ -1027,7 +1027,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> pegout_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -1035,11 +1035,11 @@ class PegUtilsGetTransactionTypeTest {
                 false
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true
             )
         );
@@ -1425,7 +1425,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> migration_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -1434,12 +1434,12 @@ class PegUtilsGetTransactionTypeTest {
                 PegTxType.PEGOUT_OR_MIGRATION
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 PegTxType.PEGOUT_OR_MIGRATION
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 PegTxType.PEGOUT_OR_MIGRATION
             )
@@ -1622,7 +1622,7 @@ class PegUtilsGetTransactionTypeTest {
     // Flyover tests
     private static Stream<Arguments> flyover_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -1656,28 +1656,28 @@ class PegUtilsGetTransactionTypeTest {
 
 
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 false,
                 false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 true,
                 false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 true,
                 true,
                 PegTxType.PEGIN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 false,
                 true,
@@ -1685,28 +1685,28 @@ class PegUtilsGetTransactionTypeTest {
             ),
 
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 false,
                 false,
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 true,
                 false,
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 true,
                 true,
                 PegTxType.UNKNOWN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 false,
                 true,
@@ -1838,7 +1838,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> flyover_migration_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -1846,11 +1846,11 @@ class PegUtilsGetTransactionTypeTest {
                 false
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true
             )
         );
@@ -2095,7 +2095,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> old_fed_to_live_fed_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -2104,12 +2104,12 @@ class PegUtilsGetTransactionTypeTest {
                 PegTxType.PEGOUT_OR_MIGRATION
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 PegTxType.PEGOUT_OR_MIGRATION
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 PegTxType.PEGIN
             )
@@ -2174,7 +2174,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> retired_fed_to_live_fed_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -2183,12 +2183,12 @@ class PegUtilsGetTransactionTypeTest {
                 PegTxType.PEGOUT_OR_MIGRATION
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 PegTxType.PEGOUT_OR_MIGRATION
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 PegTxType.PEGOUT_OR_MIGRATION
             )
@@ -2205,7 +2205,7 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
-        Script lastRetiredFederationP2SHScript = retiredFed.getP2SHScript();
+        Script lastRetiredFederationP2SHScript = retiredFed.getDefaultP2SHScript();
 
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
@@ -2241,7 +2241,7 @@ class PegUtilsGetTransactionTypeTest {
 
     private static Stream<Arguments> retired_fed_no_existing_in_the_storage_to_live_fed_args() {
         ActivationConfig.ForBlock fingerrootActivations  = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        ActivationConfig.ForBlock tbdActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         return Stream.of(
             Arguments.of(
@@ -2250,12 +2250,12 @@ class PegUtilsGetTransactionTypeTest {
                 PegTxType.PEGIN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 false,
                 PegTxType.PEGIN
             ),
             Arguments.of(
-                tbdActivations,
+                arrowheadActivations,
                 true,
                 PegTxType.PEGOUT_OR_MIGRATION
             )
