@@ -200,6 +200,9 @@ class BridgeEventLoggerLegacyImplTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         // Setup parameters for test method call
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        when(constantsMock.getFederationConstants()).thenReturn((new BridgeRegTestConstants()).getFederationConstants());
+
         Block executionBlock = mock(Block.class);
         when(executionBlock.getTimestamp()).thenReturn(15005L);
         when(executionBlock.getNumber()).thenReturn(15L);
@@ -212,7 +215,6 @@ class BridgeEventLoggerLegacyImplTest {
         );
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
-        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         FederationArgs oldFedArgs = new FederationArgs(oldFederationMembers, Instant.ofEpochMilli(15005L), 15L, btcParams);
 
         Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(oldFedArgs);

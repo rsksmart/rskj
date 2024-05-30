@@ -323,8 +323,8 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return;
         }
 
-        bridgeStorageAccessor.safeSaveToRepository(NEW_FEDERATION_KEY.getKey(), newFederation, BridgeSerializationUtils::serializeFederation);
         saveFederationFormatVersion(NEW_FEDERATION_FORMAT_VERSION.getKey(), newFederation.getFormatVersion());
+        bridgeStorageAccessor.safeSaveToRepository(NEW_FEDERATION_KEY.getKey(), newFederation, BridgeSerializationUtils::serializeFederation);
     }
 
     private void saveOldFederation(ActivationConfig.ForBlock activations) {
@@ -338,8 +338,8 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         }
 
         int oldFederationFormatVersion = getOldFederationFormatVersion();
-        bridgeStorageAccessor.safeSaveToRepository(OLD_FEDERATION_KEY.getKey(), oldFederation, BridgeSerializationUtils::serializeFederation);
         saveFederationFormatVersion(OLD_FEDERATION_FORMAT_VERSION.getKey(), oldFederationFormatVersion);
+        bridgeStorageAccessor.safeSaveToRepository(OLD_FEDERATION_KEY.getKey(), oldFederation, BridgeSerializationUtils::serializeFederation);
     }
 
     private int getOldFederationFormatVersion() {
@@ -357,14 +357,13 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         }
 
         byte[] serializedPendingFederation = serializePendingFederation(activations);
-        bridgeStorageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedPendingFederation);
 
-        if (!activations.isActive(RSKIP123)) {
-            return;
+        if (activations.isActive(RSKIP123)) {
+            // we only need to save the standard part of the fed since the emergency part is constant
+            saveFederationFormatVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION.getFormatVersion());
         }
 
-        // we only need to save the standard part of the fed since the emergency part is constant
-        saveFederationFormatVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION.getFormatVersion());
+        bridgeStorageAccessor.safeSaveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedPendingFederation);
     }
 
     @Nullable
