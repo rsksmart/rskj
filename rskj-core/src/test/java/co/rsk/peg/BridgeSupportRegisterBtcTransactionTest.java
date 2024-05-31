@@ -47,6 +47,8 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
+
+import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -404,13 +406,14 @@ class BridgeSupportRegisterBtcTransactionTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getOldFederationBtcUTXOs())
             .thenReturn(retiringFederationUtxos);
-        when(federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, any()))
+        when(federationStorageProvider.getNewFederationBtcUTXOs(any(NetworkParameters.class), any(ActivationConfig.ForBlock.class)))
             .thenReturn(activeFederationUtxos);
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
-        when(federationStorageProvider.getNewFederation(federationMainnetConstants, any())).thenReturn(activeFederation);
+        when(federationStorageProvider.getNewFederation(any(FederationConstants.class), any(ActivationConfig.ForBlock.class)))
+            .thenReturn(activeFederation);
 
         // Set executionBlock right after the migration should start
         long blockNumber = activeFederation.getCreationBlockNumber() +
@@ -511,6 +514,14 @@ class BridgeSupportRegisterBtcTransactionTest {
             feePerKbStorageProvider
         );
 
+        FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .withRskExecutionBlock(rskExecutionBlock)
+            .build();
+
         return new BridgeSupportBuilder()
             .withBtcBlockStoreFactory(mockFactory)
             .withBridgeConstants(bridgeMainnetConstants)
@@ -523,6 +534,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             .withPeginInstructionsProvider(peginInstructionsProvider)
             .withExecutionBlock(rskExecutionBlock)
             .withFeePerKbSupport(feePerKbSupport)
+            .withFederationSupport(federationSupport)
             .build();
     }
 
@@ -1864,6 +1876,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
 
         when(federationStorageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(retiringFederation);
+        when(federationStorageProvider.getLastRetiredFederationP2SHScript(activations)).thenReturn(Optional.ofNullable(inputScript));
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
@@ -2452,6 +2465,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
         when(provider.getLockWhitelist()).thenReturn(lockWhitelist);
 
+        FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, activations)).thenReturn(activeFederationUtxos);
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
@@ -2461,12 +2475,15 @@ class BridgeSupportRegisterBtcTransactionTest {
         Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
 
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
+        Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript());
         migrationTx.addInput(
             BitcoinTestUtils.createHash(1),
             FIRST_OUTPUT_INDEX,
-            ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript())
+            inputScript
         );
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
+
+        when(federationStorageProvider.getLastRetiredFederationP2SHScript(activations)).thenReturn(Optional.ofNullable(inputScript));
 
         FederationTestUtils.addSignatures(oldFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
 
@@ -2530,6 +2547,14 @@ class BridgeSupportRegisterBtcTransactionTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(bridgeRegTestConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(rskExecutionBlock)
+            .withActivations(activations)
+            .build();
+
         // act
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBtcBlockStoreFactory(mockFactory)
@@ -2542,6 +2567,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             .withPeginInstructionsProvider(peginInstructionsProvider)
             .withExecutionBlock(rskExecutionBlock)
             .withFeePerKbSupport(feePerKbSupport)
+            .withFederationSupport(federationSupport)
             .build();
 
         bridgeSupport.registerBtcTransaction(
