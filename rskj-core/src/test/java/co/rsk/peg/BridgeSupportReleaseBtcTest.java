@@ -35,6 +35,7 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.RejectedPegoutReason;
 import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.FederationSupportBuilder;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -755,8 +756,8 @@ class BridgeSupportReleaseBtcTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNextPegoutHeight()).thenReturn(Optional.of(executionBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts() - 1));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
-                new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "one"), Coin.MILLICOIN),
-                new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "two"), Coin.MILLICOIN)
+            new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "one"), Coin.MILLICOIN),
+            new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "two"), Coin.MILLICOIN)
         )));
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
@@ -853,6 +854,11 @@ class BridgeSupportReleaseBtcTest {
 
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activationMock)).thenReturn(utxos);
+        FederationSupport federationSupport = new FederationSupportBuilder()
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activationMock)
+            .build();
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(600)));
@@ -862,6 +868,7 @@ class BridgeSupportReleaseBtcTest {
             .withActivations(activationMock)
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
+            .withFederationSupport(federationSupport)
             .build();
 
         Transaction rskTx = buildUpdateTx();
@@ -1140,11 +1147,18 @@ class BridgeSupportReleaseBtcTest {
 
         utxos.add(PegTestUtils.createUTXO(4, 3, Coin.COIN.multiply(1), genesisFederation.getAddress()));
         when(federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activationMock)).thenReturn(utxos);
+        FederationSupport federationSupport = new FederationSupportBuilder()
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activationMock)
+            .build();
+
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
             .withActivations(activationMock)
             .withEventLogger(eventLogger)
+            .withFederationSupport(federationSupport)
             .build();
 
         // Second Call To updateCollections
@@ -1333,6 +1347,11 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private BridgeSupport initBridgeSupport(BridgeEventLogger eventLogger, ActivationConfig.ForBlock activationMock) {
+        FederationSupport federationSupport = new FederationSupportBuilder()
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .build();
+
         return bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
@@ -1340,6 +1359,7 @@ class BridgeSupportReleaseBtcTest {
             .withEventLogger(eventLogger)
             .withActivations(activationMock)
             .withSignatureCache(signatureCache)
+            .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
     }
