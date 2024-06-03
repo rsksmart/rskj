@@ -972,17 +972,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public byte[] getPendingFederationHash(Object[] args) {
+    public byte[] getPendingFederationHashBytes(Object[] args) {
         logger.trace("getPendingFederationHash");
 
-        byte[] hash = bridgeSupport.getPendingFederationHash().getBytes();
+        Keccak256 hash = bridgeSupport.getPendingFederationHash();
 
         if (hash == null) {
             // Empty array is returned when pending federation is not present
             return new byte[]{};
         }
 
-        return hash;
+        return hash.getBytes();
     }
 
     public Integer getPendingFederationSize(Object[] args) {
