@@ -20,9 +20,9 @@
 package co.rsk;
 
 import co.rsk.core.bc.ClaimTransactionValidator;
-import co.rsk.util.CommandLineFixture;
 import co.rsk.util.HexUtils;
 import co.rsk.util.OkHttpClientTestFixture;
+import co.rsk.util.cli.CommandLineFixture;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.Response;
