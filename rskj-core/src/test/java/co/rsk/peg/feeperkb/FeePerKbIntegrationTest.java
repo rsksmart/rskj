@@ -362,10 +362,7 @@ class FeePerKbIntegrationTest {
         assertFeePerKbValue(fourteenthFeePerKbVote);
 
         /*
-         *  15th voting: authorized caller vote several times
-         *  Authorizers 1 votes a very low fee per KB value.
-         *  Authorizer 2 votes  different value
-         *  Authorizer 3 votes a very low fee per KB value.
+         *  15th voting: authorized callers vote several times
          */
         Coin fifteenthFeePerKbVote = Coin.valueOf(130_000L);
 
@@ -434,7 +431,7 @@ class FeePerKbIntegrationTest {
         //It still has the previous voting round value
         assertFeePerKbValue(fourteenthFeePerKbVote);
 
-        // First vote for a new value
+        // Second vote for a same value than the previous one
         voteFeePerKb(fifteenthFeePerKbVote, 1);
         //It still has the previous voting round value
         assertFeePerKbValue(fifteenthFeePerKbVote);
