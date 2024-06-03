@@ -972,7 +972,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public byte[] getPendingFederationHashBytes(Object[] args) {
+    public byte[] getPendingFederationHashSerialized(Object[] args) {
         logger.trace("getPendingFederationHash");
 
         Keccak256 hash = bridgeSupport.getPendingFederationHash();

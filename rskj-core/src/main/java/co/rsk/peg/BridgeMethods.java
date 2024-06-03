@@ -331,7 +331,7 @@ public enum BridgeMethods {
             new String[]{"bytes"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getPendingFederationHashBytes,
+        (BridgeMethodExecutorTyped) Bridge::getPendingFederationHashSerialized,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
