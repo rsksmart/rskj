@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import org.ethereum.core.AccountState;
+import org.ethereum.core.ValidationArgs;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -31,7 +32,8 @@ class TxValidatorAccountStateValidatorTest {
         Mockito.when(state.isDeleted()).thenReturn(false);
 
         TxValidatorAccountStateValidator tvasv = new TxValidatorAccountStateValidator();
-        Assertions.assertTrue(tvasv.validate(null, state, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        ValidationArgs va = new ValidationArgs(state, null, null);
+        Assertions.assertTrue(tvasv.validate(null, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
@@ -40,6 +42,7 @@ class TxValidatorAccountStateValidatorTest {
         Mockito.when(state.isDeleted()).thenReturn(true);
 
         TxValidatorAccountStateValidator tvasv = new TxValidatorAccountStateValidator();
-        Assertions.assertFalse(tvasv.validate(null, state, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        ValidationArgs va = new ValidationArgs(state, null, null);
+        Assertions.assertFalse(tvasv.validate(null, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 }

@@ -19,14 +19,11 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.remasc.RemascTransaction;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -35,13 +32,9 @@ import java.math.BigInteger;
  * Transaction must not be null
  */
 public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
-    @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, RepositorySnapshot repositorySnapshot, ActivationConfig.ForBlock activationConfig) {
-        return validate(tx, state, gasLimit, minimumGasPrice, bestBlockNumber, isFreeTx);
-    }
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, ValidationArgs validationArgs, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (!(tx instanceof RemascTransaction)) {
             return TransactionValidationResult.ok();
         }

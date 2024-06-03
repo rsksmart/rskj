@@ -18,13 +18,11 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -47,12 +45,7 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
     }
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, RepositorySnapshot repositorySnapshot, ActivationConfig.ForBlock activationConfig) {
-        return validate(tx, state, gasLimit, minimumGasPrice, bestBlockNumber, isFreeTx);
-    }
-
-    @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, ValidationArgs validationArgs, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (BigInteger.valueOf(tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber), signatureCache)).compareTo(tx.getGasLimitAsInteger()) <= 0) {
             return TransactionValidationResult.ok();
         }

@@ -20,15 +20,12 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
 import co.rsk.core.bc.ClaimTransactionValidator;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -45,27 +42,22 @@ public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
     }
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, RepositorySnapshot repositorySnapshot, ActivationConfig.ForBlock activationConfig) {
+    public TransactionValidationResult validate(Transaction tx, ValidationArgs validationArgs, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (isFreeTx) {
             return TransactionValidationResult.ok();
         }
 
-        if (state == null) {
+        if (validationArgs.getAccountState() == null) {
             return TransactionValidationResult.withError("the sender account doesn't exist");
         }
 
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
         Coin maximumPrice = tx.getGasPrice().multiply(txGasLimit);
-        if (state.getBalance().compareTo(maximumPrice) >= 0
-                || claimTransactionValidator.isClaimTxAndValid(tx, repositorySnapshot, activationConfig)) {
+        if (validationArgs.getAccountState().getBalance().compareTo(maximumPrice) >= 0
+                || claimTransactionValidator.isClaimTxAndValid(tx, validationArgs.getRepositorySnapshot(), validationArgs.getActivationConfig())) {
             return TransactionValidationResult.ok();
         }
 
         return TransactionValidationResult.withError("insufficient funds");
-    }
-
-    @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
-        return TransactionValidationResult.ok();
     }
 }

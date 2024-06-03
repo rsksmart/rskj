@@ -19,13 +19,10 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -34,21 +31,16 @@ import java.math.BigInteger;
 public class TxValidatorAccountStateValidator implements TxValidatorStep {
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, RepositorySnapshot repositorySnapshot, ActivationConfig.ForBlock activationConfig) {
-        return validate(tx, state, gasLimit, minimumGasPrice, bestBlockNumber, isFreeTx);
-    }
-
-    @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, ValidationArgs validationArgs, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (isFreeTx) {
             return TransactionValidationResult.ok();
         }
 
-        if (state == null) {
+        if (validationArgs.getAccountState() == null) {
             return TransactionValidationResult.withError("the sender account doesn't exist");
         }
 
-        if (state.isDeleted()) {
+        if (validationArgs.getAccountState().isDeleted()) {
             return TransactionValidationResult.withError("the sender account is deleted");
         }
 

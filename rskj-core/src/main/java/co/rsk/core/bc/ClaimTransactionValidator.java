@@ -127,7 +127,7 @@ public class ClaimTransactionValidator {
     }
 
     public boolean isFeatureActive (ActivationConfig.ForBlock activationConfig) {
-        return activationConfig.isActive(ConsensusRule.RSKIP00);
+        return activationConfig.isActive(ConsensusRule.RSKIP432);
     }
 
     public boolean isClaimTxAndValid(Transaction tx, RepositorySnapshot repositorySnapshot, ActivationConfig.ForBlock activationConfig) {

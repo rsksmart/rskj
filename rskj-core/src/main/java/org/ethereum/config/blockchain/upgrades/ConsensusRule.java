@@ -93,9 +93,13 @@ public enum ConsensusRule {
     RSKIP412("rskip412"), // From EIP-3198 BASEFEE opcode
     RSKIP415("rskip415"),
     RSKIP417("rskip417"),
+<<<<<<< HEAD
     RSKIP428("rskip428"),
     RSKIP434("rskip434"),
     RSKIP00("rskip00") // Placeholder for EthSwap feature
+=======
+    RSKIP432("rskip432"), // From RSKIP-432 RbtcSwap
+>>>>>>> bd8b9a1a4 (Add RSKIP number and refactor validate method in TxValidatorStep)
     ;
 
     private String configKey;
