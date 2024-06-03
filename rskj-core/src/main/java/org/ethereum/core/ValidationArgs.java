@@ -8,13 +8,13 @@ import javax.annotation.Nullable;
 public class ValidationArgs {
 
     @Nullable
-    AccountState accountState;
+    private final AccountState accountState;
 
     @Nullable
-    RepositorySnapshot repositorySnapshot;
+    private final RepositorySnapshot repositorySnapshot;
 
     @Nullable
-    ActivationConfig.ForBlock activationConfig;
+    private final ActivationConfig.ForBlock activationConfig;
 
     public ValidationArgs(@Nullable AccountState accountState, @Nullable RepositorySnapshot repositorySnapshot, @Nullable ActivationConfig.ForBlock activationConfig) {
         this.accountState = accountState;
