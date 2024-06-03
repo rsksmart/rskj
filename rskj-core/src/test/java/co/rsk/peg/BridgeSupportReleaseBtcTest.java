@@ -99,8 +99,6 @@ class BridgeSupportReleaseBtcTest {
     private BridgeSupportBuilder bridgeSupportBuilder;
     private SignatureCache signatureCache;
     private FeePerKbSupport feePerKbSupport;
-    private FederationSupportBuilder federationSupportBuilder;
-    private FederationSupport federationSupport;
 
     @BeforeEach
     void setUpOnEachTest() throws IOException {
@@ -115,8 +113,6 @@ class BridgeSupportReleaseBtcTest {
         utxo = buildUTXO();
         provider = initProvider(repository, activationMock);
         federationStorageProvider = initFederationStorageProvider(repository, activationMock);
-        federationSupportBuilder = new FederationSupportBuilder();
-        federationSupport = initFederationSupport();
         bridgeSupportBuilder = new BridgeSupportBuilder();
         feePerKbSupport = mock(FeePerKbSupportImpl.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(bridgeConstants.getFeePerKbConstants().getGenesisFeePerKb());
@@ -760,8 +756,8 @@ class BridgeSupportReleaseBtcTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNextPegoutHeight()).thenReturn(Optional.of(executionBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts() - 1));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
-                new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "one"), Coin.MILLICOIN),
-                new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "two"), Coin.MILLICOIN)
+            new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "one"), Coin.MILLICOIN),
+            new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "two"), Coin.MILLICOIN)
         )));
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
@@ -858,7 +854,7 @@ class BridgeSupportReleaseBtcTest {
 
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activationMock)).thenReturn(utxos);
-        federationSupport = federationSupportBuilder
+        FederationSupport federationSupport = new FederationSupportBuilder()
             .withFederationConstants(federationConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withActivations(activationMock)
@@ -1151,7 +1147,7 @@ class BridgeSupportReleaseBtcTest {
 
         utxos.add(PegTestUtils.createUTXO(4, 3, Coin.COIN.multiply(1), genesisFederation.getAddress()));
         when(federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activationMock)).thenReturn(utxos);
-        federationSupport = federationSupportBuilder
+        FederationSupport federationSupport = new FederationSupportBuilder()
             .withFederationConstants(federationConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withActivations(activationMock)
@@ -1351,6 +1347,11 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private BridgeSupport initBridgeSupport(BridgeEventLogger eventLogger, ActivationConfig.ForBlock activationMock) {
+        FederationSupport federationSupport = new FederationSupportBuilder()
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .build();
+
         return bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
@@ -1360,13 +1361,6 @@ class BridgeSupportReleaseBtcTest {
             .withSignatureCache(signatureCache)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
-            .build();
-    }
-
-    private FederationSupport initFederationSupport() {
-        return federationSupportBuilder
-            .withFederationConstants(federationConstants)
-            .withFederationStorageProvider(federationStorageProvider)
             .build();
     }
 
