@@ -28,6 +28,7 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,8 +86,14 @@ public class TxPendingValidator {
             return TransactionValidationResult.withError(String.format("transaction's size is higher than defined maximum: %s > %s", tx.getSize(), TX_MAX_SIZE));
         }
 
+        ValidationArgs validationArgs = new ValidationArgs(
+                state,
+                repositorySnapshot,
+                activationConfig.forBlock(bestBlockNumber)
+        );
+
         for (TxValidatorStep step : validatorSteps) {
-            TransactionValidationResult validationResult = step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0, repositorySnapshot, activationConfig.forBlock(bestBlockNumber));
+            TransactionValidationResult validationResult = step.validate(tx, validationArgs, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0);
             if (!validationResult.transactionIsValid()) {
                 logger.info("[tx={}] validation failed with error: {}", tx.getHash(), validationResult.getErrorMessage());
                 return validationResult;

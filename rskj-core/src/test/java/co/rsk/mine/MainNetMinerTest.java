@@ -77,7 +77,7 @@ class MainNetMinerTest {
     void setup() {
         config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(Constants.mainnet());
-        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP00));
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP432));
         RskTestFactory factory = new RskTestFactory(tempDir, config) {
             @Override
             public GenesisLoader buildGenesisLoader() {

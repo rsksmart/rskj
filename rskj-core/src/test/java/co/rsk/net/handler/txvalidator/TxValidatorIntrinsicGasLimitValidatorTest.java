@@ -27,6 +27,7 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
@@ -96,11 +97,12 @@ class TxValidatorIntrinsicGasLimitValidatorTest {
         tx4.sign(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        ValidationArgs va = new ValidationArgs(new AccountState(), null, null);
 
-        Assertions.assertTrue(tvigpv.validate(tx1, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertTrue(tvigpv.validate(tx2, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertTrue(tvigpv.validate(tx3, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertTrue(tvigpv.validate(tx4, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvigpv.validate(tx1, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvigpv.validate(tx2, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvigpv.validate(tx3, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvigpv.validate(tx4, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
@@ -152,11 +154,12 @@ class TxValidatorIntrinsicGasLimitValidatorTest {
         tx4.sign(new ECKey().getPrivKeyBytes());
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        ValidationArgs va = new ValidationArgs(new AccountState(), null, null);
 
-        Assertions.assertFalse(tvigpv.validate(tx1, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertFalse(tvigpv.validate(tx2, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertFalse(tvigpv.validate(tx3, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertFalse(tvigpv.validate(tx4, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvigpv.validate(tx1, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvigpv.validate(tx2, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvigpv.validate(tx3, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvigpv.validate(tx4, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
 }
