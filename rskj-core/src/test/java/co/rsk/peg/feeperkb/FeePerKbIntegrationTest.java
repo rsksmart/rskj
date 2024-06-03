@@ -464,7 +464,7 @@ class FeePerKbIntegrationTest {
         return txFromAuthorizedCaller;
     }
 
-    private List<RskAddress> getAuthorizedRskAddresses(){
+    private List<RskAddress> getAuthorizedRskAddresses() {
         return Stream.of(
             "a02db0ed94a5894bc6f9079bb9a2d93ada1917f3",
             "180a7edda4e640ea5a3e495e17a1efad260c39e9",
@@ -472,7 +472,7 @@ class FeePerKbIntegrationTest {
         ).map(RskAddress::new).collect(Collectors.toList());
     }
 
-    private RskAddress getUnauthorizedRskAddress(){
+    private RskAddress getUnauthorizedRskAddress() {
         return new RskAddress("e2a5070b4e2cb77fe22dff05d9dcdc4d3eaa6ead");
     }
 }
