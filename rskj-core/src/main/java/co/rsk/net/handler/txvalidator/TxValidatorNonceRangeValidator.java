@@ -19,13 +19,10 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -44,14 +41,9 @@ public class TxValidatorNonceRangeValidator implements TxValidatorStep {
     }
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx, RepositorySnapshot repositorySnapshot, ActivationConfig.ForBlock activationConfig) {
-        return validate(tx, state, gasLimit, minimumGasPrice, bestBlockNumber, isFreeTx);
-    }
-
-    @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, ValidationArgs validationArgs, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BigInteger nonce = tx.getNonceAsInteger();
-        BigInteger stateNonce = state == null ? BigInteger.ZERO : state.getNonce();
+        BigInteger stateNonce = validationArgs.getAccountState() == null ? BigInteger.ZERO : validationArgs.getAccountState().getNonce();
 
         if (stateNonce.compareTo(nonce) > 0) {
             return TransactionValidationResult.withError("transaction nonce too low");

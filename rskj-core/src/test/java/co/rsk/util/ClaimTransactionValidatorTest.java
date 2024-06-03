@@ -73,7 +73,7 @@ public class ClaimTransactionValidatorTest {
         when(mockedRepository.getStorageValue(eq(mockedClaimTx.getReceiveAddress()), any(DataWord.class)))
                 .thenReturn(DataWord.valueOf(1));
         when(mockedRepository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(3));
-        when(mockedActivationConfig.isActive(ConsensusRule.RSKIP00)).thenReturn(true);
+        when(mockedActivationConfig.isActive(ConsensusRule.RSKIP432)).thenReturn(true);
 
 
         boolean result = claimTransactionValidator.isClaimTxAndValid(mockedClaimTx, mockedRepository, mockedActivationConfig);
