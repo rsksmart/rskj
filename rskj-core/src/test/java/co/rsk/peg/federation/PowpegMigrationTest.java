@@ -22,6 +22,7 @@ import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.FederationSupportBuilder;
 import co.rsk.trie.Trie;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -123,18 +124,6 @@ class PowpegMigrationTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
-            .withProvider(bridgeStorageProvider)
-            .withRepository(repository)
-            .withEventLogger(bridgeEventLogger)
-            .withExecutionBlock(initialBlock)
-            .withActivations(activations)
-            .withBridgeConstants(bridgeConstants)
-            .withBtcBlockStoreFactory(btcBlockStoreFactory)
-            .withPeginInstructionsProvider(new PeginInstructionsProvider())
-            .withFeePerKbSupport(feePerKbSupport)
-            .build();
-
         List<FederationMember> originalPowpegMembers = oldPowPegKeys.stream().map(theseKeys ->
             new FederationMember(
                 theseKeys.getLeft(),
@@ -198,8 +187,8 @@ class PowpegMigrationTest {
         federationStorageProvider.save(btcParams, activations);
 
         // Proceed with the powpeg change
-        FederationSupportImpl federationSupport = new FederationSupportImpl(bridgeConstants.getFederationConstants(), federationStorageProvider, initialBlock, activations);
-        federationSupport.commitFederation(false, pendingFederation.getHash(), bridgeEventLogger);
+        FederationSupportImpl federationSupportImpl = new FederationSupportImpl(bridgeConstants.getFederationConstants(), federationStorageProvider, initialBlock, activations);
+        federationSupportImpl.commitFederation(false, pendingFederation.getHash(), bridgeEventLogger);
 
         ArgumentCaptor<Federation> argumentCaptor = ArgumentCaptor.forClass(Federation.class);
         verify(bridgeEventLogger).logCommitFederation(
@@ -238,6 +227,19 @@ class PowpegMigrationTest {
 
         // Trying to create a new powpeg again should fail
         // -2 corresponds to a new powpeg was elected and the Bridge is waiting for this new powpeg to activate
+        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+            .withProvider(bridgeStorageProvider)
+            .withRepository(repository)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(initialBlock)
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFederationSupport(federationSupportImpl)
+            .withFeePerKbSupport(feePerKbSupport)
+            .build();
+
         attemptToCreateNewFederation(bridgeSupport, -2);
 
         // No change in active powpeg
@@ -313,6 +315,13 @@ class PowpegMigrationTest {
             Block legacyFedActivationBlock = mock(Block.class);
             doReturn(legacyFedActivationBlockNumber).when(legacyFedActivationBlock).getNumber();
 
+            FederationSupport federationSupport = new FederationSupportBuilder()
+                .withFederationConstants(bridgeConstants.getFederationConstants())
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(legacyFedActivationBlock)
+                .withActivations(activations)
+                .build();
+
             bridgeSupport = new BridgeSupportBuilder()
                 .withProvider(bridgeStorageProvider)
                 .withRepository(repository)
@@ -322,12 +331,20 @@ class PowpegMigrationTest {
                 .withBridgeConstants(bridgeConstants)
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withFederationSupport(federationSupport)
                 .withFeePerKbSupport(feePerKbSupport)
                 .build();
 
             assertEquals(oldPowPegAddress, bridgeSupport.getActiveFederationAddress());
             assertNull(bridgeSupport.getRetiringFederation());
         }
+
+        FederationSupport federationSupport = new FederationSupportBuilder()
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(activationBlock)
+            .withActivations(activations)
+            .build();
 
         bridgeSupport = new BridgeSupportBuilder()
             .withProvider(bridgeStorageProvider)
@@ -338,6 +355,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
@@ -393,6 +411,13 @@ class PowpegMigrationTest {
         // Adding 1 as the migration is exclusive
         doReturn(blockNumber).when(migrationBlock).getNumber();
 
+        federationSupport = new FederationSupportBuilder()
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(activationBlock)
+            .withActivations(activations)
+            .build();
+
         bridgeSupport = new BridgeSupportBuilder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
@@ -402,6 +427,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
@@ -535,6 +561,13 @@ class PowpegMigrationTest {
             bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
 
+        federationSupport = new FederationSupportBuilder()
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(activationBlock)
+            .withActivations(activations)
+            .build();
+
         bridgeSupport = new BridgeSupportBuilder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
@@ -544,6 +577,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
@@ -568,6 +602,13 @@ class PowpegMigrationTest {
             bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
 
+        federationSupport = new FederationSupportBuilder()
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(activationBlock)
+            .withActivations(activations)
+            .build();
+
         bridgeSupport = new BridgeSupportBuilder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
@@ -577,6 +618,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
@@ -730,12 +772,25 @@ class PowpegMigrationTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        FederationSupport federationSupport = new FederationSupportBuilder()
+            .withFederationConstants(bridgeConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .build();
+
         if (activations.isActive(ConsensusRule.RSKIP271)) {
             // Peg-out batching is enabled need to move the height to the next pegout event
             blockNumber = bridgeSupport.getNextPegoutCreationBlockNumber();
             Block nextPegoutEventBlock = mock(Block.class);
             // Adding 1 as the migration is exclusive
             doReturn(blockNumber).when(nextPegoutEventBlock).getNumber();
+
+            federationSupport = new FederationSupportBuilder()
+                .withFederationConstants(bridgeConstants.getFederationConstants())
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(nextPegoutEventBlock)
+                .withActivations(activations)
+                .build();
 
             bridgeSupport = new BridgeSupportBuilder()
                 .withProvider(bridgeStorageProvider)
@@ -746,6 +801,7 @@ class PowpegMigrationTest {
                 .withBridgeConstants(bridgeConstants)
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withFederationSupport(federationSupport)
                 .withFeePerKbSupport(feePerKbSupport)
                 .build();
         }
@@ -814,6 +870,7 @@ class PowpegMigrationTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
