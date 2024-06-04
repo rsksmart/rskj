@@ -3313,7 +3313,6 @@ class BridgeStorageProviderTest {
         List<Integer> storageBytesCalls = new ArrayList<>();
         List<Integer> serializeCalls = new ArrayList<>();
         Repository repositoryMock = mock(Repository.class);
-        System.out.println("activations.isActive(RSKIP123) "+ activations.isActive(RSKIP123));
 
         try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
             useOriginalIntegerSerialization(bridgeSerializationUtilsMocked);
