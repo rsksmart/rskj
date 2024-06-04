@@ -3238,7 +3238,26 @@ public class BridgeSupport {
         );
 
         ReleaseTransactionBuilder.BuildResult buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
-        if (buildReturnResult.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+        if (buildReturnResult.getResponseCode() == ReleaseTransactionBuilder.Response.SUCCESS) {
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                provider.getPegoutsWaitingForConfirmations().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber(), rskTxHash);
+                eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), buildReturnResult.getBtcTx(), totalAmount);
+            } else {
+                provider.getPegoutsWaitingForConfirmations().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber());
+            }
+
+            if (activations.isActive(RSKIP428)) {
+                List<Coin> outpointValues = extractOutpointValues(buildReturnResult.getBtcTx());
+                eventLogger.logPegoutTransactionCreated(buildReturnResult.getBtcTx().getHash(), outpointValues);
+            }
+
+            logger.info(
+                "[generateRejectionRelease] Rejecting peg-in tx built successfully: Refund to address: {}. RskTxHash: {}. Value {}.",
+                btcRefundAddress,
+                rskTxHash,
+                totalAmount
+            );
+        } else {
             logger.warn(
                 "[generateRejectionRelease] Rejecting peg-in tx could not be built due to {}: Btc peg-in txHash {}. Refund to address: {}. RskTxHash: {}. Value: {}",
                 buildReturnResult.getResponseCode(),
@@ -3248,28 +3267,7 @@ public class BridgeSupport {
                 totalAmount
             );
             panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.getResponseCode()));
-            return;
         }
-
-        BtcTransaction refundPegoutTransaction = buildReturnResult.getBtcTx();
-        if (activations.isActive(ConsensusRule.RSKIP146)) {
-            provider.getPegoutsWaitingForConfirmations().add(refundPegoutTransaction, rskExecutionBlock.getNumber(), rskTxHash);
-            eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), refundPegoutTransaction, totalAmount);
-        } else {
-            provider.getPegoutsWaitingForConfirmations().add(refundPegoutTransaction, rskExecutionBlock.getNumber());
-        }
-
-        if (activations.isActive(RSKIP428)) {
-            List<Coin> outpointValues = extractOutpointValues(refundPegoutTransaction);
-            eventLogger.logPegoutTransactionCreated(refundPegoutTransaction.getHash(), outpointValues);
-        }
-
-        logger.info(
-            "[generateRejectionRelease] Rejecting peg-in tx built successfully: Refund to address: {}. RskTxHash: {}. Value {}.",
-            btcRefundAddress,
-            rskTxHash,
-            totalAmount
-        );
     }
 
     private void generateRejectionRelease(
