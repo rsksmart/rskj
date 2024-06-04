@@ -101,9 +101,6 @@ class BridgeStorageProviderTest {
     private final NetworkParameters testnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
     private final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
-    private final byte[] bridgeAddressBytes = new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-        (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
-        (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, (byte) 0x00, (byte) 0x00, (byte) 0x06};
 
     private int transactionOffset;
 
@@ -321,7 +318,7 @@ class BridgeStorageProviderTest {
             RskAddress contractAddress = invocation.getArgument(0);
             DataWord address = invocation.getArgument(1);
 
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
@@ -366,7 +363,7 @@ class BridgeStorageProviderTest {
                 RskAddress contractAddress = invocation.getArgument(0);
                 DataWord address = invocation.getArgument(1);
 
-                assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                assertEquals(bridgeAddress, contractAddress);
 
                 if (storageCalls.size() == 1) {
                     Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
@@ -427,7 +424,7 @@ class BridgeStorageProviderTest {
                 RskAddress contractAddress = invocation.getArgument(0);
                 DataWord address = invocation.getArgument(1);
 
-                assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                assertEquals(bridgeAddress, contractAddress);
 
                 if (storageCalls.size() == 1) {
                     Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
@@ -482,8 +479,7 @@ class BridgeStorageProviderTest {
                 DataWord address = invocation.getArgument(1);
                 byte[] data = invocation.getArgument(2);
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                assertArrayEquals(bridgeAddressBytes,
-                    contractAddress.getBytes());
+                assertEquals(bridgeAddress, contractAddress);
                 Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
                 assertArrayEquals(new byte[]{(byte) 0xbb}, data);
                 return null;
@@ -550,7 +546,7 @@ class BridgeStorageProviderTest {
             RskAddress contractAddress = invocation.getArgument(0);
             DataWord address = invocation.getArgument(1);
 
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
@@ -594,7 +590,7 @@ class BridgeStorageProviderTest {
                 RskAddress contractAddress = invocation.getArgument(0);
                 DataWord address = invocation.getArgument(1);
 
-                assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                assertEquals(bridgeAddress, contractAddress);
 
                 if (storageCalls.size() == 1) {
                     Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
@@ -674,7 +670,7 @@ class BridgeStorageProviderTest {
                 RskAddress contractAddress = invocation.getArgument(0);
                 DataWord address = invocation.getArgument(1);
 
-                assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                assertEquals(bridgeAddress, contractAddress);
 
                 if (storageCalls.size() == 1) {
                     Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
@@ -728,7 +724,7 @@ class BridgeStorageProviderTest {
                 DataWord address = invocation.getArgument(1);
                 byte[] data = invocation.getArgument(2);
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                assertEquals(bridgeAddress, contractAddress);
                 Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                 assertArrayEquals(new byte[]{(byte) 0xbb}, data);
                 return null;
@@ -796,7 +792,7 @@ class BridgeStorageProviderTest {
                 byte[] data = invocation.getArgument(2);
 
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is null
-                assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                assertEquals(bridgeAddress, contractAddress);
                 Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                 assertNull(data);
                 return null;
@@ -829,13 +825,13 @@ class BridgeStorageProviderTest {
 
                 if (storageBytesCalls.size() == 1) {
                     // First call is the version setting
-                    assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                    assertEquals(bridgeAddress, contractAddress);
                     Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
                     Assertions.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
                     // Make sure the bytes are set to the correct address in the repo and that what's saved is null
-                    assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                    assertEquals(bridgeAddress, contractAddress);
                     Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                     assertNull(data);
                 }
@@ -867,7 +863,7 @@ class BridgeStorageProviderTest {
             RskAddress contractAddress = invocation.getArgument(0);
             DataWord address = invocation.getArgument(1);
 
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
@@ -909,7 +905,7 @@ class BridgeStorageProviderTest {
                 RskAddress contractAddress = invocation.getArgument(0);
                 DataWord address = invocation.getArgument(1);
 
-                assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                assertEquals(bridgeAddress, contractAddress);
 
                 if (storageCalls.size() == 1) {
                     // First call is storage version getter
@@ -943,7 +939,7 @@ class BridgeStorageProviderTest {
             RskAddress contractAddress = invocation.getArgument(0);
             DataWord address = invocation.getArgument(1);
 
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
@@ -984,7 +980,7 @@ class BridgeStorageProviderTest {
                 RskAddress contractAddress = invocation.getArgument(0);
                 DataWord address = invocation.getArgument(1);
 
-                assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                assertEquals(bridgeAddress, contractAddress);
 
                 if (storageCalls.size() == 1) {
                     // First call is storage version getter
@@ -1017,7 +1013,7 @@ class BridgeStorageProviderTest {
             DataWord address = invocation.getArgument(1);
 
             // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
             Assertions.assertEquals(PENDING_FEDERATION_KEY.getKey(), address);
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
@@ -1045,7 +1041,7 @@ class BridgeStorageProviderTest {
             DataWord address = invocation.getArgument(1);
             byte[] data = invocation.getArgument(2);
             // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
             Assertions.assertEquals(PENDING_FEDERATION_KEY.getKey(), address);
             assertNull(data);
             return null;
@@ -1072,7 +1068,7 @@ class BridgeStorageProviderTest {
             DataWord address = invocation.getArgument(1);
             byte[] data = invocation.getArgument(2);
 
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
 
             if (storageBytesCalls.size() == 1) {
                 Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKey(), address);
@@ -1108,7 +1104,7 @@ class BridgeStorageProviderTest {
             DataWord address = invocation.getArgument(1);
             byte[] data = invocation.getArgument(2);
 
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
 
             if (storageBytesCalls.size() == 1) {
                 Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKey(), address);
@@ -1143,7 +1139,7 @@ class BridgeStorageProviderTest {
             RskAddress contractAddress = invocation.getArgument(0);
             DataWord address = invocation.getArgument(1);
             // Make sure the bytes are got from the correct address in the repo
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
             Assertions.assertEquals(FEDERATION_ELECTION_KEY.getKey(), address);
             return new byte[]{(byte)0xaa};
         });
@@ -1176,7 +1172,7 @@ class BridgeStorageProviderTest {
             RskAddress contractAddress = invocation.getArgument(0);
             DataWord address = invocation.getArgument(1);
             // Make sure the bytes are got from the correct address in the repo
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
             Assertions.assertEquals(FEDERATION_ELECTION_KEY.getKey(), address);
             return null;
         });
@@ -1216,7 +1212,7 @@ class BridgeStorageProviderTest {
                 DataWord address = invocation.getArgument(1);
                 byte[] data = invocation.getArgument(2);
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                assertEquals(bridgeAddress, contractAddress);
                 Assertions.assertEquals(FEDERATION_ELECTION_KEY.getKey(), address);
                 assertArrayEquals(Hex.decode("aabb"), data);
                 return null;
@@ -3288,7 +3284,7 @@ class BridgeStorageProviderTest {
             RskAddress contractAddress = invocation.getArgument(0);
             DataWord address = invocation.getArgument(1);
 
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
@@ -3332,13 +3328,13 @@ class BridgeStorageProviderTest {
 
                 if (storageBytesCalls.size() == 1) {
                     // First call is the version setting
-                    assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                    assertEquals(bridgeAddress, contractAddress);
                     Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
                     Assertions.assertEquals(BigInteger.valueOf(version), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
                     // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                    assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                    assertEquals(bridgeAddress, contractAddress);
                     Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                     assertArrayEquals(new byte[]{(byte) 0xbb}, data);
                 }
@@ -3371,7 +3367,7 @@ class BridgeStorageProviderTest {
             RskAddress contractAddress = invocation.getArgument(0);
             DataWord address = invocation.getArgument(1);
 
-            assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+            assertEquals(bridgeAddress, contractAddress);
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
@@ -3414,13 +3410,13 @@ class BridgeStorageProviderTest {
 
                 if (storageBytesCalls.size() == 1) {
                     // First call is the version setting
-                    assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                    assertEquals(bridgeAddress, contractAddress);
                     Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
                     Assertions.assertEquals(BigInteger.valueOf(version), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
                     // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                    assertArrayEquals(bridgeAddressBytes, contractAddress.getBytes());
+                    assertEquals(bridgeAddress, contractAddress);
                     Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
                     assertArrayEquals(new byte[]{(byte) 0xbb}, data);
                 }
