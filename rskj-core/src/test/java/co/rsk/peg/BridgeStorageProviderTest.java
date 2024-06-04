@@ -76,8 +76,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP123;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP201;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -750,7 +748,7 @@ class BridgeStorageProviderTest {
     @Test
     void saveOldFederation_postMultikey() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(RSKIP123)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
 
         Federation oldFederation = buildMockFederation(100, 200, 300);
         testSaveOldFederation(oldFederation, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, activations);
@@ -759,8 +757,8 @@ class BridgeStorageProviderTest {
     @Test
     void saveOldFederation_postMultikey_RSKIP_201_active_non_standard_erp_fed() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(RSKIP123)).thenReturn(true);
-        when(activations.isActive(RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
         Federation oldFederation = buildMockFederation(100, 200, 300);
 
