@@ -7,33 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class ExchangeRateProviderFactory {
     private static final Logger logger = LoggerFactory.getLogger(ExchangeRateProviderFactory.class);
-
-    public enum XRSourceType {
-        HTTP_GET("HTTP_GET", HttpGetXRProvider.class),
-        ETH_CALL("ETH_CALL", EthCallXRProvider.class);
-
-        private final String type;
-        private final Class<? extends ExchangeRateProvider> providerClass;
-
-        XRSourceType(String type, Class<? extends ExchangeRateProvider> providerClass) {
-            this.type = type;
-            this.providerClass = providerClass;
-        }
-
-        public static Class<? extends ExchangeRateProvider> get(String sourceType) {
-            return Arrays.stream(XRSourceType.values())
-                    .filter(type -> type.type.equalsIgnoreCase(sourceType))
-                    .findFirst()
-                    .map(type -> type.providerClass)
-                    .orElse(null);
-        }
-    }
 
     public static @Nonnull List<ExchangeRateProvider> getProvidersFromSourceConfig(ConfigList minerStableGasPriceSources) {
         return minerStableGasPriceSources
@@ -49,9 +27,9 @@ public class ExchangeRateProviderFactory {
 
         String type = sourceConfig.sourceType();
         if (type == null) {
-            throw new IllegalArgumentException("Missing 'type' for a source in miner stableGasPrice");
+            throw new IllegalArgumentException("A stableGasPrice miner source requires specifying the 'type' attribute in configuration");
         }
-        Class<? extends ExchangeRateProvider> providerClass = XRSourceType.get(type);
+        Class<? extends ExchangeRateProvider> providerClass = ExchangeRateProvider.XRSourceType.get(type);
         if (providerClass == null) {
             logger.error("Unknown 'type' in miner stableGasPrice providers: {}", type);
 

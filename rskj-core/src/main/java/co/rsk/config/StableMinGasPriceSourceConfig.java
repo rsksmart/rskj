@@ -3,6 +3,7 @@ package co.rsk.config;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.List;
 
@@ -10,12 +11,12 @@ public class StableMinGasPriceSourceConfig
 {
     Config sourceConfig;
 
-    public StableMinGasPriceSourceConfig(ConfigObject sourceConfig) {
+    public StableMinGasPriceSourceConfig(@Nonnull ConfigObject sourceConfig) {
         this.sourceConfig = sourceConfig.toConfig();
     }
 
     public String sourceType() {
-        return sourceConfig.getString("type");
+        return sourceConfig.hasPath("type") ? sourceConfig.getString("type") : null;
     }
 
     public String sourceUrl() {
@@ -35,6 +36,9 @@ public class StableMinGasPriceSourceConfig
     }
 
     public String sourceContract() {
+        if (!sourceConfig.hasPath("contract")) {
+            throw new IllegalArgumentException("Contract config is required");
+        }
         return sourceConfig.getString("contract");
     }
 

@@ -1,11 +1,10 @@
 package co.rsk.mine.minGasPrice;
 
-import co.rsk.RskContext;
 import co.rsk.config.StableMinGasPriceSourceConfig;
 
 import java.time.Duration;
 
-import static co.rsk.mine.minGasPrice.ExchangeRateProviderFactory.XRSourceType.HTTP_GET;
+import static co.rsk.mine.minGasPrice.ExchangeRateProvider.XRSourceType.HTTP_GET;
 
 public class HttpGetXRProvider extends ExchangeRateProvider {
     private final String url;

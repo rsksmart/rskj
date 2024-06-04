@@ -1,53 +1,45 @@
 package co.rsk.mine.minGasPrice;
 
 import co.rsk.config.StableMinGasPriceSourceConfig;
-import co.rsk.core.RskAddress;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.util.HexUtils;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionBuilder;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.rpc.parameters.HexNumberParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import javax.annotation.Nonnull;
 import java.util.List;
 
-import static co.rsk.mine.minGasPrice.ExchangeRateProviderFactory.XRSourceType.ETH_CALL;
+import static co.rsk.mine.minGasPrice.ExchangeRateProvider.XRSourceType.ETH_CALL;
 
 public class EthCallXRProvider extends ExchangeRateProvider {
     private final String address;
     private final String method;
     private final List<String> params;
-    private final List<String> inputTypes;
-    private final List<String> outputTypes;
 
-    public EthCallXRProvider(StableMinGasPriceSourceConfig sourceConfig) {
+    Logger logger = LoggerFactory.getLogger(EthCallXRProvider.class);
+
+    public EthCallXRProvider(@Nonnull StableMinGasPriceSourceConfig sourceConfig) {
         this(
                 sourceConfig.sourceContract(),
                 sourceConfig.sourceContractMethod(),
-                sourceConfig.sourceContractMethodParams(),
-                new ArrayList<String>(),
-                new ArrayList<String>()
+                sourceConfig.sourceContractMethodParams()
         );
     }
 
     public EthCallXRProvider(
             String address,
             String method,
-            List<String> params,
-            List<String> inputTypes,
-            List<String> outputTypes
+            List<String> params
     ) {
         super(ETH_CALL);
         this.address = address;
         this.method = method;
         this.params = params;
-        this.inputTypes = inputTypes;
-        this.outputTypes = outputTypes;
     }
 
     public String getAddress() {
@@ -67,16 +59,6 @@ public class EthCallXRProvider extends ExchangeRateProvider {
     public long getPrice(MinGasPriceProvider.ProviderContext context) {
         EthModule ethModule = context.ethModule;
 
-        CallTransaction.Function function = CallTransaction.Function.fromSignature(
-                method,
-                inputTypes.toArray(new String[0]),
-                outputTypes.toArray(new String[0])
-        );
-//        byte[] encodedParams = function.encodeArguments(params);
-//        byte[] data = function.encode(encodedParams);
-//        byte[] fullData = new byte[data.length + encodedParams.length];
-//        System.arraycopy(data, 0, fullData, 0, data.length);
-//        System.arraycopy(encodedParams, 0, fullData, data.length, encodedParams.length);
         HexDataParam dataHex = new HexDataParam(String.join("", params));
         HexAddressParam oracleAddress = new HexAddressParam(address);
         HexNumberParam chainId = new HexNumberParam(ethModule.chainId());
@@ -94,8 +76,13 @@ public class EthCallXRProvider extends ExchangeRateProvider {
                 null
         );
 
-        String hReturn = ethModule.call(callArguments, new BlockIdentifierParam("latest"));
-
-        return HexUtils.jsonHexToLong(hReturn);
+        try {
+            return HexUtils.jsonHexToLong(
+                    ethModule.call(callArguments, new BlockIdentifierParam("latest"))
+            );
+        } catch (Exception e) {
+            logger.error("Error calling eth module", e);
+            return 0;
+        }
     }
 }
