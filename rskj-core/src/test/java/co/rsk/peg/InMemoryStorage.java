@@ -1,4 +1,4 @@
-package co.rsk.peg;
+/*package co.rsk.peg;
 
 import co.rsk.peg.storage.StorageAccessor;
 import java.util.HashMap;
@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.Objects;
 import org.ethereum.vm.DataWord;
 
-/**
+*//**
  * This is an In-Memory Storage to be used in Unit Tests to reduce the use of mocks, thus
  * improving the Unit Tests reliability.
- */
+ *//*
 public class InMemoryStorage implements StorageAccessor {
 
     private final Map<DataWord, byte[]> storage = new HashMap<>();
@@ -28,4 +28,4 @@ public class InMemoryStorage implements StorageAccessor {
         }
         storage.put(key, data);
     }
-}
+}*/

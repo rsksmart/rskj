@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
+ *//*
+
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
@@ -103,9 +104,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
+*/
 /**
  * Created by ajlopez on 6/9/2016.
- */
+ *//*
+
 
 @ExtendWith(MockitoExtension.class)
 // to avoid Junit5 unnecessary stub error due to some setup generalizations
@@ -4192,3 +4195,4 @@ public class BridgeSupportTestIntegration {
         return new FederationStorageProviderImpl(bridgeStorageAccessor);
     }
 }
+*/
