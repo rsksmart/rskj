@@ -435,6 +435,29 @@ class FeePerKbIntegrationTest {
         voteFeePerKb(fifteenthFeePerKbVote, 1);
         //It still has the previous voting round value
         assertFeePerKbValue(fifteenthFeePerKbVote);
+
+        /*
+         *  16th voting: authorized callers vote same current fee per KB value
+         *  Authorizers 1 votes for the same current fee per KB value.
+         *  Authorizer 2 votes  different value
+         *  Authorizer 3 votes for the same current fee per KB value.
+         */
+        Coin sixteenthFeePerKbVote = feePerKbSupport.getFeePerKb();;
+
+        // First vote for a new value
+        voteFeePerKb(sixteenthFeePerKbVote, 0);
+        //It still has the previous voting round value
+        assertFeePerKbValue(fifteenthFeePerKbVote);
+
+        // Second vote for a different value, different authorizer
+        voteFeePerKb(differentFeePerKbVote, 1);
+        //It still has the previous voting round value
+        assertFeePerKbValue(fifteenthFeePerKbVote);
+
+        // Third vote from authorizer 3, same value as the first one voted from authorizer 1
+        voteFeePerKb(sixteenthFeePerKbVote, 2);
+        // Get fee per kb, should return the value voted by authorizer 1 and 3
+        assertFeePerKbValue(sixteenthFeePerKbVote);
     }
 
     private void assertFeePerKbValue(Coin feePerKbExpectedResult) {
