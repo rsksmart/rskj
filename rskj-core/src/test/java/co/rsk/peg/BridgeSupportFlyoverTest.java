@@ -109,8 +109,6 @@ class BridgeSupportFlyoverTest {
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
         FederationConstants federationConstants = spy(bridgeConstants.getFederationConstants());
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(federationConstants).getFederationActivationAge(activations);
         when(bridgeConstants.getFederationConstants()).thenReturn(federationConstants);
 
         Context btcContext = mock(Context.class);
@@ -262,8 +260,6 @@ class BridgeSupportFlyoverTest {
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
         FederationConstants federationConstants = spy(bridgeConstants.getFederationConstants());
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(federationConstants).getFederationActivationAge(activations);
         when(bridgeConstants.getFederationConstants()).thenReturn(federationConstants);
 
         Context btcContext = mock(Context.class);
@@ -419,8 +415,6 @@ class BridgeSupportFlyoverTest {
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
         FederationConstants federationConstants = spy(bridgeConstants.getFederationConstants());
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(federationConstants).getFederationActivationAge(activations);
         when(bridgeConstants.getFederationConstants()).thenReturn(federationConstants);
 
         Context btcContext = mock(Context.class);
@@ -1663,8 +1657,6 @@ class BridgeSupportFlyoverTest {
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
         FederationConstants federationConstants = spy(bridgeConstants.getFederationConstants());
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(federationConstants).getFederationActivationAge(activations);
         when(bridgeConstants.getFederationConstants()).thenReturn(federationConstants);
 
         Context btcContext = mock(Context.class);
@@ -2073,8 +2065,6 @@ class BridgeSupportFlyoverTest {
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
         FederationConstants federationConstants = spy(bridgeConstants.getFederationConstants());
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(federationConstants).getFederationActivationAge(activations);
         when(bridgeConstants.getFederationConstants()).thenReturn(federationConstants);
 
         Context btcContext = mock(Context.class);
@@ -2678,8 +2668,6 @@ class BridgeSupportFlyoverTest {
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
         FederationConstants federationConstants = spy(bridgeConstants.getFederationConstants());
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
-        doReturn(federationActivationAge).when(federationConstants).getFederationActivationAge(activations);
         when(bridgeConstants.getFederationConstants()).thenReturn(federationConstants);
 
         Context btcContext = mock(Context.class);
