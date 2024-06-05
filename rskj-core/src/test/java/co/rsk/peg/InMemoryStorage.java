@@ -15,23 +15,23 @@ public class InMemoryStorage implements StorageAccessor {
     private final Map<DataWord, byte[]> storage = new HashMap<>();
 
     @Override
-    public <T> T safeGetFromRepository(DataWord key, RepositoryDeserializer<T> deserializer) {
+    public <T> T getFromRepository(DataWord key, RepositoryDeserializer<T> deserializer) {
             byte[] data = storage.get(key);
             return deserializer.deserialize(data);
     }
 
     @Override
-    public <T> void safeSaveToRepository(DataWord key, T value, RepositorySerializer<T> serializer) {
+    public <T> void saveToRepository(DataWord key, T value, RepositorySerializer<T> serializer) {
         byte[] data = null;
         if (!Objects.isNull(value)) {
             data = serializer.serialize(value);
         }
 
-        safeSaveToRepository(key, data);
+        saveToRepository(key, data);
     }
 
     @Override
-    public void safeSaveToRepository(DataWord key, byte[] data) {
+    public void saveToRepository(DataWord key, byte[] data) {
         storage.put(key, data);
     }
 }

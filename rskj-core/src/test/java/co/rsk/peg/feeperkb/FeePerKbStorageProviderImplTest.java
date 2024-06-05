@@ -36,7 +36,7 @@ class FeePerKbStorageProviderImplTest {
     @Test
     void getFeePerKb() {
         Optional<Coin> feePerKb = Optional.of(Coin.SATOSHI);
-        when(bridgeStorageAccessor.safeGetFromRepository(any(), any())).thenReturn(feePerKb.get());
+        when(bridgeStorageAccessor.getFromRepository(any(), any())).thenReturn(feePerKb.get());
 
         Optional<Coin> actualResult = feePerKbStorageProvider.getFeePerKb();
 
@@ -59,7 +59,7 @@ class FeePerKbStorageProviderImplTest {
         AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
         ABICallElection abiCallElection = BridgeSerializationUtils.deserializeElection(new byte[0],
             feePerKbConstants.getFeePerKbChangeAuthorizer());
-        when(bridgeStorageAccessor.safeGetFromRepository(any(), any())).thenReturn(abiCallElection);
+        when(bridgeStorageAccessor.getFromRepository(any(), any())).thenReturn(abiCallElection);
 
         ABICallElection actualResult = feePerKbStorageProvider.getFeePerKbElection(authorizer);
 
@@ -69,21 +69,21 @@ class FeePerKbStorageProviderImplTest {
     @Test
     void save() {
         feePerKbStorageProvider.setFeePerKb(Coin.SATOSHI);
-        doNothing().when(bridgeStorageAccessor).safeSaveToRepository(any(), any(), any());
-        doNothing().when(bridgeStorageAccessor).safeSaveToRepository(any(), any(), any());
+        doNothing().when(bridgeStorageAccessor).saveToRepository(any(), any(), any());
+        doNothing().when(bridgeStorageAccessor).saveToRepository(any(), any(), any());
 
         feePerKbStorageProvider.save();
 
-        verify(bridgeStorageAccessor, times(1)).safeSaveToRepository(any(), any(), any());
+        verify(bridgeStorageAccessor, times(1)).saveToRepository(any(), any(), any());
     }
 
     @Test
     void save_whenFeePerKbAndFeePerKbElectionAreNull() {
-        doNothing().when(bridgeStorageAccessor).safeSaveToRepository(any(), any(), any());
-        doNothing().when(bridgeStorageAccessor).safeSaveToRepository(any(), any(), any());
+        doNothing().when(bridgeStorageAccessor).saveToRepository(any(), any(), any());
+        doNothing().when(bridgeStorageAccessor).saveToRepository(any(), any(), any());
 
         feePerKbStorageProvider.save();
 
-        verify(bridgeStorageAccessor, never()).safeSaveToRepository(any(), any(), any());
+        verify(bridgeStorageAccessor, never()).saveToRepository(any(), any(), any());
     }
 }
