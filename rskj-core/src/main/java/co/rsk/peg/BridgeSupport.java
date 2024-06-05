@@ -20,10 +20,9 @@ package co.rsk.peg;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
-
-import static co.rsk.peg.whitelist.WhitelistResponseCode.ALREADY_EXISTS_ERROR;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.ADDRESS_ALREADY_WHITELISTED;
 import static co.rsk.peg.whitelist.WhitelistResponseCode.GENERIC_ERROR;
-import static co.rsk.peg.whitelist.WhitelistResponseCode.INVALID_ADDRESS_FORMAT_ERROR;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.INVALID_ADDRESS_FORMAT;
 import static co.rsk.peg.whitelist.WhitelistResponseCode.SUCCESS;
 import static co.rsk.peg.whitelist.WhitelistResponseCode.UNKNOWN_ERROR;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
@@ -2081,7 +2080,7 @@ public class BridgeSupport {
             return this.addLockWhitelistAddress(tx, new OneOffWhiteListEntry(address, maxTransferValueCoin));
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return INVALID_ADDRESS_FORMAT_ERROR.getCode();
+            return INVALID_ADDRESS_FORMAT.getCode();
         }
     }
 
@@ -2091,7 +2090,7 @@ public class BridgeSupport {
             return this.addLockWhitelistAddress(tx, new UnlimitedWhiteListEntry(address));
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return INVALID_ADDRESS_FORMAT_ERROR.getCode();
+            return INVALID_ADDRESS_FORMAT.getCode();
         }
     }
 
@@ -2104,7 +2103,7 @@ public class BridgeSupport {
 
         try {
             if (whitelist.isWhitelisted(entry.address())) {
-                return ALREADY_EXISTS_ERROR.getCode();
+                return ADDRESS_ALREADY_WHITELISTED.getCode();
             }
             whitelist.put(entry.address(), entry);
             return SUCCESS.getCode();
