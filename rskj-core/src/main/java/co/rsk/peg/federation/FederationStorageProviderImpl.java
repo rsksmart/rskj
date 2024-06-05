@@ -358,13 +358,11 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         byte[] serializedPendingFederation = serializePendingFederation(activations);
 
-        if (!activations.isActive(RSKIP123)) {
-            bridgeStorageAccessor.safeSaveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedPendingFederation);
-            return;
+        if (activations.isActive(RSKIP123)) {
+            // we only need to save the standard part of the fed since the emergency part is constant
+            saveFederationFormatVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION.getFormatVersion());
         }
 
-        // we only need to save the standard part of the fed since the emergency part is constant
-        saveFederationFormatVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION.getFormatVersion());
         bridgeStorageAccessor.safeSaveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedPendingFederation);
     }
 
