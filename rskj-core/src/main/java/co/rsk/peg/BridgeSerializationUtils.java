@@ -108,15 +108,13 @@ public class BridgeSerializationUtils {
         byte[][] bytes = new byte[nutxos][];
         int n = 0;
 
-        try {
-            for (UTXO utxo : list) {
-                try (ByteArrayOutputStream ostream = new ByteArrayOutputStream()) {
-                    utxo.serializeToStream(ostream);
-                    bytes[n++] = RLP.encodeElement(ostream.toByteArray());
-                }
+        for (UTXO utxo : list) {
+            try (ByteArrayOutputStream ostream = new ByteArrayOutputStream()) {
+                utxo.serializeToStream(ostream);
+                bytes[n++] = RLP.encodeElement(ostream.toByteArray());
+            } catch (IOException ioe) {
+                throw new SerializationException(String.format("Unable to serialize UTXO %s from UTXOs list %s", utxo, list), ioe);
             }
-        } catch (IOException ioe) {
-            throw new SerializationException("Unable to serialize UTXO list ", ioe);
         }
 
         return RLP.encodeList(bytes);
@@ -133,15 +131,15 @@ public class BridgeSerializationUtils {
 
         int nutxos = rlpList.size();
 
-        try {
-            for (int k = 0; k < nutxos; k++) {
-                byte[] utxoBytes = rlpList.get(k).getRLPData();
-                InputStream istream = new ByteArrayInputStream(utxoBytes);
+        for (int k = 0; k < nutxos; k++) {
+            byte[] utxoBytes = rlpList.get(k).getRLPData();
+            InputStream istream = new ByteArrayInputStream(utxoBytes);
+            try {
                 UTXO utxo = new UTXO(istream);
                 list.add(utxo);
+            } catch (IOException ioe) {
+                throw new SerializationException(String.format("Unable to deserialize %d th UTXO %s", k, Arrays.toString(data)), ioe);
             }
-        } catch (IOException ioe) {
-            throw new SerializationException("Unable to deserialize UTXO list ", ioe);
         }
 
         return list;
