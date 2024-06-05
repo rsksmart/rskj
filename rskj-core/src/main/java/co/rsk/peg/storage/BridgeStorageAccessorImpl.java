@@ -15,15 +15,15 @@ public class BridgeStorageAccessorImpl implements StorageAccessor {
     }
 
     @Override
-    public <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
-        byte[] data = repository.getStorageBytes(CONTRACT_ADDRESS, keyAddress);
+    public <T> T getFromRepository(DataWord key, RepositoryDeserializer<T> deserializer) {
+        byte[] data = repository.getStorageBytes(CONTRACT_ADDRESS, key);
         return deserializer.deserialize(data);
     }
 
     @Override
-    public <T> void saveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
+    public <T> void saveToRepository(DataWord key, T object, RepositorySerializer<T> serializer) {
         byte[] serializedData = getSerializedData(object, serializer);
-        saveToRepository(addressKey, serializedData);
+        saveToRepository(key, serializedData);
     }
 
     private <T> byte[] getSerializedData(T object, RepositorySerializer<T> serializer) {
@@ -36,7 +36,7 @@ public class BridgeStorageAccessorImpl implements StorageAccessor {
     }
 
     @Override
-    public void saveToRepository(DataWord addressKey, byte[] serializedData) {
-        repository.addStorageBytes(CONTRACT_ADDRESS, addressKey, serializedData);
+    public void saveToRepository(DataWord key, byte[] serializedData) {
+        repository.addStorageBytes(CONTRACT_ADDRESS, key, serializedData);
     }
 }
