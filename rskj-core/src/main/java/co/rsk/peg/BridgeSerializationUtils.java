@@ -116,7 +116,7 @@ public class BridgeSerializationUtils {
                 }
             }
         } catch (IOException ioe) {
-            throw new UncheckedIOException("Unable to serialize UTXO list ", ioe);
+            throw new SerializationException("Unable to serialize UTXO list ", ioe);
         }
 
         return RLP.encodeList(bytes);
@@ -141,7 +141,7 @@ public class BridgeSerializationUtils {
                 list.add(utxo);
             }
         } catch (IOException ioe) {
-            throw new UncheckedIOException("Unable to deserialize UTXO list ", ioe);
+            throw new SerializationException("Unable to deserialize UTXO list ", ioe);
         }
 
         return list;
