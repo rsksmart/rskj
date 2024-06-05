@@ -20,6 +20,12 @@ package co.rsk.peg;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
+
+import static co.rsk.peg.whitelist.WhitelistResponseCode.ALREADY_EXISTS_ERROR;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.GENERIC_ERROR;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.INVALID_ADDRESS_FORMAT_ERROR;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.SUCCESS;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.UNKNOWN_ERROR;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -84,12 +90,6 @@ public class BridgeSupport {
     public static final RskAddress BURN_ADDRESS = new RskAddress("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
     public static final int MAX_RELEASE_ITERATIONS = 30;
-
-    public static final Integer LOCK_WHITELIST_GENERIC_ERROR_CODE = -10;
-    public static final Integer LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
-    public static final Integer LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE = -1;
-    public static final Integer LOCK_WHITELIST_UNKNOWN_ERROR_CODE = 0;
-    public static final Integer LOCK_WHITELIST_SUCCESS_CODE = 1;
 
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE = -1;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE = -2;
@@ -2081,7 +2081,7 @@ public class BridgeSupport {
             return this.addLockWhitelistAddress(tx, new OneOffWhiteListEntry(address, maxTransferValueCoin));
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
+            return INVALID_ADDRESS_FORMAT_ERROR.getCode();
         }
     }
 
@@ -2091,27 +2091,27 @@ public class BridgeSupport {
             return this.addLockWhitelistAddress(tx, new UnlimitedWhiteListEntry(address));
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
+            return INVALID_ADDRESS_FORMAT_ERROR.getCode();
         }
     }
 
     private Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry entry) {
         if (!isLockWhitelistChangeAuthorized(tx)) {
-            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
+            return GENERIC_ERROR.getCode();
         }
 
         LockWhitelist whitelist = provider.getLockWhitelist();
 
         try {
             if (whitelist.isWhitelisted(entry.address())) {
-                return LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE;
+                return ALREADY_EXISTS_ERROR.getCode();
             }
             whitelist.put(entry.address(), entry);
-            return LOCK_WHITELIST_SUCCESS_CODE;
+            return SUCCESS.getCode();
         } catch (Exception e) {
             logger.error("Unexpected error in addLockWhitelistAddress: {}", e.getMessage());
             panicProcessor.panic("lock-whitelist", e.getMessage());
-            return LOCK_WHITELIST_UNKNOWN_ERROR_CODE;
+            return UNKNOWN_ERROR.getCode();
         }
     }
 
@@ -2132,7 +2132,7 @@ public class BridgeSupport {
      */
     public Integer removeLockWhitelistAddress(Transaction tx, String addressBase58) {
         if (!isLockWhitelistChangeAuthorized(tx)) {
-            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
+            return GENERIC_ERROR.getCode();
         }
 
         LockWhitelist whitelist = provider.getLockWhitelist();
@@ -2170,7 +2170,7 @@ public class BridgeSupport {
      */
     public Integer setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI) throws IOException, BlockStoreException {
         if (!isLockWhitelistChangeAuthorized(tx)) {
-            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
+            return GENERIC_ERROR.getCode();
         }
         LockWhitelist lockWhitelist = provider.getLockWhitelist();
         if (lockWhitelist.isDisableBlockSet()) {
