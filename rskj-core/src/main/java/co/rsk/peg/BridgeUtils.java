@@ -35,6 +35,7 @@ import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -468,7 +469,8 @@ public final class BridgeUtils {
     }
 
     private static boolean isFromLockWhitelistChangeAuthorizedSender(Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
-        AddressBasedAuthorizer authorizer = bridgeConfiguration.getLockWhitelistChangeAuthorizer();
+        WhitelistConstants whitelistConstants = bridgeConfiguration.getWhitelistConstants();
+        AddressBasedAuthorizer authorizer = whitelistConstants.getLockWhitelistChangeAuthorizer();
         return authorizer.isAuthorized(rskTx, signatureCache);
     }
 

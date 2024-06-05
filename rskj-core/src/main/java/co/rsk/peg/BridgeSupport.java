@@ -49,6 +49,7 @@ import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
+import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
@@ -2116,7 +2117,8 @@ public class BridgeSupport {
     }
 
     private boolean isLockWhitelistChangeAuthorized(Transaction tx) {
-        AddressBasedAuthorizer authorizer = bridgeConstants.getLockWhitelistChangeAuthorizer();
+        WhitelistConstants whitelistConstants = bridgeConstants.getWhitelistConstants();
+        AddressBasedAuthorizer authorizer = whitelistConstants.getLockWhitelistChangeAuthorizer();
 
         return authorizer.isAuthorized(tx, signatureCache);
     }
