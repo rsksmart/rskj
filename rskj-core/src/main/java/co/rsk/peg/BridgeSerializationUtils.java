@@ -39,10 +39,7 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -105,23 +102,27 @@ public class BridgeSerializationUtils {
         return map;
     }
 
-    public static byte[] serializeUTXOList(List<UTXO> list) throws IOException {
+    public static byte[] serializeUTXOList(List<UTXO> list) {
         int nutxos = list.size();
 
         byte[][] bytes = new byte[nutxos][];
         int n = 0;
 
-        for (UTXO utxo : list) {
-            try (ByteArrayOutputStream ostream = new ByteArrayOutputStream()) {
-                utxo.serializeToStream(ostream);
-                bytes[n++] = RLP.encodeElement(ostream.toByteArray());
+        try {
+            for (UTXO utxo : list) {
+                try (ByteArrayOutputStream ostream = new ByteArrayOutputStream()) {
+                    utxo.serializeToStream(ostream);
+                    bytes[n++] = RLP.encodeElement(ostream.toByteArray());
+                }
             }
+        } catch (IOException ioe) {
+            throw new UncheckedIOException("Unable to serialize UTXO list ", ioe);
         }
 
         return RLP.encodeList(bytes);
     }
 
-    public static List<UTXO> deserializeUTXOList(byte[] data) throws IOException {
+    public static List<UTXO> deserializeUTXOList(byte[] data) {
         List<UTXO> list = new ArrayList<>();
 
         if (data == null || data.length == 0) {
@@ -132,11 +133,15 @@ public class BridgeSerializationUtils {
 
         int nutxos = rlpList.size();
 
-        for (int k = 0; k < nutxos; k++) {
-            byte[] utxoBytes = rlpList.get(k).getRLPData();
-            InputStream istream = new ByteArrayInputStream(utxoBytes);
-            UTXO utxo = new UTXO(istream);
-            list.add(utxo);
+        try {
+            for (int k = 0; k < nutxos; k++) {
+                byte[] utxoBytes = rlpList.get(k).getRLPData();
+                InputStream istream = new ByteArrayInputStream(utxoBytes);
+                UTXO utxo = new UTXO(istream);
+                list.add(utxo);
+            }
+        } catch (IOException ioe) {
+            throw new UncheckedIOException("Unable to deserialize UTXO list ", ioe);
         }
 
         return list;

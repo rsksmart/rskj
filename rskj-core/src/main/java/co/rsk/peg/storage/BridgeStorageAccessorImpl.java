@@ -5,8 +5,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 
-import java.io.IOException;
-
 public class BridgeStorageAccessorImpl implements StorageAccessor {
 
     private static final RskAddress CONTRACT_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
@@ -18,29 +16,21 @@ public class BridgeStorageAccessorImpl implements StorageAccessor {
 
     @Override
     public <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
-        try {
-            return getFromRepository(keyAddress, deserializer);
-        } catch (IOException ioe) {
-            throw new StorageAccessException("Unable to get from repository: " + keyAddress, ioe);
-        }
+        return getFromRepository(keyAddress, deserializer);
     }
 
-    private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
+    private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
         byte[] data = repository.getStorageBytes(CONTRACT_ADDRESS, keyAddress);
         return deserializer.deserialize(data);
     }
 
     @Override
     public <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
-        try {
-            byte[] serializedData = getSerializedData(object, serializer);
-            safeSaveToRepository(addressKey, serializedData);
-        } catch (IOException ioe) {
-            throw new StorageAccessException("Unable to save to repository: " + addressKey, ioe);
-        }
+        byte[] serializedData = getSerializedData(object, serializer);
+        safeSaveToRepository(addressKey, serializedData);
     }
 
-    private <T> byte[] getSerializedData(T object, RepositorySerializer<T> serializer) throws IOException {
+    private <T> byte[] getSerializedData(T object, RepositorySerializer<T> serializer) {
         byte[] data = null;
         if (object != null) {
             data = serializer.serialize(object);

@@ -26,6 +26,12 @@ public class InMemoryStorage implements StorageAccessor {
         if (!Objects.isNull(value)) {
             data = serializer.serialize(value);
         }
+
+        safeSaveToRepository(key, data);
+    }
+
+    @Override
+    public void safeSaveToRepository(DataWord key, byte[] data) {
         storage.put(key, data);
     }
 }
