@@ -5,8 +5,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 
-import java.io.IOException;
-
 public class BridgeStorageAccessorImpl implements StorageAccessor {
 
     private static final RskAddress CONTRACT_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
@@ -17,30 +15,18 @@ public class BridgeStorageAccessorImpl implements StorageAccessor {
     }
 
     @Override
-    public <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
-        try {
-            return getFromRepository(keyAddress, deserializer);
-        } catch (IOException ioe) {
-            throw new StorageAccessException("Unable to get from repository: " + keyAddress, ioe);
-        }
-    }
-
-    private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
-        byte[] data = repository.getStorageBytes(CONTRACT_ADDRESS, keyAddress);
+    public <T> T getFromRepository(DataWord key, RepositoryDeserializer<T> deserializer) {
+        byte[] data = repository.getStorageBytes(CONTRACT_ADDRESS, key);
         return deserializer.deserialize(data);
     }
 
     @Override
-    public <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
-        try {
-            byte[] serializedData = getSerializedData(object, serializer);
-            safeSaveToRepository(addressKey, serializedData);
-        } catch (IOException ioe) {
-            throw new StorageAccessException("Unable to save to repository: " + addressKey, ioe);
-        }
+    public <T> void saveToRepository(DataWord key, T object, RepositorySerializer<T> serializer) {
+        byte[] serializedData = getSerializedData(object, serializer);
+        saveToRepository(key, serializedData);
     }
 
-    private <T> byte[] getSerializedData(T object, RepositorySerializer<T> serializer) throws IOException {
+    private <T> byte[] getSerializedData(T object, RepositorySerializer<T> serializer) {
         byte[] data = null;
         if (object != null) {
             data = serializer.serialize(object);
@@ -50,7 +36,7 @@ public class BridgeStorageAccessorImpl implements StorageAccessor {
     }
 
     @Override
-    public void safeSaveToRepository(DataWord addressKey, byte[] serializedData) {
-        repository.addStorageBytes(CONTRACT_ADDRESS, addressKey, serializedData);
+    public void saveToRepository(DataWord key, byte[] serializedData) {
+        repository.addStorageBytes(CONTRACT_ADDRESS, key, serializedData);
     }
 }
