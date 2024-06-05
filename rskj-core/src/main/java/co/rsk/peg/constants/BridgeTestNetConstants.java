@@ -39,7 +39,6 @@ public class BridgeTestNetConstants extends BridgeConstants {
         federationConstants = FederationTestNetConstants.getInstance();
         whitelistConstants = WhitelistTestNetConstants.getInstance();
 
-
         btc2RskMinimumAcceptableConfirmations = 10;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
         rsk2BtcMinimumAcceptableConfirmations = 10;
