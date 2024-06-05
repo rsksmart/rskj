@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import co.rsk.peg.whitelist.constants.WhitelistTestNetConstants;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -36,6 +37,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
     BridgeTestNetConstants() {
         btcParamsString = NetworkParameters.ID_TESTNET;
         feePerKbConstants = FeePerKbTestNetConstants.getInstance();
+        whitelistConstants = WhitelistTestNetConstants.getInstance();
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9")
@@ -82,16 +84,6 @@ public class BridgeTestNetConstants extends BridgeConstants {
         federationChangeAuthorizer = new AddressBasedAuthorizer(
             federationChangeAuthorizedKeys,
             AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
-        );
-
-        // Passphrases are kept private
-        List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
-            "04bf7e3bca7f7c58326382ed9c2516a8773c21f1b806984bb1c5c33bd18046502d97b28c0ea5b16433fbb2b23f14e95b36209f304841e814017f1ede1ecbdcfce3"
-        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
-
-        lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
-            lockWhitelistAuthorizedKeys,
-            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
         federationActivationAgeLegacy = 60L;

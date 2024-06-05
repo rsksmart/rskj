@@ -7,6 +7,7 @@ import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import com.google.common.collect.Lists;
 import java.time.ZonedDateTime;
+import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
     private BridgeMainNetConstants() {
         btcParamsString = NetworkParameters.ID_MAINNET;
         feePerKbConstants = FeePerKbMainNetConstants.getInstance();
+        whitelistConstants = WhitelistMainNetConstants.getInstance();
 
         BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2"));
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344"));
@@ -67,15 +69,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
         federationChangeAuthorizer = new AddressBasedAuthorizer(
             federationChangeAuthorizedKeys,
             AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
-        );
-
-        List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
-            "041a2449e9d63409c5a8ea3a21c4109b1a6634ee88fd57176d45ea46a59713d5e0b688313cf252128a3e49a0b2effb4b413e5a2525a6fa5894d059f815c9d9efa6"
-        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
-
-        lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
-            lockWhitelistAuthorizedKeys,
-            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
         federationActivationAgeLegacy = 18500L;
