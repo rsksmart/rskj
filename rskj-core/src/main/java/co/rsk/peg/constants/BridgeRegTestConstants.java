@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import co.rsk.peg.whitelist.constants.WhitelistRegTestConstants;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +51,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
         feePerKbConstants = FeePerKbRegTestConstants.getInstance();
+        whitelistConstants = WhitelistRegTestConstants.getInstance();
 
         genesisFederationPublicKeys = federationPublicKeys;
         genesisFederationCreationTime = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
@@ -87,16 +89,6 @@ public class BridgeRegTestConstants extends BridgeConstants {
         fundsMigrationAgeSinceActivationBegin = 15L;
         fundsMigrationAgeSinceActivationEnd = 150L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 150L;
-
-        // Key generated with GenNodeKey using generator 'auth-lock-whitelist'
-        List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
-            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
-        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
-
-        lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
-            lockWhitelistAuthorizedKeys,
-            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
-        );
 
         initialLockingCap = Coin.COIN.multiply(1_000L); // 1_000 BTC
 
