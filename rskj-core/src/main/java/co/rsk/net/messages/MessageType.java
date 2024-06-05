@@ -291,7 +291,7 @@ public enum MessageType {
     },
     ;
 
-    private int type;
+    private final int type;
 
     MessageType(int type) {
         this.type = type;

@@ -69,15 +69,13 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     }
 
     private void tryStartSyncing() {
-        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
-        Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
-
         logger.trace("Starting tryStartSyncing");
-        if (tryStartSnapshotSync(bestPeerOpt, peerBestBlockNumOpt)) {
+
+        if (tryStartSnapshotSync()) {
             return;
         }
 
-        if (tryStartBlockForwardSync(bestPeerOpt, peerBestBlockNumOpt)) {
+        if (tryStartBlockForwardSync()) {
             return;
         }
 
@@ -88,7 +86,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         syncEventsHandler.onLongSyncUpdate(false, null);
     }
 
-    private boolean tryStartSnapshotSync(Optional<Peer> bestPeerOpt, Optional<Long> peerBestBlockNumOpt) {
+    private boolean tryStartSnapshotSync() {
         if (!syncConfiguration.isSnapSyncEnabled()) {
             logger.trace("Snap syncing disabled");
             return false;
@@ -97,6 +95,10 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         // TODO(snap-poc) deal with multiple peers logic here
         // TODO: To be handled when we implement the multiple peers
         //List<Peer> bestPeers = peersInformation.getBestPeerCandidates();
+
+        // TODO: for now, use pre-configured snap boot nodes instead (until snap nodes discovery is implemented)
+        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
+        Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
 
         if (!bestPeerOpt.isPresent() || !peerBestBlockNumOpt.isPresent()) {
             logger.trace("Snap syncing not possible, no valid peer");
@@ -123,7 +125,10 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         return true;
     }
 
-    private boolean tryStartBlockForwardSync(Optional<Peer> bestPeerOpt, Optional<Long> peerBestBlockNumOpt) {
+    private boolean tryStartBlockForwardSync() {
+        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
+        Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
+
         if (!bestPeerOpt.isPresent() || !peerBestBlockNumOpt.isPresent()) {
             logger.trace("Forward syncing not possible, no valid peer");
             return false;
