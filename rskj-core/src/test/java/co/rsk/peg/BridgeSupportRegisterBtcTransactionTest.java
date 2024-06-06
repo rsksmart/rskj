@@ -211,9 +211,9 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
         verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
 
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
-        Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
     }
 
     private void assertInvalidPeginV1UndeterminedSenderIsRejected(BtcTransaction btcTransaction) throws IOException {
