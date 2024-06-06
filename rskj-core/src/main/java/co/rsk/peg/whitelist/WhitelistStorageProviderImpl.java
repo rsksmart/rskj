@@ -23,14 +23,14 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
     private LockWhitelist lockWhitelist;
     private final NetworkParameters networkParameters;
     private final ActivationConfig.ForBlock activations;
-    private final StorageAccessor storageAccessor;
+    private final StorageAccessor bridgeStorageAccessor;
 
     public WhitelistStorageProviderImpl(NetworkParameters networkParameters,
         ActivationConfig.ForBlock activations,
-        StorageAccessor storageAccessor) {
+        StorageAccessor bridgeStorageAccessor) {
         this.networkParameters = networkParameters;
         this.activations = activations;
-        this.storageAccessor = storageAccessor;
+        this.bridgeStorageAccessor = bridgeStorageAccessor;
     }
 
     @Override
@@ -41,11 +41,11 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
 
         List<OneOffWhiteListEntry> oneOffEntries = lockWhitelist.getAll(OneOffWhiteListEntry.class);
         Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight());
-        storageAccessor.safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY.getKey(), pairValue, BridgeSerializationUtils::serializeOneOffLockWhitelist);
+        bridgeStorageAccessor.safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY.getKey(), pairValue, BridgeSerializationUtils::serializeOneOffLockWhitelist);
 
         if (activations.isActive(RSKIP87)) {
             List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getAll(UnlimitedWhiteListEntry.class);
-            storageAccessor.safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY.getKey(), unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
+            bridgeStorageAccessor.safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY.getKey(), unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
         }
     }
 
@@ -56,7 +56,7 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
         }
 
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData =
-            storageAccessor.safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY.getKey(),
+            bridgeStorageAccessor.safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY.getKey(),
                 data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters));
 
         if (oneOffWhitelistAndDisableBlockHeightData == null) {
@@ -68,7 +68,7 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
 
         if (activations.isActive(RSKIP87)) {
             whitelistedAddresses.putAll(
-                storageAccessor.safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY.getKey(),
+                bridgeStorageAccessor.safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY.getKey(),
                     data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data,
                         networkParameters)));
         }
