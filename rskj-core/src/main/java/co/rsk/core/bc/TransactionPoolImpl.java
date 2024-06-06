@@ -80,6 +80,8 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final GasPriceTracker gasPriceTracker;
 
+    private final ClaimTransactionValidator claimTxValidator;
+
     @java.lang.SuppressWarnings("squid:S107")
     public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker) {
         this.config = config;
@@ -97,7 +99,11 @@ public class TransactionPoolImpl implements TransactionPool {
         pendingTransactions = new TransactionSet(this.signatureCache);
         queuedTransactions = new TransactionSet(this.signatureCache);
 
-        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots(), signatureCache);
+        this.validator = new TxPendingValidator(
+                this.config.getNetworkConstants(),
+                this.config.getActivationConfig(),
+                this.config.getNumOfAccountSlots(),
+                signatureCache);
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
@@ -106,6 +112,8 @@ public class TransactionPoolImpl implements TransactionPool {
         if (this.quotaChecker != null && this.config.isAccountTxRateLimitEnabled() && this.config.accountTxRateLimitCleanerPeriod() > 0) {
             this.accountTxRateLimitCleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxQuotaCleanerTimer"));
         }
+
+        this.claimTxValidator = new ClaimTransactionValidator(this.signatureCache, this.config.getNetworkConstants());
     }
 
     @Override
@@ -456,7 +464,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
-        return validator.isValid(tx, bestBlock, currentRepository.getAccountState(tx.getSender(signatureCache)));
+        return validator.isValid(tx, bestBlock, currentRepository.getAccountState(tx.getSender(signatureCache)), currentRepository);
     }
 
     /**
@@ -477,7 +485,16 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0;
+
+        if(costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0) {
+            return true;
+        }
+
+        if(claimTxValidator.isFeatureActive(config.getActivationConfig().forBlock(bestBlock.getNumber()))) {
+            return claimTxValidator.canPayPendingAndNewClaimTx(newTx, currentRepository, transactions);
+        }
+
+        return false;
     }
 
     private Coin getTxBaseCost(Transaction tx) {
@@ -493,5 +510,4 @@ public class TransactionPoolImpl implements TransactionPool {
     private long getTransactionCost(Transaction tx, long number) {
         return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number), signatureCache);
     }
-
 }

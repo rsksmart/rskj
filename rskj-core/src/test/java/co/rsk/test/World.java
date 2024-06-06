@@ -184,7 +184,9 @@ public class World {
                             programInvokeFactory,
                             new PrecompiledContracts(config, bridgeSupportFactory, blockTxSignatureCache),
                             blockTxSignatureCache
-                    )
+                    ),
+                    config.getNetworkConstants(),
+                    blockTxSignatureCache
             );
         }
 

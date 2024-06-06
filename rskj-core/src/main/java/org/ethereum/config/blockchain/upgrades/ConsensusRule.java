@@ -93,6 +93,7 @@ public enum ConsensusRule {
     RSKIP412("rskip412"), // From EIP-3198 BASEFEE opcode
     RSKIP415("rskip415"),
     RSKIP417("rskip417"),
+    RSKIP432("rskip432"), // From RSKIP-432 RbtcSwap
     ;
 
     private String configKey;

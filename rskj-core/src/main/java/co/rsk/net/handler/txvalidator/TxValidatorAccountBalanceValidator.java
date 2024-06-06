@@ -19,11 +19,13 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.core.bc.ClaimTransactionValidator;
 import co.rsk.net.TransactionValidationResult;
-import org.ethereum.core.AccountState;
+import org.ethereum.config.Constants;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -31,23 +33,31 @@ import java.math.BigInteger;
  */
 public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
 
+    private final ClaimTransactionValidator claimTransactionValidator;
+
+    public TxValidatorAccountBalanceValidator(
+            Constants constants,
+            SignatureCache signatureCache) {
+        this.claimTransactionValidator = new ClaimTransactionValidator(signatureCache, constants);
+    }
+
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, ValidationArgs validationArgs, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (isFreeTx) {
             return TransactionValidationResult.ok();
         }
 
-        if (state == null) {
+        if (validationArgs.getAccountState() == null) {
             return TransactionValidationResult.withError("the sender account doesn't exist");
         }
 
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
         Coin maximumPrice = tx.getGasPrice().multiply(txGasLimit);
-        if (state.getBalance().compareTo(maximumPrice) >= 0) {
+        if (validationArgs.getAccountState().getBalance().compareTo(maximumPrice) >= 0
+                || claimTransactionValidator.isClaimTxAndValid(tx, validationArgs.getRepositorySnapshot(), validationArgs.getActivationConfig())) {
             return TransactionValidationResult.ok();
         }
 
         return TransactionValidationResult.withError("insufficient funds");
     }
-
 }
