@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
