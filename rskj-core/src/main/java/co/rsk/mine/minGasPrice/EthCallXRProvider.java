@@ -23,8 +23,7 @@ import static co.rsk.mine.minGasPrice.ExchangeRateProvider.XRSourceType.ETH_CALL
 public class EthCallXRProvider extends ExchangeRateProvider {
     private final String fromAddress;
     private final String address;
-    private final String method;
-    private final List<String> params;
+    private final String data;
 
     Logger logger = LoggerFactory.getLogger(EthCallXRProvider.class);
 
@@ -32,22 +31,19 @@ public class EthCallXRProvider extends ExchangeRateProvider {
         this(
                 sourceConfig.sourceFrom(),
                 sourceConfig.sourceContract(),
-                sourceConfig.sourceContractMethod(),
-                sourceConfig.sourceContractMethodParams()
+                sourceConfig.sourceContractData()
         );
     }
 
     public EthCallXRProvider(
             String fromAddress,
             String address,
-            String method,
-            List<String> params
+            String data
     ) {
         super(ETH_CALL);
         this.fromAddress = fromAddress;
         this.address = address;
-        this.method = method;
-        this.params = params;
+        this.data = data;
     }
 
     public String getFromAddress() {
@@ -58,55 +54,24 @@ public class EthCallXRProvider extends ExchangeRateProvider {
         return address;
     }
 
-    public String getMethod() {
-        return method;
-    }
-
-    public List<String> getParams() {
-        return params;
-    }
-
-    // TODO: Not sure we actually need this, but couldn't find anything to deconstruct function signature
-    // TODO: if useful, however, we could move it to an override CallTransaction.Function.fromFunctionSignature
-    public static CallTransaction.Function makeFunctionFromSignature(String functionSignature) {
-        Pattern pattern = Pattern.compile("([a-zA-Z0-9_]+)\\(([^)]*)\\)\\(([^)]*)\\)");
-        Matcher matcher = pattern.matcher(functionSignature);
-
-        if (matcher.matches()) { // TODO: this could proabably improve too
-            String methodName = matcher.group(1);
-            String[] inputTypes = matcher.group(2).trim().isEmpty() ?  new String[0] : matcher.group(2).split(",");
-            String[] outputTypes = matcher.group(3).trim().isEmpty() ?  new String[0] : matcher.group(3).split(",");
-
-            return CallTransaction.Function.fromSignature(
-                    methodName,
-                    inputTypes,
-                    outputTypes
-            );
-        } else {
-            throw new IllegalArgumentException("The function signature does not match the expected format."); //TODO: improve message
-        }
+    public String getData() {
+        return data;
     }
 
     @Override
     public long getPrice(MinGasPriceProvider.ProviderContext context) {
         EthModule ethModule = context.ethModule;
 
-        HexAddressParam from = new HexAddressParam(fromAddress);
-        HexAddressParam oracleAddress = new HexAddressParam(address);
-        HexNumberParam chainId = new HexNumberParam(ethModule.chainId());
-        CallTransaction.Function function = makeFunctionFromSignature(method);
-        HexDataParam dataHex = new HexDataParam(Hex.toHexString((function.encode(params.toArray()))));
-
         CallArgumentsParam callArguments = new CallArgumentsParam(
-                from,
-                oracleAddress,
+                new HexAddressParam(fromAddress),
+                new HexAddressParam(address),
                 null,
                 null,
                 null,
                 null,
-                chainId,
+                new HexNumberParam(ethModule.chainId()),
                 null,
-                dataHex,
+                new HexDataParam(data),
                 null
         );
 

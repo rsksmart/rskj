@@ -50,14 +50,10 @@ public class StableMinGasPriceSourceConfig
         return sourceConfig.getString("contract");
     }
 
-    public String sourceContractMethod() {
-        if (!sourceConfig.hasPath("method")) {
-            throw new IllegalArgumentException("Method config is required");
+    public String sourceContractData() {
+        if (!sourceConfig.hasPath("data")) {
+            throw new IllegalArgumentException("Data config is required");
         }
-        return sourceConfig.getString("method");
-    }
-
-    public List<String> sourceContractMethodParams() {
-        return !sourceConfig.hasPath("params") ? sourceConfig.getStringList("params") : new ArrayList<>();
+        return sourceConfig.getString("data");
     }
 }
