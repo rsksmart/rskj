@@ -69,6 +69,30 @@ public final class FederationTestUtils {
         );
     }
 
+    public static ErpFederation getErpFederation(NetworkParameters networkParameters, List<BtcECKey> fedSigners, long creationBlockNumber) {
+        final List<BtcECKey> erpSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fb01", "fb02", "fb03"}, true
+        );
+
+        List<FederationMember> fedMember = FederationTestUtils.getFederationMembersWithBtcKeys(
+            fedSigners);
+
+        FederationArgs federationArgs = new FederationArgs(
+            fedMember,
+            ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant(),
+            creationBlockNumber,
+            networkParameters
+        );
+
+        long erpFedActivationDelay = 100L;
+
+        return FederationFactory.buildP2shErpFederation(
+            federationArgs,
+            erpSigners,
+            erpFedActivationDelay
+        );
+    }
+
     public static Federation getFederation(Integer... federationMemberPks) {
         FederationArgs federationArgs = new FederationArgs(
             getFederationMembersFromPks(federationMemberPks),
