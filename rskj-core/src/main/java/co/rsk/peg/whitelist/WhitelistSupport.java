@@ -3,6 +3,9 @@ package co.rsk.peg.whitelist;
 import java.math.BigInteger;
 import org.ethereum.core.Transaction;
 
+/**
+ * Interface for the whitelist support. This interface is used to add, remove and get whitelist entries.
+ */
 public interface WhitelistSupport {
 
     Integer getLockWhitelistSize();
