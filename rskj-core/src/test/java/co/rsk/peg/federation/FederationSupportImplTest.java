@@ -54,6 +54,7 @@ class FederationSupportImplTest {
 
     private FederationSupport federationSupport;
     private FederationConstants federationMainnetConstants;
+    private NetworkParameters networkParameters;
     private FederationStorageProvider storageProvider;
     private FederationSupportBuilder federationSupportBuilder;
 
@@ -62,6 +63,7 @@ class FederationSupportImplTest {
         StorageAccessor storageAccessor = new InMemoryStorage();
         storageProvider = new FederationStorageProviderImpl(storageAccessor);
         federationMainnetConstants = FederationMainNetConstants.getInstance();
+        networkParameters = federationMainnetConstants.getBtcParams();
         federationSupportBuilder = new FederationSupportBuilder();
 
         federationSupport = federationSupportBuilder
@@ -80,7 +82,7 @@ class FederationSupportImplTest {
 
     @Test
     void getActiveFederation_withOldFederationAndNullNewFederation_returnsGenesisFederation() {
-        Federation oldFederation = createFederation(100);
+        Federation oldFederation = FederationTestUtils.getErpFederation(networkParameters);
         storageProvider.setOldFederation(oldFederation);
 
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
@@ -91,7 +93,7 @@ class FederationSupportImplTest {
 
     @Test
     void getActiveFederation_withNewFederationAndNullOldFederation_returnsNewFederation() {
-        Federation newFederation = createFederation(100);
+        Federation newFederation = FederationTestUtils.getErpFederation(networkParameters);
         storageProvider.setNewFederation(newFederation);
 
         Federation activeFederation = federationSupport.getActiveFederation();
@@ -134,7 +136,6 @@ class FederationSupportImplTest {
             currentBlockNumber--;
         }
 
-
         // Arrange
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(currentBlockNumber);
@@ -146,8 +147,26 @@ class FederationSupportImplTest {
             .withActivations(activations)
             .build();
 
-        Federation newFederation = createFederation(newFedCreationBlockNumber);
-        Federation oldFederation = createFederation(oldFedCreationBlockNumber);
+        networkParameters = federationConstants.getBtcParams();
+
+        List<BtcECKey> newFederationPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
+        );
+        Federation newFederation = FederationTestUtils.getErpFederation(
+            networkParameters,
+            newFederationPublicKeys,
+            newFedCreationBlockNumber
+        );
+
+        List<BtcECKey> oldFederationPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa10", "fa12", "fa13", "fa14", "fa15", "fa16", "fa17"}, true
+        );
+        Federation oldFederation = FederationTestUtils.getErpFederation(
+            networkParameters,
+            oldFederationPublicKeys,
+            oldFedCreationBlockNumber
+        );
+
         storageProvider.setNewFederation(newFederation);
         storageProvider.setOldFederation(oldFederation);
 
@@ -202,22 +221,5 @@ class FederationSupportImplTest {
         // Out of bounds
         assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getActiveFederatorPublicKeyOfType(2, KeyType.BTC));
         assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getActiveFederatorPublicKeyOfType(-1, KeyType.BTC));
-    }
-
-    private Federation createFederation(long creationBlockNumber) {
-        List<BtcECKey> keys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fed1", "fed2"},
-            true
-        );
-        List<FederationMember> members = FederationTestUtils.getFederationMembersWithBtcKeys(keys);
-        FederationArgs federationArgs = new FederationArgs(members,
-            Instant.ofEpochMilli(123),
-            creationBlockNumber,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
-
-        return FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
     }
 }
