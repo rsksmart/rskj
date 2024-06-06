@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
@@ -35,6 +36,9 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+
+import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -51,26 +55,33 @@ class FederationSupportImplTest {
     private FederationSupport federationSupport;
     private FederationConstants federationMainnetConstants;
     private FederationStorageProvider storageProvider;
-    private ActivationConfig.ForBlock activations;
+    private FederationSupportBuilder federationSupportBuilder;
 
     @BeforeEach
     void setUp() {
-        storageProvider = mock(FederationStorageProvider.class);
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageProvider = new FederationStorageProviderImpl(storageAccessor);
         federationMainnetConstants = FederationMainNetConstants.getInstance();
-        Block executionBlock = mock(Block.class);
-        activations = mock(ActivationConfig.ForBlock.class);
+        federationSupportBuilder = new FederationSupportBuilder();
 
-        federationSupport = new FederationSupportImpl(
-            federationMainnetConstants,
-            storageProvider,
-            executionBlock,
-            activations
-        );
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .build();
     }
 
     @Test
-    void whenNewFederationIsNullThenActiveFederationIsGenesisFederation() {
-        when(storageProvider.getNewFederation(federationMainnetConstants, activations)).thenReturn(null);
+    void getActiveFederation_withNullFederations_returnsGenesisFederation() {
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
+        Federation activeFederation = federationSupport.getActiveFederation();
+
+        assertThat(activeFederation, is(genesisFederation));
+    }
+
+    @Test
+    void getActiveFederation_withOldFederationAndNullNewFederation_returnsGenesisFederation() {
+        Federation oldFederation = createFederation(100);
+        storageProvider.setOldFederation(oldFederation);
 
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
         Federation activeFederation = federationSupport.getActiveFederation();
@@ -79,10 +90,9 @@ class FederationSupportImplTest {
     }
 
     @Test
-    void whenOldFederationIsNullThenActiveFederationIsNewFederation() {
-        Federation newFederation = getNewFakeFederation(100);
-        when(storageProvider.getNewFederation(federationMainnetConstants, activations)).thenReturn(newFederation);
-        when(storageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(null);
+    void getActiveFederation_withNewFederationAndNullOldFederation_returnsNewFederation() {
+        Federation newFederation = createFederation(100);
+        storageProvider.setNewFederation(newFederation);
 
         Federation activeFederation = federationSupport.getActiveFederation();
 
@@ -109,7 +119,7 @@ class FederationSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("fedActivationAgeTestArgs")
-    void whenOldAndNewFederationArePresentReturnActiveFederationByActivationAge(
+    void getActiveFederation_withOldAndNewFederations_returnsActiveFederationByActivationAge(
         FederationConstants federationConstants,
         ActivationConfig.ForBlock activations,
         boolean newFedExpectedToBeActive
@@ -124,23 +134,22 @@ class FederationSupportImplTest {
             currentBlockNumber--;
         }
 
+
         // Arrange
-        Federation newFederation = getNewFakeFederation(newFedCreationBlockNumber);
-        Federation oldFederation = getNewFakeFederation(oldFedCreationBlockNumber);
-
-        FederationStorageProvider provider = mock(FederationStorageProvider.class);
-        when(provider.getNewFederation(federationConstants, activations)).thenReturn(newFederation);
-        when(provider.getOldFederation(federationConstants, activations)).thenReturn(oldFederation);
-
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(currentBlockNumber);
 
-        FederationSupport federationSupport = new FederationSupportImpl(
-            federationConstants,
-            provider,
-            executionBlock,
-            activations
-        );
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(storageProvider)
+            .withRskExecutionBlock(executionBlock)
+            .withActivations(activations)
+            .build();
+
+        Federation newFederation = createFederation(newFedCreationBlockNumber);
+        Federation oldFederation = createFederation(oldFedCreationBlockNumber);
+        storageProvider.setNewFederation(newFederation);
+        storageProvider.setOldFederation(oldFederation);
 
         // Act
         Federation activeFederation = federationSupport.getActiveFederation();
@@ -176,7 +185,7 @@ class FederationSupportImplTest {
         Federation theFederation = FederationFactory.buildStandardMultiSigFederation(
             federationArgs
         );
-        when(storageProvider.getNewFederation(federationMainnetConstants, activations)).thenReturn(theFederation);
+        storageProvider.setNewFederation(theFederation);
 
         assertArrayEquals(federationSupport.getActiveFederatorBtcPublicKey(0), btcKey0.getPubKey());
         assertArrayEquals(federationSupport.getActiveFederatorBtcPublicKey(1), btcKey1.getPubKey());
@@ -195,7 +204,7 @@ class FederationSupportImplTest {
         assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getActiveFederatorPublicKeyOfType(-1, KeyType.BTC));
     }
 
-    private Federation getNewFakeFederation(long creationBlockNumber) {
+    private Federation createFederation(long creationBlockNumber) {
         List<BtcECKey> keys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fed1", "fed2"},
             true
