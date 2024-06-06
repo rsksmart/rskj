@@ -29,7 +29,6 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,8 +54,32 @@ public final class FederationTestUtils {
 
         FederationArgs federationArgs = new FederationArgs(
             fedMember,
-            ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant(),
+            Instant.ofEpochMilli(0),
             0,
+            networkParameters
+        );
+
+        long erpFedActivationDelay = 100L;
+
+        return FederationFactory.buildP2shErpFederation(
+            federationArgs,
+            erpSigners,
+            erpFedActivationDelay
+        );
+    }
+
+    public static ErpFederation getErpFederation(NetworkParameters networkParameters, List<BtcECKey> fedSigners, long creationBlockNumber) {
+        final List<BtcECKey> erpSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fb01", "fb02", "fb03"}, true
+        );
+
+        List<FederationMember> fedMember = FederationTestUtils.getFederationMembersWithBtcKeys(
+            fedSigners);
+
+        FederationArgs federationArgs = new FederationArgs(
+            fedMember,
+            Instant.ofEpochMilli(0),
+            creationBlockNumber,
             networkParameters
         );
 
@@ -72,7 +95,7 @@ public final class FederationTestUtils {
     public static Federation getFederation(Integer... federationMemberPks) {
         FederationArgs federationArgs = new FederationArgs(
             getFederationMembersFromPks(federationMemberPks),
-            ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
+            Instant.ofEpochMilli(0),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
