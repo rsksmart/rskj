@@ -4,9 +4,11 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.peg.pegin.RejectedPeginReason;
+import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +34,8 @@ class BridgeEventLoggerTest {
     @Test
     void testLogLockBtc() {
         assertThrows(UnsupportedOperationException.class, () -> {
-            eventLogger.logLockBtc(mock(RskAddress.class), btcTxMock, mock(Address.class), Coin.SATOSHI);
+            eventLogger.logLockBtc(mock(RskAddress.class), btcTxMock, mock(Address.class),
+                Coin.SATOSHI);
         });
     }
 
@@ -61,7 +64,8 @@ class BridgeEventLoggerTest {
     @Test
     void testLogUnrefundablePegin() {
         assertThrows(UnsupportedOperationException.class, () -> {
-            eventLogger.logUnrefundablePegin(btcTxMock, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+            eventLogger.logUnrefundablePegin(btcTxMock,
+                UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
         });
     }
 
@@ -69,7 +73,8 @@ class BridgeEventLoggerTest {
     void testLogReleaseBtcRequestReceived() {
         String sender = "0x00000000000000000000000000000000000000";
         String base58Address = "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
-        Address btcDestinationAddress = Address.fromBase58(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), base58Address);
+        Address btcDestinationAddress = Address.fromBase58(
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST), base58Address);
         Coin amount = Coin.COIN;
         assertThrows(UnsupportedOperationException.class, () -> {
             eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount);
@@ -103,4 +108,11 @@ class BridgeEventLoggerTest {
         });
     }
 
+    @Test
+    void logPegoutTransactionCreated() {
+        Sha256Hash btcTxHash = btcTxMock.getHash();
+        List<Coin> outpointValues = Arrays.asList(Coin.COIN, Coin.SATOSHI, Coin.FIFTY_COINS);
+        assertThrows(UnsupportedOperationException.class,
+            () -> eventLogger.logPegoutTransactionCreated(btcTxHash, outpointValues));
+    }
 }

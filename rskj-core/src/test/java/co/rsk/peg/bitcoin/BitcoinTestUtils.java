@@ -2,9 +2,12 @@ package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
@@ -24,7 +27,8 @@ public class BitcoinTestUtils {
     public static List<BtcECKey> getBtcEcKeysFromSeeds(String[] seeds, boolean sorted) {
         List<BtcECKey> keys = Arrays
             .stream(seeds)
-            .map(seed -> BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
+            .map(seed -> BtcECKey.fromPrivate(
+                HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
             .collect(Collectors.toList());
 
         if (sorted) {
@@ -35,7 +39,8 @@ public class BitcoinTestUtils {
     }
 
     public static Address createP2PKHAddress(NetworkParameters networkParameters, String seed) {
-        BtcECKey key = BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
+        BtcECKey key = BtcECKey.fromPrivate(
+            HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
         return key.toAddress(networkParameters);
     }
 
@@ -70,5 +75,30 @@ public class BitcoinTestUtils {
             }
         }
         return signatures;
+    }
+
+    public static List<Coin> coinListOf(long... values) {
+        return Arrays.stream(values)
+            .mapToObj(Coin::valueOf)
+            .collect(Collectors.toList());
+    }
+
+    public static UTXO createUTXO(int nHash, long index, Coin value, Address address) {
+        return new UTXO(
+            createHash(nHash),
+            index,
+            value,
+            10,
+            false,
+            ScriptBuilder.createOutputScript(address));
+    }
+
+    public static List<UTXO> createUTXOs(int amount, Address address) {
+        List<UTXO> utxos = new ArrayList<>();
+        for (int i = 0; i < amount; i++) {
+            utxos.add(createUTXO(i + 1, 0, Coin.COIN, address));
+        }
+
+        return utxos;
     }
 }
