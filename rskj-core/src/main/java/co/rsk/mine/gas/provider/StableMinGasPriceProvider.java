@@ -1,15 +1,24 @@
 package co.rsk.mine.gas.provider;
 
 import co.rsk.core.Coin;
+import co.rsk.rpc.modules.eth.EthModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger("StableMinGasPrice");
-    private final MinGasPriceProvider fallBackProvider;
+    protected final MinGasPriceProvider fallBackProvider;
+    protected final GetContextCallback getContextCallback;
 
-    protected StableMinGasPriceProvider(MinGasPriceProvider fallBackProvider) {
+    protected StableMinGasPriceProvider(MinGasPriceProvider fallBackProvider, GetContextCallback getContextCallback) {
         this.fallBackProvider = fallBackProvider;
+        this.getContextCallback = getContextCallback;
+    }
+
+
+    @FunctionalInterface
+    public interface GetContextCallback {
+        EthModule getEthModule();
     }
 
     public abstract Long getStableMinGasPrice();

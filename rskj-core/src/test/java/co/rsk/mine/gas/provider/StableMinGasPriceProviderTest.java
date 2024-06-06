@@ -51,7 +51,7 @@ class StableMinGasPriceProviderTest {
     public static class TestStableMingGasPriceProvider extends StableMinGasPriceProvider {
 
         protected TestStableMingGasPriceProvider(MinGasPriceProvider fallBackProvider) {
-            super(fallBackProvider);
+            super(fallBackProvider, () -> null);
         }
 
         @Override

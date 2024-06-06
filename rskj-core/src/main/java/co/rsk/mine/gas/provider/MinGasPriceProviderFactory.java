@@ -14,7 +14,7 @@ public class MinGasPriceProviderFactory {
     private MinGasPriceProviderFactory() {
     }
 
-    public static MinGasPriceProvider create(long fixedMinGasPrice, StableMinGasPriceSystemConfig stableMinGasPriceSystemConfig) {
+    public static MinGasPriceProvider create(long fixedMinGasPrice, StableMinGasPriceSystemConfig stableMinGasPriceSystemConfig, StableMinGasPriceProvider.GetContextCallback getContextCallback) {
         FixedMinGasPriceProvider fixedMinGasPriceProvider = new FixedMinGasPriceProvider(fixedMinGasPrice);
         if (stableMinGasPriceSystemConfig == null) {
             logger.warn("Could not find stable min gas price system config, using {} provider", fixedMinGasPriceProvider.getType().name());
@@ -32,9 +32,9 @@ public class MinGasPriceProviderFactory {
 
         switch (method) {
             case WEB:
-                return WebStableMinGasPriceProviderFactory.create(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider);
+                return WebStableMinGasPriceProviderFactory.create(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider, getContextCallback);
             case ON_CHAIN:
-                return OnChainMinGasPriceProviderFactory.create(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider);
+                return OnChainMinGasPriceProviderFactory.create(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider, getContextCallback);
             default:
                 logger.debug("Could not find a valid implementation for the method {}. Returning fallback provider {}", method, fixedMinGasPriceProvider.getType().name());
                 return fixedMinGasPriceProvider;

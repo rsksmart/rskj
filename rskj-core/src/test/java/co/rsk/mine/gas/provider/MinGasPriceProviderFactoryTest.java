@@ -22,7 +22,7 @@ class MinGasPriceProviderFactoryTest {
         );
         StableMinGasPriceSystemConfig config = new StableMinGasPriceSystemConfig(testConfig);
 
-        MinGasPriceProvider provider = MinGasPriceProviderFactory.create(100L, config);
+        MinGasPriceProvider provider = MinGasPriceProviderFactory.create(100L, config, () -> null);
 
         assertTrue(provider instanceof FixedMinGasPriceProvider);
         assertEquals(100, provider.getMinGasPrice());
@@ -31,7 +31,7 @@ class MinGasPriceProviderFactoryTest {
 
     @Test
     void createWithNullConfig() {
-        MinGasPriceProvider provider = MinGasPriceProviderFactory.create(100L, null);
+        MinGasPriceProvider provider = MinGasPriceProviderFactory.create(100L, null, () -> null);
         assertTrue(provider instanceof FixedMinGasPriceProvider);
         assertEquals(100, provider.getMinGasPrice());
         assertEquals(MinGasPriceProviderType.FIXED, provider.getType());
@@ -52,7 +52,7 @@ class MinGasPriceProviderFactoryTest {
 
         StableMinGasPriceSystemConfig disabledConfig = new StableMinGasPriceSystemConfig(testConfig);
 
-        MinGasPriceProvider provider = MinGasPriceProviderFactory.create(100L, disabledConfig);
+        MinGasPriceProvider provider = MinGasPriceProviderFactory.create(100L, disabledConfig, () -> null);
 
         assertTrue(provider instanceof WebMinGasPriceProvider);
         assertEquals(100, provider.getMinGasPrice());
@@ -74,7 +74,7 @@ class MinGasPriceProviderFactoryTest {
 
         StableMinGasPriceSystemConfig disabledConfig = new StableMinGasPriceSystemConfig(testConfig);
 
-        MinGasPriceProvider provider = MinGasPriceProviderFactory.create(100L, disabledConfig);
+        MinGasPriceProvider provider = MinGasPriceProviderFactory.create(100L, disabledConfig, () -> null);
 
         assertTrue(provider instanceof FixedMinGasPriceProvider);
         assertEquals(100, provider.getMinGasPrice());

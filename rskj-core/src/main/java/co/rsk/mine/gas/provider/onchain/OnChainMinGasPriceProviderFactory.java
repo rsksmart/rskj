@@ -8,7 +8,7 @@ public class OnChainMinGasPriceProviderFactory {
     private OnChainMinGasPriceProviderFactory() {
     }
 
-    public static OnChainMinGasPriceProvider create(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallbackProvider) {
-        return new OnChainMinGasPriceProvider(fallbackProvider, config.getOnChainConfig());
+    public static OnChainMinGasPriceProvider create(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallbackProvider, OnChainMinGasPriceProvider.GetContextCallback getContextCallback) {
+        return new OnChainMinGasPriceProvider(fallbackProvider, config.getOnChainConfig(), getContextCallback);
     }
 }
