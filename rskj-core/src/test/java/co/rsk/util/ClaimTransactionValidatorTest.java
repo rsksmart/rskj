@@ -51,17 +51,6 @@ public class ClaimTransactionValidatorTest {
         claimTransactionValidator = new ClaimTransactionValidator(signatureCache, testConstants);
     }
 
-//    @Test
-//    public void whenCalculateSwapHashIsCalled_shouldReturnExpectedHash() {
-//        String expectedHash = "0x3dc21e0a710489c951f29205f9961b2c311d48fdf5a35545469d7b43e88f7624";
-//
-//        Transaction mockedClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 0);
-//
-//        byte[] result = claimTransactionValidator.calculateSwapHash(mockedClaimTx, new ReceivedTxSignatureCache());
-//
-//        assertEquals(expectedHash, HexUtils.toJsonHex(result));
-//    }
-
     @Test
     public void whenIsClaimTxAndValidIsCalled_shouldReturnTrue() {
         Transaction mockedClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 0);
