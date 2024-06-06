@@ -79,8 +79,7 @@ public class BridgeSupportFactory {
             repository,
             contractAddress,
             networkParameters,
-            activations,
-            bridgeStorageAccessor
+            activations
         );
 
         FederationSupport federationSupport = newFederationSupportInstance(bridgeStorageAccessor, bridgeConstants, executionBlock, activations);

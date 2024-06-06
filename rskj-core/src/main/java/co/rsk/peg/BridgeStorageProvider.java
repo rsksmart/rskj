@@ -23,9 +23,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
-import co.rsk.peg.storage.StorageAccessor;
-import co.rsk.peg.whitelist.WhitelistStorageProvider;
-import co.rsk.peg.whitelist.WhitelistStorageProviderImpl;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -81,18 +78,16 @@ public class BridgeStorageProvider {
     private Long nextPegoutHeight;
 
     private Set<Sha256Hash> pegoutTxSigHashes;
-    private final StorageAccessor storageAccessor;
 
     public BridgeStorageProvider(
         Repository repository,
         RskAddress contractAddress,
         NetworkParameters networkParameters,
-        ActivationConfig.ForBlock activations, StorageAccessor storageAccessor) {
+        ActivationConfig.ForBlock activations) {
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = networkParameters;
         this.activations = activations;
-        this.storageAccessor = storageAccessor;
     }
 
     public Optional<Long> getHeightIfBtcTxhashIsAlreadyProcessed(Sha256Hash btcTxHash) throws IOException {
@@ -553,9 +548,6 @@ public class BridgeStorageProvider {
         saveReleaseRequestQueue();
         savePegoutsWaitingForConfirmations();
         savePegoutsWaitingForSignatures();
-
-        WhitelistStorageProvider whitelistStorageProvider = new WhitelistStorageProviderImpl(networkParameters,activations, storageAccessor);
-        whitelistStorageProvider.save();
 
         saveLockingCap();
 
