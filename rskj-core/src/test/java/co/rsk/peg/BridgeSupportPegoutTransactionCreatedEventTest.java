@@ -14,14 +14,9 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.ReleaseRequestQueue.Entry;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.federation.ErpFederation;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationTestUtils;
-import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
-import co.rsk.peg.feeperkb.FeePerKbSupport;
-import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
+import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.feeperkb.*;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import java.io.IOException;
@@ -42,11 +37,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 class BridgeSupportPegoutTransactionCreatedEventTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+    private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final ErpFederation ERP_FEDERATION = FederationTestUtils.getErpFederation(btcMainnetParams);
 
     private BridgeStorageProvider provider;
     private FeePerKbSupport feePerKbSupport;
+    private FederationStorageProvider federationStorageProvider;
     private BridgeEventLogger eventLogger;
     private Block rskCurrentBlock;
     private Keccak256 pegoutCreationRskTxHash;
@@ -59,11 +56,12 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             ERP_FEDERATION.getAddress()
         );
 
+        BlockGenerator blockGenerator = new BlockGenerator();
+        rskCurrentBlock = blockGenerator.createBlock(ERP_FEDERATION.getCreationBlockNumber(), 1);
+
         provider = mock(BridgeStorageProvider.class);
         when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>()));
-        when(provider.getNewFederationBtcUTXOs()).thenReturn(fedUTXOs);
-        when(provider.getNewFederation()).thenReturn(ERP_FEDERATION);
 
         FeePerKbStorageProvider feePerKbStorageProvider = mock(FeePerKbStorageProvider.class);
         when(feePerKbStorageProvider.getFeePerKb()).thenReturn(Optional.of(Coin.MILLICOIN));
@@ -72,8 +70,9 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             feePerKbStorageProvider
         );
 
-        BlockGenerator blockGenerator = new BlockGenerator();
-        rskCurrentBlock = blockGenerator.createBlock(ERP_FEDERATION.getCreationBlockNumber(), 1);
+        federationStorageProvider = mock(FederationStorageProvider.class);
+        when(federationStorageProvider.getNewFederationBtcUTXOs(any(), any())).thenReturn(fedUTXOs);
+        when(federationStorageProvider.getNewFederation(any(), any())).thenReturn(ERP_FEDERATION);
 
         pegoutCreationRskTxHash = PegTestUtils.createHash3(1);
         executionRskTx = mock(Transaction.class);
@@ -98,6 +97,13 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
+        FederationSupport federationSupport = new FederationSupportImpl(
+            federationMainNetConstants,
+            federationStorageProvider,
+            rskCurrentBlock,
+            activations
+        );
+
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(provider)
@@ -105,6 +111,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             .withExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .withFeePerKbSupport(feePerKbSupport)
+            .withFederationSupport(federationSupport)
             .build();
 
         // Act
@@ -140,7 +147,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
         Federation oldFederation = ERP_FEDERATION;
-        when(provider.getOldFederation()).thenReturn(oldFederation);
+        when(federationStorageProvider.getOldFederation(federationMainNetConstants, activations)).thenReturn(oldFederation);
 
         long newFedCreationBlockNumber = 5L;
         FederationArgs newFederationArgs = new FederationArgs(
@@ -151,21 +158,27 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFederationArgs);
 
-        when(provider.getNewFederation()).thenReturn(newFederation);
+        when(federationStorageProvider.getNewFederation(federationMainNetConstants, activations)).thenReturn(newFederation);
 
         // Utxos to migrate
         List<UTXO> utxosToMigrate = createUTXOs(10, oldFederation.getAddress());
         Coin totalTransactionInputAmount = utxosToMigrate.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
-        when(provider.getOldFederationBtcUTXOs()).thenReturn(utxosToMigrate);
+        when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(utxosToMigrate);
 
         // Advance blockchain to migration phase. Migration phase starts 1 block after migration age is reached.
-        long migrationAge = bridgeMainnetConstants.getFederationActivationAge(activations) +
-            bridgeMainnetConstants.getFundsMigrationAgeSinceActivationBegin() +
+        long migrationAge = federationMainNetConstants.getFederationActivationAge(activations) +
+            federationMainNetConstants.getFundsMigrationAgeSinceActivationBegin() +
             newFedCreationBlockNumber + 1;
 
         BlockGenerator blockGenerator = new BlockGenerator();
         rskCurrentBlock = blockGenerator.createBlock(migrationAge, 1);
 
+        FederationSupport federationSupport = new FederationSupportImpl(
+            federationMainNetConstants,
+            federationStorageProvider,
+            rskCurrentBlock,
+            activations
+        );
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(provider)
@@ -173,6 +186,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             .withExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .withFeePerKbSupport(feePerKbSupport)
+            .withFederationSupport(federationSupport)
             .build();
 
         // Act
@@ -214,7 +228,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(pegoutRequests));
 
         Federation oldFederation = ERP_FEDERATION;
-        when(provider.getOldFederation()).thenReturn(oldFederation);
+        when(federationStorageProvider.getOldFederation(federationMainNetConstants, activations)).thenReturn(oldFederation);
 
         long newFedCreationBlockNumber = 5L;
         FederationArgs newFederationArgs = new FederationArgs(
@@ -225,24 +239,30 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
         );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFederationArgs);
 
-        when(provider.getNewFederation()).thenReturn(newFederation);
+        when(federationStorageProvider.getNewFederation(federationMainNetConstants, activations)).thenReturn(newFederation);
 
         // Utxos to migrate
         List<UTXO> utxosToMigrate = createUTXOs(10, oldFederation.getAddress());
-        when(provider.getOldFederationBtcUTXOs()).thenReturn(utxosToMigrate);
+        when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(utxosToMigrate);
         Coin migrationTotalAmount = utxosToMigrate.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
 
         List<UTXO> utxosNewFederation = createUTXOs(10, newFederation.getAddress());
-        when(provider.getNewFederationBtcUTXOs()).thenReturn(utxosNewFederation);
+        when(federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, activations)).thenReturn(utxosNewFederation);
 
         // Advance blockchain to migration phase. Migration phase starts 1 block after migration age is reached.
-        long migrationAge = bridgeMainnetConstants.getFederationActivationAge(activations) +
-            bridgeMainnetConstants.getFundsMigrationAgeSinceActivationBegin() +
+        long migrationAge = federationMainNetConstants.getFederationActivationAge(activations) +
+            federationMainNetConstants.getFundsMigrationAgeSinceActivationBegin() +
             newFedCreationBlockNumber + 1;
 
         BlockGenerator blockGenerator = new BlockGenerator();
         rskCurrentBlock = blockGenerator.createBlock(migrationAge, 1);
 
+        FederationSupport federationSupport = new FederationSupportImpl(
+            federationMainNetConstants,
+            federationStorageProvider,
+            rskCurrentBlock,
+            activations
+        );
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(provider)
@@ -250,6 +270,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             .withExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .withFeePerKbSupport(feePerKbSupport)
+            .withFederationSupport(federationSupport)
             .build();
 
         Transaction rskTx = mock(Transaction.class);
