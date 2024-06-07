@@ -50,11 +50,14 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
     }
 
     @Override
-    public LockWhitelist getLockWhitelist() {
-        if (lockWhitelist != null) {
-            return lockWhitelist;
+    public synchronized LockWhitelist getLockWhitelist() {
+        if (lockWhitelist == null) {
+            lockWhitelist = initializeLockWhitelist();
         }
+        return lockWhitelist;
+    }
 
+    private LockWhitelist initializeLockWhitelist() {
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData =
             bridgeStorageAccessor.safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY.getKey(),
                 data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters));
@@ -67,10 +70,8 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
         Map<Address, LockWhitelistEntry> whitelistedAddresses = new HashMap<>(oneOffWhitelistAndDisableBlockHeightData.getLeft());
 
         if (activations.isActive(RSKIP87)) {
-            whitelistedAddresses.putAll(
-                bridgeStorageAccessor.safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY.getKey(),
-                    data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data,
-                        networkParameters)));
+            whitelistedAddresses.putAll(bridgeStorageAccessor.safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY.getKey(),
+                    data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)));
         }
 
         lockWhitelist = new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());
