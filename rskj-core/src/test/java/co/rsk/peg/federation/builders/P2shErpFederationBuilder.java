@@ -79,7 +79,7 @@ public class P2shErpFederationBuilder {
         return this;
     }
 
-    public ErpFederation build() throws IOException {
+    public ErpFederation build() {
         if (membersRskPublicKeys.isEmpty()) {
             getRskPublicKeysFromBtcPublicKeys();
         }
