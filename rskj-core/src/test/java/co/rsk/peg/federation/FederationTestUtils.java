@@ -55,7 +55,7 @@ public final class FederationTestUtils {
 
         FederationArgs federationArgs = new FederationArgs(
             fedMember,
-            ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant(),
+            Instant.ofEpochMilli(0),
             0,
             networkParameters
         );
@@ -79,7 +79,7 @@ public final class FederationTestUtils {
 
         FederationArgs federationArgs = new FederationArgs(
             fedMember,
-            ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant(),
+            Instant.ofEpochMilli(0),
             creationBlockNumber,
             networkParameters
         );
@@ -96,7 +96,7 @@ public final class FederationTestUtils {
     public static Federation getFederation(Integer... federationMemberPks) {
         FederationArgs federationArgs = new FederationArgs(
             getFederationMembersFromPks(federationMemberPks),
-            ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
+            Instant.ofEpochMilli(0),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
