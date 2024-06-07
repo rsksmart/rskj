@@ -25,7 +25,8 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -59,6 +60,29 @@ public final class FederationTestUtils {
             networkParameters
         );
 
+        long erpFedActivationDelay = 100L;
+
+        return FederationFactory.buildP2shErpFederation(
+            federationArgs,
+            erpSigners,
+            erpFedActivationDelay
+        );
+    }
+
+    public static ErpFederation getErpFederation(NetworkParameters networkParameters, List<BtcECKey> fedSigners) {
+        final List<BtcECKey> erpSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fb01", "fb02", "fb03"}, true
+        );
+
+        List<FederationMember> fedMember = FederationTestUtils.getFederationMembersWithBtcKeys(
+            fedSigners);
+
+        FederationArgs federationArgs = new FederationArgs(
+            fedMember,
+            Instant.ofEpochMilli(0),
+            0,
+            networkParameters
+        );
         long erpFedActivationDelay = 100L;
 
         return FederationFactory.buildP2shErpFederation(
@@ -168,6 +192,30 @@ public final class FederationTestUtils {
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
+    public static Script createP2shErpRedeemScriptFromKeys(FederationConstants federationConstants, List<BtcECKey> defaultPublicKeys,
+                                                           int defaultThreshold) {
+
+        Script defaultRedeemScript = ScriptBuilder.createRedeemScript(defaultThreshold, defaultPublicKeys);
+
+        final List<BtcECKey> erpPubKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fb01", "fb02", "fb03"}, true
+        );
+        Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(2, erpPubKeys);
+
+        long erpFedActivationDelay = 100L;
+        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(erpFedActivationDelay);
+
+        return new ScriptBuilder()
+            .op(ScriptOpCodes.OP_NOTIF)
+            .addChunks(defaultRedeemScript.getChunks())
+            .op(ScriptOpCodes.OP_ELSE)
+            .data(serializedCsvValue)
+            .op(ScriptOpCodes.OP_CHECKSEQUENCEVERIFY)
+            .op(ScriptOpCodes.OP_DROP)
+            .addChunks(emergencyRedeemScript.getChunks())
+            .op(ScriptOpCodes.OP_ENDIF)
+            .build();
+    }
 
     public static void spendFromErpFed(
         NetworkParameters networkParameters,
