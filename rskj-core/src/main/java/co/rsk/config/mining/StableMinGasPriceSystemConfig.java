@@ -48,7 +48,9 @@ public class StableMinGasPriceSystemConfig {
         return new OnChainMinGasPriceSystemConfig(config.getConfig(OnChainMinGasPriceSystemConfig.ONCHAIN_STABLE_GAS_PRICE_CONFIG_PATH));
     }
 
-
+    public Config getConfig() {
+        return config;
+    }
 
     public MinGasPriceProviderType getMethod() {
         return method;

@@ -1,6 +1,7 @@
 package co.rsk.mine.gas.provider;
 
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
+import co.rsk.mine.gas.provider.example.ExampleProviderFactory;
 import co.rsk.mine.gas.provider.onchain.OnChainMinGasPriceProviderFactory;
 import co.rsk.mine.gas.provider.web.WebStableMinGasPriceProviderFactory;
 import org.slf4j.Logger;
@@ -35,6 +36,8 @@ public class MinGasPriceProviderFactory {
                 return WebStableMinGasPriceProviderFactory.create(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider);
             case ON_CHAIN:
                 return OnChainMinGasPriceProviderFactory.create(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider);
+            case EXAMPLE_PROVIDER:
+                return ExampleProviderFactory.create(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider);
             default:
                 logger.debug("Could not find a valid implementation for the method {}. Returning fallback provider {}", method, fixedMinGasPriceProvider.getType().name());
                 return fixedMinGasPriceProvider;
