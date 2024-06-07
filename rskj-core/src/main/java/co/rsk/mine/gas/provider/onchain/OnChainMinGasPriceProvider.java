@@ -14,21 +14,23 @@ import org.ethereum.rpc.parameters.HexNumberParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger(OnChainMinGasPriceProvider.class);
 
     private final String toAddress;
     private final String fromAddress;
     private final String data;
-
     @FunctionalInterface
     public interface GetContextCallback {
         EthModule getEthModule();
     }
+
     private final GetContextCallback getContextCallback;
 
-    protected OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, OnChainMinGasPriceSystemConfig config, GetContextCallback getContextCallback) {
-        super(fallBackProvider);
+    public OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice, OnChainMinGasPriceSystemConfig config, GetContextCallback getContextCallback) {
+        super(fallBackProvider, minStableGasPrice);
         this.getContextCallback = getContextCallback;
         this.toAddress = config.address();
         this.fromAddress = config.from();
@@ -41,11 +43,11 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
     }
 
     @Override
-    public Long getStableMinGasPrice() {
+    protected Optional<Long> getBtcExchangeRate() {
         EthModule ethModule = this.getContextCallback.getEthModule();
         if (ethModule == null) {
             logger.error("Could not get eth module");
-            return fallBackProvider.getMinGasPrice();
+            return Optional.empty();
         }
 
         CallArgumentsParam callArguments = new CallArgumentsParam(
@@ -64,13 +66,11 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
             String callOutput = ethModule.call(callArguments, new BlockIdentifierParam("latest"));
 
             // Parse the output of the call to get the exchange rate. Will not work with bytes32 values!
-            return HexUtils.jsonHexToLong(
-                    callOutput
-            );
+            return Optional.of(HexUtils.jsonHexToLong(
+                    callOutput));
         } catch (Exception e) {
             logger.error("Error calling eth module", e);
-
-            return fallBackProvider.getMinGasPrice();
+            return Optional.empty();
         }
     }
 

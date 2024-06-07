@@ -2165,9 +2165,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             rskSystemProperties.getForceTargetGasLimit()
                     ),
                     rskSystemProperties.isMinerServerFixedClock(),
-                    rskSystemProperties.workSubmissionRateLimitInMills(),
-                    getMinGasPriceProvider()
-            );
+                    rskSystemProperties.workSubmissionRateLimitInMills());
         }
 
         return miningConfig;

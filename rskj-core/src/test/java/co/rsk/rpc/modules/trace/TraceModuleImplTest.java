@@ -436,8 +436,7 @@ class TraceModuleImplTest {
                         rskSystemProperties.getForceTargetGasLimit()
                 ),
                 rskSystemProperties.isMinerServerFixedClock(),
-                rskSystemProperties.workSubmissionRateLimitInMills(),
-                new FixedMinGasPriceProvider(rskSystemProperties.minerMinGasPrice())
+                rskSystemProperties.workSubmissionRateLimitInMills()
         );
         BlockToMineBuilder builder = new BlockToMineBuilder(
                 rskSystemProperties.getActivationConfig(),
@@ -455,7 +454,7 @@ class TraceModuleImplTest {
                 new MinerClock(miningConfig.isFixedClock(), Clock.systemUTC()),
                 new BlockFactory(rskSystemProperties.getActivationConfig()),
                 world.getBlockExecutor(),
-                new MinimumGasPriceCalculator(miningConfig.getMinGasPriceProvider()),
+                new MinimumGasPriceCalculator(new FixedMinGasPriceProvider(rskSystemProperties.minerMinGasPrice())),
                 new MinerUtils(),
                 world.getBlockTxSignatureCache()
         );

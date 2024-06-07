@@ -29,6 +29,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
@@ -238,7 +239,7 @@ class MainNetMinerTest {
                 clock,
                 blockFactory,
                 blockExecutor,
-                new MinimumGasPriceCalculator(miningConfig.getMinGasPriceProvider()),
+                new MinimumGasPriceCalculator(new FixedMinGasPriceProvider(config.minerMinGasPrice())),
                 new MinerUtils(),
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache())
         );
