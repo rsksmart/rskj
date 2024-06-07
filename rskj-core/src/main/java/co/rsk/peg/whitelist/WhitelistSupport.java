@@ -1,5 +1,7 @@
 package co.rsk.peg.whitelist;
 
+import co.rsk.bitcoinj.store.BlockStoreException;
+import java.io.IOException;
 import java.math.BigInteger;
 import org.ethereum.core.Transaction;
 
@@ -21,5 +23,6 @@ public interface WhitelistSupport {
 
     int removeLockWhitelistAddress(Transaction tx, String addressBase58);
 
-    int setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI);
+    int setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI, int btcBlockchainBestChainHeight)
+        throws IOException, BlockStoreException;
 }
