@@ -77,17 +77,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
             AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
         );
 
-        // Key generated with GenNodeKey using generator 'auth-lock-whitelist'
-        List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
-//           "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
-            "0447b4aba974c61c6c4045893267346730ec965b308e7ca04a899cf06a901face3106e1eef1bdad04928cd8263522eda4872d20d3fe1ef5e551785c4a482656a6e"
-        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
-
-        lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
-            lockWhitelistAuthorizedKeys,
-            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
-        );
-
         // Key generated with GenNodeKey using generator 'auth-increase_locking_cap'
         List<ECKey> increaseLockingCapAuthorizedKeys = Arrays.stream(new String[]{
             "04450bbaab83ec48b3cb8fbb077c950ee079733041c039a8c4f1539e5181ca1a27589eeaf0fbf430e49d2909f14c767bf6909ad6845831f683416ee12b832e36ed"

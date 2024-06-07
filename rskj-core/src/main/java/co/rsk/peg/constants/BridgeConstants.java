@@ -24,6 +24,7 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
@@ -33,6 +34,8 @@ public abstract class BridgeConstants {
     protected FeePerKbConstants feePerKbConstants;
 
     protected FederationConstants federationConstants;
+
+    protected WhitelistConstants whitelistConstants;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
@@ -48,8 +51,6 @@ public abstract class BridgeConstants {
     protected Coin minimumPegoutTxValue;
 
     protected AddressBasedAuthorizer federationChangeAuthorizer;
-
-    protected AddressBasedAuthorizer lockWhitelistChangeAuthorizer;
 
     protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
 
@@ -80,6 +81,8 @@ public abstract class BridgeConstants {
 
     public FederationConstants getFederationConstants() { return federationConstants; }
 
+    public WhitelistConstants getWhitelistConstants() { return whitelistConstants; }
+
     public String getBtcParamsString() {
         return btcParamsString;
     }
@@ -107,8 +110,6 @@ public abstract class BridgeConstants {
     public Coin getLegacyMinimumPegoutTxValue() { return legacyMinimumPegoutTxValue; }
 
     public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
-
-    public AddressBasedAuthorizer getLockWhitelistChangeAuthorizer() { return lockWhitelistChangeAuthorizer; }
 
     public AddressBasedAuthorizer getIncreaseLockingCapAuthorizer() { return increaseLockingCapAuthorizer; }
 
