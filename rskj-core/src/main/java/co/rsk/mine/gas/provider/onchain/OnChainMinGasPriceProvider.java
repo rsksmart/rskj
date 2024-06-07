@@ -15,14 +15,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
+    private static final Logger logger = LoggerFactory.getLogger(OnChainMinGasPriceProvider.class);
+
     private final String toAddress;
     private final String fromAddress;
     private final String data;
 
-    Logger logger = LoggerFactory.getLogger(OnChainMinGasPriceProvider.class);
+    @FunctionalInterface
+    public interface GetContextCallback {
+        EthModule getEthModule();
+    }
+    private final GetContextCallback getContextCallback;
 
     protected OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, OnChainMinGasPriceSystemConfig config, GetContextCallback getContextCallback) {
-        super(fallBackProvider, getContextCallback);
+        super(fallBackProvider);
+        this.getContextCallback = getContextCallback;
         this.toAddress = config.address();
         this.fromAddress = config.from();
         this.data = config.data();
@@ -36,6 +43,11 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
     @Override
     public Long getStableMinGasPrice() {
         EthModule ethModule = this.getContextCallback.getEthModule();
+        if (ethModule == null) {
+            logger.error("Could not get eth module");
+            return fallBackProvider.getMinGasPrice();
+        }
+
         CallArgumentsParam callArguments = new CallArgumentsParam(
                 new HexAddressParam(fromAddress),
                 new HexAddressParam(toAddress),
@@ -51,8 +63,7 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
         try {
             String callOutput = ethModule.call(callArguments, new BlockIdentifierParam("latest"));
 
-            // TODO: how should we handle the output based on the return types of the function signature?
-            // TODO: This will only support uint256 but bytes32 is possible
+            // Parse the output of the call to get the exchange rate. Will not work with bytes32 values!
             return HexUtils.jsonHexToLong(
                     callOutput
             );
@@ -65,5 +76,13 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
 
     public String getToAddress() {
         return toAddress;
+    }
+
+    public String getFromAddress() {
+        return fromAddress;
+    }
+
+    public String getData() {
+        return data;
     }
 }

@@ -11,8 +11,8 @@ public class WebMinGasPriceProvider extends StableMinGasPriceProvider {
     private final int timeout;
     private final int refreshRate;
 
-    WebMinGasPriceProvider(MinGasPriceProvider fallBackProvider, WebStableMinGasPriceConfig config, StableMinGasPriceProvider.GetContextCallback getContextCallback) {
-        super(fallBackProvider, getContextCallback);
+    WebMinGasPriceProvider(MinGasPriceProvider fallBackProvider, WebStableMinGasPriceConfig config) {
+        super(fallBackProvider);
         url = config.getUrl();
         jsonPath = config.getJsonPath();
         apiKey = config.getApiKey();

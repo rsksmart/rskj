@@ -17,7 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class OnChainMinGasPriceProviderTest {
+class OnChainMinGasPriceProviderTest {
     private final String oracle_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
     private final String from_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
     private final String data = "0x";
@@ -57,8 +57,42 @@ public class OnChainMinGasPriceProviderTest {
         fallback_mock = null;
     }
 
+
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"0x123", "0xabc"})
+    void constructorSetsFieldsCorrectly(String data_input) {
+        MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
+        OnChainMinGasPriceSystemConfig config = mock(OnChainMinGasPriceSystemConfig.class);
+
+        when(config.address()).thenReturn("0xaddress");
+        when(config.from()).thenReturn("0xfrom");
+        when(config.data()).thenReturn(data_input);
+
+        OnChainMinGasPriceProvider provider = new OnChainMinGasPriceProvider(fallbackProvider, config, () -> ethModule_mock);
+
+        Assertions.assertEquals("0xaddress", provider.getToAddress());
+    }
+
     @Test
-    public void getStableMinGasPrice_callsEthModulesCallMethod() {
+    void constructorSetsFieldsToNullWhenConfigReturnsNull() {
+        MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
+        OnChainMinGasPriceSystemConfig config = mock(OnChainMinGasPriceSystemConfig.class);
+
+        when(config.address()).thenReturn(null);
+        when(config.from()).thenReturn(null);
+        when(config.data()).thenReturn(null);
+
+        OnChainMinGasPriceProvider provider = new OnChainMinGasPriceProvider(fallbackProvider, config, () -> ethModule_mock);
+
+        Assertions.assertNull(provider.getToAddress());
+        Assertions.assertNull(provider.getFromAddress());
+        Assertions.assertNull(provider.getData());
+    }
+
+    @Test
+    void getStableMinGasPrice_callsEthModulesCallMethod() {
         String expectedPrice = "0x21";
         when(ethModule_mock.call(any(), any())).thenReturn(expectedPrice);
 
@@ -71,7 +105,7 @@ public class OnChainMinGasPriceProviderTest {
     @ParameterizedTest
     @NullSource
     @ValueSource(strings = {"", "0x"})
-    public void getStableMinGasPrice_callsFallback_whenNoData(String data_input) {
+    void getStableMinGasPrice_callsFallback_whenNoData(String data_input) {
         when(onChainMinGasPriceSystemConfig_mock.data()).thenReturn(data_input);
 
         Assertions.assertEquals(
@@ -79,6 +113,20 @@ public class OnChainMinGasPriceProviderTest {
                 onChainMinGasPriceProvider.getStableMinGasPrice(),
                 "For " + data_input + ": "
         );
+    }
+
+
+    @Test
+    void getStableMinGasPrice_callsFallback_whenEthModuleIsNull() {
+        Assertions.assertEquals(
+                fallback_minGasPrice_fake,
+                onChainMinGasPriceProvider.getStableMinGasPrice()
+        );
+    }
+
+    @Test
+    void getType_returnsOnChain() {
+        Assertions.assertEquals(MinGasPriceProviderType.ON_CHAIN, onChainMinGasPriceProvider.getType());
     }
 
 }

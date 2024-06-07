@@ -1,6 +1,7 @@
 package co.rsk.mine.gas.provider;
 
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
+import co.rsk.mine.gas.provider.onchain.OnChainMinGasPriceProvider;
 import co.rsk.mine.gas.provider.onchain.OnChainMinGasPriceProviderFactory;
 import co.rsk.mine.gas.provider.web.WebStableMinGasPriceProviderFactory;
 import org.slf4j.Logger;
@@ -14,7 +15,7 @@ public class MinGasPriceProviderFactory {
     private MinGasPriceProviderFactory() {
     }
 
-    public static MinGasPriceProvider create(long fixedMinGasPrice, StableMinGasPriceSystemConfig stableMinGasPriceSystemConfig, StableMinGasPriceProvider.GetContextCallback getContextCallback) {
+    public static MinGasPriceProvider create(long fixedMinGasPrice, StableMinGasPriceSystemConfig stableMinGasPriceSystemConfig, OnChainMinGasPriceProvider.GetContextCallback getContextCallback) {
         FixedMinGasPriceProvider fixedMinGasPriceProvider = new FixedMinGasPriceProvider(fixedMinGasPrice);
         if (stableMinGasPriceSystemConfig == null) {
             logger.warn("Could not find stable min gas price system config, using {} provider", fixedMinGasPriceProvider.getType().name());
@@ -32,7 +33,7 @@ public class MinGasPriceProviderFactory {
 
         switch (method) {
             case WEB:
-                return WebStableMinGasPriceProviderFactory.create(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider, getContextCallback);
+                return WebStableMinGasPriceProviderFactory.create(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider);
             case ON_CHAIN:
                 return OnChainMinGasPriceProviderFactory.create(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider, getContextCallback);
             default:

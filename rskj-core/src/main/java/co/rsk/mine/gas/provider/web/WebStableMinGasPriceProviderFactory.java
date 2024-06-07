@@ -10,7 +10,7 @@ public class WebStableMinGasPriceProviderFactory {
     private WebStableMinGasPriceProviderFactory() {
     }
 
-    public static StableMinGasPriceProvider create(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallbackProvider, StableMinGasPriceProvider.GetContextCallback getContextCallback) {
+    public static StableMinGasPriceProvider create(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallbackProvider) {
         WebStableMinGasSystemConfig httpGetSystemConfig = config.getWebConfig();
         WebStableMinGasPriceConfig httpGetStableMinGasPriceConfig = WebStableMinGasPriceConfig.builder().setUrl(httpGetSystemConfig.getUrl())
                 .setJsonPath(httpGetSystemConfig.getRequestPath())
@@ -19,7 +19,7 @@ public class WebStableMinGasPriceProviderFactory {
                 .setMinStableGasPrice(config.getMinStableGasPrice())
                 .setRefreshRate(config.getRefreshRate())
                 .build();
-        return new WebMinGasPriceProvider(fallbackProvider, httpGetStableMinGasPriceConfig, getContextCallback);
+        return new WebMinGasPriceProvider(fallbackProvider, httpGetStableMinGasPriceConfig);
     }
 }
 
