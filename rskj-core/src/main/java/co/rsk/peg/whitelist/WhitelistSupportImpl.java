@@ -25,6 +25,9 @@ import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Implementation of the WhitelistSupport interface. Contains all the whitelist business logic.
+ */
 public class WhitelistSupportImpl implements WhitelistSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(WhitelistSupportImpl.class);
