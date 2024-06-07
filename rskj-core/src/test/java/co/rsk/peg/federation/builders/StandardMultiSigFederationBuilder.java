@@ -1,4 +1,4 @@
-package co.rsk.test.builders;
+package co.rsk.peg.federation.builders;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
