@@ -342,8 +342,10 @@ class FederationSupportImplTest {
             return Stream.of(
                 Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation.getRedeemScript()), // new federation shouldn't be active
                 Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation.getRedeemScript()), // new federation should be active
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation.getRedeemScript()), // new federation shouldn't be active since hop activation block number is smaller than fingerroot one
                 Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getRedeemScript()), // new federation shouldn't be active
-                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getRedeemScript()) // new federation should be active
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getRedeemScript()), // new federation should be active
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getRedeemScript()) // new federation should be active since hop activation block number is smaller than fingerroot one
             );
         }
 
@@ -368,8 +370,10 @@ class FederationSupportImplTest {
             return Stream.of(
                 Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation.getAddress()), // new federation shouldn't be active
                 Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation.getAddress()), // new federation should be active
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation.getAddress()), // new federation shouldn't be active since hop activation block number is smaller than fingerroot one
                 Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getAddress()), // new federation shouldn't be active
-                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getAddress()) // new federation should be active
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getAddress()), // new federation should be active
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getAddress()) // new federation should be active since hop activation block number is smaller than fingerroot one
             );
         }
     }
