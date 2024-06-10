@@ -1,13 +1,10 @@
 name: Build and Test
 
 on:
-  push:
-    branches:
-      - '**'
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
     branches:
-      - '**'
+      - '*'
 
 jobs:
   prepare-rskj:
