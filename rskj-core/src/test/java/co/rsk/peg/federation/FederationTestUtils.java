@@ -25,7 +25,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -165,18 +165,6 @@ public final class FederationTestUtils {
         long activationDelay = federationConstants.getErpFedActivationDelay();
 
         FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
-        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
-    }
-
-    public static ErpFederation createP2shErpFederation(FederationConstants federationConstants, List<BtcECKey> federationKeys, long creationBlockNumber) {
-        federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        List<FederationMember> fedMembers = getFederationMembersWithBtcKeys(federationKeys);
-        Instant creationTime = Instant.ofEpochMilli(1000L);
-        NetworkParameters btcParams = federationConstants.getBtcParams();
-        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
-        long activationDelay = federationConstants.getErpFedActivationDelay();
-
-        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, creationBlockNumber, btcParams);
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
