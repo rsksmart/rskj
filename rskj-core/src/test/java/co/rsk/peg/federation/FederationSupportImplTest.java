@@ -39,8 +39,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.FederationSupportBuilder;
-import co.rsk.peg.federation.builders.P2shErpFederationBuilder;
-import co.rsk.peg.federation.builders.StandardMultiSigFederationBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -219,7 +217,7 @@ class FederationSupportImplTest {
     private static Stream<Arguments> federations_expectedRedeemScript_args() {
         StandardMultiSigFederationBuilder federationBuilder = new StandardMultiSigFederationBuilder();
         Federation genesisFederation = federationBuilder
-            .withMembersPublicKeys(FederationMainNetConstants.getInstance().getGenesisFederationPublicKeys())
+            .withMembersBtcPublicKeys(FederationMainNetConstants.getInstance().getGenesisFederationPublicKeys())
             .build();
 
         P2shErpFederationBuilder p2shErpFederationBuilder = new P2shErpFederationBuilder();
