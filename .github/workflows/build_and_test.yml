@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
     branches:
-      - '**'
+      - "**"
 
 jobs:
   prepare-rskj:
@@ -35,6 +35,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Get gradle wrapper and build dependencies
+        if: steps.cache-gradle.outputs.cache-hit != 'true'
         run: |
           ./configure.sh
           ./gradlew --no-daemon dependencies
@@ -90,16 +91,15 @@ jobs:
       - name: If GH event is PR
         if: github.event_name == 'pull_request'
         run: |
-          git branch -f master origin/master
-          pr_number==${{ github.event.pull_request.number }}
-          extra_flags="-Dsonar.pullrequest.base=master
-            -Dsonar.pullrequest.branch=${{ github.head_ref }}
-            -Dsonar.pullrequest.key=$pr_number"
+          pr_number=${{ github.event.pull_request.number }}
+          extra_flags="-Dsonar.pullrequest.base=${{ github.base_ref }} \
+          -Dsonar.pullrequest.branch=${{ github.head_ref }} \
+          -Dsonar.pullrequest.key=$pr_number"
           ./gradlew sonarqube --no-daemon -x build -x test \
-            $extra_flags \
-            -Dsonar.organization=rsksmart \
-            -Dsonar.host.url="https://sonarcloud.io" \
-            -Dsonar.token="${{ secrets.SONAR_TOKEN }}"
+          $extra_flags \
+          -Dsonar.organization=rsksmart \
+          -Dsonar.host.url="https://sonarcloud.io" \
+          -Dsonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: If not
         if: github.event_name != 'pull_request'
@@ -111,7 +111,6 @@ jobs:
             -Dsonar.token="${{ secrets.SONAR_TOKEN }}"
 
   unit-tests:
-    needs: prepare-rskj
     runs-on: ubuntu-latest
     container:
       image: openjdk:8-jdk
@@ -124,7 +123,7 @@ jobs:
           apt install -y curl
 
       - uses: actions/cache@v4
-        name: Restore gradle cache
+        name: Cache Gradle
         id: cache-gradle
         with:
           path: |
@@ -135,18 +134,16 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Get gradle wrapper and build dependencies
+        if: steps.cache-gradle.outputs.cache-hit != 'true'
         run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            ./configure.sh
-            ./gradlew --no-daemon dependencies
-          fi
+          ./configure.sh
+          ./gradlew --no-daemon dependencies
 
       - name: Run tests
         run: |
           ./gradlew --no-daemon --stacktrace test
 
   integration-tests:
-    needs: prepare-rskj
     runs-on: ubuntu-latest
     container:
       image: openjdk:8-jdk
@@ -159,7 +156,7 @@ jobs:
           apt install -y curl
 
       - uses: actions/cache@v4
-        name: Restore gradle cache
+        name: Cache Gradle
         id: cache-gradle
         with:
           path: |
@@ -170,11 +167,10 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Get gradle wrapper and build dependencies
+        if: steps.cache-gradle.outputs.cache-hit != 'true'
         run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            ./configure.sh
-            ./gradlew --no-daemon dependencies
-          fi
+          ./configure.sh
+          ./gradlew --no-daemon dependencies
 
       - name: Run tests
         run: |
@@ -225,7 +221,7 @@ jobs:
       - name: Change mining-integration-tests bitcoind url in config.json to localhost
         working-directory: mining-integration-tests
         run: |
-          jq '.bitcoind.url = "localhost"' config.json > config.json.tmp && mv config.json.tmp config.json
+          jq 'if .bitcoind.url? then .bitcoind.url = "localhost" else error(".bitcoind.url not found") end' config.json > config.json.tmp && mv config.json.tmp config.json
 
       - name: Generate BTC blocks
         working-directory: mining-integration-tests
@@ -239,7 +235,7 @@ jobs:
           distribution: 'temurin'
 
       - uses: actions/cache@v4
-        name: Restore gradle cache
+        name: Cache Gradle
         id: cache-gradle
         with:
           path: |
@@ -250,11 +246,10 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Get gradle wrapper and build dependencies
+        if: steps.cache-gradle.outputs.cache-hit != 'true'
         run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            ./configure.sh
-            ./gradlew --no-daemon dependencies
-          fi
+          ./configure.sh
+          ./gradlew --no-daemon dependencies
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -270,19 +265,20 @@ jobs:
             | cut -d = -f 2- | paste -sd - -)
           echo "Using RskJ version $version at ../rskj-core/build/libs/rskj-core-$version-all.jar"
           java -Drsk.conf.file=./rsk-integration-test.conf -cp ../rskj-core/build/libs/rskj-core-"$version"-all.jar co.rsk.Start --regtest & rskpid=$!
-          export tries=0
-          export MAX_TRIES=10
           
-          until nc -z 127.0.0.1 4444 || [ $tries -eq $MAX_TRIES ] || ! kill -0 $rskpid 2>/dev/null; do
+          tries=0
+          MAX_TRIES=10
+          while [ $tries -lt $MAX_TRIES ]; do
+            nc -z 127.0.0.1 4444 && break
             echo "Waiting for RskJ..."
-            export tries=$((tries+1))
+            tries=$((tries+1))
             sleep 1
           done
           
-          if ! kill -0 $rskpid 2>/dev/null; then
-            echo "RskJ process has died"
+          if [ $tries -eq $MAX_TRIES ]; then
+            echo "RskJ unreachable after $MAX_TRIES attempts. Aborting." >&2
             exit 1
           fi
           
           npm test
-          kill -9 $rskpid
+          kill $rskpid
