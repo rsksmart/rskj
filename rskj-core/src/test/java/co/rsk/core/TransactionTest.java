@@ -21,6 +21,7 @@ package co.rsk.core;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -448,6 +449,7 @@ class TransactionTest {
         Transaction txInBlock = new ImmutableTransaction(bytes);
 
         Constants constants = Mockito.mock(Constants.class);
+        Mockito.doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         Mockito.doReturn(false).when(activations).isActive(ConsensusRule.RSKIP400);
 
@@ -460,6 +462,7 @@ class TransactionTest {
         Transaction txInBlock = new ImmutableTransaction(bytes);
 
         Constants constants = Mockito.mock(Constants.class);
+        Mockito.doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         Mockito.doReturn(true).when(activations).isActive(ConsensusRule.RSKIP400);
 
