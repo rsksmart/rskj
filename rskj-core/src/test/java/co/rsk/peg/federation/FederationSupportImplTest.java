@@ -19,13 +19,13 @@ package co.rsk.peg.federation;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.FederationMember.KeyType;
@@ -35,12 +35,14 @@ import co.rsk.peg.federation.constants.FederationTestNetConstants;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +54,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class FederationSupportImplTest {
 
     private FederationSupport federationSupport;
-    private FederationConstants federationMainnetConstants;
+    private static FederationConstants federationMainnetConstants;
     private NetworkParameters networkParameters;
     private FederationStorageProvider storageProvider;
     private FederationSupportBuilder federationSupportBuilder;
@@ -70,6 +72,9 @@ class FederationSupportImplTest {
             .withFederationStorageProvider(storageProvider)
             .build();
     }
+
+
+    // getActiveFederation
 
     @Test
     void getActiveFederation_withNullFederations_returnsGenesisFederation() {
@@ -178,6 +183,119 @@ class FederationSupportImplTest {
         } else {
             assertThat(activeFederation, is(oldFederation));
         }
+    }
+
+
+    // getActiveFederationRedeemScript
+
+    @Test
+    void getActiveFederationRedeemScript_withNullFederations_beforeRSKIP293_returnsEmpty() {
+        assertFalse(federationSupport.getActiveFederationRedeemScript().isPresent());
+    }
+
+    @ParameterizedTest
+    @MethodSource("federations_expectedRedeemScript_args")
+    void getActiveFederationRedeemScript_withAtLeastOneNullFederation_afterRSKIP293_returnsExpectedRedeemScript(Federation oldFederation, Federation newFederation, Script expectedRedeemScript) {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .withActivations(activations)
+            .build();
+
+        storageProvider.setOldFederation(oldFederation);
+        storageProvider.setNewFederation(newFederation);
+
+        Optional<Script> actualRedeemScript = federationSupport.getActiveFederationRedeemScript();
+
+        assertTrue(actualRedeemScript.isPresent());
+        assertThat(actualRedeemScript.get(), is(expectedRedeemScript));
+    }
+
+    private static Stream<Arguments> federations_expectedRedeemScript_args() {
+        StandardMultiSigFederationBuilder federationBuilder = new StandardMultiSigFederationBuilder();
+        Federation genesisFederation = federationBuilder
+            .withMembersBtcPublicKeys(FederationMainNetConstants.getInstance().getGenesisFederationPublicKeys())
+            .build();
+
+        P2shErpFederationBuilder p2shErpFederationBuilder = new P2shErpFederationBuilder();
+        Federation oldFederation = p2shErpFederationBuilder
+            .build();
+
+        List<BtcECKey> keysDifferentToOldFedOnes = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
+        );
+        Federation newFederation = p2shErpFederationBuilder
+            .withMembersBtcPublicKeys(keysDifferentToOldFedOnes)
+            .build();
+
+        return Stream.of(
+            Arguments.of(null, null, genesisFederation.getRedeemScript(),
+            Arguments.of(oldFederation, null, genesisFederation.getRedeemScript()),
+            Arguments.of(null, newFederation, newFederation.getRedeemScript()))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("federations_activationAge_expectedRedeemScript_args")
+    void getActiveFederationRedeemScript_withNonNullFederations_returnsExpectedRedeemScriptAccordingToActivationAgeAndActivations(Federation oldFederation, Federation newFederation,
+                                                                                                           long currentBlock, Script expectedRedeemScript,
+                                                                                                           ActivationConfig.ForBlock activations) {
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .withRskExecutionBlock(executionBlock)
+            .withActivations(activations)
+            .build();
+
+        storageProvider.setOldFederation(oldFederation);
+        storageProvider.setNewFederation(newFederation);
+
+        Optional<Script> actualRedeemScript = federationSupport.getActiveFederationRedeemScript();
+
+        assertTrue(actualRedeemScript.isPresent());
+        assertThat(actualRedeemScript.get(), is(expectedRedeemScript));
+    }
+
+    private static Stream<Arguments> federations_activationAge_expectedRedeemScript_args() {
+        long oldFederationCreationBlockNumber = 0;
+        long newFederationCreationBlockNumber = 65;
+
+        // get block number activation for hop
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
+        long newFederationActivationAgeHop = FederationMainNetConstants.getInstance().getFederationActivationAge(hopActivations);
+        long blockNumberFederationActivationHop = newFederationCreationBlockNumber + newFederationActivationAgeHop;
+
+        // get block number activation for fingerroot
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        long newFederationActivationAgeFingerroot = FederationMainNetConstants.getInstance().getFederationActivationAge(fingerrootActivations);
+        long blockNumberFederationActivationFingerroot = newFederationCreationBlockNumber + newFederationActivationAgeFingerroot;
+
+        // create old and new federations
+        P2shErpFederationBuilder p2shErpFederationBuilder = new P2shErpFederationBuilder();
+        Federation oldFederation = p2shErpFederationBuilder
+            .withCreationBlockNumber(oldFederationCreationBlockNumber)
+            .build();
+
+        List<BtcECKey> keysDifferentToOldFedOnes = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
+        );
+        Federation newFederation = p2shErpFederationBuilder
+            .withMembersBtcPublicKeys(keysDifferentToOldFedOnes)
+            .withCreationBlockNumber(newFederationCreationBlockNumber)
+            .build();
+
+        return Stream.of(
+            Arguments.of(oldFederation, newFederation, blockNumberFederationActivationHop - 1, oldFederation.getRedeemScript(), hopActivations), // new federation shouldn't be active
+            Arguments.of(oldFederation, newFederation, blockNumberFederationActivationHop + 1, newFederation.getRedeemScript(), hopActivations), // new federation should be active
+            Arguments.of(oldFederation, newFederation, blockNumberFederationActivationFingerroot - 1, oldFederation.getRedeemScript(), fingerrootActivations), // new federation shouldn't be active
+            Arguments.of(oldFederation, newFederation, blockNumberFederationActivationFingerroot + 1, newFederation.getRedeemScript(), fingerrootActivations) // new federation should be active
+        );
     }
 
     @Test
