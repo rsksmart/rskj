@@ -51,24 +51,19 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class FederationSupportImplTest {
 
-    private FederationSupport federationSupport;
-    private static FederationConstants federationMainnetConstants;
-    Federation genesisFederation;
-    Federation oldFederation;
-    Federation newFederation;
+    private static final FederationConstants federationMainnetConstants = FederationMainNetConstants.getInstance();
+    private final Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
+    private Federation oldFederation;
+    private Federation newFederation;
     private FederationStorageProvider storageProvider;
-    private FederationSupportBuilder federationSupportBuilder;
+    private FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
+    private FederationSupport federationSupport;
 
     @BeforeEach
     void setUp() {
-        federationMainnetConstants = FederationMainNetConstants.getInstance();
-
-        genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
-
         StorageAccessor storageAccessor = new InMemoryStorage();
         storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
-        federationSupportBuilder = new FederationSupportBuilder();
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(storageProvider)
@@ -76,9 +71,22 @@ class FederationSupportImplTest {
     }
 
     @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("getActiveFederationTestsWithNullFederations")
     class ActiveFederationTestsWithNullFederations {
         @Tag("getActiveFederationTestsWithNullFederations")
+
+        @BeforeAll
+        void setUp() {
+            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+            federationSupportBuilder = new FederationSupportBuilder();
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .build();
+        }
 
         @Test
         void getActiveFederation_returnsGenesisFederation() {
@@ -122,25 +130,19 @@ class FederationSupportImplTest {
 
         @BeforeAll
         void setUp() {
-            federationMainnetConstants = FederationMainNetConstants.getInstance();
-
-            genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
             // create old and new federations
-            List<BtcECKey> newFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
-            );
             P2shErpFederationBuilder p2shErpFederationBuilder = new P2shErpFederationBuilder();
             oldFederation = p2shErpFederationBuilder
                 .build();
+            List<BtcECKey> newFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
+            );
             newFederation = p2shErpFederationBuilder
                 .withMembersBtcPublicKeys(newFederationKeys)
                 .build();
 
-            // save federations in storage
             StorageAccessor storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
-            storageProvider.setOldFederation(oldFederation);
-            storageProvider.setNewFederation(newFederation);
 
             federationSupportBuilder = new FederationSupportBuilder();
             federationSupport = federationSupportBuilder
@@ -198,16 +200,7 @@ class FederationSupportImplTest {
 
         @ParameterizedTest
         @MethodSource("expectedAddress_args")
-        void getActiveFederationAddress_afterRSKIP293_returnsExpectedAddress(Federation oldFederation, Federation newFederation, Address expectedAddress) {
-            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-            when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-
-            federationSupport = federationSupportBuilder
-                .withFederationConstants(federationMainnetConstants)
-                .withFederationStorageProvider(storageProvider)
-                .withActivations(activations)
-                .build();
-
+        void getActiveFederationAddress_returnsExpectedAddress(Federation oldFederation, Federation newFederation, Address expectedAddress) {
             storageProvider.setOldFederation(oldFederation);
             storageProvider.setNewFederation(newFederation);
 
@@ -235,16 +228,15 @@ class FederationSupportImplTest {
         @BeforeAll
         @Tag("getActiveFederationTestsWithNonNullFederations")
         void setUp() {
-
             long oldFederationCreationBlockNumber = 0;
             long newFederationCreationBlockNumber = 65;
 
             // get block number activation for hop
-            long newFederationActivationAgeHop = FederationMainNetConstants.getInstance().getFederationActivationAge(hopActivations);
+            long newFederationActivationAgeHop = federationMainnetConstants.getFederationActivationAge(hopActivations);
             blockNumberFederationActivationHop = newFederationCreationBlockNumber + newFederationActivationAgeHop;
 
             // get block number activation for fingerroot
-            long newFederationActivationAgeFingerroot = FederationMainNetConstants.getInstance().getFederationActivationAge(fingerrootActivations);
+            long newFederationActivationAgeFingerroot = federationMainnetConstants.getFederationActivationAge(fingerrootActivations);
             blockNumberFederationActivationFingerroot = newFederationCreationBlockNumber + newFederationActivationAgeFingerroot;
 
             // create old and new federations
@@ -293,6 +285,15 @@ class FederationSupportImplTest {
             );
         }
 
+        @Test
+        void getActiveFederationRedeemScript_beforeRSKIP293_returnsEmpty() {
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .build();
+            assertFalse(federationSupport.getActiveFederationRedeemScript().isPresent());
+        }
+
         @ParameterizedTest
         @MethodSource("expectedRedeemScript_args")
         void getActiveFederationRedeemScript_returnsExpectedRedeemScriptAccordingToActivationAgeAndActivations(long currentBlock, Script expectedRedeemScript,
@@ -320,7 +321,6 @@ class FederationSupportImplTest {
             );
         }
 
-        // get active federation address
         @ParameterizedTest
         @MethodSource("expectedAddress_args")
         void getActiveFederationAddress_returnsExpectedAddressAccordingToActivationAgeAndActivations(long currentBlock, Address expectedAddress,
