@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - '**'
+  pull_request:
+    types: [reopened]
+    branches:
+      - '**'
 
 jobs:
   prepare-rskj:
