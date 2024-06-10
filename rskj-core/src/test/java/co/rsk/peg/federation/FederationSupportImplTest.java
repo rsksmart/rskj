@@ -240,7 +240,7 @@ class FederationSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("federations_activationAge_expectedRedeemScript_args")
-    void getActiveFederationRedeemScript_withNonNullFederations_returnsExpectedRedeemScriptAccordingToActivationAge(Federation oldFederation, Federation newFederation,
+    void getActiveFederationRedeemScript_withNonNullFederations_returnsExpectedRedeemScriptAccordingToActivationAgeAndActivations(Federation oldFederation, Federation newFederation,
                                                                                                            long currentBlock, Script expectedRedeemScript,
                                                                                                            ActivationConfig.ForBlock activations) {
         Block executionBlock = mock(Block.class);
