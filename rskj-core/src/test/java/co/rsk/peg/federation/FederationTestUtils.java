@@ -25,7 +25,6 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import java.math.BigInteger;
@@ -60,29 +59,6 @@ public final class FederationTestUtils {
             networkParameters
         );
 
-        long erpFedActivationDelay = 100L;
-
-        return FederationFactory.buildP2shErpFederation(
-            federationArgs,
-            erpSigners,
-            erpFedActivationDelay
-        );
-    }
-
-    public static ErpFederation getErpFederation(NetworkParameters networkParameters, List<BtcECKey> fedSigners) {
-        final List<BtcECKey> erpSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fb01", "fb02", "fb03"}, true
-        );
-
-        List<FederationMember> fedMember = FederationTestUtils.getFederationMembersWithBtcKeys(
-            fedSigners);
-
-        FederationArgs federationArgs = new FederationArgs(
-            fedMember,
-            Instant.ofEpochMilli(0),
-            0,
-            networkParameters
-        );
         long erpFedActivationDelay = 100L;
 
         return FederationFactory.buildP2shErpFederation(
