@@ -168,7 +168,6 @@ public final class FederationTestUtils {
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
-
     public static void spendFromErpFed(
         NetworkParameters networkParameters,
         ErpFederation federation,
