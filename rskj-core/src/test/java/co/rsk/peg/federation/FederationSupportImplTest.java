@@ -195,7 +195,7 @@ class FederationSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("federations_expectedRedeemScript_args")
-    void getActiveFederationRedeemScript_withAtLeastOneNullFed_afterRSKIP293_returnsExpectedRedeemScript(Federation oldFederation, Federation newFederation, Script expectedRedeemScript) {
+    void getActiveFederationRedeemScript_withAtLeastOneNullFederation_afterRSKIP293_returnsExpectedRedeemScript(Federation oldFederation, Federation newFederation, Script expectedRedeemScript) {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -240,7 +240,7 @@ class FederationSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("federations_activationAge_expectedRedeemScript_args")
-    void getActiveFederationRedeemScript_withNonNullFeds_returnsExpectedRedeemScriptAccordingToActivationAge(Federation oldFederation, Federation newFederation,
+    void getActiveFederationRedeemScript_withNonNullFederations_returnsExpectedRedeemScriptAccordingToActivationAge(Federation oldFederation, Federation newFederation,
                                                                                                            long currentBlock, Script expectedRedeemScript,
                                                                                                            ActivationConfig.ForBlock activations) {
         Block executionBlock = mock(Block.class);
