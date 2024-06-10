@@ -192,29 +192,16 @@ public final class FederationTestUtils {
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
-    public static Script createP2shErpRedeemScriptFromKeys(FederationConstants federationConstants, List<BtcECKey> defaultPublicKeys,
-                                                           int defaultThreshold) {
+    public static ErpFederation createP2shErpFederation(FederationConstants federationConstants, List<BtcECKey> federationKeys, long creationBlockNumber) {
+        federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        List<FederationMember> fedMembers = getFederationMembersWithBtcKeys(federationKeys);
+        Instant creationTime = Instant.ofEpochMilli(1000L);
+        NetworkParameters btcParams = federationConstants.getBtcParams();
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
 
-        Script defaultRedeemScript = ScriptBuilder.createRedeemScript(defaultThreshold, defaultPublicKeys);
-
-        final List<BtcECKey> erpPubKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fb01", "fb02", "fb03"}, true
-        );
-        Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(2, erpPubKeys);
-
-        long erpFedActivationDelay = 100L;
-        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(erpFedActivationDelay);
-
-        return new ScriptBuilder()
-            .op(ScriptOpCodes.OP_NOTIF)
-            .addChunks(defaultRedeemScript.getChunks())
-            .op(ScriptOpCodes.OP_ELSE)
-            .data(serializedCsvValue)
-            .op(ScriptOpCodes.OP_CHECKSEQUENCEVERIFY)
-            .op(ScriptOpCodes.OP_DROP)
-            .addChunks(emergencyRedeemScript.getChunks())
-            .op(ScriptOpCodes.OP_ENDIF)
-            .build();
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, creationBlockNumber, btcParams);
+        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
     public static void spendFromErpFed(
