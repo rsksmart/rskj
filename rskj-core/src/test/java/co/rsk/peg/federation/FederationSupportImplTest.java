@@ -158,6 +158,26 @@ class FederationSupportImplTest {
             long activeFederationCreationBlockNumber = federationSupport.getActiveFederationCreationBlockNumber();
             assertThat(activeFederationCreationBlockNumber, is(genesisFederation.getCreationBlockNumber()));
         }
+
+        @Test
+        @Tag("getActiveFederatorBtcPublicKey")
+        void getActiveFederatorBtcPublicKey_returnsFederatorBtcPublicKeyFromGenesisFederation() {
+            byte[] activeFederatorBtcPublicKey = federationSupport.getActiveFederatorBtcPublicKey(0);
+            assertThat(activeFederatorBtcPublicKey, is(genesisFederation.getBtcPublicKeys().get(0).getPubKey()));
+        }
+
+        @Test
+        @Tag("getActiveFederatorBtcPublicKey")
+        void getActiveFederatorBtcPublicKey_withNegativeIndex_throwsIndexOutOfBoundsException() {
+            assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getActiveFederatorBtcPublicKey(-1));
+        }
+
+        @Test
+        @Tag("getActiveFederatorBtcPublicKey")
+        void getActiveFederatorBtcPublicKey_withIndexGreaterThanActiveFederationSize_throwsIndexOutOfBoundsException() {
+            int activeFederationSize = genesisFederation.getSize();
+            assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getActiveFederatorBtcPublicKey(activeFederationSize));
+        }
     }
 
     @Nested
@@ -330,6 +350,24 @@ class FederationSupportImplTest {
             return Stream.of(
                 Arguments.of(oldFederation, null, genesisFederation.getCreationBlockNumber()),
                 Arguments.of(null, newFederation, newFederation.getCreationBlockNumber())
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederatorBtcPublicKey")
+        @MethodSource("expectedFederatorBtcPublicKeyArgs")
+        void getActiveFederatorBtcPublicKey_returnsExpectedFederatorBtcPublicKey(Federation oldFederation, Federation newFederation, byte[] expectedFederatorBtcPublicKey) {
+            storageProvider.setOldFederation(oldFederation);
+            storageProvider.setNewFederation(newFederation);
+
+            byte[] activeFederatorBtcPublicKey = federationSupport.getActiveFederatorBtcPublicKey(0);
+            assertThat(activeFederatorBtcPublicKey, is(expectedFederatorBtcPublicKey));
+        }
+
+        private Stream<Arguments> expectedFederatorBtcPublicKeyArgs() {
+            return Stream.of(
+                Arguments.of(oldFederation, null, genesisFederation.getBtcPublicKeys().get(0).getPubKey()),
+                Arguments.of(null, newFederation, newFederation.getBtcPublicKeys().get(0).getPubKey())
             );
         }
     }
@@ -596,6 +634,38 @@ class FederationSupportImplTest {
                 Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getCreationBlockNumber()),
                 Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getCreationBlockNumber()),
                 Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getCreationBlockNumber())
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederatorBtcPublicKey")
+        @MethodSource("expectedFederatorBtcPublicKeyArgs")
+        void getActiveFederatorBtcPublicKey_returnsExpectedFederatorBtcPublicKeyAccordingToActivationAgeAndActivations(long currentBlock, ActivationConfig.ForBlock activations, byte[] expectedFederatorBtcPublicKey) {
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            byte[] activeFederatorBtcPublicKey = federationSupport.getActiveFederatorBtcPublicKey(0);
+            assertThat(activeFederatorBtcPublicKey, is(expectedFederatorBtcPublicKey));
+        }
+
+        private Stream<Arguments> expectedFederatorBtcPublicKeyArgs() {
+            BtcECKey federatorFromOldFederationBtcPublicKey = oldFederation.getBtcPublicKeys().get(0);
+            BtcECKey federatorFromNewFederationBtcPublicKey = newFederation.getBtcPublicKeys().get(0);
+
+            return Stream.of(
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, federatorFromOldFederationBtcPublicKey.getPubKey()),
+                Arguments.of(blockNumberFederationActivationHop, hopActivations, federatorFromNewFederationBtcPublicKey.getPubKey()),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, federatorFromOldFederationBtcPublicKey.getPubKey()),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, federatorFromOldFederationBtcPublicKey.getPubKey()),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, federatorFromNewFederationBtcPublicKey.getPubKey()),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, federatorFromNewFederationBtcPublicKey.getPubKey())
             );
         }
     }
