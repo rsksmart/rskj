@@ -151,6 +151,13 @@ class FederationSupportImplTest {
             Instant activeFederationCreationTime = federationSupport.getActiveFederationCreationTime();
             assertThat(activeFederationCreationTime, is(genesisFederation.getCreationTime()));
         }
+
+        @Test
+        @Tag("getActiveFederationCreationBlockNumber")
+        void getActiveFederationCreationBlockNumber_returnsGenesisFederationCreationBlockNumber() {
+            long activeFederationCreationBlockNumber = federationSupport.getActiveFederationCreationBlockNumber();
+            assertThat(activeFederationCreationBlockNumber, is(genesisFederation.getCreationBlockNumber()));
+        }
     }
 
     @Nested
@@ -308,6 +315,24 @@ class FederationSupportImplTest {
             return Stream.of(
                 Arguments.of(oldFederation, null, genesisFederation.getCreationTime()),
                 Arguments.of(null, newFederation, newFederation.getCreationTime())
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationCreationBlockNumber")
+        @MethodSource("expectedCreationBlockNumberArgs")
+        void getActiveFederationCreationBlockNumber_returnsExpectedCreationBlockNumber(Federation oldFederation, Federation newFederation, long expectedCreationBlockNumber) {
+            storageProvider.setOldFederation(oldFederation);
+            storageProvider.setNewFederation(newFederation);
+
+            long activeFederationCreationBlockNumber = federationSupport.getActiveFederationCreationBlockNumber();
+            assertThat(activeFederationCreationBlockNumber, is(expectedCreationBlockNumber));
+        }
+
+        private Stream<Arguments> expectedCreationBlockNumberArgs() {
+            return Stream.of(
+                Arguments.of(oldFederation, null, genesisFederation.getCreationBlockNumber()),
+                Arguments.of(null, newFederation, newFederation.getCreationBlockNumber())
             );
         }
     }
@@ -545,6 +570,35 @@ class FederationSupportImplTest {
                 Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getCreationTime()),
                 Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getCreationTime()),
                 Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getCreationTime())
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationCreationBlockNumber")
+        @MethodSource("expectedCreationBlockNumberArgs")
+        void getActiveFederationCreationBlockNumber_returnsExpectedCreationBlockNumberAccordingToActivationAgeAndActivations(long currentBlock, ActivationConfig.ForBlock activations, long expectedCreationBlockNumber) {
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            long activeFederationCreationBlockNumber = federationSupport.getActiveFederationCreationBlockNumber();
+            assertThat(activeFederationCreationBlockNumber, is(expectedCreationBlockNumber));
+        }
+
+        private Stream<Arguments> expectedCreationBlockNumberArgs() {
+            return Stream.of(
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation.getCreationBlockNumber()),
+                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation.getCreationBlockNumber()),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation.getCreationBlockNumber()),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getCreationBlockNumber()),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getCreationBlockNumber()),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getCreationBlockNumber())
             );
         }
     }
