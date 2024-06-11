@@ -137,6 +137,13 @@ class FederationSupportImplTest {
             int activeFederationSize = federationSupport.getActiveFederationSize();
             assertThat(activeFederationSize, is(genesisFederation.getSize()));
         }
+
+        @Test
+        @Tag("getActiveFederationThreshold")
+        void getActiveFederationThreshold_returnsGenesisFederationThreshold() {
+            int activeFederationThreshold = federationSupport.getActiveFederationThreshold();
+            assertThat(activeFederationThreshold, is(genesisFederation.getNumberOfSignaturesRequired()));
+        }
     }
 
     @Nested
@@ -255,6 +262,24 @@ class FederationSupportImplTest {
             return Stream.of(
                 Arguments.of(oldFederation, null, genesisFederation.getSize()),
                 Arguments.of(null, newFederation, newFederation.getSize())
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationThreshold")
+        @MethodSource("expectedThresholdArgs")
+        void getActiveFederationThreshold_returnsExpectedThreshold(Federation oldFederation, Federation newFederation, int expectedThreshold) {
+            storageProvider.setOldFederation(oldFederation);
+            storageProvider.setNewFederation(newFederation);
+
+            int activeFederationThreshold = federationSupport.getActiveFederationThreshold();
+            assertThat(activeFederationThreshold, is(expectedThreshold));
+        }
+
+        private Stream<Arguments> expectedThresholdArgs() {
+            return Stream.of(
+                Arguments.of(oldFederation, null, genesisFederation.getNumberOfSignaturesRequired()),
+                Arguments.of(null, newFederation, newFederation.getNumberOfSignaturesRequired())
             );
         }
     }
@@ -434,6 +459,35 @@ class FederationSupportImplTest {
                 Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getSize()),
                 Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getSize()),
                 Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getSize())
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationThreshold")
+        @MethodSource("expectedThresholdArgs")
+        void getActiveFederationThreshold_returnsExpectedThresholdAccordingToActivationAgeAndActivations(long currentBlock, ActivationConfig.ForBlock activations, int expectedThreshold) {
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            int activeFederationThreshold = federationSupport.getActiveFederationThreshold();
+            assertThat(activeFederationThreshold, is(expectedThreshold));
+        }
+
+        private Stream<Arguments> expectedThresholdArgs() {
+            return Stream.of(
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation.getNumberOfSignaturesRequired()),
+                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation.getNumberOfSignaturesRequired()),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation.getNumberOfSignaturesRequired()),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getNumberOfSignaturesRequired()),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getNumberOfSignaturesRequired()),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getNumberOfSignaturesRequired())
             );
         }
     }
