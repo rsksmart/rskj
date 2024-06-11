@@ -144,6 +144,13 @@ class FederationSupportImplTest {
             int activeFederationThreshold = federationSupport.getActiveFederationThreshold();
             assertThat(activeFederationThreshold, is(genesisFederation.getNumberOfSignaturesRequired()));
         }
+
+        @Test
+        @Tag("getActiveFederationCreationTime")
+        void getActiveFederationCreationTime_returnsGenesisFederationCreationTime() {
+            Instant activeFederationCreationTime = federationSupport.getActiveFederationCreationTime();
+            assertThat(activeFederationCreationTime, is(genesisFederation.getCreationTime()));
+        }
     }
 
     @Nested
@@ -283,6 +290,24 @@ class FederationSupportImplTest {
             return Stream.of(
                 Arguments.of(oldFederation, null, genesisFederation.getNumberOfSignaturesRequired()),
                 Arguments.of(null, newFederation, newFederation.getNumberOfSignaturesRequired())
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationCreationTime")
+        @MethodSource("expectedCreationTimeArgs")
+        void getActiveFederationCreationTime_returnsExpectedCreationTime(Federation oldFederation, Federation newFederation, Instant expectedCreationTime) {
+            storageProvider.setOldFederation(oldFederation);
+            storageProvider.setNewFederation(newFederation);
+
+            Instant activeFederationCreationTime = federationSupport.getActiveFederationCreationTime();
+            assertThat(activeFederationCreationTime, is(expectedCreationTime));
+        }
+
+        private Stream<Arguments> expectedCreationTimeArgs() {
+            return Stream.of(
+                Arguments.of(oldFederation, null, genesisFederation.getCreationTime()),
+                Arguments.of(null, newFederation, newFederation.getCreationTime())
             );
         }
     }
@@ -491,6 +516,35 @@ class FederationSupportImplTest {
                 Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getNumberOfSignaturesRequired()),
                 Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getNumberOfSignaturesRequired()),
                 Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getNumberOfSignaturesRequired())
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationCreationTime")
+        @MethodSource("expectedCreationTimeArgs")
+        void getActiveFederationCreationTime_returnsExpectedCreationTimeAccordingToActivationAgeAndActivations(long currentBlock, ActivationConfig.ForBlock activations, Instant expectedCreationTime) {
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Instant activeFederationCreationTime = federationSupport.getActiveFederationCreationTime();
+            assertThat(activeFederationCreationTime, is(expectedCreationTime));
+        }
+
+        private Stream<Arguments> expectedCreationTimeArgs() {
+            return Stream.of(
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation.getCreationTime()),
+                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation.getCreationTime()),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation.getCreationTime()),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getCreationTime()),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getCreationTime()),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getCreationTime())
             );
         }
     }
