@@ -4,22 +4,21 @@
 [![CodeQL](https://github.com/rsksmart/rskj/workflows/CodeQL/badge.svg)](https://github.com/rsksmart/rskj/actions?query=workflow%3ACodeQL)
 
 # About
-RskJ is a Java implementation of the Rootstock node. For more information about Rootstock, visit [rootstock.io/](https://rootstock.io/). The [Rootstock white paper](https://rootstock.io/rsk-white-paper-updated.pdf) provides a complete conceptual overview of the platform.
+RskJ is a Java implementation of the Rootstock node. For more information about Rootstock, visit [rootstock.io](https://rootstock.io/). The [Rootstock white paper](https://rootstock.io/rsk-white-paper-updated.pdf) provides a complete conceptual overview of the platform.
 
 If you have questions about the code please find us on [![Gitter](https://badges.gitter.im/rsksmart/rskj.svg)](https://gitter.im/rsksmart/rskj?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 You may also want to check [our blog](https://blog.rsk.co/) for articles and updates on the project.
 
 # Getting Started
-Information about compiling and running a Rootstock node can be found in the [wiki](https://github.com/rsksmart/rskj/wiki).
-The stable versions are the tags published in [releases tab](https://github.com/rsksmart/rskj/releases).
+Information about compiling and running a Rootstock node can be found in the [developer portal](https://dev.rootstock.io/). Stable versions are published in [releases](https://github.com/rsksmart/rskj/releases).
 
 # Report Security Vulnerabilities
 We have a [vulnerability reporting guideline](https://github.com/rsksmart/rskj/blob/master/SECURITY.md) for details on how to
 contact us to report a vulnerability.
 
 # License
-RskJ is licensed under the GNU Lesser General Public License v3.0, also included in our repository in the COPYING.LESSER file.
+RskJ is licensed under the GNU Lesser General Public License v3.0, also included in our repository in the [COPYING.LESSER](COPYING.LESSER) file.
 
 # Your Pledge
 RskJ has been developed with the intention to foster the progress of society. By using RskJ, you make a pledge not to use it to incur in:
