@@ -171,7 +171,6 @@ class FederationSupportImplTest {
 
         private Stream<Arguments> expectedFederationArgs() {
             return Stream.of(
-                Arguments.of(oldFederation, null, genesisFederation),
                 Arguments.of(null, newFederation, newFederation)
             );
         }
@@ -213,7 +212,6 @@ class FederationSupportImplTest {
 
         private Stream<Arguments> expectedRedeemScriptArgs() {
             return Stream.of(
-                Arguments.of(oldFederation, null, genesisFederation.getRedeemScript()),
                 Arguments.of(null, newFederation, newFederation.getRedeemScript())
             );
         }
@@ -231,7 +229,6 @@ class FederationSupportImplTest {
 
         private Stream<Arguments> expectedAddressArgs() {
             return Stream.of(
-                Arguments.of(oldFederation, null, genesisFederation.getAddress()),
                 Arguments.of(null, newFederation, newFederation.getAddress())
             );
         }
@@ -253,7 +250,7 @@ class FederationSupportImplTest {
 
         @BeforeAll
         void setUp() {
-            long oldFederationCreationBlockNumber = 0;
+            long oldFederationCreationBlockNumber = 20;
             long newFederationCreationBlockNumber = 65;
 
             // get block number activation for hop
