@@ -14,13 +14,12 @@ import static org.mockito.Mockito.when;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeTestNetConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +28,6 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
 import java.util.stream.Stream;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -54,10 +52,9 @@ class FederationStorageProviderImplTests {
     private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
     private final NetworkParameters regtestBtcParams = bridgeConstantsRegtest.getBtcParams();
     private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-    private final BridgeConstants bridgeConstantsTestnet = BridgeTestNetConstants.getInstance();
-    private final FederationConstants federationConstantsTestnet = bridgeConstantsTestnet.getFederationConstants();
-    private final NetworkParameters testnetBtcParams = federationConstantsTestnet.getBtcParams();
-    private final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
+    private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+    private final FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+    private final NetworkParameters networkParameters = federationConstants.getBtcParams();
 
     @Test
     void getNewFederation_should_return_p2sh_erp_federation() {
@@ -555,50 +552,53 @@ class FederationStorageProviderImplTests {
     }
 
     private static Stream<Arguments> provideFederationBtcUTXOsTestArguments() {
+
+        ActivationConfig.ForBlock activationsWithRskip284And293Inactive = mock(ActivationConfig.ForBlock.class);
+        when(activationsWithRskip284And293Inactive.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
+        when(activationsWithRskip284And293Inactive.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        ActivationConfig.ForBlock activationsWithRskip284InactiveAnd293Active = mock(ActivationConfig.ForBlock.class);
+        when(activationsWithRskip284InactiveAnd293Active.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
+        when(activationsWithRskip284InactiveAnd293Active.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        ActivationConfig.ForBlock activationsWithRskip284ActiveAnd293Inactive = mock(ActivationConfig.ForBlock.class);
+        when(activationsWithRskip284ActiveAnd293Inactive.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activationsWithRskip284ActiveAnd293Inactive.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        ActivationConfig.ForBlock activationsWithRskip284And293Active = mock(ActivationConfig.ForBlock.class);
+        when(activationsWithRskip284And293Active.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activationsWithRskip284And293Active.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
         return Stream.of(
-            Arguments.of(false, false, NetworkParameters.ID_TESTNET),
-            Arguments.of(false, false, NetworkParameters.ID_MAINNET),
-            Arguments.of(false, true, NetworkParameters.ID_TESTNET),
-            Arguments.of(false, true, NetworkParameters.ID_MAINNET),
-            Arguments.of(true, false, NetworkParameters.ID_TESTNET),
-            Arguments.of(true, false, NetworkParameters.ID_MAINNET),
-            Arguments.of(true, true, NetworkParameters.ID_TESTNET),
-            Arguments.of(true, true, NetworkParameters.ID_MAINNET)
+            Arguments.of(activationsWithRskip284And293Inactive, NetworkParameters.ID_TESTNET),
+            Arguments.of(activationsWithRskip284And293Inactive, NetworkParameters.ID_MAINNET),
+            Arguments.of(activationsWithRskip284ActiveAnd293Inactive, NetworkParameters.ID_TESTNET),
+            Arguments.of(activationsWithRskip284ActiveAnd293Inactive, NetworkParameters.ID_MAINNET),
+            Arguments.of(activationsWithRskip284ActiveAnd293Inactive, NetworkParameters.ID_TESTNET),
+            Arguments.of(activationsWithRskip284ActiveAnd293Inactive, NetworkParameters.ID_MAINNET),
+            Arguments.of(activationsWithRskip284And293Active, NetworkParameters.ID_TESTNET),
+            Arguments.of(activationsWithRskip284And293Active, NetworkParameters.ID_MAINNET)
         );
     }
 
     @ParameterizedTest
     @MethodSource("provideFederationBtcUTXOsTestArguments")
-    void testGetNewFederationBtcUTXOsWithCombinationsOfRSKIPsAndNetworks(boolean isRskip284Active, boolean isRskip293Active, String networkId) {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
+    void testGetNewFederationBtcUTXOs(ActivationConfig.ForBlock activations, String networkId) {
 
         NetworkParameters networkParameters = NetworkParameters.fromID(networkId);
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(this.networkParameters, "test");
 
-        Address btcAddress = new Address(testnetBtcParams, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
-
-        Repository repository = mock(Repository.class);
         List<UTXO> federationUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
-        when(repository.getStorageBytes(
-            bridgeAddress,
-            NEW_FEDERATION_BTC_UTXOS_KEY.getKey()
-        )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxos));
+        storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), BridgeSerializationUtils.serializeUTXOList(federationUtxos));
 
         List<UTXO> federationUtxosAfterRskip284Activation = BitcoinTestUtils.createUTXOs(2, btcAddress);
-
-        when(repository.getStorageBytes(
-            bridgeAddress,
-            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey()
-        )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskip284Activation));
+        storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey(), BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskip284Activation));
 
         List<UTXO> federationUtxosAfterRskip293Activation = BitcoinTestUtils.createUTXOs(2, btcAddress);
-        when(repository.getStorageBytes(
-            bridgeAddress,
-            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP.getKey()
-        )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskip293Activation));
+        storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP.getKey(), BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskip293Activation));
 
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(storageAccessor);
 
         List<UTXO> obtainedUtxos = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
 
@@ -609,13 +609,13 @@ class FederationStorageProviderImplTests {
 
         // testnet
         // rskip284 & rskip293 are not active
-        if (!isRskip284Active) {
+        if (!activations.isActive(ConsensusRule.RSKIP284)) {
             Assertions.assertEquals(federationUtxos, obtainedUtxos);
             return;
         }
 
         // rskip284 is active
-        if (!isRskip293Active) {
+        if (!activations.isActive(ConsensusRule.RSKIP293)) {
             Assertions.assertEquals(federationUtxosAfterRskip284Activation, obtainedUtxos);
             return;
         }
@@ -632,19 +632,19 @@ class FederationStorageProviderImplTests {
 
         DataWord newFederationBtcUtxosKey = NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
 
-        Address btcAddress = new Address(testnetBtcParams, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
         List<UTXO> expectedUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
         storageAccessor.saveToRepository(newFederationBtcUtxosKey, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
-        List<UTXO> actualUtxos = federationStorageProvider.getNewFederationBtcUTXOs(testnetBtcParams, activations);
+        List<UTXO> actualUtxos = federationStorageProvider.getNewFederationBtcUTXOs(
+            networkParameters, activations);
 
         assertEquals(1, actualUtxos.size());
         assertEquals(expectedUtxos, actualUtxos);
 
-        List<UTXO> extraUtxos = new ArrayList<>(expectedUtxos);
-        extraUtxos.addAll(BitcoinTestUtils.createUTXOs(1, btcAddress));
+        List<UTXO> extraUtxos = new ArrayList<>(BitcoinTestUtils.createUTXOs(2, btcAddress));
 
         storageAccessor.saveToRepository(newFederationBtcUtxosKey, extraUtxos, BridgeSerializationUtils::serializeUTXOList);
 
@@ -721,4 +721,9 @@ class FederationStorageProviderImplTests {
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         return new FederationStorageProviderImpl(bridgeStorageAccessor);
     }
+
+    private FederationStorageProvider createFederationStorageProvider(StorageAccessor storageAccessor) {
+        return new FederationStorageProviderImpl(storageAccessor);
+    }
+
 }
