@@ -71,7 +71,6 @@ class FederationFactoryTest {
     @Tag("erpFeds")
     class ErpFederationTests {
         @BeforeEach
-        @Tag("erpFeds")
         void setUp() {
             emergencyKeys = federationConstants.getErpFedPubKeysList();
             activationDelayValue = federationConstants.getErpFedActivationDelay();
