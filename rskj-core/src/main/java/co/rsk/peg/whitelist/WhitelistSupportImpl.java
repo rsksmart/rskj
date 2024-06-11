@@ -131,7 +131,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
      */
     @Override
     public int removeLockWhitelistAddress(Transaction tx, String addressBase58) {
-        if (isNotAuthorizedLockWhitelistChange(tx)) {
+        if (!isAuthorizedLockWhitelistChange(tx)) {
             return UNAUTHORIZED_CALLER.getCode();
         }
 
@@ -164,7 +164,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     public int setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI, int btcBlockchainBestChainHeight)
         throws IOException, BlockStoreException {
 
-        if (isNotAuthorizedLockWhitelistChange(tx)) {
+        if (!isAuthorizedLockWhitelistChange(tx)) {
             return UNAUTHORIZED_CALLER.getCode();
         }
 
@@ -202,7 +202,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     }
 
     private Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry entry) {
-        if (isNotAuthorizedLockWhitelistChange(tx)) {
+        if (!isAuthorizedLockWhitelistChange(tx)) {
             return UNAUTHORIZED_CALLER.getCode();
         }
 
@@ -219,8 +219,8 @@ public class WhitelistSupportImpl implements WhitelistSupport {
         }
     }
 
-    private boolean isNotAuthorizedLockWhitelistChange(Transaction tx) {
+    private boolean isAuthorizedLockWhitelistChange(Transaction tx) {
         AddressBasedAuthorizer authorizer = whitelistConstants.getLockWhitelistChangeAuthorizer();
-        return !authorizer.isAuthorized(tx, signatureCache);
+        return authorizer.isAuthorized(tx, signatureCache);
     }
 }
