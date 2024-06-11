@@ -56,7 +56,7 @@ class FederationSupportImplTest {
     private Federation oldFederation;
     private Federation newFederation;
     private FederationStorageProvider storageProvider;
-    private FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
+    private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
     private FederationSupport federationSupport;
 
     @BeforeEach
@@ -72,16 +72,13 @@ class FederationSupportImplTest {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @Tag("getActiveFederationTestsWithNullFederations")
+    @Tag("null federations")
     class ActiveFederationTestsWithNullFederations {
-        @Tag("getActiveFederationTestsWithNullFederations")
-
         @BeforeAll
         void setUp() {
             StorageAccessor storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
-            federationSupportBuilder = new FederationSupportBuilder();
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
@@ -89,12 +86,14 @@ class FederationSupportImplTest {
         }
 
         @Test
+        @Tag("getActiveFederation")
         void getActiveFederation_returnsGenesisFederation() {
             Federation activeFederation = federationSupport.getActiveFederation();
             assertThat(activeFederation, is(genesisFederation));
         }
 
         @Test
+        @Tag("getActiveFederationRedeemScript")
         void getActiveFederationRedeemScript_beforeRSKIP293_returnsEmpty() {
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
             when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
@@ -109,6 +108,7 @@ class FederationSupportImplTest {
         }
 
         @Test
+        @Tag("getActiveFederationRedeemScript")
         void getActiveFederationRedeemScript_afterRSKIP293_returnsGenesisFederationRedeemScript() {
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
             when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
@@ -125,6 +125,7 @@ class FederationSupportImplTest {
         }
 
         @Test
+        @Tag("getActiveFederationAddress")
         void getActiveFederationAddress_returnsGenesisFederationAddress() {
             Address activeFederationAddress = federationSupport.getActiveFederationAddress();
             assertThat(activeFederationAddress, is(genesisFederation.getAddress()));
@@ -132,11 +133,9 @@ class FederationSupportImplTest {
     }
 
     @Nested
-    @Tag("getActiveFederationTestsWithOneNullFederation")
+    @Tag("one null federation")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class ActiveFederationTestsWithOneNullFederation {
-        @Tag("getActiveFederationTestsWithOneNullFederation")
-
         @BeforeAll
         void setUp() {
             // create old and new federations
@@ -153,7 +152,6 @@ class FederationSupportImplTest {
             StorageAccessor storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
-            federationSupportBuilder = new FederationSupportBuilder();
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
@@ -161,7 +159,8 @@ class FederationSupportImplTest {
         }
 
         @ParameterizedTest
-        @MethodSource("expectedFederation_args")
+        @Tag("getActiveFederation")
+        @MethodSource("expectedFederationArgs")
         void getActiveFederation_returnsExpectedFederation(Federation oldFederation, Federation newFederation, Federation expectedFederation) {
             storageProvider.setOldFederation(oldFederation);
             storageProvider.setNewFederation(newFederation);
@@ -170,7 +169,7 @@ class FederationSupportImplTest {
             assertThat(activeFederation, is(expectedFederation));
         }
 
-        private Stream<Arguments> expectedFederation_args() {
+        private Stream<Arguments> expectedFederationArgs() {
             return Stream.of(
                 Arguments.of(oldFederation, null, genesisFederation),
                 Arguments.of(null, newFederation, newFederation)
@@ -178,6 +177,7 @@ class FederationSupportImplTest {
         }
 
         @Test
+        @Tag("getActiveFederationRedeemScript")
         void getActiveFederationRedeemScript_beforeRSKIP293_returnsEmpty() {
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
             when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
@@ -191,7 +191,8 @@ class FederationSupportImplTest {
         }
 
         @ParameterizedTest
-        @MethodSource("expectedRedeemScript_args")
+        @Tag("getActiveFederationRedeemScript")
+        @MethodSource("expectedRedeemScriptArgs")
         void getActiveFederationRedeemScript_afterRSKIP293_returnsExpectedRedeemScript(Federation oldFederation, Federation newFederation, Script expectedRedeemScript) {
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
             when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
@@ -210,7 +211,7 @@ class FederationSupportImplTest {
             assertThat(activeFederationRedeemScript.get(), is(expectedRedeemScript));
         }
 
-        private Stream<Arguments> expectedRedeemScript_args() {
+        private Stream<Arguments> expectedRedeemScriptArgs() {
             return Stream.of(
                 Arguments.of(oldFederation, null, genesisFederation.getRedeemScript()),
                 Arguments.of(null, newFederation, newFederation.getRedeemScript())
@@ -218,7 +219,8 @@ class FederationSupportImplTest {
         }
 
         @ParameterizedTest
-        @MethodSource("expectedAddress_args")
+        @Tag("getActiveFederationAddress")
+        @MethodSource("expectedAddressArgs")
         void getActiveFederationAddress_returnsExpectedAddress(Federation oldFederation, Federation newFederation, Address expectedAddress) {
             storageProvider.setOldFederation(oldFederation);
             storageProvider.setNewFederation(newFederation);
@@ -227,7 +229,7 @@ class FederationSupportImplTest {
             assertThat(activeFederationAddress, is(expectedAddress));
         }
 
-        private Stream<Arguments> expectedAddress_args() {
+        private Stream<Arguments> expectedAddressArgs() {
             return Stream.of(
                 Arguments.of(oldFederation, null, genesisFederation.getAddress()),
                 Arguments.of(null, newFederation, newFederation.getAddress())
@@ -236,9 +238,13 @@ class FederationSupportImplTest {
     }
 
     @Nested
-    @Tag("getActiveFederationTestsWithNonNullFederations")
+    @Tag("non null federations")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class ActiveFederationTestsWithNonNullFederations {
+        // new federation should be active if we are past the activation block number
+        // old federation should be active if we are before the activation block number
+        // activation block number is smaller for hop than for fingerroot
+
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
         long blockNumberFederationActivationHop;
         ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
@@ -246,7 +252,6 @@ class FederationSupportImplTest {
         FederationStorageProvider storageProvider;
 
         @BeforeAll
-        @Tag("getActiveFederationTestsWithNonNullFederations")
         void setUp() {
             long oldFederationCreationBlockNumber = 0;
             long newFederationCreationBlockNumber = 65;
@@ -280,7 +285,8 @@ class FederationSupportImplTest {
         }
 
         @ParameterizedTest
-        @MethodSource("expectedFederation_args")
+        @Tag("getActiveFederation")
+        @MethodSource("expectedFederationArgs")
         void getActiveFederation_returnsExpectedFederationAccordingToActivationAgeAndActivations(long currentBlock, ActivationConfig.ForBlock activations, Federation expectedFederation) {
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
@@ -296,18 +302,19 @@ class FederationSupportImplTest {
             assertThat(activeFederation, is(expectedFederation));
         }
 
-        private Stream<Arguments> expectedFederation_args() {
+        private Stream<Arguments> expectedFederationArgs() {
             return Stream.of(
-                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation), // new federation shouldn't be active
-                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation), // new federation should be active
-                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation), // new federation shouldn't be active since hop activation block number is smaller than fingerroot one
-                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation), // new federation shouldn't be active
-                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation), // new federation should be active
-                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation) // new federation should be active since hop activation block number is smaller than fingerroot one
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation),
+                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation)
             );
         }
 
         @Test
+        @Tag("getActiveFederationRedeemScript")
         void getActiveFederationRedeemScript_beforeRSKIP293_returnsEmpty() {
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
             when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
@@ -321,7 +328,8 @@ class FederationSupportImplTest {
         }
 
         @ParameterizedTest
-        @MethodSource("expectedRedeemScript_args")
+        @Tag("getActiveFederationRedeemScript")
+        @MethodSource("expectedRedeemScriptArgs")
         void getActiveFederationRedeemScript_returnsExpectedRedeemScriptAccordingToActivationAgeAndActivations(long currentBlock, ActivationConfig.ForBlock activations, Script expectedRedeemScript) {
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
@@ -338,19 +346,20 @@ class FederationSupportImplTest {
             assertThat(activeFederationRedeemScript.get(), is(expectedRedeemScript));
         }
 
-        private Stream<Arguments> expectedRedeemScript_args() {
+        private Stream<Arguments> expectedRedeemScriptArgs() {
             return Stream.of(
-                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation.getRedeemScript()), // new federation shouldn't be active
-                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation.getRedeemScript()), // new federation should be active
-                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation.getRedeemScript()), // new federation shouldn't be active since hop activation block number is smaller than fingerroot one
-                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getRedeemScript()), // new federation shouldn't be active
-                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getRedeemScript()), // new federation should be active
-                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getRedeemScript()) // new federation should be active since hop activation block number is smaller than fingerroot one
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation.getRedeemScript()),
+                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation.getRedeemScript()),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation.getRedeemScript()),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getRedeemScript()),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getRedeemScript()),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getRedeemScript())
             );
         }
 
         @ParameterizedTest
-        @MethodSource("expectedAddress_args")
+        @Tag("getActiveFederationAddress")
+        @MethodSource("expectedAddressArgs")
         void getActiveFederationAddress_returnsExpectedAddressAccordingToActivationAgeAndActivations(long currentBlock, ActivationConfig.ForBlock activations, Address expectedAddress) {
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
@@ -366,14 +375,14 @@ class FederationSupportImplTest {
             assertThat(activeFederationAddress, is(expectedAddress));
         }
 
-        private Stream<Arguments> expectedAddress_args() {
+        private Stream<Arguments> expectedAddressArgs() {
             return Stream.of(
-                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation.getAddress()), // new federation shouldn't be active
-                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation.getAddress()), // new federation should be active
-                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation.getAddress()), // new federation shouldn't be active since hop activation block number is smaller than fingerroot one
-                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getAddress()), // new federation shouldn't be active
-                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getAddress()), // new federation should be active
-                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getAddress()) // new federation should be active since hop activation block number is smaller than fingerroot one
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation.getAddress()),
+                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation.getAddress()),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation.getAddress()),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getAddress()),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getAddress()),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getAddress())
             );
         }
     }
