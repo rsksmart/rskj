@@ -68,30 +68,6 @@ public final class FederationTestUtils {
         );
     }
 
-    public static ErpFederation getErpFederation(NetworkParameters networkParameters, List<BtcECKey> fedSigners, long creationBlockNumber) {
-        final List<BtcECKey> erpSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fb01", "fb02", "fb03"}, true
-        );
-
-        List<FederationMember> fedMember = FederationTestUtils.getFederationMembersWithBtcKeys(
-            fedSigners);
-
-        FederationArgs federationArgs = new FederationArgs(
-            fedMember,
-            Instant.ofEpochMilli(0),
-            creationBlockNumber,
-            networkParameters
-        );
-
-        long erpFedActivationDelay = 100L;
-
-        return FederationFactory.buildP2shErpFederation(
-            federationArgs,
-            erpSigners,
-            erpFedActivationDelay
-        );
-    }
-
     public static Federation getFederation(Integer... federationMemberPks) {
         FederationArgs federationArgs = new FederationArgs(
             getFederationMembersFromPks(federationMemberPks),
@@ -167,7 +143,6 @@ public final class FederationTestUtils {
         FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
-
 
     public static void spendFromErpFed(
         NetworkParameters networkParameters,
