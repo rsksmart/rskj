@@ -1,5 +1,7 @@
 package co.rsk.peg.whitelist;
 
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -25,4 +27,6 @@ public interface WhitelistSupport {
 
     int setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI, int btcBlockchainBestChainHeight)
         throws IOException, BlockStoreException;
+
+    boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height);
 }

@@ -683,7 +683,7 @@ public class BridgeSupport {
     private boolean shouldProcessPegInVersionLegacy(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx,
                                        Address senderBtcAddress, Coin totalAmount, int height) {
         return isTxLockableForLegacyVersion(txSenderAddressType, btcTx, senderBtcAddress) &&
-                verifyLockSenderIsWhitelisted(senderBtcAddress, totalAmount, height) &&
+                whitelistSupport.verifyLockSenderIsWhitelisted(senderBtcAddress, totalAmount, height) &&
                 verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount);
     }
 
@@ -2743,24 +2743,6 @@ public class BridgeSupport {
         };
 
         generateRejectionRelease(btcTx, senderBtcAddress, null, rskTxHash, totalAmount, createWallet);
-    }
-
-    private boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height) {
-        // If the address is not whitelisted, then return the funds
-        // using the exact same utxos sent to us.
-        // That is, build a pegout waiting for confirmations and get it in the pegoutWaitingForConfirmations set.
-        // Otherwise, transfer SBTC to the sender of the BTC
-        // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
-        LockWhitelist lockWhitelist = provider.getLockWhitelist();
-        if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
-            logger.info("Rejecting lock. Address {} is not whitelisted.", senderBtcAddress);
-            return false;
-        }
-
-        // Consume this whitelisted address
-        lockWhitelist.consume(senderBtcAddress);
-
-        return true;
     }
 
     private boolean verifyLockDoesNotSurpassLockingCap(BtcTransaction btcTx, Coin totalAmount) {

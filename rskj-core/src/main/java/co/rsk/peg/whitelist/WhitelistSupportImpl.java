@@ -4,9 +4,9 @@ import static co.rsk.peg.whitelist.WhitelistResponseCode.ADDRESS_ALREADY_WHITELI
 import static co.rsk.peg.whitelist.WhitelistResponseCode.ADDRESS_NOT_EXIST;
 import static co.rsk.peg.whitelist.WhitelistResponseCode.DELAY_ALREADY_SET;
 import static co.rsk.peg.whitelist.WhitelistResponseCode.DISABLE_BLOCK_DELAY_INVALID;
-import static co.rsk.peg.whitelist.WhitelistResponseCode.GENERIC_ERROR;
 import static co.rsk.peg.whitelist.WhitelistResponseCode.INVALID_ADDRESS_FORMAT;
 import static co.rsk.peg.whitelist.WhitelistResponseCode.SUCCESS;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.UNAUTHORIZED_CALLER;
 import static co.rsk.peg.whitelist.WhitelistResponseCode.UNKNOWN_ERROR;
 
 import co.rsk.bitcoinj.core.Address;
@@ -14,7 +14,6 @@ import co.rsk.bitcoinj.core.AddressFormatException;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import java.io.IOException;
@@ -32,15 +31,16 @@ public class WhitelistSupportImpl implements WhitelistSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(WhitelistSupportImpl.class);
     private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
     private final SignatureCache signatureCache;
     private final Context btcContext;
     private final WhitelistConstants whitelistConstants;
     private final WhitelistStorageProvider whitelistStorageProvider;
 
-    public WhitelistSupportImpl(WhitelistStorageProvider whitelistStorageProvider,
+    public WhitelistSupportImpl(
+        WhitelistStorageProvider whitelistStorageProvider,
         WhitelistConstants whitelistConstants,
-        SignatureCache signatureCache, Context btcContext) {
+        SignatureCache signatureCache,
+        Context btcContext) {
         this.whitelistStorageProvider = whitelistStorageProvider;
         this.whitelistConstants = whitelistConstants;
         this.signatureCache = signatureCache;
@@ -58,21 +58,21 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     }
 
     /**
-     * Returns the lock whitelist address stored at the given whitelistIndex, or null if the whitelistIndex is out of
+     * Returns the lock whitelist address stored at the given index, or null if the index is out of
      * bounds
      *
-     * @param whitelistIndex the index at which to get the address
-     * @return the base58-encoded address stored at the given whitelistIndex, or null if whitelistIndex is out of
+     * @param index the index at which to get the address
+     * @return the base58-encoded address stored at the given index, or null if index is out of
      * bounds
      */
     @Override
-    public LockWhitelistEntry getLockWhitelistEntryByIndex(int whitelistIndex) {
-        List<LockWhitelistEntry> whitelistEntries = whitelistStorageProvider.getLockWhitelist().getAll();
+    public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
+        List<LockWhitelistEntry> entries = whitelistStorageProvider.getLockWhitelist().getAll();
 
-        if (whitelistIndex < 0 || whitelistIndex >= whitelistEntries.size()) {
+        if (index < 0 || index >= entries.size()) {
             return null;
         }
-        return whitelistEntries.get(whitelistIndex);
+        return entries.get(index);
     }
 
     @Override
@@ -93,16 +93,16 @@ public class WhitelistSupportImpl implements WhitelistSupport {
      * @param addressBase58    the base58-encoded address to add to the whitelist
      * @param maxTransferValue the max amount of satoshis enabled to transfer for this address
      * @return 1 SUCCESS, -1 ADDRESS_ALREADY_WHITELISTED, -2 INVALID_ADDRESS_FORMAT,
-     * -10 GENERIC_ERROR, 0 UNKNOWN_ERROR.
+     * -10 UNAUTHORIZED_CALLER, 0 UNKNOWN_ERROR.
      */
     @Override
     public int addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
         try {
             Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
             Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
-            LockWhitelistEntry whiteListEntry = new OneOffWhiteListEntry(address, maxTransferValueCoin);
+            LockWhitelistEntry entry = new OneOffWhiteListEntry(address, maxTransferValueCoin);
 
-            return this.addLockWhitelistAddress(tx, whiteListEntry);
+            return this.addLockWhitelistAddress(tx, entry);
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
             return INVALID_ADDRESS_FORMAT.getCode();
@@ -113,9 +113,9 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     public int addUnlimitedLockWhitelistAddress(Transaction tx, String addressBase58) {
         try {
             Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
-            LockWhitelistEntry whiteListEntry = new UnlimitedWhiteListEntry(address);
+            LockWhitelistEntry entry = new UnlimitedWhiteListEntry(address);
 
-            return this.addLockWhitelistAddress(tx, whiteListEntry);
+            return this.addLockWhitelistAddress(tx, entry);
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
             return INVALID_ADDRESS_FORMAT.getCode();
@@ -126,13 +126,13 @@ public class WhitelistSupportImpl implements WhitelistSupport {
      * Removes the given address from the lock whitelist.
      *
      * @param addressBase58 the base58-encoded address to remove from the whitelist
-     * @return 1 SUCCESS, -1 ADDRESS_NOT_EXIST, -2 INVALID_ADDRESS_FORMAT, -10 GENERIC_ERROR,
+     * @return 1 SUCCESS, -1 ADDRESS_NOT_EXIST, -2 INVALID_ADDRESS_FORMAT, -10 UNAUTHORIZED_CALLER,
      * 0 UNKNOWN_ERROR.
      */
     @Override
     public int removeLockWhitelistAddress(Transaction tx, String addressBase58) {
-        if (isAuthorizedLockWhitelistChange(tx)) {
-            return GENERIC_ERROR.getCode();
+        if (isNotAuthorizedLockWhitelistChange(tx)) {
+            return UNAUTHORIZED_CALLER.getCode();
         }
 
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist();
@@ -144,10 +144,10 @@ public class WhitelistSupportImpl implements WhitelistSupport {
             }
             return SUCCESS.getCode();
         } catch (AddressFormatException e) {
+            logger.error("Invalid Address Format error in removeLockWhitelistAddress: {}", e.getMessage());
             return INVALID_ADDRESS_FORMAT.getCode();
         } catch (Exception e) {
             logger.error("Unexpected error in removeLockWhitelistAddress: {}", e.getMessage());
-            panicProcessor.panic("lock-whitelist", e.getMessage());
             return UNKNOWN_ERROR.getCode();
         }
     }
@@ -158,14 +158,14 @@ public class WhitelistSupportImpl implements WhitelistSupport {
      * @param tx                  current RSK transaction
      * @param disableBlockDelayBI block since current BTC best chain height to disable lock
      *                            whitelist
-     * @return 1 SUCCESS, -1 DELAY_ALREADY_SET, -2 DISABLE_BLOCK_DELAY_INVALID, -10 GENERIC_ERROR
+     * @return 1 SUCCESS, -1 DELAY_ALREADY_SET, -2 DISABLE_BLOCK_DELAY_INVALID, -10 UNAUTHORIZED_CALLER
      */
     @Override
     public int setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI, int btcBlockchainBestChainHeight)
         throws IOException, BlockStoreException {
 
-        if (isAuthorizedLockWhitelistChange(tx)) {
-            return GENERIC_ERROR.getCode();
+        if (isNotAuthorizedLockWhitelistChange(tx)) {
+            return UNAUTHORIZED_CALLER.getCode();
         }
 
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist();
@@ -183,27 +183,44 @@ public class WhitelistSupportImpl implements WhitelistSupport {
         return SUCCESS.getCode();
     }
 
-    private Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry whitelistEntry) {
-        if (isAuthorizedLockWhitelistChange(tx)) {
-            return GENERIC_ERROR.getCode();
+    @Override
+    public boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height) {
+        // If the address is not whitelisted, then return the funds
+        // using the exact same utxos sent to us.
+        // That is, build a pegout waiting for confirmations and get it in the pegoutWaitingForConfirmations set.
+        // Otherwise, transfer SBTC to the sender of the BTC
+        // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
+        LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist();
+        if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
+            logger.info("Rejecting lock. Address {} is not whitelisted.", senderBtcAddress);
+            return false;
+        }
+        // Consume this whitelisted address
+        lockWhitelist.consume(senderBtcAddress);
+
+        return true;
+    }
+
+    private Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry entry) {
+        if (isNotAuthorizedLockWhitelistChange(tx)) {
+            return UNAUTHORIZED_CALLER.getCode();
         }
 
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist();
         try {
-            if (whitelist.isWhitelisted(whitelistEntry.address())) {
+            if (whitelist.isWhitelisted(entry.address())) {
                 return ADDRESS_ALREADY_WHITELISTED.getCode();
             }
-            whitelist.put(whitelistEntry.address(), whitelistEntry);
+            whitelist.put(entry.address(), entry);
             return SUCCESS.getCode();
         } catch (Exception e) {
             logger.error("Unexpected error in addLockWhitelistAddress: {}", e.getMessage());
-            panicProcessor.panic("lock-whitelist", e.getMessage());
             return UNKNOWN_ERROR.getCode();
         }
     }
 
-    private boolean isAuthorizedLockWhitelistChange(Transaction tx) {
+    private boolean isNotAuthorizedLockWhitelistChange(Transaction tx) {
         AddressBasedAuthorizer authorizer = whitelistConstants.getLockWhitelistChangeAuthorizer();
-        return authorizer.isAuthorized(tx, signatureCache);
+        return !authorizer.isAuthorized(tx, signatureCache);
     }
 }
