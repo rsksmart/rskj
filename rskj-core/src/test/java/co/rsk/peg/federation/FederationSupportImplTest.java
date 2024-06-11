@@ -130,6 +130,13 @@ class FederationSupportImplTest {
             Address activeFederationAddress = federationSupport.getActiveFederationAddress();
             assertThat(activeFederationAddress, is(genesisFederation.getAddress()));
         }
+
+        @Test
+        @Tag("getActiveFederationSize")
+        void getActiveFederationSize_returnsGenesisFederationSize() {
+            int activeFederationSize = federationSupport.getActiveFederationSize();
+            assertThat(activeFederationSize, is(genesisFederation.getSize()));
+        }
     }
 
     @Nested
@@ -233,6 +240,24 @@ class FederationSupportImplTest {
             return Stream.of(
                 Arguments.of(oldFederation, null, genesisFederation.getAddress()),
                 Arguments.of(null, newFederation, newFederation.getAddress())
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationSize")
+        @MethodSource("expectedSizeArgs")
+        void getActiveFederationSize_returnsExpectedSize(Federation oldFederation, Federation newFederation, int expectedSize) {
+            storageProvider.setOldFederation(oldFederation);
+            storageProvider.setNewFederation(newFederation);
+
+            int activeFederationSize = federationSupport.getActiveFederationSize();
+            assertThat(activeFederationSize, is(expectedSize));
+        }
+
+        private Stream<Arguments> expectedSizeArgs() {
+            return Stream.of(
+                Arguments.of(oldFederation, null, genesisFederation.getSize()),
+                Arguments.of(null, newFederation, newFederation.getSize())
             );
         }
     }
@@ -383,6 +408,35 @@ class FederationSupportImplTest {
                 Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getAddress()),
                 Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getAddress()),
                 Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getAddress())
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationSize")
+        @MethodSource("expectedSizeArgs")
+        void getActiveFederationSize_returnsExpectedSizeAccordingToActivationAgeAndActivations(long currentBlock, ActivationConfig.ForBlock activations, int expectedSize) {
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            int activeFederationSize = federationSupport.getActiveFederationSize();
+            assertThat(activeFederationSize, is(expectedSize));
+        }
+
+        private Stream<Arguments> expectedSizeArgs() {
+            return Stream.of(
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederation.getSize()),
+                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederation.getSize()),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederation.getSize()),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederation.getSize()),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederation.getSize()),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederation.getSize())
             );
         }
     }
