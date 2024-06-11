@@ -30,9 +30,9 @@ COPY --from=build --chown=rsk:rsk /home/rsk/rsk.jar ./
 
 ENV DEFAULT_JVM_OPTS="-Xms4G"
 ENV RSKJ_SYS_PROPS="-Drpc.providers.web.http.bind_address=0.0.0.0 -Drpc.providers.web.http.hosts.0=localhost -Drpc.providers.web.http.hosts.1=127.0.0.1 -Drpc.providers.web.http.hosts.2=::1"
-ENV LOGGING_STDOUT="-Dlogging.stdout=INFO"
+ENV RSKJ_LOG_PROPS="-Dlogging.stdout=INFO"
 ENV RSKJ_CLASS=co.rsk.Start
 ENV RSKJ_OPTS=""
 
-ENTRYPOINT ["/bin/sh", "-c", "exec java $LOGGING_STDOUT $DEFAULT_JVM_OPTS $RSKJ_SYS_PROPS -cp rsk.jar $RSKJ_CLASS $RSKJ_OPTS \"${@}\"", "--"]
+ENTRYPOINT ["/bin/sh", "-c", "exec java $RSKJ_LOG_PROPS $DEFAULT_JVM_OPTS $RSKJ_SYS_PROPS -cp rsk.jar $RSKJ_CLASS $RSKJ_OPTS \"${@}\"", "--"]
 
