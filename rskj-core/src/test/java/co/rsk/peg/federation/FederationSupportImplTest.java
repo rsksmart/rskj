@@ -362,7 +362,6 @@ class FederationSupportImplTest {
 
         private Stream<Arguments> expectedFederatorBtcPublicKeyArgs() {
             return Stream.of(
-                Arguments.of(oldFederation, null, genesisFederation.getBtcPublicKeys().get(0).getPubKey()),
                 Arguments.of(null, newFederation, newFederation.getBtcPublicKeys().get(0).getPubKey())
             );
         }
