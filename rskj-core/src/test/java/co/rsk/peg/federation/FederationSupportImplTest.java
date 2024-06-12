@@ -275,21 +275,11 @@ class FederationSupportImplTest {
             assertThat(activeFederationCreationBlockNumber, is(newFederation.getCreationBlockNumber()));
         }
 
-        @ParameterizedTest
+        @Test
         @Tag("getActiveFederatorBtcPublicKey")
-        @MethodSource("expectedFederatorBtcPublicKeyArgs")
-        void getActiveFederatorBtcPublicKey_returnsExpectedFederatorBtcPublicKey(Federation oldFederation, Federation newFederation, byte[] expectedFederatorBtcPublicKey) {
-            storageProvider.setOldFederation(oldFederation);
-            storageProvider.setNewFederation(newFederation);
-
+        void getActiveFederatorBtcPublicKey_returnsExpectedFederatorBtcPublicKey() {
             byte[] activeFederatorBtcPublicKey = federationSupport.getActiveFederatorBtcPublicKey(0);
-            assertThat(activeFederatorBtcPublicKey, is(expectedFederatorBtcPublicKey));
-        }
-
-        private Stream<Arguments> expectedFederatorBtcPublicKeyArgs() {
-            return Stream.of(
-                Arguments.of(null, newFederation, newFederation.getBtcPublicKeys().get(0).getPubKey())
-            );
+            assertThat(activeFederatorBtcPublicKey, is(newFederation.getBtcPublicKeys().get(0).getPubKey()));
         }
     }
 
@@ -556,7 +546,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getActiveFederatorBtcPublicKey")
         @MethodSource("expectedFederatorBtcPublicKeyArgs")
-        void getActiveFederatorBtcPublicKey_returnsExpectedFederatorBtcPublicKeyAccordingToActivationAgeAndActivations(long currentBlock, ActivationConfig.ForBlock activations, byte[] expectedFederatorBtcPublicKey) {
+        void getActiveFederatorBtcPublicKey_returnsExpectedFederatorBtcPublicKeyAccordingToActivationAgeAndActivations(long currentBlock, ActivationConfig.ForBlock activations, BtcECKey expectedFederatorBtcPublicKey) {
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
@@ -568,7 +558,7 @@ class FederationSupportImplTest {
                 .build();
 
             byte[] activeFederatorBtcPublicKey = federationSupport.getActiveFederatorBtcPublicKey(0);
-            assertThat(activeFederatorBtcPublicKey, is(expectedFederatorBtcPublicKey));
+            assertThat(activeFederatorBtcPublicKey, is(expectedFederatorBtcPublicKey.getPubKey()));
         }
 
         private Stream<Arguments> expectedFederatorBtcPublicKeyArgs() {
@@ -576,12 +566,12 @@ class FederationSupportImplTest {
             BtcECKey federatorFromNewFederationBtcPublicKey = newFederation.getBtcPublicKeys().get(0);
 
             return Stream.of(
-                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, federatorFromOldFederationBtcPublicKey.getPubKey()),
-                Arguments.of(blockNumberFederationActivationHop, hopActivations, federatorFromNewFederationBtcPublicKey.getPubKey()),
-                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, federatorFromOldFederationBtcPublicKey.getPubKey()),
-                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, federatorFromOldFederationBtcPublicKey.getPubKey()),
-                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, federatorFromNewFederationBtcPublicKey.getPubKey()),
-                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, federatorFromNewFederationBtcPublicKey.getPubKey())
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, federatorFromOldFederationBtcPublicKey),
+                Arguments.of(blockNumberFederationActivationHop, hopActivations, federatorFromNewFederationBtcPublicKey),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, federatorFromOldFederationBtcPublicKey),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, federatorFromOldFederationBtcPublicKey),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, federatorFromNewFederationBtcPublicKey),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, federatorFromNewFederationBtcPublicKey)
             );
         }
     }
