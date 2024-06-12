@@ -8,7 +8,6 @@ public enum WhitelistResponseCode {
     ADDRESS_ALREADY_WHITELISTED(-1),
     ADDRESS_NOT_EXIST(-1),
     DELAY_ALREADY_SET(-1),
-    UNKNOWN_ERROR(0),
     SUCCESS(1);
 
     private final int code;
