@@ -163,44 +163,30 @@ class FederationSupportImplTest {
     @Nested
     @Tag("null old federation, non null new federation")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    class ActiveFederationTestsWithOneNullFederation {
+    class ActiveFederationTestsWithNullOldFederation {
         @BeforeAll
         void setUp() {
-            // create old and new federations
-            P2shErpFederationBuilder p2shErpFederationBuilder = new P2shErpFederationBuilder();
-            oldFederation = p2shErpFederationBuilder
-                .build();
-            List<BtcECKey> newFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
-            );
-            newFederation = p2shErpFederationBuilder
-                .withMembersBtcPublicKeys(newFederationKeys)
-                .build();
-
             StorageAccessor storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
+            // create new federation
+            P2shErpFederationBuilder p2shErpFederationBuilder = new P2shErpFederationBuilder();
+            newFederation = p2shErpFederationBuilder
+                .build();
+
+            storageProvider.setNewFederation(newFederation);
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
                 .build();
+
         }
 
-        @ParameterizedTest
+        @Test
         @Tag("getActiveFederation")
-        @MethodSource("expectedFederationArgs")
-        void getActiveFederation_returnsExpectedFederation(Federation oldFederation, Federation newFederation, Federation expectedFederation) {
-            storageProvider.setOldFederation(oldFederation);
-            storageProvider.setNewFederation(newFederation);
-
+        void getActiveFederation_returnsExpectedFederation() {
             Federation activeFederation = federationSupport.getActiveFederation();
-            assertThat(activeFederation, is(expectedFederation));
-        }
-
-        private Stream<Arguments> expectedFederationArgs() {
-            return Stream.of(
-                Arguments.of(null, newFederation, newFederation)
-            );
+            assertThat(activeFederation, is(newFederation));
         }
 
         @Test
@@ -214,13 +200,13 @@ class FederationSupportImplTest {
                 .withFederationStorageProvider(storageProvider)
                 .withActivations(activations)
                 .build();
+
             assertFalse(federationSupport.getActiveFederationRedeemScript().isPresent());
         }
 
-        @ParameterizedTest
+        @Test
         @Tag("getActiveFederationRedeemScript")
-        @MethodSource("expectedRedeemScriptArgs")
-        void getActiveFederationRedeemScript_afterRSKIP293_returnsExpectedRedeemScript(Federation oldFederation, Federation newFederation, Script expectedRedeemScript) {
+        void getActiveFederationRedeemScript_afterRSKIP293_returnsExpectedRedeemScript() {
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
             when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -230,103 +216,44 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            storageProvider.setOldFederation(oldFederation);
-            storageProvider.setNewFederation(newFederation);
-
             Optional<Script> activeFederationRedeemScript = federationSupport.getActiveFederationRedeemScript();
             assertTrue(activeFederationRedeemScript.isPresent());
-            assertThat(activeFederationRedeemScript.get(), is(expectedRedeemScript));
+            assertThat(activeFederationRedeemScript.get(), is(newFederation.getRedeemScript()));
         }
 
-        private Stream<Arguments> expectedRedeemScriptArgs() {
-            return Stream.of(
-                Arguments.of(null, newFederation, newFederation.getRedeemScript())
-            );
-        }
-
-        @ParameterizedTest
+        @Test
         @Tag("getActiveFederationAddress")
-        @MethodSource("expectedAddressArgs")
-        void getActiveFederationAddress_returnsExpectedAddress(Federation oldFederation, Federation newFederation, Address expectedAddress) {
-            storageProvider.setOldFederation(oldFederation);
-            storageProvider.setNewFederation(newFederation);
-
+        void getActiveFederationAddress_returnsExpectedAddress() {
             Address activeFederationAddress = federationSupport.getActiveFederationAddress();
-            assertThat(activeFederationAddress, is(expectedAddress));
+            assertThat(activeFederationAddress, is(newFederation.getAddress()));
         }
 
-        private Stream<Arguments> expectedAddressArgs() {
-            return Stream.of(
-                Arguments.of(null, newFederation, newFederation.getAddress())
-            );
-        }
-
-        @ParameterizedTest
+        @Test
         @Tag("getActiveFederationSize")
-        @MethodSource("expectedSizeArgs")
-        void getActiveFederationSize_returnsExpectedSize(Federation oldFederation, Federation newFederation, int expectedSize) {
-            storageProvider.setOldFederation(oldFederation);
-            storageProvider.setNewFederation(newFederation);
-
+        void getActiveFederationSize_returnsExpectedSize() {
             int activeFederationSize = federationSupport.getActiveFederationSize();
-            assertThat(activeFederationSize, is(expectedSize));
+            assertThat(activeFederationSize, is(newFederation.getSize()));
         }
 
-        private Stream<Arguments> expectedSizeArgs() {
-            return Stream.of(
-                Arguments.of(null, newFederation, newFederation.getSize())
-            );
-        }
-
-        @ParameterizedTest
+        @Test
         @Tag("getActiveFederationThreshold")
-        @MethodSource("expectedThresholdArgs")
-        void getActiveFederationThreshold_returnsExpectedThreshold(Federation oldFederation, Federation newFederation, int expectedThreshold) {
-            storageProvider.setOldFederation(oldFederation);
-            storageProvider.setNewFederation(newFederation);
-
+        void getActiveFederationThreshold_returnsExpectedThreshold() {
             int activeFederationThreshold = federationSupport.getActiveFederationThreshold();
-            assertThat(activeFederationThreshold, is(expectedThreshold));
+            assertThat(activeFederationThreshold, is(newFederation.getNumberOfSignaturesRequired()));
         }
 
-        private Stream<Arguments> expectedThresholdArgs() {
-            return Stream.of(
-                Arguments.of(null, newFederation, newFederation.getNumberOfSignaturesRequired())
-            );
-        }
-
-        @ParameterizedTest
+        @Test
         @Tag("getActiveFederationCreationTime")
-        @MethodSource("expectedCreationTimeArgs")
-        void getActiveFederationCreationTime_returnsExpectedCreationTime(Federation oldFederation, Federation newFederation, Instant expectedCreationTime) {
-            storageProvider.setOldFederation(oldFederation);
-            storageProvider.setNewFederation(newFederation);
-
+        void getActiveFederationCreationTime_returnsExpectedCreationTime() {
             Instant activeFederationCreationTime = federationSupport.getActiveFederationCreationTime();
-            assertThat(activeFederationCreationTime, is(expectedCreationTime));
+            assertThat(activeFederationCreationTime, is(newFederation.getCreationTime()));
         }
 
-        private Stream<Arguments> expectedCreationTimeArgs() {
-            return Stream.of(
-                Arguments.of(null, newFederation, newFederation.getCreationTime())
-            );
-        }
-
-        @ParameterizedTest
+        @Test
         @Tag("getActiveFederationCreationBlockNumber")
-        @MethodSource("expectedCreationBlockNumberArgs")
-        void getActiveFederationCreationBlockNumber_returnsExpectedCreationBlockNumber(Federation oldFederation, Federation newFederation, long expectedCreationBlockNumber) {
-            storageProvider.setOldFederation(oldFederation);
-            storageProvider.setNewFederation(newFederation);
-
+        void getActiveFederationCreationBlockNumber_returnsExpectedCreationBlockNumber() {
             long activeFederationCreationBlockNumber = federationSupport.getActiveFederationCreationBlockNumber();
-            assertThat(activeFederationCreationBlockNumber, is(expectedCreationBlockNumber));
-        }
-
-        private Stream<Arguments> expectedCreationBlockNumberArgs() {
-            return Stream.of(
-                Arguments.of(null, newFederation, newFederation.getCreationBlockNumber())
-            );
+            assertThat(activeFederationCreationBlockNumber, is(newFederation.getCreationBlockNumber()));
         }
     }
 
@@ -417,6 +344,7 @@ class FederationSupportImplTest {
                 .withFederationStorageProvider(storageProvider)
                 .withActivations(activations)
                 .build();
+
             assertFalse(federationSupport.getActiveFederationRedeemScript().isPresent());
         }
 
