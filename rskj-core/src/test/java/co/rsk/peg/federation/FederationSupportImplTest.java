@@ -320,10 +320,6 @@ class FederationSupportImplTest {
                 .withMembersRskPublicKeys(rskECKeys)
                 .build();
             storageProvider.setNewFederation(newFederation);
-            federationSupport = federationSupportBuilder
-                .withFederationConstants(federationMainnetConstants)
-                .withFederationStorageProvider(storageProvider)
-                .build();
 
             BtcECKey federatorFromNewFederationBtcPublicKey = newFederation.getBtcPublicKeys().get(0);
             byte[] activeFederatorBtcPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.BTC);
@@ -354,10 +350,6 @@ class FederationSupportImplTest {
                 .withMembersMstPublicKeys(mstECKeys)
                 .build();
             storageProvider.setNewFederation(newFederation);
-            federationSupport = federationSupportBuilder
-                .withFederationConstants(federationMainnetConstants)
-                .withFederationStorageProvider(storageProvider)
-                .build();
 
             BtcECKey federatorFromNewFederationBtcPublicKey = newFederation.getBtcPublicKeys().get(0);
             byte[] activeFederatorBtcPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.BTC);
