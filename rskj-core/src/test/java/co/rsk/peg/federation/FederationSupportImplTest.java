@@ -74,7 +74,7 @@ class FederationSupportImplTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("null federations")
     class ActiveFederationTestsWithNullFederations {
-        @BeforeAll
+        @BeforeEach
         void setUp() {
             StorageAccessor storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
@@ -164,7 +164,7 @@ class FederationSupportImplTest {
     @Tag("null old federation, non null new federation")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class ActiveFederationTestsWithNullOldFederation {
-        @BeforeAll
+        @BeforeEach
         void setUp() {
             StorageAccessor storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
@@ -265,38 +265,32 @@ class FederationSupportImplTest {
         // old federation should be active if we are before the activation block number
         // activation block number is smaller for hop than for fingerroot
 
+        // create old and new federations
+        long oldFederationCreationBlockNumber = 20;
+        long newFederationCreationBlockNumber = 65;
+        Federation oldFederation = new P2shErpFederationBuilder()
+            .withCreationBlockNumber(oldFederationCreationBlockNumber)
+            .build();
+        List<BtcECKey> newFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
+        );
+        Federation newFederation = new P2shErpFederationBuilder()
+            .withMembersBtcPublicKeys(newFederationKeys)
+            .withCreationBlockNumber(newFederationCreationBlockNumber)
+            .build();
+
+        // get block number activations for hop and fingerroot
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
-        long blockNumberFederationActivationHop;
+        long newFederationActivationAgeHop = federationMainnetConstants.getFederationActivationAge(hopActivations);
+        long blockNumberFederationActivationHop = newFederationCreationBlockNumber + newFederationActivationAgeHop;
         ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        long blockNumberFederationActivationFingerroot;
+        long newFederationActivationAgeFingerroot = federationMainnetConstants.getFederationActivationAge(fingerrootActivations);
+        long blockNumberFederationActivationFingerroot = newFederationCreationBlockNumber + newFederationActivationAgeFingerroot;
+
         FederationStorageProvider storageProvider;
 
-        @BeforeAll
+        @BeforeEach
         void setUp() {
-            long oldFederationCreationBlockNumber = 20;
-            long newFederationCreationBlockNumber = 65;
-
-            // get block number activation for hop
-            long newFederationActivationAgeHop = federationMainnetConstants.getFederationActivationAge(hopActivations);
-            blockNumberFederationActivationHop = newFederationCreationBlockNumber + newFederationActivationAgeHop;
-
-            // get block number activation for fingerroot
-            long newFederationActivationAgeFingerroot = federationMainnetConstants.getFederationActivationAge(fingerrootActivations);
-            blockNumberFederationActivationFingerroot = newFederationCreationBlockNumber + newFederationActivationAgeFingerroot;
-
-            // create old and new federations
-            P2shErpFederationBuilder p2shErpFederationBuilder = new P2shErpFederationBuilder();
-            oldFederation = p2shErpFederationBuilder
-                .withCreationBlockNumber(oldFederationCreationBlockNumber)
-                .build();
-            List<BtcECKey> newFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
-            );
-            newFederation = p2shErpFederationBuilder
-                .withMembersBtcPublicKeys(newFederationKeys)
-                .withCreationBlockNumber(newFederationCreationBlockNumber)
-                .build();
-
             // save federations in storage
             StorageAccessor storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
