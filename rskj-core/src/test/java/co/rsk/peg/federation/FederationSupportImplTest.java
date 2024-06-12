@@ -173,9 +173,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getActiveFederatorBtcPublicKey")
-        void getActiveFederatorBtcPublicKey_withIndexGreaterThanActiveFederationSize_throwsIndexOutOfBoundsException() {
-            int activeFederationSize = genesisFederation.getSize();
-            assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getActiveFederatorBtcPublicKey(activeFederationSize));
+        void getActiveFederatorBtcPublicKey_withIndexGreaterThanGenesisFederationSize_throwsIndexOutOfBoundsException() {
+            int genesisFederationSize = genesisFederation.getSize();
+            assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getActiveFederatorBtcPublicKey(genesisFederationSize));
         }
     }
 
