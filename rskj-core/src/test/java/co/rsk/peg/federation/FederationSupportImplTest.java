@@ -181,7 +181,7 @@ class FederationSupportImplTest {
     }
 
     @Nested
-    @Tag("one null federation")
+    @Tag("null old federation, non null new federation")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class ActiveFederationTestsWithOneNullFederation {
         @BeforeAll
@@ -294,7 +294,6 @@ class FederationSupportImplTest {
 
         private Stream<Arguments> expectedSizeArgs() {
             return Stream.of(
-                Arguments.of(oldFederation, null, genesisFederation.getSize()),
                 Arguments.of(null, newFederation, newFederation.getSize())
             );
         }
@@ -312,7 +311,6 @@ class FederationSupportImplTest {
 
         private Stream<Arguments> expectedThresholdArgs() {
             return Stream.of(
-                Arguments.of(oldFederation, null, genesisFederation.getNumberOfSignaturesRequired()),
                 Arguments.of(null, newFederation, newFederation.getNumberOfSignaturesRequired())
             );
         }
@@ -330,7 +328,6 @@ class FederationSupportImplTest {
 
         private Stream<Arguments> expectedCreationTimeArgs() {
             return Stream.of(
-                Arguments.of(oldFederation, null, genesisFederation.getCreationTime()),
                 Arguments.of(null, newFederation, newFederation.getCreationTime())
             );
         }
@@ -348,7 +345,6 @@ class FederationSupportImplTest {
 
         private Stream<Arguments> expectedCreationBlockNumberArgs() {
             return Stream.of(
-                Arguments.of(oldFederation, null, genesisFederation.getCreationBlockNumber()),
                 Arguments.of(null, newFederation, newFederation.getCreationBlockNumber())
             );
         }
