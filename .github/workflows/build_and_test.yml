@@ -7,7 +7,7 @@ on:
       - "**"
 
 jobs:
-  prepare-rskj:
+  build-rskj:
     runs-on: ubuntu-latest
     container:
       image: openjdk:8-jdk
@@ -52,7 +52,7 @@ jobs:
             rskj-core/build
 
   smell-test:
-    needs: prepare-rskj
+    needs: build-rskj
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -177,7 +177,7 @@ jobs:
           ./gradlew --no-daemon --stacktrace integrationTest
 
   mining-tests:
-    needs: prepare-rskj
+    needs: build-rskj
     runs-on: ubuntu-latest
     services:
       bitcoind1:
