@@ -32,14 +32,11 @@ import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.FederationSupportBuilder;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -58,17 +55,6 @@ class FederationSupportImplTest {
     private Federation newFederation;
     private FederationStorageProvider storageProvider;
     private FederationSupport federationSupport;
-
-    @BeforeEach
-    void setUp() {
-        StorageAccessor storageAccessor = new InMemoryStorage();
-        storageProvider = new FederationStorageProviderImpl(storageAccessor);
-
-        federationSupport = federationSupportBuilder
-            .withFederationConstants(federationMainnetConstants)
-            .withFederationStorageProvider(storageProvider)
-            .build();
-    }
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -753,47 +739,5 @@ class FederationSupportImplTest {
                 Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, federatorFromNewFederationBtcPublicKey, federatorFromNewFederationRskPublicKey, federatorFromNewFederationRskPublicKey)
             );
         }
-    }
-
-    @Test
-    void getActiveFederatorPublicKeyOfType() {
-        BtcECKey btcKey0 = BtcECKey.fromPublicOnly(Hex.decode("020000000000000000001111111111111111111122222222222222222222333333"));
-        ECKey rskKey0 = new ECKey();
-        ECKey mstKey0 = new ECKey();
-
-        BtcECKey btcKey1 = BtcECKey.fromPublicOnly(Hex.decode("020000000000000000001111111111111111111122222222222222222222444444"));
-        ECKey rskKey1 = new ECKey();
-        ECKey mstKey1 = new ECKey();
-
-        List<FederationMember> members = Arrays.asList(
-            new FederationMember(btcKey0, rskKey0, mstKey0),
-            new FederationMember(btcKey1, rskKey1, mstKey1)
-        );
-        FederationArgs federationArgs = new FederationArgs(
-            members,
-            Instant.ofEpochMilli(123),
-            456,
-            federationMainnetConstants.getBtcParams()
-        );
-        Federation theFederation = FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
-        storageProvider.setNewFederation(theFederation);
-
-        assertArrayEquals(federationSupport.getActiveFederatorBtcPublicKey(0), btcKey0.getPubKey());
-        assertArrayEquals(federationSupport.getActiveFederatorBtcPublicKey(1), btcKey1.getPubKey());
-
-        assertArrayEquals(federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.BTC), btcKey0.getPubKey());
-        assertArrayEquals(federationSupport.getActiveFederatorPublicKeyOfType(1, KeyType.BTC), btcKey1.getPubKey());
-
-        assertArrayEquals(federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.RSK), rskKey0.getPubKey(true));
-        assertArrayEquals(federationSupport.getActiveFederatorPublicKeyOfType(1, KeyType.RSK), rskKey1.getPubKey(true));
-
-        assertArrayEquals(federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.MST), mstKey0.getPubKey(true));
-        assertArrayEquals(federationSupport.getActiveFederatorPublicKeyOfType(1, KeyType.MST), mstKey1.getPubKey(true));
-
-        // Out of bounds
-        assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getActiveFederatorPublicKeyOfType(2, KeyType.BTC));
-        assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getActiveFederatorPublicKeyOfType(-1, KeyType.BTC));
     }
 }
