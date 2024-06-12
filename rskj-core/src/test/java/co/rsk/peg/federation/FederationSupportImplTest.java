@@ -51,9 +51,9 @@ class FederationSupportImplTest {
 
     private static final FederationConstants federationMainnetConstants = FederationMainNetConstants.getInstance();
     private final Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
-    private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
     private Federation newFederation;
     private FederationStorageProvider storageProvider;
+    private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
     private FederationSupport federationSupport;
 
     @Nested
@@ -163,7 +163,7 @@ class FederationSupportImplTest {
         void getActiveFederatorBtcPublicKey_withIndexGreaterThanGenesisFederationSize_throwsIndexOutOfBoundsException() {
             int genesisFederationSize = genesisFederation.getSize();
             assertThrows(
-                IndexOutOfBoundsException.class, () -> 
+                IndexOutOfBoundsException.class, () ->
                 federationSupport.getActiveFederatorBtcPublicKey(genesisFederationSize)
             );
         }
@@ -410,10 +410,10 @@ class FederationSupportImplTest {
         @Tag("getActiveFederation")
         @MethodSource("expectedFederationArgs")
         void getActiveFederation_returnsExpectedFederationAccordingToActivationAgeAndActivations(
-            long currentBlock, 
-            ActivationConfig.ForBlock activations, 
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
             Federation expectedFederation) {
-            
+
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
@@ -458,10 +458,10 @@ class FederationSupportImplTest {
         @Tag("getActiveFederationRedeemScript")
         @MethodSource("expectedRedeemScriptArgs")
         void getActiveFederationRedeemScript_returnsExpectedRedeemScriptAccordingToActivationAgeAndActivations(
-            long currentBlock, 
-            ActivationConfig.ForBlock activations, 
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
             Script expectedRedeemScript) {
-            
+
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
@@ -492,10 +492,10 @@ class FederationSupportImplTest {
         @Tag("getActiveFederationAddress")
         @MethodSource("expectedAddressArgs")
         void getActiveFederationAddress_returnsExpectedAddressAccordingToActivationAgeAndActivations(
-            long currentBlock, 
-            ActivationConfig.ForBlock activations, 
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
             Address expectedAddress) {
-            
+
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
@@ -525,10 +525,10 @@ class FederationSupportImplTest {
         @Tag("getActiveFederationSize")
         @MethodSource("expectedSizeArgs")
         void getActiveFederationSize_returnsExpectedSizeAccordingToActivationAgeAndActivations(
-            long currentBlock, 
-            ActivationConfig.ForBlock activations, 
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
             int expectedSize) {
-            
+
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
@@ -558,10 +558,10 @@ class FederationSupportImplTest {
         @Tag("getActiveFederationThreshold")
         @MethodSource("expectedThresholdArgs")
         void getActiveFederationThreshold_returnsExpectedThresholdAccordingToActivationAgeAndActivations(
-            long currentBlock, 
-            ActivationConfig.ForBlock activations, 
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
             int expectedThreshold) {
-            
+
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
@@ -591,10 +591,10 @@ class FederationSupportImplTest {
         @Tag("getActiveFederationCreationTime")
         @MethodSource("expectedCreationTimeArgs")
         void getActiveFederationCreationTime_returnsExpectedCreationTimeAccordingToActivationAgeAndActivations(
-            long currentBlock, 
-            ActivationConfig.ForBlock activations, 
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
             Instant expectedCreationTime) {
-            
+
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
@@ -624,10 +624,10 @@ class FederationSupportImplTest {
         @Tag("getActiveFederationCreationBlockNumber")
         @MethodSource("expectedCreationBlockNumberArgs")
         void getActiveFederationCreationBlockNumber_returnsExpectedCreationBlockNumberAccordingToActivationAgeAndActivations(
-            long currentBlock, 
-            ActivationConfig.ForBlock activations, 
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
             long expectedCreationBlockNumber) {
-            
+
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
@@ -657,10 +657,10 @@ class FederationSupportImplTest {
         @Tag("getActiveFederatorBtcPublicKey")
         @MethodSource("expectedFederatorBtcPublicKeyArgs")
         void getActiveFederatorBtcPublicKey_returnsExpectedFederatorBtcPublicKeyAccordingToActivationAgeAndActivations(
-            long currentBlock, 
-            ActivationConfig.ForBlock activations, 
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
             BtcECKey expectedFederatorBtcPublicKey) {
-            
+
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
