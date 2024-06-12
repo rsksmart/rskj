@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import co.rsk.bitcoinj.script.ScriptChunk;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 
 public class BitcoinTestUtils {
@@ -25,6 +26,16 @@ public class BitcoinTestUtils {
         if (sorted) {
             keys.sort(BtcECKey.PUBKEY_COMPARATOR);
         }
+
+        return keys;
+    }
+
+    public static List<ECKey> getEcKeysFromSeeds(String[] seeds) {
+        List<ECKey> keys = Arrays
+            .stream(seeds)
+            .map(seed -> ECKey.fromPrivate(
+                HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
+            .collect(Collectors.toList());
 
         return keys;
     }
