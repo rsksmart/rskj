@@ -175,13 +175,15 @@ class FederationSupportImplTest {
             byte[] activeFederatorBtcPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.BTC);
             assertThat(activeFederatorBtcPublicKey, is(federatorFromGenesisFederationBtcPublicKey.getPubKey()));
 
+            // rsk public keys for genesis federation are set deriving the btc public keys
             ECKey federatorFromGenesisFederationRskPublicKey = ECKey.fromPublicOnly(federatorFromGenesisFederationBtcPublicKey.getPubKey());
             byte[] activeFederatorRskPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.RSK);
             assertThat(activeFederatorRskPublicKey, is(federatorFromGenesisFederationRskPublicKey.getPubKey(true)));
 
-            ECKey federatorFromGenesisFederationMstPublicKey = ECKey.fromPublicOnly(federatorFromGenesisFederationBtcPublicKey.getPubKey());
+            // mst public keys for genesis federation are set deriving the btc public keys,
+            // so they should be the same as the rsk public keys
             byte[] activeFederatorMstPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.MST);
-            assertThat(activeFederatorMstPublicKey, is(federatorFromGenesisFederationMstPublicKey.getPubKey(true)));
+            assertThat(activeFederatorMstPublicKey, is(federatorFromGenesisFederationRskPublicKey.getPubKey(true)));
         }
     }
 
