@@ -13,17 +13,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class OnChainMinGasPriceProviderTest {
-    private final String oracle_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
-    private final String from_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
-    private final String data = "0x";
     private final long fallback_minGasPrice_fake = 1234567890L;
-
     private EthModule ethModule_mock;
     private MinGasPriceProvider fallback_mock;
     private OnChainMinGasPriceSystemConfig onChainMinGasPriceSystemConfig_mock;
@@ -40,8 +37,11 @@ class OnChainMinGasPriceProviderTest {
         when(fallback_mock.getMinGasPrice()).thenReturn(fallback_minGasPrice_fake);
 
         onChainMinGasPriceSystemConfig_mock = mock(OnChainMinGasPriceSystemConfig.class);
+        String oracle_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
         when(onChainMinGasPriceSystemConfig_mock.address()).thenReturn(oracle_address);
+        String from_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
         when(onChainMinGasPriceSystemConfig_mock.from()).thenReturn(from_address);
+        String data = "0x";
         when(onChainMinGasPriceSystemConfig_mock.data()).thenReturn(data);
 
 
@@ -58,7 +58,6 @@ class OnChainMinGasPriceProviderTest {
         ethModule_mock = null;
         fallback_mock = null;
     }
-
 
 
     @ParameterizedTest
@@ -111,21 +110,13 @@ class OnChainMinGasPriceProviderTest {
     void getStableMinGasPrice_callsFallback_whenNoData(String data_input) {
         when(onChainMinGasPriceSystemConfig_mock.data()).thenReturn(data_input);
 
-        assertTrue(onChainMinGasPriceProvider.getBtcExchangeRate().isPresent());
-        Assertions.assertEquals(
-                fallback_minGasPrice_fake,
-                onChainMinGasPriceProvider.getBtcExchangeRate().get(),
-                "For " + data_input + ": "
-        );
+        assertFalse(onChainMinGasPriceProvider.getBtcExchangeRate().isPresent());
     }
 
 
     @Test
     void getStableMinGasPrice_callsFallback_whenEthModuleIsNull() {
-        Assertions.assertEquals(
-                fallback_minGasPrice_fake,
-                onChainMinGasPriceProvider.getBtcExchangeRate().get()
-        );
+        assertFalse(onChainMinGasPriceProvider.getBtcExchangeRate().isPresent());
     }
 
     @Test
