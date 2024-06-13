@@ -104,7 +104,6 @@ public class BridgeSupport {
     private static final Logger logger = LoggerFactory.getLogger(BridgeSupport.class);
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final FeePerKbSupport feePerKbSupport;
     private final BridgeConstants bridgeConstants;
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
@@ -114,6 +113,7 @@ public class BridgeSupport {
     private final PeginInstructionsProvider peginInstructionsProvider;
 
     private final FederationSupport federationSupport;
+    private final FeePerKbSupport feePerKbSupport;
     private final WhitelistSupport whitelistSupport;
 
     private final Context btcContext;
@@ -680,11 +680,16 @@ public class BridgeSupport {
         logger.info("[processPegoutOrMigration] BTC Tx {} processed in RSK", btcTx.getHash(false));
     }
 
-    private boolean shouldProcessPegInVersionLegacy(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx,
-                                       Address senderBtcAddress, Coin totalAmount, int height) {
+    private boolean shouldProcessPegInVersionLegacy(
+        TxSenderAddressType txSenderAddressType,
+        BtcTransaction btcTx,
+        Address senderBtcAddress,
+        Coin totalAmount,
+        int height) {
+
         return isTxLockableForLegacyVersion(txSenderAddressType, btcTx, senderBtcAddress) &&
-                whitelistSupport.verifyLockSenderIsWhitelisted(senderBtcAddress, totalAmount, height) &&
-                verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount);
+            whitelistSupport.verifyLockSenderIsWhitelisted(senderBtcAddress, totalAmount, height) &&
+            verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount);
     }
 
     protected boolean isTxLockableForLegacyVersion(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx, Address senderBtcAddress) {
@@ -2018,45 +2023,18 @@ public class BridgeSupport {
         return federationSupport.getPendingFederatorPublicKeyOfType(index, keyType);
     }
 
-    /**
-     * Returns the lock whitelist size, that is,
-     * the number of whitelisted addresses
-     * @return the lock whitelist size
-     */
     public Integer getLockWhitelistSize() {
         return whitelistSupport.getLockWhitelistSize();
     }
 
-    /**
-     * Returns the lock whitelist address stored
-     * at the given index, or null if the
-     * index is out of bounds
-     * @param index the index at which to get the address
-     * @return the base58-encoded address stored at the given index, or null if index is out of bounds
-     */
     public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
         return whitelistSupport.getLockWhitelistEntryByIndex(index);
     }
 
-    /**
-     *
-     * @param addressBase58
-     * @return
-     */
     public LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58) {
         return whitelistSupport.getLockWhitelistEntryByAddress(addressBase58);
     }
 
-    /**
-     * Adds the given address to the lock whitelist.
-     * Returns 1 upon success, or -1 if the address was
-     * already in the whitelist.
-     * @param addressBase58 the base58-encoded address to add to the whitelist
-     * @param maxTransferValue the max amount of satoshis enabled to transfer for this address
-     * @return 1 upon success, -1 if the address was already
-     * in the whitelist, -2 if address is invalid
-     * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
-     */
     public Integer addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
        return whitelistSupport.addOneOffLockWhitelistAddress(tx, addressBase58, maxTransferValue);
     }
@@ -2065,15 +2043,6 @@ public class BridgeSupport {
         return whitelistSupport.addUnlimitedLockWhitelistAddress(tx, addressBase58);
     }
 
-    /**
-     * Removes the given address from the lock whitelist.
-     * Returns 1 upon success, or -1 if the address was
-     * not in the whitelist.
-     * @param addressBase58 the base58-encoded address to remove from the whitelist
-     * @return 1 upon success, -1 if the address was not
-     * in the whitelist, -2 if the address is invalid,
-     * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
-     */
     public Integer removeLockWhitelistAddress(Transaction tx, String addressBase58) {
         return whitelistSupport.removeLockWhitelistAddress(tx, addressBase58);
     }
@@ -2086,12 +2055,6 @@ public class BridgeSupport {
         return feePerKbSupport.voteFeePerKbChange(tx, feePerKb, signatureCache);
     }
 
-    /**
-     * Sets a delay in the BTC best chain to disable lock whitelist
-     * @param tx current RSK transaction
-     * @param disableBlockDelayBI block since current BTC best chain height to disable lock whitelist
-     * @return 1 if it was successful, -1 if a delay was already set, -2 if disableBlockDelay contains an invalid value
-     */
     public Integer setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI)
         throws IOException, BlockStoreException {
         int btcBlockchainBestChainHeight = getBtcBlockchainBestChainHeight();
