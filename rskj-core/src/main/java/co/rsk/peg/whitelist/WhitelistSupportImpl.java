@@ -1,17 +1,8 @@
 package co.rsk.peg.whitelist;
 
-import static co.rsk.peg.whitelist.WhitelistResponseCode.ADDRESS_ALREADY_WHITELISTED;
-import static co.rsk.peg.whitelist.WhitelistResponseCode.ADDRESS_NOT_EXIST;
-import static co.rsk.peg.whitelist.WhitelistResponseCode.DELAY_ALREADY_SET;
-import static co.rsk.peg.whitelist.WhitelistResponseCode.DISABLE_BLOCK_DELAY_INVALID;
-import static co.rsk.peg.whitelist.WhitelistResponseCode.INVALID_ADDRESS_FORMAT;
-import static co.rsk.peg.whitelist.WhitelistResponseCode.SUCCESS;
-import static co.rsk.peg.whitelist.WhitelistResponseCode.UNAUTHORIZED_CALLER;
+import static co.rsk.peg.whitelist.WhitelistResponseCode.*;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.AddressFormatException;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import java.math.BigInteger;
@@ -25,20 +16,20 @@ public class WhitelistSupportImpl implements WhitelistSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(WhitelistSupportImpl.class);
     private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
-    private final SignatureCache signatureCache;
-    private final Context btcContext;
-    private final WhitelistConstants whitelistConstants;
     private final WhitelistStorageProvider whitelistStorageProvider;
+    private final WhitelistConstants whitelistConstants;
+    private final SignatureCache signatureCache;
+    private final NetworkParameters networkParameters;
 
     public WhitelistSupportImpl(
         WhitelistStorageProvider whitelistStorageProvider,
         WhitelistConstants whitelistConstants,
         SignatureCache signatureCache,
-        Context btcContext) {
+        NetworkParameters networkParameters) {
         this.whitelistStorageProvider = whitelistStorageProvider;
         this.whitelistConstants = whitelistConstants;
         this.signatureCache = signatureCache;
-        this.btcContext = btcContext;
+        this.networkParameters = networkParameters;
     }
 
     @Override
@@ -59,7 +50,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58) {
         try {
-            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+            Address address = Address.fromBase58(networkParameters, addressBase58);
 
             return whitelistStorageProvider.getLockWhitelist().get(address);
         } catch (AddressFormatException e) {
@@ -71,7 +62,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public int addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
         try {
-            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+            Address address = Address.fromBase58(networkParameters, addressBase58);
             Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
             LockWhitelistEntry entry = new OneOffWhiteListEntry(address, maxTransferValueCoin);
 
@@ -85,7 +76,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public int addUnlimitedLockWhitelistAddress(Transaction tx, String addressBase58) {
         try {
-            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+            Address address = Address.fromBase58(networkParameters, addressBase58);
             LockWhitelistEntry entry = new UnlimitedWhiteListEntry(address);
 
             return addLockWhitelistAddress(tx, entry);
@@ -116,7 +107,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
 
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist();
         try {
-            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+            Address address = Address.fromBase58(networkParameters, addressBase58);
             if (!whitelist.remove(address)) {
                 return ADDRESS_NOT_EXIST.getCode();
             }
