@@ -96,7 +96,7 @@ public abstract class Federation {
 
     public List<ECKey> getRskPublicKeys() {
         // Copy instances since we don't control
-        // immutability of BtcECKey instances
+        // immutability of ECKey instances
         return members.stream()
             .map(m -> m.getRskPublicKey().getPubKey())
             .map(ECKey::fromPublicOnly)
@@ -105,7 +105,7 @@ public abstract class Federation {
 
     public List<ECKey> getMstPublicKeys() {
         // Copy instances since we don't control
-        // immutability of BtcECKey instances
+        // immutability of ECKey instances
         return members.stream()
             .map(m -> m.getMstPublicKey().getPubKey())
             .map(ECKey::fromPublicOnly)
