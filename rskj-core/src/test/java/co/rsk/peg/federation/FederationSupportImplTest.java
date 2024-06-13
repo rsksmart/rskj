@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.script.Script;
@@ -330,7 +331,7 @@ class FederationSupportImplTest {
         @Tag("getActiveFederatorPublicKeyOfType")
         void getActiveFederatorPublicKeyOfType_withSpecificRskKeys_returnsExpectedFederatorPublicKeys() {
             // create new federation with specific rsk public keys
-            List<ECKey> rskECKeys = BitcoinTestUtils.getEcKeysFromSeeds(
+            List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
             );
             newFederation = new P2shErpFederationBuilder()
@@ -361,10 +362,10 @@ class FederationSupportImplTest {
         @Tag("getActiveFederatorPublicKeyOfType")
         void getActiveFederatorPublicKeyOfType_withSpecificRskAndMstKeys_returnsExpectedFederatorPublicKeys() {
             // create new federation with specific rsk and mst public keys
-            List<ECKey> rskECKeys = BitcoinTestUtils.getEcKeysFromSeeds(
+            List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
             );
-            List<ECKey> mstECKeys = BitcoinTestUtils.getEcKeysFromSeeds(
+            List<ECKey> mstECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"mst01", "mst02", "mst03", "mst04", "mst05", "mst06", "mst07", "mst08", "mst09"}
             );
             newFederation = new P2shErpFederationBuilder()
