@@ -95,6 +95,19 @@ public class WhitelistSupportImpl implements WhitelistSupport {
         }
     }
 
+    private Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry entry) {
+        if (!isAuthorizedLockWhitelistChange(tx)) {
+            return UNAUTHORIZED_CALLER.getCode();
+        }
+
+        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist();
+        if (whitelist.isWhitelisted(entry.address())) {
+            return ADDRESS_ALREADY_WHITELISTED.getCode();
+        }
+        whitelist.put(entry.address(), entry);
+        return SUCCESS.getCode();
+    }
+
     @Override
     public int removeLockWhitelistAddress(Transaction tx, String addressBase58) {
         if (!isAuthorizedLockWhitelistChange(tx)) {
@@ -148,19 +161,6 @@ public class WhitelistSupportImpl implements WhitelistSupport {
         lockWhitelist.consume(senderBtcAddress);
 
         return true;
-    }
-
-    private Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry entry) {
-        if (!isAuthorizedLockWhitelistChange(tx)) {
-            return UNAUTHORIZED_CALLER.getCode();
-        }
-
-        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist();
-        if (whitelist.isWhitelisted(entry.address())) {
-            return ADDRESS_ALREADY_WHITELISTED.getCode();
-        }
-        whitelist.put(entry.address(), entry);
-        return SUCCESS.getCode();
     }
 
     private boolean isAuthorizedLockWhitelistChange(Transaction tx) {
