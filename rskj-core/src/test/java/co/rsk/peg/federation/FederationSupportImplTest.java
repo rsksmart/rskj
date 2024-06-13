@@ -320,11 +320,9 @@ class FederationSupportImplTest {
             assertThat(activeFederatorBtcPublicKey, is(federatorFromNewFederationBtcPublicKey.getPubKey()));
 
             byte[] activeFederatorRskPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.RSK);
-            // for rsk, the method returns the pubkey compressed
             assertThat(activeFederatorRskPublicKey, is(federatorFromNewFederationRskPublicKey.getPubKey(true)));
 
             byte[] activeFederatorMstPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.MST);
-            // for mst, the method returns the pubkey compressed
             assertThat(activeFederatorMstPublicKey, is(federatorFromNewFederationMstPublicKey.getPubKey(true)));
         }
 
@@ -742,11 +740,9 @@ class FederationSupportImplTest {
             assertThat(activeFederatorBtcPublicKey, is(expectedFederatorBtcPublicKey.getPubKey()));
 
             byte[] activeFederatorRskPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.RSK);
-            // for rsk, the method returns the pubkey compressed
             assertThat(activeFederatorRskPublicKey, is(expectedFederatorRskPublicKey.getPubKey(true)));
 
             byte[] activeFederatorMstPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.MST);
-            // for mst, the method returns the pubkey compressed
             assertThat(activeFederatorMstPublicKey, is(expectedFederatorMstPublicKey.getPubKey(true)));
         }
 
