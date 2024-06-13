@@ -16,20 +16,18 @@ public class WhitelistSupportImpl implements WhitelistSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(WhitelistSupportImpl.class);
     private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
-    private final WhitelistStorageProvider whitelistStorageProvider;
     private final WhitelistConstants whitelistConstants;
+    private final WhitelistStorageProvider whitelistStorageProvider;
     private final SignatureCache signatureCache;
-    private final NetworkParameters networkParameters;
 
     public WhitelistSupportImpl(
-        WhitelistStorageProvider whitelistStorageProvider,
         WhitelistConstants whitelistConstants,
-        SignatureCache signatureCache,
-        NetworkParameters networkParameters) {
-        this.whitelistStorageProvider = whitelistStorageProvider;
+        WhitelistStorageProvider whitelistStorageProvider,
+        SignatureCache signatureCache) {
+
         this.whitelistConstants = whitelistConstants;
+        this.whitelistStorageProvider = whitelistStorageProvider;
         this.signatureCache = signatureCache;
-        this.networkParameters = networkParameters;
     }
 
     @Override
@@ -50,7 +48,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58) {
         try {
-            Address address = Address.fromBase58(networkParameters, addressBase58);
+            Address address = Address.fromBase58(whitelistConstants.getBtcParams(), addressBase58);
 
             return whitelistStorageProvider.getLockWhitelist().get(address);
         } catch (AddressFormatException e) {
@@ -62,7 +60,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public int addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
         try {
-            Address address = Address.fromBase58(networkParameters, addressBase58);
+            Address address = Address.fromBase58(whitelistConstants.getBtcParams(), addressBase58);
             Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
             LockWhitelistEntry entry = new OneOffWhiteListEntry(address, maxTransferValueCoin);
 
@@ -76,7 +74,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public int addUnlimitedLockWhitelistAddress(Transaction tx, String addressBase58) {
         try {
-            Address address = Address.fromBase58(networkParameters, addressBase58);
+            Address address = Address.fromBase58(whitelistConstants.getBtcParams(), addressBase58);
             LockWhitelistEntry entry = new UnlimitedWhiteListEntry(address);
 
             return addLockWhitelistAddress(tx, entry);
@@ -107,7 +105,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
 
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist();
         try {
-            Address address = Address.fromBase58(networkParameters, addressBase58);
+            Address address = Address.fromBase58(whitelistConstants.getBtcParams(), addressBase58);
             if (!whitelist.remove(address)) {
                 return ADDRESS_NOT_EXIST.getCode();
             }
