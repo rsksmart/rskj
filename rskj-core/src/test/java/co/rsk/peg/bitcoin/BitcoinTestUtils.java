@@ -30,16 +30,6 @@ public class BitcoinTestUtils {
         return keys;
     }
 
-    public static List<ECKey> getEcKeysFromSeeds(String[] seeds) {
-        List<ECKey> keys = Arrays
-            .stream(seeds)
-            .map(seed -> ECKey.fromPrivate(
-                HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
-            .collect(Collectors.toList());
-
-        return keys;
-    }
-
     public static Address createP2PKHAddress(NetworkParameters networkParameters, String seed) {
         BtcECKey key = BtcECKey.fromPrivate(
             HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
