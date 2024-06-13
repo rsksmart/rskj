@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 import co.rsk.bitcoinj.script.ScriptChunk;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 
 public class BitcoinTestUtils {
