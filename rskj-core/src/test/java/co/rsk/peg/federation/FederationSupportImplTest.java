@@ -178,7 +178,7 @@ class FederationSupportImplTest {
             // since genesis federation was created without specifying rsk public keys
             // these are set deriving the btc public keys,
             // so we should first assert that
-            ECKey ecKeyDerivedFromBtcKey = ECKey.fromPublicOnly(federatorFromGenesisFederationBtcPublicKey.getPubKey());;
+            ECKey ecKeyDerivedFromBtcKey = ECKey.fromPublicOnly(federatorFromGenesisFederationBtcPublicKey.getPubKey());
             assertThat(federatorFromGenesisFederationRskPublicKey, is(ecKeyDerivedFromBtcKey));
             // since genesis federation was created without specifying mst public keys
             // these are set copying the rsk public keys,
@@ -309,7 +309,7 @@ class FederationSupportImplTest {
             // since new federation was created without specifying rsk public keys
             // these are set deriving the btc public keys,
             // so we should first assert that
-            ECKey ecKeyDerivedFromBtcKey = ECKey.fromPublicOnly(federatorFromNewFederationBtcPublicKey.getPubKey());;
+            ECKey ecKeyDerivedFromBtcKey = ECKey.fromPublicOnly(federatorFromNewFederationBtcPublicKey.getPubKey());
             assertThat(federatorFromNewFederationRskPublicKey, is(ecKeyDerivedFromBtcKey));
             // since new federation was created without specifying mst public keys
             // these are set copying the rsk public keys,
@@ -721,7 +721,7 @@ class FederationSupportImplTest {
             // since new federation was created without specifying rsk public keys
             // these are set deriving the btc public keys,
             // so we should first assert that
-            ECKey ecKeyDerivedFromBtcKey = ECKey.fromPublicOnly(expectedFederatorBtcPublicKey.getPubKey());;
+            ECKey ecKeyDerivedFromBtcKey = ECKey.fromPublicOnly(expectedFederatorBtcPublicKey.getPubKey());
             assertThat(expectedFederatorRskPublicKey, is(ecKeyDerivedFromBtcKey));
             // since new federation was created without specifying mst public keys
             // these are set copying the rsk public keys,
