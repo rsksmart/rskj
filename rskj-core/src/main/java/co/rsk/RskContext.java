@@ -1860,7 +1860,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (minGasPriceProvider == null) {
             long minGasPrice = getRskSystemProperties().minerMinGasPrice();
             StableMinGasPriceSystemConfig stableGasPriceSystemConfig = getRskSystemProperties().getStableGasPriceSystemConfig();
-            minGasPriceProvider = MinGasPriceProviderFactory.create(minGasPrice, stableGasPriceSystemConfig);
+            minGasPriceProvider = MinGasPriceProviderFactory.create(minGasPrice, stableGasPriceSystemConfig, this::getEthModule);
         }
         logger.debug("MinGasPriceProvider type: {}", minGasPriceProvider.getType().name());
         return minGasPriceProvider;

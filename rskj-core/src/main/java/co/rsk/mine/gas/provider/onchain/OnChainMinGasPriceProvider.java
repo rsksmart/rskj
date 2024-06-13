@@ -4,13 +4,35 @@ import co.rsk.config.mining.OnChainMinGasPriceSystemConfig;
 import co.rsk.mine.gas.provider.MinGasPriceProvider;
 import co.rsk.mine.gas.provider.MinGasPriceProviderType;
 import co.rsk.mine.gas.provider.StableMinGasPriceProvider;
+import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.util.HexUtils;
+import org.ethereum.rpc.parameters.BlockIdentifierParam;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.rpc.parameters.HexNumberParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
-    private final String address;
+    private static final Logger logger = LoggerFactory.getLogger(OnChainMinGasPriceProvider.class);
 
-    protected OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, OnChainMinGasPriceSystemConfig config) {
+    private final String toAddress;
+    private final String fromAddress;
+    private final String data;
+
+    @FunctionalInterface
+    public interface GetContextCallback {
+        EthModule getEthModule();
+    }
+    private final GetContextCallback getContextCallback;
+
+    protected OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, OnChainMinGasPriceSystemConfig config, GetContextCallback getContextCallback) {
         super(fallBackProvider);
-        this.address = config.getAddress();
+        this.getContextCallback = getContextCallback;
+        this.toAddress = config.address();
+        this.fromAddress = config.from();
+        this.data = config.data();
     }
 
     @Override
@@ -20,10 +42,47 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
 
     @Override
     public Long getStableMinGasPrice() {
-        return null;
+        EthModule ethModule = this.getContextCallback.getEthModule();
+        if (ethModule == null) {
+            logger.error("Could not get eth module");
+            return fallBackProvider.getMinGasPrice();
+        }
+
+        CallArgumentsParam callArguments = new CallArgumentsParam(
+                new HexAddressParam(fromAddress),
+                new HexAddressParam(toAddress),
+                null,
+                null,
+                null,
+                null,
+                new HexNumberParam(ethModule.chainId()),
+                null,
+                new HexDataParam(data),
+                null
+        );
+        try {
+            String callOutput = ethModule.call(callArguments, new BlockIdentifierParam("latest"));
+
+            // Parse the output of the call to get the exchange rate. Will not work with bytes32 values!
+            return HexUtils.jsonHexToLong(
+                    callOutput
+            );
+        } catch (Exception e) {
+            logger.error("Error calling eth module", e);
+
+            return fallBackProvider.getMinGasPrice();
+        }
     }
 
-    public String getAddress() {
-        return address;
+    public String getToAddress() {
+        return toAddress;
+    }
+
+    public String getFromAddress() {
+        return fromAddress;
+    }
+
+    public String getData() {
+        return data;
     }
 }

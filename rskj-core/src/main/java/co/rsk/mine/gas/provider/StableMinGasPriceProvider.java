@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger("StableMinGasPrice");
-    private final MinGasPriceProvider fallBackProvider;
+    protected final MinGasPriceProvider fallBackProvider;
 
     protected StableMinGasPriceProvider(MinGasPriceProvider fallBackProvider) {
         this.fallBackProvider = fallBackProvider;
