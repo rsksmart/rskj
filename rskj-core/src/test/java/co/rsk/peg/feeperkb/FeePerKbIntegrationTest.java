@@ -10,452 +10,542 @@ import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import co.rsk.peg.storage.StorageAccessor;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import co.rsk.peg.utils.Caller;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.TestMethodOrder;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(Lifecycle.PER_CLASS)
 class FeePerKbIntegrationTest {
     private final FeePerKbConstants feePerKbConstants = FeePerKbMainNetConstants.getInstance();
     private FeePerKbSupport feePerKbSupport;
     private SignatureCache signatureCache;
+    private Coin currentFeePerKb;
+    private Coin excessiveFeePerKbVote;
+    private Coin differentFeePerKbVote;
 
-    @BeforeEach
+    @BeforeAll
     void setUp() {
         StorageAccessor inMemoryStorage = new InMemoryStorage();
         FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(inMemoryStorage);
         feePerKbSupport = new FeePerKbSupportImpl(feePerKbConstants, feePerKbStorageProvider);
         signatureCache = mock(SignatureCache.class);
+        Coin maxFeePerKbVote = feePerKbConstants.getMaxFeePerKb();
+        excessiveFeePerKbVote = maxFeePerKbVote.add(Coin.SATOSHI);
+        differentFeePerKbVote = Coin.valueOf(60_000L);
     }
 
+    /**
+     * Without any previous voting.
+     */
     @Test
-    void feePerKbIntegrationTest() {
-        Coin differentFeePerKbVote = Coin.valueOf(60_000L);
-        Coin maxFeePerKbVote = feePerKbConstants.getMaxFeePerKb();
-        Coin excessiveFeePerKbVote = maxFeePerKbVote.add(Coin.SATOSHI);
+    @Order(0)
+    void genesisFeePerKb() {
         Coin genesisFeePerKb = feePerKbConstants.getGenesisFeePerKb();
-
-        // Get fee per kb before any voting, should return the genesis fee per kb
+        currentFeePerKb = genesisFeePerKb;
         assertFeePerKbValue(genesisFeePerKb);
+    }
 
-        /*
-         *  1st voting: authorizer 1 and 2 vote the same value
-         */
+    /**
+     * Authorizer 1 and 2 vote the same value
+     */
+    @Test
+    @Order(1)
+    void firstVoting() {
         Coin firstFeePerKbVote = Coin.valueOf(50_000L);
-
         // Send 1 vote from an authorizer
-        voteFeePerKb(firstFeePerKbVote, 0);
+        voteFeePerKb(firstFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         // Get fee per kb, shouldn't have changed because only one vote was added
-        assertFeePerKbValue(genesisFeePerKb);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote from a different authorizer
-        voteFeePerKb(firstFeePerKbVote, 1);
+        voteFeePerKb(firstFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
+        currentFeePerKb = firstFeePerKbVote;
+
         // Get fee per kb, should return the newly voted value
         assertFeePerKbValue(firstFeePerKbVote);
+    }
 
-        /*
-         *  2nd voting, authorizers 2 and 3 vote the same value
-         */
+    /**
+     * Authorizers 2 and 3 vote the same value
+     */
+    @Test
+    @Order(2)
+    void secondVoting() {
         Coin secondFeePerKbVote = Coin.valueOf(100_000L);
-
         // First vote for a new value
-        voteFeePerKb(secondFeePerKbVote, 1);
+        voteFeePerKb(secondFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
         // Get fee per kb, should return the first value voted because the new value has only 1 vote
-        assertFeePerKbValue(firstFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote for the same value, different authorizer
-        voteFeePerKb(secondFeePerKbVote, 2);
+        voteFeePerKb(secondFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = secondFeePerKbVote;
+
         // Get fee per kb, should return the second round vote value
         assertFeePerKbValue(secondFeePerKbVote);
+    }
 
-        /*
-         *  3rd voting, authorizers 1 and 2 vote different values.
-         *  Then authorizer 3 votes the same value as authorizer 1
-         */
+    /**
+     * Authorizers 1 and 2 vote different values. Then authorizer 3 votes the same value as
+     * authorizer 1
+     */
+    @Test
+    @Order(3)
+    void thirdVoting() {
         Coin thirdFeePerKbVote = Coin.valueOf(40_000L);
 
         // First vote for a new value
-        voteFeePerKb(thirdFeePerKbVote, 0);
+        voteFeePerKb(thirdFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         // Get fee per kb, should return the second voted value because the third value has only 1 vote
-        assertFeePerKbValue(secondFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote for a different value, different authorizer
-        voteFeePerKb(differentFeePerKbVote, 1);
+        voteFeePerKb(differentFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
         // Get fee per kb, should return the second round voting value because the third value has only 2 different votes
-        assertFeePerKbValue(secondFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote from authorizer 3, same value as the first one voted from authorizer 1
-        voteFeePerKb(thirdFeePerKbVote, 2);
+        voteFeePerKb(thirdFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = thirdFeePerKbVote;
+
         // Get fee per kb, should return the third vote value
         assertFeePerKbValue(thirdFeePerKbVote);
+    }
 
-        /*
-         *  4th voting, authorizers 1 and 2 vote the same value.
-         *  Then authorizer 3 votes a different value
-         */
+    /**
+     * Authorizers 1 and 2 vote the same value. Then authorizer 3 votes a different value
+     */
+    @Test
+    @Order(4)
+    void fourthVoting() {
         Coin fourthFeePerKbVote = Coin.valueOf(70_000L);
 
         // First vote for a new value
-        voteFeePerKb(fourthFeePerKbVote, 0);
+        voteFeePerKb(fourthFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         // Get fee per kb, should return the third round voted value because the fourth round has only 1 vote
-        assertFeePerKbValue(thirdFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote for a same value, different authorizer
-        voteFeePerKb(fourthFeePerKbVote, 1);
+        voteFeePerKb(fourthFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
         // Get fee per kb, should have changed to fourthFeePerKb vote
         assertFeePerKbValue(fourthFeePerKbVote);
 
         // Third vote for a different value, different authorizer
-        voteFeePerKb(differentFeePerKbVote, 2);
+        voteFeePerKb(differentFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = fourthFeePerKbVote;
+
         // Get fee per kb, should return fourthFeePerKbVote since the third vote is considered a new round.
         assertFeePerKbValue(fourthFeePerKbVote);
+    }
 
-        /*
-         *  5th voting, authorizers 1 and 3 vote the same value.
-         *  The last vote of the previous voting is taken as a first vote (different vote), however,
-         *  it changes its vote in this round for the same vote of the authorizer 1.
-         */
+    /**
+     * Authorizers 1 and 3 vote the same value. The last vote of the previous voting is taken as a
+     * first vote (different vote), however, it changes its vote in this round for the same vote of
+     * the authorizer 1.
+     */
+    @Test
+    @Order(5)
+    void fifthVoting() {
         Coin fifthFeePerKbVote = Coin.valueOf(80_000L);
 
         // Send 1 vote from an authorizer
-        voteFeePerKb(fifthFeePerKbVote, 0);
+        voteFeePerKb(fifthFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         // Get fee per kb, shouldn't have changed because the two first votes are different
-        assertFeePerKbValue(fourthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote from a different authorizer
-        voteFeePerKb(fifthFeePerKbVote, 2);
+        voteFeePerKb(fifthFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = fifthFeePerKbVote;
+
         // Get fee per kb, should return the newly voted value
         assertFeePerKbValue(fifthFeePerKbVote);
+    }
 
-        /*
-         *  6th voting, authorizers 1 vote for a different value.
-         *  Authorizer 2 and 3 vote the same value.
-         */
+    /**
+     * Authorizers 1 vote for a different value. Authorizer 2 and 3 vote the same value.
+     */
+    @Test
+    @Order(6)
+    void sixthVoting() {
         Coin sixthFeePerKbVote = Coin.valueOf(30_000L);
 
         // First vote for a new value
-        voteFeePerKb(differentFeePerKbVote, 0);
+        voteFeePerKb(differentFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         // Get fee per kb, should return the fifthFeePerKbVote voted value because the voting has only 1 vote
-        assertFeePerKbValue(fifthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote for a different value, different authorizer
-        voteFeePerKb(sixthFeePerKbVote, 1);
+        voteFeePerKb(sixthFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
         // Get fee per kb, should return the second round voting value because the third value has only 2 different votes
-        assertFeePerKbValue(fifthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote from authorizer 3, same value as the second one voted
-        voteFeePerKb(sixthFeePerKbVote, 2);
+        voteFeePerKb(sixthFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = sixthFeePerKbVote;
+
         // Get fee per kb, should return sixthFeePerKbVote value
         assertFeePerKbValue(sixthFeePerKbVote);
+    }
 
-        /*
-         *  7th voting, authorizers 1 and 3 vote same values.
-         *  In between votes an unauthorized caller emits a vote similar to previous, but the fee per KB
-         *  shouldn't change with this vote.
-         */
+    /**
+     * Authorizers 1 and 3 vote same values. In between votes an unauthorized caller emits a vote
+     * similar to previous, but the fee per KB shouldn't change with this vote.
+     */
+    @Test
+    @Order(7)
+    void seventhVoting() {
         Coin seventhFeePerKbVote = Coin.valueOf(40_000L);
 
         // First vote for a new value
-        voteFeePerKb(seventhFeePerKbVote, 0);
+        voteFeePerKb(seventhFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         // Get fee per kb, should return the second voted value because the third value has only 1 vote
-        assertFeePerKbValue(sixthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote for an unauthorized caller
-        voteFeePerKbByUnauthorizedCaller(seventhFeePerKbVote);
+        voteFeePerKb(seventhFeePerKbVote, Caller.UNAUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(sixthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote from authorizer 3, same value as the first one voted from authorizer 1
-        voteFeePerKb(seventhFeePerKbVote, 2);
+        voteFeePerKb(seventhFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = seventhFeePerKbVote;
+
         // Get fee per kb, should return the third vote value
         assertFeePerKbValue(seventhFeePerKbVote);
+    }
 
-        /*
-         *  8th voting, authorizers 1 and 3 vote same values.
-         *  In between vote authorizer 2 an unauthorized caller the same value, but the fee per KB
-         *  shouldn't change with an unauthorized caller vote.
-         */
+    /**
+     * Authorizers 1 and 3 vote same values. In between vote authorizer 2 an unauthorized caller the
+     * same value, but the fee per KB shouldn't change with an unauthorized caller vote.
+     */
+    @Test
+    @Order(8)
+    void eighthVoting() {
         Coin eighthFeePerKbVote = Coin.valueOf(40_000L);
 
         // First vote for a new value
-        voteFeePerKb(eighthFeePerKbVote, 0);
+        voteFeePerKb(eighthFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(seventhFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote for a new different value
-        voteFeePerKb(differentFeePerKbVote, 1);
+        voteFeePerKb(differentFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(seventhFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote is same than the second vote value, but it is an unauthorized caller
-        voteFeePerKbByUnauthorizedCaller(differentFeePerKbVote);
+        voteFeePerKb(differentFeePerKbVote, Caller.UNAUTHORIZED.getRskAddress());
         //It still has the previous voting round value, since it shouldn't change with an unauthorized caller vote
-        assertFeePerKbValue(seventhFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Fourth vote from authorizer 3, same value as the first one voted from authorizer 1
-        voteFeePerKb(eighthFeePerKbVote, 2);
+        voteFeePerKb(eighthFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = eighthFeePerKbVote;
+
         // Get fee per kb, should return the third vote value
         assertFeePerKbValue(eighthFeePerKbVote);
+    }
 
-        /*
-         *  9th voting:
-         *  An unauthorized caller and authorizer 2 vote same value.
-         *  Authorizer 1 and 3 vote same values.
-         *  It should change with the last vote from authorizer 3
-         */
+    /**
+     * An unauthorized caller and authorizer 2 vote same value. Authorizer 1 and 3 vote same values.
+     * It should change with the last vote from authorizer 3
+     */
+    @Test
+    @Order(9)
+    void ninthVoting() {
         Coin ninthFeePerKbVote = Coin.valueOf(90_000L);
 
         // First vote is by an unauthorized caller
-        voteFeePerKbByUnauthorizedCaller(differentFeePerKbVote);
+        voteFeePerKb(differentFeePerKbVote, Caller.UNAUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(eighthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote is by authorizer 1
-        voteFeePerKb(ninthFeePerKbVote, 0);
+        voteFeePerKb(ninthFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(eighthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote is by authorizer 2. it votes similar then the unauthorized caller
-        voteFeePerKb(differentFeePerKbVote, 1);
+        voteFeePerKb(differentFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value, since it shouldn't change with an unauthorized caller vote
-        assertFeePerKbValue(eighthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Fourth vote is by authorizer 3, same value than authorizer 1
-        voteFeePerKb(ninthFeePerKbVote, 2);
+        voteFeePerKb(ninthFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = ninthFeePerKbVote;
+
         // Get fee per kb, should return the third vote value
         assertFeePerKbValue(ninthFeePerKbVote);
+    }
 
-        /*
-         *  10th voting:
-         *  Authorizers 1 and 2 vote same values. Authorizer 2 votes the first time a negative value
-         *  Authorizer 2 and 3 vote for a negative value, but fee per KB not change since negative values
-         *  are not permitted.
-         *
-         */
+    /**
+     * Authorizers 1 and 2 vote same values. Authorizer 2 votes the first time a negative value
+     * Authorizer 2 and 3 vote for a negative value, but fee per KB not change since negative values
+     * are not permitted.
+     */
+    @Test
+    @Order(10)
+    void tenthVoting() {
         Coin tenthFeePerKbVote = Coin.valueOf(20_000L);
 
         // First vote for a new value
-        voteFeePerKb(tenthFeePerKbVote, 0);
+        voteFeePerKb(tenthFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(ninthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote, authorizer 2 votes a negative value
-        voteFeePerKb(Coin.NEGATIVE_SATOSHI, 1);
+        voteFeePerKb(Coin.NEGATIVE_SATOSHI, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(ninthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote, authorizer 3, votes a negative value
-        voteFeePerKb(Coin.NEGATIVE_SATOSHI, 2);
+        voteFeePerKb(Coin.NEGATIVE_SATOSHI, Caller.THIRD_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(ninthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Fourth vote, authorizer 2 votes again, this time for the same value that authorizer 1
-        voteFeePerKb(tenthFeePerKbVote, 1);
+        voteFeePerKb(tenthFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
+        currentFeePerKb = tenthFeePerKbVote;
+
         // Get fee per kb, should return the value voted by authorizer 1 and 2 (second vote)
         assertFeePerKbValue(tenthFeePerKbVote);
+    }
 
-        /*
-         *  11th voting: excessive value case. An excessive value is a value greater than the max
-         *  fee per KB value permitted
-         *  Authorizers 1 and 2 vote same values. Authorizer 2 votes the first time an excessive value
-         *  Authorizer 2 and 3 vote for an excessive value, but fee per KB not change since excessive values
-         *  are not permitted.
-         */
+    /**
+     * Excessive value case. An excessive value is a value greater than the max fee per KB value
+     * permitted Authorizers 1 and 2 vote same values. Authorizer 2 votes the first time an
+     * excessive value Authorizer 2 and 3 vote for an excessive value, but fee per KB not change
+     * since excessive values are not permitted.
+     */
+    @Test
+    @Order(11)
+    void eleventhVoting() {
         Coin eleventhFeePerKbVote = Coin.valueOf(20_000L);
 
         // First vote for a new value
-        voteFeePerKb(eleventhFeePerKbVote, 0);
+        voteFeePerKb(eleventhFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(tenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote, authorizer 2 votes an excessive value
-        voteFeePerKb(excessiveFeePerKbVote, 1);
+        voteFeePerKb(excessiveFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(tenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote, authorizer 3, votes an excessive value
-        voteFeePerKb(excessiveFeePerKbVote, 2);
+        voteFeePerKb(excessiveFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(tenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Fourth vote, authorizer 2 votes again, this time for the same value that authorizer 1
-        voteFeePerKb(eleventhFeePerKbVote, 1);
+        voteFeePerKb(eleventhFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
+        currentFeePerKb = eleventhFeePerKbVote;
+
         // Get fee per kb, should return the value voted by authorizer 1 and 2 (second vote)
         assertFeePerKbValue(eleventhFeePerKbVote);
+    }
 
-        /*
-         *  12th voting: edge case where max fee per KB is voted by majority
-         *  Authorizers 1 votes the max fee per KB value.
-         *  Authorizer 2 votes  different value
-         *  Authorizer 3 votes the max fee per KB value.
-         */
+    /**
+     * Edge case where max fee per KB is voted by majority Authorizers 1 votes the max fee per KB
+     * value. Authorizer 2 votes  different value Authorizer 3 votes the max fee per KB value.
+     */
+    @Test
+    @Order(12)
+    void twelfthVoting() {
         Coin twelfthFeePerKbVote = feePerKbConstants.getMaxFeePerKb();
 
         // First vote for a new value
-        voteFeePerKb(twelfthFeePerKbVote, 0);
+        voteFeePerKb(twelfthFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(eleventhFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote for a different value, different authorizer
-        voteFeePerKb(differentFeePerKbVote, 1);
+        voteFeePerKb(differentFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(eleventhFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote from authorizer 3, same value as the first one voted from authorizer 1
-        voteFeePerKb(twelfthFeePerKbVote, 2);
+        voteFeePerKb(twelfthFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = twelfthFeePerKbVote;
+
         // Get fee per kb, should return the value voted by authorizer 1 and 3
         assertFeePerKbValue(twelfthFeePerKbVote);
+    }
 
-        /*
-         *  13th voting: edge case where a very low fee per KB is voted by majority
-         *  Authorizers 1 votes a very low fee per KB value.
-         *  Authorizer 2 votes  different value
-         *  Authorizer 3 votes a very low fee per KB value.
-         */
+    /**
+     * Edge case where a very low fee per KB is voted by majority Authorizers 1 votes a very low fee
+     * per KB value. Authorizer 2 votes  different value Authorizer 3 votes a very low fee per KB
+     * value.
+     */
+    @Test
+    @Order(13)
+    void thirteenthVoting() {
         Coin thirteenthFeePerKbVote = Coin.SATOSHI;
 
         // First vote for a new value
-        voteFeePerKb(thirteenthFeePerKbVote, 0);
+        voteFeePerKb(thirteenthFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(twelfthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote for a different value, different authorizer
-        voteFeePerKb(differentFeePerKbVote, 1);
+        voteFeePerKb(differentFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(twelfthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote from authorizer 3, same value as the first one voted from authorizer 1
-        voteFeePerKb(thirteenthFeePerKbVote, 2);
+        voteFeePerKb(thirteenthFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = thirteenthFeePerKbVote;
+
         // Get fee per kb, should return the value voted by authorizer 1 and 3
         assertFeePerKbValue(thirteenthFeePerKbVote);
+    }
 
-        /*
-         *  14th voting:
-         *  Authorizers 1 and 2 vote same values. Authorizer 2 votes the first time a zero value
-         *  Authorizer 2 and 3 vote for a zero value, but fee per KB not change since zero values
-         *  are not permitted.
-         *
-         */
+    /**
+     * Authorizers 1 and 2 vote same values. Authorizer 2 votes the first time a zero value
+     * Authorizer 2 and 3 vote for a zero value, but fee per KB not change since zero values are not
+     * permitted.
+     */
+    @Test
+    @Order(14)
+    void fourteenthVoting() {
         Coin fourteenthFeePerKbVote = Coin.valueOf(10_000L);
 
         // First vote for a new value
-        voteFeePerKb(fourteenthFeePerKbVote, 0);
+        voteFeePerKb(fourteenthFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(thirteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote, authorizer 2 votes a zero value
-        voteFeePerKb(Coin.ZERO, 1);
+        voteFeePerKb(Coin.ZERO, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(thirteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote, authorizer 3, votes a zero value
-        voteFeePerKb(Coin.ZERO, 2);
+        voteFeePerKb(Coin.ZERO, Caller.THIRD_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(thirteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Fourth vote, authorizer 2 votes again, this time for the same value that authorizer 1
-        voteFeePerKb(fourteenthFeePerKbVote, 1);
+        voteFeePerKb(fourteenthFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
+        currentFeePerKb = fourteenthFeePerKbVote;
+
         // Get fee per kb, should return the value voted by authorizer 1 and 2 (second vote)
         assertFeePerKbValue(fourteenthFeePerKbVote);
+    }
 
-        /*
-         *  15th voting: authorized callers vote several times
-         */
+    /**
+     * Authorized callers vote several times
+     */
+    @Test
+    @Order(15)
+    void fifteenthVoting() {
         Coin fifteenthFeePerKbVote = Coin.valueOf(130_000L);
 
-        Coin firstVoteFeePerKb  = Coin.valueOf(121_000L);
+        Coin firstVoteFeePerKb = Coin.valueOf(121_000L);
         // First vote for a new value
-        voteFeePerKb(firstVoteFeePerKb, 0);
+        voteFeePerKb(firstVoteFeePerKb, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fourteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
-        Coin secondVoteFeePerKb  = Coin.valueOf(122_000L);
+        Coin secondVoteFeePerKb = Coin.valueOf(122_000L);
         // Second vote for a different value, different authorizer
-        voteFeePerKb(secondVoteFeePerKb, 1);
+        voteFeePerKb(secondVoteFeePerKb, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fourteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
-        Coin thirdVoteFeePerKb  = Coin.valueOf(123_000L);
+        Coin thirdVoteFeePerKb = Coin.valueOf(123_000L);
         // Third vote for a different value, different authorizer
-        voteFeePerKb(thirdVoteFeePerKb, 2);
+        voteFeePerKb(thirdVoteFeePerKb, Caller.THIRD_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fourteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Again authorized callers vote
 
-        Coin fourthVoteFeePerKb  = Coin.valueOf(124_000L);
+        Coin fourthVoteFeePerKb = Coin.valueOf(124_000L);
         // First vote for a new value
-        voteFeePerKb(fourthVoteFeePerKb, 0);
+        voteFeePerKb(fourthVoteFeePerKb, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fourteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
-        Coin fifthVoteFeePerKb  = Coin.valueOf(125_000L);
+        Coin fifthVoteFeePerKb = Coin.valueOf(125_000L);
         // Second vote for a different value, different authorizer
-        voteFeePerKb(fifthVoteFeePerKb, 1);
+        voteFeePerKb(fifthVoteFeePerKb, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fourteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
-        Coin sixthVoteFeePerKb  = Coin.valueOf(126_000L);
+        Coin sixthVoteFeePerKb = Coin.valueOf(126_000L);
         // Third vote for a different value, different authorizer
-        voteFeePerKb(sixthVoteFeePerKb, 2);
+        voteFeePerKb(sixthVoteFeePerKb, Caller.THIRD_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fourteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Again authorized callers vote
 
-        Coin seventhVoteFeePerKb  = Coin.valueOf(127_000L);
+        Coin seventhVoteFeePerKb = Coin.valueOf(127_000L);
         // First vote for a new value
-        voteFeePerKb(seventhVoteFeePerKb, 0);
+        voteFeePerKb(seventhVoteFeePerKb, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fourteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
-        Coin eighthVoteFeePerKb  = Coin.valueOf(128_000L);
+        Coin eighthVoteFeePerKb = Coin.valueOf(128_000L);
         // Second vote for a different value, different authorizer
-        voteFeePerKb(eighthVoteFeePerKb, 1);
+        voteFeePerKb(eighthVoteFeePerKb, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fourteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
-        Coin ninthVoteFeePerKb  = Coin.valueOf(129_000L);
+        Coin ninthVoteFeePerKb = Coin.valueOf(129_000L);
         // Third vote for a different value, different authorizer
-        voteFeePerKb(ninthVoteFeePerKb, 2);
+        voteFeePerKb(ninthVoteFeePerKb, Caller.THIRD_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fourteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Again authorized callers vote
 
         // First vote for a new value
-        voteFeePerKb(fifteenthFeePerKbVote, 0);
+        voteFeePerKb(fifteenthFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fourteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote for a same value than the previous one
-        voteFeePerKb(fifteenthFeePerKbVote, 1);
+        voteFeePerKb(fifteenthFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
+        currentFeePerKb = fifteenthFeePerKbVote;
+
         //It still has the previous voting round value
         assertFeePerKbValue(fifteenthFeePerKbVote);
+    }
 
-        /*
-         *  16th voting: authorized callers vote same current fee per KB value
-         *  Authorizers 1 votes for the same current fee per KB value.
-         *  Authorizer 2 votes  different value
-         *  Authorizer 3 votes for the same current fee per KB value.
-         */
-        Coin sixteenthFeePerKbVote = feePerKbSupport.getFeePerKb();;
+    /**
+     * Authorized callers vote same current fee per KB value Authorizers 1 votes for the same
+     * current fee per KB value. Authorizer 2 votes  different value Authorizer 3 votes for the same
+     * current fee per KB value.
+     */
+    @Test
+    @Order(16)
+    void sixteenthVoting() {
+        Coin sixteenthFeePerKbVote = feePerKbSupport.getFeePerKb();
 
         // First vote for a new value
-        voteFeePerKb(sixteenthFeePerKbVote, 0);
+        voteFeePerKb(sixteenthFeePerKbVote, Caller.FIRST_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fifteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Second vote for a different value, different authorizer
-        voteFeePerKb(differentFeePerKbVote, 1);
+        voteFeePerKb(differentFeePerKbVote, Caller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value
-        assertFeePerKbValue(fifteenthFeePerKbVote);
+        assertFeePerKbValue(currentFeePerKb);
 
         // Third vote from authorizer 3, same value as the first one voted from authorizer 1
-        voteFeePerKb(sixteenthFeePerKbVote, 2);
+        voteFeePerKb(sixteenthFeePerKbVote, Caller.THIRD_AUTHORIZED.getRskAddress());
+        currentFeePerKb = sixteenthFeePerKbVote;
+
         // Get fee per kb, should return the value voted by authorizer 1 and 3
         assertFeePerKbValue(sixteenthFeePerKbVote);
     }
@@ -465,15 +555,8 @@ class FeePerKbIntegrationTest {
         assertEquals(feePerKbExpectedResult, feePerKbActualResult);
     }
 
-    private void voteFeePerKb(Coin feePerKb, int authorizerIndex) {
-        RskAddress authorizerAddress = this.getAuthorizedRskAddresses().get(authorizerIndex);
-        Transaction voteTx = getTransactionFromCaller(authorizerAddress);
-        feePerKbSupport.voteFeePerKbChange(voteTx, feePerKb, signatureCache);
-    }
-
-    private void voteFeePerKbByUnauthorizedCaller(Coin feePerKb) {
-        RskAddress authorizerAddress = this.getUnauthorizedRskAddress();
-        Transaction voteTx = getTransactionFromCaller(authorizerAddress);
+    private void voteFeePerKb(Coin feePerKb, RskAddress caller) {
+        Transaction voteTx = getTransactionFromCaller(caller);
         feePerKbSupport.voteFeePerKbChange(voteTx, feePerKb, signatureCache);
     }
 
@@ -482,17 +565,5 @@ class FeePerKbIntegrationTest {
         when(txFromAuthorizedCaller.getSender(signatureCache)).thenReturn(authorizer);
 
         return txFromAuthorizedCaller;
-    }
-
-    private List<RskAddress> getAuthorizedRskAddresses() {
-        return Stream.of(
-            "a02db0ed94a5894bc6f9079bb9a2d93ada1917f3",
-            "180a7edda4e640ea5a3e495e17a1efad260c39e9",
-            "8418edc8fea47183116b4c8cd6a12e51a7e169c1"
-        ).map(RskAddress::new).collect(Collectors.toList());
-    }
-
-    private RskAddress getUnauthorizedRskAddress() {
-        return new RskAddress("e2a5070b4e2cb77fe22dff05d9dcdc4d3eaa6ead");
     }
 }
