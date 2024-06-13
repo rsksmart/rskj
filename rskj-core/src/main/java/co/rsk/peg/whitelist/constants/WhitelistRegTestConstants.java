@@ -1,5 +1,6 @@
 package co.rsk.peg.whitelist.constants;
 
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.util.Collections;
 import java.util.List;
@@ -11,10 +12,12 @@ public class WhitelistRegTestConstants extends WhitelistConstants {
     private static final WhitelistRegTestConstants instance = new WhitelistRegTestConstants();
 
     private WhitelistRegTestConstants() {
+        btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+
         ECKey authorizerPublicKey = ECKey.fromPublicOnly(Hex.decode(
-            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"));
-        List<ECKey> lockWhitelistAuthorizedKeys = Collections.singletonList(
-            authorizerPublicKey);
+            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        ));
+        List<ECKey> lockWhitelistAuthorizedKeys = Collections.singletonList(authorizerPublicKey);
 
         lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
             lockWhitelistAuthorizedKeys,
