@@ -33,9 +33,9 @@ import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.FederationSupportBuilder;
@@ -774,12 +774,8 @@ class FederationSupportImplTest {
     }
 
     private List<ECKey> getMstPublicKeysFromFederation(Federation federation) {
-        List<ECKey> mstPublicKeys = new ArrayList<>();
-        List<FederationMember> members = federation.getMembers();
-        for (FederationMember member : members) {
-            mstPublicKeys.add(member.getMstPublicKey());
-        }
-
-        return mstPublicKeys;
+        return federation.getMembers().stream()
+            .map(FederationMember::getMstPublicKey)
+            .collect(Collectors.toList());
     }
 }
