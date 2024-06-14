@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import org.ethereum.crypto.ECKey;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -91,24 +90,6 @@ public abstract class Federation {
         return members.stream()
             .map(m -> m.getBtcPublicKey().getPubKey())
             .map(BtcECKey::fromPublicOnly)
-            .collect(Collectors.toList());
-    }
-
-    public List<ECKey> getRskPublicKeys() {
-        // Copy instances since we don't control
-        // immutability of ECKey instances
-        return members.stream()
-            .map(m -> m.getRskPublicKey().getPubKey())
-            .map(ECKey::fromPublicOnly)
-            .collect(Collectors.toList());
-    }
-
-    public List<ECKey> getMstPublicKeys() {
-        // Copy instances since we don't control
-        // immutability of ECKey instances
-        return members.stream()
-            .map(m -> m.getMstPublicKey().getPubKey())
-            .map(ECKey::fromPublicOnly)
             .collect(Collectors.toList());
     }
 
