@@ -58,7 +58,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58) {
         try {
-            Address address = Address.fromBase58(whitelistConstants.getBtcParams(), addressBase58);
+            Address address = Address.fromBase58(networkParameters, addressBase58);
 
             return whitelistStorageProvider.getLockWhitelist(activations, networkParameters).get(address);
         } catch (AddressFormatException e) {
@@ -70,7 +70,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public int addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
         try {
-            Address address = Address.fromBase58(whitelistConstants.getBtcParams(), addressBase58);
+            Address address = Address.fromBase58(networkParameters, addressBase58);
             Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
             LockWhitelistEntry entry = new OneOffWhiteListEntry(address, maxTransferValueCoin);
 
@@ -84,7 +84,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public int addUnlimitedLockWhitelistAddress(Transaction tx, String addressBase58) {
         try {
-            Address address = Address.fromBase58(whitelistConstants.getBtcParams(), addressBase58);
+            Address address = Address.fromBase58(networkParameters, addressBase58);
             LockWhitelistEntry entry = new UnlimitedWhiteListEntry(address);
 
             return addLockWhitelistAddress(tx, entry);
@@ -115,7 +115,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
 
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, networkParameters);
         try {
-            Address address = Address.fromBase58(whitelistConstants.getBtcParams(), addressBase58);
+            Address address = Address.fromBase58(networkParameters, addressBase58);
             if (!whitelist.remove(address)) {
                 return ADDRESS_NOT_EXIST.getCode();
             }
