@@ -20,47 +20,50 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
  */
 public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
 
-    private LockWhitelist lockWhitelist;
-    private final NetworkParameters networkParameters;
-    private final ActivationConfig.ForBlock activations;
     private final StorageAccessor bridgeStorageAccessor;
+    private LockWhitelist lockWhitelist;
 
-    public WhitelistStorageProviderImpl(NetworkParameters networkParameters,
-        ActivationConfig.ForBlock activations,
-        StorageAccessor bridgeStorageAccessor) {
-        this.networkParameters = networkParameters;
-        this.activations = activations;
+    public WhitelistStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
     }
 
     @Override
-    public void save() {
+    public void save(ActivationConfig.ForBlock activations) {
         if (lockWhitelist == null) {
             return;
         }
 
         List<OneOffWhiteListEntry> oneOffEntries = lockWhitelist.getAll(OneOffWhiteListEntry.class);
         Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight());
-        bridgeStorageAccessor.safeSaveToRepository(LOCK_ONE_OFF.getKey(), pairValue, BridgeSerializationUtils::serializeOneOffLockWhitelist);
+        bridgeStorageAccessor.safeSaveToRepository(
+            LOCK_ONE_OFF.getKey(),
+            pairValue,
+            BridgeSerializationUtils::serializeOneOffLockWhitelist
+        );
 
         if (activations.isActive(RSKIP87)) {
             List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getAll(UnlimitedWhiteListEntry.class);
-            bridgeStorageAccessor.safeSaveToRepository(LOCK_UNLIMITED.getKey(), unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
+            bridgeStorageAccessor.safeSaveToRepository(
+                LOCK_UNLIMITED.getKey(),
+                unlimitedEntries,
+                BridgeSerializationUtils::serializeUnlimitedLockWhitelist
+            );
         }
     }
 
     @Override
-    public synchronized LockWhitelist getLockWhitelist() {
+    public synchronized LockWhitelist getLockWhitelist(ActivationConfig.ForBlock activations, NetworkParameters networkParameters) {
         if (lockWhitelist == null) {
-            lockWhitelist = initializeLockWhitelist();
+            lockWhitelist = initializeLockWhitelist(activations, networkParameters);
         }
         return lockWhitelist;
     }
 
-    private LockWhitelist initializeLockWhitelist() {
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData =
-            bridgeStorageAccessor.safeGetFromRepository(LOCK_ONE_OFF.getKey(),
-                data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters));
+    private LockWhitelist initializeLockWhitelist(ActivationConfig.ForBlock activations, NetworkParameters networkParameters) {
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData = bridgeStorageAccessor.safeGetFromRepository(
+            LOCK_ONE_OFF.getKey(),
+            data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters)
+        );
 
         if (oneOffWhitelistAndDisableBlockHeightData == null) {
             lockWhitelist = new LockWhitelist(new HashMap<>());
@@ -70,8 +73,10 @@ public class WhitelistStorageProviderImpl implements WhitelistStorageProvider {
         Map<Address, LockWhitelistEntry> whitelistedAddresses = new HashMap<>(oneOffWhitelistAndDisableBlockHeightData.getLeft());
 
         if (activations.isActive(RSKIP87)) {
-            whitelistedAddresses.putAll(bridgeStorageAccessor.safeGetFromRepository(LOCK_UNLIMITED.getKey(),
-                    data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)));
+            whitelistedAddresses.putAll(bridgeStorageAccessor.safeGetFromRepository(
+                LOCK_UNLIMITED.getKey(),
+                data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)
+            ));
         }
 
         lockWhitelist = new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());
