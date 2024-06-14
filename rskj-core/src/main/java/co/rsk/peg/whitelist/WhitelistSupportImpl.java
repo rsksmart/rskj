@@ -7,6 +7,7 @@ import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import java.math.BigInteger;
 import java.util.List;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -18,26 +19,35 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
     private final WhitelistConstants whitelistConstants;
     private final WhitelistStorageProvider whitelistStorageProvider;
+    private final ActivationConfig.ForBlock activations;
     private final SignatureCache signatureCache;
+    private final NetworkParameters networkParameters;
 
     public WhitelistSupportImpl(
         WhitelistConstants whitelistConstants,
         WhitelistStorageProvider whitelistStorageProvider,
+        ActivationConfig.ForBlock activations,
         SignatureCache signatureCache) {
 
         this.whitelistConstants = whitelistConstants;
         this.whitelistStorageProvider = whitelistStorageProvider;
+        this.activations = activations;
         this.signatureCache = signatureCache;
+
+        this.networkParameters = whitelistConstants.getBtcParams();
     }
 
     @Override
     public int getLockWhitelistSize() {
-        return whitelistStorageProvider.getLockWhitelist().getSize();
+        return whitelistStorageProvider.getLockWhitelist(activations, networkParameters).getSize();
     }
 
     @Override
     public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
-        List<LockWhitelistEntry> entries = whitelistStorageProvider.getLockWhitelist().getAll();
+        List<LockWhitelistEntry> entries = whitelistStorageProvider.getLockWhitelist(
+            activations,
+            networkParameters
+        ).getAll();
 
         if (index < 0 || index >= entries.size()) {
             return null;
@@ -50,7 +60,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
         try {
             Address address = Address.fromBase58(whitelistConstants.getBtcParams(), addressBase58);
 
-            return whitelistStorageProvider.getLockWhitelist().get(address);
+            return whitelistStorageProvider.getLockWhitelist(activations, networkParameters).get(address);
         } catch (AddressFormatException e) {
             logger.warn("[getLockWhitelistEntryByAddress] {}", INVALID_ADDRESS_FORMAT_MESSAGE, e);
             return null;
@@ -89,7 +99,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
             return UNAUTHORIZED_CALLER.getCode();
         }
 
-        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist();
+        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, networkParameters);
         if (whitelist.isWhitelisted(entry.address())) {
             return ADDRESS_ALREADY_WHITELISTED.getCode();
         }
@@ -103,7 +113,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
             return UNAUTHORIZED_CALLER.getCode();
         }
 
-        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist();
+        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, networkParameters);
         try {
             Address address = Address.fromBase58(whitelistConstants.getBtcParams(), addressBase58);
             if (!whitelist.remove(address)) {
@@ -123,7 +133,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
             return UNAUTHORIZED_CALLER.getCode();
         }
 
-        LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist();
+        LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activations, networkParameters);
         if (lockWhitelist.isDisableBlockSet()) {
             return DELAY_ALREADY_SET.getCode();
         }
@@ -141,7 +151,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height) {
         final String ADDRESS_NOT_WHITELISTED_MESSAGE = "Rejected lock. Address is not whitelisted. Address: ";
-        LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist();
+        LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activations, networkParameters);
         if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
             logger.info("[verifyLockSenderIsWhitelisted] {} {}", ADDRESS_NOT_WHITELISTED_MESSAGE, senderBtcAddress);
             return false;
