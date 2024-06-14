@@ -130,15 +130,12 @@ public class BridgeSupportFactory {
 
     private WhitelistSupport getWhitelistSupportInstance(StorageAccessor bridgeStorageAccessor, ActivationConfig.ForBlock activations) {
         WhitelistConstants whitelistConstants = bridgeConstants.getWhitelistConstants();
-        WhitelistStorageProvider whitelistStorageProvider = new WhitelistStorageProviderImpl(
-            whitelistConstants.getBtcParams(),
-            activations,
-            bridgeStorageAccessor
-        );
+        WhitelistStorageProvider whitelistStorageProvider = new WhitelistStorageProviderImpl(bridgeStorageAccessor);
 
         return new WhitelistSupportImpl(
             whitelistConstants,
             whitelistStorageProvider,
+            activations,
             signatureCache
         );
     }
