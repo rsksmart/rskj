@@ -18,6 +18,7 @@
 package co.rsk.peg.federation;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -769,6 +770,159 @@ class FederationSupportImplTest {
                 Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, federatorFromOldFederationBtcPublicKey, federatorFromOldFederationRskPublicKey, federatorFromOldFederationMstPublicKey),
                 Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, federatorFromNewFederationBtcPublicKey, federatorFromNewFederationRskPublicKey, federatorFromNewFederationMstPublicKey),
                 Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, federatorFromNewFederationBtcPublicKey, federatorFromNewFederationRskPublicKey, federatorFromNewFederationMstPublicKey)
+            );
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("null federations")
+    class RetiringFederationTestsWithNullFederations {
+        @BeforeEach
+        void setUp() {
+            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .build();
+        }
+
+        @Test
+        @Tag("getRetiringFederation")
+        void getRetiringFederation_returnsNull() {
+            Federation retiringFederation = federationSupport.getRetiringFederation();
+            assertThat(retiringFederation, is(nullValue()));
+        }
+    }
+
+    @Nested
+    @Tag("null old federation, non null new federation")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class RetiringFederationTestsWithNullOldFederation {
+        @BeforeEach
+        void setUp() {
+            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+            // create new federation
+            P2shErpFederationBuilder p2shErpFederationBuilder = new P2shErpFederationBuilder();
+            newFederation = p2shErpFederationBuilder
+                .build();
+
+            storageProvider.setNewFederation(newFederation);
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .build();
+
+        }
+
+        @Test
+        @Tag("getRetiringFederation")
+        void getRetiringFederation_returnsNull() {
+            Federation retiringFederation = federationSupport.getRetiringFederation();
+            assertThat(retiringFederation, is(nullValue()));
+        }
+    }
+
+    @Nested
+    @Tag("non null federations")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class RetiringFederationTestsWithNonNullFederations {
+        // new federation should be active if we are past the activation block number
+        // old federation should be active if we are before the activation block number
+        // activation block number is smaller for hop than for fingerroot
+
+        // create old and new federations
+        long oldFederationCreationBlockNumber = 20;
+        long newFederationCreationBlockNumber = 65;
+        Federation oldFederation = new P2shErpFederationBuilder()
+            .withCreationBlockNumber(oldFederationCreationBlockNumber)
+            .build();
+        List<BtcECKey> newFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
+        );
+        Federation newFederation = new P2shErpFederationBuilder()
+            .withMembersBtcPublicKeys(newFederationKeys)
+            .withCreationBlockNumber(newFederationCreationBlockNumber)
+            .build();
+
+        // get block number activations for hop and fingerroot
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
+        long newFederationActivationAgeHop = federationMainnetConstants.getFederationActivationAge(hopActivations);
+        long blockNumberFederationActivationHop = newFederationCreationBlockNumber + newFederationActivationAgeHop;
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        long newFederationActivationAgeFingerroot = federationMainnetConstants.getFederationActivationAge(fingerrootActivations);
+        long blockNumberFederationActivationFingerroot = newFederationCreationBlockNumber + newFederationActivationAgeFingerroot;
+
+        FederationStorageProvider storageProvider;
+
+        @BeforeEach
+        void setUp() {
+            // save federations in storage
+            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+            storageProvider.setOldFederation(oldFederation);
+            storageProvider.setNewFederation(newFederation);
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederation")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void getRetiringFederation_withNewFederationNotActive_returnsNull(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Federation retiringFederation = federationSupport.getRetiringFederation();
+            assertThat(retiringFederation, is(nullValue()));
+        }
+
+        private Stream<Arguments> newFederationNotActiveActivationArgs() {
+            return Stream.of(
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations)
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederation")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederation_withNewFederationActive_returnsOldFederation(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Federation retiringFederation = federationSupport.getRetiringFederation();
+            assertThat(retiringFederation, is(oldFederation));
+        }
+
+        private Stream<Arguments> newFederationActiveActivationArgs() {
+            return Stream.of(
+                Arguments.of(blockNumberFederationActivationHop, hopActivations),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations)
             );
         }
     }
