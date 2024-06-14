@@ -70,7 +70,7 @@ import java.util.stream.Collectors;
  */
 public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
-    private static final Logger logger = LoggerFactory.getLogger("bridge");
+    private static final Logger logger = LoggerFactory.getLogger(Bridge.class);
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     // No parameters
@@ -1052,7 +1052,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("[getLockWhitelistEntryByAddress] Exception in getLockWhitelistEntryByAddress", e);
+            logger.warn("[getLockWhitelistEntryByAddress] Error while parsing the provided address. {}", e.getMessage());
             return WhitelistResponseCode.INVALID_ADDRESS_FORMAT.getCode();
         }
 
@@ -1060,6 +1060,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (entry == null) {
             // Empty string is returned when address is not found
+            logger.debug("[getLockWhitelistEntryByAddress] Address not found: {}", addressBase58);
             return WhitelistResponseCode.ADDRESS_NOT_EXIST.getCode();
         }
 
@@ -1077,7 +1078,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             addressBase58 = (String) args[0];
             maxTransferValue = (BigInteger) args[1];
         } catch (Exception e) {
-            logger.warn("Exception in addOneOffLockWhitelistAddress", e);
+            logger.warn("[addOneOffLockWhitelistAddress] Error while parsing the provided address and max value. {}", e.getMessage());
             return 0;
         }
 
@@ -1105,7 +1106,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("[removeLockWhitelistAddress] Exception in removeLockWhitelistAddress", e);
+            logger.warn("[removeLockWhitelistAddress] Error while parsing the provided address. {}", e.getMessage());
             return 0;
         }
 
@@ -1115,6 +1116,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException, BlockStoreException {
         logger.trace("setLockWhitelistDisableBlockDelay");
         BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
+
         return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);
     }
 
