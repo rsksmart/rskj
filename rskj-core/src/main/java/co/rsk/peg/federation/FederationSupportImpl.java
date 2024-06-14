@@ -240,7 +240,7 @@ public class FederationSupportImpl implements FederationSupport {
     public int getRetiringFederationSize() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return -1;
+            return FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode();
         }
 
         return retiringFederation.getSize();
@@ -250,7 +250,7 @@ public class FederationSupportImpl implements FederationSupport {
     public int getRetiringFederationThreshold() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return -1;
+            return FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode();
         }
 
         return retiringFederation.getNumberOfSignaturesRequired();
@@ -339,7 +339,7 @@ public class FederationSupportImpl implements FederationSupport {
         PendingFederation currentPendingFederation = getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return -1;
+            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
         }
 
         return currentPendingFederation.getSize();
