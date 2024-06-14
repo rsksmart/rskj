@@ -816,6 +816,13 @@ class FederationSupportImplTest {
             int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
             assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
         }
+
+        @Test
+        @Tag("getRetiringFederationCreationTime")
+        void getRetiringFederationCreationTime_returnsNull() {
+            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertThat(retiringFederationCreationTime, is(nullValue()));
+        }
     }
 
     @Nested
@@ -865,6 +872,13 @@ class FederationSupportImplTest {
         void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
             int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
             assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+        }
+
+        @Test
+        @Tag("getRetiringFederationCreationTime")
+        void getRetiringFederationCreationTime_returnsNull() {
+            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertThat(retiringFederationCreationTime, is(nullValue()));
         }
     }
 
@@ -1075,6 +1089,48 @@ class FederationSupportImplTest {
 
             int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
             assertThat(retiringFederationThreshold, is(oldFederation.getNumberOfSignaturesRequired()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationCreationTime")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void getRetiringFederationCreationTime_withNewFederationNotActive_returnsNull(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertThat(retiringFederationCreationTime, is(nullValue()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationCreationTime")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederationCreationTime_withNewFederationActive_returnsOldFederationCreationTime(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertThat(retiringFederationCreationTime, is(oldFederation.getCreationTime()));
         }
 
         private Stream<Arguments> newFederationNotActiveActivationArgs() {
