@@ -795,6 +795,13 @@ class FederationSupportImplTest {
             Federation retiringFederation = federationSupport.getRetiringFederation();
             assertThat(retiringFederation, is(nullValue()));
         }
+
+        @Test
+        @Tag("getRetiringFederationAddress")
+        void getRetiringFederationAddress_returnsNull() {
+            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertThat(retiringFederationAddress, is(nullValue()));
+        }
     }
 
     @Nested
@@ -824,6 +831,13 @@ class FederationSupportImplTest {
         void getRetiringFederation_returnsNull() {
             Federation retiringFederation = federationSupport.getRetiringFederation();
             assertThat(retiringFederation, is(nullValue()));
+        }
+
+        @Test
+        @Tag("getRetiringFederationAddress")
+        void getRetiringFederationAddress_returnsNull() {
+            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertThat(retiringFederationAddress, is(nullValue()));
         }
     }
 
@@ -889,14 +903,6 @@ class FederationSupportImplTest {
             assertThat(retiringFederation, is(nullValue()));
         }
 
-        private Stream<Arguments> newFederationNotActiveActivationArgs() {
-            return Stream.of(
-                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations),
-                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations),
-                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations)
-            );
-        }
-
         @ParameterizedTest
         @Tag("getRetiringFederation")
         @MethodSource("newFederationActiveActivationArgs")
@@ -916,6 +922,56 @@ class FederationSupportImplTest {
 
             Federation retiringFederation = federationSupport.getRetiringFederation();
             assertThat(retiringFederation, is(oldFederation));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationAddress")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void getRetiringFederationAddress_withNewFederationNotActive_returnsNull(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertThat(retiringFederationAddress, is(nullValue()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederation")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederationAddress_withNewFederationActive_returnsOldFederationAddress(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertThat(retiringFederationAddress, is(oldFederation.getAddress()));
+        }
+
+        private Stream<Arguments> newFederationNotActiveActivationArgs() {
+            return Stream.of(
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations)
+            );
         }
 
         private Stream<Arguments> newFederationActiveActivationArgs() {
