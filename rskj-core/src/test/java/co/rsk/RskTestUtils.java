@@ -5,7 +5,6 @@ import co.rsk.peg.federation.FederationMember;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
