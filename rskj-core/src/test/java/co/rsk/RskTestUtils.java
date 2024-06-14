@@ -20,12 +20,8 @@ public class RskTestUtils {
     }
 
     public static List<ECKey> getRskPublicKeysFromFederation(Federation federation) {
-        List<ECKey> rskPublicKeys = new ArrayList<>();
-        List<FederationMember> members = federation.getMembers();
-        for (FederationMember member : members) {
-            rskPublicKeys.add(member.getRskPublicKey());
-        }
-
-        return rskPublicKeys;
+        return federation.getMembers().stream()
+            .map(FederationMember::getRskPublicKey)
+            .collect(Collectors.toList());
     }
 }
