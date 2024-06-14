@@ -54,6 +54,20 @@ integrationTest {
     }
 }
 
+sourceSets {
+    integrationTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+        compileClasspath += sourceSets.test.output
+        runtimeClasspath += sourceSets.test.output
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom implementation
+    integrationTestTestRuntimeOnly.extendsFrom runtimeOnly
+}
+
 jacocoTestReport {
     reports {
         xml.required = true
