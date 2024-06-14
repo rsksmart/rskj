@@ -809,6 +809,13 @@ class FederationSupportImplTest {
             int retiringFederationSize = federationSupport.getRetiringFederationSize();
             assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
         }
+
+        @Test
+        @Tag("getRetiringFederationThreshold")
+        void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
+            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+        }
     }
 
     @Nested
@@ -830,7 +837,6 @@ class FederationSupportImplTest {
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
                 .build();
-
         }
 
         @Test
@@ -852,6 +858,13 @@ class FederationSupportImplTest {
         void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
             int retiringFederationSize = federationSupport.getRetiringFederationSize();
             assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+        }
+
+        @Test
+        @Tag("getRetiringFederationThreshold")
+        void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
+            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
         }
     }
 
@@ -1017,8 +1030,51 @@ class FederationSupportImplTest {
                 .withRskExecutionBlock(executionBlock)
                 .withActivations(activations)
                 .build();
+
             int retiringFederationSize = federationSupport.getRetiringFederationSize();
             assertThat(retiringFederationSize, is(oldFederation.getSize()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationThreshold")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void getRetiringFederationThreshold_withNewFederationNotActive_returnsRetiringFederationNonExistentResponseCode(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationThreshold")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederationThreshold_withNewFederationActive_returnsOldFederationThreshold(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
+            assertThat(retiringFederationThreshold, is(oldFederation.getNumberOfSignaturesRequired()));
         }
 
         private Stream<Arguments> newFederationNotActiveActivationArgs() {
