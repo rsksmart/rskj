@@ -2,10 +2,14 @@ package co.rsk.peg.federation;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -16,6 +20,8 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
+
+import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.PegTestUtils;
@@ -23,6 +29,7 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.storage.FederationStorageIndexKey;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,12 +42,16 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.MockedStatic;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.verification.VerificationMode;
 import co.rsk.bitcoinj.core.UTXO;
 
@@ -49,6 +60,7 @@ class FederationStorageProviderImplTests {
     private static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = STANDARD_MULTISIG_FEDERATION.getFormatVersion();
     private static final int NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION = NON_STANDARD_ERP_FEDERATION.getFormatVersion();
     private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = P2SH_ERP_FEDERATION.getFormatVersion();
+    private static final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
 
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
@@ -57,6 +69,7 @@ class FederationStorageProviderImplTests {
     private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
     private final FederationConstants federationConstants = bridgeConstants.getFederationConstants();
     private final NetworkParameters networkParameters = federationConstants.getBtcParams();
+    private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
 
     @Test
     void getNewFederation_should_return_p2sh_erp_federation() {
@@ -693,6 +706,157 @@ class FederationStorageProviderImplTests {
 
     }
 
+    @Test
+    void getNewFederation_initialVersion() {
+        List<Integer> storageCalls = new ArrayList<>();
+        List<Integer> deserializeCalls = new ArrayList<>();
+        Federation newFederation = buildMockFederation(100, 200, 300);
+        Repository repositoryMock = mock(Repository.class);
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repositoryMock);
+
+        when(repositoryMock.getStorageBytes(any(
+            RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgument(0);
+            DataWord address = invocation.getArgument(1);
+
+            assertEquals(bridgeAddress, contractAddress);
+
+            if (storageCalls.size() == 1) {
+                // First call is storage version getter
+                Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
+                return new byte[0];
+            } else {
+                // Second call is the actual storage getter
+                Assertions.assertEquals(2, storageCalls.size());
+                Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
+                return new byte[]{(byte) 0xaa};
+            }
+        });
+
+        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
+            bridgeSerializationUtilsMocked.when(() -> BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
+                deserializeCalls.add(0);
+                byte[] data = invocation.getArgument(0);
+                NetworkParameters networkParametersReceived = invocation.getArgument(1);
+
+                // Make sure we're deserializing what just came from the repo with the correct BTC context
+                assertArrayEquals(new byte[]{(byte) 0xaa}, data);
+                Assertions.assertEquals(networkParametersReceived, networkParameters);
+                return newFederation;
+            });
+
+            Assertions.assertEquals(newFederation, federationStorageProvider.getNewFederation(federationConstants, activationsBeforeFork));
+            Assertions.assertEquals(newFederation, federationStorageProvider.getNewFederation(federationConstants, activationsBeforeFork));
+            Assertions.assertEquals(2, storageCalls.size());
+            Assertions.assertEquals(1, deserializeCalls.size());
+        }
+    }
+
+    @Test
+    void getNewFederation_initialVersion_nullBytes() {
+        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class, CALLS_REAL_METHODS)) {
+            List<Integer> storageCalls = new ArrayList<>();
+            Repository repositoryMock = mock(Repository.class);
+            FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repositoryMock);
+
+            when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+                storageCalls.add(0);
+                RskAddress contractAddress = invocation.getArgument(0);
+                DataWord address = invocation.getArgument(1);
+
+                assertEquals(bridgeAddress, contractAddress);
+
+                if (storageCalls.size() == 1) {
+                    Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
+                    // First call is storage version getter
+                    return new byte[0];
+                } else {
+                    // Second and third calls are actual storage getters
+                    Assertions.assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
+                    Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
+                    return null;
+                }
+            });
+
+            assertNull(federationStorageProvider.getNewFederation(federationConstants, activationsBeforeFork));
+            assertNull(federationStorageProvider.getNewFederation(federationConstants, activationsBeforeFork));
+            Assertions.assertEquals(3, storageCalls.size());
+
+            bridgeSerializationUtilsMocked.verify(() -> BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class)), never());
+            bridgeSerializationUtilsMocked.verify(() -> BridgeSerializationUtils.deserializeStandardMultisigFederation(any(byte[].class), any(NetworkParameters.class)), never());
+        }
+    }
+
+    @Test
+    void getNewFederation_multiKeyVersion() {
+        Federation newFederation = buildMockFederation(100, 200, 300);
+        testGetNewFederationPostMultiKey(newFederation);
+    }
+
+    @Test
+    void getNewFederation_non_standard_erp_and_p2sh_erp_feds() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0);
+        Federation newFederation = buildMockFederation(100, 200, 300);
+
+        FederationArgs federationArgs = newFederation.getArgs();
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
+
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
+        ErpFederation p2shErpFederation = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
+
+        testGetNewFederationPostMultiKey(nonStandardErpFederation);
+        testGetNewFederationPostMultiKey(p2shErpFederation);
+    }
+
+    @Test
+    void getNewFederation_multiKeyVersion_nullBytes() {
+        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class, CALLS_REAL_METHODS)) {
+            List<Integer> storageCalls = new ArrayList<>();
+            Repository repositoryMock = mock(Repository.class);
+
+            FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repositoryMock);
+
+            when(repositoryMock.getStorageBytes(
+                any(RskAddress.class),
+                any(DataWord.class))
+            ).then((InvocationOnMock invocation) -> {
+                storageCalls.add(0);
+                RskAddress contractAddress = invocation.getArgument(0);
+                DataWord address = invocation.getArgument(1);
+
+                assertEquals(bridgeAddress, contractAddress);
+
+                if (storageCalls.size() == 1) {
+                    Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
+                    // First call is storage version getter
+                    return RLP.encodeBigInteger(BigInteger.valueOf(1234));
+                } else {
+                    // Second and third calls are the actual storage getters
+                    Assertions.assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
+                    Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
+                    return null;
+                }
+            });
+
+            assertNull(federationStorageProvider.getNewFederation(federationConstants, activationsBeforeFork));
+            assertNull(federationStorageProvider.getNewFederation(federationConstants, activationsBeforeFork));
+            assertEquals(3, storageCalls.size());
+
+            bridgeSerializationUtilsMocked.verify(() -> BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(
+                    any(byte[].class),
+                    any(NetworkParameters.class)),
+                never()
+            );
+            bridgeSerializationUtilsMocked.verify(() -> BridgeSerializationUtils.deserializeStandardMultisigFederation(
+                    any(byte[].class),
+                    any(NetworkParameters.class)),
+                never()
+            );
+        }
+    }
+
     private void testSaveOldFederation(
         int expectedFormat,
         Federation federationToSave
@@ -753,6 +917,46 @@ class FederationStorageProviderImplTests {
     private FederationStorageProvider createFederationStorageProvider(Repository repository) {
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         return new FederationStorageProviderImpl(bridgeStorageAccessor);
+    }
+
+    private Federation buildMockFederation(Integer... pks) {
+        FederationArgs federationArgs = new FederationArgs(FederationTestUtils.getFederationMembersFromPks(pks),
+            Instant.ofEpochMilli(1000),
+            1, networkParameters);
+        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
+    }
+
+    private void testGetNewFederationPostMultiKey(Federation federation) {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<Integer> storageCalls = new ArrayList<>();
+        Repository repositoryMock = mock(Repository.class);
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repositoryMock);
+
+        when(repositoryMock.getStorageBytes(
+            any(RskAddress.class),
+            any(DataWord.class)
+        )).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgument(0);
+            DataWord address = invocation.getArgument(1);
+
+            assertEquals(bridgeAddress, contractAddress);
+
+            if (storageCalls.size() == 1) {
+                // First call is storage version getter
+                Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
+                int federationVersion = federation.getFormatVersion();
+                return RLP.encodeBigInteger(BigInteger.valueOf(federationVersion));
+            } else {
+                // Second call is the actual storage getter
+                Assertions.assertEquals(2, storageCalls.size());
+                Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
+                return BridgeSerializationUtils.serializeFederation(federation);
+            }
+        });
+
+        assertEquals(federation, federationStorageProvider.getNewFederation(federationConstants, activations));
+        assertEquals(2, storageCalls.size());
     }
 
 }
