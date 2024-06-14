@@ -1,7 +1,5 @@
 package co.rsk;
 
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationMember;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import java.nio.charset.StandardCharsets;
@@ -15,12 +13,6 @@ public class RskTestUtils {
             .map(seed -> seed.getBytes(StandardCharsets.UTF_8))
             .map(HashUtil::keccak256)
             .map(ECKey::fromPrivate)
-            .collect(Collectors.toList());
-    }
-
-    public static List<ECKey> getRskPublicKeysFromFederation(Federation federation) {
-        return federation.getMembers().stream()
-            .map(FederationMember::getRskPublicKey)
             .collect(Collectors.toList());
     }
 }
