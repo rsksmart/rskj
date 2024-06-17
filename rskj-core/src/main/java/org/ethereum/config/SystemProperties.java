@@ -20,9 +20,9 @@
 package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.config.ConfigLoader;
 import co.rsk.peg.constants.BridgeDevNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.config.ConfigLoader;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
@@ -38,7 +38,13 @@ import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -46,7 +52,12 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -66,8 +77,6 @@ import java.util.stream.Collectors;
  * @since 22.05.2014
  */
 public abstract class SystemProperties {
-    private static final Logger logger = LoggerFactory.getLogger("general");
-
     public static final String PROPERTY_BLOCKCHAIN_CONFIG = "blockchain.config";
     public static final String PROPERTY_BC_CONFIG_NAME = PROPERTY_BLOCKCHAIN_CONFIG + ".name";
     public static final String PROPERTY_BC_VERIFY = PROPERTY_BLOCKCHAIN_CONFIG + ".verify";
@@ -85,6 +94,15 @@ public abstract class SystemProperties {
     public static final String PROPERTY_RPC_HTTP_ADDRESS = "rpc.providers.web.http.bind_address";
     public static final String PROPERTY_RPC_HTTP_HOSTS = "rpc.providers.web.http.hosts";
     public static final String PROPERTY_RPC_HTTP_PORT = "rpc.providers.web.http.port";
+    public static final String PROPERTY_PUBLIC_IP = "public.ip";
+    public static final String PROPERTY_BIND_ADDRESS = "bind_address";
+    public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
+    public static final String PROPERTY_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
+    public static final String PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT = "cache.states.persist-snapshot";
+    public static final String PROPERTY_PERSIST_BLOOMS_CACHE_SNAPSHOT = "cache.blooms.persist-snapshot";
+    /* Testing */
+    public static final String LAST_KNEW_PEERS_FILE = "lastPeers.properties";
+    private static final Logger logger = LoggerFactory.getLogger("general");
     private static final String PROPERTY_RPC_WEBSOCKET_ENABLED = "rpc.providers.web.ws.enabled";
     private static final String PROPERTY_RPC_WEBSOCKET_ADDRESS = "rpc.providers.web.ws.bind_address";
     private static final String PROPERTY_RPC_WEBSOCKET_PORT = "rpc.providers.web.ws.port";
@@ -96,19 +114,6 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_MAX_RESPONSE_SIZE = "rpc.maxResponseSize";
     private static final String PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER = "rpc.minGasPriceMultiplier";
     private static final String PROPERTY_RPC_TIMEOUT = "rpc.timeout";
-
-    public static final String PROPERTY_PUBLIC_IP = "public.ip";
-    public static final String PROPERTY_BIND_ADDRESS = "bind_address";
-
-    public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
-
-    public static final String PROPERTY_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
-
-    public static final String PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT = "cache.states.persist-snapshot";
-    public static final String PROPERTY_PERSIST_BLOOMS_CACHE_SNAPSHOT = "cache.blooms.persist-snapshot";
-
-    /* Testing */
-    public static final String LAST_KNEW_PEERS_FILE = "lastPeers.properties";
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
 
     protected final Config configFromFiles;
@@ -297,6 +302,14 @@ public abstract class SystemProperties {
         });
 
         return ret;
+    }
+
+    public List<Node> getSnapshotTrustedPeers() {
+        if (!configFromFiles.hasPath("sync.snapshot.client.trustedPeers")) {
+            return Collections.emptyList();
+        }
+        List<? extends ConfigObject> list = configFromFiles.getObjectList("sync.snapshot.client.trustedPeers");
+        return list.stream().map(this::parsePeer).collect(Collectors.toList());
     }
 
     public Integer peerChannelReadTimeout() {

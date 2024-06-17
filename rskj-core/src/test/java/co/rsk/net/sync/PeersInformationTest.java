@@ -24,7 +24,9 @@ import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.net.Status;
 import co.rsk.scoring.PeerScoringManager;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Blockchain;
+import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.ChannelManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +38,9 @@ import org.mockito.MockitoAnnotations;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -102,6 +107,88 @@ class PeersInformationTest {
         Assertions.assertEquals(optionalPeer.get().getPeerNodeID(), new NodeID("peer1".getBytes()));
     }
 
+    @Test
+    void testGetOrRegisterSnapPeer_ShouldThrowIllegalArgumentException(){
+        SnapshotPeersInformation peersInformation = setupTopBestScenario(100.0D);
+        Peer peer6 = Mockito.mock(Peer.class);
+        Mockito.when(peer6.getPeerNodeID()).thenReturn(new NodeID("peer6".getBytes()));
+
+        Mockito.doReturn(4).when(random).nextInt(Mockito.eq(5));
+
+        Exception exception = Assertions.assertThrows(IllegalArgumentException.class, () -> peersInformation.getOrRegisterSnapPeer(peer6));
+
+        String expectedMessage = "Peer not allowed:";
+        String actualMessage = exception.getMessage();
+
+        Assertions.assertTrue(actualMessage.contains(expectedMessage));
+    }
+
+    @Test
+    void testGetBestPeerCandidateForSnapSync_ShouldReturnBestCandidates(){
+        SnapshotPeersInformation peersInformation = setupTopBestScenario(100.0D);
+
+        Mockito.doReturn(4).when(random).nextInt(Mockito.eq(5));
+
+        List<Peer> actualPeersForSnapSync= peersInformation.getBestPeerCandidatesForSnapSync();
+
+        Peer peer1 = Mockito.mock(Peer.class);
+        Mockito.when(peer1.getPeerNodeID()).thenReturn(new NodeID("peer1".getBytes()));
+
+        Assertions.assertEquals(5, actualPeersForSnapSync.size());
+    }
+
+    @Test
+    void testGetBestSnapPeer_ShouldReturnBestSnapPeerWithTopBestAt0Perc() {
+        SnapshotPeersInformation peersInformation = setupTopBestScenario(0.0D);
+        Optional<Peer> optionalSnapPeer = peersInformation.getBestSnapPeer();
+
+        Assertions.assertEquals(optionalSnapPeer.get().getPeerNodeID(), new NodeID("peer5".getBytes()));
+    }
+
+    @Test
+    void testGetBestSnapPeer_ShouldReturnBestSnapPeerWithTopBestAt30Perc() {
+        SnapshotPeersInformation peersInformation = setupTopBestScenario(30.0D);
+
+        Mockito.doReturn(1).when(random).nextInt(Mockito.eq(2));
+
+        Optional<Peer> optionalSnapPeer = peersInformation.getBestSnapPeer();
+
+        Assertions.assertEquals(optionalSnapPeer.get().getPeerNodeID(), new NodeID("peer4".getBytes()));
+    }
+
+    @Test
+    void testGetBestSnapPeer_ShouldReturnBestSnapPeerWithTopBestAt60Perc() {
+        SnapshotPeersInformation peersInformation = setupTopBestScenario(60.0D);
+
+        Mockito.doReturn(2).when(random).nextInt(Mockito.eq(3));
+
+        Optional<Peer> optionalSnapPeer = peersInformation.getBestSnapPeer();
+
+        Assertions.assertEquals(optionalSnapPeer.get().getPeerNodeID(), new NodeID("peer3".getBytes()));
+    }
+
+    @Test
+    void testGetBestSnapPeer_ShouldReturnBestSnapPeerWithTopBestAt80Perc() {
+        SnapshotPeersInformation peersInformation = setupTopBestScenario(80.0D);
+
+        Mockito.doReturn(3).when(random).nextInt(Mockito.eq(4));
+
+        Optional<Peer> optionalSnapPeer = peersInformation.getBestSnapPeer();
+
+        Assertions.assertEquals(optionalSnapPeer.get().getPeerNodeID(), new NodeID("peer2".getBytes()));
+    }
+
+    @Test
+    void testGetBestSnapPeer_ShouldReturnBestSnapPeerWithTopBestAt100Perc() {
+        SnapshotPeersInformation snapPeersInformation = setupTopBestScenario(100.0D);
+
+        Mockito.doReturn(4).when(random).nextInt(Mockito.eq(5));
+
+        Optional<Peer> optionalSnapPeer = snapPeersInformation.getBestSnapPeer();
+
+        Assertions.assertEquals(optionalSnapPeer.get().getPeerNodeID(), new NodeID("peer1".getBytes()));
+    }
+
     private PeersInformation setupTopBestScenario(double topBest) {
         Peer peer1 = Mockito.mock(Peer.class);
         Peer peer2 = Mockito.mock(Peer.class);
@@ -114,6 +201,13 @@ class PeersInformationTest {
         Mockito.when(peer3.getPeerNodeID()).thenReturn(new NodeID("peer3".getBytes()));
         Mockito.when(peer4.getPeerNodeID()).thenReturn(new NodeID("peer4".getBytes()));
         Mockito.when(peer5.getPeerNodeID()).thenReturn(new NodeID("peer5".getBytes()));
+
+        Map<String, Node> nodeMap = new HashMap<>();
+        nodeMap.put(peer1.getPeerNodeID().toString(),new Node(Hex.decode(""), "", 0));
+        nodeMap.put(peer2.getPeerNodeID().toString(),new Node(Hex.decode(""), "", 0));
+        nodeMap.put(peer3.getPeerNodeID().toString(),new Node(Hex.decode(""), "", 0));
+        nodeMap.put(peer4.getPeerNodeID().toString(),new Node(Hex.decode(""), "", 0));
+        nodeMap.put(peer5.getPeerNodeID().toString(),new Node(Hex.decode(""), "", 0));
 
         Blockchain blockchain = Mockito.mock(Blockchain.class);
         BlockChainStatus blockChainStatus = Mockito.mock(BlockChainStatus.class);
@@ -132,6 +226,8 @@ class PeersInformationTest {
 
         Mockito.when(syncConfiguration.getTopBest())
                 .thenReturn(topBest);
+
+        Mockito.when(syncConfiguration.getNodeIdToSnapshotTrustedPeerMap()).thenReturn(nodeMap);
 
         Mockito.when(peerScoringManager.hasGoodReputation(Mockito.eq(peer1.getPeerNodeID()))).thenReturn(true);
         Mockito.when(peerScoringManager.hasGoodReputation(Mockito.eq(peer2.getPeerNodeID()))).thenReturn(true);
