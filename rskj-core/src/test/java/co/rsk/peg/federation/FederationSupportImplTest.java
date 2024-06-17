@@ -795,6 +795,20 @@ class FederationSupportImplTest {
             Federation retiringFederation = federationSupport.getRetiringFederation();
             assertThat(retiringFederation, is(nullValue()));
         }
+
+        @Test
+        @Tag("getRetiringFederationAddress")
+        void getRetiringFederationAddress_returnsNull() {
+            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertThat(retiringFederationAddress, is(nullValue()));
+        }
+
+        @Test
+        @Tag("getRetiringFederationSize")
+        void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
+            int retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+        }
     }
 
     @Nested
@@ -824,6 +838,20 @@ class FederationSupportImplTest {
         void getRetiringFederation_returnsNull() {
             Federation retiringFederation = federationSupport.getRetiringFederation();
             assertThat(retiringFederation, is(nullValue()));
+        }
+
+        @Test
+        @Tag("getRetiringFederationAddress")
+        void getRetiringFederationAddress_returnsNull() {
+            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertThat(retiringFederationAddress, is(nullValue()));
+        }
+
+        @Test
+        @Tag("getRetiringFederationSize")
+        void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
+            int retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
         }
     }
 
@@ -889,14 +917,6 @@ class FederationSupportImplTest {
             assertThat(retiringFederation, is(nullValue()));
         }
 
-        private Stream<Arguments> newFederationNotActiveActivationArgs() {
-            return Stream.of(
-                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations),
-                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations),
-                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations)
-            );
-        }
-
         @ParameterizedTest
         @Tag("getRetiringFederation")
         @MethodSource("newFederationActiveActivationArgs")
@@ -916,6 +936,97 @@ class FederationSupportImplTest {
 
             Federation retiringFederation = federationSupport.getRetiringFederation();
             assertThat(retiringFederation, is(oldFederation));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationAddress")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void getRetiringFederationAddress_withNewFederationNotActive_returnsNull(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertThat(retiringFederationAddress, is(nullValue()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederation")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederationAddress_withNewFederationActive_returnsOldFederationAddress(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Address retiringFederationAddress = federationSupport.getRetiringFederationAddress();
+            assertThat(retiringFederationAddress, is(oldFederation.getAddress()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationSize")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void getRetiringFederationSize_withNewFederationNotActive_returnsRetiringFederationNonExistentResponseCode(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            int retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationSize")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederationSize_withNewFederationActive_returnsOldFederationSize(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+            int retiringFederationSize = federationSupport.getRetiringFederationSize();
+            assertThat(retiringFederationSize, is(oldFederation.getSize()));
+        }
+
+        private Stream<Arguments> newFederationNotActiveActivationArgs() {
+            return Stream.of(
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations)
+            );
         }
 
         private Stream<Arguments> newFederationActiveActivationArgs() {
