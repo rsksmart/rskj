@@ -26,6 +26,7 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -33,8 +34,6 @@ import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigInteger;
 
 @Deprecated
 @Disabled
@@ -135,7 +134,8 @@ class LockWhitelistTest extends BridgePerformanceTestCase {
             int blocksToGenerate = Helper.randomInRange(minBtcBlocks, maxBtcBlocks);
             Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
 
-            lockWhitelist = provider.getLockWhitelist();
+            // TODO: This logic needs to be adjusted to use the new WhitelistStorageProvider class
+//            lockWhitelist = provider.getLockWhitelist();
 
             int size = Helper.randomInRange(minSize, maxSize);
             for (int i = 0; i < size; i++) {
