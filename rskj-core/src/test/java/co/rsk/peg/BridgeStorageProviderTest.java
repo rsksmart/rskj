@@ -36,14 +36,9 @@ import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import co.rsk.peg.whitelist.LockWhitelist;
-import co.rsk.peg.whitelist.LockWhitelistEntry;
-import co.rsk.peg.whitelist.OneOffWhiteListEntry;
-import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
-import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -70,9 +65,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
+import static org.ethereum.TestUtils.mockAddress;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -1283,226 +1278,6 @@ class BridgeStorageProviderTest {
             storageProvider.saveFederationElection();
             Assertions.assertEquals(1, storageBytesCalls.size());
             Assertions.assertEquals(1, serializeCalls.size());
-        }
-    }
-
-    @Test
-    void getLockWhitelist_nonNullBytes() {
-        List<Integer> calls = new ArrayList<>();
-        LockWhitelist whitelistMock = new LockWhitelist(new HashMap<>());
-        LockWhitelistEntry oneOffEntry = new OneOffWhiteListEntry(getBtcAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), Coin.COIN);
-        LockWhitelistEntry unlimitedEntry = new UnlimitedWhiteListEntry(getBtcAddress("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"));
-        whitelistMock.put(oneOffEntry.address(), oneOffEntry);
-        whitelistMock.put(unlimitedEntry.address(), unlimitedEntry);
-        Repository repositoryMock = mock(Repository.class);
-        // Overriding Activation to make sure it serializes the unlimited whitelist data
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
-            repositoryMock,
-            mockAddress("aabbccdd"),
-            bridgeTestnetInstance,
-            activationsAllForks
-        );
-
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(LOCK_ONE_OFF_WHITELIST_KEY.getKey())))
-                .then((InvocationOnMock invocation) -> {
-                    calls.add(0);
-                    RskAddress contractAddress = invocation.getArgument(0);
-                    DataWord address = invocation.getArgument(1);
-                    // Make sure the bytes are got from the correct address in the repo
-                    assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-                    Assertions.assertEquals(LOCK_ONE_OFF_WHITELIST_KEY.getKey(), address);
-                    return new byte[]{(byte)0xaa};
-                });
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(LOCK_UNLIMITED_WHITELIST_KEY.getKey())))
-                .then((InvocationOnMock invocation) -> {
-                    calls.add(0);
-                    RskAddress contractAddress = invocation.getArgument(0);
-                    DataWord address = invocation.getArgument(1);
-                    // Make sure the bytes are got from the correct address in the repo
-                    assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-                    Assertions.assertEquals(LOCK_UNLIMITED_WHITELIST_KEY.getKey(), address);
-                    return new byte[]{(byte)0xbb};
-                });
-        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
-            bridgeSerializationUtilsMocked
-                .when(() -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(any(byte[].class), any(NetworkParameters.class)))
-                .then((InvocationOnMock invocation) -> {
-                    calls.add(0);
-                    byte[] data = invocation.getArgument(0);
-                    NetworkParameters parameters = invocation.getArgument(1);
-                    assertEquals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET), parameters);
-                    // Make sure we're deserializing what just came from the repo with the correct AddressBasedAuthorizer
-                    assertArrayEquals(new byte[]{(byte) 0xaa}, data);
-                    HashMap<Address, LockWhitelistEntry> map = new HashMap<>();
-                    map.put(oneOffEntry.address(), oneOffEntry);
-                    return Pair.of(map, 0);
-                });
-            bridgeSerializationUtilsMocked
-                .when(() -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(any(byte[].class), any(NetworkParameters.class)))
-                .then((InvocationOnMock invocation) -> {
-                    calls.add(0);
-                    byte[] unlimitedData = invocation.getArgument(0);
-                    NetworkParameters parameters = invocation.getArgument(1);
-                    assertEquals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET), parameters);
-                    // Make sure we're deserializing what just came from the repo with the correct AddressBasedAuthorizer
-                    assertArrayEquals(new byte[]{(byte) 0xbb}, unlimitedData);
-                    HashMap<Address, LockWhitelistEntry> map = new HashMap<>();
-                    map.put(unlimitedEntry.address(), unlimitedEntry);
-                    return map;
-                });
-
-            assertEquals(whitelistMock.getAll(), storageProvider.getLockWhitelist().getAll());
-            assertEquals(4, calls.size()); // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes (we call getStorageBytes twice)
-        }
-    }
-
-    @Test
-    void getLockWhitelist_nullBytes() {
-        List<Integer> calls = new ArrayList<>();
-        Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), bridgeTestnetInstance,
-            activationsAllForks);
-
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class)))
-                .then((InvocationOnMock invocation) -> {
-                    calls.add(0);
-                    RskAddress contractAddress = invocation.getArgument(0);
-                    DataWord address = invocation.getArgument(1);
-                    // Make sure the bytes are got from the correct address in the repo
-                    assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-                    Assertions.assertEquals(LOCK_ONE_OFF_WHITELIST_KEY.getKey(), address);
-                    return new byte[]{(byte)0xee};
-                });
-        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
-            bridgeSerializationUtilsMocked
-                .when(() -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(any(byte[].class), any(NetworkParameters.class)))
-                .then((InvocationOnMock invocation) -> {
-                    calls.add(0);
-                    return null;
-                });
-            bridgeSerializationUtilsMocked
-                .when(() -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(any(byte[].class), any(NetworkParameters.class)))
-                .then((InvocationOnMock invocation) -> {
-                    calls.add(0); // THIS ONE WON'T BE CALLED BECAUSE ONEOFF IS EMPTY
-                    Assertions.fail("As we don't have data for one-off, we shouldn't have called deserialize unlimited");
-                    return null;
-                });
-
-            LockWhitelist result = storageProvider.getLockWhitelist();
-            Assertions.assertNotNull(result);
-            Assertions.assertEquals(0, result.getSize().intValue());
-            Assertions.assertEquals(2, calls.size()); // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
-        }
-    }
-
-    @Test
-    void saveLockWhitelist() {
-        LockWhitelist whitelistMock = mock(LockWhitelist.class);
-        List<Integer> storageBytesCalls = new ArrayList<>();
-        List<Integer> serializeCalls = new ArrayList<>();
-        Repository repositoryMock = mock(Repository.class);
-        // Overriding activation to make sure it serializes the unlimited whitelist data
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), bridgeTestnetInstance,
-            activationsAllForks);
-
-        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
-            // Mock the One-Off serialization
-            bridgeSerializationUtilsMocked
-                .when(() -> BridgeSerializationUtils.serializeOneOffLockWhitelist(any(Pair.class)))
-                .then((InvocationOnMock invocation) -> {
-                    Pair<List<OneOffWhiteListEntry>, Integer> data = invocation.getArgument(0);
-                    Assertions.assertEquals(whitelistMock.getAll(OneOffWhiteListEntry.class), data.getLeft());
-                    Assertions.assertSame(whitelistMock.getDisableBlockHeight(), data.getRight());
-                    serializeCalls.add(0);
-                    return Hex.decode("ccdd");
-                });
-
-            Mockito
-                    .doAnswer((InvocationOnMock invocation) -> {
-                        storageBytesCalls.add(0);
-                        RskAddress contractAddress = invocation.getArgument(0);
-                        DataWord address = invocation.getArgument(1);
-                        byte[] data = invocation.getArgument(2);
-                        // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                        assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                        Assertions.assertEquals(LOCK_ONE_OFF_WHITELIST_KEY.getKey(), address);
-                        assertArrayEquals(Hex.decode("ccdd"), data);
-                        return null;
-                    })
-                    .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(LOCK_ONE_OFF_WHITELIST_KEY.getKey()), any(byte[].class));
-
-            // Mock the Unlimited serialization
-            bridgeSerializationUtilsMocked
-                .when(() -> BridgeSerializationUtils.serializeUnlimitedLockWhitelist(any(List.class)))
-                .then((InvocationOnMock invocation) -> {
-                    List<UnlimitedWhiteListEntry> unlimitedWhiteListEntries = invocation.getArgument(0);
-                    assertEquals(whitelistMock.getAll(UnlimitedWhiteListEntry.class), unlimitedWhiteListEntries);
-                    serializeCalls.add(0);
-                    return Hex.decode("bbcc");
-                });
-
-            Mockito
-                    .doAnswer((InvocationOnMock invocation) -> {
-                        storageBytesCalls.add(0);
-                        RskAddress contractAddress = invocation.getArgument(0);
-                        DataWord address = invocation.getArgument(1);
-                        byte[] data = invocation.getArgument(2);
-                        // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                        assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                        Assertions.assertEquals(LOCK_UNLIMITED_WHITELIST_KEY.getKey(), address);
-                        assertArrayEquals(Hex.decode("bbcc"), data);
-                        return null;
-                    })
-                    .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(LOCK_UNLIMITED_WHITELIST_KEY.getKey()), any(byte[].class));
-
-            storageProvider.saveLockWhitelist();
-            // Shouldn't have tried to save nor serialize anything
-            Assertions.assertEquals(0, storageBytesCalls.size());
-            Assertions.assertEquals(0, serializeCalls.size());
-            TestUtils.setInternalState(storageProvider, "lockWhitelist", whitelistMock);
-            storageProvider.saveLockWhitelist();
-            Assertions.assertEquals(2, storageBytesCalls.size());
-            Assertions.assertEquals(2, serializeCalls.size());
-        }
-    }
-
-    @Test
-    void saveLockWhiteListAfterGetWithData() {
-        AtomicReference<Boolean> storageCalled = new AtomicReference<>();
-        storageCalled.set(Boolean.FALSE);
-        Repository repositoryMock = mock(Repository.class);
-        OneOffWhiteListEntry oneOffEntry = new OneOffWhiteListEntry(getBtcAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), Coin.COIN);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), bridgeTestnetInstance,
-            config.getActivationConfig().forBlock(500L));
-
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(LOCK_ONE_OFF_WHITELIST_KEY.getKey())))
-                .then((InvocationOnMock invocation) -> new byte[]{(byte)0xaa});
-
-        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
-            bridgeSerializationUtilsMocked
-                .when(() -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(any(byte[].class), any(NetworkParameters.class)))
-                .then((InvocationOnMock invocation) -> {
-                    HashMap<Address, LockWhitelistEntry> map = new HashMap<>();
-                    map.put(oneOffEntry.address(), oneOffEntry);
-                    return Pair.of(map, 0);
-                });
-
-            bridgeSerializationUtilsMocked
-                .when(() -> BridgeSerializationUtils.serializeOneOffLockWhitelist(any(Pair.class)))
-                .thenReturn(new byte[]{(byte) 0xee});
-
-            Mockito
-                    .doAnswer((InvocationOnMock invocation) -> {
-                        storageCalled.set(Boolean.TRUE);
-                        return null;
-                    })
-                    .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(LOCK_ONE_OFF_WHITELIST_KEY.getKey()), eq(new byte[]{(byte) 0xee}));
-
-            Assertions.assertTrue(storageProvider.getLockWhitelist().getSize() > 0);
-
-            storageProvider.saveLockWhitelist();
-
-            Assertions.assertTrue(storageCalled.get());
         }
     }
 
@@ -3719,16 +3494,6 @@ class BridgeStorageProviderTest {
         tx.addInput(PegTestUtils.createHash(), transactionOffset++, ScriptBuilder.createInputScript(new TransactionSignature(BigInteger.ONE, BigInteger.TEN)));
 
         return tx;
-    }
-
-    private RskAddress mockAddress(String addr) {
-        RskAddress mock = mock(RskAddress.class);
-        when(mock.getBytes()).thenReturn(Hex.decode(addr));
-        return mock;
-    }
-
-    private Address getBtcAddress(String addr) {
-        return new Address(networkParameters, Hex.decode(addr));
     }
 
     private Federation buildMockFederation(Integer... pks) {
