@@ -20,8 +20,8 @@ package co.rsk.net;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.messages.*;
-import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SnapSyncState;
+import co.rsk.net.sync.SnapshotPeersInformation;
 import co.rsk.net.sync.SyncMessageHandler;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStore;
@@ -53,7 +53,7 @@ public class SnapshotProcessorTest {
     private BlockStore blockStore;
     private TrieStore trieStore;
     private Peer peer;
-    private final PeersInformation peersInformation = mock(PeersInformation.class);
+    private final SnapshotPeersInformation peersInformation = mock(SnapshotPeersInformation.class);
     private final SnapSyncState snapSyncState = mock(SnapSyncState.class);
     private final SyncMessageHandler.Listener listener = mock(SyncMessageHandler.Listener.class);
     private SnapshotProcessor underTest;
@@ -61,7 +61,7 @@ public class SnapshotProcessorTest {
     @BeforeEach
     void setUp() throws UnknownHostException {
         peer = mockedPeer();
-        when(peersInformation.getBestPeerCandidates()).thenReturn(Collections.singletonList(peer));
+        when(peersInformation.getBestPeerCandidatesForSnapSync()).thenReturn(Collections.singletonList(peer));
     }
 
     @AfterEach
@@ -123,7 +123,7 @@ public class SnapshotProcessorTest {
 
         //then
         verify(peer, atLeast(3)).sendMessage(any()); // 1 for SnapStatusRequestMessage, 1 for SnapBlocksRequestMessage and 1 for SnapStateChunkRequestMessage
-        verify(peersInformation, times(2)).getBestPeerCandidates();
+        verify(peersInformation, times(2)).getBestPeerCandidatesForSnapSync();
     }
 
     @Test
@@ -346,7 +346,7 @@ public class SnapshotProcessorTest {
         NodeID nodeID = mock(NodeID.class);
         when(mockedPeer.getPeerNodeID()).thenReturn(nodeID);
         when(mockedPeer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
-        when(peersInformation.getBestPeerCandidates()).thenReturn(Arrays.asList(peer));
+        when(peersInformation.getBestPeerCandidatesForSnapSync()).thenReturn(Arrays.asList(peer));
         return mockedPeer;
     }
 

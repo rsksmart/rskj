@@ -31,7 +31,14 @@ import org.ethereum.net.server.ChannelManager;
 
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,21 +48,19 @@ import java.util.stream.Stream;
  * TODO(mc) remove this after the logical node abstraction is created, since it will wrap
  *     things such as the underlying communication channel.
  */
-public class PeersInformation {
+public class PeersInformation implements SnapshotPeersInformation {
 
     private static final int TIME_LIMIT_FAILURE_RECORD = 600;
     private static final int MAX_SIZE_FAILURE_RECORDS = 10;
-
     private final ChannelManager channelManager;
     private final SyncConfiguration syncConfiguration;
     private final Blockchain blockchain;
     private final Map<NodeID, Instant> failedPeers;
     private final PeerScoringManager peerScoringManager;
     private final Comparator<Map.Entry<Peer, SyncPeerStatus>> peerComparator;
-    private Map<Peer, SyncPeerStatus> peerStatuses = new HashMap<>();
     private final double topBest;
     private final Random random;
-
+    private Map<Peer, SyncPeerStatus> peerStatuses = new HashMap<>();
 
     public PeersInformation(ChannelManager channelManager,
                             SyncConfiguration syncConfiguration,
@@ -66,10 +71,10 @@ public class PeersInformation {
 
     @VisibleForTesting
     PeersInformation(ChannelManager channelManager,
-                            SyncConfiguration syncConfiguration,
-                            Blockchain blockchain,
-                            PeerScoringManager peerScoringManager,
-                            Random random) {
+                     SyncConfiguration syncConfiguration,
+                     Blockchain blockchain,
+                     PeerScoringManager peerScoringManager,
+                     Random random) {
         this.channelManager = channelManager;
         this.syncConfiguration = syncConfiguration;
         this.blockchain = blockchain;
@@ -113,13 +118,23 @@ public class PeersInformation {
         return this.registerPeer(peer);
     }
 
+    @Override
+    public SyncPeerStatus getOrRegisterSnapPeer(Peer peer) {
+
+        if (syncConfiguration.getNodeIdToSnapshotTrustedPeerMap().containsKey(peer.getPeerNodeID().toString())) {
+            return getOrRegisterPeer(peer);
+        }
+
+        throw new IllegalArgumentException(String.format("Peer not allowed: %s", peer.getPeerNodeID().toString()));
+    }
+
     public SyncPeerStatus getPeer(Peer peer) {
         return this.peerStatuses.get(peer);
     }
 
-    public Optional<Peer> getBestPeer() {
+    private Optional<Peer> getBestPeer(Stream<Map.Entry<Peer, SyncPeerStatus>> bestCandidatesStream) {
         if (topBest > 0.0D) {
-            List<Map.Entry<Peer, SyncPeerStatus>> entries = getBestCandidatesStream()
+            List<Map.Entry<Peer, SyncPeerStatus>> entries = bestCandidatesStream
                     .sorted(this.peerComparator.reversed())
                     .collect(Collectors.toList());
 
@@ -141,6 +156,18 @@ public class PeersInformation {
         return getBestCandidatesStream()
                 .max(this.peerComparator)
                 .map(Map.Entry::getKey);
+    }
+
+    public Optional<Peer> getBestPeer() {
+        return getBestPeer(getBestCandidatesStream());
+    }
+
+    @Override
+    public Optional<Peer> getBestSnapPeer() {
+        return getBestPeer(
+                getBestCandidatesStream()
+                        .filter(entry -> syncConfiguration.getNodeIdToSnapshotTrustedPeerMap().containsKey(entry.getKey().getPeerNodeID().toString()))
+        );
     }
 
     public Optional<Peer> getBestOrEqualPeer() {
@@ -175,6 +202,14 @@ public class PeersInformation {
 
     public List<Peer> getBestPeerCandidates() {
         return getBestCandidatesStream()
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Peer> getBestPeerCandidatesForSnapSync() {
+        return getBestCandidatesStream()
+                .filter(entry -> syncConfiguration.getNodeIdToSnapshotTrustedPeerMap().containsKey(entry.getKey().getPeerNodeID().toString()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
