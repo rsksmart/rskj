@@ -1227,7 +1227,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederatorBtcPublicKey")
         @MethodSource("newFederationActiveActivationArgs")
-        void getRetiringFederatorBtcPublicKey_withNewFederationActive_returnsOldFederationBtcPublicKey(
+        void getRetiringFederatorBtcPublicKey_withNewFederationActive_returnsFederatorFromOldFederationBtcPublicKey(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1285,7 +1285,7 @@ class FederationSupportImplTest {
                 int retiringFederationSize = oldFederation.getSize();
                 assertThrows(
                 IndexOutOfBoundsException.class, () ->
-                    federationSupport.getActiveFederatorBtcPublicKey(retiringFederationSize)
+                    federationSupport.getRetiringFederatorBtcPublicKey(retiringFederationSize)
             );
         }
 
