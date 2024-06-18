@@ -1,78 +1,54 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import org.ethereum.crypto.ECKey;
-
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class StandardMultiSigFederationBuilder {
+public class PendingFederationBuilder {
     private List<BtcECKey> membersBtcPublicKeys;
     private List<ECKey> membersRskPublicKeys;
     private List<ECKey> membersMstPublicKeys;
-    private Instant creationTime;
-    private long creationBlockNumber;
-    private NetworkParameters networkParameters;
 
-    public StandardMultiSigFederationBuilder() {
+    public PendingFederationBuilder() {
         this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true
         );
         this.membersRskPublicKeys = new ArrayList<>();
         this.membersMstPublicKeys = new ArrayList<>();
-        this.creationTime = Instant.ofEpochMilli(0);
-        this.creationBlockNumber = 0;
-        this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
     }
 
-    public StandardMultiSigFederationBuilder withMembersBtcPublicKeys(List<BtcECKey> membersPublicKeys) {
-        this.membersBtcPublicKeys = membersPublicKeys;
+    public PendingFederationBuilder withMembersBtcPublicKeys(List<BtcECKey> btcPublicKeys) {
+        this.membersBtcPublicKeys = btcPublicKeys;
         return this;
     }
 
-    public StandardMultiSigFederationBuilder withMembersRskPublicKeys(List<ECKey> rskPublicKeys) {
+    public PendingFederationBuilder withMembersRskPublicKeys(List<ECKey> rskPublicKeys) {
         this.membersRskPublicKeys = rskPublicKeys;
         return this;
     }
 
-    public StandardMultiSigFederationBuilder withMembersMstPublicKeys(List<ECKey> mstPublicKeys) {
+    public PendingFederationBuilder withMembersMstPublicKeys(List<ECKey> mstPublicKeys) {
         this.membersMstPublicKeys = mstPublicKeys;
         return this;
     }
 
-    public StandardMultiSigFederationBuilder withCreationTime(Instant creationTime) {
-        this.creationTime = creationTime;
-        return this;
-    }
-
-    public StandardMultiSigFederationBuilder withCreationBlockNumber(long creationBlockNumber) {
-        this.creationBlockNumber = creationBlockNumber;
-        return this;
-    }
-
-    public StandardMultiSigFederationBuilder withNetworkParameters(NetworkParameters networkParameters) {
-        this.networkParameters = networkParameters;
-        return this;
-    }
-
-    public Federation build() {
+    public PendingFederation build() {
         List<FederationMember> federationMembers = getFederationMembers();
-        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, creationBlockNumber, networkParameters);
-
-        return FederationFactory.buildStandardMultiSigFederation(federationArgs);
+        return new PendingFederation(federationMembers);
     }
 
     private List<FederationMember> getFederationMembers() {
+
         if (membersRskPublicKeys.isEmpty()) {
             membersRskPublicKeys = membersBtcPublicKeys.stream()
                 .map(btcKey -> ECKey.fromPublicOnly(btcKey.getPubKey()))
                 .collect(Collectors.toList());
         }
+
         if (membersMstPublicKeys.isEmpty()) {
             membersMstPublicKeys = new ArrayList<>(membersRskPublicKeys);
         }

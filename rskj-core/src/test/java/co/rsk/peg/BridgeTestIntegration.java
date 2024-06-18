@@ -1622,7 +1622,7 @@ public class BridgeTestIntegration {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
-        when(bridgeSupportMock.getActiveFederatorPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
+        when(bridgeSupportMock.getActiveFederatorBtcPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
@@ -1655,7 +1655,7 @@ public class BridgeTestIntegration {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
         Assertions.assertNull(bridge.execute(BridgeMethods.GET_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)})));
-        verify(bridgeSupportMock, never()).getActiveFederatorPublicKey(any(int.class));
+        verify(bridgeSupportMock, never()).getActiveFederatorBtcPublicKey(any(int.class));
     }
 
     @Test
@@ -1905,7 +1905,7 @@ public class BridgeTestIntegration {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
-        when(bridgeSupportMock.getPendingFederatorPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
+        when(bridgeSupportMock.getPendingFederatorBtcPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
@@ -1940,7 +1940,7 @@ public class BridgeTestIntegration {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
         Assertions.assertNull(bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)})));
-        verify(bridgeSupportMock, never()).getPendingFederatorPublicKey(any(int.class));
+        verify(bridgeSupportMock, never()).getPendingFederatorBtcPublicKey(any(int.class));
     }
 
     @Test

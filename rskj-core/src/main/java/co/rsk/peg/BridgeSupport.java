@@ -380,7 +380,7 @@ public class BridgeSupport {
                 bridgeConstants,
                 getActiveFederation(),
                 getRetiringFederation(),
-                federationSupport.getLastRetiredFederationP2SHScript().orElse(null),
+                getLastRetiredFederationP2SHScript(),
                 btcTx,
                 height
             );
@@ -407,6 +407,10 @@ public class BridgeSupport {
                 e.getMessage()
             );
         }
+    }
+
+    private Script getLastRetiredFederationP2SHScript() {
+        return federationSupport.getLastRetiredFederationP2SHScript().orElse(null);
     }
 
     @VisibleForTesting
@@ -934,6 +938,10 @@ public class BridgeSupport {
 
         processConfirmedPegouts(rskTx);
 
+        updateFederationCreationBlockHeights();
+    }
+
+    protected void updateFederationCreationBlockHeights() {
         federationSupport.updateFederationCreationBlockHeights();
     }
 
@@ -1896,7 +1904,7 @@ public class BridgeSupport {
      * @param index the federator's index (zero-based)
      * @return the federator's public key
      */
-    public byte[] getActiveFederatorPublicKey(int index) {
+    public byte[] getActiveFederatorBtcPublicKey(int index) {
         return federationSupport.getActiveFederatorBtcPublicKey(index);
     }
 
@@ -2027,8 +2035,8 @@ public class BridgeSupport {
      * @param index the federator's index (zero-based)
      * @return the pending federation's federator public key
      */
-    public byte[] getPendingFederatorPublicKey(int index) {
-        return federationSupport.getPendingFederatorPublicKey(index);
+    public byte[] getPendingFederatorBtcPublicKey(int index) {
+        return federationSupport.getPendingFederatorBtcPublicKey(index);
     }
 
     /**
