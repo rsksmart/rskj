@@ -61,7 +61,7 @@ class FederationSupportImplTest {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @Tag("null federations")
+    @Tag("null new and old federations")
     class ActiveFederationTestsWithNullFederations {
         @BeforeEach
         void setUp() {
@@ -392,7 +392,7 @@ class FederationSupportImplTest {
     }
 
     @Nested
-    @Tag("non null federations")
+    @Tag("non null new and old federations")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class ActiveFederationTestsWithNonNullFederations {
         // new federation should be active if we are past the activation block number
@@ -1486,6 +1486,59 @@ class FederationSupportImplTest {
                 Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations),
                 Arguments.of(blockNumberFederationActivationFingerroot, hopActivations)
             );
+        }
+    }
+
+    @Nested
+    @Tag("null pending federation")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class PendingFederationTestsWithNullFederation {
+
+        @BeforeEach
+        void setUp() {
+            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .build();
+        }
+
+        @Test
+        @Tag("getPendingFederationSize")
+        void getPendingFederationSize_returnsPendingFederationNonExistentResponseCode() {
+            int pendingFederationSize = federationSupport.getPendingFederationSize();
+            assertThat(pendingFederationSize, is(FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode()));
+        }
+    }
+
+    @Nested
+    @Tag("non null pending federation")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class PendingFederationTestsWithNonNullFederation {
+
+        PendingFederation pendingFederation = new PendingFederationBuilder()
+                .build();
+
+        @BeforeEach
+        void setUp() {
+            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .build();
+
+            storageProvider.setPendingFederation(pendingFederation);
+        }
+
+        @Test
+        @Tag("getPendingFederationSize")
+        void getPendingFederationSize_returnsPendingFederationSize() {
+            int pendingFederationSize = federationSupport.getPendingFederationSize();
+            assertThat(pendingFederationSize, is(pendingFederation.getSize()));
         }
     }
 
