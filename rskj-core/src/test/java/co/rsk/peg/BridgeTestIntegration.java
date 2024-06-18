@@ -1784,7 +1784,7 @@ public class BridgeTestIntegration {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
-        when(bridgeSupportMock.getRetiringFederatorPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
+        when(bridgeSupportMock.getRetiringFederatorBtcPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
@@ -1820,7 +1820,7 @@ public class BridgeTestIntegration {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
         Assertions.assertNull(bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)})));
-        verify(bridgeSupportMock, never()).getRetiringFederatorPublicKey(any(int.class));
+        verify(bridgeSupportMock, never()).getRetiringFederatorBtcPublicKey(any(int.class));
     }
 
     @Test
