@@ -823,6 +823,13 @@ class FederationSupportImplTest {
             Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
             assertThat(retiringFederationCreationTime, is(nullValue()));
         }
+
+        @Test
+        @Tag("getRetiringFederationCreationBlockNumber")
+        void getRetiringFederationCreationBlockNumber_returnsLongMinusOne() {
+            long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
+            assertThat(retiringFederationCreationBlockNumber, is(-1L));
+        }
     }
 
     @Nested
@@ -879,6 +886,13 @@ class FederationSupportImplTest {
         void getRetiringFederationCreationTime_returnsNull() {
             Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
             assertThat(retiringFederationCreationTime, is(nullValue()));
+        }
+
+        @Test
+        @Tag("getRetiringFederationCreationBlockNumber")
+        void getRetiringFederationCreationBlockNumber_returnsLongMinusOne() {
+            long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
+            assertThat(retiringFederationCreationBlockNumber, is(-1L));
         }
     }
 
@@ -1116,6 +1130,48 @@ class FederationSupportImplTest {
         @Tag("getRetiringFederationCreationTime")
         @MethodSource("newFederationActiveActivationArgs")
         void getRetiringFederationCreationTime_withNewFederationActive_returnsOldFederationCreationTime(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
+            assertThat(retiringFederationCreationTime, is(oldFederation.getCreationTime()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationCreationBlockNumber")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void getRetiringFederationCreationBlockNumber_withNewFederationNotActive_returnsLongMinusOne(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
+            assertThat(retiringFederationCreationBlockNumber, is(-1L));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationCreationTime")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederationCreationBlockNumber_withNewFederationActive_returnsOldFederationCreationTime(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
