@@ -1248,7 +1248,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederatorBtcPublicKey")
         @MethodSource("newFederationActiveActivationArgs")
-        void getRetiringFederatorBtcPublicKey_withNegativeIndex_throwsIndexOutOfBoundsException(
+        void getRetiringFederatorBtcPublicKey_withNewFederationActiveAndNegativeIndex_throwsIndexOutOfBoundsException(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1268,7 +1268,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederatorBtcPublicKey")
         @MethodSource("newFederationActiveActivationArgs")
-        void getRetiringFederatorBtcPublicKey_withIndexGreaterThanRetiringFederationSize_throwsIndexOutOfBoundsException(
+        void getRetiringFederatorBtcPublicKey_withNewFederationActiveAndIndexGreaterThanRetiringFederationSize_throwsIndexOutOfBoundsException(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
