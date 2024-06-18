@@ -1316,7 +1316,7 @@ class FederationSupportImplTest {
         }
 
         @ParameterizedTest
-        @Tag("getRetiringFederationCreationBlockNumber")
+        @Tag("getRetiringFederatorPublicKeyOfType")
         @MethodSource("newFederationNotActiveActivationArgs")
         void getRetiringFederatorPublicKeyOfType_withNewFederationNotActive_returnsNull(
             long currentBlock,
