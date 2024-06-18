@@ -1169,9 +1169,9 @@ class FederationSupportImplTest {
         }
 
         @ParameterizedTest
-        @Tag("getRetiringFederationCreationTime")
+        @Tag("getRetiringFederationCreationBlockNumber")
         @MethodSource("newFederationActiveActivationArgs")
-        void getRetiringFederationCreationBlockNumber_withNewFederationActive_returnsOldFederationCreationTime(
+        void getRetiringFederationCreationBlockNumber_withNewFederationActive_returnsOldFederationCreationBlockNumber(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1185,8 +1185,8 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Instant retiringFederationCreationTime = federationSupport.getRetiringFederationCreationTime();
-            assertThat(retiringFederationCreationTime, is(oldFederation.getCreationTime()));
+            long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
+            assertThat(retiringFederationCreationBlockNumber, is(oldFederation.getCreationBlockNumber()));
         }
 
         private Stream<Arguments> newFederationNotActiveActivationArgs() {
