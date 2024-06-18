@@ -2028,7 +2028,7 @@ public class BridgeSupport {
      * @return the pending federation's federator public key
      */
     public byte[] getPendingFederatorPublicKey(int index) {
-        return federationSupport.getPendingFederatorPublicKey(index);
+        return federationSupport.getPendingFederatorBtcPublicKey(index);
     }
 
     /**

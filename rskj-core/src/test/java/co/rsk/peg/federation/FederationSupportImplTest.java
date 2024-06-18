@@ -1519,6 +1519,13 @@ class FederationSupportImplTest {
             Keccak256 pendingFederationHash = federationSupport.getPendingFederationHash();
             assertThat(pendingFederationHash, is(nullValue()));
         }
+
+        @Test
+        @Tag("getPendingFederatorBtcPublicKey")
+        void getPendingFederatorBtcPublicKey_returnsNull() {
+            byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorBtcPublicKey(0);
+            assertThat(pendingFederatorBtcPublicKey, is(nullValue()));
+        }
     }
 
     @Nested
@@ -1554,6 +1561,26 @@ class FederationSupportImplTest {
         void getPendingFederationHash_returnsPendingFederationHash() {
             Keccak256 pendingFederationHash = federationSupport.getPendingFederationHash();
             assertThat(pendingFederationHash, is(pendingFederation.getHash()));
+        }
+
+        @Test
+        @Tag("getPendingFederatorBtcPublicKey")
+        void getPendingFederatorBtcPublicKey_returnsFederatorFromPendingFederationBtcPublicKey() {
+            byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorBtcPublicKey(0);
+            assertThat(pendingFederatorBtcPublicKey, is(pendingFederation.getBtcPublicKeys().get(0).getPubKey()));
+        }
+
+        @Test
+        @Tag("getPendingFederatorBtcPublicKey")
+        void getPendingFederatorBtcPublicKey_withNegativeIndex_throwsIndexOutOfBoundsException() {
+            assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getPendingFederatorBtcPublicKey(-1));
+        }
+
+        @Test
+        @Tag("getPendingFederatorBtcPublicKey")
+        void getPendingFederatorBtcPublicKey_withIndexGreaterThanPendingFederationSize_throwsIndexOutOfBoundsException() {
+            int pendingFederationSize = pendingFederation.getSize();
+            assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getPendingFederatorBtcPublicKey(pendingFederationSize));
         }
     }
 

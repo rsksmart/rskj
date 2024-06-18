@@ -346,7 +346,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public byte[] getPendingFederatorPublicKey(int index) {
+    public byte[] getPendingFederatorBtcPublicKey(int index) {
         PendingFederation currentPendingFederation = getPendingFederation();
 
         if (currentPendingFederation == null) {
