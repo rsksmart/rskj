@@ -1404,14 +1404,14 @@ class FederationSupportImplTest {
             List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
             );
-            Federation oldFederation = new P2shErpFederationBuilder()
+            Federation oldFederationWithRskKeys = new P2shErpFederationBuilder()
                 .withMembersRskPublicKeys(rskECKeys)
                 .build();
-            storageProvider.setOldFederation(oldFederation);
+            storageProvider.setOldFederation(oldFederationWithRskKeys);
 
-            BtcECKey federatorFromOldFederationBtcPublicKey = oldFederation.getBtcPublicKeys().get(0);
-            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederation).get(0);
-            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederation).get(0);
+            BtcECKey federatorFromOldFederationBtcPublicKey = oldFederationWithRskKeys.getBtcPublicKeys().get(0);
+            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederationWithRskKeys).get(0);
+            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederationWithRskKeys).get(0);
 
             // since old federation was created without specifying mst public keys
             // these are set copying the rsk public keys,
@@ -1452,15 +1452,15 @@ class FederationSupportImplTest {
             List<ECKey> mstECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"mst01", "mst02", "mst03", "mst04", "mst05", "mst06", "mst07", "mst08", "mst09"}
             );
-            Federation oldFederation = new P2shErpFederationBuilder()
+            Federation oldFederationWithRskAndMstKeys = new P2shErpFederationBuilder()
                 .withMembersRskPublicKeys(rskECKeys)
                 .withMembersMstPublicKeys(mstECKeys)
                 .build();
-            storageProvider.setOldFederation(oldFederation);
+            storageProvider.setOldFederation(oldFederationWithRskAndMstKeys);
 
-            BtcECKey federatorFromOldFederationBtcPublicKey = oldFederation.getBtcPublicKeys().get(0);
-            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederation).get(0);
-            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederation).get(0);
+            BtcECKey federatorFromOldFederationBtcPublicKey = oldFederationWithRskAndMstKeys.getBtcPublicKeys().get(0);
+            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederationWithRskAndMstKeys).get(0);
+            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederationWithRskAndMstKeys).get(0);
 
             byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
             assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
