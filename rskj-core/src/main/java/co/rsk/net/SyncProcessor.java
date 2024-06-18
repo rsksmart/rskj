@@ -78,9 +78,6 @@ public class SyncProcessor implements SyncEventsHandler {
     private SyncState syncState;
     private long lastRequestId;
 
-    // TODO(snap-poc) tmp field until we can spot from DB (stateRoot?) if further Snap sync is required
-    private boolean snapSyncFinished;
-
     @VisibleForTesting
     public SyncProcessor(Blockchain blockchain,
                          BlockStore blockStore,
@@ -227,6 +224,18 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
+    public void processSnapStatusResponse(Peer sender, SnapStatusResponseMessage responseMessage) {
+        syncState.onSnapStatus(sender, responseMessage);
+    }
+
+    public void processSnapBlocksResponse(Peer sender, SnapBlocksResponseMessage responseMessage) {
+        syncState.onSnapBlocks(sender, responseMessage);
+    }
+
+    public void processStateChunkResponse(Peer peer, SnapStateChunkResponseMessage responseMessage) {
+        syncState.onSnapStateChunk(peer, responseMessage);
+    }
+
     @Override
     public void sendSkeletonRequest(Peer peer, long height) {
         logger.debug("Send skeleton request to node {} height {}", peer.getPeerNodeID(), height);
@@ -280,19 +289,9 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startSnapSync(PeersInformation peers) {
-        logger.info("Start Snap syncing with #{} nodes", peers.getBestPeerCandidates());
-        setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration, peers));
-    }
-
-    @Override
-    public void snapSyncFinished() {
-        this.snapSyncFinished = true;
-    }
-
-    @Override
-    public boolean isSnapSyncFinished() {
-        return snapSyncFinished;
+    public void startSnapSync() {
+        logger.info("Start Snap syncing");
+        setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration));
     }
 
     @Override

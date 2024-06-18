@@ -41,10 +41,7 @@ class SnapSyncStateTest {
     private final PeersInformation peersInformation = mock(PeersInformation.class);
     private final SnapshotProcessor snapshotProcessor = mock(SnapshotProcessor.class);
 
-    private final SnapSyncState underTest = new SnapSyncState(syncEventsHandler,
-            snapshotProcessor,
-            syncConfiguration,
-            peersInformation);
+    private final SnapSyncState underTest = new SnapSyncState(syncEventsHandler, snapshotProcessor, syncConfiguration);
 
     @BeforeEach
     void setUp(){
@@ -56,7 +53,9 @@ class SnapSyncStateTest {
         //given-when
         underTest.onEnter();
         //then
-        verify(snapshotProcessor).startSyncing(peersInformation, underTest);
+        verify(snapshotProcessor).startSyncing();
+        //cleanup
+        underTest.finish();
     }
 
     @Test
@@ -66,7 +65,7 @@ class SnapSyncStateTest {
         assertThat(underTest.timeElapsed, greaterThan(Duration.ZERO));
 
         // when
-        underTest.newChunk();
+        underTest.onNewChunk();
         //then
         assertThat(underTest.timeElapsed, equalTo(Duration.ZERO));
     }
@@ -94,20 +93,20 @@ class SnapSyncStateTest {
         when(mockedPeer.getPeerNodeID()).thenReturn(nodeID);
         when(mockedPeer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
         when(peersInformation.getBestPeer()).thenReturn(Optional.of(mockedPeer));
+        underTest.setRunning();
         // when
         underTest.tick(elapsedTime);
         //then
         assertThat(underTest.timeElapsed, equalTo(elapsedTime));
         verify(syncEventsHandler, times(1)).stopSyncing();
-        verify(syncEventsHandler, times(1)).onErrorSyncing(any(),any(),any(),any());
     }
 
     @Test
     void givenFinishedIsCalled_thenSyncEventHandlerStopsSync(){
         //given-when
-        underTest.finished();
+        underTest.setRunning();
+        underTest.finish();
         //then
-        verify(syncEventsHandler, times(1)).snapSyncFinished();
         verify(syncEventsHandler, times(1)).stopSyncing();
     }
 }

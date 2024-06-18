@@ -60,8 +60,9 @@ public class SnapshotSyncIntegrationTest {
     private static final String RSKJ_CLIENT_CONF_FILE_NAME = "snap-sync-client-rskj.conf";
 
     private final int portServer = 50555;
-    private final int portClient = portServer + 1;
-    private final int portClientHttp = portClient + 1;
+    private final int portServerRpc = portServer + 1;
+    private final int portClient = portServerRpc + 1;
+    private final int portClientRpc = portClient + 1;
 
     @TempDir
     public Path tempDirectory;
@@ -89,12 +90,13 @@ public class SnapshotSyncIntegrationTest {
         serverNode.startNode();
         ThreadTimerHelper.waitForSeconds(30);
 
+        JsonNode serverBestBlockResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portServerRpc, "latest");
+        String serverBestBlockNumber = serverBestBlockResponse.get(0).get("result").get("number").asText();
+
         //when
         String rskConfFileChangedClient = configureClientConfWithGeneratedInformation(serverDbDir, clientDbDir.toString());
         clientNode = new NodeIntegrationTestCommandLine(rskConfFileChangedClient, "--regtest");
         clientNode.startNode();
-
-        ThreadTimerHelper.waitForSeconds(20);
 
         //then
         long startTime = System.currentTimeMillis();
@@ -102,20 +104,23 @@ public class SnapshotSyncIntegrationTest {
         boolean isClientSynced = false;
 
         while (System.currentTimeMillis() < endTime) {
-            if(clientNode.getOutput().contains("CLIENT - Starting Snapshot sync.") && clientNode.getOutput().contains("CLIENT - Snapshot sync finished!")) {
+            if (clientNode.getOutput().contains("CLIENT - Starting Snapshot sync.") && clientNode.getOutput().contains("CLIENT - Snapshot sync finished!")) {
                 try {
-                    JsonNode jsonResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portClientHttp);
-                    String bestBlockNumber = jsonResponse.get(0).get("result").get("transactions").get(0).get("blockNumber").asText();
-                    if(bestBlockNumber.equals("0x1770")) { // We reached the tip of the test database imported on server on the client
-                        isClientSynced = true;
-                        break;
+                    JsonNode jsonResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portClientRpc, serverBestBlockNumber);
+                    JsonNode jsonResult = jsonResponse.get(0).get("result");
+                    if (jsonResult.isObject()) {
+                        String bestBlockNumber = jsonResult.get("number").asText();
+                        if (bestBlockNumber.equals(serverBestBlockNumber)) { // We reached the tip of the test database imported on server on the client
+                            isClientSynced = true;
+                            break;
+                        }
                     }
                 } catch (Exception e) {
                     System.out.println("Error while trying to get the best block number from the client: " + e.getMessage());
                     System.out.println("We will try again in 10 seconds.");
                 }
-                ThreadTimerHelper.waitForSeconds(2);
             }
+            ThreadTimerHelper.waitForSeconds(2);
         }
 
         assertTrue(isClientSynced);
@@ -136,7 +141,7 @@ public class SnapshotSyncIntegrationTest {
         List<Pair<String, String>> tagsWithValues = new ArrayList<>();
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_SERVER_DATABASE_PATH, tempDirDatabaseServerPath.toString()));
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_SERVER_PORT, String.valueOf(portServer)));
-        tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_SERVER_RPC_PORT, String.valueOf(portServer + 1)));
+        tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_SERVER_RPC_PORT, String.valueOf(portServerRpc)));
 
         RskjConfigurationFileFixture.substituteTagsOnRskjConfFile(rskConfFileServer.toString(), tagsWithValues);
 
@@ -154,7 +159,7 @@ public class SnapshotSyncIntegrationTest {
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_NODE_ID, nodeId));
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_SERVER_PORT, String.valueOf(portServer)));
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_CLIENT_PORT, String.valueOf(portClient)));
-        tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_CLIENT_RPC_HTTP_PORT, String.valueOf(portClientHttp)));
+        tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_CLIENT_RPC_HTTP_PORT, String.valueOf(portClientRpc)));
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_CLIENT_RPC_WS_PORT, String.valueOf(portClient + 2)));
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_CLIENT_DATABASE_PATH, tempDirDatabasePath));
 

@@ -30,10 +30,10 @@ import java.security.cert.X509Certificate;
 
 public class OkHttpClientTestFixture {
 
-    public static final String GET_BEST_BLOCK_CONTENT = "[{\n" +
+    public static final String GET_BLOCK_CONTENT = "[{\n" +
             "    \"method\": \"eth_getBlockByNumber\",\n" +
             "    \"params\": [\n" +
-            "        \"latest\",\n" +
+            "        \"<BLOCK_NUM_OR_TAG>\",\n" +
             "        true\n" +
             "    ],\n" +
             "    \"id\": 1,\n" +
@@ -94,11 +94,15 @@ public class OkHttpClientTestFixture {
     }
 
     public static Response sendJsonRpcGetBestBlockMessage(int port) throws IOException {
-        return sendJsonRpcMessage(GET_BEST_BLOCK_CONTENT, port);
+        return sendJsonRpcGetBlockMessage(port, "latest");
     }
 
-    public static JsonNode getJsonResponseForGetBestBlockMessage(int port) throws IOException {
-        Response response = sendJsonRpcGetBestBlockMessage(port);
+    public static Response sendJsonRpcGetBlockMessage(int port, String blockNumOrTag) throws IOException {
+        return sendJsonRpcMessage(GET_BLOCK_CONTENT.replace("<BLOCK_NUM_OR_TAG>", blockNumOrTag), port);
+    }
+
+    public static JsonNode getJsonResponseForGetBestBlockMessage(int port, String blockNumOrTag) throws IOException {
+        Response response = sendJsonRpcGetBlockMessage(port, blockNumOrTag);
         return new ObjectMapper().readTree(response.body().string());
     }
 }

@@ -33,28 +33,25 @@ import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.mockito.Mockito.*;
 
 public class SnapshotProcessorTest {
     public static final int TEST_CHUNK_SIZE = 200;
-    private BlockChainBuilder blockChainBuilder;
     private Blockchain blockchain;
     private TransactionPool transactionPool;
     private BlockStore blockStore;
     private TrieStore trieStore;
     private Peer peer;
-    private PeersInformation peersInformation = mock(PeersInformation.class);
-    private SnapSyncState snapSyncState = mock(SnapSyncState.class);
-
+    private final PeersInformation peersInformation = mock(PeersInformation.class);
+    private final SnapSyncState snapSyncState = mock(SnapSyncState.class);
     private SnapshotProcessor underTest;
+
     @BeforeEach
     void setUp() throws UnknownHostException {
         peer = mockedPeer();
-        when(peersInformation.getBestPeerCandidates()).thenReturn(Arrays.asList(peer));
+        when(peersInformation.getBestPeerCandidates()).thenReturn(Collections.singletonList(peer));
     }
 
     @Test
@@ -70,7 +67,7 @@ public class SnapshotProcessorTest {
                 TEST_CHUNK_SIZE,
                 false);
         //when
-        underTest.startSyncing(peersInformation, snapSyncState);
+        underTest.startSyncing();
         //then
         verify(peer).sendMessage(any(SnapStatusRequestMessage.class));
     }
@@ -97,10 +94,15 @@ public class SnapshotProcessorTest {
         }
 
         SnapStatusResponseMessage snapStatusResponseMessage = new SnapStatusResponseMessage(blocks, difficulties, 100000L);
-        underTest.startSyncing(peersInformation, snapSyncState);
+
+        doReturn(blocks.get(blocks.size() - 1)).when(snapSyncState).getLastBlock();
+        doReturn(snapStatusResponseMessage.getTrieSize()).when(snapSyncState).getRemoteTrieSize();
+        doReturn(new LinkedList<>()).when(snapSyncState).getChunkTaskQueue();
+
+        underTest.startSyncing();
 
         //when
-        underTest.processSnapStatusResponse(peer, snapStatusResponseMessage);
+        underTest.processSnapStatusResponse(snapSyncState, peer, snapStatusResponseMessage);
 
         //then
         verify(peer, atLeast(3)).sendMessage(any()); // 1 for SnapStatusRequestMessage, 1 for SnapBlocksRequestMessage and 1 for SnapStateChunkRequestMessage
@@ -120,7 +122,7 @@ public class SnapshotProcessorTest {
                 TEST_CHUNK_SIZE,
                 false);
         //when
-        underTest.processSnapStatusRequest(peer);
+        underTest.processSnapStatusRequestInternal(peer, mock(SnapStatusRequestMessage.class));
 
         //then
         verify(peer, atLeast(1)).sendMessage(any(SnapStatusResponseMessage.class));
@@ -138,9 +140,10 @@ public class SnapshotProcessorTest {
                 transactionPool,
                 TEST_CHUNK_SIZE,
                 false);
+
         SnapBlocksRequestMessage snapBlocksRequestMessage = new SnapBlocksRequestMessage(460);
         //when
-        underTest.processSnapBlocksRequest(peer, snapBlocksRequestMessage);
+        underTest.processSnapBlocksRequestInternal(peer, snapBlocksRequestMessage);
 
         //then
         verify(peer, atLeast(1)).sendMessage(any(SnapBlocksResponseMessage.class));
@@ -168,12 +171,16 @@ public class SnapshotProcessorTest {
         }
 
         SnapStatusResponseMessage snapStatusResponseMessage = new SnapStatusResponseMessage(blocks, difficulties, 100000L);
-        underTest.startSyncing(peersInformation, snapSyncState);
-        underTest.processSnapStatusResponse(peer, snapStatusResponseMessage);
+        doReturn(new LinkedList<>()).when(snapSyncState).getChunkTaskQueue();
+
+        underTest.startSyncing();
+        underTest.processSnapStatusResponse(snapSyncState, peer, snapStatusResponseMessage);
 
         SnapBlocksResponseMessage snapBlocksResponseMessage = new SnapBlocksResponseMessage(blocks, difficulties);
+
+        when(snapSyncState.getLastBlock()).thenReturn(blocks.get(blocks.size() - 1));
         //when
-        underTest.processSnapBlocksResponse(peer, snapBlocksResponseMessage);
+        underTest.processSnapBlocksResponse(snapSyncState, peer, snapBlocksResponseMessage);
 
         //then
         verify(peer, atLeast(2)).sendMessage(any(SnapBlocksRequestMessage.class));
@@ -195,14 +202,14 @@ public class SnapshotProcessorTest {
         SnapStateChunkRequestMessage snapStateChunkRequestMessage = new SnapStateChunkRequestMessage(1L, 1L,1, TEST_CHUNK_SIZE);
 
         //when
-        underTest.processStateChunkRequest(peer, snapStateChunkRequestMessage);
+        underTest.processStateChunkRequestInternal(peer, snapStateChunkRequestMessage);
 
         //then
         verify(peer, timeout(5000).atLeast(1)).sendMessage(any(SnapStateChunkResponseMessage.class)); // We have to wait because this method does the job insides thread
     }
 
     private void initializeBlockchainWithAmountOfBlocks(int numberOfBlocks) {
-        blockChainBuilder = new BlockChainBuilder();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         blockchain = blockChainBuilder.ofSize(numberOfBlocks);
         transactionPool = blockChainBuilder.getTransactionPool();
         blockStore = blockChainBuilder.getBlockStore();

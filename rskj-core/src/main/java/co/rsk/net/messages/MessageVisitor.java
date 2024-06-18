@@ -150,10 +150,6 @@ public class MessageVisitor {
         this.blockProcessor.processBlockHeadersRequest(sender, message.getId(), hash, count);
     }
 
-    public void apply(SnapStateChunkRequestMessage message) {
-        this.snapshotProcessor.processStateChunkRequest(sender, message);
-    }
-
     public void apply(BlockHashRequestMessage message) {
         this.blockProcessor.processBlockHashRequest(sender, message.getId(), message.getHeight());
     }
@@ -191,30 +187,34 @@ public class MessageVisitor {
         blockProcessor.processNewBlockHashesMessage(sender, message);
     }
 
-    public void apply(SnapStateChunkResponseMessage message) {
-        logger.debug("snapshot chunk response : {}", message.getId());
-        this.snapshotProcessor.processStateChunkResponse(sender, message);
-    }
-
     public void apply(SnapStatusRequestMessage message) {
         logger.debug("snapshot status request message apply");
-
-        this.snapshotProcessor.processSnapStatusRequest(sender);
+        this.snapshotProcessor.processSnapStatusRequest(sender, message);
     }
 
     public void apply(SnapStatusResponseMessage message)  {
         logger.debug("snapshot status response message apply blocks[{}] - trieSize[{}]", message.getBlocks().size(), message.getTrieSize());
-        this.snapshotProcessor.processSnapStatusResponse(sender, message);
+        this.syncProcessor.processSnapStatusResponse(sender, message);
     }
 
-    public void apply(SnapBlocksRequestMessage snapBlocksRequestMessage) {
-        logger.debug("snapshot blocks request message apply : {}", snapBlocksRequestMessage);
-        this.snapshotProcessor.processSnapBlocksRequest(sender, snapBlocksRequestMessage);
+    public void apply(SnapBlocksRequestMessage message) {
+        logger.debug("snapshot blocks request message apply : {}", message);
+        this.snapshotProcessor.processSnapBlocksRequest(sender, message);
     }
 
-    public void apply(SnapBlocksResponseMessage snapBlocksResponseMessage) {
-        logger.debug("snapshot blocks response message apply : {}", snapBlocksResponseMessage);
-        this.snapshotProcessor.processSnapBlocksResponse(sender, snapBlocksResponseMessage);
+    public void apply(SnapBlocksResponseMessage message) {
+        logger.debug("snapshot blocks response message apply : {}", message);
+        this.syncProcessor.processSnapBlocksResponse(sender, message);
+    }
+
+    public void apply(SnapStateChunkRequestMessage message) {
+        logger.debug("snapshot chunk request : {}", message.getId());
+        this.snapshotProcessor.processStateChunkRequest(sender, message);
+    }
+
+    public void apply(SnapStateChunkResponseMessage message) {
+        logger.debug("snapshot chunk response : {}", message.getId());
+        this.syncProcessor.processStateChunkResponse(sender, message);
     }
 
     public void apply(TransactionsMessage message) {

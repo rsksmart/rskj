@@ -1010,6 +1010,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (getRskSystemProperties().isSyncEnabled()) {
             internalServices.add(getSyncPool());
+            if (getSyncConfiguration().isServerSnapSyncEnabled()) {
+                internalServices.add(getSnapshotProcessor());
+            }
         }
 
         if (getRskSystemProperties().isMinerServerEnabled()) {
@@ -1464,7 +1467,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 rskSystemProperties.getMaxRequestedBodies(),
                 rskSystemProperties.getLongSyncLimit(),
                 rskSystemProperties.getTopBest(),
-                rskSystemProperties.isSnapshotSyncEnabled(),
+                rskSystemProperties.isServerSnapshotSyncEnabled(),
+                rskSystemProperties.isClientSnapshotSyncEnabled(),
                 rskSystemProperties.getSnapshotChunkTimeout(),
                 rskSystemProperties.getSnapshotSyncLimit());
     }

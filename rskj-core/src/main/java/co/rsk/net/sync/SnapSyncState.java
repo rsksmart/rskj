@@ -18,34 +18,124 @@
 
 package co.rsk.net.sync;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
-import co.rsk.scoring.EventType;
+import co.rsk.net.messages.SnapBlocksResponseMessage;
+import co.rsk.net.messages.SnapStateChunkResponseMessage;
+import co.rsk.net.messages.SnapStatusResponseMessage;
+import co.rsk.trie.TrieDTO;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
+import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.time.Duration;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class SnapSyncState extends BaseSyncState {
 
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     private final SnapshotProcessor snapshotProcessor;
-    private final PeersInformation peers;
 
-    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor, SyncConfiguration syncConfiguration, PeersInformation peers) {
+    // queue for processing of SNAP responses
+    private final BlockingQueue<SyncMessageHandler.Job> responseQueue = new LinkedBlockingQueue<>();
+
+    // priority queue for ordering chunk responses
+    private final PriorityQueue<SnapStateChunkResponseMessage> snapStateChunkQueue = new PriorityQueue<>(
+            Comparator.comparingLong(SnapStateChunkResponseMessage::getFrom)
+    );
+
+    private final Queue<ChunkTask> chunkTaskQueue = new LinkedList<>();
+
+    private BigInteger stateSize = BigInteger.ZERO;
+    private BigInteger stateChunkSize = BigInteger.ZERO;
+    private final List<TrieDTO> allNodes;
+
+    private long remoteTrieSize;
+    private byte[] remoteRootHash;
+    private final List<Pair<Block, BlockDifficulty>> blocks;
+    private Block lastBlock;
+    private BlockDifficulty lastBlockDifficulty;
+
+    private long nextExpectedFrom = 0L;
+
+    private volatile Boolean isRunning;
+    private final Thread thread = new Thread(new SyncMessageHandler("SNAP responses", responseQueue) {
+
+        @Override
+        public boolean isRunning() {
+            return isRunning;
+        }
+    }, "snap sync response handler");
+
+    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor, SyncConfiguration syncConfiguration) {
         super(syncEventsHandler, syncConfiguration);
         this.snapshotProcessor = snapshotProcessor; // TODO(snap-poc) code in SnapshotProcessor should be moved here probably
-        this.peers = peers;
+        this.allNodes = Lists.newArrayList();
+        this.blocks = Lists.newArrayList();
     }
 
     @Override
     public void onEnter() {
-        snapshotProcessor.startSyncing(this.peers, this);
+        if (isRunning != null) {
+            logger.warn("Invalid state, isRunning: [{}]", isRunning);
+            return;
+        }
+        isRunning = Boolean.TRUE;
+        thread.start();
+        snapshotProcessor.startSyncing();
     }
 
-    public void newChunk() {
+    @Override
+    public void onSnapStatus(Peer sender, SnapStatusResponseMessage responseMessage) {
+        try {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+                @Override
+                public void run() {
+                    snapshotProcessor.processSnapStatusResponse(SnapSyncState.this, sender, responseMessage);
+                }
+            });
+        } catch (InterruptedException e) {
+            logger.warn("SnapStatusResponseMessage processing was interrupted", e);
+        }
+    }
+
+    @Override
+    public void onSnapBlocks(Peer sender, SnapBlocksResponseMessage responseMessage) {
+        try {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+                @Override
+                public void run() {
+                    snapshotProcessor.processSnapBlocksResponse(SnapSyncState.this, sender, responseMessage);
+                }
+            });
+        } catch (InterruptedException e) {
+            logger.warn("SnapBlocksResponseMessage processing was interrupted", e);
+        }
+    }
+
+    @Override
+    public void onSnapStateChunk(Peer sender, SnapStateChunkResponseMessage responseMessage) {
+        try {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+                @Override
+                public void run() {
+                    snapshotProcessor.processStateChunkResponse(SnapSyncState.this, sender, responseMessage);
+                }
+            });
+        } catch (InterruptedException e) {
+            logger.warn("SnapStateChunkResponseMessage processing was interrupted", e);
+        }
+    }
+
+    public void onNewChunk() {
         resetTimeElapsed();
     }
 
@@ -59,24 +149,117 @@ public class SnapSyncState extends BaseSyncState {
         }
     }
 
-    // TODO(snap-poc) handle potential errors by calling co.rsk.net.sync.SyncEventsHandler.onErrorSyncing, like other SyncStates do
-
     @Override
     protected void onMessageTimeOut() {
-        // TODO(snap-poc) handle multiple peers here, not just stop syncing, similarly to co.rsk.net.sync.DownloadingBodiesSyncState.tick
-        Optional<Peer> timeoutPeerResult = this.peers.getBestPeer();
-        syncEventsHandler.stopSyncing();
+        // TODO: call syncEventsHandler.onErrorSyncing() and punish peers after SNAP feature discovery is implemented
 
-        if (timeoutPeerResult.isPresent()) {
-            Peer timeoutPeer = timeoutPeerResult.get();
-            logger.warn("Timeout on SnapSyncState for peer {}", timeoutPeer.getPeerNodeID());
-            syncEventsHandler.onErrorSyncing(timeoutPeer, EventType.TIMEOUT_MESSAGE,
-                    "Timeout for peer {} on {}", timeoutPeer.getPeerNodeID(), this.getClass());
-        }
+        finish();
     }
 
-    public void finished() {
-        syncEventsHandler.snapSyncFinished();
+    public Block getLastBlock() {
+        return lastBlock;
+    }
+
+    public void setLastBlock(Block lastBlock) {
+        this.lastBlock = lastBlock;
+    }
+
+    public long getNextExpectedFrom() {
+        return nextExpectedFrom;
+    }
+
+    public void setNextExpectedFrom(long nextExpectedFrom) {
+        this.nextExpectedFrom = nextExpectedFrom;
+    }
+
+    public BlockDifficulty getLastBlockDifficulty() {
+        return lastBlockDifficulty;
+    }
+
+    public void setLastBlockDifficulty(BlockDifficulty lastBlockDifficulty) {
+        this.lastBlockDifficulty = lastBlockDifficulty;
+    }
+
+    public byte[] getRemoteRootHash() {
+        return remoteRootHash;
+    }
+
+    public void setRemoteRootHash(byte[] remoteRootHash) {
+        this.remoteRootHash = remoteRootHash;
+    }
+
+    public long getRemoteTrieSize() {
+        return remoteTrieSize;
+    }
+
+    public void setRemoteTrieSize(long remoteTrieSize) {
+        this.remoteTrieSize = remoteTrieSize;
+    }
+
+    public List<Pair<Block, BlockDifficulty>> getBlocks() {
+        return blocks;
+    }
+
+    public List<TrieDTO> getAllNodes() {
+        return allNodes;
+    }
+
+    public BigInteger getStateSize() {
+        return stateSize;
+    }
+
+    public void setStateSize(BigInteger stateSize) {
+        this.stateSize = stateSize;
+    }
+
+    public BigInteger getStateChunkSize() {
+        return stateChunkSize;
+    }
+
+    public void setStateChunkSize(BigInteger stateChunkSize) {
+        this.stateChunkSize = stateChunkSize;
+    }
+
+    public PriorityQueue<SnapStateChunkResponseMessage> getSnapStateChunkQueue() {
+        return snapStateChunkQueue;
+    }
+
+    public Queue<ChunkTask> getChunkTaskQueue() {
+        return chunkTaskQueue;
+    }
+
+    public void finish() {
+        if (isRunning != Boolean.TRUE) {
+            logger.warn("Invalid state, isRunning: [{}]", isRunning);
+            return;
+        }
+
+        isRunning = Boolean.FALSE;
+        thread.interrupt();
+
         syncEventsHandler.stopSyncing();
+    }
+
+    @VisibleForTesting
+    public void setRunning() {
+        isRunning = true;
+    }
+
+    public static class ChunkTask {
+        private final long blockNumber;
+        private final long from;
+
+        public ChunkTask(long blockNumber, long from) {
+            this.blockNumber = blockNumber;
+            this.from = from;
+        }
+
+        public long getBlockNumber() {
+            return blockNumber;
+        }
+
+        public long getFrom() {
+            return from;
+        }
     }
 }

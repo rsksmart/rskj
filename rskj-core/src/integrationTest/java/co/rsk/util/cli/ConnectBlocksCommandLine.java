@@ -30,7 +30,7 @@ public class ConnectBlocksCommandLine extends RskjCommandLineBase {
 
     public ConnectBlocksCommandLine(String filePath, Path dbDir) {
         super("co.rsk.cli.tools.ConnectBlocks",
-                new String[]{},
+                new String[]{ "-Dlogging.dir=./build/tmp" },
                 makeArgs(filePath, dbDir));
     }
 

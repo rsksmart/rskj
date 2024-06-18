@@ -18,11 +18,13 @@
 
 package co.rsk.net;
 
+import co.rsk.config.InternalService;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.BlockConnectorHelper;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SnapSyncState;
+import co.rsk.net.sync.SyncMessageHandler;
 import co.rsk.trie.TrieDTO;
 import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieDTOInOrderRecoverer;
@@ -42,19 +44,20 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 /**
  * Snapshot Synchronization consist in 3 steps:
- * 1. Status: exchange message with the server, to know which block we are going to sync and whats the size of the Unitrie of that block.
+ * 1. Status: exchange message with the server, to know which block we are going to sync and what the size of the Unitrie of that block is.
  * it also exchanges previous blocks (4k) and the block of the snapshot, which has a root hash of the state.
  * 2. State chunks: share the state in chunks of N nodes. Each chunk is independently verifiable.
  * 3. Rebuild the state: Rebuild the state in the client side, save it to the db and save also the blocks corresponding to the snapshot.
  * <p>
  * After this process, the node should be able to start the long sync to the tip and then the backward sync to the genesis.
  */
-public class SnapshotProcessor {
+public class SnapshotProcessor implements InternalService {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
 
@@ -68,31 +71,20 @@ public class SnapshotProcessor {
     private final PeersInformation peersInformation;
     private final TransactionPool transactionPool;
     private long messageId = 0;
-    private BigInteger stateSize = BigInteger.ZERO;
-    private BigInteger stateChunkSize = BigInteger.ZERO;
-    private SnapSyncState snapSyncState;
-    private final List<TrieDTO> allNodes;
-
-    private long remoteTrieSize;
-    private byte[] remoteRootHash;
-    private final List<Pair<Block,BlockDifficulty>> blocks;
-    private Block lastBlock;
-    private BlockDifficulty lastBlockDifficulty;
-
-    private final ConcurrentLinkedQueue<ChunkTask> chunkTasks = new ConcurrentLinkedQueue<>();
-    private PeersInformation peers;
 
     // flag for parallel requests
     private final boolean parallel;
 
-    // priority queue for ordering chunk responses
-    private final PriorityQueue<SnapStateChunkResponseMessage> responseQueue = new PriorityQueue<>(
-            Comparator.comparingLong(SnapStateChunkResponseMessage::getFrom)
-    );
+    private final BlockingQueue<SyncMessageHandler.Job> requestQueue = new LinkedBlockingQueue<>();
 
-    private long nextExpectedFrom = 0L;
+    private volatile Boolean isRunning;
+    private final Thread thread = new Thread(new SyncMessageHandler("SNAP requests", requestQueue) {
 
-    private boolean syncing;
+        @Override
+        public boolean isRunning() {
+            return isRunning;
+        }
+    }, "snap sync request handler");
 
     public SnapshotProcessor(Blockchain blockchain,
                              TrieStore trieStore,
@@ -105,37 +97,22 @@ public class SnapshotProcessor {
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
-        this.allNodes = Lists.newArrayList();
         this.blockStore = blockStore;
-        this.blocks = Lists.newArrayList();
         this.transactionPool = transactionPool;
         this.parallel = isParallelEnabled;
-        this.syncing = false;
     }
 
-    public void startSyncing(PeersInformation peers, SnapSyncState snapSyncState) {
-        // TODO(snap-poc) temporary hack, code in this should be moved to SnapSyncState probably
-        if (this.syncing) {
-            return;
-        }
-        this.syncing = true;
-        this.snapSyncState = snapSyncState;
-        this.peers = peers;
-        this.stateSize = BigInteger.ZERO;
-        this.stateChunkSize = BigInteger.ZERO;
+    public void startSyncing() {
         // get more than one peer, use the peer queue
         // TODO(snap-poc) deal with multiple peers algorithm here
-        Peer peer = peers.getBestPeerCandidates().get(0);
+        Peer peer = peersInformation.getBestPeerCandidates().get(0);
         logger.info("CLIENT - Starting Snapshot sync.");
         requestSnapStatus(peer);
     }
 
     // TODO(snap-poc) should be called on errors too
-    private void stopSyncing() {
-        this.syncing = false;
-        this.stateSize = BigInteger.ZERO;
-        this.stateChunkSize = BigInteger.ZERO;
-        this.snapSyncState.finished();
+    private void stopSyncing(SnapSyncState state) {
+        state.finish();
     }
 
     /**
@@ -146,7 +123,25 @@ public class SnapshotProcessor {
         peer.sendMessage(message);
     }
 
-    public void processSnapStatusRequest(Peer sender) {
+    public void processSnapStatusRequest(Peer sender, SnapStatusRequestMessage requestMessage) {
+        if (isRunning != Boolean.TRUE) {
+            logger.warn("processSnapStatusRequest: invalid state, isRunning: [{}]", isRunning);
+            return;
+        }
+
+        try {
+            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage) {
+                @Override
+                public void run() {
+                    processSnapStatusRequestInternal(sender, requestMessage);
+                }
+            });
+        } catch (InterruptedException e) {
+            logger.warn("SnapStatusRequestMessage processing was interrupted", e);
+        }
+    }
+
+    void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage ignoredRequestMessage) {
         logger.debug("SERVER - Processing snapshot status request.");
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
         long checkpointBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
@@ -175,20 +170,24 @@ public class SnapshotProcessor {
         sender.sendMessage(responseMessage);
     }
 
-    public void processSnapStatusResponse(Peer sender, SnapStatusResponseMessage responseMessage) {
+    public void processSnapStatusResponse(SnapSyncState state, Peer sender, SnapStatusResponseMessage responseMessage) {
         List<Block> blocksFromResponse = responseMessage.getBlocks();
         List<BlockDifficulty> difficultiesFromResponse = responseMessage.getDifficulties();
-        this.lastBlock = blocksFromResponse.get(blocksFromResponse.size() - 1);
-        this.lastBlockDifficulty = lastBlock.getCumulativeDifficulty();
-        this.remoteRootHash = this.lastBlock.getStateRoot();
-        this.remoteTrieSize = responseMessage.getTrieSize();
+        Block lastBlock = blocksFromResponse.get(blocksFromResponse.size() - 1);
+
+        state.setLastBlock(lastBlock);
+        state.setLastBlockDifficulty(lastBlock.getCumulativeDifficulty());
+        state.setRemoteRootHash(lastBlock.getStateRoot());
+        state.setRemoteTrieSize(responseMessage.getTrieSize());
+        List<Pair<Block, BlockDifficulty>> blocks = state.getBlocks();
+
         for (int i = 0; i < blocksFromResponse.size(); i++) {
-            this.blocks.add(new ImmutablePair<>(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
+            blocks.add(new ImmutablePair<>(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
         }
-        logger.debug("CLIENT - Processing snapshot status response - last blockNumber: {} rootHash: {} triesize: {}", lastBlock.getNumber(), remoteRootHash, remoteTrieSize);
+        logger.debug("CLIENT - Processing snapshot status response - last blockNumber: {} rootHash: {} triesize: {}", lastBlock.getNumber(), state.getRemoteRootHash(), state.getRemoteTrieSize());
         requestBlocksChunk(sender, blocksFromResponse.get(0).getNumber());
-        generateChunkRequestTasks();
-        startRequestingChunks();
+        generateChunkRequestTasks(state);
+        startRequestingChunks(state);
     }
 
     /**
@@ -199,11 +198,29 @@ public class SnapshotProcessor {
         sender.sendMessage(new SnapBlocksRequestMessage(blockNumber));
     }
 
-    public void processSnapBlocksRequest(Peer sender, SnapBlocksRequestMessage snapBlocksRequestMessage) {
+    public void processSnapBlocksRequest(Peer sender, SnapBlocksRequestMessage requestMessage) {
+        if (isRunning != Boolean.TRUE) {
+            logger.warn("processSnapBlocksRequest: invalid state, isRunning: [{}]", isRunning);
+            return;
+        }
+
+        try {
+            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage) {
+                @Override
+                public void run() {
+                    processSnapBlocksRequestInternal(sender, requestMessage);
+                }
+            });
+        } catch (InterruptedException e) {
+            logger.warn("SnapBlocksRequestMessage processing was interrupted", e);
+        }
+    }
+
+    void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
         logger.debug("SERVER - Processing snap blocks request");
         List<Block> blocks = Lists.newArrayList();
         List<BlockDifficulty> difficulties = Lists.newArrayList();
-        for (long i = snapBlocksRequestMessage.getBlockNumber() - BLOCK_CHUNK_SIZE; i < snapBlocksRequestMessage.getBlockNumber(); i++) {
+        for (long i = requestMessage.getBlockNumber() - BLOCK_CHUNK_SIZE; i < requestMessage.getBlockNumber(); i++) {
             Block block = blockchain.getBlockByNumber(i);
             blocks.add(block);
             difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
@@ -212,15 +229,15 @@ public class SnapshotProcessor {
         sender.sendMessage(responseMessage);
     }
 
-    public void processSnapBlocksResponse(Peer sender, SnapBlocksResponseMessage snapBlocksResponseMessage) {
+    public void processSnapBlocksResponse(SnapSyncState state, Peer sender, SnapBlocksResponseMessage responseMessage) {
         logger.debug("CLIENT - Processing snap blocks response");
-        List<Block> blocksFromResponse = snapBlocksResponseMessage.getBlocks();
-        List<BlockDifficulty> difficultiesFromResponse = snapBlocksResponseMessage.getDifficulties();
+        List<Block> blocksFromResponse = responseMessage.getBlocks();
+        List<BlockDifficulty> difficultiesFromResponse = responseMessage.getDifficulties();
         for (int i = 0; i < blocksFromResponse.size(); i++) {
-            this.blocks.add(new ImmutablePair<>(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
+            state.getBlocks().add(new ImmutablePair<>(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
         }
         long nextChunk = blocksFromResponse.get(0).getNumber();
-        if (nextChunk > this.lastBlock.getNumber() - BLOCKS_REQUIRED) {
+        if (nextChunk > state.getLastBlock().getNumber() - BLOCKS_REQUIRED) {
             requestBlocksChunk(sender, nextChunk);
         } else {
             logger.info("CLIENT - Finished Snap blocks sync.");
@@ -237,70 +254,91 @@ public class SnapshotProcessor {
         logger.debug("CLIENT - Request sent state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
     }
 
-    public void processStateChunkRequest(Peer sender, SnapStateChunkRequestMessage request) {
-        new Thread(() -> {
-            long startChunk = System.currentTimeMillis();
-            logger.debug("SERVER - Processing state chunk request from node {}", sender.getPeerNodeID());
-            List<byte[]> trieEncoded = new ArrayList<>();
-            Block block = blockchain.getBlockByNumber(request.getBlockNumber());
-            final long to = request.getFrom() + (request.getChunkSize() * 1024);
-            TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom(), to);
+    public void processStateChunkRequest(Peer sender, SnapStateChunkRequestMessage requestMessage) {
+        if (isRunning != Boolean.TRUE) {
+            logger.warn("processStateChunkRequest: invalid state, isRunning: [{}]", isRunning);
+            return;
+        }
 
-            // First we add the root nodes on the left of the current node. They are used to validate the chunk.
-            List<byte[]> preRootNodes = it.getPreRootNodes().stream().map((t) -> RLP.encodeList(RLP.encodeElement(t.getEncoded()), RLP.encodeElement(getBytes(t.getLeftHash())))).collect(Collectors.toList());
-            byte[] preRootNodesBytes = !preRootNodes.isEmpty() ? RLP.encodeList(preRootNodes.toArray(new byte[0][0])) : RLP.encodedEmptyList();
-
-            // Then we add the nodes corresponding to the chunk.
-            TrieDTO first = it.peek();
-            TrieDTO last = null;
-            while (it.hasNext()) {
-                TrieDTO e = it.next();
-                if (it.hasNext() || it.isEmpty()) {
-                    last = e;
-                    trieEncoded.add(RLP.encodeElement(e.getEncoded()));
+        try {
+            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage) {
+                @Override
+                public void run() {
+                    processStateChunkRequestInternal(sender, requestMessage);
                 }
-            }
-            byte[] firstNodeLeftHash = RLP.encodeElement(first.getLeftHash());
-            byte[] nodesBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
-            byte[] lastNodeHashes = last != null ? RLP.encodeList(RLP.encodeElement(getBytes(last.getLeftHash())), RLP.encodeElement(getBytes(last.getRightHash()))) : RLP.encodedEmptyList();
-
-            // Last we add the root nodes on the right of the last visited node. They are used to validate the chunk.
-            List<byte[]> postRootNodes = it.getNodesLeftVisiting().stream().map((t) -> RLP.encodeList(RLP.encodeElement(t.getEncoded()), RLP.encodeElement(getBytes(t.getRightHash())))).collect(Collectors.toList());
-            byte[] postRootNodesBytes = !postRootNodes.isEmpty() ? RLP.encodeList(postRootNodes.toArray(new byte[0][0])) : RLP.encodedEmptyList();
-            byte[] chunkBytes = RLP.encodeList(preRootNodesBytes, nodesBytes, firstNodeLeftHash, lastNodeHashes, postRootNodesBytes);
-
-            SnapStateChunkResponseMessage responseMessage = new SnapStateChunkResponseMessage(request.getId(), chunkBytes, request.getBlockNumber(), request.getFrom(), to, it.isEmpty());
-
-            long totalChunkTime = System.currentTimeMillis() - startChunk;
-
-            logger.debug("SERVER - Sending state chunk from {} of {} bytes to node {}, totalTime {}ms", request.getFrom(), chunkBytes.length, sender.getPeerNodeID(), totalChunkTime);
-            sender.sendMessage(responseMessage);
-        }).start();
+            });
+        } catch (InterruptedException e) {
+            logger.warn("SnapStateChunkRequestMessage processing was interrupted", e);
+        }
     }
 
-    public void processStateChunkResponse(Peer peer, SnapStateChunkResponseMessage message) {
-        responseQueue.add(message);
-        logger.debug("CLIENT - State chunk received from: {}", message.getFrom());
-        while (!responseQueue.isEmpty()) {
-            SnapStateChunkResponseMessage nextMessage = responseQueue.peek();
+    void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage request) {
+        long startChunk = System.currentTimeMillis();
+        logger.debug("SERVER - Processing state chunk request from node {}", sender.getPeerNodeID());
+        List<byte[]> trieEncoded = new ArrayList<>();
+        Block block = blockchain.getBlockByNumber(request.getBlockNumber());
+        final long to = request.getFrom() + (request.getChunkSize() * 1024);
+        TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom(), to);
+
+        // First we add the root nodes on the left of the current node. They are used to validate the chunk.
+        List<byte[]> preRootNodes = it.getPreRootNodes().stream().map((t) -> RLP.encodeList(RLP.encodeElement(t.getEncoded()), RLP.encodeElement(getBytes(t.getLeftHash())))).collect(Collectors.toList());
+        byte[] preRootNodesBytes = !preRootNodes.isEmpty() ? RLP.encodeList(preRootNodes.toArray(new byte[0][0])) : RLP.encodedEmptyList();
+
+        // Then we add the nodes corresponding to the chunk.
+        TrieDTO first = it.peek();
+        TrieDTO last = null;
+        while (it.hasNext()) {
+            TrieDTO e = it.next();
+            if (it.hasNext() || it.isEmpty()) {
+                last = e;
+                trieEncoded.add(RLP.encodeElement(e.getEncoded()));
+            }
+        }
+        byte[] firstNodeLeftHash = RLP.encodeElement(first.getLeftHash());
+        byte[] nodesBytes = RLP.encodeList(trieEncoded.toArray(new byte[0][0]));
+        byte[] lastNodeHashes = last != null ? RLP.encodeList(RLP.encodeElement(getBytes(last.getLeftHash())), RLP.encodeElement(getBytes(last.getRightHash()))) : RLP.encodedEmptyList();
+
+        // Last we add the root nodes on the right of the last visited node. They are used to validate the chunk.
+        List<byte[]> postRootNodes = it.getNodesLeftVisiting().stream().map((t) -> RLP.encodeList(RLP.encodeElement(t.getEncoded()), RLP.encodeElement(getBytes(t.getRightHash())))).collect(Collectors.toList());
+        byte[] postRootNodesBytes = !postRootNodes.isEmpty() ? RLP.encodeList(postRootNodes.toArray(new byte[0][0])) : RLP.encodedEmptyList();
+        byte[] chunkBytes = RLP.encodeList(preRootNodesBytes, nodesBytes, firstNodeLeftHash, lastNodeHashes, postRootNodesBytes);
+
+        SnapStateChunkResponseMessage responseMessage = new SnapStateChunkResponseMessage(request.getId(), chunkBytes, request.getBlockNumber(), request.getFrom(), to, it.isEmpty());
+
+        long totalChunkTime = System.currentTimeMillis() - startChunk;
+
+        logger.debug("SERVER - Sending state chunk from {} of {} bytes to node {}, totalTime {}ms", request.getFrom(), chunkBytes.length, sender.getPeerNodeID(), totalChunkTime);
+        sender.sendMessage(responseMessage);
+    }
+
+    public void processStateChunkResponse(SnapSyncState state, Peer peer, SnapStateChunkResponseMessage responseMessage) {
+        logger.debug("CLIENT - State chunk received from: {}", responseMessage.getFrom());
+
+        PriorityQueue<SnapStateChunkResponseMessage> queue = state.getSnapStateChunkQueue();
+        queue.add(responseMessage);
+
+        while (!queue.isEmpty()) {
+            SnapStateChunkResponseMessage nextMessage = queue.peek();
+            long nextExpectedFrom = state.getNextExpectedFrom();
             logger.debug("CLIENT - State chunk dequeued from: {} - expected: {}", nextMessage.getFrom(), nextExpectedFrom);
             if (nextMessage.getFrom() == nextExpectedFrom) {
-                processOrderedStateChunkResponse(peer, responseQueue.poll());
-                nextExpectedFrom += chunkSize * 1024L;
+                processOrderedStateChunkResponse(state, peer, queue.poll());
+                state.setNextExpectedFrom(nextExpectedFrom + chunkSize * 1024L);
             } else {
                 break;
             }
         }
-        if (!message.isComplete()) {
-            executeNextChunkRequestTask(peer);
+
+        if (!responseMessage.isComplete()) {
+            executeNextChunkRequestTask(state, peer);
         }
     }
 
-    public void processOrderedStateChunkResponse(Peer peer, SnapStateChunkResponseMessage message) {
+    private void processOrderedStateChunkResponse(SnapSyncState state, Peer peer, SnapStateChunkResponseMessage message) {
         try {
             logger.debug("CLIENT - Processing State chunk received from: {}", message.getFrom());
             peersInformation.getOrRegisterPeer(peer);
-            snapSyncState.newChunk();
+            state.onNewChunk();
 
             RLPList nodeLists = RLP.decodeList(message.getChunkOfTrieKeyValue());
             final RLPList preRootElements = RLP.decodeList(nodeLists.get(0).getRLPData());
@@ -351,25 +389,22 @@ public class SnapshotProcessor {
                 postRootNodes.add(node);
             }
 
-            if (TrieDTOInOrderRecoverer.verifyChunk(this.remoteRootHash, preRootNodes, nodes, postRootNodes)) {
-                this.allNodes.addAll(nodes);
-                this.stateSize = this.stateSize.add(BigInteger.valueOf(trieElements.size()));
-                this.stateChunkSize = this.stateChunkSize.add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length));
-                logger.debug("CLIENT - State progress: {} chunks ({} bytes)", this.stateSize.toString(), this.stateChunkSize.toString());
+            if (TrieDTOInOrderRecoverer.verifyChunk(state.getRemoteRootHash(), preRootNodes, nodes, postRootNodes)) {
+                state.getAllNodes().addAll(nodes);
+                state.setStateSize(state.getStateSize().add(BigInteger.valueOf(trieElements.size())));
+                state.setStateChunkSize(state.getStateChunkSize().add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length)));
+                logger.debug("CLIENT - State progress: {} chunks ({} bytes)", state.getStateSize(), state.getStateChunkSize());
                 if (!message.isComplete()) {
-                    executeNextChunkRequestTask(peer);
+                    executeNextChunkRequestTask(state, peer);
                 } else {
-                    new Thread(() -> {
-                        rebuildStateAndSave();
-                        logger.info("CLIENT - Snapshot sync finished!");
-                        this.stopSyncing();
-                    }).start();
+                    rebuildStateAndSave(state);
+                    logger.info("CLIENT - Snapshot sync finished!");
+                    stopSyncing(state);
                 }
             } else {
                 logger.error("Error while verifying chunk response: {}", message);
                 throw new Exception("Error verifying chunk.");
             }
-
         } catch (Exception e) {
             logger.error("Error while processing chunk response.", e);
         }
@@ -378,13 +413,13 @@ public class SnapshotProcessor {
     /**
      * Once state share is received, rebuild the trie, save it in db and save all the blocks.
      */
-    private void rebuildStateAndSave() {
+    private void rebuildStateAndSave(SnapSyncState state) {
         logger.debug("CLIENT - State Completed! {} chunks ({} bytes) - chunk size = {}",
-                this.stateSize.toString(), this.stateChunkSize.toString(), this.chunkSize);
-        final TrieDTO[] nodeArray = this.allNodes.toArray(new TrieDTO[0]);
+                state.getStateSize(), state.getStateChunkSize(), this.chunkSize);
+        final TrieDTO[] nodeArray = state.getAllNodes().toArray(new TrieDTO[0]);
         logger.debug("CLIENT - Recovering trie...");
         Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, this.trieStore::saveDTO);
-        if (!result.isPresent() || !Arrays.equals(this.remoteRootHash, result.get().calculateHash())) {
+        if (!result.isPresent() || !Arrays.equals(state.getRemoteRootHash(), result.get().calculateHash())) {
             logger.error("CLIENT - State final validation FAILED");
         } else {
             logger.debug("CLIENT - State final validation OK!");
@@ -392,63 +427,65 @@ public class SnapshotProcessor {
 
         logger.debug("CLIENT - Saving previous blocks...");
         this.blockchain.removeBlocksByNumber(0);
-        BlockConnectorHelper blockConnector = new BlockConnectorHelper(this.blockStore, this.blocks);
+        BlockConnectorHelper blockConnector = new BlockConnectorHelper(this.blockStore, state.getBlocks());
         blockConnector.startConnecting();
         logger.debug("CLIENT - Setting last block as best block...");
-        this.blockchain.setStatus(this.lastBlock, this.lastBlockDifficulty);
-        this.transactionPool.setBestBlock(this.lastBlock);
+        this.blockchain.setStatus(state.getLastBlock(), state.getLastBlockDifficulty());
+        this.transactionPool.setBestBlock(state.getLastBlock());
     }
 
-    private void generateChunkRequestTasks() {
+    private void generateChunkRequestTasks(SnapSyncState state) {
         long from = 0;
         logger.debug("Generating chunk request tasks...");
-        while (from < remoteTrieSize) {
-            ChunkTask task = new ChunkTask(this.lastBlock.getNumber(), from, chunkSize);
-            chunkTasks.add(task);
+        while (from < state.getRemoteTrieSize()) {
+            SnapSyncState.ChunkTask task = new SnapSyncState.ChunkTask(state.getLastBlock().getNumber(), from);
+            state.getChunkTaskQueue().add(task);
             from += chunkSize * 1024L;
         }
     }
 
-    private void startRequestingChunks() {
-        List<Peer> bestPeerCandidates = peers.getBestPeerCandidates();
+    private void startRequestingChunks(SnapSyncState state) {
+        List<Peer> bestPeerCandidates = peersInformation.getBestPeerCandidates();
         List<Peer> peerList = bestPeerCandidates.subList(0, !parallel ? 1 : bestPeerCandidates.size());
         for (Peer peer : peerList) {
-            executeNextChunkRequestTask(peer);
+            executeNextChunkRequestTask(state, peer);
         }
     }
 
-    private void executeNextChunkRequestTask(Peer peer) {
-        if (!chunkTasks.isEmpty()) {
-            ChunkTask task = chunkTasks.poll();
-            task.setPeer(peer);
-            task.execute();
+    private void executeNextChunkRequestTask(SnapSyncState state, Peer peer) {
+        Queue<SnapSyncState.ChunkTask> taskQueue = state.getChunkTaskQueue();
+        if (!taskQueue.isEmpty()) {
+            SnapSyncState.ChunkTask task = taskQueue.poll();
+
+            requestStateChunk(peer, task.getFrom(), task.getBlockNumber(), chunkSize);
         } else {
             logger.warn("No more chunk request tasks.");
         }
     }
 
-    public class ChunkTask {
-        private final long blockNumber;
-        private final long from;
-        private final int chunkSize;
-        private Peer peer;
-
-        public ChunkTask(long blockNumber, long from, int chunkSize) {
-            this.blockNumber = blockNumber;
-            this.from = from;
-            this.chunkSize = chunkSize;
-        }
-
-        public void setPeer(Peer peer) {
-            this.peer = peer;
-        }
-
-        public void execute() {
-            requestStateChunk(peer, from, blockNumber, chunkSize);
-        }
-    }
-
     private static byte[] getBytes(byte[] result) {
         return result != null ? result : new byte[0];
+    }
+
+    @Override
+    public void start() {
+        if (isRunning != null) {
+            logger.warn("Invalid state, isRunning: [{}]", isRunning);
+            return;
+        }
+
+        isRunning = Boolean.TRUE;
+        thread.start();
+    }
+
+    @Override
+    public void stop() {
+        if (isRunning != Boolean.TRUE) {
+            logger.warn("Invalid state, isRunning: [{}]", isRunning);
+            return;
+        }
+
+        isRunning = Boolean.FALSE;
+        thread.interrupt();
     }
 }
