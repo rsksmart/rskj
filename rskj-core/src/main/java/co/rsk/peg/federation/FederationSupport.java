@@ -36,7 +36,7 @@ public interface FederationSupport {
     int getRetiringFederationThreshold();
     Instant getRetiringFederationCreationTime();
     long getRetiringFederationCreationBlockNumber();
-    byte[] getRetiringFederatorPublicKey(int index);
+    byte[] getRetiringFederatorBtcPublicKey(int index);
     byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
     List<UTXO> getRetiringFederationBtcUTXOs();
 
