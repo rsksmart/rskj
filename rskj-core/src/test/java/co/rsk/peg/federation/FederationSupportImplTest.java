@@ -830,6 +830,13 @@ class FederationSupportImplTest {
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
             assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
         }
+
+        @Test
+        @Tag("getRetiringFederatorBtcPublicKey")
+        void getRetiringFederatorBtcPublicKey_returnsNull() {
+            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        }
     }
 
     @Nested
@@ -893,6 +900,13 @@ class FederationSupportImplTest {
         void getRetiringFederationCreationBlockNumber_returnsRetiringFederationNonExistentResponseCode() {
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
             assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+        }
+
+        @Test
+        @Tag("getRetiringFederatorBtcPublicKey")
+        void getRetiringFederatorBtcPublicKey_returnsNull() {
+            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
         }
     }
 
@@ -1187,6 +1201,92 @@ class FederationSupportImplTest {
 
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
             assertThat(retiringFederationCreationBlockNumber, is(oldFederation.getCreationBlockNumber()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationCreationBlockNumber")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void getRetiringFederatorBtcPublicKey_withNewFederationNotActive_returnsNull(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederatorBtcPublicKey")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederatorBtcPublicKey_withNewFederationActive_returnsOldFederationBtcPublicKey(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
+            assertThat(retiringFederatorBtcPublicKey, is(oldFederation.getBtcPublicKeys().get(0).getPubKey()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederatorBtcPublicKey")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederatorBtcPublicKey_withNegativeIndex_throwsIndexOutOfBoundsException(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getRetiringFederatorBtcPublicKey(-1));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederatorBtcPublicKey")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederatorBtcPublicKey_withIndexGreaterThanRetiringFederationSize_throwsIndexOutOfBoundsException(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+                Block executionBlock = mock(Block.class);
+                when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+                federationSupport = federationSupportBuilder
+                    .withFederationConstants(federationMainnetConstants)
+                    .withFederationStorageProvider(storageProvider)
+                    .withRskExecutionBlock(executionBlock)
+                    .withActivations(activations)
+                    .build();
+
+                int retiringFederationSize = oldFederation.getSize();
+                assertThrows(
+                IndexOutOfBoundsException.class, () ->
+                    federationSupport.getActiveFederatorBtcPublicKey(retiringFederationSize)
+            );
         }
 
         private Stream<Arguments> newFederationNotActiveActivationArgs() {
