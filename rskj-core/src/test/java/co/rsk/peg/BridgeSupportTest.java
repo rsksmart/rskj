@@ -25,20 +25,18 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.utils.TransactionUtils;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
+import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.bitcoin.MerkleBranch;
-import co.rsk.peg.btcLockSender.BtcLockSender;
-import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
-import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.btcLockSender.*;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegininstructions.*;
@@ -46,6 +44,7 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.utils.UnrefundablePeginReason;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.*;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
@@ -284,6 +283,250 @@ class BridgeSupportTest {
         }
     }
 
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("federation support tests")
+    class FederationSupportTests {
+        FederationSupport federationSupport;
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+        BridgeSupportBuilder bridgeSupportBuilder = new BridgeSupportBuilder();
+        BridgeSupport bridgeSupport;
+
+        Federation federation = new P2shErpFederationBuilder().build();
+
+        @BeforeEach
+        void setUp() {
+            federationSupport = mock(FederationSupportImpl.class);
+
+            bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeMainnetConstants)
+            .withFederationSupport(federationSupport)
+            .build();
+        }
+
+        @Test
+        void getActiveFederation() {
+            when(federationSupport.getActiveFederation()).thenReturn(federation);
+            assertThat(bridgeSupport.getActiveFederation(), is(federation));
+        }
+
+        @Test
+        void getActiveFederationRedeemScript() {
+            Optional<Script> redeemScript = Optional.ofNullable(federation.getRedeemScript());
+
+            when(federationSupport.getActiveFederationRedeemScript()).thenReturn(redeemScript);
+            assertThat(bridgeSupport.getActiveFederationRedeemScript(), is(redeemScript));
+        }
+
+        @Test
+        void getActiveFederationAddress() {
+            Address address = federation.getAddress();
+
+            when(federationSupport.getActiveFederationAddress()).thenReturn(address);
+            assertThat(bridgeSupport.getActiveFederationAddress(), is(address));
+        }
+
+        @Test
+        void getActiveFederationSize() {
+            int size = federation.getSize();
+
+            when(federationSupport.getActiveFederationSize()).thenReturn(size);
+            assertThat(bridgeSupport.getActiveFederationSize(), is(size));
+        }
+
+        @Test
+        void getActiveFederationThreshold() {
+            int threshold = federation.getNumberOfSignaturesRequired();
+
+            when(federationSupport.getActiveFederationThreshold()).thenReturn(threshold);
+            assertThat(bridgeSupport.getActiveFederationThreshold(), is(threshold));
+        }
+
+        @Test
+        void getActiveFederationCreationTime() {
+            Instant creationTime = federation.getCreationTime();
+
+            when(federationSupport.getActiveFederationCreationTime()).thenReturn(creationTime);
+            assertThat(bridgeSupport.getActiveFederationCreationTime(), is(creationTime));
+        }
+
+        @Test
+        void getActiveFederationCreationBlockNumber() {
+            long creationBlockNumber = federation.getCreationBlockNumber();
+
+            when(federationSupport.getActiveFederationCreationBlockNumber()).thenReturn(creationBlockNumber);
+            assertThat(bridgeSupport.getActiveFederationCreationBlockNumber(), is(creationBlockNumber));
+        }
+
+        @Test
+        void getActiveFederationCreationBlockHeight() {
+            long creationBlockHeight = 100L;
+
+            when(federationSupport.getActiveFederationCreationBlockHeight()).thenReturn(creationBlockHeight);
+            assertThat(bridgeSupport.getActiveFederationCreationBlockHeight(), is(creationBlockHeight));
+        }
+
+        @Test
+        void getActiveFederatorBtcPublicKey() {
+            BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
+
+            when(federationSupport.getActiveFederatorBtcPublicKey(0)).thenReturn(publicKey.getPubKey());
+            assertThat(bridgeSupport.getActiveFederatorBtcPublicKey(0), is(publicKey.getPubKey()));
+        }
+
+        @Test
+        void getActiveFederatorPublicKeyOfType() {
+            FederationMember member = federation.getMembers().get(0);
+            BtcECKey btcKey = member.getBtcPublicKey();
+            ECKey rskKey = member.getRskPublicKey();
+            ECKey mstKey = member.getMstPublicKey();
+
+            when(federationSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(btcKey.getPubKey());
+            assertThat(bridgeSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), is(btcKey.getPubKey()));
+
+            when(federationSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(rskKey.getPubKey());
+            assertThat(bridgeSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), is(rskKey.getPubKey()));
+
+            when(federationSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
+            assertThat(bridgeSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
+        }
+
+        @Test
+        void getRetiringFederation() {
+            when(federationSupport.getRetiringFederation()).thenReturn(federation);
+            assertThat(bridgeSupport.getRetiringFederation(), is(federation));
+        }
+
+        @Test
+        void getRetiringFederationAddress() {
+            Address address = federation.getAddress();
+
+            when(federationSupport.getRetiringFederationAddress()).thenReturn(address);
+            assertThat(bridgeSupport.getRetiringFederationAddress(), is(address));
+        }
+
+        @Test
+        void getRetiringFederationSize() {
+            int size = federation.getSize();
+
+            when(federationSupport.getRetiringFederationSize()).thenReturn(size);
+            assertThat(bridgeSupport.getRetiringFederationSize(), is(size));
+        }
+
+        @Test
+        void getRetiringFederationThreshold() {
+            int threshold = federation.getNumberOfSignaturesRequired();
+
+            when(federationSupport.getRetiringFederationThreshold()).thenReturn(threshold);
+            assertThat(bridgeSupport.getRetiringFederationThreshold(), is(threshold));
+        }
+
+        @Test
+        void getRetiringFederationCreationTime() {
+            Instant creationTime = federation.getCreationTime();
+
+            when(federationSupport.getRetiringFederationCreationTime()).thenReturn(creationTime);
+            assertThat(bridgeSupport.getRetiringFederationCreationTime(), is(creationTime));
+        }
+
+        @Test
+        void getRetiringFederationCreationBlockNumber() {
+            long creationBlockNumber = federation.getCreationBlockNumber();
+
+            when(federationSupport.getRetiringFederationCreationBlockNumber()).thenReturn(creationBlockNumber);
+            assertThat(bridgeSupport.getRetiringFederationCreationBlockNumber(), is(creationBlockNumber));
+        }
+
+        @Test
+        void getRetiringFederatorBtcPublicKey() {
+            BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
+
+            when(federationSupport.getRetiringFederatorBtcPublicKey(0)).thenReturn(publicKey.getPubKey());
+            assertThat(bridgeSupport.getRetiringFederatorBtcPublicKey(0), is(publicKey.getPubKey()));
+        }
+
+        @Test
+        void getRetiringFederatorPublicKeyOfType() {
+            FederationMember member = federation.getMembers().get(0);
+            BtcECKey btcKey = member.getBtcPublicKey();
+            ECKey rskKey = member.getRskPublicKey();
+            ECKey mstKey = member.getMstPublicKey();
+
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(btcKey.getPubKey());
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), is(btcKey.getPubKey()));
+
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(rskKey.getPubKey());
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), is(rskKey.getPubKey()));
+
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
+        }
+
+        @Test
+        void getPendingFederationHash() {
+            PendingFederation pendingFederation = new PendingFederationBuilder().build();
+            Keccak256 hash = pendingFederation.getHash();
+
+            when(federationSupport.getPendingFederationHash()).thenReturn(hash);
+            assertThat(bridgeSupport.getPendingFederationHash(), is(hash));
+        }
+
+        @Test
+        void getPendingFederationSize() {
+            int size = federation.getSize();
+
+            when(federationSupport.getPendingFederationSize()).thenReturn(size);
+            assertThat(bridgeSupport.getPendingFederationSize(), is(size));
+        }
+
+        @Test
+        void getPendingFederatorBtcPublicKey() {
+            BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
+
+            when(federationSupport.getPendingFederatorBtcPublicKey(0)).thenReturn(publicKey.getPubKey());
+            assertThat(bridgeSupport.getPendingFederatorBtcPublicKey(0), is(publicKey.getPubKey()));
+        }
+
+        @Test
+        void getPendingFederatorPublicKeyOfType() {
+            FederationMember member = federation.getMembers().get(0);
+            BtcECKey btcKey = member.getBtcPublicKey();
+            ECKey rskKey = member.getRskPublicKey();
+            ECKey mstKey = member.getMstPublicKey();
+
+            when(federationSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(btcKey.getPubKey());
+            assertThat(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), is(btcKey.getPubKey()));
+
+            when(federationSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(rskKey.getPubKey());
+            assertThat(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), is(rskKey.getPubKey()));
+
+            when(federationSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
+            assertThat(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
+        }
+
+        @Test
+        void voteFederationChange() throws BridgeIllegalArgumentException {
+            Transaction tx = mock(Transaction.class);
+            ABICallSpec callSpec = mock(ABICallSpec.class);
+            int result = 1;
+
+            when(federationSupport.voteFederationChange(any(), any(), any(), any())).thenReturn(result);
+            assertThat(bridgeSupport.voteFederationChange(tx, callSpec), is(result));
+        }
+
+        @Test
+        void updateFederationCreationBlockHeights_callsFederationSupportUpdateFederationCreationBlockHeights() {
+            bridgeSupport.updateFederationCreationBlockHeights();
+            verify(federationSupport).updateFederationCreationBlockHeights();
+        }
+
+        @Test
+        void save_callsFederationSupportSave() throws IOException {
+            bridgeSupport.save();
+            verify(federationSupport).save();
+        }
+    }
+
     @Test
     void getLockingCap() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -307,45 +550,6 @@ class BridgeSupportTest {
         assertEquals(constants.getInitialLockingCap(), bridgeSupport.getLockingCap());
         // Verify the set was called just once
         verify(provider, times(1)).setLockingCap(constants.getInitialLockingCap());
-    }
-
-    @Test
-    void getActivePowpegRedeemScript_before_RSKIP293_activation() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
-            .withActivations(activations)
-            .build();
-
-        assertEquals(Optional.empty(), bridgeSupport.getActiveFederationRedeemScript());
-    }
-
-    @Test
-    void getActivePowpegRedeemScript_after_RSKIP293_activation() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-
-        FederationSupport federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
-            .withActivations(activations)
-            .build();
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
-            .withActivations(activations)
-            .withFederationSupport(federationSupport)
-            .build();
-
-        Script federationRedeemScript = genesisFederation.getRedeemScript();
-
-        assertTrue(bridgeSupport.getActiveFederationRedeemScript().isPresent());
-        assertEquals(
-            federationRedeemScript,
-            bridgeSupport.getActiveFederationRedeemScript().get()
-        );
     }
 
     @Test
@@ -986,7 +1190,6 @@ class BridgeSupportTest {
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-        when(mockBridgeStorageProvider.getLockWhitelist()).thenReturn(lockWhitelist);
 
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
         when(federationStorageProviderMock.getNewFederation(any(), any())).thenReturn(genesisFederation);
@@ -1533,7 +1736,10 @@ class BridgeSupportTest {
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(666L);
 
-        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstantsRegtest.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
+        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(
+            bridgeConstantsRegtest.getFeePerKbConstants(),
+            mock(FeePerKbStorageProvider.class)
+        );
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
 
         FederationSupport federationSupport = federationSupportBuilder
@@ -6296,7 +6502,7 @@ class BridgeSupportTest {
         hashes.add(tx.getHash());
         PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstantsRegtest.getBtcParams(), bits, hashes, 1);
         co.rsk.bitcoinj.core.BtcBlock btcBlock =
-            new co.rsk.bitcoinj.core.BtcBlock(bridgeConstantsRegtest.getBtcParams(), 1, PegTestUtils.createHash(), Sha256Hash.ZERO_HASH,
+            new co.rsk.bitcoinj.core.BtcBlock(bridgeConstantsRegtest.getBtcParams(), 1, BitcoinTestUtils.createHash(1), Sha256Hash.ZERO_HASH,
                 1, 1, 1, new ArrayList<>());
 
         int height = 1;
@@ -6313,9 +6519,9 @@ class BridgeSupportTest {
             mock(Repository.class),
             mock(Block.class),
             mock(Context.class),
-            mock(FederationSupport.class),
             feePerKbSupport,
             whitelistSupport,
+            mock(FederationSupport.class),
             btcBlockStoreFactory,
             mock(ActivationConfig.ForBlock.class),
             signatureCache
@@ -7093,7 +7299,7 @@ class BridgeSupportTest {
 
         private Stream<Arguments> notMainnetAndActivationsArgs() {
             BridgeConstants testnet = BridgeTestNetConstants.getInstance();
-            BridgeConstants regtest = BridgeRegTestConstants.getInstance();
+            BridgeConstants regtest = new BridgeRegTestConstants();
 
             return Stream.of(
                 Arguments.of(activationsPreRSKIP434, testnet),

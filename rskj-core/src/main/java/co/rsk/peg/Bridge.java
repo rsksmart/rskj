@@ -790,7 +790,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        return bridgeSupport.getActiveFederatorPublicKey(index);
+        return bridgeSupport.getActiveFederatorBtcPublicKey(index);
     }
 
     public byte[] getFederatorPublicKeyOfType(Object[] args) throws VMException {
@@ -993,7 +993,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getPendingFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        byte[] publicKey = bridgeSupport.getPendingFederatorPublicKey(index);
+        byte[] publicKey = bridgeSupport.getPendingFederatorBtcPublicKey(index);
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found

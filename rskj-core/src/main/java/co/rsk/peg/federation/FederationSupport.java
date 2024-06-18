@@ -44,7 +44,7 @@ public interface FederationSupport {
 
     Keccak256 getPendingFederationHash();
     int getPendingFederationSize();
-    byte[] getPendingFederatorPublicKey(int index);
+    byte[] getPendingFederatorBtcPublicKey(int index);
     byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
     int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache, BridgeEventLogger eventLogger);

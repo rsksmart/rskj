@@ -25,6 +25,7 @@ import co.rsk.peg.federation.constants.FederationRegTestConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.constants.WhitelistRegTestConstants;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import co.rsk.peg.feeperkb.constants.FeePerKbRegTestConstants;
@@ -34,11 +35,11 @@ import org.ethereum.crypto.ECKey;
 
 public class BridgeRegTestConstants extends BridgeConstants {
 
-    private static final List<BtcECKey> defaultFederationPublicKeys = Stream.of(
+    private static final List<BtcECKey> defaultFederationPublicKeys = Collections.unmodifiableList(Stream.of(
         "0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124",
         "03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db",
         "02cd53fc53a07f211641a677d250f6de99caf620e8e77071e811a28b3bcddf0be1"
-    ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+    ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
 
     public BridgeRegTestConstants() {
         this(defaultFederationPublicKeys);
