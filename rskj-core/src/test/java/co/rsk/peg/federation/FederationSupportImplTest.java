@@ -826,9 +826,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationCreationBlockNumber")
-        void getRetiringFederationCreationBlockNumber_returnsLongMinusOne() {
+        void getRetiringFederationCreationBlockNumber_returnsRetiringFederationNonExistentResponseCode() {
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is(-1L));
+            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
         }
     }
 
@@ -890,9 +890,9 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getRetiringFederationCreationBlockNumber")
-        void getRetiringFederationCreationBlockNumber_returnsLongMinusOne() {
+        void getRetiringFederationCreationBlockNumber_returnsRetiringFederationNonExistentResponseCode() {
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is(-1L));
+            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
         }
     }
 
@@ -1150,7 +1150,7 @@ class FederationSupportImplTest {
         @ParameterizedTest
         @Tag("getRetiringFederationCreationBlockNumber")
         @MethodSource("newFederationNotActiveActivationArgs")
-        void getRetiringFederationCreationBlockNumber_withNewFederationNotActive_returnsLongMinusOne(
+        void getRetiringFederationCreationBlockNumber_withNewFederationNotActive_returnsRetiringFederationNonExistentResponseCode(
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
@@ -1165,7 +1165,7 @@ class FederationSupportImplTest {
                 .build();
 
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is(-1L));
+            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @ParameterizedTest
