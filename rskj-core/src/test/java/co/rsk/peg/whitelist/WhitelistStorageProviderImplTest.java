@@ -1,21 +1,25 @@
 package co.rsk.peg.whitelist;
 
 import static co.rsk.peg.whitelist.WhitelistStorageIndexKey.LOCK_ONE_OFF;
+import static co.rsk.peg.whitelist.WhitelistStorageIndexKey.LOCK_UNLIMITED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.InMemoryStorage;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -28,12 +32,16 @@ class WhitelistStorageProviderImplTest {
     private WhitelistStorageProvider whitelistStorageProvider;
     private ActivationConfig.ForBlock activationConfig;
     private StorageAccessor inMemoryStorage;
+    private Address firstBtcAddress;
+    private Address secondBtcAddress;
 
     @BeforeEach
     void setUp() {
         inMemoryStorage = new InMemoryStorage();
         whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
         activationConfig = mock(ActivationConfig.ForBlock.class);
+        firstBtcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "firstBtcAddress");
+        secondBtcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "secondBtcAddress");
     }
 
     @Test
@@ -48,28 +56,47 @@ class WhitelistStorageProviderImplTest {
     @Test
     void save_whenLockWhiteListIsNotNull_ShouldReturnSavedValue() {
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
-        LockWhitelistEntry oneOffWhiteListEntry =  addOneOffWhiteListEntry();
-        lockWhitelist.put(getBtcAddress(), oneOffWhiteListEntry);
+
+        //make sure the lockWhitelist is empty
+        assertEquals(0, lockWhitelist.getAll().size());
+
+        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry();
+        lockWhitelist.put(firstBtcAddress, oneOffWhiteListEntry);
 
         whitelistStorageProvider.save(activationConfig);
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
         assertEquals(1, actualLockWhitelist.getAll().size());
+
+        //Making sure the saved value is correct
+        Map<Address, OneOffWhiteListEntry> whitelistedAddresses = getAddressFromOneOffWhiteListEntryInMemoryStorage();
+        assertTrue(whitelistedAddresses.containsKey(firstBtcAddress));
     }
 
     @Test
     void save_whenIsActiveRSKIP87_ShouldSavedUnlimitedLockWhitelist() {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(true);
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
-        LockWhitelistEntry oneOffWhiteListEntry =  addOneOffWhiteListEntry();
-        LockWhitelistEntry unlimitedWhiteListEntry = addUnlimitedWhiteListEntry();
-        lockWhitelist.put(getBtcAddress(), oneOffWhiteListEntry);
-        lockWhitelist.put(getBtcAddress(), unlimitedWhiteListEntry);
+
+        //make sure the lockWhitelist is empty
+        assertEquals(0, lockWhitelist.getAll().size());
+
+        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry();
+        LockWhitelistEntry unlimitedWhiteListEntry = createUnlimitedWhiteListEntry();
+        lockWhitelist.put(firstBtcAddress, oneOffWhiteListEntry);
+        lockWhitelist.put(secondBtcAddress, unlimitedWhiteListEntry);
 
         whitelistStorageProvider.save(activationConfig);
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
         assertEquals(2, actualLockWhitelist.getAll().size());
+
+        //Making sure the saved value is correct
+        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
+        assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
+
+        Map<Address, LockWhitelistEntry> lockWhitelistEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        assertTrue(lockWhitelistEntryMap.containsKey(secondBtcAddress));
     }
 
     @Test
@@ -82,12 +109,14 @@ class WhitelistStorageProviderImplTest {
     @Test
     void getLockWhitelist_whenLockWhitelistIsNotNull_shouldReturnOneEntry() {
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
-        LockWhitelistEntry oneOffWhiteListEntry =  addOneOffWhiteListEntry();
-        lockWhitelist.put(getBtcAddress(), oneOffWhiteListEntry);
+        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry();
+        lockWhitelist.put(firstBtcAddress, oneOffWhiteListEntry);
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         assertEquals(1, actualLockWhitelist.getAll().size());
+        //Making sure the correct value was whitelisted
+        assertTrue(actualLockWhitelist.isWhitelisted(firstBtcAddress));
     }
 
     @Test
@@ -95,17 +124,20 @@ class WhitelistStorageProviderImplTest {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(true);
         saveInMemoryStorageOneOffWhiteListEntry();
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
-        LockWhitelistEntry unlimitedWhiteListEntry = addUnlimitedWhiteListEntry();
-        lockWhitelist.put(getBtcAddress(), unlimitedWhiteListEntry);
+        LockWhitelistEntry unlimitedWhiteListEntry = createUnlimitedWhiteListEntry();
+        lockWhitelist.put(secondBtcAddress, unlimitedWhiteListEntry);
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         assertEquals(2, actualLockWhitelist.getAll().size());
+        //Making sure the correct value was whitelisted
+        assertTrue(actualLockWhitelist.isWhitelisted(firstBtcAddress));
+        assertTrue(actualLockWhitelist.isWhitelisted(secondBtcAddress));
     }
 
     private void saveInMemoryStorageOneOffWhiteListEntry() {
         Coin maxTransferValue = networkParameters.getMaxMoney();
-        OneOffWhiteListEntry oneOffWhiteListEntry = new OneOffWhiteListEntry(getBtcAddress(), maxTransferValue);
+        OneOffWhiteListEntry oneOffWhiteListEntry = new OneOffWhiteListEntry(firstBtcAddress, maxTransferValue);
         List<OneOffWhiteListEntry> oneOffWhiteListEntries = Collections.singletonList(oneOffWhiteListEntry);
         Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffWhiteListEntries, 100);
 
@@ -116,17 +148,29 @@ class WhitelistStorageProviderImplTest {
         );
     }
 
-    private LockWhitelistEntry addOneOffWhiteListEntry() {
+    private LockWhitelistEntry createOneOffWhiteListEntry() {
         Coin maxTransferValue = networkParameters.getMaxMoney();
-        return new OneOffWhiteListEntry(getBtcAddress(), maxTransferValue);
+        return new OneOffWhiteListEntry(firstBtcAddress, maxTransferValue);
     }
 
-    private LockWhitelistEntry addUnlimitedWhiteListEntry() {
-        return new UnlimitedWhiteListEntry(getBtcAddress());
+    private LockWhitelistEntry createUnlimitedWhiteListEntry() {
+        return new UnlimitedWhiteListEntry(secondBtcAddress);
     }
 
-    private Address getBtcAddress() {
-        BtcECKey btcECKey = new BtcECKey();
-        return btcECKey.toAddress(whitelistConstants.getBtcParams());
+    private Map<Address, OneOffWhiteListEntry> getAddressFromOneOffWhiteListEntryInMemoryStorage() {
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData = inMemoryStorage.safeGetFromRepository(
+            LOCK_ONE_OFF.getKey(),
+            data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters)
+        );
+        return oneOffWhitelistAndDisableBlockHeightData.getLeft();
+    }
+
+    private Map<Address, LockWhitelistEntry> getAddressFromUnlimitedWhiteListEntryInMemoryStorage() {
+        Map<Address, LockWhitelistEntry> whitelistedAddresses = new HashMap<>();
+        whitelistedAddresses.putAll(inMemoryStorage.safeGetFromRepository(
+            LOCK_UNLIMITED.getKey(),
+            data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)
+        ));
+        return whitelistedAddresses;
     }
 }
