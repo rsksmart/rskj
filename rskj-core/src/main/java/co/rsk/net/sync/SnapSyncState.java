@@ -32,6 +32,7 @@ import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.*;
@@ -67,19 +68,26 @@ public class SnapSyncState extends BaseSyncState {
     private long nextExpectedFrom = 0L;
 
     private volatile Boolean isRunning;
-    private final Thread thread = new Thread(new SyncMessageHandler("SNAP responses", responseQueue) {
-
-        @Override
-        public boolean isRunning() {
-            return isRunning;
-        }
-    }, "snap sync response handler");
+    private final Thread thread;
 
     public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor, SyncConfiguration syncConfiguration) {
+        this(syncEventsHandler, snapshotProcessor, syncConfiguration, null);
+    }
+
+    @VisibleForTesting
+    SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor,
+                         SyncConfiguration syncConfiguration, @Nullable SyncMessageHandler.Listener listener) {
         super(syncEventsHandler, syncConfiguration);
         this.snapshotProcessor = snapshotProcessor; // TODO(snap-poc) code in SnapshotProcessor should be moved here probably
         this.allNodes = Lists.newArrayList();
         this.blocks = Lists.newArrayList();
+        this.thread = new Thread(new SyncMessageHandler("SNAP responses", responseQueue, listener) {
+
+            @Override
+            public boolean isRunning() {
+                return isRunning;
+            }
+        }, "snap sync response handler");
     }
 
     @Override
@@ -104,6 +112,7 @@ public class SnapSyncState extends BaseSyncState {
             });
         } catch (InterruptedException e) {
             logger.warn("SnapStatusResponseMessage processing was interrupted", e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -118,6 +127,7 @@ public class SnapSyncState extends BaseSyncState {
             });
         } catch (InterruptedException e) {
             logger.warn("SnapBlocksResponseMessage processing was interrupted", e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -132,6 +142,7 @@ public class SnapSyncState extends BaseSyncState {
             });
         } catch (InterruptedException e) {
             logger.warn("SnapStateChunkResponseMessage processing was interrupted", e);
+            Thread.currentThread().interrupt();
         }
     }
 

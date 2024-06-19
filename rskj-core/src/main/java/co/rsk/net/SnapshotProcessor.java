@@ -29,6 +29,7 @@ import co.rsk.trie.TrieDTO;
 import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -42,6 +43,7 @@ import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -78,13 +80,7 @@ public class SnapshotProcessor implements InternalService {
     private final BlockingQueue<SyncMessageHandler.Job> requestQueue = new LinkedBlockingQueue<>();
 
     private volatile Boolean isRunning;
-    private final Thread thread = new Thread(new SyncMessageHandler("SNAP requests", requestQueue) {
-
-        @Override
-        public boolean isRunning() {
-            return isRunning;
-        }
-    }, "snap sync request handler");
+    private final Thread thread;
 
     public SnapshotProcessor(Blockchain blockchain,
                              TrieStore trieStore,
@@ -93,6 +89,18 @@ public class SnapshotProcessor implements InternalService {
                              TransactionPool transactionPool,
                              int chunkSize,
                              boolean isParallelEnabled) {
+        this(blockchain, trieStore, peersInformation, blockStore, transactionPool, chunkSize, isParallelEnabled, null);
+    }
+
+    @VisibleForTesting
+    SnapshotProcessor(Blockchain blockchain,
+                             TrieStore trieStore,
+                             PeersInformation peersInformation,
+                             BlockStore blockStore,
+                             TransactionPool transactionPool,
+                             int chunkSize,
+                             boolean isParallelEnabled,
+                             @Nullable SyncMessageHandler.Listener listener) {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
@@ -100,6 +108,13 @@ public class SnapshotProcessor implements InternalService {
         this.blockStore = blockStore;
         this.transactionPool = transactionPool;
         this.parallel = isParallelEnabled;
+        this.thread = new Thread(new SyncMessageHandler("SNAP requests", requestQueue, listener) {
+
+            @Override
+            public boolean isRunning() {
+                return isRunning;
+            }
+        }, "snap sync request handler");
     }
 
     public void startSyncing() {
@@ -138,6 +153,7 @@ public class SnapshotProcessor implements InternalService {
             });
         } catch (InterruptedException e) {
             logger.warn("SnapStatusRequestMessage processing was interrupted", e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -213,6 +229,7 @@ public class SnapshotProcessor implements InternalService {
             });
         } catch (InterruptedException e) {
             logger.warn("SnapBlocksRequestMessage processing was interrupted", e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -269,6 +286,7 @@ public class SnapshotProcessor implements InternalService {
             });
         } catch (InterruptedException e) {
             logger.warn("SnapStateChunkRequestMessage processing was interrupted", e);
+            Thread.currentThread().interrupt();
         }
     }
 

@@ -36,9 +36,16 @@ public abstract class SyncMessageHandler implements Runnable {
 
     private final BlockingQueue<Job> jobQueue;
 
+    private final Listener listener;
+
     protected SyncMessageHandler(String name, BlockingQueue<Job> jobQueue) {
+        this(name, jobQueue, null);
+    }
+
+    protected SyncMessageHandler(String name, BlockingQueue<Job> jobQueue, Listener listener) {
         this.name = name;
         this.jobQueue = jobQueue;
+        this.listener = listener;
     }
 
     public abstract boolean isRunning();
@@ -46,6 +53,10 @@ public abstract class SyncMessageHandler implements Runnable {
     @Override
     public void run() {
         logger.debug("Starting processing queue of messages for: [{}]", name);
+
+        if (listener != null) {
+            listener.onStart();
+        }
 
         Job job = null;
         Instant jobStart = Instant.MIN;
@@ -65,14 +76,42 @@ public abstract class SyncMessageHandler implements Runnable {
                             job.getMsg().getMessageType(), job.getSender(), name,
                             FormatUtils.formatNanosecondsToSeconds(Duration.between(jobStart, Instant.now()).toNanos()));
                 }
+
+                if (listener != null) {
+                    listener.onJobRun(job);
+                    if (jobQueue.isEmpty()) {
+                        listener.onQueueEmpty();
+                    }
+                }
             } catch (InterruptedException e) {
                 logger.warn("Queue processing was interrupted for: [{}]", name, e);
+                if (listener != null) {
+                    listener.onInterrupted();
+                }
+                Thread.currentThread().interrupt();
+                break;
             } catch (Exception e) {
                 logger.error("Unexpected error processing msg: '[{}]' for: [{}]", job, name, e);
+                if (listener != null) {
+                    listener.onException(e);
+                }
             }
         }
 
+        if (listener != null) {
+            listener.onComplete();
+        }
+
         logger.debug("Finished processing queue of messages for: [{}]", name);
+    }
+
+    public interface Listener {
+        void onStart();
+        void onJobRun(Job job);
+        void onQueueEmpty();
+        void onInterrupted();
+        void onException(Exception e);
+        void onComplete();
     }
 
     public static abstract class Job implements Runnable {
