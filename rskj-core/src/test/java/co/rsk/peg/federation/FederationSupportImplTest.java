@@ -837,6 +837,19 @@ class FederationSupportImplTest {
             byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
             assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
         }
+
+        @Test
+        @Tag("getRetiringFederatorPublicKeyOfType")
+        void getRetiringFederatorPublicKeyOfType_returnsNull() {
+            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+
+            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertThat(retiringFederatorRskPublicKey, is(nullValue()));
+
+            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertThat(retiringFederatorMstPublicKey, is(nullValue()));
+        }
     }
 
     @Nested
@@ -907,6 +920,19 @@ class FederationSupportImplTest {
         void getRetiringFederatorBtcPublicKey_returnsNull() {
             byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorBtcPublicKey(0);
             assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+        }
+
+        @Test
+        @Tag("getRetiringFederatorPublicKeyOfType")
+        void getRetiringFederatorPublicKeyOfType_returnsNull() {
+            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+
+            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertThat(retiringFederatorRskPublicKey, is(nullValue()));
+
+            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertThat(retiringFederatorMstPublicKey, is(nullValue()));
         }
     }
 
@@ -1287,6 +1313,163 @@ class FederationSupportImplTest {
                 IndexOutOfBoundsException.class, () ->
                     federationSupport.getRetiringFederatorBtcPublicKey(retiringFederationSize)
             );
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederatorPublicKeyOfType")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void getRetiringFederatorPublicKeyOfType_withNewFederationNotActive_returnsNull(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertThat(retiringFederatorBtcPublicKey, is(nullValue()));
+
+            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertThat(retiringFederatorRskPublicKey, is(nullValue()));
+
+            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertThat(retiringFederatorMstPublicKey, is(nullValue()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederatorPublicKeyOfType")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederatorPublicKeyOfType_withNewFederationActive_returnsFederatorFromOldFederationPublicKeys(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            BtcECKey federatorFromOldFederationBtcPublicKey = oldFederation.getBtcPublicKeys().get(0);
+            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederation).get(0);
+            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederation).get(0);
+
+            // since old federation was created without specifying rsk public keys
+            // these are set deriving the btc public keys,
+            // so we should first assert that
+            ECKey ecKeyDerivedFromBtcKey = ECKey.fromPublicOnly(federatorFromOldFederationBtcPublicKey.getPubKey());
+            assertThat(federatorFromOldFederationRskPublicKey, is(ecKeyDerivedFromBtcKey));
+            // since old federation was created without specifying mst public keys
+            // these are set copying the rsk public keys,
+            // so we should first assert that
+            assertThat(federatorFromOldFederationMstPublicKey, is(federatorFromOldFederationRskPublicKey));
+
+            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
+
+            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertThat(retiringFederatorRskPublicKey, is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
+
+            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertThat(retiringFederatorMstPublicKey, is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederatorPublicKeyOfType")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederatorPublicKeyOfType_withSpecificRskKeysAndNewFederationActive_returnsExpectedFederatorPublicKeys(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            // create old federation with specific rsk public keys
+            List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
+                new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
+            );
+            Federation oldFederationWithRskKeys = new P2shErpFederationBuilder()
+                .withMembersRskPublicKeys(rskECKeys)
+                .build();
+            storageProvider.setOldFederation(oldFederationWithRskKeys);
+
+            BtcECKey federatorFromOldFederationBtcPublicKey = oldFederationWithRskKeys.getBtcPublicKeys().get(0);
+            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederationWithRskKeys).get(0);
+            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederationWithRskKeys).get(0);
+
+            // since old federation was created without specifying mst public keys
+            // these are set copying the rsk public keys,
+            // so we should first assert that
+            assertThat(federatorFromOldFederationMstPublicKey, is(federatorFromOldFederationRskPublicKey));
+
+            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
+
+            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertThat(retiringFederatorRskPublicKey, is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
+
+            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertThat(retiringFederatorMstPublicKey, is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederatorPublicKeyOfType")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederatorPublicKeyOfType_withSpecificRskAndMstKeysAndNewFederationActive_returnsExpectedFederatorPublicKeys(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            // create old federation with specific rsk and mst public keys
+            List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
+                new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
+            );
+            List<ECKey> mstECKeys = RskTestUtils.getEcKeysFromSeeds(
+                new String[]{"mst01", "mst02", "mst03", "mst04", "mst05", "mst06", "mst07", "mst08", "mst09"}
+            );
+            Federation oldFederationWithRskAndMstKeys = new P2shErpFederationBuilder()
+                .withMembersRskPublicKeys(rskECKeys)
+                .withMembersMstPublicKeys(mstECKeys)
+                .build();
+            storageProvider.setOldFederation(oldFederationWithRskAndMstKeys);
+
+            BtcECKey federatorFromOldFederationBtcPublicKey = oldFederationWithRskAndMstKeys.getBtcPublicKeys().get(0);
+            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederationWithRskAndMstKeys).get(0);
+            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederationWithRskAndMstKeys).get(0);
+
+            byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
+
+            byte[] retiringFederatorRskPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertThat(retiringFederatorRskPublicKey, is(federatorFromOldFederationRskPublicKey.getPubKey(true)));
+
+            byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
+            assertThat(retiringFederatorMstPublicKey, is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
         }
 
         private Stream<Arguments> newFederationNotActiveActivationArgs() {
