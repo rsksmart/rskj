@@ -995,7 +995,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getPendingFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        byte[] publicKey = bridgeSupport.getPendingFederatorPublicKey(index);
+        byte[] publicKey = bridgeSupport.getPendingFederatorBtcPublicKey(index);
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found
