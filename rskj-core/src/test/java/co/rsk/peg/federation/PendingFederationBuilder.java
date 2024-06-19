@@ -1,19 +1,19 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import org.ethereum.crypto.ECKey;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class PendingFederationBuilder {
     private List<BtcECKey> membersBtcPublicKeys;
     private List<ECKey> membersRskPublicKeys;
     private List<ECKey> membersMstPublicKeys;
 
-    public PendingFederationBuilder(){
+    public PendingFederationBuilder() {
         this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true
         );
@@ -42,35 +42,23 @@ public class PendingFederationBuilder {
     }
 
     private List<FederationMember> getFederationMembers() {
+
         if (membersRskPublicKeys.isEmpty()) {
-            getRskPublicKeysFromBtcPublicKeys();
+            membersRskPublicKeys = membersBtcPublicKeys.stream()
+                .map(btcKey -> ECKey.fromPublicOnly(btcKey.getPubKey()))
+                .collect(Collectors.toList());
         }
+
         if (membersMstPublicKeys.isEmpty()) {
-            getMstPublicKeysFromRskPublicKeys();
+            membersMstPublicKeys = new ArrayList<>(membersRskPublicKeys);
         }
 
-        List<FederationMember> federationMembers = new ArrayList<>();
-
-        for (int i = 0; i < membersBtcPublicKeys.size(); i++) {
-            FederationMember federationMember;
-
-            BtcECKey memberBtcPublicKey = membersBtcPublicKeys.get(i);
-            ECKey memberRskPublicKey = membersRskPublicKeys.get(i);
-            ECKey memberMstPublicKey = membersMstPublicKeys.get(i);
-
-            federationMember = new FederationMember(memberBtcPublicKey, memberRskPublicKey, memberMstPublicKey);
-            federationMembers.add(federationMember);
-        }
-        return federationMembers;
-    }
-
-    private void getRskPublicKeysFromBtcPublicKeys() {
-        for (BtcECKey btcPublicKey : membersBtcPublicKeys) {
-            membersRskPublicKeys.add(ECKey.fromPublicOnly(btcPublicKey.getPubKey()));
-        }
-    }
-
-    private void getMstPublicKeysFromRskPublicKeys() {
-        membersMstPublicKeys.addAll(membersRskPublicKeys);
+        return IntStream.range(0, membersBtcPublicKeys.size())
+            .mapToObj(i -> new FederationMember(
+                membersBtcPublicKeys.get(i),
+                membersRskPublicKeys.get(i),
+                membersMstPublicKeys.get(i)
+            ))
+            .collect(Collectors.toList());
     }
 }
