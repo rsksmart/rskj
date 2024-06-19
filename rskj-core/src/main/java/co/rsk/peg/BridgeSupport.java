@@ -1975,8 +1975,8 @@ public class BridgeSupport {
      * @param index the retiring federator's index (zero-based)
      * @return the retiring federator's public key, null if no retiring federation exists
      */
-    public byte[] getRetiringFederatorPublicKey(int index) {
-        return federationSupport.getRetiringFederatorPublicKey(index);
+    public byte[] getRetiringFederatorBtcPublicKey(int index) {
+        return federationSupport.getRetiringFederatorBtcPublicKey(index);
     }
 
     /**

@@ -270,13 +270,13 @@ public class FederationSupportImpl implements FederationSupport {
     public long getRetiringFederationCreationBlockNumber() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return -1L;
+            return FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode();
         }
         return retiringFederation.getCreationBlockNumber();
     }
 
     @Override
-    public byte[] getRetiringFederatorPublicKey(int index) {
+    public byte[] getRetiringFederatorBtcPublicKey(int index) {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return null;

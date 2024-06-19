@@ -2206,7 +2206,7 @@ public class BridgeSupportIT {
 
         assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
         assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
-        assertNull(bridgeSupport.getRetiringFederatorPublicKey(0));
+        assertNull(bridgeSupport.getRetiringFederatorBtcPublicKey(0));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
@@ -2250,7 +2250,7 @@ public class BridgeSupportIT {
 
         assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
         assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
-        assertNull(bridgeSupport.getRetiringFederatorPublicKey(0));
+        assertNull(bridgeSupport.getRetiringFederatorBtcPublicKey(0));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
         assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
@@ -2300,7 +2300,7 @@ public class BridgeSupportIT {
         assertEquals(mockedOldFederation.getAddress().toString(), bridgeSupport.getRetiringFederationAddress().toString());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(4);
         for (int i = 0; i < 4; i++) {
-            assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getRetiringFederatorPublicKey(i)));
+            assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getRetiringFederatorBtcPublicKey(i)));
             assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
             assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
             assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
