@@ -48,6 +48,10 @@ class WhitelistStorageProviderImplTest {
     @Test
     void save_whenLockWhiteListIsNotNull_ShouldReturnSavedValue() {
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
+
+        //make sure the lockWhitelist is empty
+        assertEquals(0, lockWhitelist.getAll().size());
+
         LockWhitelistEntry oneOffWhiteListEntry =  addOneOffWhiteListEntry();
         lockWhitelist.put(getBtcAddress(), oneOffWhiteListEntry);
 
@@ -61,6 +65,10 @@ class WhitelistStorageProviderImplTest {
     void save_whenIsActiveRSKIP87_ShouldSavedUnlimitedLockWhitelist() {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(true);
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
+
+        //make sure the lockWhitelist is empty
+        assertEquals(0, lockWhitelist.getAll().size());
+
         LockWhitelistEntry oneOffWhiteListEntry =  addOneOffWhiteListEntry();
         LockWhitelistEntry unlimitedWhiteListEntry = addUnlimitedWhiteListEntry();
         lockWhitelist.put(getBtcAddress(), oneOffWhiteListEntry);
