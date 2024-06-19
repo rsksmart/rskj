@@ -276,7 +276,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public byte[] getRetiringFederatorPublicKey(int index) {
+    public byte[] getRetiringFederatorBtcPublicKey(int index) {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return null;
