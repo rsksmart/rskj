@@ -28,6 +28,7 @@ import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.FederationMember.KeyType;
@@ -1511,6 +1512,13 @@ class FederationSupportImplTest {
             int pendingFederationSize = federationSupport.getPendingFederationSize();
             assertThat(pendingFederationSize, is(FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode()));
         }
+
+        @Test
+        @Tag("getPendingFederationHash")
+        void getPendingFederationHash_returnsNull() {
+            Keccak256 pendingFederationHash = federationSupport.getPendingFederationHash();
+            assertThat(pendingFederationHash, is(nullValue()));
+        }
     }
 
     @Nested
@@ -1539,6 +1547,13 @@ class FederationSupportImplTest {
         void getPendingFederationSize_returnsPendingFederationSize() {
             int pendingFederationSize = federationSupport.getPendingFederationSize();
             assertThat(pendingFederationSize, is(pendingFederation.getSize()));
+        }
+
+        @Test
+        @Tag("getPendingFederationHash")
+        void getPendingFederationHash_returnsPendingFederationHash() {
+            Keccak256 pendingFederationHash = federationSupport.getPendingFederationHash();
+            assertThat(pendingFederationHash, is(pendingFederation.getHash()));
         }
     }
 
