@@ -346,7 +346,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public byte[] getPendingFederatorPublicKey(int index) {
+    public byte[] getPendingFederatorBtcPublicKey(int index) {
         PendingFederation currentPendingFederation = getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -354,10 +354,6 @@ public class FederationSupportImpl implements FederationSupport {
         }
 
         List<BtcECKey> publicKeys = currentPendingFederation.getBtcPublicKeys();
-
-        if (index < 0 || index >= publicKeys.size()) {
-            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", publicKeys.size() - 1));
-        }
 
         return publicKeys.get(index).getPubKey();
     }

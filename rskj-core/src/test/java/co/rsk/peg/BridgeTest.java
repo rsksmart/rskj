@@ -1950,7 +1950,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getPendingFederatorPublicKey(federatorIndex);
+            verify(bridgeSupportMock, times(1)).getPendingFederatorBtcPublicKey(federatorIndex);
         }
     }
 
