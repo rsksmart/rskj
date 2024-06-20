@@ -176,8 +176,8 @@ class FederationSupportImplTest {
         @Tag("getActiveFederatorPublicKeyOfType")
         void getActiveFederatorPublicKeyOfType_returnsFederatorPublicKeysFromGenesisFederation() {
             BtcECKey federatorFromGenesisFederationBtcPublicKey = genesisFederation.getBtcPublicKeys().get(0);
-            ECKey federatorFromGenesisFederationRskPublicKey = getRskPublicKeysFromFederation(genesisFederation).get(0);
-            ECKey federatorFromGenesisFederationMstPublicKey = getMstPublicKeysFromFederation(genesisFederation).get(0);
+            ECKey federatorFromGenesisFederationRskPublicKey = getRskPublicKeysFromFederationMembers(genesisFederation.getMembers()).get(0);
+            ECKey federatorFromGenesisFederationMstPublicKey = getMstPublicKeysFromFederationMembers(genesisFederation.getMembers()).get(0);
 
             // since genesis federation was created without specifying rsk public keys
             // these are set deriving the btc public keys,
@@ -307,8 +307,8 @@ class FederationSupportImplTest {
         @Tag("getActiveFederatorPublicKeyOfType")
         void getActiveFederatorPublicKeyOfType_returnsExpectedFederatorPublicKeys() {
             BtcECKey federatorFromNewFederationBtcPublicKey = newFederation.getBtcPublicKeys().get(0);
-            ECKey federatorFromNewFederationRskPublicKey = getRskPublicKeysFromFederation(newFederation).get(0);
-            ECKey federatorFromNewFederationMstPublicKey = getMstPublicKeysFromFederation(newFederation).get(0);
+            ECKey federatorFromNewFederationRskPublicKey = getRskPublicKeysFromFederationMembers(newFederation.getMembers()).get(0);
+            ECKey federatorFromNewFederationMstPublicKey = getMstPublicKeysFromFederationMembers(newFederation.getMembers()).get(0);
 
             // since new federation was created without specifying rsk public keys
             // these are set deriving the btc public keys,
@@ -343,8 +343,8 @@ class FederationSupportImplTest {
             storageProvider.setNewFederation(newFederation);
 
             BtcECKey federatorFromNewFederationBtcPublicKey = newFederation.getBtcPublicKeys().get(0);
-            ECKey federatorFromNewFederationRskPublicKey = getRskPublicKeysFromFederation(newFederation).get(0);
-            ECKey federatorFromNewFederationMstPublicKey = getMstPublicKeysFromFederation(newFederation).get(0);
+            ECKey federatorFromNewFederationRskPublicKey = getRskPublicKeysFromFederationMembers(newFederation.getMembers()).get(0);
+            ECKey federatorFromNewFederationMstPublicKey = getMstPublicKeysFromFederationMembers(newFederation.getMembers()).get(0);
 
             // since new federation was created without specifying mst public keys
             // these are set copying the rsk public keys,
@@ -378,8 +378,8 @@ class FederationSupportImplTest {
             storageProvider.setNewFederation(newFederation);
 
             BtcECKey federatorFromNewFederationBtcPublicKey = newFederation.getBtcPublicKeys().get(0);
-            ECKey federatorFromNewFederationRskPublicKey = getRskPublicKeysFromFederation(newFederation).get(0);
-            ECKey federatorFromNewFederationMstPublicKey = getMstPublicKeysFromFederation(newFederation).get(0);
+            ECKey federatorFromNewFederationRskPublicKey = getRskPublicKeysFromFederationMembers(newFederation.getMembers()).get(0);
+            ECKey federatorFromNewFederationMstPublicKey = getMstPublicKeysFromFederationMembers(newFederation.getMembers()).get(0);
 
             byte[] activeFederatorBtcPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.BTC);
             assertThat(activeFederatorBtcPublicKey, is(federatorFromNewFederationBtcPublicKey.getPubKey()));
@@ -757,12 +757,12 @@ class FederationSupportImplTest {
 
         private Stream<Arguments> expectedFederatorPublicKeyOfTypeArgs() {
             BtcECKey federatorFromOldFederationBtcPublicKey = oldFederation.getBtcPublicKeys().get(0);
-            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederation).get(0);
-            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederation).get(0);
+            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederationMembers(oldFederation.getMembers()).get(0);
+            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederationMembers(oldFederation.getMembers()).get(0);
 
             BtcECKey federatorFromNewFederationBtcPublicKey = newFederation.getBtcPublicKeys().get(0);
-            ECKey federatorFromNewFederationRskPublicKey = getRskPublicKeysFromFederation(newFederation).get(0);
-            ECKey federatorFromNewFederationMstPublicKey = getMstPublicKeysFromFederation(newFederation).get(0);
+            ECKey federatorFromNewFederationRskPublicKey = getRskPublicKeysFromFederationMembers(newFederation.getMembers()).get(0);
+            ECKey federatorFromNewFederationMstPublicKey = getMstPublicKeysFromFederationMembers(newFederation.getMembers()).get(0);
 
             return Stream.of(
                 Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, federatorFromOldFederationBtcPublicKey, federatorFromOldFederationRskPublicKey, federatorFromOldFederationMstPublicKey),
@@ -1361,8 +1361,8 @@ class FederationSupportImplTest {
                 .build();
 
             BtcECKey federatorFromOldFederationBtcPublicKey = oldFederation.getBtcPublicKeys().get(0);
-            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederation).get(0);
-            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederation).get(0);
+            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederationMembers(oldFederation.getMembers()).get(0);
+            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederationMembers(oldFederation.getMembers()).get(0);
 
             // since old federation was created without specifying rsk public keys
             // these are set deriving the btc public keys,
@@ -1411,8 +1411,8 @@ class FederationSupportImplTest {
             storageProvider.setOldFederation(oldFederationWithRskKeys);
 
             BtcECKey federatorFromOldFederationBtcPublicKey = oldFederationWithRskKeys.getBtcPublicKeys().get(0);
-            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederationWithRskKeys).get(0);
-            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederationWithRskKeys).get(0);
+            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederationMembers(oldFederationWithRskKeys.getMembers()).get(0);
+            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederationMembers(oldFederationWithRskKeys.getMembers()).get(0);
 
             // since old federation was created without specifying mst public keys
             // these are set copying the rsk public keys,
@@ -1460,8 +1460,8 @@ class FederationSupportImplTest {
             storageProvider.setOldFederation(oldFederationWithRskAndMstKeys);
 
             BtcECKey federatorFromOldFederationBtcPublicKey = oldFederationWithRskAndMstKeys.getBtcPublicKeys().get(0);
-            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederation(oldFederationWithRskAndMstKeys).get(0);
-            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederation(oldFederationWithRskAndMstKeys).get(0);
+            ECKey federatorFromOldFederationRskPublicKey = getRskPublicKeysFromFederationMembers(oldFederationWithRskAndMstKeys.getMembers()).get(0);
+            ECKey federatorFromOldFederationMstPublicKey = getMstPublicKeysFromFederationMembers(oldFederationWithRskAndMstKeys.getMembers()).get(0);
 
             byte[] retiringFederatorBtcPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.BTC);
             assertThat(retiringFederatorBtcPublicKey, is(federatorFromOldFederationBtcPublicKey.getPubKey()));
@@ -1526,6 +1526,19 @@ class FederationSupportImplTest {
             byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorBtcPublicKey(0);
             assertThat(pendingFederatorBtcPublicKey, is(nullValue()));
         }
+
+        @Test
+        @Tag("getPendingFederatorPublicKeyOfType")
+        void getPendingFederatorPublicKeyOfType_returnsNull() {
+            byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertThat(pendingFederatorBtcPublicKey, is(nullValue()));
+
+            byte[] pendingFederatorRskPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertThat(pendingFederatorRskPublicKey, is(nullValue()));
+
+            byte[] pendingFederatorMstPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.MST);
+            assertThat(pendingFederatorMstPublicKey, is(nullValue()));
+        }
     }
 
     @Nested
@@ -1582,16 +1595,104 @@ class FederationSupportImplTest {
             int pendingFederationSize = pendingFederation.getSize();
             assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getPendingFederatorBtcPublicKey(pendingFederationSize));
         }
+
+        @Test
+        @Tag("getPendingFederatorPublicKeyOfType")
+        void getPendingFederatorPublicKeyOfType_returnsFederatorFromPendingFederationPublicKeys() {
+            BtcECKey federatorFromPendingFederationBtcPublicKey = pendingFederation.getBtcPublicKeys().get(0);
+            ECKey federatorFromPendingFederationRskPublicKey = getRskPublicKeysFromFederationMembers(pendingFederation.getMembers()).get(0);
+            ECKey federatorFromPendingFederationMstPublicKey = getMstPublicKeysFromFederationMembers(pendingFederation.getMembers()).get(0);
+
+            // since pending federation was created without specifying rsk public keys
+            // these are set deriving the btc public keys,
+            // so we should first assert that
+            ECKey ecKeyDerivedFromBtcKey = ECKey.fromPublicOnly(federatorFromPendingFederationBtcPublicKey.getPubKey());
+            assertThat(federatorFromPendingFederationRskPublicKey, is(ecKeyDerivedFromBtcKey));
+            // since pending federation was created without specifying mst public keys
+            // these are set copying the rsk public keys,
+            // so we should first assert that
+            assertThat(federatorFromPendingFederationMstPublicKey, is(federatorFromPendingFederationRskPublicKey));
+
+            byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertThat(pendingFederatorBtcPublicKey, is(federatorFromPendingFederationBtcPublicKey.getPubKey()));
+
+            byte[] pendingFederatorRskPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertThat(pendingFederatorRskPublicKey, is(federatorFromPendingFederationRskPublicKey.getPubKey(true)));
+
+            byte[] pendingFederatorMstPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.MST);
+            assertThat(pendingFederatorMstPublicKey, is(federatorFromPendingFederationMstPublicKey.getPubKey(true)));
+        }
+
+        @Test
+        @Tag("getPendingFederatorPublicKeyOfType")
+        void getPendingFederatorPublicKeyOfType_withSpecificRskKeys_returnsFederatorFromPendingFederationPublicKeys() {
+            // create pending federation with specific rsk public keys
+            List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
+                new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
+            );
+            PendingFederation pendingFederationWithRskKeys = new PendingFederationBuilder()
+                .withMembersRskPublicKeys(rskECKeys)
+                .build();
+            storageProvider.setPendingFederation(pendingFederationWithRskKeys);
+
+            BtcECKey federatorFromPendingFederationBtcPublicKey = pendingFederationWithRskKeys.getBtcPublicKeys().get(0);
+            ECKey federatorFromPendingFederationRskPublicKey = getRskPublicKeysFromFederationMembers(pendingFederationWithRskKeys.getMembers()).get(0);
+            ECKey federatorFromPendingFederationMstPublicKey = getMstPublicKeysFromFederationMembers(pendingFederationWithRskKeys.getMembers()).get(0);
+
+            // since pending federation was created without specifying mst public keys
+            // these are set copying the rsk public keys,
+            // so we should first assert that
+            assertThat(federatorFromPendingFederationMstPublicKey, is(federatorFromPendingFederationRskPublicKey));
+
+            byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertThat(pendingFederatorBtcPublicKey, is(federatorFromPendingFederationBtcPublicKey.getPubKey()));
+
+            byte[] pendingFederatorRskPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertThat(pendingFederatorRskPublicKey, is(federatorFromPendingFederationRskPublicKey.getPubKey(true)));
+
+            byte[] pendingFederatorMstPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.MST);
+            assertThat(pendingFederatorMstPublicKey, is(federatorFromPendingFederationMstPublicKey.getPubKey(true)));
+        }
+
+        @Test
+        @Tag("getPendingFederatorPublicKeyOfType")
+        void getPendingFederatorPublicKeyOfType_withSpecificRskAndMstKeys_returnsFederatorFromPendingFederationPublicKeys() {
+            // create pending federation with specific rsk and mst public keys
+            List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
+                new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
+            );
+            List<ECKey> mstECKeys = RskTestUtils.getEcKeysFromSeeds(
+                new String[]{"mst01", "mst02", "mst03", "mst04", "mst05", "mst06", "mst07", "mst08", "mst09"}
+            );
+            PendingFederation pendingFederationWithRskAndMstKeys = new PendingFederationBuilder()
+                .withMembersRskPublicKeys(rskECKeys)
+                .withMembersMstPublicKeys(mstECKeys)
+                .build();
+            storageProvider.setPendingFederation(pendingFederationWithRskAndMstKeys);
+
+            BtcECKey federatorFromPendingFederationBtcPublicKey = pendingFederationWithRskAndMstKeys.getBtcPublicKeys().get(0);
+            ECKey federatorFromPendingFederationRskPublicKey = getRskPublicKeysFromFederationMembers(pendingFederationWithRskAndMstKeys.getMembers()).get(0);
+            ECKey federatorFromPendingFederationMstPublicKey = getMstPublicKeysFromFederationMembers(pendingFederationWithRskAndMstKeys.getMembers()).get(0);
+
+            byte[] pendingFederatorBtcPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC);
+            assertThat(pendingFederatorBtcPublicKey, is(federatorFromPendingFederationBtcPublicKey.getPubKey()));
+
+            byte[] pendingFederatorRskPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.RSK);
+            assertThat(pendingFederatorRskPublicKey, is(federatorFromPendingFederationRskPublicKey.getPubKey(true)));
+
+            byte[] pendingFederatorMstPublicKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.MST);
+            assertThat(pendingFederatorMstPublicKey, is(federatorFromPendingFederationMstPublicKey.getPubKey(true)));
+        }
     }
 
-    private List<ECKey> getRskPublicKeysFromFederation(Federation federation) {
-        return federation.getMembers().stream()
+    private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
+        return members.stream()
             .map(FederationMember::getRskPublicKey)
             .collect(Collectors.toList());
     }
 
-    private List<ECKey> getMstPublicKeysFromFederation(Federation federation) {
-        return federation.getMembers().stream()
+    private List<ECKey> getMstPublicKeysFromFederationMembers(List<FederationMember> members) {
+        return members.stream()
             .map(FederationMember::getMstPublicKey)
             .collect(Collectors.toList());
     }
