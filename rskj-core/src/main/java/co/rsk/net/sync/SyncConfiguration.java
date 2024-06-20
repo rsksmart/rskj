@@ -23,17 +23,17 @@ import org.ethereum.net.rlpx.Node;
 import javax.annotation.concurrent.Immutable;
 import java.time.Duration;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Immutable
 public final class SyncConfiguration {
     @VisibleForTesting
-    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0, false, false, 60, 0, Collections.emptyList());
+    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0, false, false, 60, 0);
 
     @VisibleForTesting
-    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 0, false, false, 60, 0, Collections.emptyList());
+    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 0, false, false, 60, 0);
 
     private final int expectedPeers;
     private final Duration timeoutWaitingPeers;
@@ -51,7 +51,7 @@ public final class SyncConfiguration {
 
     private final int snapshotSyncLimit;
     private final List<Node> snapshotTrustedPeers;
-    private final Map<String, Node> nodeIdToSnapshotTrustedPeerMap = new HashMap<>();
+    private Map<String, Node> nodeIdToSnapshotTrustedPeerMap;
 
     /**
      * @param expectedPeers            The expected number of peers we would want to start finding a connection point.
@@ -80,7 +80,37 @@ public final class SyncConfiguration {
             double topBest,
             boolean isServerSnapSyncEnabled,
             boolean isClientSnapSyncEnabled,
-            int timeoutWaitingSnapChunk, 
+            int timeoutWaitingSnapChunk,
+            int snapshotSyncLimit) {
+        this(expectedPeers,
+                timeoutWaitingPeers,
+                timeoutWaitingRequest,
+                expirationTimePeerStatus,
+                maxSkeletonChunks,
+                chunkSize,
+                maxRequestedBodies,
+                longSyncLimit,
+                topBest,
+                isServerSnapSyncEnabled,
+                isClientSnapSyncEnabled,
+                timeoutWaitingSnapChunk,
+                snapshotSyncLimit,
+                Collections.emptyList());
+    }
+
+    public SyncConfiguration(
+            int expectedPeers,
+            int timeoutWaitingPeers,
+            int timeoutWaitingRequest,
+            int expirationTimePeerStatus,
+            int maxSkeletonChunks,
+            int chunkSize,
+            int maxRequestedBodies,
+            int longSyncLimit,
+            double topBest,
+            boolean isServerSnapSyncEnabled,
+            boolean isClientSnapSyncEnabled,
+            int timeoutWaitingSnapChunk,
             int snapshotSyncLimit,
             List<Node> snapshotTrustedPeers) {
         this.expectedPeers = expectedPeers;
@@ -97,11 +127,10 @@ public final class SyncConfiguration {
         // TODO(snap-poc) re-visit the need of this specific timeout as the algorithm evolves
         this.timeoutWaitingSnapChunk = Duration.ofSeconds(timeoutWaitingSnapChunk);
         this.snapshotSyncLimit = snapshotSyncLimit;
-        this.snapshotTrustedPeers = snapshotTrustedPeers;
+        this.snapshotTrustedPeers = snapshotTrustedPeers != null ? snapshotTrustedPeers : Collections.emptyList();
 
-        getSnapshotTrustedPeers().forEach(peer -> {
-            nodeIdToSnapshotTrustedPeerMap.put(peer.getId().toString(), peer);
-        });
+        nodeIdToSnapshotTrustedPeerMap = getSnapshotTrustedPeers().stream()
+                .collect(Collectors.toMap(peer -> peer.getId().toString(), peer -> peer));
     }
 
     public final int getExpectedPeers() {
@@ -117,7 +146,7 @@ public final class SyncConfiguration {
     }
 
     public final Duration getTimeoutWaitingRequest() {
-        return timeoutWaitingRequest;
+        return  timeoutWaitingRequest;
     }
 
     public final Duration getExpirationTimePeerStatus() {
@@ -157,10 +186,6 @@ public final class SyncConfiguration {
     }
 
     public List<Node> getSnapshotTrustedPeers() {
-        if (snapshotTrustedPeers == null) {
-            return Collections.emptyList();
-        }
-
         return snapshotTrustedPeers;
     }
 

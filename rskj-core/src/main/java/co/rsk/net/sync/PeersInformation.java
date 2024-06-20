@@ -166,7 +166,7 @@ public class PeersInformation implements SnapshotPeersInformation {
     public Optional<Peer> getBestSnapPeer() {
         return getBestPeer(
                 getBestCandidatesStream()
-                        .filter(entry -> syncConfiguration.getNodeIdToSnapshotTrustedPeerMap().containsKey(entry.getKey().getPeerNodeID().toString()))
+                .filter(this::isSnapPeerCandidate)
         );
     }
 
@@ -207,9 +207,9 @@ public class PeersInformation implements SnapshotPeersInformation {
     }
 
     @Override
-    public List<Peer> getBestPeerCandidatesForSnapSync() {
+    public List<Peer> getBestSnapPeerCandidates() {
         return getBestCandidatesStream()
-                .filter(entry -> syncConfiguration.getNodeIdToSnapshotTrustedPeerMap().containsKey(entry.getKey().getPeerNodeID().toString()))
+                .filter(this::isSnapPeerCandidate)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
@@ -294,5 +294,9 @@ public class PeersInformation implements SnapshotPeersInformation {
 
     public void clearOldFailedPeers() {
         failedPeers.values().removeIf(Instant.now().minusSeconds(TIME_LIMIT_FAILURE_RECORD)::isAfter);
+    }
+
+    private boolean isSnapPeerCandidate(Map.Entry<Peer, SyncPeerStatus> entry) {
+        return syncConfiguration.getNodeIdToSnapshotTrustedPeerMap().containsKey(entry.getKey().getPeerNodeID().toString());
     }
 }

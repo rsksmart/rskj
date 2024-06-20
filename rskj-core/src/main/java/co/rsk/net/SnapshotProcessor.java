@@ -117,7 +117,7 @@ public class SnapshotProcessor implements InternalService {
     public void startSyncing() {
         // get more than one peer, use the peer queue
         // TODO(snap-poc) deal with multiple peers algorithm here
-        Peer peer = peersInformation.getBestPeerCandidatesForSnapSync().get(0);
+        Peer peer = peersInformation.getBestSnapPeerCandidates().get(0);
         logger.info("CLIENT - Starting Snapshot sync.");
         requestSnapStatus(peer);
     }
@@ -460,7 +460,7 @@ public class SnapshotProcessor implements InternalService {
     }
 
     private void startRequestingChunks(SnapSyncState state) {
-        List<Peer> bestPeerCandidates = peersInformation.getBestPeerCandidatesForSnapSync();
+        List<Peer> bestPeerCandidates = peersInformation.getBestSnapPeerCandidates();
         List<Peer> peerList = bestPeerCandidates.subList(0, !parallel ? 1 : bestPeerCandidates.size());
         for (Peer peer : peerList) {
             executeNextChunkRequestTask(state, peer);
