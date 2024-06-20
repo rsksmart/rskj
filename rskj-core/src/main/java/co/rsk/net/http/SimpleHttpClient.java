@@ -38,8 +38,7 @@ public class SimpleHttpClient {
     public String doGet(String targetUrl) throws HttpException {
         StringBuilder response = new StringBuilder();
         try {
-            URL url = new URL(targetUrl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL(targetUrl).openConnection();
             conn.setRequestMethod(GET_METHOD);
             conn.setConnectTimeout(timeoutMillis);
             conn.setReadTimeout(timeoutMillis);
@@ -50,12 +49,12 @@ public class SimpleHttpClient {
                 throw new HttpException("Http request failed with code :  " + responseCode + " - " + responseMessage);
             }
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
             }
-            reader.close();
         } catch (HttpException httpException) {
             throw httpException;
         } catch (UnknownHostException unknownHostException) {

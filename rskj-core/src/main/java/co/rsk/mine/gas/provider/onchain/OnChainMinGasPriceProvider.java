@@ -32,7 +32,7 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
     private final GetContextCallback getContextCallback;
 
     public OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, StableMinGasPriceSystemConfig config, GetContextCallback getContextCallback) {
-        super(fallBackProvider, config.getMinStableGasPrice());
+        super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
         this.getContextCallback = getContextCallback;
         OnChainMinGasPriceSystemConfig oConfig = config.getOnChainConfig();
         this.toAddress = oConfig.getAddress();

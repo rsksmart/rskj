@@ -30,7 +30,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.Optional;
 
 public class WebMinGasPriceProvider extends StableMinGasPriceProvider {
@@ -38,53 +37,39 @@ public class WebMinGasPriceProvider extends StableMinGasPriceProvider {
     private final String url;
     private final JsonPointer jsonPath;
     private final int timeout;
-    private final int refreshRateMillis;
     private final SimpleHttpClient httpClient;
     private final ObjectMapper objectMapper;
-    private Long lastPrice;
-    private int lastUpdateTimeStamp;
 
 
     public WebMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider) {
-        super(fallBackProvider, config.getMinStableGasPrice());
+        super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
         WebStableMinGasSystemConfig webConfig = config.getWebConfig();
         url = webConfig.getUrl();
         jsonPath = JsonPointer.valueOf(webConfig.getRequestPath());
         timeout = webConfig.getTimeout();
-        refreshRateMillis = config.getRefreshRate() * 1000;
         httpClient = new SimpleHttpClient(webConfig.getTimeout());
         objectMapper = new ObjectMapper();
     }
+
     public WebMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider, SimpleHttpClient httpClient) {
-        super(fallBackProvider, config.getMinStableGasPrice());
+        super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
         WebStableMinGasSystemConfig webConfig = config.getWebConfig();
         url = webConfig.getUrl();
         jsonPath = JsonPointer.valueOf(webConfig.getRequestPath());
         timeout = webConfig.getTimeout();
-        refreshRateMillis = config.getRefreshRate() * 1000;
         this.httpClient = httpClient;
         objectMapper = new ObjectMapper();
     }
 
     @Override
     protected Optional<Long> getBtcExchangeRate() {
-        int currentTime = (int) Instant.now().getEpochSecond();
-        if (currentTime - lastUpdateTimeStamp >= refreshRateMillis) {
-            fetchPrice();
-        }
-        // time it is always updated, it is not taken into account if the price was really updated or not.
-        lastUpdateTimeStamp = currentTime;
-        return Optional.ofNullable(lastPrice);
-    }
-
-    private void fetchPrice() {
         String response = getResponseFromWeb();
         if (!StringUtils.isBlank(response)) {
             Long price = parsePrice(response);
-            if (price != null && price > 0) {
-                lastPrice = price;
-            }
+            return Optional.ofNullable(price);
         }
+        logger.error("Error getting min gas price from web provider, empty response.");
+        return Optional.empty();
     }
 
     private Long parsePrice(String response) {

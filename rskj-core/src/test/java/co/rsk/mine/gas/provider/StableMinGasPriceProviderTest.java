@@ -36,7 +36,7 @@ class StableMinGasPriceProviderTest {
         fallBackProvider = Mockito.mock(MinGasPriceProvider.class);
         when(fallBackProvider.getMinGasPrice()).thenReturn(10L);
         when(fallBackProvider.getType()).thenReturn(MinGasPriceProviderType.FIXED);
-        stableMinGasPriceProvider = new TestStableMingGasPriceProvider(fallBackProvider, 100);
+        stableMinGasPriceProvider = new TestStableMingGasPriceProvider(fallBackProvider, 100, 10);
     }
 
     @Test
@@ -48,7 +48,7 @@ class StableMinGasPriceProviderTest {
 
     @Test
     void GetMinGasPriceUsesFallbackWhenReturnIsNull() {
-        stableMinGasPriceProvider = new TestStableMingGasPriceProvider(fallBackProvider, 100) {
+        stableMinGasPriceProvider = new TestStableMingGasPriceProvider(fallBackProvider, 100, 10) {
             @Override
             public Optional<Long> getBtcExchangeRate() {
                 return Optional.empty();
@@ -62,15 +62,29 @@ class StableMinGasPriceProviderTest {
     }
 
     @Test
+    void whenRequestingTheValueTwiceCachedValueIsUsed() {
+        MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
+        when(fallbackProvider.getType()).thenReturn(MinGasPriceProviderType.FIXED);
+
+        stableMinGasPriceProvider = spy(new TestStableMingGasPriceProvider(fallBackProvider, 100, 10));
+
+        stableMinGasPriceProvider.getMinGasPrice();
+        stableMinGasPriceProvider.getMinGasPrice();
+
+        verify(stableMinGasPriceProvider, times(2)).getMinGasPrice();
+        verify(stableMinGasPriceProvider, times(1)).getBtcExchangeRate();
+    }
+    @Test
     void testGetMinGasPriceAsCoin() {
         Coin result = stableMinGasPriceProvider.getMinGasPriceAsCoin();
         assertEquals(Coin.valueOf(6L), result);
     }
 
+
     public static class TestStableMingGasPriceProvider extends StableMinGasPriceProvider {
 
-        protected TestStableMingGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice) {
-            super(fallBackProvider, minStableGasPrice);
+        protected TestStableMingGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice, int refreshRateSeconds) {
+            super(fallBackProvider, minStableGasPrice, refreshRateSeconds);
         }
 
         @Override

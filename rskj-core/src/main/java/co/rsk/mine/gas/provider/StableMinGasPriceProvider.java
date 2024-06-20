@@ -21,30 +21,38 @@ import co.rsk.core.Coin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.Optional;
 
 public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger("StableMinGasPrice");
     private final MinGasPriceProvider fallBackProvider;
     private final long minStableGasPrice;
+    private Long lastMinGasPrice;
+    private long lastUpdateTimeStamp;
+    private final int refreshRateMillis;
 
-    protected StableMinGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice) {
+
+    protected StableMinGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice, int refreshRateInSeconds) {
         this.minStableGasPrice = minStableGasPrice;
         this.fallBackProvider = fallBackProvider;
+        this.lastMinGasPrice = 0L;
+        this.refreshRateMillis = refreshRateInSeconds * 1000;
     }
 
     protected abstract Optional<Long> getBtcExchangeRate();
 
     @Override
     public long getMinGasPrice() {
-        Optional<Long> btcValueOpt = getBtcExchangeRate();
-        if (btcValueOpt.isPresent()) {
-            long btcValue = btcValueOpt.get();
-            if (btcValue >= 0) {
-                return calculateMinGasPriceBasedOnBtcPrice(btcValue);
-            }
+        long currentTime = Instant.now().getEpochSecond();
+        if (currentTime - lastUpdateTimeStamp >= refreshRateMillis) {
+            fetchPrice();
         }
-        logger.error("Could not get stable min gas price from method {}, using fallback provider: {}", this.getType().name(), fallBackProvider.getType().name());
+        // time it is always updated, it is not taken into account if the price was really updated or not.
+        lastUpdateTimeStamp = currentTime;
+        if (lastMinGasPrice != null && lastMinGasPrice > 0) {
+            return lastMinGasPrice;
+        }
         return fallBackProvider.getMinGasPrice();
     }
 
@@ -58,5 +66,14 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     @Override
     public Coin getMinGasPriceAsCoin() {
         return Coin.valueOf(getMinGasPrice());
+    }
+
+    private void fetchPrice() {
+        Optional<Long> priceResponse = getBtcExchangeRate();
+        if (priceResponse.isPresent() && priceResponse.get() > 0) {
+            lastMinGasPrice = calculateMinGasPriceBasedOnBtcPrice(priceResponse.get());
+        } else {
+            logger.warn("Gas price was not updated as it was not possible to obtain valid price from provider");
+        }
     }
 }
