@@ -102,7 +102,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     @Test
-    void getLockWhitelist_whenLockWhitelistIsNull_shouldReturnZeroEntries() {
+    void getLockWhitelist_whenNoEntriesInStorage_shouldReturnZeroEntries() {
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         assertEquals(0, actualLockWhitelist.getAll().size());
