@@ -65,6 +65,7 @@ class WhitelistStorageProviderImplTest {
 
         whitelistStorageProvider.save(activationConfig);
 
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
         assertEquals(1, actualLockWhitelist.getAll().size());
 
@@ -88,6 +89,7 @@ class WhitelistStorageProviderImplTest {
 
         whitelistStorageProvider.save(activationConfig);
 
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
         assertEquals(2, actualLockWhitelist.getAll().size());
 
