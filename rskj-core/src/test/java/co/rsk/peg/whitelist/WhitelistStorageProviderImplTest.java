@@ -60,7 +60,7 @@ class WhitelistStorageProviderImplTest {
         //make sure the lockWhitelist is empty
         assertEquals(0, lockWhitelist.getAll().size());
 
-        LockWhitelistEntry oneOffWhiteListEntry =  addOneOffWhiteListEntry();
+        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry();
         lockWhitelist.put(firstBtcAddress, oneOffWhiteListEntry);
 
         whitelistStorageProvider.save(activationConfig);
@@ -81,8 +81,8 @@ class WhitelistStorageProviderImplTest {
         //make sure the lockWhitelist is empty
         assertEquals(0, lockWhitelist.getAll().size());
 
-        LockWhitelistEntry oneOffWhiteListEntry =  addOneOffWhiteListEntry();
-        LockWhitelistEntry unlimitedWhiteListEntry = addUnlimitedWhiteListEntry();
+        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry();
+        LockWhitelistEntry unlimitedWhiteListEntry = createUnlimitedWhiteListEntry();
         lockWhitelist.put(firstBtcAddress, oneOffWhiteListEntry);
         lockWhitelist.put(secondBtcAddress, unlimitedWhiteListEntry);
 
@@ -109,7 +109,7 @@ class WhitelistStorageProviderImplTest {
     @Test
     void getLockWhitelist_whenLockWhitelistIsNotNull_shouldReturnOneEntry() {
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
-        LockWhitelistEntry oneOffWhiteListEntry =  addOneOffWhiteListEntry();
+        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry();
         lockWhitelist.put(firstBtcAddress, oneOffWhiteListEntry);
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
@@ -124,7 +124,7 @@ class WhitelistStorageProviderImplTest {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(true);
         saveInMemoryStorageOneOffWhiteListEntry();
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
-        LockWhitelistEntry unlimitedWhiteListEntry = addUnlimitedWhiteListEntry();
+        LockWhitelistEntry unlimitedWhiteListEntry = createUnlimitedWhiteListEntry();
         lockWhitelist.put(secondBtcAddress, unlimitedWhiteListEntry);
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
@@ -148,12 +148,12 @@ class WhitelistStorageProviderImplTest {
         );
     }
 
-    private LockWhitelistEntry addOneOffWhiteListEntry() {
+    private LockWhitelistEntry createOneOffWhiteListEntry() {
         Coin maxTransferValue = networkParameters.getMaxMoney();
         return new OneOffWhiteListEntry(firstBtcAddress, maxTransferValue);
     }
 
-    private LockWhitelistEntry addUnlimitedWhiteListEntry() {
+    private LockWhitelistEntry createUnlimitedWhiteListEntry() {
         return new UnlimitedWhiteListEntry(secondBtcAddress);
     }
 
