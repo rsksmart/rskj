@@ -1603,12 +1603,12 @@ class FederationSupportImplTest {
             ECKey federatorFromPendingFederationRskPublicKey = getRskPublicKeysFromFederationMembers(pendingFederation.getMembers()).get(0);
             ECKey federatorFromPendingFederationMstPublicKey = getMstPublicKeysFromFederationMembers(pendingFederation.getMembers()).get(0);
 
-            // since genesis federation was created without specifying rsk public keys
+            // since pending federation was created without specifying rsk public keys
             // these are set deriving the btc public keys,
             // so we should first assert that
             ECKey ecKeyDerivedFromBtcKey = ECKey.fromPublicOnly(federatorFromPendingFederationBtcPublicKey.getPubKey());
             assertThat(federatorFromPendingFederationRskPublicKey, is(ecKeyDerivedFromBtcKey));
-            // since genesis federation was created without specifying mst public keys
+            // since pending federation was created without specifying mst public keys
             // these are set copying the rsk public keys,
             // so we should first assert that
             assertThat(federatorFromPendingFederationMstPublicKey, is(federatorFromPendingFederationRskPublicKey));
@@ -1639,7 +1639,7 @@ class FederationSupportImplTest {
             ECKey federatorFromPendingFederationRskPublicKey = getRskPublicKeysFromFederationMembers(pendingFederationWithRskKeys.getMembers()).get(0);
             ECKey federatorFromPendingFederationMstPublicKey = getMstPublicKeysFromFederationMembers(pendingFederationWithRskKeys.getMembers()).get(0);
 
-            // since old federation was created without specifying mst public keys
+            // since pending federation was created without specifying mst public keys
             // these are set copying the rsk public keys,
             // so we should first assert that
             assertThat(federatorFromPendingFederationMstPublicKey, is(federatorFromPendingFederationRskPublicKey));
