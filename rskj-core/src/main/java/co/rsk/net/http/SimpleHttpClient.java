@@ -41,8 +41,8 @@ public class SimpleHttpClient {
             URL url = new URL(targetUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod(GET_METHOD);
-            conn.setConnectTimeout(timeoutMillis); // Set connection timeout to 30 seconds
-            conn.setReadTimeout(timeoutMillis); // Set read timeout to 30 seconds
+            conn.setConnectTimeout(timeoutMillis);
+            conn.setReadTimeout(timeoutMillis);
             int responseCode = conn.getResponseCode();
 
             if (responseCode >= 300 || responseCode < 200) {

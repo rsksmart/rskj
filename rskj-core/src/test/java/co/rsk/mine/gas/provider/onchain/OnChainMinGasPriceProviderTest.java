@@ -1,6 +1,7 @@
 package co.rsk.mine.gas.provider.onchain;
 
 import co.rsk.config.mining.OnChainMinGasPriceSystemConfig;
+import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import co.rsk.mine.gas.provider.MinGasPriceProvider;
 import co.rsk.mine.gas.provider.MinGasPriceProviderType;
 import co.rsk.util.HexUtils;
@@ -20,12 +21,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class OnChainMinGasPriceProviderTest {
-    private final long fallback_minGasPrice_fake = 1234567890L;
     private EthModule ethModule_mock;
     private MinGasPriceProvider fallback_mock;
     private OnChainMinGasPriceSystemConfig onChainMinGasPriceSystemConfig_mock;
-
     private OnChainMinGasPriceProvider onChainMinGasPriceProvider;
+    private StableMinGasPriceSystemConfig stableMinGasPriceSystemConfig;
 
     @BeforeEach
     public void beforeEach() {
@@ -34,21 +34,25 @@ class OnChainMinGasPriceProviderTest {
 
         fallback_mock = mock(MinGasPriceProvider.class);
         when(fallback_mock.getType()).thenReturn(MinGasPriceProviderType.FIXED);
+        long fallback_minGasPrice_fake = 1234567890L;
         when(fallback_mock.getMinGasPrice()).thenReturn(fallback_minGasPrice_fake);
 
         onChainMinGasPriceSystemConfig_mock = mock(OnChainMinGasPriceSystemConfig.class);
         String oracle_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
-        when(onChainMinGasPriceSystemConfig_mock.address()).thenReturn(oracle_address);
+        when(onChainMinGasPriceSystemConfig_mock.getAddress()).thenReturn(oracle_address);
         String from_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
-        when(onChainMinGasPriceSystemConfig_mock.from()).thenReturn(from_address);
+        when(onChainMinGasPriceSystemConfig_mock.getFrom()).thenReturn(from_address);
         String data = "0x";
-        when(onChainMinGasPriceSystemConfig_mock.data()).thenReturn(data);
+        when(onChainMinGasPriceSystemConfig_mock.getData()).thenReturn(data);
+        
+        stableMinGasPriceSystemConfig = mock(StableMinGasPriceSystemConfig.class);
+        when(stableMinGasPriceSystemConfig.getOnChainConfig()).thenReturn(onChainMinGasPriceSystemConfig_mock);
+        when(stableMinGasPriceSystemConfig.getMinStableGasPrice()).thenReturn(fallback_minGasPrice_fake);
 
 
         onChainMinGasPriceProvider = new OnChainMinGasPriceProvider(
                 fallback_mock,
-                fallback_minGasPrice_fake,
-                onChainMinGasPriceSystemConfig_mock,
+                stableMinGasPriceSystemConfig,
                 () -> ethModule_mock
         );
     }
@@ -67,11 +71,11 @@ class OnChainMinGasPriceProviderTest {
         MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
         OnChainMinGasPriceSystemConfig config = mock(OnChainMinGasPriceSystemConfig.class);
 
-        when(config.address()).thenReturn("0xaddress");
-        when(config.from()).thenReturn("0xfrom");
-        when(config.data()).thenReturn(data_input);
+        when(config.getAddress()).thenReturn("0xaddress");
+        when(config.getFrom()).thenReturn("0xfrom");
+        when(config.getData()).thenReturn(data_input);
 
-        OnChainMinGasPriceProvider provider = new OnChainMinGasPriceProvider(fallbackProvider, fallback_minGasPrice_fake, config, () -> ethModule_mock);
+        OnChainMinGasPriceProvider provider = new OnChainMinGasPriceProvider(fallbackProvider, stableMinGasPriceSystemConfig, () -> ethModule_mock);
 
         Assertions.assertEquals("0xaddress", provider.getToAddress());
     }
@@ -81,11 +85,11 @@ class OnChainMinGasPriceProviderTest {
         MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
         OnChainMinGasPriceSystemConfig config = mock(OnChainMinGasPriceSystemConfig.class);
 
-        when(config.address()).thenReturn(null);
-        when(config.from()).thenReturn(null);
-        when(config.data()).thenReturn(null);
+        when(config.getAddress()).thenReturn(null);
+        when(config.getFrom()).thenReturn(null);
+        when(config.getData()).thenReturn(null);
 
-        OnChainMinGasPriceProvider provider = new OnChainMinGasPriceProvider(fallbackProvider, fallback_minGasPrice_fake, config, () -> ethModule_mock);
+        OnChainMinGasPriceProvider provider = new OnChainMinGasPriceProvider(fallbackProvider, stableMinGasPriceSystemConfig, () -> ethModule_mock);
 
         Assertions.assertNull(provider.getToAddress());
         Assertions.assertNull(provider.getFromAddress());
@@ -108,7 +112,7 @@ class OnChainMinGasPriceProviderTest {
     @NullSource
     @ValueSource(strings = {"", "0x"})
     void getStableMinGasPrice_callsFallback_whenNoData(String data_input) {
-        when(onChainMinGasPriceSystemConfig_mock.data()).thenReturn(data_input);
+        when(onChainMinGasPriceSystemConfig_mock.getData()).thenReturn(data_input);
 
         assertFalse(onChainMinGasPriceProvider.getBtcExchangeRate().isPresent());
     }

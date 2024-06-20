@@ -35,7 +35,7 @@ public class MinGasPriceProviderFactory {
             case WEB:
                 return new WebMinGasPriceProvider(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider);
             case ON_CHAIN:
-                return new OnChainMinGasPriceProvider(fixedMinGasPriceProvider, stableMinGasPriceSystemConfig.getMinStableGasPrice(), stableMinGasPriceSystemConfig.getOnChainConfig(), getContextCallback);
+                return new OnChainMinGasPriceProvider(fixedMinGasPriceProvider, stableMinGasPriceSystemConfig, getContextCallback);
             default:
                 logger.debug("Could not find a valid implementation for the method {}. Returning fallback provider {}", method, fixedMinGasPriceProvider.getType().name());
                 return fixedMinGasPriceProvider;

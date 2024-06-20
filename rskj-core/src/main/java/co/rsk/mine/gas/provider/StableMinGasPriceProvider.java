@@ -27,6 +27,7 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger("StableMinGasPrice");
     private final MinGasPriceProvider fallBackProvider;
     private final long minStableGasPrice;
+
     protected StableMinGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice) {
         this.minStableGasPrice = minStableGasPrice;
         this.fallBackProvider = fallBackProvider;
@@ -48,7 +49,7 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     }
 
     private long calculateMinGasPriceBasedOnBtcPrice(long btcValue) {
-        if(minStableGasPrice == 0 || btcValue == 0) {
+        if (minStableGasPrice == 0 || btcValue == 0) {
             return 0;
         }
         return minStableGasPrice / btcValue;

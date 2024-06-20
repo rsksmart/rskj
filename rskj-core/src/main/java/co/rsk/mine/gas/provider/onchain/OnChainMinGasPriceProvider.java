@@ -1,6 +1,7 @@
 package co.rsk.mine.gas.provider.onchain;
 
 import co.rsk.config.mining.OnChainMinGasPriceSystemConfig;
+import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import co.rsk.mine.gas.provider.MinGasPriceProvider;
 import co.rsk.mine.gas.provider.MinGasPriceProviderType;
 import co.rsk.mine.gas.provider.StableMinGasPriceProvider;
@@ -22,6 +23,7 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
     private final String toAddress;
     private final String fromAddress;
     private final String data;
+
     @FunctionalInterface
     public interface GetContextCallback {
         EthModule getEthModule();
@@ -29,12 +31,13 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
 
     private final GetContextCallback getContextCallback;
 
-    public OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice, OnChainMinGasPriceSystemConfig config, GetContextCallback getContextCallback) {
-        super(fallBackProvider, minStableGasPrice);
+    public OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, StableMinGasPriceSystemConfig config, GetContextCallback getContextCallback) {
+        super(fallBackProvider, config.getMinStableGasPrice());
         this.getContextCallback = getContextCallback;
-        this.toAddress = config.address();
-        this.fromAddress = config.from();
-        this.data = config.data();
+        OnChainMinGasPriceSystemConfig oConfig = config.getOnChainConfig();
+        this.toAddress = oConfig.getAddress();
+        this.fromAddress = oConfig.getFrom();
+        this.data = oConfig.getData();
     }
 
     @Override
