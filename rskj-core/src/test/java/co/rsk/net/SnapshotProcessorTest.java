@@ -61,7 +61,7 @@ public class SnapshotProcessorTest {
     @BeforeEach
     void setUp() throws UnknownHostException {
         peer = mockedPeer();
-        when(peersInformation.getBestPeerCandidatesForSnapSync()).thenReturn(Collections.singletonList(peer));
+        when(peersInformation.getBestSnapPeerCandidates()).thenReturn(Collections.singletonList(peer));
     }
 
     @AfterEach
@@ -123,7 +123,7 @@ public class SnapshotProcessorTest {
 
         //then
         verify(peer, atLeast(3)).sendMessage(any()); // 1 for SnapStatusRequestMessage, 1 for SnapBlocksRequestMessage and 1 for SnapStateChunkRequestMessage
-        verify(peersInformation, times(2)).getBestPeerCandidatesForSnapSync();
+        verify(peersInformation, times(2)).getBestSnapPeerCandidates();
     }
 
     @Test
@@ -346,7 +346,7 @@ public class SnapshotProcessorTest {
         NodeID nodeID = mock(NodeID.class);
         when(mockedPeer.getPeerNodeID()).thenReturn(nodeID);
         when(mockedPeer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
-        when(peersInformation.getBestPeerCandidatesForSnapSync()).thenReturn(Arrays.asList(peer));
+        when(peersInformation.getBestSnapPeerCandidates()).thenReturn(Arrays.asList(peer));
         return mockedPeer;
     }
 

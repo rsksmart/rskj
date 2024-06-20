@@ -77,6 +77,8 @@ import java.util.stream.Collectors;
  * @since 22.05.2014
  */
 public abstract class SystemProperties {
+    private static final Logger logger = LoggerFactory.getLogger("general");
+
     public static final String PROPERTY_BLOCKCHAIN_CONFIG = "blockchain.config";
     public static final String PROPERTY_BC_CONFIG_NAME = PROPERTY_BLOCKCHAIN_CONFIG + ".name";
     public static final String PROPERTY_BC_VERIFY = PROPERTY_BLOCKCHAIN_CONFIG + ".verify";
@@ -94,15 +96,6 @@ public abstract class SystemProperties {
     public static final String PROPERTY_RPC_HTTP_ADDRESS = "rpc.providers.web.http.bind_address";
     public static final String PROPERTY_RPC_HTTP_HOSTS = "rpc.providers.web.http.hosts";
     public static final String PROPERTY_RPC_HTTP_PORT = "rpc.providers.web.http.port";
-    public static final String PROPERTY_PUBLIC_IP = "public.ip";
-    public static final String PROPERTY_BIND_ADDRESS = "bind_address";
-    public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
-    public static final String PROPERTY_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
-    public static final String PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT = "cache.states.persist-snapshot";
-    public static final String PROPERTY_PERSIST_BLOOMS_CACHE_SNAPSHOT = "cache.blooms.persist-snapshot";
-    /* Testing */
-    public static final String LAST_KNEW_PEERS_FILE = "lastPeers.properties";
-    private static final Logger logger = LoggerFactory.getLogger("general");
     private static final String PROPERTY_RPC_WEBSOCKET_ENABLED = "rpc.providers.web.ws.enabled";
     private static final String PROPERTY_RPC_WEBSOCKET_ADDRESS = "rpc.providers.web.ws.bind_address";
     private static final String PROPERTY_RPC_WEBSOCKET_PORT = "rpc.providers.web.ws.port";
@@ -114,6 +107,19 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_MAX_RESPONSE_SIZE = "rpc.maxResponseSize";
     private static final String PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER = "rpc.minGasPriceMultiplier";
     private static final String PROPERTY_RPC_TIMEOUT = "rpc.timeout";
+
+    public static final String PROPERTY_PUBLIC_IP = "public.ip";
+    public static final String PROPERTY_BIND_ADDRESS = "bind_address";
+
+    public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
+
+    public static final String PROPERTY_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
+
+    public static final String PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT = "cache.states.persist-snapshot";
+    public static final String PROPERTY_PERSIST_BLOOMS_CACHE_SNAPSHOT = "cache.blooms.persist-snapshot";
+
+    /* Testing */
+    public static final String LAST_KNEW_PEERS_FILE = "lastPeers.properties";
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
 
     protected final Config configFromFiles;

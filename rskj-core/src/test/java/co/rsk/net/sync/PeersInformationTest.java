@@ -155,7 +155,7 @@ class PeersInformationTest {
 
         Mockito.doReturn(4).when(random).nextInt(Mockito.eq(5));
 
-        List<Peer> actualPeersForSnapSync= peersInformation.getBestPeerCandidatesForSnapSync();
+        List<Peer> actualPeersForSnapSync= peersInformation.getBestSnapPeerCandidates();
 
         String expectedNodeIdSnapPeer1 = ByteUtil.toHexString("snapPeer1".getBytes());
         String expectedNodeIdSnapPeer2 = ByteUtil.toHexString("snapPeer2".getBytes());
