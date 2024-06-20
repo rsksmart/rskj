@@ -110,9 +110,7 @@ class WhitelistStorageProviderImplTest {
 
     @Test
     void getLockWhitelist_whenLockWhitelistIsNotNull_shouldReturnOneEntry() {
-        LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
-        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry();
-        lockWhitelist.put(firstBtcAddress, oneOffWhiteListEntry);
+        saveInMemoryStorageOneOffWhiteListEntry();
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
@@ -125,9 +123,7 @@ class WhitelistStorageProviderImplTest {
     void getWhitelist_whenIsActiveRSKIP87_shouldReturnTwoEntries() {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(true);
         saveInMemoryStorageOneOffWhiteListEntry();
-        LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
-        LockWhitelistEntry unlimitedWhiteListEntry = createUnlimitedWhiteListEntry();
-        lockWhitelist.put(secondBtcAddress, unlimitedWhiteListEntry);
+        saveInMemoryStorageUnlimitedWhiteListEntry();
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
@@ -147,6 +143,17 @@ class WhitelistStorageProviderImplTest {
             LOCK_ONE_OFF.getKey(),
             pairValue,
             BridgeSerializationUtils::serializeOneOffLockWhitelist
+        );
+    }
+
+    private void saveInMemoryStorageUnlimitedWhiteListEntry() {
+        UnlimitedWhiteListEntry unlimitedWhiteListEntry = new UnlimitedWhiteListEntry(secondBtcAddress);
+        List<UnlimitedWhiteListEntry> unlimitedWhiteListEntries = Collections.singletonList(unlimitedWhiteListEntry);
+
+        inMemoryStorage.safeSaveToRepository(
+            WhitelistStorageIndexKey.LOCK_UNLIMITED.getKey(),
+            unlimitedWhiteListEntries,
+            BridgeSerializationUtils::serializeUnlimitedLockWhitelist
         );
     }
 
