@@ -29,6 +29,18 @@ public class BitcoinTestUtils {
         return keys;
     }
 
+    /**
+     * Returns a BTC address derived from the seed.
+     *
+     * @param seed              the seed to derive the address from
+     * @param networkParameters the network parameters
+     * @return the BTC address
+     */
+    public static Address getBtcAddress(String seed, NetworkParameters networkParameters) {
+        BtcECKey btcECKey = BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
+        return btcECKey.toAddress(networkParameters);
+    }
+
     public static Address createP2PKHAddress(NetworkParameters networkParameters, String seed) {
         BtcECKey key = BtcECKey.fromPrivate(
             HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
