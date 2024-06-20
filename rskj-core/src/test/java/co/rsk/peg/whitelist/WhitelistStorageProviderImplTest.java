@@ -138,7 +138,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     private void saveInMemoryStorageOneOffWhiteListEntry() {
-        Coin maxTransferValue = networkParameters.getMaxMoney();
+        Coin maxTransferValue = Coin.valueOf(50_000L);
         OneOffWhiteListEntry oneOffWhiteListEntry = new OneOffWhiteListEntry(firstBtcAddress, maxTransferValue);
         List<OneOffWhiteListEntry> oneOffWhiteListEntries = Collections.singletonList(oneOffWhiteListEntry);
         Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffWhiteListEntries, 100);
@@ -151,7 +151,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     private LockWhitelistEntry createOneOffWhiteListEntry() {
-        Coin maxTransferValue = networkParameters.getMaxMoney();
+        Coin maxTransferValue = Coin.valueOf(50_000L);
         return new OneOffWhiteListEntry(firstBtcAddress, maxTransferValue);
     }
 
