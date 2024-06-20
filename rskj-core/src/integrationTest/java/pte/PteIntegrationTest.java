@@ -134,7 +134,6 @@ public class PteIntegrationTest {
                             blocksResponseMap.put("asyncBlocksResult", future.get());
 
                         } catch (ExecutionException | InterruptedException e) {
-                            e.printStackTrace();
                             Assertions.fail(e);
                         }
 
