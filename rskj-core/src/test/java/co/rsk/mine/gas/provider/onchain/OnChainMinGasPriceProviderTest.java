@@ -69,7 +69,7 @@ class OnChainMinGasPriceProviderTest {
     @ValueSource(strings = {"0x123", "0xabc"})
     void constructorSetsFieldsCorrectly(String data_input) {
         MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
-        OnChainMinGasPriceSystemConfig config = mock(OnChainMinGasPriceSystemConfig.class);
+        OnChainMinGasPriceSystemConfig config = stableMinGasPriceSystemConfig.getOnChainConfig();
 
         when(config.getAddress()).thenReturn("0xaddress");
         when(config.getFrom()).thenReturn("0xfrom");
@@ -83,11 +83,11 @@ class OnChainMinGasPriceProviderTest {
     @Test
     void constructorSetsFieldsToNullWhenConfigReturnsNull() {
         MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
-        OnChainMinGasPriceSystemConfig config = mock(OnChainMinGasPriceSystemConfig.class);
-
+        OnChainMinGasPriceSystemConfig config = stableMinGasPriceSystemConfig.getOnChainConfig();
         when(config.getAddress()).thenReturn(null);
         when(config.getFrom()).thenReturn(null);
         when(config.getData()).thenReturn(null);
+
 
         OnChainMinGasPriceProvider provider = new OnChainMinGasPriceProvider(fallbackProvider, stableMinGasPriceSystemConfig, () -> ethModule_mock);
 
