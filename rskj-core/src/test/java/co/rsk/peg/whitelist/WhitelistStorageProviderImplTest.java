@@ -40,8 +40,8 @@ class WhitelistStorageProviderImplTest {
         inMemoryStorage = new InMemoryStorage();
         whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
         activationConfig = mock(ActivationConfig.ForBlock.class);
-        firstBtcAddress = BitcoinTestUtils.getBtcAddress("firstBtcAddress", networkParameters);
-        secondBtcAddress = BitcoinTestUtils.getBtcAddress("secondBtcAddress", networkParameters);
+        firstBtcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "firstBtcAddress");
+        secondBtcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "secondBtcAddress");
     }
 
     @Test
