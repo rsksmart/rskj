@@ -56,6 +56,7 @@ class FederationSupportImplTest {
     private static final FederationConstants federationMainnetConstants = FederationMainNetConstants.getInstance();
     private final Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
     private Federation newFederation;
+    private StorageAccessor storageAccessor;
     private FederationStorageProvider storageProvider;
     private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
     private FederationSupport federationSupport;
@@ -66,7 +67,7 @@ class FederationSupportImplTest {
     class ActiveFederationTestsWithNullFederations {
         @BeforeEach
         void setUp() {
-            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
             federationSupport = federationSupportBuilder
@@ -206,7 +207,7 @@ class FederationSupportImplTest {
     class ActiveFederationTestsWithNullOldFederation {
         @BeforeEach
         void setUp() {
-            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
             // create new federation
@@ -427,7 +428,7 @@ class FederationSupportImplTest {
         @BeforeEach
         void setUp() {
             // save federations in storage
-            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
             storageProvider.setOldFederation(oldFederation);
             storageProvider.setNewFederation(newFederation);
@@ -777,11 +778,149 @@ class FederationSupportImplTest {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("active federation creation block height tests")
+    class ActiveFederationCreationBlockHeightTests {
+        // if nextFederationCreationBlockHeight is not set,
+        // method should return activeFederationCreationBlockHeight.
+        // if nextFederationCreationBlockHeight is set, method should return:
+        // nextFederationCreationBlockHeight if enough blocks have passed,
+        // activeFederationCreationBlockHeight if not.
+        // if activeFederationCreationBlockHeight is not set,
+        // method should return 0L.
+
+        long nextFederationCreationBlockHeight = 200L;
+        long activeFederationCreationBlockHeight = 100L;
+
+        // get activation age and activations for hop and fingerroot
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
+        long newFederationActivationAgeHop = federationMainnetConstants.getFederationActivationAge(hopActivations);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        long newFederationActivationAgeFingerroot = federationMainnetConstants.getFederationActivationAge(fingerrootActivations);
+
+        @BeforeEach
+        void setUp() {
+            storageAccessor = new InMemoryStorage();
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+            when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withActivations(activations)
+                .build();
+        }
+
+        @Test
+        @Tag("getActiveFederationCreationBlockHeight")
+        void getActiveFederationCreationBlockHeight_beforeRSKIP186_returnsZero() {
+            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+            when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withActivations(activations)
+                .build();
+
+            long activeFederationCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
+            assertThat(activeFederationCreationBlockHeight, is(0L));
+        }
+
+        @Test
+        @Tag("getActiveFederationCreationBlockHeight")
+        void getActiveFederationCreationBlockHeight_withNextAndActiveFederationCreationBlockHeightsUnset_returnsZero() {
+            long activeFederationCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
+            assertThat(activeFederationCreationBlockHeight, is(0L));
+        }
+
+        @Test
+        @Tag("getActiveFederationCreationBlockHeight")
+        void getActiveFederationCreationBlockHeight_withNextFederationCreationBlockHeightUnsetAndActiveFederationCreationBlockHeightSet_returnsActiveFederationCreationBlockHeight() {
+            storageProvider.setActiveFederationCreationBlockHeight(activeFederationCreationBlockHeight);
+
+            long activeFederationCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
+            assertThat(activeFederationCreationBlockHeight, is(activeFederationCreationBlockHeight));
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationCreationBlockHeight")
+        @MethodSource("newFederationCreationBlockHeightAndCurrentBlockAndActivationsArgs")
+        void getActiveFederationCreationBlockHeight_withNewFederationCreationBlockHeightSetAndActiveFederationCreationBlockHeightUnset_returnsCreationBlockHeightAccordingToCurrentBlockAndActivations(
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
+            long expectedActiveFederationCreationBlockHeight
+        ) {
+            Block rskExecutionBlock = mock(Block.class);
+            when(rskExecutionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(rskExecutionBlock)
+                .withActivations(activations)
+                .build();
+            storageProvider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+
+            long activeFederationCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
+            assertThat(activeFederationCreationBlockHeight, is(expectedActiveFederationCreationBlockHeight));
+        }
+
+        private Stream<Arguments> newFederationCreationBlockHeightAndCurrentBlockAndActivationsArgs() {
+            return Stream.of(
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop - 1, hopActivations, 0L),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot - 1, fingerrootActivations, 0L),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop, fingerrootActivations, 0L),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop, hopActivations, nextFederationCreationBlockHeight),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot, fingerrootActivations, nextFederationCreationBlockHeight),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot, hopActivations, nextFederationCreationBlockHeight)
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationCreationBlockHeight")
+        @MethodSource("newAndActiveFederationCreationBlockHeightsAndCurrentBlockAndActivationsArgs")
+        void getActiveFederationCreationBlockHeight_withNewAndActiveFederationCreationBlockHeightsSet_returnsCreationBlockHeightAccordingToCurrentBlockAndActivations(
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
+            long expectedActiveFederationCreationBlockHeight
+        ) {
+            Block rskExecutionBlock = mock(Block.class);
+            when(rskExecutionBlock.getNumber()).thenReturn(currentBlock);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(rskExecutionBlock)
+                .withActivations(activations)
+                .build();
+            storageProvider.setActiveFederationCreationBlockHeight(activeFederationCreationBlockHeight);
+            storageProvider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+
+            long activeFederationCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
+            assertThat(activeFederationCreationBlockHeight, is(expectedActiveFederationCreationBlockHeight));
+        }
+
+        private Stream<Arguments> newAndActiveFederationCreationBlockHeightsAndCurrentBlockAndActivationsArgs() {
+            return Stream.of(
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop - 1, hopActivations, activeFederationCreationBlockHeight),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot - 1, fingerrootActivations, activeFederationCreationBlockHeight),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop, fingerrootActivations, activeFederationCreationBlockHeight),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop, hopActivations, nextFederationCreationBlockHeight),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot, fingerrootActivations, nextFederationCreationBlockHeight),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot, hopActivations, nextFederationCreationBlockHeight)
+            );
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("null federations")
     class RetiringFederationTestsWithNullFederations {
         @BeforeEach
         void setUp() {
-            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
             federationSupport = federationSupportBuilder
@@ -859,7 +998,7 @@ class FederationSupportImplTest {
     class RetiringFederationTestsWithNullOldFederation {
         @BeforeEach
         void setUp() {
-            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
             // create new federation
@@ -972,7 +1111,7 @@ class FederationSupportImplTest {
         @BeforeEach
         void setUp() {
             // save federations in storage
-            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
             storageProvider.setOldFederation(oldFederation);
             storageProvider.setNewFederation(newFederation);
@@ -1497,7 +1636,7 @@ class FederationSupportImplTest {
 
         @BeforeEach
         void setUp() {
-            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
             federationSupport = federationSupportBuilder
@@ -1551,7 +1690,7 @@ class FederationSupportImplTest {
 
         @BeforeEach
         void setUp() {
-            StorageAccessor storageAccessor = new InMemoryStorage();
+            storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
             federationSupport = federationSupportBuilder
