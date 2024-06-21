@@ -18,10 +18,15 @@
 
 package co.rsk.net.utils;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -33,7 +38,10 @@ import java.util.List;
 /**
  * Created by ajlopez on 7/22/2016.
  */
-public class TransactionUtils {
+public final class TransactionUtils {
+
+    private TransactionUtils() {
+    }
 	
     public static List<Transaction> getTransactions(int n) {
         List<Transaction> txs = new ArrayList<>();
@@ -78,5 +86,11 @@ public class TransactionUtils {
 
     public static Transaction createTransaction() {
         return getTransactions(1).get(0);
+    }
+
+    public static Transaction getTransactionFromCaller(SignatureCache signatureCache, RskAddress caller) {
+        Transaction tx = mock(Transaction.class);
+        when(tx.getSender(signatureCache)).thenReturn(caller);
+        return tx;
     }
 }
