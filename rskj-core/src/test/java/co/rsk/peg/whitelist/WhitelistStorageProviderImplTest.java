@@ -54,7 +54,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     @Test
-    void save_whenLockWhiteListIsNotNull_ShouldReturnSavedValue() {
+    void save_whenLockWhiteListIsNotNull_shouldReturnSavedValue() {
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         //make sure the lockWhitelist is empty
