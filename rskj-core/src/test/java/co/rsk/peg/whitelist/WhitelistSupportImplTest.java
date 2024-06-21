@@ -118,7 +118,7 @@ class WhitelistSupportImplTest {
     }
 
     @Test
-    void addOneOffLockWhitelistAddress_whenAddressIsNotWhitelisted_shouldReturnAddressAlreadyWhitelisted() {
+    void addOneOffLockWhitelistAddress_whenAddressIsAlreadyWhitelisted_shouldReturnAddressAlreadyWhitelisted() {
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
         // Add the address to the whitelist
         whitelistSupport.addOneOffLockWhitelistAddress(tx, btcAddress.toString(), BigInteger.TEN);
@@ -157,7 +157,7 @@ class WhitelistSupportImplTest {
     }
 
     @Test
-    void addUnlimitedLockWhitelistAddress_whenAddressIsNotWhitelisted_shouldReturnAddressAlreadyWhitelisted() {
+    void addUnlimitedLockWhitelistAddress_whenAddressIsAlreadyWhitelisted_shouldReturnAddressAlreadyWhitelisted() {
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
         // Add the address to the whitelist
         whitelistSupport.addUnlimitedLockWhitelistAddress(tx, btcAddress.toString());
