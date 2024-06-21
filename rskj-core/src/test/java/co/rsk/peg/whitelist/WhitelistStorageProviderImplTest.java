@@ -54,7 +54,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     @Test
-    void save_whenLockWhiteListIsNotNull_ShouldReturnSavedValue() {
+    void save_whenLockWhiteListIsNotNull_shouldReturnSavedValue() {
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         //make sure the lockWhitelist is empty
@@ -97,7 +97,7 @@ class WhitelistStorageProviderImplTest {
         Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
         assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
 
-        Map<Address, LockWhitelistEntry> lockWhitelistEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        Map<Address, UnlimitedWhiteListEntry> lockWhitelistEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
         assertTrue(lockWhitelistEntryMap.containsKey(secondBtcAddress));
     }
 
@@ -120,7 +120,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     @Test
-    void getWhitelist_whenIsActiveRSKIP87_shouldReturnTwoEntries() {
+    void getWhitelist_whenIsActiveRSKIP87_shouldReturnUnlimitedEntries() {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(true);
         saveInMemoryStorageOneOffWhiteListEntry();
         saveInMemoryStorageUnlimitedWhiteListEntry();
@@ -174,12 +174,12 @@ class WhitelistStorageProviderImplTest {
         return oneOffWhitelistAndDisableBlockHeightData.getLeft();
     }
 
-    private Map<Address, LockWhitelistEntry> getAddressFromUnlimitedWhiteListEntryInMemoryStorage() {
-        Map<Address, LockWhitelistEntry> whitelistedAddresses = new HashMap<>();
-        whitelistedAddresses.putAll(inMemoryStorage.safeGetFromRepository(
+    private Map<Address, UnlimitedWhiteListEntry> getAddressFromUnlimitedWhiteListEntryInMemoryStorage() {
+        return inMemoryStorage.safeGetFromRepository(
             LOCK_UNLIMITED.getKey(),
-            data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)
-        ));
-        return whitelistedAddresses;
+            data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(
+                data,
+                networkParameters)
+        );
     }
 }
