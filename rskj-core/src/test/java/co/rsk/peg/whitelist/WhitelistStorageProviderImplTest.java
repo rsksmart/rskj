@@ -120,7 +120,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     @Test
-    void getWhitelist_whenIsActiveRSKIP87_shouldReturnTwoEntries() {
+    void getWhitelist_whenIsActiveRSKIP87_shouldReturnUnlimitedEntries() {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(true);
         saveInMemoryStorageOneOffWhiteListEntry();
         saveInMemoryStorageUnlimitedWhiteListEntry();
