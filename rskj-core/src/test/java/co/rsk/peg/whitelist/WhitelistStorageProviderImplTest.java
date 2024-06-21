@@ -60,7 +60,7 @@ class WhitelistStorageProviderImplTest {
         //make sure the lockWhitelist is empty
         assertEquals(0, lockWhitelist.getAll().size());
 
-        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry();
+        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry(firstBtcAddress);
         lockWhitelist.put(firstBtcAddress, oneOffWhiteListEntry);
 
         whitelistStorageProvider.save(activationConfig);
@@ -82,8 +82,8 @@ class WhitelistStorageProviderImplTest {
         //make sure the lockWhitelist is empty
         assertEquals(0, lockWhitelist.getAll().size());
 
-        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry();
-        LockWhitelistEntry unlimitedWhiteListEntry = createUnlimitedWhiteListEntry();
+        LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry(firstBtcAddress);
+        LockWhitelistEntry unlimitedWhiteListEntry = createUnlimitedWhiteListEntry(secondBtcAddress);
         lockWhitelist.put(firstBtcAddress, oneOffWhiteListEntry);
         lockWhitelist.put(secondBtcAddress, unlimitedWhiteListEntry);
 
@@ -157,13 +157,13 @@ class WhitelistStorageProviderImplTest {
         );
     }
 
-    private LockWhitelistEntry createOneOffWhiteListEntry() {
+    private LockWhitelistEntry createOneOffWhiteListEntry(Address btcAddress) {
         Coin maxTransferValue = Coin.COIN;
-        return new OneOffWhiteListEntry(firstBtcAddress, maxTransferValue);
+        return new OneOffWhiteListEntry(btcAddress, maxTransferValue);
     }
 
-    private LockWhitelistEntry createUnlimitedWhiteListEntry() {
-        return new UnlimitedWhiteListEntry(secondBtcAddress);
+    private LockWhitelistEntry createUnlimitedWhiteListEntry(Address btcAddress) {
+        return new UnlimitedWhiteListEntry(btcAddress);
     }
 
     private Map<Address, OneOffWhiteListEntry> getAddressFromOneOffWhiteListEntryInMemoryStorage() {
