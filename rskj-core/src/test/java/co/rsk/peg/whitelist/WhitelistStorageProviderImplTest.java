@@ -134,8 +134,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     private void saveInMemoryStorageOneOffWhiteListEntry() {
-        Coin maxTransferValue = Coin.COIN;
-        OneOffWhiteListEntry oneOffWhiteListEntry = new OneOffWhiteListEntry(firstBtcAddress, maxTransferValue);
+        OneOffWhiteListEntry oneOffWhiteListEntry = createOneOffWhiteListEntry(firstBtcAddress);
         List<OneOffWhiteListEntry> oneOffWhiteListEntries = Collections.singletonList(oneOffWhiteListEntry);
         Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffWhiteListEntries, 100);
 
@@ -147,7 +146,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     private void saveInMemoryStorageUnlimitedWhiteListEntry() {
-        UnlimitedWhiteListEntry unlimitedWhiteListEntry = new UnlimitedWhiteListEntry(secondBtcAddress);
+        UnlimitedWhiteListEntry unlimitedWhiteListEntry = createUnlimitedWhiteListEntry(secondBtcAddress);
         List<UnlimitedWhiteListEntry> unlimitedWhiteListEntries = Collections.singletonList(unlimitedWhiteListEntry);
 
         inMemoryStorage.safeSaveToRepository(
@@ -157,12 +156,12 @@ class WhitelistStorageProviderImplTest {
         );
     }
 
-    private LockWhitelistEntry createOneOffWhiteListEntry(Address btcAddress) {
+    private OneOffWhiteListEntry createOneOffWhiteListEntry(Address btcAddress) {
         Coin maxTransferValue = Coin.COIN;
         return new OneOffWhiteListEntry(btcAddress, maxTransferValue);
     }
 
-    private LockWhitelistEntry createUnlimitedWhiteListEntry(Address btcAddress) {
+    private UnlimitedWhiteListEntry createUnlimitedWhiteListEntry(Address btcAddress) {
         return new UnlimitedWhiteListEntry(btcAddress);
     }
 
