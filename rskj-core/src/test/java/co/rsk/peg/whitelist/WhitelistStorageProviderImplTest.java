@@ -59,12 +59,13 @@ class WhitelistStorageProviderImplTest {
         assertEquals(0, oneOffWhiteListEntryMap.size());
 
         //Making sure there is no value saved in Storage
-        Map<Address, UnlimitedWhiteListEntry> addressUnlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
-        assertEquals(0, addressUnlimitedWhiteListEntryMap.size());
+        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
 
     @Test
-    void save_whenLockWhiteListIsNotNull_shouldReturnSavedValue() {
+    void save_whenLockWhiteListIsNotNullAndRSKIP87IsNotActive_shouldReturnSavedValue() {
+        when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(false);
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         //make sure the lockWhitelist is empty
@@ -79,9 +80,13 @@ class WhitelistStorageProviderImplTest {
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
         assertEquals(1, actualLockWhitelist.getAll().size());
 
-        //Making sure the saved value is correct
-        Map<Address, OneOffWhiteListEntry> whitelistedAddresses = getAddressFromOneOffWhiteListEntryInMemoryStorage();
-        assertTrue(whitelistedAddresses.containsKey(firstBtcAddress));
+        //Making sure the saved value is correct and related to OneOffWhiteListEntry
+        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
+        assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
+
+        //Making sure there is no value saved in storage related to UnlimitedWhiteListEntry
+        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
 
     @Test
