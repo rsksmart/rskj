@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -50,7 +51,16 @@ class WhitelistStorageProviderImplTest {
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
+        //make sure the lockWhitelist and storage is empty
         assertEquals(0, actualLockWhitelist.getAll().size());
+
+        //Making sure there is no value saved in Storage
+        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
+        assertEquals(0, oneOffWhiteListEntryMap.size());
+
+        //Making sure there is no value saved in Storage
+        Map<Address, UnlimitedWhiteListEntry> addressUnlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        assertEquals(0, addressUnlimitedWhiteListEntryMap.size());
     }
 
     @Test
@@ -170,7 +180,7 @@ class WhitelistStorageProviderImplTest {
             LOCK_ONE_OFF.getKey(),
             data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters)
         );
-        return oneOffWhitelistAndDisableBlockHeightData.getLeft();
+        return Objects.isNull(oneOffWhitelistAndDisableBlockHeightData) ? new HashMap<>() : oneOffWhitelistAndDisableBlockHeightData.getLeft();
     }
 
     private Map<Address, UnlimitedWhiteListEntry> getAddressFromUnlimitedWhiteListEntryInMemoryStorage() {
