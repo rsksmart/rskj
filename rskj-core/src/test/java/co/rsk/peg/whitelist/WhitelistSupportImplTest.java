@@ -2,7 +2,9 @@ package co.rsk.peg.whitelist;
 
 import static co.rsk.peg.whitelist.WhitelistStorageIndexKey.LOCK_ONE_OFF;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import co.rsk.bitcoinj.core.Address;
@@ -260,6 +262,33 @@ class WhitelistSupportImplTest {
         int actualResult = whitelistSupport.setLockWhitelistDisableBlockDelay(tx, BigInteger.ZERO, 0);
 
         assertEquals(WhitelistResponseCode.DISABLE_BLOCK_DELAY_INVALID.getCode(), actualResult);
+    }
+
+    @Test
+    void verifyLockSenderIsWhitelisted_whenOneOffLockWhitelistAddressIsWhitelisted_shouldReturnTrue() {
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
+        whitelistSupport.addOneOffLockWhitelistAddress(tx, btcAddress.toString(), BigInteger.TEN);
+
+        boolean actualResult = whitelistSupport.verifyLockSenderIsWhitelisted(btcAddress, Coin.SATOSHI, 0);
+
+        assertTrue(actualResult);
+    }
+
+    @Test
+    void verifyLockSenderIsWhitelisted_whenUnlimitedLockWhitelistAddressIsWhitelisted_shouldReturnTrue() {
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
+        whitelistSupport.addUnlimitedLockWhitelistAddress(tx, btcAddress.toString());
+
+        boolean actualResult = whitelistSupport.verifyLockSenderIsWhitelisted(btcAddress, Coin.SATOSHI, 0);
+
+        assertTrue(actualResult);
+    }
+
+    @Test
+    void verifyLockSenderIsWhitelisted_whenAddressIsNotWhitelisted_shouldReturnFalse() {
+        boolean actualResult = whitelistSupport.verifyLockSenderIsWhitelisted(btcAddress, Coin.SATOSHI, 0);
+
+        assertFalse(actualResult);
     }
 
     private void saveInMemoryStorageOneOffWhiteListEntry() {
