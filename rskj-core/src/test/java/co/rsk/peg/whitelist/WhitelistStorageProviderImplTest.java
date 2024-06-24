@@ -91,7 +91,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     @Test
-    void save_whenIsActiveRSKIP87_ShouldSavedUnlimitedLockWhitelist() {
+    void save_whenIsActiveRSKIP87_shouldSavedUnlimitedLockWhitelist() {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(true);
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
