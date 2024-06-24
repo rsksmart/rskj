@@ -268,9 +268,11 @@ class WhitelistSupportImplTest {
     void verifyLockSenderIsWhitelisted_whenOneOffLockWhitelistAddressIsWhitelisted_shouldReturnTrue() {
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
         whitelistSupport.addOneOffLockWhitelistAddress(tx, btcAddress.toString(), BigInteger.TEN);
+        LockWhitelistEntry lockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString());
 
         boolean actualResult = whitelistSupport.verifyLockSenderIsWhitelisted(btcAddress, Coin.SATOSHI, 0);
 
+        assertTrue(lockWhitelistEntry.isConsumed());
         assertTrue(actualResult);
     }
 
