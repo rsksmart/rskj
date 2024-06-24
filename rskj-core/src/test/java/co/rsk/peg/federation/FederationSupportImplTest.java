@@ -17,11 +17,12 @@
  */
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.storage.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
+import static co.rsk.peg.storage.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +32,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.FederationMember.KeyType;
@@ -205,16 +207,8 @@ class FederationSupportImplTest {
         @Test
         @Tag("getActiveFederationBtcUTXOs")
         void getActiveFederationUTXOs_returnsGenesisFederationUTXOs() {
-            storageProvider = mock(FederationStorageProviderImpl.class);
-            when(storageProvider.getNewFederation(any(), any())).thenReturn(genesisFederation);
-
             List<UTXO> genesisFederationUTXOs = BitcoinTestUtils.createUTXOs(10, genesisFederation.getAddress());
-            when(storageProvider.getNewFederationBtcUTXOs(any(), any())).thenReturn(genesisFederationUTXOs);
-
-            federationSupport = federationSupportBuilder
-                .withFederationConstants(federationMainnetConstants)
-                .withFederationStorageProvider(storageProvider)
-                .build();
+            storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), genesisFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             List<UTXO> activeFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
             assertThat(activeFederationUTXOs, is(genesisFederationUTXOs));
@@ -415,16 +409,8 @@ class FederationSupportImplTest {
         @Test
         @Tag("getActiveFederationBtcUTXOs")
         void getActiveFederationUTXOs_returnsNewFederationUTXOs() {
-            storageProvider = mock(FederationStorageProviderImpl.class);
-            when(storageProvider.getNewFederation(any(), any())).thenReturn(newFederation);
-
             List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
-            when(storageProvider.getNewFederationBtcUTXOs(any(), any())).thenReturn(newFederationUTXOs);
-
-            federationSupport = federationSupportBuilder
-                .withFederationConstants(federationMainnetConstants)
-                .withFederationStorageProvider(storageProvider)
-                .build();
+            storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             List<UTXO> activeFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
             assertThat(activeFederationUTXOs, is(newFederationUTXOs));
@@ -824,14 +810,10 @@ class FederationSupportImplTest {
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
-            storageProvider = mock(FederationStorageProviderImpl.class);
-            when(storageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(oldFederation);
-            when(storageProvider.getNewFederation(federationMainnetConstants, activations)).thenReturn(newFederation);
-
             List<UTXO> oldFederationUTXOs = BitcoinTestUtils.createUTXOs(5, oldFederation.getAddress());
+            storageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), oldFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
             List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
-            when(storageProvider.getOldFederationBtcUTXOs()).thenReturn(oldFederationUTXOs);
-            when(storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations)).thenReturn(newFederationUTXOs);
+            storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
