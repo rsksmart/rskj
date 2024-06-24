@@ -55,11 +55,11 @@ class WhitelistStorageProviderImplTest {
         // make sure the lockWhitelist and storage is empty
         assertEquals(0, actualLockWhitelist.getAll().size());
 
-        // Making sure there is no value saved in Storage
+        // There should be no value saved in the one-off entry
         Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
         assertEquals(0, oneOffWhiteListEntryMap.size());
 
-        // Making sure there is no value saved in Storage
+        // There should be no value saved in the unlimited entry
         Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
         assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
