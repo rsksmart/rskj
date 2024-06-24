@@ -23,6 +23,7 @@ import co.rsk.util.cli.CommandLineFixture;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,9 +37,14 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
+import static co.rsk.util.OkHttpClientTestFixture.*;
+
 public class PteIntegrationTest {
 
-    // THIS TEST REQUIRES A JAR FILE TO BE IN THE CORRECT PLACE BEFORE RUNNING
+    /*
+        When running this test locally, don't forget to build the .jar for the code you're trying to
+        test ('./gradlew clean' and './gradlew assemble' should be sufficient for most cases).
+     */
 
     private static final int RPC_PORT = 9999;
     private static final int MAX_BLOCKS_TO_GET = 20;
@@ -173,15 +179,44 @@ public class PteIntegrationTest {
     }
 
     private Response getBlockByNumber(String number) throws IOException {
-        String content = "[{\n" +
-                "    \"method\": \"eth_getBlockByNumber\",\n" +
-                "    \"params\": [\n" +
-                "        \"" + number + "\",\n" +
-                "        true\n" +
-                "    ],\n" +
-                "    \"id\": 1,\n" +
-                "    \"jsonrpc\": \"2.0\"\n" +
-                "}]";
+        String content = getEnvelopedMethodCalls(
+                ETH_GET_BLOCK_BY_NUMBER.replace(
+                        "<BLOCK_NUM_OR_TAG>",
+                        number)
+        );
+
+        System.out.println(content);
+
+        return OkHttpClientTestFixture.sendJsonRpcMessage(content, RPC_PORT);
+    }
+
+    private Response sendBulkTransactions(
+            String addressFrom1, String addressTo1,
+            String addressFrom2, String addressTo2,
+            String addressFrom3, String addressTo3,
+            String addressFrom4, String addressTo4) throws IOException {
+
+        String gas = "0x9C40";
+        String gasPrice = "0x10";
+        String value = "0x500";
+
+        String[] placeholders = new String[]{
+                "<ADDRESS_FROM>", "<ADDRESS_TO>", "<GAS>",
+                "<GAS_PRICE>", "<VALUE>"
+        };
+
+        String content = getEnvelopedMethodCalls(
+                StringUtils.replaceEach(ETH_SEND_TRANSACTION, placeholders,
+                        new String[]{addressFrom1, addressTo1, gas, gasPrice, value}),
+                StringUtils.replaceEach(ETH_SEND_TRANSACTION, placeholders,
+                        new String[]{addressFrom2, addressTo2, gas, gasPrice, value}),
+                StringUtils.replaceEach(ETH_SEND_TRANSACTION, placeholders,
+                        new String[]{addressFrom3, addressTo3, gas, gasPrice, value}),
+                StringUtils.replaceEach(ETH_SEND_TRANSACTION, placeholders,
+                        new String[]{addressFrom4, addressTo4, gas, gasPrice, value})
+        );
+
+        System.out.println(content);
 
         return OkHttpClientTestFixture.sendJsonRpcMessage(content, RPC_PORT);
     }
@@ -204,66 +239,6 @@ public class PteIntegrationTest {
         });
 
         return completableFuture;
-    }
-
-    private Response sendBulkTransactions(
-            String addressFrom1, String addressTo1,
-            String addressFrom2, String addressTo2,
-            String addressFrom3, String addressTo3,
-            String addressFrom4, String addressTo4) throws IOException {
-
-        String content = "[\n" +
-                "{\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"eth_sendTransaction\",\n" +
-                "    \"id\": 1,\n" +
-                "    \"params\": [{\n" +
-                "        \"from\": \"" + addressFrom1 + "\",\n" +
-                "        \"to\": \"" + addressTo1 + "\",\n" +
-                "        \"gas\": \"0x9C40\",\n" +
-                "        \"gasPrice\": \"0x10\",\n" +
-                "        \"value\": \"0x500\"\n" +
-                "    }]\n" +
-                "},\n" +
-                "{\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"eth_sendTransaction\",\n" +
-                "    \"id\": 1,\n" +
-                "    \"params\": [{\n" +
-                "        \"from\": \"" + addressFrom2 + "\",\n" +
-                "        \"to\": \"" + addressTo2 + "\",\n" +
-                "        \"gas\": \"0x9C40\",\n" +
-                "        \"gasPrice\": \"0x10\",\n" +
-                "        \"value\": \"0x500\"\n" +
-                "    }]\n" +
-                "},\n" +
-                "{\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"eth_sendTransaction\",\n" +
-                "    \"id\": 1,\n" +
-                "    \"params\": [{\n" +
-                "        \"from\": \"" + addressFrom3 + "\",\n" +
-                "        \"to\": \"" + addressTo3 + "\",\n" +
-                "        \"gas\": \"0x9C40\",\n" +
-                "        \"gasPrice\": \"0x10\",\n" +
-                "        \"value\": \"0x500\"\n" +
-                "    }]\n" +
-                "},\n" +
-                "{\n" +
-                "    \"jsonrpc\": \"2.0\",\n" +
-                "    \"method\": \"eth_sendTransaction\",\n" +
-                "    \"id\": 1,\n" +
-                "    \"params\": [{\n" +
-                "        \"from\": \"" + addressFrom4 + "\",\n" +
-                "        \"to\": \"" + addressTo4 + "\",\n" +
-                "        \"gas\": \"0x9C40\",\n" +
-                "        \"gasPrice\": \"0x10\",\n" +
-                "        \"value\": \"0x500\"\n" +
-                "    }]\n" +
-                "}\n" +
-                "]";
-
-        return OkHttpClientTestFixture.sendJsonRpcMessage(content, RPC_PORT);
     }
 
 }
