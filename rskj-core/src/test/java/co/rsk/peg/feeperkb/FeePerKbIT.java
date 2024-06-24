@@ -232,7 +232,7 @@ class FeePerKbIT {
         //It still has the previous voting round value
         assertFeePerKbValue(currentFeePerKb);
 
-        // Third vote is by authorizer 2. it votes similar then the unauthorized caller
+        // Third vote is by authorizer 2, who votes the same as the unauthorized caller
         voteFeePerKb(differentFeePerKbVote, FeePerKbVoteCaller.SECOND_AUTHORIZED.getRskAddress());
         //It still has the previous voting round value, since it shouldn't change with an unauthorized caller vote
         assertFeePerKbValue(currentFeePerKb);

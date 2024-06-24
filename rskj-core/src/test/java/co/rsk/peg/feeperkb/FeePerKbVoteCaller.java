@@ -12,13 +12,13 @@ public enum FeePerKbVoteCaller {
     THIRD_AUTHORIZED("8418edc8fea47183116b4c8cd6a12e51a7e169c1"),
     UNAUTHORIZED("e2a5070b4e2cb77fe22dff05d9dcdc4d3eaa6ead");
 
-    private final String RskAddress;
+    private final String rskAddress;
 
     FeePerKbVoteCaller(String rskAddress) {
-        RskAddress = rskAddress;
+        this.rskAddress = rskAddress;
     }
 
     public RskAddress getRskAddress() {
-        return new RskAddress(RskAddress);
+        return new RskAddress(rskAddress);
     }
 }
