@@ -52,15 +52,15 @@ class WhitelistStorageProviderImplTest {
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
-        // make sure the lockWhitelist and storage is empty
+        // Make sure the lockWhitelist cache and storage entries are empty
         assertEquals(0, actualLockWhitelist.getAll().size());
 
         // There should be no value saved in the one-off entry
-        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
+        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
         assertEquals(0, oneOffWhiteListEntryMap.size());
 
         // There should be no value saved in the unlimited entry
-        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedStorageEntry();
         assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
 
@@ -82,16 +82,16 @@ class WhitelistStorageProviderImplTest {
         assertEquals(1, actualLockWhitelist.getAll().size());
 
         // Making sure the saved value is correct and related to OneOffWhiteListEntry
-        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
+        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
         assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
 
         // Making sure there is no value saved in storage related to UnlimitedWhiteListEntry
-        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedStorageEntry();
         assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
 
     @Test
-    void save_whenIsActiveRSKIP87_ShouldSavedUnlimitedLockWhitelist() {
+    void save_whenIsActiveRSKIP87_shouldSavedUnlimitedLockWhitelist() {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(true);
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
@@ -110,10 +110,10 @@ class WhitelistStorageProviderImplTest {
         assertEquals(2, actualLockWhitelist.getAll().size());
 
         // Making sure the saved value is correct
-        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
+        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
         assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
 
-        Map<Address, UnlimitedWhiteListEntry> lockWhitelistEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        Map<Address, UnlimitedWhiteListEntry> lockWhitelistEntryMap = getAddressFromUnlimitedStorageEntry();
         assertTrue(lockWhitelistEntryMap.containsKey(secondBtcAddress));
     }
 
@@ -125,30 +125,30 @@ class WhitelistStorageProviderImplTest {
     }
 
     @Test
-    void getLockWhitelist_whenSavedValueDirectlyInStorageAndLockWhitelistIsNotNull_shouldReturnZeroEntries() {
+    void getLockWhitelist_shouldReturnActualEntries() {
         // The first time LockWhitelist is null and it queries the storage
-        LockWhitelist firstTimeQuery = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
+        LockWhitelist tempLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         // It should return zero entries as there is no value saved in storage. As of here LockWhitelist is not null
-        assertEquals(0, firstTimeQuery.getAll().size());
+        assertEquals(0, tempLockWhitelist.getAll().size());
 
         // Saving a value directly in storage
         saveInMemoryStorageOneOffWhiteListEntry(firstBtcAddress);
         // The second time LockWhitelist is not null so that it doesn't query the storage and get the value from cache
-        LockWhitelist secondTimeQuery = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
+        tempLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         // Return zero entries as it doesn't query in storage
-        assertEquals(0, secondTimeQuery.getAll().size());
-        assertFalse(secondTimeQuery.isWhitelisted(firstBtcAddress));
+        assertEquals(0, tempLockWhitelist.getAll().size());
+        assertFalse(tempLockWhitelist.isWhitelisted(firstBtcAddress));
 
         // Recreating whitelistStorageProvider to make sure it is querying the storage
         whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
-        LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
+        tempLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         // Return one entry that was saved directly in storage
-        assertEquals(1, actualLockWhitelist.getAll().size());
+        assertEquals(1, tempLockWhitelist.getAll().size());
         // Making sure the correct value was whitelisted
-        assertTrue(actualLockWhitelist.isWhitelisted(firstBtcAddress));
+        assertTrue(tempLockWhitelist.isWhitelisted(firstBtcAddress));
     }
 
     @Test
@@ -197,7 +197,7 @@ class WhitelistStorageProviderImplTest {
         return new UnlimitedWhiteListEntry(btcAddress);
     }
 
-    private Map<Address, OneOffWhiteListEntry> getAddressFromOneOffWhiteListEntryInMemoryStorage() {
+    private Map<Address, OneOffWhiteListEntry> getAddressFromOneOffStorageEntry() {
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData = inMemoryStorage.safeGetFromRepository(
             LOCK_ONE_OFF.getKey(),
             data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters)
@@ -205,7 +205,7 @@ class WhitelistStorageProviderImplTest {
         return Objects.isNull(oneOffWhitelistAndDisableBlockHeightData) ? new HashMap<>() : oneOffWhitelistAndDisableBlockHeightData.getLeft();
     }
 
-    private Map<Address, UnlimitedWhiteListEntry> getAddressFromUnlimitedWhiteListEntryInMemoryStorage() {
+    private Map<Address, UnlimitedWhiteListEntry> getAddressFromUnlimitedStorageEntry() {
         return inMemoryStorage.safeGetFromRepository(
             LOCK_UNLIMITED.getKey(),
             data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(
