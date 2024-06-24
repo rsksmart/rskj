@@ -191,7 +191,7 @@ class FeePerKbIT {
 
     @Test
     @Order(8)
-    void voteFeePerKbChange_whenAuthorizerOneAndThreeVoteAfterAuthorizerOneVoteAuthorizerTwoDifferentValueAfterThatUnauthorizedCallerVotesSameThanAuthorizerTwoAndLasVoteIsEmittedByAuthorizerThree_shouldSetValueVotedByOneAndThree() {
+    void voteFeePerKbChange_whenAuthorizerOneAndThreeVoteSameValueThenInBetweenAuthorizerTwoAndUnauthorizedCallerVoteSameValue_shouldSetValueVotedByOneAndThree() {
         Coin eighthFeePerKbVote = Coin.valueOf(40_000L);
 
         // First vote for a new value
@@ -457,7 +457,7 @@ class FeePerKbIT {
 
     @Test
     @Order(16)
-    void voteFeePerKbChange_whenAuthorizerOneAndThreeVoteSameCurrentFeePerKbValueAndInBetweenAuthorizerTwoVotesDifferentValue_shouldSetValueVotedByOneAndThree() {
+    void voteFeePerKbChange_whenVotingSameCurrentFeePerKbValue_shouldSetValueVoted() {
         Coin sixteenthFeePerKbVote = feePerKbSupport.getFeePerKb();
 
         // First vote for a new value
