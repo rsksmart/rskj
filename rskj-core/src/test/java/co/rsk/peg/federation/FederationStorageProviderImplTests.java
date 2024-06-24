@@ -2,6 +2,7 @@ package co.rsk.peg.federation;
 
 import static java.util.Objects.nonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -109,104 +110,45 @@ class FederationStorageProviderImplTests {
         assertEquals(expectedFederation, obtainedFederation);
     }
 
-    @Test
-    void getOldFederation_should_return_p2sh_erp_federation() {
-        Federation federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
-
-        testGetOldFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-    }
-
-    @Test
-    void getOldFederation_should_return_non_standard_erp_federation() {
-        Federation federation = createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION);
-        testGetOldFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-    }
-
-    @Test
-    void getOldFederation_should_return_standard_multisig_fed() {
-        Federation federation = createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
-        testGetOldFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-    }
-
-    @Test
-    void getOldFederation_should_return_null() {
-        testGetOldFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            null
-        );
-
-        testGetOldFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            null
-        );
-
-        testGetOldFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            null
-        );
-    }
-
-    private void testGetOldFederation(
+    @ParameterizedTest
+    @MethodSource("provideFederationAndFormatArguments")
+    void testGetOldFederation(
         int federationFormat,
-        Federation storedFederation
+        Federation expectedFederation
     ) {
         // Arrange
-        Repository repository = mock(Repository.class);
 
-        // Mock federation format in storage
-        when(repository.getStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            OLD_FEDERATION_FORMAT_VERSION.getKey())
-        ).thenReturn(BridgeSerializationUtils.serializeInteger(federationFormat));
-
-        // Mock federation
-        byte[] serializedFederation = null;
-        if (storedFederation != null) {
-            serializedFederation = BridgeSerializationUtils.serializeFederation(storedFederation);
-        }
-
-        when(repository.getStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            OLD_FEDERATION_KEY.getKey())
-        ).thenReturn(serializedFederation);
-
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        byte[] federationFormatSerialized = getFederationFormatSerialized(federationFormat);
+        storageAccessor.saveToRepository(OLD_FEDERATION_FORMAT_VERSION.getKey(), federationFormatSerialized);
+        byte[] serializedFederation = getSerializedFederation(expectedFederation, federationFormat);
+        storageAccessor.saveToRepository(OLD_FEDERATION_KEY.getKey(), serializedFederation);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
         // Act
+
         Federation obtainedFederation = federationStorageProvider.getOldFederation(federationConstants, activations);
+
+        // Directly saving a null federation in storage to then assert that the method returns the cached federation
+        if(nonNull(expectedFederation)) {
+            storageAccessor.saveToRepository(OLD_FEDERATION_KEY.getKey(), null);
+        }
 
         // Assert
 
-        // Assert that the OLD_FEDERATION_FORMAT_VERSION key is read from the storage
-        verify(repository, times(1)).getStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            OLD_FEDERATION_FORMAT_VERSION.getKey()
-        );
-
-        // Call getNewFederation again and assert the same federation is returned
+        // Call the method again and assert the same cached federation is returned
         assertEquals(obtainedFederation, federationStorageProvider.getOldFederation(federationConstants, activations));
 
-        // The second call to getNewFederation() should return the federation stored in memory
-        int timesFederationIsReadFromRepository = 1;
-        if (storedFederation == null) {
-            // If there is no federation in storage it will try to get it every time getNewFederation() is called
-            timesFederationIsReadFromRepository = 2;
-        }
-        verify(repository, times(timesFederationIsReadFromRepository)).getStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            OLD_FEDERATION_KEY.getKey()
-        );
+        assertEquals(expectedFederation, obtainedFederation);
+    }
 
-        assertEquals(storedFederation, obtainedFederation);
+    @Test
+    void getOldFederation_previouslySetToNull_returnsNull() {
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationStorageProvider.setOldFederation(null);
+        Federation oldFederation = federationStorageProvider.getOldFederation(federationConstants, activations);
+        assertNull(oldFederation);
     }
 
     @Test
