@@ -150,7 +150,14 @@ public class Stats {
                 return 0.5;
             case BLOCK_HEADERS_RESPONSE_MESSAGE:
                 return 5;
-                // TODO (pato) add priority for Snap sync messages.
+            case SNAP_BLOCKS_REQUEST_MESSAGE:
+                return 6;
+            case SNAP_BLOCKS_RESPONSE_MESSAGE:
+                return 7;
+            case SNAP_STATUS_REQUEST_MESSAGE:
+                return 8;
+            case SNAP_STATUS_RESPONSE_MESSAGE:
+                return 9;
             default:
                 return 0.0;
         }

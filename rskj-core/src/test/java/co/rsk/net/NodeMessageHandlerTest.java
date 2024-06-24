@@ -40,18 +40,24 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.net.NodeManager;
+import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskMockFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -202,6 +208,76 @@ class NodeMessageHandlerTest {
 
         nodeMessageHandler.postMessage(sender, message, null);
 
+        Assertions.assertEquals(0, nodeMessageHandler.getMessageQueueSize());
+    }
+
+    @Test
+    void postSnapMessages() throws InterruptedException {
+        RskSystemProperties config = spy(this.config);
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        SyncProcessor syncProcessor = mock(SyncProcessor.class);
+        StatusResolver statusResolver = mock(StatusResolver.class);
+        Status status = mock(Status.class);
+        ChannelManager channelManager = mock(ChannelManager.class);
+
+        // Mock snap messages
+        Message snapStateRequestMessage = Mockito.mock(SnapStateChunkRequestMessage.class);
+        Message snapStateResponseMessage = Mockito.mock(SnapStateChunkResponseMessage.class);
+        Message snapStatusRequestMessage = Mockito.mock(SnapStatusRequestMessage.class);
+        Message snapStatusResponseMessage = Mockito.mock(SnapStatusResponseMessage.class);
+
+        Mockito.when(snapStateRequestMessage.getMessageType()).thenReturn(MessageType.SNAP_STATUS_REQUEST_MESSAGE);
+        Mockito.when(snapStateResponseMessage.getMessageType()).thenReturn(MessageType.SNAP_STATUS_RESPONSE_MESSAGE);
+        Mockito.when(snapStatusRequestMessage.getMessageType()).thenReturn(MessageType.SNAP_BLOCKS_REQUEST_MESSAGE);
+        Mockito.when(snapStatusResponseMessage.getMessageType()).thenReturn(MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE);
+
+        Mockito.when(status.getBestBlockNumber()).thenReturn(0L);
+        Mockito.when(status.getBestBlockHash()).thenReturn(ByteUtil.intToBytes(0));
+        Mockito.when(statusResolver.currentStatus()).thenReturn(status);
+        Mockito.when(channelManager.broadcastStatus(any())).thenReturn(0);
+
+        Channel sender = new Channel(null, null, mock(NodeManager.class), null, null, null, null);
+        InetAddress inetAddress = InetAddress.getLoopbackAddress();
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 500);
+        sender.setInetSocketAddress(inetSocketAddress);
+        sender.setNode(new NodeID(TestUtils.generatePeerId("peer")).getID());
+
+        RskAddress bannedMiner = new RskAddress("0000000000000000000000000000000000000023");
+        doReturn(Collections.singletonList(bannedMiner.toHexString())).when(config).bannedMinerList();
+
+        NodeMessageHandler nodeMessageHandler = Mockito.spy(new NodeMessageHandler(
+                config, sbp, syncProcessor, null, channelManager, null, scoring, statusResolver));
+
+        nodeMessageHandler.postMessage(sender, snapStateRequestMessage, null);
+        nodeMessageHandler.postMessage(sender, snapStateResponseMessage, null);
+        nodeMessageHandler.postMessage(sender, snapStatusRequestMessage, null);
+        nodeMessageHandler.postMessage(sender, snapStatusResponseMessage, null);
+
+        Assertions.assertEquals(4, nodeMessageHandler.getMessageQueueSize());
+
+        nodeMessageHandler.start();
+        Thread runThread = new Thread(nodeMessageHandler::run);
+        runThread.start();
+
+        // Give some time so that runThread can execute some processing in its run() method
+        TimeUnit.SECONDS.sleep(1);
+
+        runThread.interrupt();
+        nodeMessageHandler.stop();
+
+        ArgumentCaptor<Message> snapMessagesCaptor = ArgumentCaptor.forClass(Message.class);
+        Mockito.verify(nodeMessageHandler, atLeastOnce()).processMessage(any(Peer.class), snapMessagesCaptor.capture());
+
+        List<Message> capturedMessages = snapMessagesCaptor.getAllValues();
+        // score = 900
+        Assertions.assertEquals(MessageType.SNAP_STATUS_RESPONSE_MESSAGE, capturedMessages.get(0).getMessageType());
+        // score = 800
+        Assertions.assertEquals(MessageType.SNAP_STATUS_REQUEST_MESSAGE, capturedMessages.get(1).getMessageType());
+        // score = 695.36
+        Assertions.assertEquals(MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE, capturedMessages.get(2).getMessageType());
+        // score = 596.02
+        Assertions.assertEquals(MessageType.SNAP_BLOCKS_REQUEST_MESSAGE, capturedMessages.get(3).getMessageType());
         Assertions.assertEquals(0, nodeMessageHandler.getMessageQueueSize());
     }
 
