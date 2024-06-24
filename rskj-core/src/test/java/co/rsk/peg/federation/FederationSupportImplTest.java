@@ -21,12 +21,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.InMemoryStorage;
@@ -199,6 +201,24 @@ class FederationSupportImplTest {
             byte[] activeFederatorMstPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.MST);
             assertThat(activeFederatorMstPublicKey, is(federatorFromGenesisFederationMstPublicKey.getPubKey(true)));
         }
+
+        @Test
+        @Tag("getActiveFederationBtcUTXOs")
+        void getActiveFederationUTXOs_returnsGenesisFederationUTXOs() {
+            storageProvider = mock(FederationStorageProviderImpl.class);
+            when(storageProvider.getNewFederation(any(), any())).thenReturn(genesisFederation);
+
+            List<UTXO> genesisFederationUTXOs = BitcoinTestUtils.createUTXOs(10, genesisFederation.getAddress());
+            when(storageProvider.getNewFederationBtcUTXOs(any(), any())).thenReturn(genesisFederationUTXOs);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .build();
+
+            List<UTXO> activeFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
+            assertThat(activeFederationUTXOs, is(genesisFederationUTXOs));
+        }
     }
 
     @Nested
@@ -225,7 +245,7 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getActiveFederation")
-        void getActiveFederation_returnsExpectedFederation() {
+        void getActiveFederation_returnsNewFederation() {
             Federation activeFederation = federationSupport.getActiveFederation();
             assertThat(activeFederation, is(newFederation));
         }
@@ -247,7 +267,7 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getActiveFederationRedeemScript")
-        void getActiveFederationRedeemScript_afterRSKIP293_returnsExpectedRedeemScript() {
+        void getActiveFederationRedeemScript_afterRSKIP293_returnsNewFederationRedeemScript() {
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
             when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -264,49 +284,49 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getActiveFederationAddress")
-        void getActiveFederationAddress_returnsExpectedAddress() {
+        void getActiveFederationAddress_returnsNewFederationAddress() {
             Address activeFederationAddress = federationSupport.getActiveFederationAddress();
             assertThat(activeFederationAddress, is(newFederation.getAddress()));
         }
 
         @Test
         @Tag("getActiveFederationSize")
-        void getActiveFederationSize_returnsExpectedSize() {
+        void getActiveFederationSize_returnsNewFederationSize() {
             int activeFederationSize = federationSupport.getActiveFederationSize();
             assertThat(activeFederationSize, is(newFederation.getSize()));
         }
 
         @Test
         @Tag("getActiveFederationThreshold")
-        void getActiveFederationThreshold_returnsExpectedThreshold() {
+        void getActiveFederationThreshold_returnsNewFederationThreshold() {
             int activeFederationThreshold = federationSupport.getActiveFederationThreshold();
             assertThat(activeFederationThreshold, is(newFederation.getNumberOfSignaturesRequired()));
         }
 
         @Test
         @Tag("getActiveFederationCreationTime")
-        void getActiveFederationCreationTime_returnsExpectedCreationTime() {
+        void getActiveFederationCreationTime_returnsNewFederationCreationTime() {
             Instant activeFederationCreationTime = federationSupport.getActiveFederationCreationTime();
             assertThat(activeFederationCreationTime, is(newFederation.getCreationTime()));
         }
 
         @Test
         @Tag("getActiveFederationCreationBlockNumber")
-        void getActiveFederationCreationBlockNumber_returnsExpectedCreationBlockNumber() {
+        void getActiveFederationCreationBlockNumber_returnsNewFederationCreationBlockNumber() {
             long activeFederationCreationBlockNumber = federationSupport.getActiveFederationCreationBlockNumber();
             assertThat(activeFederationCreationBlockNumber, is(newFederation.getCreationBlockNumber()));
         }
 
         @Test
         @Tag("getActiveFederatorBtcPublicKey")
-        void getActiveFederatorBtcPublicKey_returnsExpectedFederatorBtcPublicKey() {
+        void getActiveFederatorBtcPublicKey_returnsFederatorFromNewFederationBtcPublicKey() {
             byte[] activeFederatorBtcPublicKey = federationSupport.getActiveFederatorBtcPublicKey(0);
             assertThat(activeFederatorBtcPublicKey, is(newFederation.getBtcPublicKeys().get(0).getPubKey()));
         }
 
         @Test
         @Tag("getActiveFederatorPublicKeyOfType")
-        void getActiveFederatorPublicKeyOfType_returnsExpectedFederatorPublicKeys() {
+        void getActiveFederatorPublicKeyOfType_returnsFederatorFromNewFederationPublicKeys() {
             BtcECKey federatorFromNewFederationBtcPublicKey = newFederation.getBtcPublicKeys().get(0);
             ECKey federatorFromNewFederationRskPublicKey = getRskPublicKeysFromFederationMembers(newFederation.getMembers()).get(0);
             ECKey federatorFromNewFederationMstPublicKey = getMstPublicKeysFromFederationMembers(newFederation.getMembers()).get(0);
@@ -333,7 +353,7 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getActiveFederatorPublicKeyOfType")
-        void getActiveFederatorPublicKeyOfType_withSpecificRskKeys_returnsExpectedFederatorPublicKeys() {
+        void getActiveFederatorPublicKeyOfType_withSpecificRskKeys_returnsFederatorFromNewFederationPublicKeys() {
             // create new federation with specific rsk public keys
             List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
@@ -364,7 +384,7 @@ class FederationSupportImplTest {
 
         @Test
         @Tag("getActiveFederatorPublicKeyOfType")
-        void getActiveFederatorPublicKeyOfType_withSpecificRskAndMstKeys_returnsExpectedFederatorPublicKeys() {
+        void getActiveFederatorPublicKeyOfType_withSpecificRskAndMstKeys_returnsFederatorFromNewFederationPublicKeys() {
             // create new federation with specific rsk and mst public keys
             List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
@@ -390,6 +410,24 @@ class FederationSupportImplTest {
 
             byte[] activeFederatorMstPublicKey = federationSupport.getActiveFederatorPublicKeyOfType(0, KeyType.MST);
             assertThat(activeFederatorMstPublicKey, is(federatorFromNewFederationMstPublicKey.getPubKey(true)));
+        }
+
+        @Test
+        @Tag("getActiveFederationBtcUTXOs")
+        void getActiveFederationUTXOs_returnsNewFederationUTXOs() {
+            storageProvider = mock(FederationStorageProviderImpl.class);
+            when(storageProvider.getNewFederation(any(), any())).thenReturn(newFederation);
+
+            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+            when(storageProvider.getNewFederationBtcUTXOs(any(), any())).thenReturn(newFederationUTXOs);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .build();
+
+            List<UTXO> activeFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
+            assertThat(activeFederationUTXOs, is(newFederationUTXOs));
         }
     }
 
@@ -772,6 +810,51 @@ class FederationSupportImplTest {
                 Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, federatorFromOldFederationBtcPublicKey, federatorFromOldFederationRskPublicKey, federatorFromOldFederationMstPublicKey),
                 Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, federatorFromNewFederationBtcPublicKey, federatorFromNewFederationRskPublicKey, federatorFromNewFederationMstPublicKey),
                 Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, federatorFromNewFederationBtcPublicKey, federatorFromNewFederationRskPublicKey, federatorFromNewFederationMstPublicKey)
+            );
+        }
+
+        @ParameterizedTest
+        @Tag("getActiveFederationUTXOs")
+        @MethodSource("expectedUTXOsArgs")
+        void getActiveFederationBtcUTXOs_returnsExpectedUTXOsAccordingToActivationAgeAndActivations(
+            long currentBlock,
+            ActivationConfig.ForBlock activations,
+            List<UTXO> expectedUTXOs) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            storageProvider = mock(FederationStorageProviderImpl.class);
+            when(storageProvider.getOldFederation(federationMainnetConstants, activations)).thenReturn(oldFederation);
+            when(storageProvider.getNewFederation(federationMainnetConstants, activations)).thenReturn(newFederation);
+
+            List<UTXO> oldFederationUTXOs = BitcoinTestUtils.createUTXOs(5, oldFederation.getAddress());
+            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+            when(storageProvider.getOldFederationBtcUTXOs()).thenReturn(oldFederationUTXOs);
+            when(storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations)).thenReturn(newFederationUTXOs);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            List<UTXO> activeFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
+            assertThat(activeFederationUTXOs, is(expectedUTXOs));
+        }
+
+        private Stream<Arguments> expectedUTXOsArgs() {
+            List<UTXO> oldFederationUTXOs = BitcoinTestUtils.createUTXOs(5, oldFederation.getAddress());
+            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+
+            return Stream.of(
+                Arguments.of(blockNumberFederationActivationHop - 1, hopActivations, oldFederationUTXOs),
+                Arguments.of(blockNumberFederationActivationHop, fingerrootActivations, oldFederationUTXOs),
+                Arguments.of(blockNumberFederationActivationFingerroot - 1, fingerrootActivations, oldFederationUTXOs),
+                Arguments.of(blockNumberFederationActivationHop, hopActivations, newFederationUTXOs),
+                Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederationUTXOs),
+                Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederationUTXOs)
             );
         }
     }
