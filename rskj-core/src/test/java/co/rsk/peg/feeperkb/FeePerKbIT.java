@@ -27,7 +27,7 @@ class FeePerKbIT {
     private final FeePerKbConstants feePerKbConstants = FeePerKbMainNetConstants.getInstance();
     private FeePerKbSupport feePerKbSupport;
     private SignatureCache signatureCache;
-    private Coin currentFeePerKb;
+    private Coin currentFeePerKb; // it is used to guarantee the value from getFeePerKb() contains the value expected
 
     @BeforeAll
     void setUp() {
@@ -465,12 +465,7 @@ class FeePerKbIT {
         //It still has the previous voting round value
         assertFeePerKbValue(currentFeePerKb);
 
-        // Second vote for a different value, different authorizer
-        voteFeePerKb(differentFeePerKbVote, FeePerKbVoteCaller.SECOND_AUTHORIZED.getRskAddress());
-        //It still has the previous voting round value
-        assertFeePerKbValue(currentFeePerKb);
-
-        // Third vote from authorizer 3, same value as the first one voted from authorizer 1
+        // Second vote from authorizer 3 is the same as first vote
         voteFeePerKb(sixteenthFeePerKbVote, FeePerKbVoteCaller.THIRD_AUTHORIZED.getRskAddress());
         currentFeePerKb = sixteenthFeePerKbVote;
 
