@@ -79,7 +79,7 @@ class FederationStorageProviderImplTests {
 
     @ParameterizedTest
     @MethodSource("provideFederationAndFormatArguments")
-    protected void testGetNewFederation(
+    void testGetNewFederation(
         int federationFormat,
         Federation expectedFederation
     ) {
