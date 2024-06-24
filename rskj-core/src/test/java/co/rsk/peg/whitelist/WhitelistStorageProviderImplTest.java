@@ -52,14 +52,14 @@ class WhitelistStorageProviderImplTest {
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
-        //make sure the lockWhitelist and storage is empty
+        // make sure the lockWhitelist and storage is empty
         assertEquals(0, actualLockWhitelist.getAll().size());
 
-        //Making sure there is no value saved in Storage
+        // Making sure there is no value saved in Storage
         Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
         assertEquals(0, oneOffWhiteListEntryMap.size());
 
-        //Making sure there is no value saved in Storage
+        // Making sure there is no value saved in Storage
         Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
         assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
@@ -69,7 +69,7 @@ class WhitelistStorageProviderImplTest {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(false);
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
-        //make sure the lockWhitelist is empty
+        // Make sure the lockWhitelist is empty
         assertEquals(0, lockWhitelist.getAll().size());
 
         LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry(firstBtcAddress);
@@ -81,11 +81,11 @@ class WhitelistStorageProviderImplTest {
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
         assertEquals(1, actualLockWhitelist.getAll().size());
 
-        //Making sure the saved value is correct and related to OneOffWhiteListEntry
+        // Making sure the saved value is correct and related to OneOffWhiteListEntry
         Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
         assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
 
-        //Making sure there is no value saved in storage related to UnlimitedWhiteListEntry
+        // Making sure there is no value saved in storage related to UnlimitedWhiteListEntry
         Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
         assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
@@ -95,7 +95,7 @@ class WhitelistStorageProviderImplTest {
         when(activationConfig.isActive(ConsensusRule.RSKIP87)).thenReturn(true);
         LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
-        //make sure the lockWhitelist is empty
+        // Make sure the lockWhitelist is empty
         assertEquals(0, lockWhitelist.getAll().size());
 
         LockWhitelistEntry oneOffWhiteListEntry =  createOneOffWhiteListEntry(firstBtcAddress);
@@ -109,7 +109,7 @@ class WhitelistStorageProviderImplTest {
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
         assertEquals(2, actualLockWhitelist.getAll().size());
 
-        //Making sure the saved value is correct
+        // Making sure the saved value is correct
         Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
         assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
 
@@ -126,28 +126,28 @@ class WhitelistStorageProviderImplTest {
 
     @Test
     void getLockWhitelist_whenSavedValueDirectlyInStorageAndLockWhitelistIsNotNull_shouldReturnZeroEntries() {
-        //The first time LockWhitelist is null and it queries the storage
+        // The first time LockWhitelist is null and it queries the storage
         LockWhitelist firstTimeQuery = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
-        //It should return zero entries as there is no value saved in storage. As of here LockWhitelist is not null
+        // It should return zero entries as there is no value saved in storage. As of here LockWhitelist is not null
         assertEquals(0, firstTimeQuery.getAll().size());
 
-        //Saving a value directly in storage
+        // Saving a value directly in storage
         saveInMemoryStorageOneOffWhiteListEntry(firstBtcAddress);
-        //The second time LockWhitelist is not null so that it doesn't query the storage and get the value from cache
+        // The second time LockWhitelist is not null so that it doesn't query the storage and get the value from cache
         LockWhitelist secondTimeQuery = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
-        //Return zero entries as it doesn't query in storage
+        // Return zero entries as it doesn't query in storage
         assertEquals(0, secondTimeQuery.getAll().size());
         assertFalse(secondTimeQuery.isWhitelisted(firstBtcAddress));
 
-        //Recreating whitelistStorageProvider to make sure it is querying the storage
+        // Recreating whitelistStorageProvider to make sure it is querying the storage
         whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
-        //Return one entry that was saved directly in storage
+        // Return one entry that was saved directly in storage
         assertEquals(1, actualLockWhitelist.getAll().size());
-        //Making sure the correct value was whitelisted
+        // Making sure the correct value was whitelisted
         assertTrue(actualLockWhitelist.isWhitelisted(firstBtcAddress));
     }
 
@@ -160,7 +160,7 @@ class WhitelistStorageProviderImplTest {
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         assertEquals(2, actualLockWhitelist.getAll().size());
-        //Making sure the correct value was whitelisted
+        // Making sure the correct value was whitelisted
         assertTrue(actualLockWhitelist.isWhitelisted(firstBtcAddress));
         assertTrue(actualLockWhitelist.isWhitelisted(secondBtcAddress));
     }
