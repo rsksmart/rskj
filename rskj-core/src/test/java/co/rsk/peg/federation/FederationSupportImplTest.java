@@ -39,6 +39,7 @@ import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -1055,6 +1056,13 @@ class FederationSupportImplTest {
             byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
             assertThat(retiringFederatorMstPublicKey, is(nullValue()));
         }
+
+        @Test
+        @Tag("getRetiringFederationBtcUTXOs")
+        void getRetiringFederationUTXOs_returnsEmptyList() {
+            List<UTXO> retiringFederationUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
+            assertThat(retiringFederationUTXOs, is(Collections.emptyList()));
+        }
     }
 
     @Nested
@@ -1138,6 +1146,17 @@ class FederationSupportImplTest {
 
             byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
             assertThat(retiringFederatorMstPublicKey, is(nullValue()));
+        }
+
+        @Test
+        @Tag("getRetiringFederationBtcUTXOs")
+        void getRetiringFederationUTXOs_returnsEmptyList() {
+            // set UTXOs for new federation
+            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+            storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
+
+            List<UTXO> retiringFederationUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
+            assertThat(retiringFederationUTXOs, is(Collections.emptyList()));
         }
     }
 
@@ -1675,6 +1694,60 @@ class FederationSupportImplTest {
 
             byte[] retiringFederatorMstPublicKey = federationSupport.getRetiringFederatorPublicKeyOfType(0, KeyType.MST);
             assertThat(retiringFederatorMstPublicKey, is(federatorFromOldFederationMstPublicKey.getPubKey(true)));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationCreationBlockNumber")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void getRetiringFederationBtcUTXOs_withNewFederationNotActive_returnsEmptyList(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            // set UTXOs for both feds
+            List<UTXO> oldFederationUTXOs = BitcoinTestUtils.createUTXOs(5, oldFederation.getAddress());
+            storageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), oldFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
+            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+            storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            List<UTXO> retiringFederationUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
+            assertThat(retiringFederationUTXOs, is(Collections.emptyList()));
+        }
+
+        @ParameterizedTest
+        @Tag("getRetiringFederationCreationBlockNumber")
+        @MethodSource("newFederationActiveActivationArgs")
+        void getRetiringFederationBtcUTXOs_withNewFederationActive_returnsOldFederationBtcUTXOs(
+            long currentBlock,
+            ActivationConfig.ForBlock activations) {
+
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
+
+            // set UTXOs for both feds
+            List<UTXO> oldFederationUTXOs = BitcoinTestUtils.createUTXOs(5, oldFederation.getAddress());
+            storageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), oldFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
+            List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+            storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            List<UTXO> retiringFederationUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
+            assertThat(retiringFederationUTXOs, is(oldFederationUTXOs));
         }
 
         private Stream<Arguments> newFederationNotActiveActivationArgs() {
