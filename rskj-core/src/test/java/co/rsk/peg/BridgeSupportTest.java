@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.peg.constants.*;
@@ -44,11 +45,16 @@ import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.util.Factory;
+import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.HexEncoder;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -6227,6 +6233,184 @@ class BridgeSupportTest {
         verify(btcBlockStore, never()).put(any(StoredBlock.class));
         verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
         Assertions.assertEquals(-4, result);
+    }
+
+    @Test
+    void receiveHeader_block_with_too_much_work() throws IOException, BlockStoreException {
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+        ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
+        Repository repository = createRepository();
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeMainnetConstants,
+            activations
+        );
+        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
+        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
+        PeginInstructionsProvider peginInstructionsProvider = mock(PeginInstructionsProvider.class);
+        Block block = mock(Block.class);
+
+        Context btcContext = new Context(bridgeMainnetConstants.getBtcParams());
+
+        FederationSupport federationSupport = new FederationSupport(bridgeMainnetConstants, bridgeStorageProvider, block, activations);
+
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+            bridgeMainnetConstants.getBtcParams(),
+            100,
+            100
+        );
+
+        BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
+
+        BtcBlock chainHead = new BtcBlock(
+            bridgeMainnetConstants.getBtcParams(),
+            HexUtils.stringHexToByteArray("00e00820925b77c9ff4d0036aa29f3238cde12e9af9d55c34ed30200000000000000000032a9fa3e12ef87a2327b55db6a16a1227bb381db8b269d90aa3a6e38cf39665f91b47766255d0317c1b1575f")
+        );
+        SignatureCache signatureCache = mock(SignatureCache.class);
+
+        BridgeSupport bs = new BridgeSupport(
+            bridgeMainnetConstants,
+            bridgeStorageProvider,
+            bridgeEventLogger,
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            repository,
+            block,
+            btcContext,
+            federationSupport,
+            feePerKbSupport,
+            btcBlockStoreFactory,
+            activations,
+            signatureCache
+        );
+
+        BtcBlock btcBlockToAdd = new BtcBlock(
+            bridgeMainnetConstants.getBtcParams(),
+            HexUtils.stringHexToByteArray("006001207ca158816ffc9d45b9ecd6a49ffbf3038f3646cf13fc01000000000000000000e0182ce7cc10db785b5fb2fb4314053f5b12cd6116168797cb461aa339fc725078b87766255d0317ba5261e2")
+        );
+
+        // To do:
+        // - create a new checkpoints file that loads up to the block before the issue
+        // - update the genesis federation to be right after the block with the issue (so the checkpoint used is the one with the issue)
+
+        // Make the previous block tip of the chain
+//        StoredBlock parent = new StoredBlock(chainHead, chainHead.getWork().multiply(BigInteger.TEN), 849137);
+//        StoredBlock child = new StoredBlock(btcBlockToAdd, btcBlockToAdd.getWork(), 849138);
+//        btcBlockStoreWithCache.put(parent);
+//        btcBlockStoreWithCache.setChainHead(parent);
+//        btcBlockStoreWithCache.put(child);
+//        repository.save();
+//        assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), chainHead.getHash());
+
+        bs.receiveHeader(btcBlockToAdd);
+        assertEquals(bs.getBtcBlockchainBestChainHeight(), 849138);
+
+        // Call a second time to trigger ensureBtcBlockStore
+        bs = new BridgeSupport(
+            bridgeMainnetConstants,
+            bridgeStorageProvider,
+            bridgeEventLogger,
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            repository,
+            block,
+            btcContext,
+            federationSupport,
+            feePerKbSupport,
+            new RepositoryBtcBlockStoreWithCache.Factory(
+                bridgeMainnetConstants.getBtcParams(),
+                100,
+                100
+            ),
+            activations,
+            signatureCache
+        );
+        bs.receiveHeader(btcBlockToAdd);
+
+    }
+
+    @Test
+    void receiveHeader_withExceededChainWork_returnsReceiveHeaderUnexpectedException() throws IOException, BlockStoreException {
+        // Arrange - recreate the context
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+        Context btcContext = new Context(bridgeMainnetConstants.getBtcParams());
+
+        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
+        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
+        PeginInstructionsProvider peginInstructionsProvider = mock(PeginInstructionsProvider.class);
+        Block block = mock(Block.class);
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
+        Repository repository = createRepository();
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeMainnetConstants,
+            activations
+        );
+        FederationSupport federationSupport = new FederationSupport(bridgeMainnetConstants, bridgeStorageProvider, block, activations);
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+        SignatureCache signatureCache = mock(SignatureCache.class);
+
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+            bridgeMainnetConstants.getBtcParams(),
+            100,
+            100
+        );
+        BridgeSupport bridgeSupport = new BridgeSupport(
+            bridgeMainnetConstants,
+            bridgeStorageProvider,
+            bridgeEventLogger,
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            repository,
+            block,
+            btcContext,
+            federationSupport,
+            feePerKbSupport,
+            btcBlockStoreFactory,
+            activations,
+            signatureCache
+        );
+        BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
+
+        //
+        //
+        // Act - add the problematic block and the previous one
+        // As of block 849138 chainWork has reached a value of 800028897aa1dce163ead2cf,
+        // that is 39614272687832008485268804303 in bigInt
+        BigInteger tooMuchWork = new BigInteger("39614272687832008485268804303");
+        BigInteger difficultyForBlock = new BigInteger("-359387998867170497083477"); // this is (minus) the difficulty for each block
+
+        // Create the previous block tip of the chain
+        String previousBlockHeader = "00e00820925b77c9ff4d0036aa29f3238cde12e9af9d55c34ed30200000000000000000032a9fa3e12ef87a2327b55db6a16a1227bb381db8b269d90aa3a6e38cf39665f91b47766255d0317c1b1575f";
+        BtcBlock previousBlock = new BtcBlock(
+            bridgeMainnetConstants.getBtcParams(),
+            HexUtils.stringHexToByteArray(previousBlockHeader)
+        );
+        // we have to set it with its accumulated difficulty to recreate the real scenario
+        // the chainWork for block 849137 should be the work reached in 849138, minus the difficulty from the block 849138 itself
+        StoredBlock parent = new StoredBlock(previousBlock, tooMuchWork.add(difficultyForBlock), 849137);
+
+        // save previous block and assert
+        btcBlockStoreWithCache.put(parent);
+        btcBlockStoreWithCache.setChainHead(parent);
+        repository.save();
+        assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), previousBlock.getHash());
+
+        // Create problematic block
+        String blockWithTooMuchWorkHeader = "006001207ca158816ffc9d45b9ecd6a49ffbf3038f3646cf13fc01000000000000000000e0182ce7cc10db785b5fb2fb4314053f5b12cd6116168797cb461aa339fc725078b87766255d0317ba5261e2";
+        BtcBlock btcBlockWithTooMuchWork = new BtcBlock(
+            bridgeMainnetConstants.getBtcParams(),
+            HexUtils.stringHexToByteArray(blockWithTooMuchWorkHeader)
+        );
+
+        // assert that receiveHeader for the block with too much work throws a (handled) error
+        Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
+        assertThat(bridgeSupport.receiveHeader(btcBlockWithTooMuchWork), is(RECEIVE_HEADER_UNEXPECTED_EXCEPTION));
     }
 
     private void assertRefundInProcessPegInVersionLegacy(
