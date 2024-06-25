@@ -338,7 +338,7 @@ class MessageTest {
 
         Assertions.assertNotNull(result);
         Assertions.assertArrayEquals(encoded, result.getEncoded());
-        Assertions.assertEquals(MessageType.STATE_CHUNK_REQUEST_MESSAGE, result.getMessageType());
+        Assertions.assertEquals(MessageType.SNAP_STATE_CHUNK_REQUEST_MESSAGE, result.getMessageType());
 
         SnapStateChunkRequestMessage newMessage = (SnapStateChunkRequestMessage) result;
 

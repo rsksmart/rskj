@@ -40,7 +40,7 @@ public class SnapStateChunkRequestMessage extends MessageWithId {
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.STATE_CHUNK_REQUEST_MESSAGE;
+        return MessageType.SNAP_STATE_CHUNK_REQUEST_MESSAGE;
     }
 
     @Override

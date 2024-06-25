@@ -43,7 +43,7 @@ public class SnapStateChunkRequestMessageTest {
         MessageType messageType = message.getMessageType();
 
         //then
-        assertThat(messageType, equalTo(MessageType.STATE_CHUNK_REQUEST_MESSAGE));
+        assertThat(messageType, equalTo(MessageType.SNAP_STATE_CHUNK_REQUEST_MESSAGE));
     }
     @Test
     void givenParameters4Test_assureExpectedValues() {

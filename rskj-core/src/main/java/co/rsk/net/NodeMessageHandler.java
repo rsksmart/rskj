@@ -75,7 +75,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private final PriorityBlockingQueue<MessageTask> queue;
 
-    private final MessageCounter messageCounter = new MessageCounter();
+    private final MessageCounter messageCounter;
     private final int messageQueueMaxSize;
 
     private volatile boolean recentIdleTime = false;
@@ -106,6 +106,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 transactionGateway,
                 peerScoringManager,
                 statusResolver,
+                null,
                 null
         );
     }
@@ -119,7 +120,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                               @Nullable TransactionGateway transactionGateway,
                               @Nullable PeerScoringManager peerScoringManager,
                               StatusResolver statusResolver,
-                       Thread thread) {
+                              Thread thread,
+                       MessageCounter messageCounter) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
@@ -135,6 +137,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
         this.thread = Optional.ofNullable(thread).orElse(new Thread(this, "message handler"));
+        this.messageCounter = Optional.ofNullable(messageCounter).orElse(new MessageCounter());
     }
 
     @VisibleForTesting
@@ -162,6 +165,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
         this.thread = new Thread(this, "message handler");
+        this.messageCounter = new MessageCounter();
     }
 
     /**

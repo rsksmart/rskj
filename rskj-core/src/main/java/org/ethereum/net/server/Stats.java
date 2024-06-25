@@ -151,13 +151,17 @@ public class Stats {
             case BLOCK_HEADERS_RESPONSE_MESSAGE:
                 return 5;
             case SNAP_BLOCKS_REQUEST_MESSAGE:
-                return 6;
+                return 1;
             case SNAP_BLOCKS_RESPONSE_MESSAGE:
-                return 7;
+                return 3;
             case SNAP_STATUS_REQUEST_MESSAGE:
-                return 8;
+                return 1;
             case SNAP_STATUS_RESPONSE_MESSAGE:
-                return 9;
+                return 3;
+            case SNAP_STATE_CHUNK_REQUEST_MESSAGE:
+                return 1;
+            case SNAP_STATE_CHUNK_RESPONSE_MESSAGE:
+                return 3;
             default:
                 return 0.0;
         }
