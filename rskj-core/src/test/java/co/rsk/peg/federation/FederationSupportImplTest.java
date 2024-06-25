@@ -1964,18 +1964,17 @@ class FederationSupportImplTest {
 
     @Test
     void getNewFederationBtcUTXOs_returnsNewFederationUTXOs() {
-        newFederation = new P2shErpFederationBuilder()
-            .build();
-        List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
-
         storageAccessor = new InMemoryStorage();
-        storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
-
         storageProvider = new FederationStorageProviderImpl(storageAccessor);
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(storageProvider)
             .build();
+        newFederation = new P2shErpFederationBuilder()
+            .build();
+
+        List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
+        storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
         List<UTXO> actualNewFederationUTXOs = federationSupport.getNewFederationBtcUTXOs();
         assertThat(actualNewFederationUTXOs, is(newFederationUTXOs));
