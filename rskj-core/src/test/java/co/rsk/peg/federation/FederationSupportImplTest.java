@@ -2074,8 +2074,8 @@ class FederationSupportImplTest {
             .withFederationStorageProvider(storageProvider)
             .withActivations(activations)
             .build();
-        federationSupport.save();
 
+        federationSupport.save();
         verify(storageProvider).save(federationMainnetConstants.getBtcParams(), activations);
     }
 
