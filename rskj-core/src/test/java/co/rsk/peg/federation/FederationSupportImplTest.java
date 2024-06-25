@@ -2047,6 +2047,22 @@ class FederationSupportImplTest {
         assertThat(lastRetiredFederationP2SHScript.get(), is(p2shScript));
     }
 
+    @Test
+    @Tag("clear retired federation")
+    void clearRetiredFederation_whenHavingOldFederation_removesOldFederation() {
+        ErpFederation federation = new P2shErpFederationBuilder().build();
+        storageProvider.setOldFederation(federation);
+
+        // check the old federation was correctly saved
+        Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, mock(ActivationConfig.ForBlock.class));
+        assertThat(oldFederation, is(federation));
+
+        federationSupport.clearRetiredFederation();
+        // check the old federation was removed
+        oldFederation = storageProvider.getOldFederation(federationMainnetConstants, mock(ActivationConfig.ForBlock.class));
+        assertThat(oldFederation, is(nullValue()));
+    }
+
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getRskPublicKey)
