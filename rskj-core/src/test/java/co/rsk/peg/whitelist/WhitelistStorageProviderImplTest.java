@@ -127,28 +127,28 @@ class WhitelistStorageProviderImplTest {
     @Test
     void getLockWhitelist_whenSavedValueDirectlyInStorageAndLockWhitelistIsNotNull_shouldReturnZeroEntries() {
         // The first time LockWhitelist is null and it queries the storage
-        LockWhitelist firstTimeQuery = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
+        LockWhitelist tempLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         // It should return zero entries as there is no value saved in storage. As of here LockWhitelist is not null
-        assertEquals(0, firstTimeQuery.getAll().size());
+        assertEquals(0, tempLockWhitelist.getAll().size());
 
         // Saving a value directly in storage
         saveInMemoryStorageOneOffWhiteListEntry(firstBtcAddress);
         // The second time LockWhitelist is not null so that it doesn't query the storage and get the value from cache
-        LockWhitelist secondTimeQuery = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
+        tempLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         // Return zero entries as it doesn't query in storage
-        assertEquals(0, secondTimeQuery.getAll().size());
-        assertFalse(secondTimeQuery.isWhitelisted(firstBtcAddress));
+        assertEquals(0, tempLockWhitelist.getAll().size());
+        assertFalse(tempLockWhitelist.isWhitelisted(firstBtcAddress));
 
         // Recreating whitelistStorageProvider to make sure it is querying the storage
         whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
-        LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
+        tempLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
         // Return one entry that was saved directly in storage
-        assertEquals(1, actualLockWhitelist.getAll().size());
+        assertEquals(1, tempLockWhitelist.getAll().size());
         // Making sure the correct value was whitelisted
-        assertTrue(actualLockWhitelist.isWhitelisted(firstBtcAddress));
+        assertTrue(tempLockWhitelist.isWhitelisted(firstBtcAddress));
     }
 
     @Test
