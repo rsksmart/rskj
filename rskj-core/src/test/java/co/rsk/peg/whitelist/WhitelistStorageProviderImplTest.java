@@ -56,11 +56,11 @@ class WhitelistStorageProviderImplTest {
         assertEquals(0, actualLockWhitelist.getAll().size());
 
         // There should be no value saved in the one-off entry
-        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
+        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
         assertEquals(0, oneOffWhiteListEntryMap.size());
 
         // There should be no value saved in the unlimited entry
-        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedStorageEntry();
         assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
 
@@ -82,11 +82,11 @@ class WhitelistStorageProviderImplTest {
         assertEquals(1, actualLockWhitelist.getAll().size());
 
         // Making sure the saved value is correct and related to OneOffWhiteListEntry
-        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
+        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
         assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
 
         // Making sure there is no value saved in storage related to UnlimitedWhiteListEntry
-        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        Map<Address, UnlimitedWhiteListEntry> unlimitedWhiteListEntryMap = getAddressFromUnlimitedStorageEntry();
         assertEquals(0, unlimitedWhiteListEntryMap.size());
     }
 
@@ -110,10 +110,10 @@ class WhitelistStorageProviderImplTest {
         assertEquals(2, actualLockWhitelist.getAll().size());
 
         // Making sure the saved value is correct
-        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffWhiteListEntryInMemoryStorage();
+        Map<Address, OneOffWhiteListEntry> oneOffWhiteListEntryMap = getAddressFromOneOffStorageEntry();
         assertTrue(oneOffWhiteListEntryMap.containsKey(firstBtcAddress));
 
-        Map<Address, UnlimitedWhiteListEntry> lockWhitelistEntryMap = getAddressFromUnlimitedWhiteListEntryInMemoryStorage();
+        Map<Address, UnlimitedWhiteListEntry> lockWhitelistEntryMap = getAddressFromUnlimitedStorageEntry();
         assertTrue(lockWhitelistEntryMap.containsKey(secondBtcAddress));
     }
 
@@ -197,7 +197,7 @@ class WhitelistStorageProviderImplTest {
         return new UnlimitedWhiteListEntry(btcAddress);
     }
 
-    private Map<Address, OneOffWhiteListEntry> getAddressFromOneOffWhiteListEntryInMemoryStorage() {
+    private Map<Address, OneOffWhiteListEntry> getAddressFromOneOffStorageEntry() {
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData = inMemoryStorage.safeGetFromRepository(
             LOCK_ONE_OFF.getKey(),
             data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters)
@@ -205,7 +205,7 @@ class WhitelistStorageProviderImplTest {
         return Objects.isNull(oneOffWhitelistAndDisableBlockHeightData) ? new HashMap<>() : oneOffWhitelistAndDisableBlockHeightData.getLeft();
     }
 
-    private Map<Address, UnlimitedWhiteListEntry> getAddressFromUnlimitedWhiteListEntryInMemoryStorage() {
+    private Map<Address, UnlimitedWhiteListEntry> getAddressFromUnlimitedStorageEntry() {
         return inMemoryStorage.safeGetFromRepository(
             LOCK_UNLIMITED.getKey(),
             data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(
