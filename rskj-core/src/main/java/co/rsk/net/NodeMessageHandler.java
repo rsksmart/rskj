@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -96,6 +97,29 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             @Nullable TransactionGateway transactionGateway,
             @Nullable PeerScoringManager peerScoringManager,
             StatusResolver statusResolver) {
+        this(
+                config,
+                blockProcessor,
+                syncProcessor,
+                snapshotProcessor,
+                channelManager,
+                transactionGateway,
+                peerScoringManager,
+                statusResolver,
+                null
+        );
+    }
+
+    @VisibleForTesting
+    NodeMessageHandler(RskSystemProperties config,
+                              BlockProcessor blockProcessor,
+                              SyncProcessor syncProcessor,
+                              SnapshotProcessor snapshotProcessor,
+                              @Nullable ChannelManager channelManager,
+                              @Nullable TransactionGateway transactionGateway,
+                              @Nullable PeerScoringManager peerScoringManager,
+                              StatusResolver statusResolver,
+                       Thread thread) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
@@ -110,7 +134,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
-        this.thread = new Thread(this, "message handler");
+        this.thread = Optional.ofNullable(thread).orElse(new Thread(this, "message handler"));
     }
 
     @VisibleForTesting

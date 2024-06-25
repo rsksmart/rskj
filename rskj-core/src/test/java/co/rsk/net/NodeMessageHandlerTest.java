@@ -212,7 +212,7 @@ class NodeMessageHandlerTest {
     }
 
     @Test
-    void postSnapMessages() throws InterruptedException {
+    void postSnapMessages() {
         RskSystemProperties config = spy(this.config);
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -222,20 +222,20 @@ class NodeMessageHandlerTest {
         ChannelManager channelManager = mock(ChannelManager.class);
 
         // Mock snap messages
-        Message snapStateRequestMessage = Mockito.mock(SnapStateChunkRequestMessage.class);
-        Message snapStateResponseMessage = Mockito.mock(SnapStateChunkResponseMessage.class);
+        Message snapStateChunkRequestMessage = Mockito.mock(SnapStateChunkRequestMessage.class);
+        Message snapStateChunkResponseMessage = Mockito.mock(SnapStateChunkResponseMessage.class);
         Message snapStatusRequestMessage = Mockito.mock(SnapStatusRequestMessage.class);
         Message snapStatusResponseMessage = Mockito.mock(SnapStatusResponseMessage.class);
 
-        Mockito.when(snapStateRequestMessage.getMessageType()).thenReturn(MessageType.SNAP_STATUS_REQUEST_MESSAGE);
-        Mockito.when(snapStateResponseMessage.getMessageType()).thenReturn(MessageType.SNAP_STATUS_RESPONSE_MESSAGE);
+        Mockito.when(snapStateChunkRequestMessage.getMessageType()).thenReturn(MessageType.SNAP_STATUS_REQUEST_MESSAGE);
+        Mockito.when(snapStateChunkResponseMessage.getMessageType()).thenReturn(MessageType.SNAP_STATUS_RESPONSE_MESSAGE);
         Mockito.when(snapStatusRequestMessage.getMessageType()).thenReturn(MessageType.SNAP_BLOCKS_REQUEST_MESSAGE);
         Mockito.when(snapStatusResponseMessage.getMessageType()).thenReturn(MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE);
 
         Mockito.when(status.getBestBlockNumber()).thenReturn(0L);
         Mockito.when(status.getBestBlockHash()).thenReturn(ByteUtil.intToBytes(0));
+        Mockito.doThrow(new IllegalAccessError()).when(channelManager).broadcastStatus(any());
         Mockito.when(statusResolver.currentStatus()).thenReturn(status);
-        Mockito.when(channelManager.broadcastStatus(any())).thenReturn(0);
 
         Channel sender = new Channel(null, null, mock(NodeManager.class), null, null, null, null);
         InetAddress inetAddress = InetAddress.getLoopbackAddress();
@@ -246,24 +246,27 @@ class NodeMessageHandlerTest {
         RskAddress bannedMiner = new RskAddress("0000000000000000000000000000000000000023");
         doReturn(Collections.singletonList(bannedMiner.toHexString())).when(config).bannedMinerList();
 
-        NodeMessageHandler nodeMessageHandler = Mockito.spy(new NodeMessageHandler(
-                config, sbp, syncProcessor, null, channelManager, null, scoring, statusResolver));
+        NodeMessageHandler nodeMessageHandler = Mockito.spy( new NodeMessageHandler(
+                config,
+                sbp,
+                syncProcessor,
+                null,
+                channelManager,
+                null,
+                scoring,
+                statusResolver,
+                Mockito.mock(Thread.class)
+        ));
 
-        nodeMessageHandler.postMessage(sender, snapStateRequestMessage, null);
-        nodeMessageHandler.postMessage(sender, snapStateResponseMessage, null);
+        nodeMessageHandler.postMessage(sender, snapStateChunkRequestMessage, null);
+        nodeMessageHandler.postMessage(sender, snapStateChunkResponseMessage, null);
         nodeMessageHandler.postMessage(sender, snapStatusRequestMessage, null);
         nodeMessageHandler.postMessage(sender, snapStatusResponseMessage, null);
 
         Assertions.assertEquals(4, nodeMessageHandler.getMessageQueueSize());
 
         nodeMessageHandler.start();
-        Thread runThread = new Thread(nodeMessageHandler::run);
-        runThread.start();
-
-        // Give some time so that runThread can execute some processing in its run() method
-        TimeUnit.SECONDS.sleep(1);
-
-        runThread.interrupt();
+        nodeMessageHandler.run();
         nodeMessageHandler.stop();
 
         ArgumentCaptor<Message> snapMessagesCaptor = ArgumentCaptor.forClass(Message.class);
