@@ -29,9 +29,9 @@ public class BridgeMainNetConstants extends BridgeConstants {
         );
         genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
 
-        btc2RskMinimumAcceptableConfirmations = 100;
-        btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;
-        rsk2BtcMinimumAcceptableConfirmations = 4000;
+        btc2RskMinimumAcceptableConfirmations = 5;
+        btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
+        rsk2BtcMinimumAcceptableConfirmations = 40;
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
 
@@ -98,13 +98,13 @@ public class BridgeMainNetConstants extends BridgeConstants {
         oldFederationAddress = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
 
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
-        maxDepthBlockchainAccepted = 25;
+        maxDepthBlockchainAccepted = 2500;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
 
         maxInputsPerPegoutTransaction = 50;
 
-        numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
+        numberOfBlocksBetweenPegouts = 60; // 30 minutes of RSK blocks (considering 1 block every 30 seconds)
 
         btcHeightWhenPegoutTxIndexActivates = 837_589; // Estimated date Wed, 03 Apr 2024 15:00:00 GMT. 832,430 was the block number at time of calculation
         pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
