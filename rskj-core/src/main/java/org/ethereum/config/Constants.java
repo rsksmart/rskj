@@ -230,7 +230,7 @@ public class Constants {
                 MAINNET_CHAIN_ID,
                 false,
                 14,
-                new BlockDifficulty(BigInteger.valueOf((long) 14E15 / 2)),
+                new BlockDifficulty(BigInteger.valueOf(131072)),
                 new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
                 BigInteger.valueOf(50),
                 60,
