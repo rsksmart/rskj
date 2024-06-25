@@ -52,7 +52,7 @@ class WhitelistStorageProviderImplTest {
 
         LockWhitelist actualLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
-        // make sure the lockWhitelist and storage is empty
+        // Make sure the lockWhitelist cache and storage entries are empty
         assertEquals(0, actualLockWhitelist.getAll().size());
 
         // There should be no value saved in the one-off entry
