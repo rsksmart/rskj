@@ -2008,6 +2008,7 @@ class FederationSupportImplTest {
     }
 
     @Test
+    @Tag("last retired federation p2sh script")
     void getLastRetiredFederationP2SHScript_afterRSKIP186_whenNoScriptWasSaved_returnsOptionalEmpty() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
@@ -2023,6 +2024,7 @@ class FederationSupportImplTest {
     }
 
     @Test
+    @Tag("last retired federation p2sh script")
     void getLastRetiredFederationP2SHScript_afterRSKIP186_whenSavingScript_returnsScript() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
