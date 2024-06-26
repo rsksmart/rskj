@@ -7,3 +7,13 @@ subprojects {
     group = 'co.rsk'
     version = config.modifier?.trim() ? config.versionNumber + "-" + config.modifier : config.versionNumber
 }
+
+sonarqube {
+    properties {
+        property "sonar.java.binaries", "rskj-core/build/classes/java/main"
+        property "sonar.scm.provider", "git"
+        property "sonar.projectBaseDir", project.projectDir
+        property "sonar.projectKey", "rskj"
+        property "sonar.organization", "rsksmart"
+    }
+}
