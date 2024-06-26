@@ -125,7 +125,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     @Test
-    void getLockWhitelist_whenSavedValueDirectlyInStorageAndLockWhitelistIsNotNull_shouldReturnZeroEntries() {
+    void getLockWhitelist_shouldReturnActualEntries() {
         // The first time LockWhitelist is null and it queries the storage
         LockWhitelist tempLockWhitelist = whitelistStorageProvider.getLockWhitelist(activationConfig, networkParameters);
 
