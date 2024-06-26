@@ -109,7 +109,7 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           ./gradlew sonarqube --no-daemon -x build -x test \
-            -Dsonar.branch.name=master \
+            -Dsonar.branch.name="${{ github.ref }}" \
             -Dsonar.organization=rsksmart \
             -Dsonar.host.url="https://sonarcloud.io" \
             -Dsonar.token="${{ secrets.SONAR_TOKEN }}"
