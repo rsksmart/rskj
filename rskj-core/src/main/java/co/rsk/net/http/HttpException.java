@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2024 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,22 +15,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.config;
+package co.rsk.net.http;
 
-import co.rsk.core.RskAddress;
+public class HttpException extends Exception {
 
-public class ConfigUtils {
-    public static MiningConfig getDefaultMiningConfig() {
-        final byte[] coinbaseAddress = new byte[]{-120, 95, -109, -18, -43, 119, -14, -4, 52, 30, -69, -102, 92, -101, 44, -28, 70, 93, -106, -60};
-        return new MiningConfig(
-                new RskAddress(coinbaseAddress),
-                0.0,
-                1.0,
-                10,
-                7,
-                new GasLimitConfig(3000000, 500000, true),
-                true,
-                0L
-        );
+    private static final long serialVersionUID = 9209168000899420627L;
+
+    public HttpException(String message) {
+        super(message);
     }
+
 }
