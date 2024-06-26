@@ -62,6 +62,7 @@ class BridgeSupportAddSignatureTest {
 
     private final BridgeConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
     private final NetworkParameters btcRegTestParams = bridgeRegTestConstants.getBtcParams();
+    private WhitelistSupport whitelistSupport;
     private final Instant creationTime = Instant.ofEpochMilli(1000L);
     private final long creationBlockNumber = 0L;
 
@@ -74,6 +75,7 @@ class BridgeSupportAddSignatureTest {
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
         bridgeSupportBuilder = new BridgeSupportBuilder();
+        whitelistSupport = mock(WhitelistSupport.class);
     }
 
     @Test
