@@ -27,7 +27,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         genesisFederationPublicKeys = Lists.newArrayList(
             federator0PublicKey, federator1PublicKey, federator2PublicKey
         );
-        genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
+        genesisFederationCreationTime = ZonedDateTime.parse("2024-06-24T12:00:00.400Z").toInstant();
 
         btc2RskMinimumAcceptableConfirmations = 5;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
