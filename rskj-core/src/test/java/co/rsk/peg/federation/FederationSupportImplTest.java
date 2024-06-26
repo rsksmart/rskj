@@ -2050,16 +2050,18 @@ class FederationSupportImplTest {
     @Test
     @Tag("clear retired federation")
     void clearRetiredFederation_whenHavingOldFederation_removesOldFederation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
         ErpFederation federation = new P2shErpFederationBuilder().build();
         storageProvider.setOldFederation(federation);
 
         // check the old federation was correctly saved
-        Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, mock(ActivationConfig.ForBlock.class));
+        Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
         assertThat(oldFederation, is(federation));
 
         federationSupport.clearRetiredFederation();
         // check the old federation was removed
-        oldFederation = storageProvider.getOldFederation(federationMainnetConstants, mock(ActivationConfig.ForBlock.class));
+        oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
         assertThat(oldFederation, is(nullValue()));
     }
 
