@@ -38,10 +38,10 @@ class AddressBasedAuthorizerTest {
     @Test
     void numberOfKeys_one() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
-                mock(ECKey.class),
-                mock(ECKey.class),
-                mock(ECKey.class),
-                mock(ECKey.class)
+            mock(ECKey.class),
+            mock(ECKey.class),
+            mock(ECKey.class),
+            mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.ONE);
 
         Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
@@ -51,10 +51,10 @@ class AddressBasedAuthorizerTest {
     @Test
     void numberOfKeys_majority() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
-                mock(ECKey.class),
-                mock(ECKey.class),
-                mock(ECKey.class),
-                mock(ECKey.class)
+            mock(ECKey.class),
+            mock(ECKey.class),
+            mock(ECKey.class),
+            mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
         Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
@@ -64,10 +64,10 @@ class AddressBasedAuthorizerTest {
     @Test
     void numberOfKeys_all() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
-                mock(ECKey.class),
-                mock(ECKey.class),
-                mock(ECKey.class),
-                mock(ECKey.class)
+            mock(ECKey.class),
+            mock(ECKey.class),
+            mock(ECKey.class),
+            mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.ALL);
 
         Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
@@ -77,9 +77,9 @@ class AddressBasedAuthorizerTest {
     @Test
     void isAuthorized() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
-                ECKey.fromPrivate(BigInteger.valueOf(100L)),
-                ECKey.fromPrivate(BigInteger.valueOf(101L)),
-                ECKey.fromPrivate(BigInteger.valueOf(102L))
+            ECKey.fromPrivate(BigInteger.valueOf(100L)),
+            ECKey.fromPrivate(BigInteger.valueOf(101L)),
+            ECKey.fromPrivate(BigInteger.valueOf(102L))
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
         for (long n = 100L; n <= 102L; n++) {

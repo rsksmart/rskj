@@ -35,4 +35,5 @@ public final class BridgeSupportTestUtil {
         when(btcBlockStore.getChainHead()).thenReturn(currentStored);
         when(currentStored.getHeight()).thenReturn(headHeight);
     }
+
 }

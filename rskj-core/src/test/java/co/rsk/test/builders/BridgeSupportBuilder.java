@@ -9,6 +9,7 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -25,6 +26,7 @@ public class BridgeSupportBuilder {
     private Factory btcBlockStoreFactory;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
+    private FeePerKbSupport feePerKbSupport;
 
     public BridgeSupportBuilder() {
         this.bridgeConstants = mock(BridgeConstants.class);
@@ -37,6 +39,7 @@ public class BridgeSupportBuilder {
         this.btcBlockStoreFactory = mock(Factory.class);
         this.activations = mock(ActivationConfig.ForBlock.class);
         this.signatureCache = mock(BlockTxSignatureCache.class);
+        this.feePerKbSupport = mock(FeePerKbSupport.class);
     }
 
     public BridgeSupportBuilder withBridgeConstants(BridgeConstants bridgeConstants) {
@@ -89,8 +92,13 @@ public class BridgeSupportBuilder {
         return this;
     }
 
+    public BridgeSupportBuilder withFeePerKbSupport(FeePerKbSupport feePerKbSupport) {
+        this.feePerKbSupport = feePerKbSupport;
+        return this;
+    }
+
     public BridgeSupport build() {
-        return new BridgeSupport(
+      return new BridgeSupport(
             bridgeConstants,
             provider,
             eventLogger,
@@ -100,6 +108,7 @@ public class BridgeSupportBuilder {
             executionBlock,
             new Context(bridgeConstants.getBtcParams()),
             new FederationSupport(bridgeConstants, provider, executionBlock, activations),
+            feePerKbSupport,
             btcBlockStoreFactory,
             activations,
             signatureCache

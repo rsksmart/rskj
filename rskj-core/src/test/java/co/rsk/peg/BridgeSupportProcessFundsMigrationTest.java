@@ -11,6 +11,7 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationArgs;
 import co.rsk.peg.federation.FederationFactory;
 import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
@@ -19,7 +20,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -35,6 +35,8 @@ import java.util.stream.Stream;
 
 import static co.rsk.peg.PegTestUtils.BTC_TX_LEGACY_VERSION;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -75,7 +77,6 @@ class BridgeSupportProcessFundsMigrationTest {
             Arguments.of(bridgeMainNetConstants, hopActivations, false),
             Arguments.of(bridgeMainNetConstants, hopActivations, true)
         );
-
 
         ActivationConfig.ForBlock hop401Activations = ActivationConfigsForTest.hop401().forBlock(0);
         Stream<Arguments> hop401Tests = Stream.of(
@@ -137,9 +138,7 @@ class BridgeSupportProcessFundsMigrationTest {
             federationCreationBlockNumber,
             bridgeConstants.getBtcParams()
         );
-        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
-            newFederationArgs
-        );
+        Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFederationArgs);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
@@ -152,12 +151,16 @@ class BridgeSupportProcessFundsMigrationTest {
         long updateCollectionsCallHeight = inMigrationAge ? federationInMigrationAgeHeight : federationPastMigrationAgeHeight;
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(updateCollectionsCallHeight, 1);
 
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
             .withEventLogger(bridgeEventLogger)
             .withExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
 
         List<UTXO> sufficientUTXOsForMigration = new ArrayList<>();
@@ -172,10 +175,10 @@ class BridgeSupportProcessFundsMigrationTest {
         Transaction updateCollectionsTx = buildUpdateCollectionsTransaction();
         bridgeSupport.updateCollections(updateCollectionsTx);
 
-        Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
-        Assertions.assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 1 : 0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
+        assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());
+        assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 1 : 0, provider.getPegoutsWaitingForConfirmations().getEntriesWithHash().size());
 
-        Assertions.assertTrue(sufficientUTXOsForMigration.isEmpty());
+        assertTrue(sufficientUTXOsForMigration.isEmpty());
         if (inMigrationAge){
             verify(provider, never()).setOldFederation(null);
         } else {
@@ -194,9 +197,9 @@ class BridgeSupportProcessFundsMigrationTest {
             );
 
             if (activations.isActive(ConsensusRule.RSKIP376)){
-                Assertions.assertEquals(BTC_TX_VERSION_2, entry.getBtcTransaction().getVersion());
+                assertEquals(BTC_TX_VERSION_2, entry.getBtcTransaction().getVersion());
             } else {
-                Assertions.assertEquals(BTC_TX_LEGACY_VERSION, entry.getBtcTransaction().getVersion());
+                assertEquals(BTC_TX_LEGACY_VERSION, entry.getBtcTransaction().getVersion());
             }
         } else {
             verify(bridgeEventLogger, never()).logReleaseBtcRequested(

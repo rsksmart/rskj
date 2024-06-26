@@ -4,49 +4,38 @@ import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createFederation;
+import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
 import static co.rsk.peg.pegin.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
 import static co.rsk.peg.utils.UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.StoredBlock;
-import co.rsk.bitcoinj.core.TransactionWitness;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.federation.*;
+import co.rsk.peg.feeperkb.*;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.whitelist.LockWhitelist;
@@ -54,23 +43,13 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockTxSignatureCache;
-import org.ethereum.core.ReceivedTxSignatureCache;
-import org.ethereum.core.Repository;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
@@ -86,6 +65,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
     private static final ActivationConfig.ForBlock arrowhead600Activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+    private static final ActivationConfig.ForBlock lovell700Activations = ActivationConfigsForTest.lovell700().forBlock(0);
 
     private static final Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(ActivationConfigsForTest.all().forBlock(0));
     private static final Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
@@ -127,8 +107,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     // After peg-out tx index gets in use
@@ -137,8 +117,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, times(1)).logUnrefundablePegin(btcTransaction, UnrefundablePeginReason.INVALID_AMOUNT);
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     // fingerroot
@@ -147,8 +127,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
         verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     // After arrowhead600Activations but before grace period
@@ -157,8 +137,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, times(1)).logUnrefundablePegin(btcTransaction, UnrefundablePeginReason.INVALID_AMOUNT);
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     // After arrowhead600Activations and grace period
@@ -167,22 +147,33 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
-    private void assertLegacyMultisigPeginIsRejectedAndRefunded(BtcTransaction btcTransaction, Coin sentAmount) throws IOException {
+    private void assertPeginIsRejectedAndRefunded(ActivationConfig.ForBlock activations, BtcTransaction btcTransaction, Coin sentAmount, RejectedPeginReason expectedRejectedPeginReason) throws IOException {
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
 
-        verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, LEGACY_PEGIN_MULTISIG_SENDER);
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(eq(rskTx.getHash().getBytes()), any(BtcTransaction.class), eq(sentAmount));
+        assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+        Entry pegoutWaitingForConfirmationEntry = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
+        BtcTransaction refundPegout = pegoutWaitingForConfirmationEntry.getBtcTransaction();
+        Sha256Hash refundPegoutHash = refundPegout.getHash();
+        List<Coin> refundPegoutOutpointValues = extractOutpointValues(refundPegout);
+
+        verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, expectedRejectedPeginReason);
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(rskTx.getHash().getBytes(), refundPegout, sentAmount);
 
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
+        verify(provider, never()).setPegoutTxSigHash(any());
 
-        Assertions.assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+        if(activations == lovell700Activations) {
+            verify(bridgeEventLogger, times(1)).logPegoutTransactionCreated(refundPegoutHash, refundPegoutOutpointValues);
+        } else {
+            verify(bridgeEventLogger, never()).logPegoutTransactionCreated(any(), any());
+        }
     }
 
     // Before arrowhead600Activations is activated
@@ -199,11 +190,11 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
+        verify(bridgeEventLogger, never()).logPegoutTransactionCreated(any(), any());
 
-
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
-        Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
     }
 
     // After arrowhead600Activations is activated
@@ -223,6 +214,25 @@ class BridgeSupportRegisterBtcTransactionTest {
         Assertions.assertTrue(activeFederationUtxos.isEmpty());
         Assertions.assertTrue(retiringFederationUtxos.isEmpty());
         Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
+    }
+
+    private void assertInvalidPeginV1UndeterminedSenderIsRejected(BtcTransaction btcTransaction) throws IOException {
+        verify(bridgeEventLogger, times(1)).logRejectedPegin(
+            btcTransaction, PEGIN_V1_INVALID_PAYLOAD
+        );
+        verify(bridgeEventLogger, times(1)).logUnrefundablePegin(
+            btcTransaction,
+            LEGACY_PEGIN_UNDETERMINED_SENDER
+        );
+
+        verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
+        verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
+        verify(bridgeEventLogger, never()).logPegoutTransactionCreated(any(), any());
+        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
     }
 
     private static Stream<Arguments> common_args() {
@@ -265,21 +275,25 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
     }
 
-    private static Stream<Arguments> pre_and_post_rskip379_args() {
+    private static Stream<Arguments> activationsAndShouldUsePegoutIndexArgs() {
         return Stream.of(
             // before RSKIP379 activation
             Arguments.of(
                 fingerrootActivations,
                 false
             ),
-            // after RSKIP379 activation but before blockNumber to start using Pegout Index
+            // after RSKIP379 activation but before using Pegout Index
             Arguments.of(
                 arrowhead600Activations,
                 false
             ),
-            // after RSKIP379 activation and after blockNumber to start using Pegout Index
+            // after RSKIP379 activation and after start using Pegout Index
             Arguments.of(
                 arrowhead600Activations,
+                true
+            ),
+            Arguments.of(
+                lovell700Activations,
                 true
             )
         );
@@ -508,6 +522,13 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(repository.getBalance(PrecompiledContracts.BRIDGE_ADDR)).thenReturn(co.rsk.core.Coin.fromBitcoin(bridgeMainnetConstants.getMaxRbtc()));
         when(provider.getLockingCap()).thenReturn(bridgeMainnetConstants.getMaxRbtc());
 
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+        FeePerKbSupport feePerKbSupport =  new FeePerKbSupportImpl(
+            bridgeMainnetConstants.getFeePerKbConstants(),
+            feePerKbStorageProvider
+        );
+
         return new BridgeSupportBuilder()
             .withBtcBlockStoreFactory(mockFactory)
             .withBridgeConstants(bridgeMainnetConstants)
@@ -519,6 +540,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             .withBtcLockSenderProvider(btcLockSenderProvider)
             .withPeginInstructionsProvider(peginInstructionsProvider)
             .withExecutionBlock(rskExecutionBlock)
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
     }
 
@@ -729,8 +751,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(1, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
@@ -770,7 +792,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(10)), eq(0));
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(10, activeFederationUtxos.size());
+        assertEquals(10, activeFederationUtxos.size());
     }
 
     @ParameterizedTest
@@ -810,7 +832,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
+        assertEquals(1, activeFederationUtxos.size());
     }
 
     @ParameterizedTest
@@ -850,7 +872,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue), eq(0));
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
+        assertEquals(1, activeFederationUtxos.size());
     }
 
     @ParameterizedTest
@@ -971,7 +993,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_to_active_and_retiring_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1003,12 +1025,12 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(2)), eq(0));
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
-        Assertions.assertEquals(1, retiringFederationUtxos.size());
+        assertEquals(1, activeFederationUtxos.size());
+        assertEquals(1, retiringFederationUtxos.size());
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_to_active_fed_below_minimum_and_retiring_above_minimum(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1044,7 +1066,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_to_active_and_retiring_fed_and_unknown_address(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1077,12 +1099,12 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(minimumPeginTxValue.multiply(2)), eq(0));
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
-        Assertions.assertEquals(1, retiringFederationUtxos.size());
+        assertEquals(1, activeFederationUtxos.size());
+        assertEquals(1, retiringFederationUtxos.size());
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_v1_to_retiring_fed_can_be_registered(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1126,7 +1148,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_v1_two_rsk_op_return_cannot_be_registered(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1178,11 +1200,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
         }
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_v1_invalid_protocol_legacy_sender_to_active_fed_(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1221,11 +1243,11 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
 
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_v1_invalid_prefix_to_active_fed_can_be_registered(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1263,12 +1285,12 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(bridgeEventLogger, times(1)).logPeginBtc(any(), eq(btcTransaction), eq(amountToSend), eq(0));
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(1, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_v1_segwit_to_retiring_fed_can_be_registered(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1318,7 +1340,55 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
+    void pegin_v1_to_active_fed_with_invalid_payload_and_unknown_sender_cannot_be_processed(
+        ActivationConfig.ForBlock activations,
+        boolean shouldUsePegoutTxIndex
+    ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        // arrange
+        btcLockSenderProvider = mock(BtcLockSenderProvider.class);
+        when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.empty());
+
+        int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
+
+        List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
+
+        Federation unknownFed = createFederation(bridgeMainnetConstants, signers);
+
+        Coin amountToSend = Coin.COIN;
+        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
+        btcTransaction.addInput(
+            BitcoinTestUtils.createHash(1),
+            FIRST_OUTPUT_INDEX,
+            new Script(new byte[]{})
+        );
+
+        btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
+        btcTransaction.addOutput(Coin.ZERO, PegTestUtils.createOpReturnScriptForRskWithCustomPayload(1, new byte[]{}));
+
+        FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
+
+        PartialMerkleTree pmt = createPmtAndMockBlockStore(btcTransaction, height);
+
+        // act
+        BridgeSupport bridgeSupport = buildBridgeSupport(activations);
+        bridgeSupport.registerBtcTransaction(
+            rskTx,
+            btcTransaction.bitcoinSerialize(),
+            height,
+            pmt.bitcoinSerialize()
+        );
+
+        // assert
+        if (activations == fingerrootActivations){
+            assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
+        } else {
+            assertInvalidPeginV1UndeterminedSenderIsRejected(btcTransaction);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_from_multisig_to_retiring_fed_can_be_refunded(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1355,11 +1425,11 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        assertLegacyMultisigPeginIsRejectedAndRefunded(btcTransaction, amountToSend);
+        assertPeginIsRejectedAndRefunded(activations, btcTransaction, amountToSend, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_to_retiring_fed_cannot_be_processed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1399,15 +1469,15 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        if (activations == arrowhead600Activations){
-            assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
-        } else {
+        if (activations == fingerrootActivations){
             assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
+        } else {
+            assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
         }
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void pegin_legacy_from_segwit_to_active_fed_cannot_be_processed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1453,23 +1523,20 @@ class BridgeSupportRegisterBtcTransactionTest {
         // assert
 
         // SINCE RSKIP379 ONLY TRANSACTIONS THAT REALLY ARE PROCESSED, REFUNDS OR REGISTER WILL BE MARK AS PROCESSED.
-        if (activations == arrowhead600Activations){
-            assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
-        } else {
+        if (activations == fingerrootActivations){
             assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
+        } else {
+            assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
         }
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
-    void invalid_pegin_v1_from_multisig_to_active_fed_cannot_be_processed(
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
+    void invalid_pegin_v1_from_multisig_to_active_fed_can_be_refunded(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        btcLockSenderProvider = mock(BtcLockSenderProvider.class);
-        when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.empty());
-
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
@@ -1502,11 +1569,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        if (activations == arrowhead600Activations){
-
-        } else {
-            assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
-        }
+        assertPeginIsRejectedAndRefunded(activations, btcTransaction, Coin.COIN, PEGIN_V1_INVALID_PAYLOAD);
     }
 
     // Pegout tests
@@ -1559,8 +1622,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @Test
@@ -1601,8 +1664,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
 
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
@@ -1684,8 +1747,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(1, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
@@ -1765,8 +1828,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(1, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
@@ -1831,14 +1894,14 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     // Migration tests
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void migration_ok(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1883,8 +1946,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(1, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @Test
@@ -1924,12 +1987,12 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
 
-        Assertions.assertTrue(activeFederationUtxos.isEmpty());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(activeFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void migration_many_outputs_and_inputs(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -1992,12 +2055,12 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(40, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(40, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void migration_many_outputs_and_one_input(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -2061,12 +2124,12 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(40, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(40, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void migration_one_outputs_and_many_input(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -2114,8 +2177,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(1, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     // flyover pegin
@@ -2261,7 +2324,7 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void flyover_segwit_as_migration_utxo(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -2333,12 +2396,12 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(1, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void flyover_segwit_as_migration_utxo_with_many_outputs_and_inputs(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -2418,13 +2481,13 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(10, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(10, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     // old fed
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void old_fed_migration(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -2448,8 +2511,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
         when(provider.getLockWhitelist()).thenReturn(lockWhitelist);
 
-        when(provider.getNewFederationBtcUTXOs())
-            .thenReturn(activeFederationUtxos);
+        when(provider.getNewFederationBtcUTXOs()).thenReturn(activeFederationUtxos);
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
@@ -2488,7 +2550,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         co.rsk.bitcoinj.core.BtcBlock headBlock = new co.rsk.bitcoinj.core.BtcBlock(
             btcRegTestsParams,
             1,
-            PegTestUtils.createHash(2),
+            BitcoinTestUtils.createHash(2),
             Sha256Hash.of(new byte[]{1}),
             1,
             1,
@@ -2496,18 +2558,36 @@ class BridgeSupportRegisterBtcTransactionTest {
             new ArrayList<>()
         );
 
-        StoredBlock chainHead = new StoredBlock(headBlock, new BigInteger("0"), height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations());
+        StoredBlock chainHead = new StoredBlock(
+            headBlock,
+            new BigInteger("0"),
+            height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations()
+        );
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
 
         when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        co.rsk.bitcoinj.core.BtcBlock btcBlock =
-            new co.rsk.bitcoinj.core.BtcBlock(btcRegTestsParams, 1, BitcoinTestUtils.createHash(1), blockMerkleRoot,
-                1, 1, 1, new ArrayList<>());
+        co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
+            btcRegTestsParams,
+            1,
+            BitcoinTestUtils.createHash(1),
+            blockMerkleRoot,
+            1,
+            1,
+            1,
+            new ArrayList<>()
+        );
 
+        mockChainOfStoredBlocks(
+            btcBlockStore,
+            btcBlock,
+            height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height
+        );
 
-        mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations(), height);
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         // act
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
@@ -2520,6 +2600,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             .withBtcLockSenderProvider(btcLockSenderProvider)
             .withPeginInstructionsProvider(peginInstructionsProvider)
             .withExecutionBlock(rskExecutionBlock)
+            .withFeePerKbSupport(feePerKbSupport)
             .build();
 
         bridgeSupport.registerBtcTransaction(
@@ -2532,7 +2613,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         // assert
         verify(bridgeEventLogger, never()).logUnrefundablePegin(migrationTx, LEGACY_PEGIN_UNDETERMINED_SENDER);
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertTrue(retiringFederationUtxos.isEmpty());
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(migrationTx.getHash(false), rskExecutionBlock.getNumber());
 
         if (shouldUsePegoutTxIndex) {
@@ -2544,8 +2625,8 @@ class BridgeSupportRegisterBtcTransactionTest {
                 any(BtcTransaction.class),
                 eq(Coin.COIN)
             );
-            Assertions.assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
-            Assertions.assertTrue(activeFederationUtxos.isEmpty());
+            assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
+            assertTrue(activeFederationUtxos.isEmpty());
         } else {
             verify(bridgeEventLogger, never()).logRejectedPegin(
                 any(), any()
@@ -2555,14 +2636,14 @@ class BridgeSupportRegisterBtcTransactionTest {
                 any(),
                 any()
             );
-            Assertions.assertEquals(1, activeFederationUtxos.size());
+            assertEquals(1, activeFederationUtxos.size());
         }
     }
 
     // retired fed
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void last_retired_fed_to_active_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -2606,12 +2687,12 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-        Assertions.assertEquals(1, activeFederationUtxos.size());
-        Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+        assertEquals(1, activeFederationUtxos.size());
+        assertTrue(retiringFederationUtxos.isEmpty());
     }
 
     @ParameterizedTest
-    @MethodSource("pre_and_post_rskip379_args")
+    @MethodSource("activationsAndShouldUsePegoutIndexArgs")
     void no_last_retired_fed_in_storage_sending_funds_to_active_fed(
         ActivationConfig.ForBlock activations,
         boolean shouldUsePegoutTxIndex
@@ -2658,10 +2739,10 @@ class BridgeSupportRegisterBtcTransactionTest {
             verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
             verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
             verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
-            Assertions.assertEquals(1, activeFederationUtxos.size());
-            Assertions.assertTrue(retiringFederationUtxos.isEmpty());
+            assertEquals(1, activeFederationUtxos.size());
+            assertTrue(retiringFederationUtxos.isEmpty());
         } else {
-            assertLegacyMultisigPeginIsRejectedAndRefunded(btcTransaction, Coin.COIN);
+            assertPeginIsRejectedAndRefunded(activations, btcTransaction, Coin.COIN, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
         }
     }
 }

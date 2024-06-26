@@ -30,6 +30,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -44,6 +45,33 @@ import org.ethereum.crypto.ECKey;
 public final class FederationTestUtils {
 
     private FederationTestUtils() {
+    }
+
+    public static ErpFederation getErpFederation(NetworkParameters networkParameters) {
+        final List<BtcECKey> fedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
+        );
+        final List<BtcECKey> erpSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fb01", "fb02", "fb03"}, true
+        );
+
+        List<FederationMember> fedMember = FederationTestUtils.getFederationMembersWithBtcKeys(
+            fedSigners);
+
+        FederationArgs federationArgs = new FederationArgs(
+            fedMember,
+            ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant(),
+            0,
+            networkParameters
+        );
+
+        long erpFedActivationDelay = 100L;
+
+        return FederationFactory.buildP2shErpFederation(
+            federationArgs,
+            erpSigners,
+            erpFedActivationDelay
+        );
     }
 
     public static Federation getFederation(Integer... federationMemberPks) {
