@@ -211,6 +211,11 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         this.ensureBtcBlockChain();
         for (BtcBlock header : headers) {
+            StoredBlock previousBlock = btcBlockStore.get(header.getPrevBlockHash());
+            if (cannotProcessBlock(header, previousBlock)) {
+                logger.warn("[receiveHeader] Header {} has too much work to be processed", header.getHash());
+                break;
+            }
             try {
                 btcBlockChain.add(header);
             } catch (Exception e) {
@@ -253,6 +258,11 @@ public class BridgeSupport {
             return RECEIVE_HEADER_BLOCK_TOO_OLD;
         }
 
+        if (cannotProcessBlock(header, previousBlock)) {
+            logger.warn("[receiveHeader] Header {} has too much work to be processed", header.getHash());
+            return RECEIVE_HEADER_UNEXPECTED_EXCEPTION;
+        }
+
         try {
             btcBlockChain.add(header);
         } catch (Exception e) {
@@ -263,6 +273,16 @@ public class BridgeSupport {
         }
         provider.setReceiveHeadersLastTimestamp(currentTimeStamp);
         return 0;
+    }
+
+    private boolean cannotProcessBlock(BtcBlock block, StoredBlock previousBlock) {
+        StoredBlock blockToAdd = previousBlock.build(block);
+        int errorHeight = 849138;
+
+        boolean networkIsMainnet = btcContext.getParams().equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET));
+        return blockToAdd.getHeight() >= errorHeight
+            && networkIsMainnet
+            && !activations.isActive(ConsensusRule.RSKIP434);
     }
 
     /**
