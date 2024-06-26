@@ -19,7 +19,6 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
-import co.rsk.mine.gas.provider.MinGasPriceProvider;
 
 /**
  * Wraps configuration for Mining, which is usually derived from configuration files.
@@ -35,11 +34,10 @@ public class MiningConfig {
     private final GasLimitConfig gasLimit;
     private final boolean isFixedClock;
     private final long workSubmissionRateLimitInMills;
-    private final MinGasPriceProvider minGasPriceProvider;
 
     public MiningConfig(RskAddress coinbaseAddress, double minFeesNotifyInDollars, double minerGasUnitInDollars,
                         int uncleListLimit, int uncleGenerationLimit, GasLimitConfig gasLimit,
-                        boolean isFixedClock, long workSubmissionRateLimitInMills, MinGasPriceProvider minGasPriceProvider) {
+                        boolean isFixedClock, long workSubmissionRateLimitInMills) {
         this.coinbaseAddress = coinbaseAddress;
         this.minFeesNotifyInDollars = minFeesNotifyInDollars;
         this.minerGasUnitInDollars = minerGasUnitInDollars;
@@ -48,7 +46,6 @@ public class MiningConfig {
         this.gasLimit = gasLimit;
         this.isFixedClock = isFixedClock;
         this.workSubmissionRateLimitInMills = workSubmissionRateLimitInMills;
-        this.minGasPriceProvider = minGasPriceProvider;
     }
 
     public RskAddress getCoinbaseAddress() {
@@ -81,9 +78,5 @@ public class MiningConfig {
 
     public long getWorkSubmissionRateLimitInMills() {
         return workSubmissionRateLimitInMills;
-    }
-
-    public MinGasPriceProvider getMinGasPriceProvider() {
-        return minGasPriceProvider;
     }
 }

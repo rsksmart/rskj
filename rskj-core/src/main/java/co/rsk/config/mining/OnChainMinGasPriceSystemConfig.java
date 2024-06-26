@@ -4,7 +4,6 @@ import com.typesafe.config.Config;
 
 public class OnChainMinGasPriceSystemConfig {
     public static final String ONCHAIN_STABLE_GAS_PRICE_CONFIG_PATH = "onChain";
-    //TODO property example
     private static final String ADDRESS_PROPERTY = "address";
     private static final String FROM_PROPERTY = "from";
     private static final String DATA_PROPERTY = "data";
@@ -18,15 +17,15 @@ public class OnChainMinGasPriceSystemConfig {
         data = config.getString(DATA_PROPERTY);
     }
 
-    public String address() {
+    public String getAddress() {
         return address;
     }
 
-    public String from() {
+    public String getFrom() {
         return from;
     }
 
-    public String data() {
+    public String getData() {
         return data;
     }
 }

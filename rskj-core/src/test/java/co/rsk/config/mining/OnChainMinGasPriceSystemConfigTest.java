@@ -25,16 +25,16 @@ class OnChainMinGasPriceSystemConfigTest {
 
     @Test
     void testAddress() {
-        assertEquals(address, config.address());
+        assertEquals(address, config.getAddress());
     }
 
     @Test
     void testFrom() {
-        assertEquals(from, config.from());
+        assertEquals(from, config.getFrom());
     }
 
     @Test
     void testData() {
-        assertEquals(data, config.data());
+        assertEquals(data, config.getData());
     }
 }

@@ -1,6 +1,7 @@
 package co.rsk.mine.gas.provider.onchain;
 
 import co.rsk.config.mining.OnChainMinGasPriceSystemConfig;
+import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import co.rsk.mine.gas.provider.MinGasPriceProvider;
 import co.rsk.mine.gas.provider.MinGasPriceProviderType;
 import co.rsk.mine.gas.provider.StableMinGasPriceProvider;
@@ -14,6 +15,8 @@ import org.ethereum.rpc.parameters.HexNumberParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger(OnChainMinGasPriceProvider.class);
 
@@ -25,14 +28,16 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
     public interface GetContextCallback {
         EthModule getEthModule();
     }
+
     private final GetContextCallback getContextCallback;
 
-    protected OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, OnChainMinGasPriceSystemConfig config, GetContextCallback getContextCallback) {
-        super(fallBackProvider);
+    public OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, StableMinGasPriceSystemConfig config, GetContextCallback getContextCallback) {
+        super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
         this.getContextCallback = getContextCallback;
-        this.toAddress = config.address();
-        this.fromAddress = config.from();
-        this.data = config.data();
+        OnChainMinGasPriceSystemConfig oConfig = config.getOnChainConfig();
+        this.toAddress = oConfig.getAddress();
+        this.fromAddress = oConfig.getFrom();
+        this.data = oConfig.getData();
     }
 
     @Override
@@ -41,11 +46,11 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
     }
 
     @Override
-    public Long getStableMinGasPrice() {
+    protected Optional<Long> getBtcExchangeRate() {
         EthModule ethModule = this.getContextCallback.getEthModule();
         if (ethModule == null) {
             logger.error("Could not get eth module");
-            return fallBackProvider.getMinGasPrice();
+            return Optional.empty();
         }
 
         CallArgumentsParam callArguments = new CallArgumentsParam(
@@ -64,13 +69,11 @@ public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
             String callOutput = ethModule.call(callArguments, new BlockIdentifierParam("latest"));
 
             // Parse the output of the call to get the exchange rate. Will not work with bytes32 values!
-            return HexUtils.jsonHexToLong(
-                    callOutput
-            );
+            return Optional.of(HexUtils.jsonHexToLong(
+                    callOutput));
         } catch (Exception e) {
             logger.error("Error calling eth module", e);
-
-            return fallBackProvider.getMinGasPrice();
+            return Optional.empty();
         }
     }
 

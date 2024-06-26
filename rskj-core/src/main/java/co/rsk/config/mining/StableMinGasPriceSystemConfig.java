@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2024 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.config.mining;
 
 import co.rsk.mine.gas.provider.MinGasPriceProviderType;
@@ -11,7 +28,7 @@ public class StableMinGasPriceSystemConfig {
     private static final String METHOD_PROPERTY = "method";
 
     private final Integer refreshRate;
-    private final Integer minStableGasPrice;
+    private final Long minStableGasPrice;
     private final boolean enabled;
     private final MinGasPriceProviderType method;
     private final Config config;
@@ -19,7 +36,7 @@ public class StableMinGasPriceSystemConfig {
     public StableMinGasPriceSystemConfig(Config config) {
         enabled = config.getBoolean(ENABLED_PROPERTY);
         refreshRate = config.getInt(REFRESH_RATE_PROPERTY);
-        minStableGasPrice = config.getInt(MIN_STABLE_GAS_PRICE_PROPERTY);
+        minStableGasPrice = config.getLong(MIN_STABLE_GAS_PRICE_PROPERTY);
         method = config.getEnum(MinGasPriceProviderType.class, METHOD_PROPERTY);
         this.config = config;
     }
@@ -32,7 +49,7 @@ public class StableMinGasPriceSystemConfig {
         return refreshRate;
     }
 
-    public int getMinStableGasPrice() {
+    public Long getMinStableGasPrice() {
         return minStableGasPrice;
     }
 
