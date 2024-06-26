@@ -184,7 +184,7 @@ class BridgeSupportTest {
     void getLockWhitelistEntryByAddress() {
         WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
         LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
-        when(whitelistSupport.getLockWhitelistEntryByAddress(any())).thenReturn(entry);
+        when(whitelistSupport.getLockWhitelistEntryByAddress("address")).thenReturn(entry);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withWhitelistSupport(whitelistSupport)
@@ -196,15 +196,15 @@ class BridgeSupportTest {
     @Test
     void addOneOffLockWhitelistAddress() {
         WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        when(whitelistSupport.addOneOffLockWhitelistAddress(any(), any(), any())).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+        Transaction tx = mock(Transaction.class);
+        String address = "address";
+        BigInteger maxTransferValue = BigInteger.ONE;
+        when(whitelistSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withWhitelistSupport(whitelistSupport)
             .build();
 
-        Transaction tx = mock(Transaction.class);
-        String address = "address";
-        BigInteger maxTransferValue = BigInteger.ONE;
         int result = bridgeSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue);
 
         assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
@@ -213,14 +213,14 @@ class BridgeSupportTest {
     @Test
     void addUnlimitedLockWhitelistAddress() {
         WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        when(whitelistSupport.addUnlimitedLockWhitelistAddress(any(), any())).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+        Transaction tx = mock(Transaction.class);
+        String address = "address";
+        when(whitelistSupport.addUnlimitedLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withWhitelistSupport(whitelistSupport)
             .build();
 
-        Transaction tx = mock(Transaction.class);
-        String address = "address";
         int result = bridgeSupport.addUnlimitedLockWhitelistAddress(tx, address);
 
         assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
@@ -229,14 +229,14 @@ class BridgeSupportTest {
     @Test
     void removeLockWhitelistAddress() {
         WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        when(whitelistSupport.removeLockWhitelistAddress(any(), any())).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+        Transaction tx = mock(Transaction.class);
+        String address = "address";
+        when(whitelistSupport.removeLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withWhitelistSupport(whitelistSupport)
             .build();
 
-        Transaction tx = mock(Transaction.class);
-        String address = "address";
         int result = bridgeSupport.removeLockWhitelistAddress(tx, address);
 
         assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
