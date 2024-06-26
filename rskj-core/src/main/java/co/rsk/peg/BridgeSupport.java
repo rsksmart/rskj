@@ -19,6 +19,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
@@ -32,10 +33,14 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.pegin.*;
@@ -87,9 +92,6 @@ public class BridgeSupport {
     public static final Integer LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE = -1;
     public static final Integer LOCK_WHITELIST_UNKNOWN_ERROR_CODE = 0;
     public static final Integer LOCK_WHITELIST_SUCCESS_CODE = 1;
-    public static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = -10;
-    public static final Integer NEGATIVE_FEE_PER_KB_ERROR_CODE = -1;
-    public static final Integer EXCESSIVE_FEE_PER_KB_ERROR_CODE = -2;
 
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE = -1;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE = -2;
@@ -120,6 +122,7 @@ public class BridgeSupport {
         "rollback"
     ));
 
+    private final FeePerKbSupport feePerKbSupport;
     private final BridgeConstants bridgeConstants;
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
@@ -149,6 +152,7 @@ public class BridgeSupport {
             Block executionBlock,
             Context btcContext,
             FederationSupport federationSupport,
+            FeePerKbSupport feePerKbSupport,
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
             ActivationConfig.ForBlock activations,
             SignatureCache signatureCache) {
@@ -161,6 +165,7 @@ public class BridgeSupport {
         this.peginInstructionsProvider = peginInstructionsProvider;
         this.btcContext = btcContext;
         this.federationSupport = federationSupport;
+        this.feePerKbSupport = feePerKbSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
         this.signatureCache = signatureCache;
@@ -189,6 +194,7 @@ public class BridgeSupport {
 
     public void save() throws IOException {
         provider.save();
+        feePerKbSupport.save();
     }
 
     /**
@@ -916,19 +922,6 @@ public class BridgeSupport {
     }
 
     /**
-     * @return Current fee per kb in BTC.
-     */
-    public Coin getFeePerKb() {
-        Coin currentFeePerKb = provider.getFeePerKb();
-
-        if (currentFeePerKb == null) {
-            currentFeePerKb = bridgeConstants.getGenesisFeePerKb();
-        }
-
-        return currentFeePerKb;
-    }
-
-    /**
      * Executed every now and then.
      * Performs a few tasks: processing of any pending btc funds
      * migrations from retiring federations;
@@ -1041,7 +1034,7 @@ public class BridgeSupport {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
-        BtcTransaction btcTx = createResult.getLeft();
+        BtcTransaction migrationTransaction = createResult.getLeft();
         List<UTXO> selectedUTXOs = createResult.getRight();
 
         logger.debug(
@@ -1054,26 +1047,33 @@ public class BridgeSupport {
             Coin amountMigrated = selectedUTXOs.stream()
                 .map(UTXO::getValue)
                 .reduce(Coin.ZERO, Coin::add);
-            pegoutsWaitingForConfirmations.add(btcTx, rskExecutionBlock.getNumber(), rskTxHash);
+            pegoutsWaitingForConfirmations.add(migrationTransaction, rskExecutionBlock.getNumber(), rskTxHash);
             // Log the Release request
             logger.debug(
                 "[migrateFunds] release requested. rskTXHash: {}, btcTxHash: {}, amount: {}",
                 rskTxHash,
-                btcTx.getHash(),
+                migrationTransaction.getHash(),
                 amountMigrated
             );
-            eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTx, amountMigrated);
+            eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), migrationTransaction, amountMigrated);
         } else {
-            pegoutsWaitingForConfirmations.add(btcTx, rskExecutionBlock.getNumber());
+            pegoutsWaitingForConfirmations.add(migrationTransaction, rskExecutionBlock.getNumber());
         }
 
         // Store pegoutTxSigHash to be able to identify the tx type
-        savePegoutTxSigHash(btcTx);
+        savePegoutTxSigHash(migrationTransaction);
 
         // Mark UTXOs as spent
         availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
             utxo.getHash().equals(selectedUtxo.getHash()) && utxo.getIndex() == selectedUtxo.getIndex()
         ));
+
+        if (!activations.isActive(RSKIP428)) {
+            return;
+        }
+
+        List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
+        eventLogger.logPegoutTransactionCreated(migrationTransaction.getHash(), outpointValues);
     }
 
     /**
@@ -1188,64 +1188,74 @@ public class BridgeSupport {
         long currentBlockNumber = rskExecutionBlock.getNumber();
         long nextPegoutCreationBlockNumber = getNextPegoutCreationBlockNumber();
 
-        if (currentBlockNumber >= nextPegoutCreationBlockNumber) {
-            List<ReleaseRequestQueue.Entry> pegoutEntries = pegoutRequests.getEntries();
-            Coin totalPegoutValue = pegoutEntries
-                .stream()
-                .map(ReleaseRequestQueue.Entry::getAmount)
-                .reduce(Coin.ZERO, Coin::add);
+        if (currentBlockNumber < nextPegoutCreationBlockNumber) {
+            return;
+        }
+        
+        List<ReleaseRequestQueue.Entry> pegoutEntries = pegoutRequests.getEntries();
+        Coin totalPegoutValue = pegoutEntries
+            .stream()
+            .map(ReleaseRequestQueue.Entry::getAmount)
+            .reduce(Coin.ZERO, Coin::add);
 
-            if (wallet.getBalance().isLessThan(totalPegoutValue)) {
-                logger.warn("[processPegoutsInBatch] wallet balance {} is less than the totalPegoutValue {}", wallet.getBalance(), totalPegoutValue);
+        if (wallet.getBalance().isLessThan(totalPegoutValue)) {
+            logger.warn("[processPegoutsInBatch] wallet balance {} is less than the totalPegoutValue {}", wallet.getBalance(), totalPegoutValue);
+            return;
+        }
+
+        if (!pegoutEntries.isEmpty()) {
+            logger.info("[processPegoutsInBatch] going to create a batched pegout transaction for {} requests, total amount {}", pegoutEntries.size(), totalPegoutValue);
+            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
+
+            while (pegoutEntries.size() > 1 && result.getResponseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
+                logger.info("[processPegoutsInBatch] Max size exceeded, going to divide {} requests in half", pegoutEntries.size());
+                int firstHalfSize = pegoutEntries.size() / 2;
+                pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
+                result = txBuilder.buildBatchedPegouts(pegoutEntries);
+            }
+
+            if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+                logger.warn(
+                    "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
+                    pegoutRequests.getEntries().size(),
+                    totalPegoutValue,
+                    result.getResponseCode());
                 return;
             }
 
-            if (!pegoutEntries.isEmpty()) {
-                logger.info("[processPegoutsInBatch] going to create a batched pegout transaction for {} requests, total amount {}", pegoutEntries.size(), totalPegoutValue);
-                ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
+            logger.info(
+                "[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}",
+                result.getBtcTx().getHash(), result.getResponseCode());
 
-                while (pegoutEntries.size() > 1 && result.getResponseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
-                    logger.info("[processPegoutsInBatch] Max size exceeded, going to divide {} requests in half", pegoutEntries.size());
-                    int firstHalfSize = pegoutEntries.size() / 2;
-                    pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
-                    result = txBuilder.buildBatchedPegouts(pegoutEntries);
-                }
+            BtcTransaction batchPegoutTransaction = result.getBtcTx();
+            addToPegoutsWaitingForConfirmations(batchPegoutTransaction,
+                pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
+            savePegoutTxSigHash(batchPegoutTransaction);
 
-                if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
-                    logger.warn(
-                        "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
-                        pegoutRequests.getEntries().size(),
-                        totalPegoutValue,
-                        result.getResponseCode());
-                    return;
-                }
+            // Remove batched requests from the queue after successfully batching pegouts
+            pegoutRequests.removeEntries(pegoutEntries);
 
-                logger.info("[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}", result.getBtcTx().getHash(), result.getResponseCode());
+            // Mark UTXOs as spent
+            List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
+            logger.debug("[processPegoutsInBatch] used {} UTXOs for this pegout", selectedUTXOs.size());
+            availableUTXOs.removeAll(selectedUTXOs);
 
-                BtcTransaction generatedTransaction = result.getBtcTx();
-                addToPegoutsWaitingForConfirmations(generatedTransaction, pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
-                savePegoutTxSigHash(generatedTransaction);
+            eventLogger.logBatchPegoutCreated(batchPegoutTransaction.getHash(),
+                pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
 
-                // Remove batched requests from the queue after successfully batching pegouts
-                pegoutRequests.removeEntries(pegoutEntries);
-
-                // Mark UTXOs as spent
-                List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
-                logger.debug("[processPegoutsInBatch] used {} UTXOs for this pegout", selectedUTXOs.size());
-                availableUTXOs.removeAll(selectedUTXOs);
-
-                eventLogger.logBatchPegoutCreated(generatedTransaction.getHash(),
-                    pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
-
-                adjustBalancesIfChangeOutputWasDust(generatedTransaction, totalPegoutValue, wallet);
+            if (activations.isActive(RSKIP428)) {
+                List<Coin> outpointValues = extractOutpointValues(batchPegoutTransaction);
+                eventLogger.logPegoutTransactionCreated(batchPegoutTransaction.getHash(), outpointValues);
             }
 
-            // update next Pegout height even if there were no request in queue
-            if (pegoutRequests.getEntries().isEmpty()) {
-                long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
-                provider.setNextPegoutHeight(nextPegoutHeight);
-                logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
-            }
+            adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, totalPegoutValue, wallet);
+        }
+
+        // set the next pegout creation block number when there are no pending pegout requests to be processed or they have been already processed
+        if (pegoutRequests.getEntries().isEmpty()) {
+            long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
+            provider.setNextPegoutHeight(nextPegoutHeight);
+            logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
         }
     }
 
@@ -2530,61 +2540,12 @@ public class BridgeSupport {
         }
     }
 
-    /**
-     * Votes for a fee per kb value.
-     *
-     * @return 1 upon successful vote, -1 when the vote was unsuccessful,
-     * FEE_PER_KB_GENERIC_ERROR_CODE when there was an un expected error.
-     */
+    public Coin getFeePerKb() {
+        return feePerKbSupport.getFeePerKb();
+    }
+
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb) {
-        AddressBasedAuthorizer authorizer = bridgeConstants.getFeePerKbChangeAuthorizer();
-        if (!authorizer.isAuthorized(tx, signatureCache)) {
-            return FEE_PER_KB_GENERIC_ERROR_CODE;
-        }
-
-        if(!feePerKb.isPositive()){
-            return NEGATIVE_FEE_PER_KB_ERROR_CODE;
-        }
-
-        if(feePerKb.isGreaterThan(bridgeConstants.getMaxFeePerKb())) {
-            return EXCESSIVE_FEE_PER_KB_ERROR_CODE;
-        }
-
-        ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
-        ABICallSpec feeVote = new ABICallSpec("setFeePerKb", new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
-        boolean successfulVote = feePerKbElection.vote(feeVote, tx.getSender(signatureCache));
-        if (!successfulVote) {
-            return -1;
-        }
-
-        Optional<ABICallSpec> winnerOptional = feePerKbElection.getWinner();
-        if (!winnerOptional.isPresent()) {
-            logger.info("Successful fee per kb vote for {}", feePerKb);
-            return 1;
-        }
-
-        ABICallSpec winner = winnerOptional.get();
-        Coin winnerFee;
-        try {
-            winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);
-        } catch (Exception e) {
-            logger.warn("Exception deserializing winner feePerKb", e);
-            return FEE_PER_KB_GENERIC_ERROR_CODE;
-        }
-
-        if (winnerFee == null) {
-            logger.warn("Invalid winner feePerKb: feePerKb can't be null");
-            return FEE_PER_KB_GENERIC_ERROR_CODE;
-        }
-
-        if (!winnerFee.equals(feePerKb)) {
-            logger.debug("Winner fee is different than the last vote: maybe you forgot to clear winners");
-        }
-
-        logger.info("Fee per kb changed to {}", winnerFee);
-        provider.setFeePerKb(winnerFee);
-        feePerKbElection.clear();
-        return 1;
+        return feePerKbSupport.voteFeePerKbChange(tx, feePerKb, signatureCache);
     }
 
     /**
@@ -3220,20 +3181,7 @@ public class BridgeSupport {
         );
 
         ReleaseTransactionBuilder.BuildResult buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
-        if (buildReturnResult.getResponseCode() == ReleaseTransactionBuilder.Response.SUCCESS) {
-            if (activations.isActive(ConsensusRule.RSKIP146)) {
-                provider.getPegoutsWaitingForConfirmations().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber(), rskTxHash);
-                eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), buildReturnResult.getBtcTx(), totalAmount);
-            } else {
-                provider.getPegoutsWaitingForConfirmations().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber());
-            }
-            logger.info(
-                "[generateRejectionRelease] Rejecting peg-in tx built successfully: Refund to address: {}. RskTxHash: {}. Value {}.",
-                btcRefundAddress,
-                rskTxHash,
-                totalAmount
-            );
-        } else {
+        if (buildReturnResult.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             logger.warn(
                 "[generateRejectionRelease] Rejecting peg-in tx could not be built due to {}: Btc peg-in txHash {}. Refund to address: {}. RskTxHash: {}. Value: {}",
                 buildReturnResult.getResponseCode(),
@@ -3243,7 +3191,28 @@ public class BridgeSupport {
                 totalAmount
             );
             panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.getResponseCode()));
+            return;
         }
+
+        BtcTransaction refundPegoutTransaction = buildReturnResult.getBtcTx();
+        if (activations.isActive(ConsensusRule.RSKIP146)) {
+            provider.getPegoutsWaitingForConfirmations().add(refundPegoutTransaction, rskExecutionBlock.getNumber(), rskTxHash);
+            eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), refundPegoutTransaction, totalAmount);
+        } else {
+            provider.getPegoutsWaitingForConfirmations().add(refundPegoutTransaction, rskExecutionBlock.getNumber());
+        }
+
+        if (activations.isActive(RSKIP428)) {
+            List<Coin> outpointValues = extractOutpointValues(refundPegoutTransaction);
+            eventLogger.logPegoutTransactionCreated(refundPegoutTransaction.getHash(), outpointValues);
+        }
+
+        logger.info(
+            "[generateRejectionRelease] Rejecting peg-in tx built successfully: Refund to address: {}. RskTxHash: {}. Value {}.",
+            btcRefundAddress,
+            rskTxHash,
+            totalAmount
+        );
     }
 
     private void generateRejectionRelease(

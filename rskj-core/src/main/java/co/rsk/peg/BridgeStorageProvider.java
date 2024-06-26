@@ -88,9 +88,6 @@ public class BridgeStorageProvider {
 
     private LockWhitelist lockWhitelist;
 
-    private Coin feePerKb;
-    private ABICallElection feePerKbElection;
-
     private Coin lockingCap;
 
     private HashMap<DataWord, Optional<Integer>> storageVersionEntries;
@@ -547,47 +544,6 @@ public class BridgeStorageProvider {
         return lockWhitelist;
     }
 
-    public Coin getFeePerKb() {
-        if (feePerKb != null) {
-            return feePerKb;
-        }
-
-        feePerKb = safeGetFromRepository(FEE_PER_KB_KEY, BridgeSerializationUtils::deserializeCoin);
-        return feePerKb;
-    }
-
-    public void setFeePerKb(Coin feePerKb) {
-        this.feePerKb = feePerKb;
-    }
-
-    public void saveFeePerKb() {
-        if (feePerKb == null) {
-            return;
-        }
-
-        safeSaveToRepository(FEE_PER_KB_KEY, feePerKb, BridgeSerializationUtils::serializeCoin);
-    }
-
-    /**
-     * Save the fee per kb election
-     */
-    public void saveFeePerKbElection() {
-        if (feePerKbElection == null) {
-            return;
-        }
-
-        safeSaveToRepository(FEE_PER_KB_ELECTION_KEY, feePerKbElection, BridgeSerializationUtils::serializeElection);
-    }
-
-    public ABICallElection getFeePerKbElection(AddressBasedAuthorizer authorizer) {
-        if (feePerKbElection != null) {
-            return feePerKbElection;
-        }
-
-        feePerKbElection = safeGetFromRepository(FEE_PER_KB_ELECTION_KEY, data -> BridgeSerializationUtils.deserializeElection(data, authorizer));
-        return feePerKbElection;
-    }
-
     public void saveLockingCap() {
         if (activations.isActive(RSKIP134)) {
             safeSaveToRepository(LOCKING_CAP_KEY, this.getLockingCap(), BridgeSerializationUtils::serializeCoin);
@@ -981,9 +937,6 @@ public class BridgeStorageProvider {
         saveFederationElection();
 
         saveLockWhitelist();
-
-        saveFeePerKb();
-        saveFeePerKbElection();
 
         saveLockingCap();
 

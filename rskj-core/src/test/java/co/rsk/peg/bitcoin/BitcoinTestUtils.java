@@ -1,15 +1,8 @@
 package co.rsk.peg.bitcoin;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
-import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import co.rsk.bitcoinj.script.ScriptChunk;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 
 public class BitcoinTestUtils {
@@ -24,7 +18,8 @@ public class BitcoinTestUtils {
     public static List<BtcECKey> getBtcEcKeysFromSeeds(String[] seeds, boolean sorted) {
         List<BtcECKey> keys = Arrays
             .stream(seeds)
-            .map(seed -> BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
+            .map(seed -> BtcECKey.fromPrivate(
+                HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
             .collect(Collectors.toList());
 
         if (sorted) {
@@ -35,7 +30,8 @@ public class BitcoinTestUtils {
     }
 
     public static Address createP2PKHAddress(NetworkParameters networkParameters, String seed) {
-        BtcECKey key = BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
+        BtcECKey key = BtcECKey.fromPrivate(
+            HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
         return key.toAddress(networkParameters);
     }
 
@@ -70,5 +66,47 @@ public class BitcoinTestUtils {
             }
         }
         return signatures;
+    }
+
+    public static List<Coin> coinListOf(long... values) {
+        return Arrays.stream(values)
+            .mapToObj(Coin::valueOf)
+            .collect(Collectors.toList());
+    }
+
+    public static UTXO createUTXO(int nHash, long index, Coin value, Address address) {
+        return new UTXO(
+            createHash(nHash),
+            index,
+            value,
+            10,
+            false,
+            ScriptBuilder.createOutputScript(address));
+    }
+
+    public static List<UTXO> createUTXOs(int amount, Address address) {
+        List<UTXO> utxos = new ArrayList<>();
+        for (int i = 0; i < amount; i++) {
+            utxos.add(createUTXO(i + 1, 0, Coin.COIN, address));
+        }
+
+        return utxos;
+    }
+
+    public static BtcTransaction createBtcTransactionWithOutputToAddress(
+        NetworkParameters networkParameters,
+        Coin amount,
+        Address btcAddress) {
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(amount, btcAddress);
+        BtcECKey srcKey = BtcECKey.fromPublicOnly(Hex.decode("02550cc87fa9061162b1dd395a16662529c9d8094c0feca17905a3244713d65fe8"));
+        tx.addInput(
+            createHash(100),
+            0,
+            ScriptBuilder.createInputScript(null, srcKey)
+        );
+
+        return tx;
     }
 }

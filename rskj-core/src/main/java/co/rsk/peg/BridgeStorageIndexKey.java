@@ -17,8 +17,6 @@ public enum BridgeStorageIndexKey {
     FEDERATION_ELECTION_KEY("federationElection"),
     LOCK_ONE_OFF_WHITELIST_KEY("lockWhitelist"),
     LOCK_UNLIMITED_WHITELIST_KEY("unlimitedLockWhitelist"),
-    FEE_PER_KB_KEY("feePerKb"),
-    FEE_PER_KB_ELECTION_KEY("feePerKbElection"),
     LOCKING_CAP_KEY("lockingCap"),
     RELEASE_REQUEST_QUEUE_WITH_TXHASH("releaseRequestQueueWithTxHash"),
     PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY("releaseTransactionSetWithTxHash"),

@@ -1630,7 +1630,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (rskSystemProperties.usePeersFromLastSession()) {
             List<String> peerLastSession = knownPeersHandler.readPeers();
-            logger.debug("Loading peers from previous session: {}",peerLastSession);
+            logger.info("Loading peers from previous session: {}", peerLastSession);
             initialBootNodes.addAll(peerLastSession);
         }
         return new ArrayList<>(initialBootNodes);

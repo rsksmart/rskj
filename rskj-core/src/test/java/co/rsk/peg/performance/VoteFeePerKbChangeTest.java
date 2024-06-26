@@ -19,8 +19,9 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
+import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
@@ -72,7 +73,8 @@ class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
     void voteFeePerKbChange_unauthorized() throws VMException {
         BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
 
-        Coin genesisFeePerKB = BridgeRegTestConstants.getInstance().getGenesisFeePerKb();
+        FeePerKbConstants feePerKbMainNetConstants= FeePerKbMainNetConstants.getInstance();
+        Coin genesisFeePerKB = feePerKbMainNetConstants.getGenesisFeePerKb();
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.VOTE_FEE_PER_KB.encode(BigInteger.valueOf(Helper.randomCoin(Coin.MILLICOIN, 1, 100).getValue()));
 
         TxBuilder txBuilder = (int executionIndex) -> {
