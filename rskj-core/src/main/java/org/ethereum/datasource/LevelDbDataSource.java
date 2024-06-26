@@ -65,12 +65,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
         logger.info("New LevelDbDataSource: {}", name);
     }
 
-    public static KeyValueDataSource makeDataSource(Path datasourcePath) {
-        KeyValueDataSource ds = new LevelDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
-        ds.init();
-        return ds;
-    }
-
     @Override
     public void init() {
         resetDbLock.writeLock().lock();

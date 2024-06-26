@@ -752,6 +752,44 @@ class TraceModuleImplTest {
         Assertions.assertEquals("\"create2\"", oresult.get("action").get("creationMethod").toString());
     }
 
+    @Test
+    void executedContractWithDelegateCallToNonExistentContract() throws Exception {
+        DslParser parser = DslParser.fromResource("dsl/delegatecall02.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Account delegateCallAccount = world.getAccountByName("delegatecall");
+        Account delegatedAccount = world.getAccountByName("delegated");
+
+        Assertions.assertNotNull(delegateCallAccount);
+        Assertions.assertNotNull(delegatedAccount);
+
+        Transaction transaction = world.getTransactionByName("tx01");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null, world.getBlockTxSignatureCache());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assertions.assertEquals(2, aresult.size());
+        Assertions.assertTrue(result.get(0).isObject());
+
+        ObjectNode oresult = (ObjectNode)result.get(1);
+
+        Assertions.assertNotNull(oresult.get("action"));
+        Assertions.assertNotNull(oresult.get("action").get("callType"));
+        Assertions.assertEquals("\"delegatecall\"", oresult.get("action").get("callType").toString());
+        Assertions.assertEquals("\"" + delegatedAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("to").toString());
+        Assertions.assertEquals("\"" + delegateCallAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("from").toString());
+    }
+
     private static World executeMultiContract(ReceiptStore receiptStore) throws DslProcessorException, FileNotFoundException {
         DslParser parser = DslParser.fromResource("dsl/contracts08.txt");
         World world = new World(receiptStore);
