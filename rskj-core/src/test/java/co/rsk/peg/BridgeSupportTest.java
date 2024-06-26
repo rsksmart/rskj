@@ -43,7 +43,10 @@ import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelist;
-import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.LockWhitelistEntry;
+import co.rsk.peg.whitelist.WhitelistResponseCode;
+import co.rsk.peg.whitelist.WhitelistSupport;
+import co.rsk.peg.whitelist.WhitelistSupportImpl;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -150,6 +153,93 @@ class BridgeSupportTest {
         int result = bridgeSupport.voteFeePerKbChange(tx, feePerKbVote);
 
         assertEquals(FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode(), result);
+    }
+
+    @Test
+    void getLockWhitelistSize() {
+        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+        when(whitelistSupport.getLockWhitelistSize()).thenReturn(Integer.SIZE);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withWhitelistSupport(whitelistSupport)
+            .build();
+
+        assertEquals(Integer.SIZE, bridgeSupport.getLockWhitelistSize());
+    }
+
+    @Test
+    void getLockWhitelistEntryByIndex() {
+        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+        LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
+        when(whitelistSupport.getLockWhitelistEntryByIndex(Integer.SIZE)).thenReturn(entry);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withWhitelistSupport(whitelistSupport)
+            .build();
+
+        assertEquals(entry, bridgeSupport.getLockWhitelistEntryByIndex(Integer.SIZE));
+    }
+
+    @Test
+    void getLockWhitelistEntryByAddress() {
+        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+        LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
+        when(whitelistSupport.getLockWhitelistEntryByAddress("address")).thenReturn(entry);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withWhitelistSupport(whitelistSupport)
+            .build();
+
+        assertEquals(entry, bridgeSupport.getLockWhitelistEntryByAddress("address"));
+    }
+
+    @Test
+    void addOneOffLockWhitelistAddress() {
+        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+        Transaction tx = mock(Transaction.class);
+        String address = "address";
+        BigInteger maxTransferValue = BigInteger.ONE;
+        when(whitelistSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withWhitelistSupport(whitelistSupport)
+            .build();
+
+        int result = bridgeSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue);
+
+        assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+    }
+
+    @Test
+    void addUnlimitedLockWhitelistAddress() {
+        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+        Transaction tx = mock(Transaction.class);
+        String address = "address";
+        when(whitelistSupport.addUnlimitedLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withWhitelistSupport(whitelistSupport)
+            .build();
+
+        int result = bridgeSupport.addUnlimitedLockWhitelistAddress(tx, address);
+
+        assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+    }
+
+    @Test
+    void removeLockWhitelistAddress() {
+        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+        Transaction tx = mock(Transaction.class);
+        String address = "address";
+        when(whitelistSupport.removeLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withWhitelistSupport(whitelistSupport)
+            .build();
+
+        int result = bridgeSupport.removeLockWhitelistAddress(tx, address);
+
+        assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
     }
 
     @Test
