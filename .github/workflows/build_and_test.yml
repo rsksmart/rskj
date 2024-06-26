@@ -95,6 +95,7 @@ jobs:
       - name: Sonarqube for PRs
         if: github.event_name == 'pull_request'
         run: |
+          git fetch origin ${{ github.base_ref }} --depth 1
           pr_number=${{ github.event.pull_request.number }}
           extra_flags="-Dsonar.pullrequest.base=${{ github.base_ref }} \
           -Dsonar.pullrequest.branch=${{ github.head_ref }} \
