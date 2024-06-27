@@ -6303,7 +6303,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void receiveHeader_afterRSKIP434_returnsUnexpectedExceptionResponseCode() throws BlockStoreException, IOException {
+        void receiveHeader_afterRSKIP434_returnsSuccessful() throws BlockStoreException, IOException {
             // first assert that previous block was correctly saved
             assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), previousBlock.getHash());
 
@@ -6342,7 +6342,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void receiveHeader_afterRSKIP434_savesTheBlock() throws BlockStoreException, IOException {
+        void receiveHeaders_afterRSKIP434_savesTheBlock() throws BlockStoreException, IOException {
             // first assert that previous block was correctly saved
             assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), previousBlock.getHash());
 
