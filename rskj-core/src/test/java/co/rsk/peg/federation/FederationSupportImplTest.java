@@ -1652,10 +1652,7 @@ class FederationSupportImplTest {
                 .build();
 
             int retiringFederationSize = oldFederation.getSize();
-            assertThrows(
-                IndexOutOfBoundsException.class, () ->
-                    federationSupport.getRetiringFederatorBtcPublicKey(retiringFederationSize)
-            );
+            assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getRetiringFederatorBtcPublicKey(retiringFederationSize));
         }
 
         @ParameterizedTest
@@ -1942,8 +1939,7 @@ class FederationSupportImplTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class PendingFederationTestsWithNonNullFederation {
 
-        PendingFederation pendingFederation = new PendingFederationBuilder()
-            .build();
+        PendingFederation pendingFederation = new PendingFederationBuilder().build();
 
         @BeforeEach
         void setUp() {
@@ -2196,8 +2192,8 @@ class FederationSupportImplTest {
     }
 
     private List<ECKey> getMstPublicKeysFromFederationMembers(List<FederationMember> members) {
-            return members.stream()
-                .map(FederationMember::getMstPublicKey)
-                .collect(Collectors.toList());
-        }
+        return members.stream()
+            .map(FederationMember::getMstPublicKey)
+            .collect(Collectors.toList());
+    }
 }
