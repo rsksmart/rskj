@@ -1151,7 +1151,7 @@ class FederationSupportImplTest {
         @Test
         @Tag("getRetiringFederationBtcUTXOs")
         void getRetiringFederationUTXOs_returnsEmptyList() {
-            // set UTXOs for new federation since there is no old federation
+            // set UTXOs for new federation since there is no retiring federation
             List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, newFederation.getAddress());
             storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
