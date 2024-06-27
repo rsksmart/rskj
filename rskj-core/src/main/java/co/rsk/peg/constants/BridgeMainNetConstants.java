@@ -124,6 +124,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         btcHeightWhenPegoutTxIndexActivates = 837_589; // Estimated date Wed, 03 Apr 2024 15:00:00 GMT. 832,430 was the block number at time of calculation
         pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
+
+        blockWithTooMuchChainWorkHeight = 849_138;
     }
 
     public static BridgeMainNetConstants getInstance() {
