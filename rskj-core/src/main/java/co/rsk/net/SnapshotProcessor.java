@@ -21,10 +21,7 @@ package co.rsk.net;
 import co.rsk.config.InternalService;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.messages.*;
-import co.rsk.net.sync.BlockConnectorHelper;
-import co.rsk.net.sync.PeersInformation;
-import co.rsk.net.sync.SnapSyncState;
-import co.rsk.net.sync.SyncMessageHandler;
+import co.rsk.net.sync.*;
 import co.rsk.trie.TrieDTO;
 import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieDTOInOrderRecoverer;
@@ -456,7 +453,7 @@ public class SnapshotProcessor implements InternalService {
         long from = 0;
         logger.debug("Generating chunk request tasks...");
         while (from < state.getRemoteTrieSize()) {
-            SnapSyncState.ChunkTask task = new SnapSyncState.ChunkTask(state.getLastBlock().getNumber(), from);
+            ChunkTask task = new ChunkTask(state.getLastBlock().getNumber(), from);
             state.getChunkTaskQueue().add(task);
             from += chunkSize * 1024L;
         }
@@ -471,9 +468,9 @@ public class SnapshotProcessor implements InternalService {
     }
 
     private void executeNextChunkRequestTask(SnapSyncState state, Peer peer) {
-        Queue<SnapSyncState.ChunkTask> taskQueue = state.getChunkTaskQueue();
+        Queue<ChunkTask> taskQueue = state.getChunkTaskQueue();
         if (!taskQueue.isEmpty()) {
-            SnapSyncState.ChunkTask task = taskQueue.poll();
+            ChunkTask task = taskQueue.poll();
 
             requestStateChunk(peer, task.getFrom(), task.getBlockNumber(), chunkSize);
         } else {

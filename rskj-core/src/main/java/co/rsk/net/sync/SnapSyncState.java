@@ -256,21 +256,5 @@ public class SnapSyncState extends BaseSyncState {
         isRunning = true;
     }
 
-    public static class ChunkTask {
-        private final long blockNumber;
-        private final long from;
 
-        public ChunkTask(long blockNumber, long from) {
-            this.blockNumber = blockNumber;
-            this.from = from;
-        }
-
-        public long getBlockNumber() {
-            return blockNumber;
-        }
-
-        public long getFrom() {
-            return from;
-        }
-    }
 }

@@ -231,10 +231,7 @@ public class SnapshotProcessorTest {
         Peer peer = mock(Peer.class);
         SnapStatusRequestMessage msg = mock(SnapStatusRequestMessage.class);
         CountDownLatch latch = new CountDownLatch(2);
-        doAnswer(invocation -> {
-            latch.countDown();
-            return null;
-        }).when(listener).onQueueEmpty();
+        doCountDownOnQueueEmpty(listener, latch);
         underTest = new SnapshotProcessor(
                 blockchain,
                 trieStore,
@@ -270,10 +267,7 @@ public class SnapshotProcessorTest {
         Peer peer = mock(Peer.class);
         SnapBlocksRequestMessage msg = mock(SnapBlocksRequestMessage.class);
         CountDownLatch latch = new CountDownLatch(2);
-        doAnswer(invocation -> {
-            latch.countDown();
-            return null;
-        }).when(listener).onQueueEmpty();
+        doCountDownOnQueueEmpty(listener, latch);
         underTest = new SnapshotProcessor(
                 blockchain,
                 trieStore,
@@ -309,10 +303,7 @@ public class SnapshotProcessorTest {
         Peer peer = mock(Peer.class);
         SnapStateChunkRequestMessage msg = mock(SnapStateChunkRequestMessage.class);
         CountDownLatch latch = new CountDownLatch(2);
-        doAnswer(invocation -> {
-            latch.countDown();
-            return null;
-        }).when(listener).onQueueEmpty();
+        doCountDownOnQueueEmpty(listener, latch);
         underTest = new SnapshotProcessor(
                 blockchain,
                 trieStore,
@@ -359,4 +350,10 @@ public class SnapshotProcessorTest {
         return mockedPeer;
     }
 
+    private static void doCountDownOnQueueEmpty(SyncMessageHandler.Listener listener, CountDownLatch latch) {
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
+        }).when(listener).onQueueEmpty();
+    }
 }

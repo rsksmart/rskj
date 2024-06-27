@@ -66,16 +66,11 @@ class SyncMessageHandlerTest {
         thread.start();
 
         //when
-        jobQueue.put(new SyncMessageHandler.Job(mock(Peer.class), mock(Message.class)) {
-            @Override
-            public void run() {
-                jobCalled.set(true);
-            }
-        });
+        putJob(() -> jobCalled.set(true));
 
-        //then
         thread.join(THREAD_JOIN_TIMEOUT);
 
+        //then
         assertTrue(jobCalled.get());
         verify(listener, times(1)).onStart();
         verify(listener, times(1)).onQueueEmpty();
@@ -99,22 +94,14 @@ class SyncMessageHandlerTest {
         thread.start();
 
         //when
-        jobQueue.put(new SyncMessageHandler.Job(mock(Peer.class), mock(Message.class)) {
-            @Override
-            public void run() {
-                throw exception;
-            }
+        putJob(() -> {
+            throw exception;
         });
-        jobQueue.put(new SyncMessageHandler.Job(mock(Peer.class), mock(Message.class)) {
-            @Override
-            public void run() {
-                jobCalled.set(true);
-            }
-        });
+        putJob(() -> jobCalled.set(true));
 
-        //then
         thread.join(THREAD_JOIN_TIMEOUT);
 
+        //then
         assertTrue(jobCalled.get());
         verify(listener, times(1)).onStart();
         verify(listener, times(1)).onQueueEmpty();
@@ -134,13 +121,22 @@ class SyncMessageHandlerTest {
 
         thread.start();
 
-        //then
         thread.join(THREAD_JOIN_TIMEOUT);
 
+        //then
         verify(listener, times(1)).onStart();
         verify(listener, times(0)).onQueueEmpty();
         verify(listener, times(1)).onInterrupted();
         verify(listener, never()).onException(any());
         verify(listener, times(1)).onComplete();
+    }
+
+    private void putJob(Runnable action) throws InterruptedException {
+        jobQueue.put(new SyncMessageHandler.Job(mock(Peer.class), mock(Message.class)) {
+            @Override
+            public void run() {
+                action.run();
+            }
+        });
     }
 }

@@ -159,10 +159,7 @@ class SnapSyncStateTest {
         Peer peer = mock(Peer.class);
         SnapStatusResponseMessage msg = mock(SnapStatusResponseMessage.class);
         CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(invocation -> {
-            latch.countDown();
-            return null;
-        }).when(listener).onQueueEmpty();
+        doCountDownOnQueueEmpty(listener, latch);
         underTest.onEnter();
 
         //when
@@ -184,10 +181,7 @@ class SnapSyncStateTest {
         Peer peer = mock(Peer.class);
         SnapBlocksResponseMessage msg = mock(SnapBlocksResponseMessage.class);
         CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(invocation -> {
-            latch.countDown();
-            return null;
-        }).when(listener).onQueueEmpty();
+        doCountDownOnQueueEmpty(listener, latch);
         underTest.onEnter();
 
         //when
@@ -209,10 +203,7 @@ class SnapSyncStateTest {
         Peer peer = mock(Peer.class);
         SnapStateChunkResponseMessage msg = mock(SnapStateChunkResponseMessage.class);
         CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(invocation -> {
-            latch.countDown();
-            return null;
-        }).when(listener).onQueueEmpty();
+        doCountDownOnQueueEmpty(listener, latch);
         underTest.onEnter();
 
         //when
@@ -226,5 +217,12 @@ class SnapSyncStateTest {
 
         assertEquals(peer, jobArg.getValue().getSender());
         assertEquals(msg, jobArg.getValue().getMsg());
+    }
+
+    private static void doCountDownOnQueueEmpty(SyncMessageHandler.Listener listener, CountDownLatch latch) {
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
+        }).when(listener).onQueueEmpty();
     }
 }
