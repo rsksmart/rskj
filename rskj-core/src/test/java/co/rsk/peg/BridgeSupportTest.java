@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -44,6 +45,7 @@ import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
+import co.rsk.peg.whitelist.WhitelistCaller;
 import co.rsk.peg.whitelist.WhitelistResponseCode;
 import co.rsk.peg.whitelist.WhitelistSupport;
 import co.rsk.peg.whitelist.WhitelistSupportImpl;
@@ -238,6 +240,48 @@ class BridgeSupportTest {
             .build();
 
         int result = bridgeSupport.removeLockWhitelistAddress(tx, address);
+
+        assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+    }
+
+    @Test
+    void setLockWhitelistDisableBlockDelay() throws BlockStoreException, IOException {
+        // Set of Variables to be use in setLockWhitelistDisableBlockDelay
+        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
+        BigInteger disableBlockDelayBI = BigInteger.ONE;
+        when(whitelistSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI, 0)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+
+        // Set of variables to be use in bridgeSupportBuilder
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        Repository rskRepository = mock(Repository.class);
+        BridgeConstants bridgeConstantsMainNet = BridgeMainNetConstants.getInstance();
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withWhitelistSupport(whitelistSupport)
+            .withProvider(provider)
+            .withRepository(rskRepository)
+            .withBridgeConstants(bridgeConstantsMainNet)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withActivations(activations)
+            .build();
+
+        // Set of variables to be used mocking
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        NetworkParameters btcParams = bridgeConstantsMainNet.getBtcParams();
+        BtcBlock genesisBtcBlock = btcParams.getGenesisBlock();
+        Sha256Hash genesisBtcBlockHash = genesisBtcBlock.getHash();
+
+        when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
+        when(storedBlock.getHeader()).thenReturn(btcBlock);
+        when(btcBlock.getHash()).thenReturn(genesisBtcBlockHash);
+        when(btcBlockStoreFactory.newInstance(rskRepository, bridgeConstantsMainNet, provider, activations)).thenReturn(btcBlockStore);
+
+        int result = bridgeSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI);
 
         assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
     }
