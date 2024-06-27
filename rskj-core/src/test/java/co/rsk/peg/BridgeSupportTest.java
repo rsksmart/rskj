@@ -160,26 +160,26 @@ class BridgeSupportTest {
     @Test
     void getLockWhitelistSize() {
         WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        when(whitelistSupport.getLockWhitelistSize()).thenReturn(Integer.SIZE);
+        when(whitelistSupport.getLockWhitelistSize()).thenReturn(10);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withWhitelistSupport(whitelistSupport)
             .build();
 
-        assertEquals(Integer.SIZE, bridgeSupport.getLockWhitelistSize());
+        assertEquals(10, bridgeSupport.getLockWhitelistSize());
     }
 
     @Test
     void getLockWhitelistEntryByIndex() {
         WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
         LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
-        when(whitelistSupport.getLockWhitelistEntryByIndex(Integer.SIZE)).thenReturn(entry);
+        when(whitelistSupport.getLockWhitelistEntryByIndex(0)).thenReturn(entry);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withWhitelistSupport(whitelistSupport)
             .build();
 
-        assertEquals(entry, bridgeSupport.getLockWhitelistEntryByIndex(Integer.SIZE));
+        assertEquals(entry, bridgeSupport.getLockWhitelistEntryByIndex(0));
     }
 
     @Test
