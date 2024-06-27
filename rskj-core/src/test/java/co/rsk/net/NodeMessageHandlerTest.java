@@ -212,7 +212,7 @@ class NodeMessageHandlerTest {
     }
 
     @Test
-    void postSnapMessages() {
+    void checkSnapMessagesOrderAndPriority() {
         RskSystemProperties config = spy(this.config);
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
