@@ -6241,7 +6241,12 @@ class BridgeSupportTest {
         BridgeSupportBuilder bridgeSupportBuilder = new BridgeSupportBuilder();
         BridgeSupport bridgeSupport;
 
+        BtcBlock block849134;
+        BtcBlock block849135;
+        BtcBlock block849136;
+        BtcBlock block849137;
         BtcBlock blockWithTooMuchWork;
+        BtcBlock block849139;
 
         @BeforeEach
         void setUp() {
@@ -6249,9 +6254,23 @@ class BridgeSupportTest {
             repository = createRepository();
             btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeMainnetConstants.getBtcParams(), 100, 100);
 
-            // Create block with too much work
+            String block849134Header = "0080b92c24f123130ae29e899f0cab72653722e54cdf3b30445202000000000000000000c72ead65a3b78ab637d1876c00414a77e47bcc5b52667ac1e573633563bea5a695aa7766255d031728d182a8";
+            block849134 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849134Header));
+
+            String block849135Header = "00004020bf67910b5d3996ee594848b482ee84d0e28c97a9a2d601000000000000000000865e218552bb92df36c962f5163e84a6c2542584fb36be2fa8b2a4246c73a701f1ae7766255d031791836b22";
+            block849135 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849135Header));
+
+            String block849136Header = "0000003a796f8b7a9d6ba6e13064e7c64e94570f877170262f1f0200000000000000000036b2ab17565a24a9be4626ca801cb31f91232034ba848295475f931a58dd5446e5b07766255d03173b01a491";
+            block849136 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849136Header));
+
+            String block849137Header = "00e00820925b77c9ff4d0036aa29f3238cde12e9af9d55c34ed30200000000000000000032a9fa3e12ef87a2327b55db6a16a1227bb381db8b269d90aa3a6e38cf39665f91b47766255d0317c1b1575f";
+            block849137 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849137Header));
+
             String blockWithTooMuchWorkHeader = "006001207ca158816ffc9d45b9ecd6a49ffbf3038f3646cf13fc01000000000000000000e0182ce7cc10db785b5fb2fb4314053f5b12cd6116168797cb461aa339fc725078b87766255d0317ba5261e2";
             blockWithTooMuchWork = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(blockWithTooMuchWorkHeader));
+
+            String block849139Header = "00a0b625ffa2f7cbf95219fc74c3db38f84ae265784bc1417c71020000000000000000008e5b319a229376089f4a7b77c90ed90ac19a0532fc4c62426f5a5931ee7e3e8dd2c67766255d03171e91a015";
+            block849139 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849139Header));
         }
 
         @Test
@@ -6273,9 +6292,7 @@ class BridgeSupportTest {
                 .build();
             btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
 
-            // Create block with too much work parent
-            String block849137Header = "00e00820925b77c9ff4d0036aa29f3238cde12e9af9d55c34ed30200000000000000000032a9fa3e12ef87a2327b55db6a16a1227bb381db8b269d90aa3a6e38cf39665f91b47766255d0317c1b1575f";
-            BtcBlock block849137 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849137Header));
+            // Create block with too much work parent with cumulative difficulty
             BigInteger block849137ChainWork = new BigInteger("00000000000000000000000000000000000000007fffdc6f043e4a69ea179a7a", 16);
             StoredBlock block849137ToStore = new StoredBlock(block849137, block849137ChainWork, 849137);
 
@@ -6310,10 +6327,7 @@ class BridgeSupportTest {
                 .build();
             btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
 
-            // this info is from block 849134.
-            // We need to save it before testing receiveHeaders behavior
-            String block849134Header = "0080b92c24f123130ae29e899f0cab72653722e54cdf3b30445202000000000000000000c72ead65a3b78ab637d1876c00414a77e47bcc5b52667ac1e573633563bea5a695aa7766255d031728d182a8";
-            BtcBlock block849134 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849134Header));
+            // Create block 849134 with cumulative difficulty
             BigInteger block849134ChainWork = new BigInteger("00000000000000000000000000000000000000007ffef81fa11393037c9df17b", 16);
             StoredBlock block849134ToStore = new StoredBlock(block849134, block849134ChainWork, 849134);
 
@@ -6324,24 +6338,7 @@ class BridgeSupportTest {
             // assert that block 849134 was correctly saved
             assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), block849134.getHash());
 
-            // create block headers to send
-            String block849135Header = "00004020bf67910b5d3996ee594848b482ee84d0e28c97a9a2d601000000000000000000865e218552bb92df36c962f5163e84a6c2542584fb36be2fa8b2a4246c73a701f1ae7766255d031791836b22";
-            BtcBlock block849135 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849135Header));
-
-            String block849136Header = "0000003a796f8b7a9d6ba6e13064e7c64e94570f877170262f1f0200000000000000000036b2ab17565a24a9be4626ca801cb31f91232034ba848295475f931a58dd5446e5b07766255d03173b01a491";
-            BtcBlock block849136 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849136Header));
-
-            String block849137Header = "00e00820925b77c9ff4d0036aa29f3238cde12e9af9d55c34ed30200000000000000000032a9fa3e12ef87a2327b55db6a16a1227bb381db8b269d90aa3a6e38cf39665f91b47766255d0317c1b1575f";
-            BtcBlock block849137 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849137Header));
-
-            String blockWithTooMuchWorkHeader = "006001207ca158816ffc9d45b9ecd6a49ffbf3038f3646cf13fc01000000000000000000e0182ce7cc10db785b5fb2fb4314053f5b12cd6116168797cb461aa339fc725078b87766255d0317ba5261e2";
-            BtcBlock blockWithTooMuchWork = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(blockWithTooMuchWorkHeader));
-
-            String block849139Header = "00a0b625ffa2f7cbf95219fc74c3db38f84ae265784bc1417c71020000000000000000008e5b319a229376089f4a7b77c90ed90ac19a0532fc4c62426f5a5931ee7e3e8dd2c67766255d03171e91a015";
-            BtcBlock block849139 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849139Header));
-
             BtcBlock[] headersToSend = new BtcBlock[] { block849135, block849136, block849137, blockWithTooMuchWork, block849139 };
-
             // assert blocks until 849137 are correctly saved
             // and blocks from 849138 are not saved
             bridgeSupport.receiveHeaders(headersToSend);
@@ -6371,9 +6368,7 @@ class BridgeSupportTest {
                 .build();
             btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
 
-            // Create block with too much work parent
-            String block849137Header = "00e00820925b77c9ff4d0036aa29f3238cde12e9af9d55c34ed30200000000000000000032a9fa3e12ef87a2327b55db6a16a1227bb381db8b269d90aa3a6e38cf39665f91b47766255d0317c1b1575f";
-            BtcBlock block849137 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849137Header));
+            // Create block with too much work parent with cumulative difficulty
             BigInteger block849137ChainWork = new BigInteger("00000000000000000000000000000000000000007fffdc6f043e4a69ea179a7a", 16);
             StoredBlock block849137ToStore = new StoredBlock(block849137, block849137ChainWork, 849137);
 
@@ -6408,10 +6403,7 @@ class BridgeSupportTest {
                 .build();
             btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
 
-            // this info is from block 849134.
-            // We need to save it before testing receiveHeaders behavior
-            String block849134Header = "0080b92c24f123130ae29e899f0cab72653722e54cdf3b30445202000000000000000000c72ead65a3b78ab637d1876c00414a77e47bcc5b52667ac1e573633563bea5a695aa7766255d031728d182a8";
-            BtcBlock block849134 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849134Header));
+            // Create block 849134 with cumulative difficulty
             BigInteger block849134ChainWork = new BigInteger("00000000000000000000000000000000000000007ffef81fa11393037c9df17b", 16);
             StoredBlock block849134ToStore = new StoredBlock(block849134, block849134ChainWork, 849134);
 
@@ -6422,24 +6414,7 @@ class BridgeSupportTest {
             // assert that block 849134 was correctly saved
             assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), block849134.getHash());
 
-            // create block headers to send
-            String block849135Header = "00004020bf67910b5d3996ee594848b482ee84d0e28c97a9a2d601000000000000000000865e218552bb92df36c962f5163e84a6c2542584fb36be2fa8b2a4246c73a701f1ae7766255d031791836b22";
-            BtcBlock block849135 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849135Header));
-
-            String block849136Header = "0000003a796f8b7a9d6ba6e13064e7c64e94570f877170262f1f0200000000000000000036b2ab17565a24a9be4626ca801cb31f91232034ba848295475f931a58dd5446e5b07766255d03173b01a491";
-            BtcBlock block849136 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849136Header));
-
-            String block849137Header = "00e00820925b77c9ff4d0036aa29f3238cde12e9af9d55c34ed30200000000000000000032a9fa3e12ef87a2327b55db6a16a1227bb381db8b269d90aa3a6e38cf39665f91b47766255d0317c1b1575f";
-            BtcBlock block849137 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849137Header));
-
-            String blockWithTooMuchWorkHeader = "006001207ca158816ffc9d45b9ecd6a49ffbf3038f3646cf13fc01000000000000000000e0182ce7cc10db785b5fb2fb4314053f5b12cd6116168797cb461aa339fc725078b87766255d0317ba5261e2";
-            BtcBlock blockWithTooMuchWork = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(blockWithTooMuchWorkHeader));
-
-            String block849139Header = "00a0b625ffa2f7cbf95219fc74c3db38f84ae265784bc1417c71020000000000000000008e5b319a229376089f4a7b77c90ed90ac19a0532fc4c62426f5a5931ee7e3e8dd2c67766255d03171e91a015";
-            BtcBlock block849139 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849139Header));
-
             BtcBlock[] headersToSend = new BtcBlock[] { block849135, block849136, block849137, blockWithTooMuchWork, block849139 };
-
             // assert all blocks are correctly saved
             bridgeSupport.receiveHeaders(headersToSend);
             assertNotNull(btcBlockStoreWithCache.get(block849135.getHash()));
