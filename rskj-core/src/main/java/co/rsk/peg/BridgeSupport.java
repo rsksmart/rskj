@@ -211,12 +211,12 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         this.ensureBtcBlockChain();
         for (BtcBlock header : headers) {
-            StoredBlock previousBlock = btcBlockStore.get(header.getPrevBlockHash()); // we assume previous block was already saved
-            if (cannotProcessNextBlock(previousBlock)) {
-                logger.warn("[receiveHeaders] Header {} has too much work to be processed", header.getHash());
-                break;
-            }
             try {
+                StoredBlock previousBlock = btcBlockStore.get(header.getPrevBlockHash());
+                if (cannotProcessNextBlock(previousBlock)) {
+                    logger.warn("[receiveHeaders] Header {} has too much work to be processed", header.getHash());
+                    break;
+                }
                 btcBlockChain.add(header);
             } catch (Exception e) {
                 // If we try to add an orphan header bitcoinj throws an exception
