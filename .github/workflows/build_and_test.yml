@@ -56,10 +56,12 @@ jobs:
             rskj-core/build
 
   smell-test:
-    needs: build-rskj
+    needs: unit-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Java JDK
         uses: actions/setup-java@v3
@@ -92,27 +94,39 @@ jobs:
           path: |
             rskj-core/build
 
-      - name: Sonarqube for PRs
-        if: github.event_name == 'pull_request'
-        run: |
-          pr_number=${{ github.event.pull_request.number }}
-          extra_flags="-Dsonar.pullrequest.base=${{ github.base_ref }} \
-          -Dsonar.pullrequest.branch=${{ github.head_ref }} \
-          -Dsonar.pullrequest.key=$pr_number"
-          ./gradlew sonarqube --no-daemon -x build -x test \
-          $extra_flags \
-          -Dsonar.organization=rsksmart \
-          -Dsonar.host.url="https://sonarcloud.io" \
-          -Dsonar.token="${{ secrets.SONAR_TOKEN }}"
+      - name: Download test reports
+        uses: actions/download-artifact@v4
+        with:
+          name: test-report
+          path: |
+            rskj-core/build/test-results/
+            rskj-core/build/reports/
 
-      - name: Sonarqube for master
-        if: github.event_name != 'pull_request'
+      - name: Run SonarQube analysis
+        env:
+          GH_EVENT: ${{ github.event_name }}
+          GH_PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_PR_BASE_REF: ${{ github.base_ref }}
+          GH_PR_HEAD_REF: ${{ github.head_ref }}
+          GH_REF: ${{ github.ref }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          ./gradlew sonarqube --no-daemon -x build -x test \
-            -Dsonar.branch.name="${{ github.ref }}" \
-            -Dsonar.organization=rsksmart \
-            -Dsonar.host.url="https://sonarcloud.io" \
-            -Dsonar.token="${{ secrets.SONAR_TOKEN }}"
+          if [ "$GH_EVENT" = pull_request ]; then
+            ./gradlew sonarqube --no-daemon -x build -x test \
+              -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
+              -Dsonar.pullrequest.branch="$GH_PR_HEAD_REF" \
+              -Dsonar.pullrequest.key="$GH_PR_NUMBER" \
+              -Dsonar.organization=rsksmart \
+              -Dsonar.host.url="https://sonarcloud.io" \
+              -Dsonar.token="$SONAR_TOKEN"
+          else
+            ./gradlew sonarqube --no-daemon -x build -x test \
+              -Dsonar.branch.name="$GH_REF" \
+              -Dsonar.organization=rsksmart \
+              -Dsonar.host.url="https://sonarcloud.io" \
+              -Dsonar.token="$SONAR_TOKEN"
+          fi
+
 
   mining-tests:
     needs: build-rskj
@@ -197,6 +211,8 @@ jobs:
             rskj-core/build
 
       - name: Start RSKj and Run Tests
+        env:
+          MAX_TRIES: 10
         working-directory: mining-integration-tests
         run: |
           version=$(tr -d "'\"" < ../rskj-core/src/main/resources/version.properties \
@@ -205,7 +221,6 @@ jobs:
           java -Drsk.conf.file=./rsk-integration-test.conf -cp ../rskj-core/build/libs/rskj-core-"$version"-all.jar co.rsk.Start --regtest & rskpid=$!
           
           tries=0
-          MAX_TRIES=10
           while [ $tries -lt $MAX_TRIES ]; do
             nc -z 127.0.0.1 4444 && break
             echo "Waiting for RskJ..."
@@ -253,6 +268,14 @@ jobs:
       - name: Run tests
         run: |
           ./gradlew --no-daemon --stacktrace test
+
+      - name: Persist test reports for sonar
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: |
+            rskj-core/build/test-results/
+            rskj-core/build/reports/
 
   integration-tests:
     runs-on: ubuntu-latest
