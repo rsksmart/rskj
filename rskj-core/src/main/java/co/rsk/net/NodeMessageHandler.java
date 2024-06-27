@@ -43,7 +43,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -136,8 +135,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
-        this.thread = Optional.ofNullable(thread).orElse(new Thread(this, "message handler"));
-        this.messageCounter = Optional.ofNullable(messageCounter).orElse(new MessageCounter());
+        this.thread = thread == null ? new Thread(this, "message handler") : thread;
+        this.messageCounter = messageCounter == null ? new MessageCounter() : messageCounter;
     }
 
     @VisibleForTesting
