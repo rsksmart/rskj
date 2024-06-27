@@ -1962,6 +1962,36 @@ class FederationSupportImplTest {
         }
     }
 
+    @Test
+    void getNewFederationBtcUTXOs_whenNoUTXOsWereSaved_returnsEmptyList() {
+        storageAccessor = new InMemoryStorage();
+        storageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .build();
+
+        List<UTXO> newFederationUTXOs = federationSupport.getNewFederationBtcUTXOs();
+        assertThat(newFederationUTXOs, is(Collections.emptyList()));
+    }
+
+    @Test
+    void getNewFederationBtcUTXOs_whenSavingUTXOs_returnsNewFederationUTXOs() {
+        storageAccessor = new InMemoryStorage();
+        storageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .build();
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(federationMainnetConstants.getBtcParams(), "address");
+
+        List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, btcAddress);
+        storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
+
+        List<UTXO> actualNewFederationUTXOs = federationSupport.getNewFederationBtcUTXOs();
+        assertThat(actualNewFederationUTXOs, is(newFederationUTXOs));
+    }
+
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getRskPublicKey)
