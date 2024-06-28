@@ -991,6 +991,125 @@ class FederationSupportImplTest {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("update federation creation block height tests")
+    class UpdateFederationCreationBlockHeightTests {
+        // this method updates its provider's block heights.
+        // if RSKIP186 is not active yet,
+        // method should do nothing.
+        // if RSKIP186 is active:
+        // if nextFederationCreationBlockHeight is not set,
+        // method should do nothing.
+        // if nextFederationCreationBlockHeight is set, method should:
+        // if not enough blocks have passed, do nothing.
+        // if enough blocks have passed,
+        // update activeFederationCreationBlockHeight with nextFederationCreationBlockHeight
+        // and clear nextFederationCreationBlockHeight by setting a -1L.
+
+        long nextFederationCreationBlockHeight = 200L;
+
+        // get activation age and activations for hop and fingerroot
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
+        long newFederationActivationAgeHop = federationMainnetConstants.getFederationActivationAge(hopActivations);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        long newFederationActivationAgeFingerroot = federationMainnetConstants.getFederationActivationAge(fingerrootActivations);
+        ActivationConfig.ForBlock activations;
+
+        @BeforeEach
+        void setUp() {
+            storageAccessor = new InMemoryStorage();
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+            activations = mock(ActivationConfig.ForBlock.class);
+            when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withActivations(activations)
+                .build();
+        }
+
+        @Test
+        @Tag("updateFederationCreationBlockHeights")
+        void updateFederationCreationBlockHeights_beforeRSKIP186_doesNothing() {
+            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+            when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withActivations(activations)
+                .build();
+
+            federationSupport.updateFederationCreationBlockHeights();
+            assertFalse(storageProvider.getActiveFederationCreationBlockHeight(activations).isPresent());
+        }
+
+        @Test
+        @Tag("updateFederationCreationBlockHeights")
+        void updateFederationCreationBlockHeights_withNextFederationCreationBlockHeightUnset_doesNothing() {
+            assertFalse(storageProvider.getActiveFederationCreationBlockHeight(activations).isPresent());
+        }
+
+        @ParameterizedTest
+        @Tag("updateFederationCreationBlockHeights")
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void updateFederationCreationBlockHeights_withNextFederationCreationBlockHeightSetButInactiveNewFederation_doesNothing(long currentBlockNumber, ActivationConfig.ForBlock activations) {
+            Block block = mock(Block.class);
+            when(block.getNumber()).thenReturn(currentBlockNumber);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(block)
+                .withActivations(activations)
+                .build();
+            storageProvider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+
+            federationSupport.updateFederationCreationBlockHeights();
+            assertFalse(storageProvider.getActiveFederationCreationBlockHeight(activations).isPresent());
+        }
+
+        @ParameterizedTest
+        @Tag("updateFederationCreationBlockHeights")
+        @MethodSource("newFederationActiveActivationArgs")
+        void updateFederationCreationBlockHeights_withNextFederationCreationBlockHeightSetAndActiveNewFederation_shouldUpdateBlockHeights(long currentBlockNumber, ActivationConfig.ForBlock activations) {
+            Block block = mock(Block.class);
+            when(block.getNumber()).thenReturn(currentBlockNumber);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(block)
+                .withActivations(activations)
+                .build();
+            storageProvider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+
+            federationSupport.updateFederationCreationBlockHeights();
+            assertTrue(storageProvider.getActiveFederationCreationBlockHeight(activations).isPresent());
+            assertThat(storageProvider.getActiveFederationCreationBlockHeight(activations).get(), is(nextFederationCreationBlockHeight));
+            assertTrue(storageProvider.getNextFederationCreationBlockHeight(activations).isPresent());
+            assertThat(storageProvider.getNextFederationCreationBlockHeight(activations).get(), is(-1L));
+        }
+
+        private Stream<Arguments> newFederationNotActiveActivationArgs() {
+            return Stream.of(
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop - 1, hopActivations),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot - 1, fingerrootActivations),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop, fingerrootActivations)
+            );
+        }
+
+        private Stream<Arguments> newFederationActiveActivationArgs() {
+            return Stream.of(
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop, hopActivations),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot, fingerrootActivations),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot, hopActivations)
+            );
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("null federations")
     class RetiringFederationTestsWithNullFederations {
         @BeforeEach
@@ -1531,21 +1650,18 @@ class FederationSupportImplTest {
             long currentBlock,
             ActivationConfig.ForBlock activations) {
 
-                Block executionBlock = mock(Block.class);
-                when(executionBlock.getNumber()).thenReturn(currentBlock);
+            Block executionBlock = mock(Block.class);
+            when(executionBlock.getNumber()).thenReturn(currentBlock);
 
-                federationSupport = federationSupportBuilder
-                    .withFederationConstants(federationMainnetConstants)
-                    .withFederationStorageProvider(storageProvider)
-                    .withRskExecutionBlock(executionBlock)
-                    .withActivations(activations)
-                    .build();
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
 
-                int retiringFederationSize = oldFederation.getSize();
-                assertThrows(
-                IndexOutOfBoundsException.class, () ->
-                    federationSupport.getRetiringFederatorBtcPublicKey(retiringFederationSize)
-            );
+            int retiringFederationSize = oldFederation.getSize();
+            assertThrows(IndexOutOfBoundsException.class, () -> federationSupport.getRetiringFederatorBtcPublicKey(retiringFederationSize));
         }
 
         @ParameterizedTest
@@ -1832,8 +1948,7 @@ class FederationSupportImplTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class PendingFederationTestsWithNonNullFederation {
 
-        PendingFederation pendingFederation = new PendingFederationBuilder()
-                .build();
+        PendingFederation pendingFederation = new PendingFederationBuilder().build();
 
         @BeforeEach
         void setUp() {
