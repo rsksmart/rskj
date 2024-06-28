@@ -23,8 +23,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.Address;
@@ -2063,6 +2062,21 @@ class FederationSupportImplTest {
         // check the old federation was removed
         oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
         assertThat(oldFederation, is(nullValue()));
+    }
+
+    @Test
+    @Tag("save")
+    void save_callsStorageProviderSave() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        storageProvider = mock(FederationStorageProviderImpl.class);
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .withActivations(activations)
+            .build();
+
+        federationSupport.save();
+        verify(storageProvider).save(federationMainnetConstants.getBtcParams(), activations);
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
