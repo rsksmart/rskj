@@ -1003,7 +1003,7 @@ class FederationSupportImplTest {
         // if not enough blocks have passed, do nothing.
         // if enough blocks have passed,
         // update activeFederationCreationBlockHeight with nextFederationCreationBlockHeight
-        // and clear nextFederationCreationBlockHeight.
+        // and clear nextFederationCreationBlockHeight by setting a -1L.
 
         long nextFederationCreationBlockHeight = 200L;
 
@@ -1050,12 +1050,13 @@ class FederationSupportImplTest {
             assertFalse(storageProvider.getActiveFederationCreationBlockHeight(activations).isPresent());
         }
 
-        //TODO parameterize this test to use all posible cases for new federation not active
-        @Test
+        @ParameterizedTest
         @Tag("updateFederationCreationBlockHeights")
-        void updateFederationCreationBlockHeights_withNextFederationCreationBlockHeightSetButInactiveNewFederation_doesNothing() {
+        @MethodSource("newFederationNotActiveActivationArgs")
+        void updateFederationCreationBlockHeights_withNextFederationCreationBlockHeightSetButInactiveNewFederation_doesNothing(long currentBlockNumber, ActivationConfig.ForBlock activations) {
             Block block = mock(Block.class);
-            when(block.getNumber()).thenReturn(1000L);
+            when(block.getNumber()).thenReturn(currentBlockNumber);
+
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
@@ -1070,7 +1071,7 @@ class FederationSupportImplTest {
 
         @ParameterizedTest
         @Tag("updateFederationCreationBlockHeights")
-        @MethodSource("currentBlockAndActivationsArgs")
+        @MethodSource("newFederationActiveActivationArgs")
         void updateFederationCreationBlockHeights_withNextFederationCreationBlockHeightSetAndActiveNewFederation_shouldUpdateBlockHeights(long currentBlockNumber, ActivationConfig.ForBlock activations) {
             Block block = mock(Block.class);
             when(block.getNumber()).thenReturn(currentBlockNumber);
@@ -1086,11 +1087,19 @@ class FederationSupportImplTest {
             federationSupport.updateFederationCreationBlockHeights();
             assertTrue(storageProvider.getActiveFederationCreationBlockHeight(activations).isPresent());
             assertThat(storageProvider.getActiveFederationCreationBlockHeight(activations).get(), is(nextFederationCreationBlockHeight));
-            // TODO check this -1L
+            assertTrue(storageProvider.getNextFederationCreationBlockHeight(activations).isPresent());
             assertThat(storageProvider.getNextFederationCreationBlockHeight(activations).get(), is(-1L));
         }
 
-        private Stream<Arguments> currentBlockAndActivationsArgs() {
+        private Stream<Arguments> newFederationNotActiveActivationArgs() {
+            return Stream.of(
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop - 1, hopActivations),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot - 1, fingerrootActivations),
+                Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop, fingerrootActivations)
+            );
+        }
+
+        private Stream<Arguments> newFederationActiveActivationArgs() {
             return Stream.of(
                 Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeHop, hopActivations),
                 Arguments.of(nextFederationCreationBlockHeight + newFederationActivationAgeFingerroot, fingerrootActivations),
