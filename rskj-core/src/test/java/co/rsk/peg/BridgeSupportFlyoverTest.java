@@ -39,6 +39,7 @@ import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.whitelist.WhitelistSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -76,6 +77,7 @@ class BridgeSupportFlyoverTest {
     protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     protected final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
     private BridgeSupportBuilder bridgeSupportBuilder;
+    private WhitelistSupport whitelistSupport;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
 
@@ -86,6 +88,7 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         bridgeSupportBuilder = new BridgeSupportBuilder();
+        whitelistSupport = mock(WhitelistSupport.class);
     }
 
     private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
@@ -2839,6 +2842,7 @@ class BridgeSupportFlyoverTest {
             btcContext,
             mock(FederationSupport.class),
             feePerKbSupport,
+            whitelistSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -2921,6 +2925,7 @@ class BridgeSupportFlyoverTest {
             btcContext,
             mock(FederationSupport.class),
             feePerKbSupport,
+            whitelistSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3013,6 +3018,7 @@ class BridgeSupportFlyoverTest {
             btcContext,
             mock(FederationSupport.class),
             feePerKbSupport,
+            whitelistSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3107,6 +3113,7 @@ class BridgeSupportFlyoverTest {
             btcContext,
             mock(FederationSupport.class),
             feePerKbSupport,
+            whitelistSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3216,6 +3223,7 @@ class BridgeSupportFlyoverTest {
             btcContext,
             federationSupportMock,
             feePerKbSupport,
+            whitelistSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3326,6 +3334,7 @@ class BridgeSupportFlyoverTest {
             mock(Context.class),
             federationSupport,
             feePerKbSupport,
+            whitelistSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3377,6 +3386,7 @@ class BridgeSupportFlyoverTest {
             btcContext,
             mock(FederationSupport.class),
             feePerKbSupport,
+            whitelistSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
