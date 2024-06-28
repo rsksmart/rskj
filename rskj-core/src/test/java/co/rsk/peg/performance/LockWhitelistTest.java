@@ -18,15 +18,22 @@
 
 package co.rsk.peg.performance;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.WhitelistStorageProvider;
+import co.rsk.peg.whitelist.WhitelistStorageProviderImpl;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.exception.VMException;
@@ -135,7 +142,10 @@ class LockWhitelistTest extends BridgePerformanceTestCase {
             int blocksToGenerate = Helper.randomInRange(minBtcBlocks, maxBtcBlocks);
             Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
 
-            lockWhitelist = provider.getLockWhitelist();
+            StorageAccessor inMemoryStorageAccessor = new InMemoryStorage();
+            WhitelistStorageProvider whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorageAccessor);
+            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+            lockWhitelist = whitelistStorageProvider.getLockWhitelist(activations, networkParameters);
 
             int size = Helper.randomInRange(minSize, maxSize);
             for (int i = 0; i < size; i++) {
