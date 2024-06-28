@@ -60,11 +60,21 @@ class FederationSupportImplTest {
 
     private static final FederationConstants federationMainnetConstants = FederationMainNetConstants.getInstance();
     private final Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
-    private Federation newFederation;
+    private ErpFederation newFederation;
     private StorageAccessor storageAccessor;
     private FederationStorageProvider storageProvider;
     private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
     private FederationSupport federationSupport;
+
+    @BeforeEach
+    void setUp() {
+        storageAccessor = new InMemoryStorage();
+        storageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .build();
+    }
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -1963,33 +1973,78 @@ class FederationSupportImplTest {
     }
 
     @Test
+    @Tag("new federation btc utxos")
     void getNewFederationBtcUTXOs_whenNoUTXOsWereSaved_returnsEmptyList() {
-        storageAccessor = new InMemoryStorage();
-        storageProvider = new FederationStorageProviderImpl(storageAccessor);
-        federationSupport = federationSupportBuilder
-            .withFederationConstants(federationMainnetConstants)
-            .withFederationStorageProvider(storageProvider)
-            .build();
-
         List<UTXO> newFederationUTXOs = federationSupport.getNewFederationBtcUTXOs();
         assertThat(newFederationUTXOs, is(Collections.emptyList()));
     }
 
     @Test
+    @Tag("new federation btc utxos")
     void getNewFederationBtcUTXOs_whenSavingUTXOs_returnsNewFederationUTXOs() {
-        storageAccessor = new InMemoryStorage();
-        storageProvider = new FederationStorageProviderImpl(storageAccessor);
-        federationSupport = federationSupportBuilder
-            .withFederationConstants(federationMainnetConstants)
-            .withFederationStorageProvider(storageProvider)
-            .build();
         Address btcAddress = BitcoinTestUtils.createP2PKHAddress(federationMainnetConstants.getBtcParams(), "address");
-
         List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, btcAddress);
+
         storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
         List<UTXO> actualNewFederationUTXOs = federationSupport.getNewFederationBtcUTXOs();
         assertThat(actualNewFederationUTXOs, is(newFederationUTXOs));
+    }
+
+    @Test
+    @Tag("last retired federation p2sh script")
+    void getLastRetiredFederationP2SHScript_beforeRSKIP186_returnsOptionalEmpty() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
+
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .withActivations(activations)
+            .build();
+
+        Optional<Script> lastRetiredFederationP2SHScript = federationSupport.getLastRetiredFederationP2SHScript();
+        assertThat(lastRetiredFederationP2SHScript, is(Optional.empty()));
+    }
+
+    @Test
+    @Tag("last retired federation p2sh script")
+    void getLastRetiredFederationP2SHScript_afterRSKIP186_whenNoScriptWasSaved_returnsOptionalEmpty() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .withActivations(activations)
+            .build();
+
+        Optional<Script> lastRetiredFederationP2SHScript = federationSupport.getLastRetiredFederationP2SHScript();
+        assertThat(lastRetiredFederationP2SHScript, is(Optional.empty()));
+    }
+
+    @Test
+    @Tag("last retired federation p2sh script")
+    void getLastRetiredFederationP2SHScript_afterRSKIP186_whenSavingScript_returnsScript() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .withActivations(activations)
+            .build();
+
+        // get a real p2sh script
+        ErpFederation federation = new P2shErpFederationBuilder()
+            .build();
+        Script p2shScript = federation.getDefaultP2SHScript();
+
+        storageProvider.setLastRetiredFederationP2SHScript(p2shScript);
+        Optional<Script> lastRetiredFederationP2SHScript = federationSupport.getLastRetiredFederationP2SHScript();
+
+        assertTrue(lastRetiredFederationP2SHScript.isPresent());
+        assertThat(lastRetiredFederationP2SHScript.get(), is(p2shScript));
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
