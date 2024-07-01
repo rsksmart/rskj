@@ -19,6 +19,7 @@
 
 package org.ethereum.net.rlpx;
 
+import co.rsk.core.types.bytes.Bytes;
 import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -74,7 +75,7 @@ public class AuthResponseMessageV4 {
     public String toString() {
         return "AuthResponseMessage{" +
                 "\n  ephemeralPublicKey=" + ephemeralPublicKey +
-                "\n  nonce=" + ByteUtil.toHexString(nonce) +
+                "\n  nonce=" + Bytes.of(nonce) +
                 "\n  version=" + version +
                 '}';
     }

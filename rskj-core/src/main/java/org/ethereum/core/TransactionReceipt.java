@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+    import co.rsk.core.types.bytes.Bytes;
     import org.bouncycastle.util.BigIntegers;
     import org.ethereum.util.*;
     import org.ethereum.vm.LogInfo;
@@ -232,8 +233,8 @@ public class TransactionReceipt {
 
         return "TransactionReceipt[" +
                 "\n  , " + (hasTxStatus() ? ("txStatus=" + (isSuccessful()? "OK" : "FAILED"))
-                        : ("postTxState=" + ByteUtil.toHexString(postTxState))) +
-                "\n  , cumulativeGas=" + ByteUtil.toHexString(cumulativeGas) +
+                        : ("postTxState=" + Bytes.of(postTxState))) +
+                "\n  , cumulativeGas=" + Bytes.of(cumulativeGas) +
                 "\n  , bloom=" + bloomFilter.toString() +
                 "\n  , logs=" + logInfoList +
                 ']';

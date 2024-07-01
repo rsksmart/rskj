@@ -19,6 +19,7 @@
 
 package org.ethereum.solidity;
 
+import co.rsk.core.types.bytes.Bytes;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.ethereum.util.ByteUtil;
@@ -375,7 +376,7 @@ public abstract class SolidityType {
             byte[] addr = super.encode(value);
             for (int i = 0; i < 12; i++) {
                 if (addr[i] != 0) {
-                    throw new RuntimeException("Invalid address (should be 20 bytes length): " + ByteUtil.toHexString(addr));
+                    throw new RuntimeException("Invalid address (should be 20 bytes length): " + Bytes.of(addr));
                 }
             }
             return addr;
