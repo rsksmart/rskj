@@ -10,6 +10,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FederationTestNetConstants extends FederationConstants {
 
@@ -18,11 +19,12 @@ public class FederationTestNetConstants extends FederationConstants {
     private FederationTestNetConstants() {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
-        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9"));
-        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
-        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09"));
-        BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85"));
-        genesisFederationPublicKeys = Arrays.asList(federator0PublicKey, federator1PublicKey, federator2PublicKey, federator3PublicKey);
+        genesisFederationPublicKeys = Stream.of(
+            "039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9",
+            "02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da",
+            "0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09",
+            "034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85"
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
         genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T19:29:27.600Z").toInstant();
 
         // Passphrases are kept private
