@@ -74,7 +74,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private final PriorityBlockingQueue<MessageTask> queue;
 
-    private final MessageCounter messageCounter = new MessageCounter();
+    private final MessageCounter messageCounter;
     private final int messageQueueMaxSize;
 
     private volatile boolean recentIdleTime = false;
@@ -96,6 +96,31 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             @Nullable TransactionGateway transactionGateway,
             @Nullable PeerScoringManager peerScoringManager,
             StatusResolver statusResolver) {
+        this(
+                config,
+                blockProcessor,
+                syncProcessor,
+                snapshotProcessor,
+                channelManager,
+                transactionGateway,
+                peerScoringManager,
+                statusResolver,
+                null,
+                null
+        );
+    }
+
+    @VisibleForTesting
+    NodeMessageHandler(RskSystemProperties config,
+                              BlockProcessor blockProcessor,
+                              SyncProcessor syncProcessor,
+                              SnapshotProcessor snapshotProcessor,
+                              @Nullable ChannelManager channelManager,
+                              @Nullable TransactionGateway transactionGateway,
+                              @Nullable PeerScoringManager peerScoringManager,
+                              StatusResolver statusResolver,
+                              Thread thread,
+                       MessageCounter messageCounter) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
@@ -110,7 +135,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
-        this.thread = new Thread(this, "message handler");
+        this.thread = thread == null ? new Thread(this, "message handler") : thread;
+        this.messageCounter = messageCounter == null ? new MessageCounter() : messageCounter;
     }
 
     @VisibleForTesting
@@ -138,6 +164,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
         this.thread = new Thread(this, "message handler");
+        this.messageCounter = new MessageCounter();
     }
 
     /**

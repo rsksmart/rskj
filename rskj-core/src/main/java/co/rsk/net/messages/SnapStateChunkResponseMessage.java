@@ -46,7 +46,7 @@ public class SnapStateChunkResponseMessage extends MessageWithId {
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.STATE_CHUNK_RESPONSE_MESSAGE;
+        return MessageType.SNAP_STATE_CHUNK_RESPONSE_MESSAGE;
     }
 
     @Override

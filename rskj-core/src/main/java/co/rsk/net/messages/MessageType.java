@@ -253,13 +253,13 @@ public enum MessageType {
             return new NewBlockHashMessage(hash);
         }
     },
-    STATE_CHUNK_REQUEST_MESSAGE(20) {
+    SNAP_STATE_CHUNK_REQUEST_MESSAGE(20) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             return SnapStateChunkRequestMessage.create(blockFactory, list);
         }
     },
-    STATE_CHUNK_RESPONSE_MESSAGE(21) {
+    SNAP_STATE_CHUNK_RESPONSE_MESSAGE(21) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             return SnapStateChunkResponseMessage.create(blockFactory, list);
