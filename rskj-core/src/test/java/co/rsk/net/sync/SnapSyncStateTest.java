@@ -49,7 +49,7 @@ class SnapSyncStateTest {
 
     private final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
     private final SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
-    private final PeersInformation peersInformation = mock(PeersInformation.class);
+    private final SnapshotPeersInformation peersInformation = mock(SnapshotPeersInformation.class);
     private final SnapshotProcessor snapshotProcessor = mock(SnapshotProcessor.class);
     private final SyncMessageHandler.Listener listener = mock(SyncMessageHandler.Listener.class);
 
@@ -135,7 +135,7 @@ class SnapSyncStateTest {
         NodeID nodeID = mock(NodeID.class);
         when(mockedPeer.getPeerNodeID()).thenReturn(nodeID);
         when(mockedPeer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(mockedPeer));
+        when(peersInformation.getBestSnapPeer()).thenReturn(Optional.of(mockedPeer));
         underTest.setRunning();
         // when
         underTest.tick(elapsedTime);

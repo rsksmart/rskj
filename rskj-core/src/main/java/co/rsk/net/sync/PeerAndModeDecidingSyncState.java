@@ -97,7 +97,8 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         //List<Peer> bestPeers = peersInformation.getBestPeerCandidates();
 
         // TODO: for now, use pre-configured snap boot nodes instead (until snap nodes discovery is implemented)
-        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
+        SnapshotPeersInformation snapPeersInformation = peersInformation;
+        Optional<Peer> bestPeerOpt = snapPeersInformation.getBestSnapPeer();
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
 
         if (!bestPeerOpt.isPresent() || !peerBestBlockNumOpt.isPresent()) {
