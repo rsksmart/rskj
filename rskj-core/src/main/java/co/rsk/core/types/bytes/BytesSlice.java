@@ -49,8 +49,16 @@ public interface BytesSlice extends HexPrintableBytes {
      */
     byte[] copyArrayOfRange(int from, int to);
 
+    default byte[] copyArray() {
+        return copyArrayOfRange(0, length());
+    }
+
     default Bytes copyBytesOfRange(int from, int to) {
         return Bytes.of(copyArrayOfRange(from, to));
+    }
+
+    default Bytes copyBytes() {
+        return Bytes.of(copyArrayOfRange(0, length()));
     }
 
     default BytesSlice slice(int from, int to) {
@@ -71,7 +79,7 @@ class BytesSliceImpl implements BytesSlice {
         if (from < 0) {
             throw new IndexOutOfBoundsException(from + " < " + 0);
         }
-        if (from >= to) {
+        if (from > to) {
             throw new IndexOutOfBoundsException(from + " > " + to);
         }
         if (to > originBytes.length()) {
@@ -97,7 +105,7 @@ class BytesSliceImpl implements BytesSlice {
 
     @Override
     public byte[] copyArrayOfRange(int from, int to) {
-        if (from < 0 || from >= to || to > length()) {
+        if (from < 0 || from > to || to > length()) {
             throw new IndexOutOfBoundsException("invalid 'from' and/or 'to': [" + from + ";" + to + ")");
         }
         return originBytes.copyArrayOfRange(this.from + from, this.from + to);
