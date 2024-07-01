@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import static java.util.Objects.nonNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,6 +12,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static java.util.Objects.isNull;
+
+import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -144,11 +147,108 @@ class FederationStorageProviderImplTests {
 
     @Test
     void getOldFederation_previouslySetToNull_returnsNull() {
-        StorageAccessor storageAccessor = new InMemoryStorage();
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(null);
         federationStorageProvider.setOldFederation(null);
         Federation oldFederation = federationStorageProvider.getOldFederation(federationConstants, activations);
         assertNull(oldFederation);
+    }
+
+    private static Stream<Arguments> providePendingFederationAndFormatArguments() {
+        return Stream.of(
+            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, buildMockPendingFederation()),
+            Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, buildMockPendingFederation()),
+            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, buildMockPendingFederation()),
+            Arguments.of(INVALID_FEDERATION_FORMAT, buildMockPendingFederation()),
+            Arguments.of(EMPTY_FEDERATION_FORMAT, buildMockPendingFederation())
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("providePendingFederationAndFormatArguments")
+    void testGetPendingFederation(
+        int federationFormat,
+        PendingFederation expectedFederation
+    ) {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+
+        if(federationFormat != INVALID_FEDERATION_FORMAT && federationFormat != EMPTY_FEDERATION_FORMAT) {
+            when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        }
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        byte[] federationFormatSerialized = getFederationFormatSerialized(federationFormat);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), federationFormatSerialized);
+
+        byte[] serializedFederation = expectedFederation.serialize(activations);
+        System.out.println("serializedFederation: " + ByteUtil.toHexString(serializedFederation));
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedFederation);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        PendingFederation obtainedFederation = federationStorageProvider.getPendingFederation();
+
+        // Directly saving a null federation in storage to then assert that the method returns the cached federation
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), null);
+
+        // Assert
+
+        // Call the method again and assert the same cached federation is returned
+        assertEquals(obtainedFederation, federationStorageProvider.getPendingFederation());
+
+        if(federationFormat == INVALID_FEDERATION_FORMAT || federationFormat == EMPTY_FEDERATION_FORMAT) {
+            assertArrayEquals(expectedFederation.serialize(activations), obtainedFederation.serialize(activations));
+        } else {
+            assertEquals(expectedFederation, obtainedFederation);
+        }
+
+    }
+
+    @Test
+    void getPendingFederation_previouslySet_returnsCachedPendingFederation() {
+
+        // Arrange
+
+        PendingFederation expectedPendingFederation = buildMockPendingFederation();
+
+        // Act
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(null);
+        federationStorageProvider.setPendingFederation(expectedPendingFederation);
+
+        // Assert
+        assertEquals(expectedPendingFederation, federationStorageProvider.getPendingFederation());
+
+    }
+
+    @Test
+    void getPendingFederation_nullPendingFederationInStorage_returnsNull() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        byte[] federationFormatSerialized = getFederationFormatSerialized(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), federationFormatSerialized);
+
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), null);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        PendingFederation actualPendingFederation = federationStorageProvider.getPendingFederation();
+
+        // Assert
+
+        assertNull(actualPendingFederation);
+
     }
 
     @Test
@@ -671,6 +771,11 @@ class FederationStorageProviderImplTests {
 
         return BridgeSerializationUtils.serializeFederation(federation);
 
+    }
+
+
+    private static PendingFederation buildMockPendingFederation() {
+        return new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300));
     }
 
 }
