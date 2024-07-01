@@ -21,6 +21,7 @@ package org.ethereum.vm.program;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.pcc.NativeContract;
 import co.rsk.peg.Bridge;
@@ -581,7 +582,7 @@ public class Program {
         refundGas(refundGas, "remaining gas from the internal call");
         if (isGasLogEnabled) {
             gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
-                    ByteUtil.toHexString(getOwnerAddress().getLast20Bytes()),
+                    Bytes.of(getOwnerAddress().getLast20Bytes()),
                     refundGas
             );
         }

@@ -19,11 +19,11 @@
 package co.rsk.validators;
 
 import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
-import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +55,7 @@ public class BlockRootValidationRule implements BlockValidationRule {
 
         if (!Arrays.equals(blockTxRootHash, txListRootHash)) {
             String message = String.format("Block's given Trie Hash doesn't match: %s != %s",
-                      ByteUtil.toHexString(blockTxRootHash), ByteUtil.toHexString(txListRootHash));
+                    Bytes.of(blockTxRootHash), Bytes.of(txListRootHash));
 
             logger.warn(message);
             panicProcessor.panic("invalidtrie", message);

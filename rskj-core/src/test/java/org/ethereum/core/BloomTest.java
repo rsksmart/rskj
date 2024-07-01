@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.types.bytes.Bytes;
 import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -30,10 +31,8 @@ import org.bouncycastle.util.encoders.Hex;
  */
 class BloomTest {
 
-
     @Test /// based on http://bit.ly/1MtXxFg
-    void test1(){
-
+    void test1() {
         byte[] address = Hex.decode("095e7baea6a6c7c4c2dfeb977efac326af552d87");
         Bloom addressBloom = Bloom.create(HashUtil.keccak256(address));
 
@@ -44,10 +43,9 @@ class BloomTest {
         totalBloom.or(addressBloom);
         totalBloom.or(topicBloom);
 
-
         Assertions.assertEquals(
                 "00000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000040000000000000000000000000000000000000000000000000000000",
-                totalBloom.toString()
+                Bytes.of(totalBloom.getData()).toHexString()
         );
     }
 

@@ -6,6 +6,8 @@ import co.rsk.bitcoinj.script.ScriptChunk;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import co.rsk.core.types.bytes.Bytes;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +36,7 @@ public class PeginInstructionsProvider {
             throw new PeginInstructionsException(message, e);
         }
 
-        logger.trace("[buildPeginInstructions] OP_RETURN data: {}", Hex.toHexString(opReturnOutputData));
+        logger.trace("[buildPeginInstructions] OP_RETURN data: {}", Bytes.of(opReturnOutputData));
 
         int protocolVersion = PeginInstructionsBase.extractProtocolVersion(opReturnOutputData);
 

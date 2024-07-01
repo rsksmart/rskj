@@ -2,6 +2,7 @@ package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
+import co.rsk.util.StringUtils;
 
 public class HDWalletUtilsHelper {
     public NetworkParameters validateAndExtractNetworkFromExtendedPublicKey(String xpub) throws NativeContractIllegalArgumentException {
@@ -15,7 +16,7 @@ public class HDWalletUtilsHelper {
         } else if (xpub.startsWith("tpub")) {
             return NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
         } else {
-            throw new NativeContractIllegalArgumentException(String.format("Invalid extended public key '%s'", xpub));
+            throw new NativeContractIllegalArgumentException(String.format("Invalid extended public key '%s'", StringUtils.trim(xpub)));
         }
     }
 }

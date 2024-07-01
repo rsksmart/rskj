@@ -20,13 +20,13 @@ package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
@@ -130,7 +130,7 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
             function = PROCESS_MINERS_FEES;
         } else {
             if (data.length != 4) {
-                logger.warn("Invalid function: signature longer than expected {}.", ByteUtil.toHexString(data));
+                logger.warn("Invalid function: signature longer than expected {}.", Bytes.of(data));
                 throw new RemascInvalidInvocationException("Invalid function signature");
             }
 
@@ -138,7 +138,7 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
             function = functions.get(new ByteArrayWrapper(functionSignature));
 
             if (function == null) {
-                logger.warn("Invalid function: signature does not match an existing function {}.", ByteUtil.toHexString(functionSignature));
+                logger.warn("Invalid function: signature does not match an existing function {}.", Bytes.of(functionSignature));
                 throw new RemascInvalidInvocationException("Invalid function signature");
             }
         }
