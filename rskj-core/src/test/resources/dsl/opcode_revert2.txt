@@ -10,6 +10,7 @@ transaction_build contract_with_revert
 
 block_build b01
     parent g00
+    gasLimit 7500000
     transactions contract_with_revert
     build
 
@@ -31,6 +32,7 @@ transaction_build tx02
 
 block_build b02
     parent b01
+    gasLimit 7500000
     transactions tx02
     build
 
@@ -53,6 +55,7 @@ transaction_build tx03
 
 block_build b03
     parent b02
+    gasLimit 7500000
     transactions tx03
     build
 

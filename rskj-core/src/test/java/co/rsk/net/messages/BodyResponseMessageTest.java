@@ -1,12 +1,10 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
-import org.ethereum.core.Account;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -18,8 +16,8 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 
 class BodyResponseMessageTest {
-    @Test
-    void createMessage() {
+
+    private BodyResponseMessage testCreateMessage(BlockHeaderExtension extension) {
         List<Transaction> transactions = new ArrayList<>();
 
         for (int k = 1; k <= 10; k++)
@@ -36,7 +34,7 @@ class BodyResponseMessageTest {
             parent = block;
         }
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, extension);
 
         Assertions.assertEquals(100, message.getId());
 
@@ -50,8 +48,34 @@ class BodyResponseMessageTest {
         Assertions.assertNotNull(message.getUncles());
         Assertions.assertEquals(uncles.size(), message.getUncles().size());
 
-        for (int k = 0; k < uncles.size(); k++)
+        for (int k = 0; k < uncles.size(); k++) {
             Assertions.assertArrayEquals(uncles.get(k).getFullEncoded(), message.getUncles().get(k).getFullEncoded());
+        }
+
+        return  message;
+    }
+
+    private BodyResponseMessage encodeAndDecodeMessage(BodyResponseMessage message) {
+        return (BodyResponseMessage) Message.create(new BlockFactory(new TestSystemProperties().getActivationConfig()), message.getEncoded());
+    }
+
+    @Test
+    void createMessage() {
+        BodyResponseMessage message = testCreateMessage(null);
+        Assertions.assertNull(message.getBlockHeaderExtension());
+        message = encodeAndDecodeMessage(message);
+        Assertions.assertNull(message.getBlockHeaderExtension());
+    }
+
+    @Test
+    void createMessageWithExtension() {
+        Bloom bloom = new Bloom();
+        short[] edges = new short[]{ 1, 2, 3, 4 };
+        BlockHeaderExtension extension = new BlockHeaderExtensionV1(bloom.getData(), edges);
+        BodyResponseMessage message = testCreateMessage(extension);
+        Assertions.assertArrayEquals(extension.getEncoded(), message.getBlockHeaderExtension().getEncoded());
+        message = encodeAndDecodeMessage(message);
+        Assertions.assertArrayEquals(extension.getEncoded(), message.getBlockHeaderExtension().getEncoded());
     }
 
     private static Transaction createTransaction(int number) {
@@ -69,7 +93,7 @@ class BodyResponseMessageTest {
         List<Transaction> transactions = new LinkedList<>();
         List<BlockHeader> uncles = new LinkedList<>();
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, null);
 
         MessageVisitor visitor = mock(MessageVisitor.class);
 

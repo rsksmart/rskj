@@ -80,12 +80,17 @@ public class World {
         this(new BlockChainBuilder());
     }
 
+
     public World(RskSystemProperties config) {
         this(new BlockChainBuilder().setConfig(config));
     }
 
     public World(ReceiptStore receiptStore) {
         this(new BlockChainBuilder().setReceiptStore(receiptStore));
+    }
+
+    public World(ReceiptStore receiptStore, RskSystemProperties config) {
+        this(new BlockChainBuilder().setReceiptStore(receiptStore).setConfig(config));
     }
 
     @VisibleForTesting
@@ -174,7 +179,6 @@ public class World {
 
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
-                    config.getActivationConfig(),
                     new RepositoryLocator(getTrieStore(), stateRootHandler),
                     new TransactionExecutorFactory(
                             config,
@@ -184,8 +188,8 @@ public class World {
                             programInvokeFactory,
                             new PrecompiledContracts(config, bridgeSupportFactory, blockTxSignatureCache),
                             blockTxSignatureCache
-                    )
-            );
+                    ),
+                    config);
         }
 
         return this.blockExecutor;

@@ -44,6 +44,14 @@ public class ActivationConfig {
         this.activationHeights = activationHeights;
     }
 
+    public byte getHeaderVersion(long blockNumber) {
+        if (this.isActive(ConsensusRule.RSKIP351, blockNumber)) {
+            return 0x1;
+        }
+
+        return 0x0;
+    }
+
     public boolean isActive(ConsensusRule consensusRule, long blockNumber) {
         long activationHeight = activationHeights.get(consensusRule);
         return 0 <= activationHeight && activationHeight <= blockNumber;

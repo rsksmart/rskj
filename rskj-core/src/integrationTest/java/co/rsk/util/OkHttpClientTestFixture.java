@@ -40,6 +40,31 @@ public class OkHttpClientTestFixture {
             "    \"jsonrpc\": \"2.0\"\n" +
             "}]";
 
+    public static final String ETH_GET_BLOCK_BY_NUMBER =
+            "{\n" +
+            "    \"method\": \"eth_getBlockByNumber\",\n" +
+            "    \"params\": [\n" +
+            "        \"<BLOCK_NUM_OR_TAG>\",\n" +
+            "        true\n" +
+            "    ],\n" +
+            "    \"id\": 1,\n" +
+            "    \"jsonrpc\": \"2.0\"\n" +
+            "}";
+
+    public static final String ETH_SEND_TRANSACTION =
+            "{\n" +
+            "    \"jsonrpc\": \"2.0\",\n" +
+            "    \"method\": \"eth_sendTransaction\",\n" +
+            "    \"id\": 1,\n" +
+            "    \"params\": [{\n" +
+            "        \"from\": \"<ADDRESS_FROM>\",\n" +
+            "        \"to\": \"<ADDRESS_TO>\",\n" +
+            "        \"gas\": \"<GAS>\",\n" +
+            "        \"gasPrice\": \"<GAS_PRICE>\",\n" +
+            "        \"value\": \"<VALUE>\"\n" +
+            "    }]\n" +
+            "}";
+
     private OkHttpClientTestFixture() {
     }
 
@@ -101,4 +126,9 @@ public class OkHttpClientTestFixture {
         Response response = sendJsonRpcGetBestBlockMessage(port);
         return new ObjectMapper().readTree(response.body().string());
     }
+
+    public static String getEnvelopedMethodCalls(String... methodCall) {
+        return "[\n" + String.join(",\n", methodCall) + "]";
+    }
+
 }
