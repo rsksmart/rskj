@@ -144,6 +144,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         btcHeightWhenPegoutTxIndexActivates = 250;
         pegoutTxIndexGracePeriodInBtcBlocks = 100;
+
+        blockWithTooMuchChainWorkHeight = Integer.MAX_VALUE;
     }
 
     public static BridgeRegTestConstants getInstance() {
