@@ -1,16 +1,14 @@
 package co.rsk.peg.federation;
 
 import static java.util.Objects.nonNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static java.util.Objects.isNull;
+import java.math.BigInteger;
+import java.util.*;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -25,6 +23,11 @@ import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
+import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
+import co.rsk.core.RskAddress;
+import co.rsk.peg.vote.ABICallElection;
+import co.rsk.peg.vote.ABICallSpec;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -45,7 +48,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-
 import co.rsk.bitcoinj.core.UTXO;
 
 class FederationStorageProviderImplTests {
@@ -65,16 +67,16 @@ class FederationStorageProviderImplTests {
 
     private static Stream<Arguments> provideFederationAndFormatArguments() {
         return Stream.of(
-            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, new P2shErpFederationBuilder().build()),
             Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, new StandardMultiSigFederationBuilder().build()),
             Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, null),
             Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, null),
             Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, null),
             Arguments.of(INVALID_FEDERATION_FORMAT, null),
             Arguments.of(EMPTY_FEDERATION_FORMAT, null),
-            Arguments.of(INVALID_FEDERATION_FORMAT, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(EMPTY_FEDERATION_FORMAT, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION))
+            Arguments.of(INVALID_FEDERATION_FORMAT, new StandardMultiSigFederationBuilder().build()),
+            Arguments.of(EMPTY_FEDERATION_FORMAT, new StandardMultiSigFederationBuilder().build())
         );
     }
 
@@ -151,94 +153,172 @@ class FederationStorageProviderImplTests {
         assertNull(oldFederation);
     }
 
-    @Test
-    void saveNewFederation_before_RSKIP123_should_allow_to_save_any_fed_type() {
-        testSaveNewFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
-
-        testSaveNewFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
-        );
-
-        testSaveNewFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)
+    private static Stream<Arguments> providePendingFederationAndFormatArguments() {
+        return Stream.of(
+            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, new PendingFederationBuilder().build()),
+            Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, new PendingFederationBuilder().build()),
+            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, new PendingFederationBuilder().build())
         );
     }
 
-    @Test
-    void saveNewFederation_after_RSKIP123_should_save_standard_multisig_fed_format() {
-        activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
-        testSaveNewFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
+    @ParameterizedTest
+    @MethodSource("providePendingFederationAndFormatArguments")
+    void testGetPendingFederation(
+        int federationFormat,
+        PendingFederation expectedFederation
+    ) {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        byte[] federationFormatSerialized = getFederationFormatSerialized(federationFormat);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), federationFormatSerialized);
+
+        byte[] serializedFederation = expectedFederation.serialize(activations);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedFederation);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        PendingFederation obtainedFederation = federationStorageProvider.getPendingFederation();
+
+        // Directly saving a null federation in storage to then assert that the method returns the cached federation
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), null);
+
+        // Assert
+
+        // Call the method again and assert the same cached federation is returned
+        assertEquals(obtainedFederation, federationStorageProvider.getPendingFederation());
+
+        assertEquals(expectedFederation, obtainedFederation);
+
     }
 
     @Test
-    void saveNewFederation_after_RSKIP201_should_save_standard_multisig_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201
-        ).forBlock(0);
-        testSaveNewFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
+    void getPendingFederation_whenStorageVersionIsNotAvailable_deserializeFromBtcKeysOnly(
+    ) {
+
+        PendingFederation expectedFederation = new PendingFederationBuilder().build();
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        byte[] federationFormatSerialized = getFederationFormatSerialized(INVALID_FEDERATION_FORMAT);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), federationFormatSerialized);
+
+        byte[] serializedFederation = expectedFederation.serialize(activations);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedFederation);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        PendingFederation obtainedFederation = federationStorageProvider.getPendingFederation();
+
+        // Directly saving a null federation in storage to then assert that the method returns the cached federation
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), null);
+
+        // Assert
+
+        // Call the method again and assert the same cached federation is returned
+        assertEquals(obtainedFederation, federationStorageProvider.getPendingFederation());
+
+
+        assertArrayEquals(expectedFederation.serialize(activations), obtainedFederation.serialize(activations));
+
     }
 
     @Test
-    void saveNewFederation_after_RSKIP353_should_save_standard_multisig_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201,
-            ConsensusRule.RSKIP353
-        ).forBlock(0);
-        testSaveNewFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
+    void getPendingFederation_previouslySet_returnsCachedPendingFederation() {
+
+        // Arrange
+
+        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(null);
+        federationStorageProvider.setPendingFederation(expectedPendingFederation);
+
+        // Assert
+
+        assertEquals(expectedPendingFederation, federationStorageProvider.getPendingFederation());
+
     }
 
     @Test
-    void saveNewFederation_after_RSKIP201_should_save_non_standard_erp_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201
-        ).forBlock(0);
-        testSaveNewFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
-        );
+    void getPendingFederation_previouslySetToNull_returnsNull() {
+        // Arrange
+
+        StorageAccessor storageAccessor = mock(StorageAccessor.class);
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        federationStorageProvider.setPendingFederation(null);
+        PendingFederation pendingFederation = federationStorageProvider.getPendingFederation();
+
+        // Assert
+
+        assertNull(pendingFederation);
+        verify(storageAccessor, never()).getFromRepository(any(), any());
+
     }
 
     @Test
-    void saveNewFederation_after_RSKIP353_should_save_non_standard_erp_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201,
-            ConsensusRule.RSKIP353
-        ).forBlock(0);
-        testSaveNewFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
-        );
+    void getPendingFederation_nullPendingFederationInStorage_returnsNull() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        byte[] federationFormatSerialized = getFederationFormatSerialized(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), federationFormatSerialized);
+
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), null);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        PendingFederation actualPendingFederation = federationStorageProvider.getPendingFederation();
+
+        // Assert
+
+        assertNull(actualPendingFederation);
+
     }
 
-    @Test
-    void saveNewFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201,
-            ConsensusRule.RSKIP353
-        ).forBlock(0);
-        testSaveNewFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)
+    private static Stream<Arguments> provideSaveFederationTestArguments() {
+
+        ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0L);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
+
+        Federation standardFederation = new StandardMultiSigFederationBuilder().build();
+        Federation nonStandardFederation = createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION);
+        Federation ps2hErpFederation = new P2shErpFederationBuilder().build();;
+
+        return Stream.of(
+            // When iris is not active, should allow to save any fed type but not the version
+            Arguments.of(papyrusActivations, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, standardFederation),
+            Arguments.of(papyrusActivations, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
+            Arguments.of(papyrusActivations, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation),
+            // When iris is active, should allow to save any fed type with its the version
+            Arguments.of(irisActivations, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, standardFederation),
+            Arguments.of(irisActivations, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
+            Arguments.of(irisActivations, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation)
         );
+
     }
 
     @Test
@@ -277,7 +357,10 @@ class FederationStorageProviderImplTests {
         );
     }
 
-    private void testSaveNewFederation(
+    @ParameterizedTest
+    @MethodSource("provideSaveFederationTestArguments")
+    void testSaveNewFederation(
+        ActivationConfig.ForBlock activations,
         int expectedFormatToSave,
         Federation federationToSave
     ) {
@@ -306,97 +389,6 @@ class FederationStorageProviderImplTests {
             PrecompiledContracts.BRIDGE_ADDR,
             NEW_FEDERATION_KEY.getKey(),
             serializedFederation
-        );
-    }
-
-    @Test
-    void saveOldFederation_before_RSKIP123_should_allow_to_save_any_fed_type() {
-        activations = ActivationConfigsForTest.only().forBlock(0);
-        testSaveOldFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
-
-        testSaveOldFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
-        );
-
-        testSaveOldFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP123_should_save_standard_multisig_fed_format() {
-        activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
-        testSaveOldFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP201_should_save_standard_multisig_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201
-        ).forBlock(0);
-        testSaveOldFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP353_should_save_standard_multisig_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201,
-            ConsensusRule.RSKIP353
-        ).forBlock(0);
-        testSaveOldFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP201_should_save_non_standard_erp_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201
-        ).forBlock(0);
-        testSaveOldFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP353_should_save_non_standard_erp_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201,
-            ConsensusRule.RSKIP353
-        ).forBlock(0);
-        testSaveOldFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201,
-            ConsensusRule.RSKIP353
-        ).forBlock(0);
-        testSaveOldFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)
         );
     }
 
@@ -586,7 +578,232 @@ class FederationStorageProviderImplTests {
 
     }
 
-    private void testSaveOldFederation(
+    @Test
+    void getFederationElection_whenElectionIsInStorage_shouldReturnNewElection() {
+
+        // Arrange
+
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
+
+        ABICallElection expectedElection = getSampleElection("function1", authorizer, FederationChangeCaller.FIRST_AUTHORIZED);
+        byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), expectedElectionEncoded);
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        ABICallElection actualElection = federationStorageProvider.getFederationElection(authorizer);
+
+        // Assert
+
+        assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
+        
+    }
+
+    @Test
+    void getFederationElection_whenCalledTwice_shouldReturnCached() {
+
+        // Arrange
+
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
+
+        ABICallElection expectedElection = getSampleElection("function1", authorizer,
+            FederationChangeCaller.SECOND_AUTHORIZED);
+        byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), expectedElectionEncoded);
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        ABICallElection actualElection = federationStorageProvider.getFederationElection(authorizer);
+        assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
+        ABICallElection secondElectionSample = getSampleElection("function2", authorizer, FederationChangeCaller.THIRD_AUTHORIZED);
+        storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), BridgeSerializationUtils.serializeElection(secondElectionSample));
+
+        // Assert
+
+        ABICallElection cachedElection = federationStorageProvider.getFederationElection(authorizer);
+
+        assertArrayEquals(serializeElection(actualElection), serializeElection(cachedElection));
+        assertFalse(Arrays.equals(expectedElectionEncoded, serializeElection(secondElectionSample)));
+
+    }
+
+    @Test
+    void getFederationElection_whenElectionIsNotInStorage_shouldReturnDefault() {
+
+        // Arrange
+
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
+
+        ABICallElection expectedElection = new ABICallElection(authorizer);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        ABICallElection actualElection = federationStorageProvider.getFederationElection(authorizer);
+
+        // Assert
+
+        byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
+        assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
+
+    }
+
+    @Test
+    void getNextFederationCreationBlockHeight_preIris300_storageIsNotAccessedAndReturnsEmpty() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.papyrus200().forBlock(0L);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        // Putting some value in the storage just to then assert that before fork, the storage won't be accessed.
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(
+            BigInteger.valueOf(1_300_000)));
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Assert
+        assertEquals(Optional.empty(), federationStorageProvider.getNextFederationCreationBlockHeight(activations));
+
+    }
+
+    @Test
+    void getNextFederationCreationBlockHeight_postIris300_getsValueFromStorage() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        long expectedValue = 1_000_000L;
+
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(BigInteger.valueOf(expectedValue)));
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        Optional<Long> actualValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+
+        // Assert
+
+        assertTrue(actualValue.isPresent());
+        assertEquals(expectedValue, actualValue.get());
+
+        // Setting in storage a different value to assert that calling the method again should return cached value
+
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(BigInteger.valueOf(2_000_000L)));
+
+        Optional<Long> actualCachedValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+
+        assertTrue(actualCachedValue.isPresent());
+        assertEquals(expectedValue, actualCachedValue.get());
+
+    }
+
+    @Test
+    void getNextFederationCreationBlockHeight_postIris300AndNoValueInStorage_returnsEmpty() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), null);
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        Optional<Long> actualValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+
+        // Assert
+
+        assertFalse(actualValue.isPresent());
+
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideFederationBtcUTXOsTestArguments")
+    void saveNewFederationBtcUTXOs_utxosShouldBeSavedToStorage(FederationStorageIndexKey federationStorageIndexKey, NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
+
+        // Arrange
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageAccessor.saveToRepository(federationStorageIndexKey.getKey(), new byte[] {});
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        List<UTXO> utxos = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
+        int expectedCountOfUtxos = 3;
+        List<UTXO> extraUtxos = BitcoinTestUtils.createUTXOs(expectedCountOfUtxos, btcAddress);
+        utxos.addAll(extraUtxos);
+
+        // Act
+
+        federationStorageProvider.save(networkParameters, activations);
+
+        // Assert
+
+        // Getting the utxos from storage to ensure they were stored in the storage.
+        List<UTXO> finalListOfUtxosFromStorage = storageAccessor.getFromRepository(federationStorageIndexKey.getKey(), BridgeSerializationUtils::deserializeUTXOList);
+
+        assertEquals(expectedCountOfUtxos, utxos.size());
+        assertEquals(utxos, finalListOfUtxosFromStorage);
+
+        // Ensuring `getNewFederationBtcUTXOs` also returns the one saved in the storage.
+        List<UTXO> finalListOfUtxosFromMethod = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
+        assertEquals(finalListOfUtxosFromStorage, finalListOfUtxosFromMethod);
+
+    }
+
+    @Test
+    void saveOldFederationBtcUTXOs_utxosShouldBeSavedToStorage() {
+
+        // Arrange
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        DataWord oldFederationBtcUtxosKey = OLD_FEDERATION_BTC_UTXOS_KEY.getKey();
+        storageAccessor.saveToRepository(oldFederationBtcUtxosKey, new byte[]{});
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
+        List<UTXO> utxos = federationStorageProvider.getOldFederationBtcUTXOs();
+        List<UTXO> extraUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
+        utxos.addAll(extraUtxos);
+
+        // Act
+
+        federationStorageProvider.save(networkParameters, activations);
+
+        // Assert
+
+        List<UTXO> finalListOfUtxosFromStorage = storageAccessor.getFromRepository(oldFederationBtcUtxosKey,
+            BridgeSerializationUtils::deserializeUTXOList);
+
+        assertEquals(1, finalListOfUtxosFromStorage.size());
+        assertEquals(utxos, finalListOfUtxosFromStorage);
+
+        // Ensuring `getOldFederationBtcUTXOs` also returns the one saved in the storage.
+        List<UTXO> finalListOfUtxosFromMethod = federationStorageProvider.getOldFederationBtcUTXOs();
+        assertEquals(finalListOfUtxosFromStorage, finalListOfUtxosFromMethod);
+
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideSaveFederationTestArguments")
+    void testSaveOldFederation(
+        ActivationConfig.ForBlock activations,
         int expectedFormat,
         Federation federationToSave
     ) {
@@ -671,6 +888,15 @@ class FederationStorageProviderImplTests {
 
         return BridgeSerializationUtils.serializeFederation(federation);
 
+    }
+
+    private static ABICallElection getSampleElection(String functionName, AddressBasedAuthorizer authorizer, FederationChangeCaller federationChangeCaller) {
+        Map<ABICallSpec, List<RskAddress>> sampleVotes = new HashMap<>();
+        sampleVotes.put(
+            new ABICallSpec(functionName, new byte[][]{}),
+            Collections.singletonList(federationChangeCaller.getRskAddress())
+        );
+        return new ABICallElection(authorizer, sampleVotes);
     }
 
 }
