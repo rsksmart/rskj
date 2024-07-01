@@ -87,7 +87,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     }
 
     private boolean tryStartSnapshotSync() {
-        if (!syncConfiguration.isSnapSyncEnabled()) {
+        if (!syncConfiguration.isClientSnapSyncEnabled()) {
             logger.trace("Snap syncing disabled");
             return false;
         }
@@ -111,17 +111,11 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
             return false;
         }
 
-        // TODO(snap-poc) tmp naive approach until we can spot from DB (stateRoot?) if further Snap sync is required
-        if (syncEventsHandler.isSnapSyncFinished()) {
-            logger.debug("Snap syncing not required (local state is ok)");
-            return false;
-        }
-
         // we consider Snap as part of the Long Sync
         syncEventsHandler.onLongSyncUpdate(true, peerBestBlockNumOpt.get());
 
         // send the LIST
-        syncEventsHandler.startSnapSync(peersInformation);
+        syncEventsHandler.startSnapSync();
         return true;
     }
 
@@ -170,7 +164,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
 
     private boolean shouldSnapSync(long peerBestBlockNumber) {
         long distanceToTip = peerBestBlockNumber - blockStore.getBestBlock().getNumber();
-        return distanceToTip > syncConfiguration.getSnapshotSyncLimit() && syncConfiguration.isSnapSyncEnabled();
+        return distanceToTip > syncConfiguration.getSnapshotSyncLimit() && syncConfiguration.isClientSnapSyncEnabled();
     }
 
     private Optional<Long> getPeerBestBlockNumber(Peer peer) {

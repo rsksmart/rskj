@@ -21,42 +21,84 @@ package co.rsk.net.sync;
 import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
+import co.rsk.net.messages.SnapBlocksResponseMessage;
+import co.rsk.net.messages.SnapStateChunkResponseMessage;
+import co.rsk.net.messages.SnapStatusResponseMessage;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 class SnapSyncStateTest {
+
+    private static final long THREAD_JOIN_TIMEOUT = 10_000; // 10 secs
 
     private final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
     private final SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
     private final PeersInformation peersInformation = mock(PeersInformation.class);
     private final SnapshotProcessor snapshotProcessor = mock(SnapshotProcessor.class);
+    private final SyncMessageHandler.Listener listener = mock(SyncMessageHandler.Listener.class);
 
-    private final SnapSyncState underTest = new SnapSyncState(syncEventsHandler,
-            snapshotProcessor,
-            syncConfiguration,
-            peersInformation);
+    private final SnapSyncState underTest = new SnapSyncState(syncEventsHandler, snapshotProcessor, syncConfiguration, listener);
 
     @BeforeEach
     void setUp(){
         reset(syncEventsHandler,peersInformation, snapshotProcessor);
     }
 
+    @AfterEach
+    void tearDown() {
+        underTest.finish();
+    }
+
     @Test
-    void givenOnEnterWasCalled_thenSyncingStartWithTestObjectAsParameter(){
+    void givenOnEnterWasCalledAndNotRunningYet_thenSyncingStartsWithTestObjectAsParameter(){
         //given-when
         underTest.onEnter();
         //then
-        verify(snapshotProcessor).startSyncing(peersInformation, underTest);
+        verify(snapshotProcessor, times(1)).startSyncing();
+    }
+
+    @Test
+    void givenFinishWasCalledTwice_thenStopSyncingOnlyOnce(){
+        //given-when
+        underTest.setRunning();
+        underTest.finish();
+        underTest.finish();
+        //then
+        verify(syncEventsHandler, times(1)).stopSyncing();
+    }
+
+    @Test
+    void givenOnEnterWasCalledTwice_thenSyncingStartsOnlyOnce(){
+        //given-when
+        underTest.onEnter();
+        underTest.onEnter();
+        //then
+        verify(snapshotProcessor, times(1)).startSyncing();
+    }
+
+    @Test
+    void givenOnMessageTimeOutCalled_thenSyncingStops(){
+        //given-when
+        underTest.setRunning();
+        underTest.onMessageTimeOut();
+        //then
+        verify(syncEventsHandler, times(1)).stopSyncing();
     }
 
     @Test
@@ -66,7 +108,7 @@ class SnapSyncStateTest {
         assertThat(underTest.timeElapsed, greaterThan(Duration.ZERO));
 
         // when
-        underTest.newChunk();
+        underTest.onNewChunk();
         //then
         assertThat(underTest.timeElapsed, equalTo(Duration.ZERO));
     }
@@ -94,20 +136,93 @@ class SnapSyncStateTest {
         when(mockedPeer.getPeerNodeID()).thenReturn(nodeID);
         when(mockedPeer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
         when(peersInformation.getBestPeer()).thenReturn(Optional.of(mockedPeer));
+        underTest.setRunning();
         // when
         underTest.tick(elapsedTime);
         //then
         assertThat(underTest.timeElapsed, equalTo(elapsedTime));
         verify(syncEventsHandler, times(1)).stopSyncing();
-        verify(syncEventsHandler, times(1)).onErrorSyncing(any(),any(),any(),any());
     }
 
     @Test
-    void givenFinishedIsCalled_thenSyncEventHandlerStopsSync(){
+    void givenFinishIsCalled_thenSyncEventHandlerStopsSync(){
         //given-when
-        underTest.finished();
+        underTest.setRunning();
+        underTest.finish();
         //then
-        verify(syncEventsHandler, times(1)).snapSyncFinished();
         verify(syncEventsHandler, times(1)).stopSyncing();
+    }
+
+    @Test
+    void givenOnSnapStatusIsCalled_thenJobIsAddedAndRun() throws InterruptedException {
+        //given
+        Peer peer = mock(Peer.class);
+        SnapStatusResponseMessage msg = mock(SnapStatusResponseMessage.class);
+        CountDownLatch latch = new CountDownLatch(1);
+        doCountDownOnQueueEmpty(listener, latch);
+        underTest.onEnter();
+
+        //when
+        underTest.onSnapStatus(peer, msg);
+
+        //then
+        assertTrue(latch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+
+        ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
+        verify(listener, times(1)).onJobRun(jobArg.capture());
+
+        assertEquals(peer, jobArg.getValue().getSender());
+        assertEquals(msg, jobArg.getValue().getMsg());
+    }
+
+    @Test
+    void givenOnSnapBlocksIsCalled_thenJobIsAddedAndRun() throws InterruptedException {
+        //given
+        Peer peer = mock(Peer.class);
+        SnapBlocksResponseMessage msg = mock(SnapBlocksResponseMessage.class);
+        CountDownLatch latch = new CountDownLatch(1);
+        doCountDownOnQueueEmpty(listener, latch);
+        underTest.onEnter();
+
+        //when
+        underTest.onSnapBlocks(peer, msg);
+
+        //then
+        assertTrue(latch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+
+        ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
+        verify(listener, times(1)).onJobRun(jobArg.capture());
+
+        assertEquals(peer, jobArg.getValue().getSender());
+        assertEquals(msg, jobArg.getValue().getMsg());
+    }
+
+    @Test
+    void givenOnSnapStateChunkIsCalled_thenJobIsAddedAndRun() throws InterruptedException {
+        //given
+        Peer peer = mock(Peer.class);
+        SnapStateChunkResponseMessage msg = mock(SnapStateChunkResponseMessage.class);
+        CountDownLatch latch = new CountDownLatch(1);
+        doCountDownOnQueueEmpty(listener, latch);
+        underTest.onEnter();
+
+        //when
+        underTest.onSnapStateChunk(peer, msg);
+
+        //then
+        assertTrue(latch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+
+        ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
+        verify(listener, times(1)).onJobRun(jobArg.capture());
+
+        assertEquals(peer, jobArg.getValue().getSender());
+        assertEquals(msg, jobArg.getValue().getMsg());
+    }
+
+    private static void doCountDownOnQueueEmpty(SyncMessageHandler.Listener listener, CountDownLatch latch) {
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
+        }).when(listener).onQueueEmpty();
     }
 }

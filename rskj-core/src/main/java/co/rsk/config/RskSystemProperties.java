@@ -407,17 +407,18 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("sync.longSyncLimit");
     }
 
-    public boolean isSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.enabled");}
+    public boolean isServerSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.server.enabled");}
+    public boolean isClientSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.client.enabled");}
 
     public int getSnapshotChunkTimeout() {
-        return configFromFiles.getInt("sync.snapshot.chunkRequestTimeout");
+        return configFromFiles.getInt("sync.snapshot.client.chunkRequestTimeout");
     }
 
-    public boolean isSnapshotParallelEnabled() { return configFromFiles.getBoolean("sync.snapshot.parallel");}
+    public boolean isSnapshotParallelEnabled() { return configFromFiles.getBoolean("sync.snapshot.client.parallel");}
 
-    public int getSnapshotChunkSize() { return configFromFiles.getInt("sync.snapshot.chunkSize");}
+    public int getSnapshotChunkSize() { return configFromFiles.getInt("sync.snapshot.client.chunkSize");}
 
-    public int getSnapshotSyncLimit() { return configFromFiles.getInt("sync.snapshot.limit");}
+    public int getSnapshotSyncLimit() { return configFromFiles.getInt("sync.snapshot.client.limit");}
 
     // its fixed, cannot be set by config file
     public int getChunkSize() {

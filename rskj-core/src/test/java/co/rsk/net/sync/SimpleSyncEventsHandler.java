@@ -104,20 +104,6 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
         return stopSyncingWasCalled_;
     }
 
-
     @Override
-    public void startSnapSync(PeersInformation peers) {
-
-    }
-
-    @Override
-    public void snapSyncFinished() {
-
-    }
-
-    @Override
-    public boolean isSnapSyncFinished() {
-        return false;
-    }
-
+    public void startSnapSync() { }
 }
