@@ -18,11 +18,9 @@
 
 package org.ethereum.rpc.Simples;
 
-import co.rsk.config.RskSystemProperties;
-import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.Status;
-import co.rsk.net.messages.MessageWithId;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.net.simples.SimpleNodeChannel;
 import org.ethereum.core.Block;
@@ -30,16 +28,12 @@ import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.ChannelManagerImpl;
-import org.ethereum.sync.SyncPool;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * Created by Ruben on 09/06/2016.
