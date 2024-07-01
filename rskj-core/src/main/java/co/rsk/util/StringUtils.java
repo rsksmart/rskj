@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 
 public class StringUtils {
 
-    private static final int DEFAULT_MAX_LEN = 32;
+    private static final int DEFAULT_MAX_LEN = 64;
 
     public static String trim(@Nullable String src) {
         return trim(src, DEFAULT_MAX_LEN);
