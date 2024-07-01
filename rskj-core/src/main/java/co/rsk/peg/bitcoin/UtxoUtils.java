@@ -40,7 +40,7 @@ public final class UtxoUtils {
             } catch (Exception ex) {
                 throw new InvalidOutpointValueException(
                     String.format("Invalid value with invalid VarInt format: %s",
-                        Bytes.of(encodedOutpointValues).toPrintableString().toUpperCase()
+                        Bytes.toPrintableString(encodedOutpointValues).toUpperCase()
                     ),
                     ex
                 );

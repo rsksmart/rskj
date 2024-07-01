@@ -58,13 +58,23 @@ public interface Bytes extends BytesSlice {
     /**
      * A helper method for printing "nullable" byte arrays.
      *
-     * @return {@code null}, if {@code byteArray} is {@code null}. Otherwise - {@code Bytes.of(byteArray).toPrintableString()}.
+     * @return {@code valueIfNull}, if {@code byteArray} is {@code null}. Otherwise - {@code Bytes.of(byteArray).toPrintableString()}.
      */
-    static String toPrintableString(@Nullable byte[] byteArray) {
+    static String toPrintableString(@Nullable byte[] byteArray, @Nullable String valueIfNull) {
         if (byteArray == null) {
-            return null;
+            return valueIfNull;
         }
         return of(byteArray).toPrintableString();
+    }
+
+    /**
+     * A helper method for printing "nullable" byte arrays.
+     *
+     * @return {@code "<null>"}, if {@code byteArray} is {@code null}. Otherwise - {@code Bytes.of(byteArray).toPrintableString()}.
+     */
+    @Nonnull
+    static String toPrintableString(@Nullable byte[] byteArray) {
+        return toPrintableString(byteArray, "<null>");
     }
 
     /**

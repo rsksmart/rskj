@@ -50,7 +50,7 @@ public interface HexPrintableBytes extends PrintableBytes {
     }
 
     default String toPrintableString(@Nonnull Formatter<HexPrintableBytes> formatter) {
-        return formatter.toFormattedString(this, 0, length());
+        return toPrintableString(formatter, 0, length());
     }
 
     @Override
