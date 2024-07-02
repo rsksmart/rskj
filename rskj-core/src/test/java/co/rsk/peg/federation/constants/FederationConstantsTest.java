@@ -207,7 +207,7 @@ class FederationConstantsTest {
             "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
             "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
             "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
-        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());;
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         List<ECKey> fedChangeAuthorizedKeysRegtest = Stream.of(
             "04dde17c5fab31ffc53c91c2390136c325bb8690dc135b0840075dd7b86910d8ab9e88baad0c32f3eea8833446a6bc5ff1cd2efa99ecb17801bcb65fc16fc7d991",
@@ -215,7 +215,7 @@ class FederationConstantsTest {
             "045d4dedf9c69ab3ea139d0f0da0ad00160b7663d01ce7a6155cd44a3567d360112b0480ab6f31cac7345b5f64862205ea7ccf555fcf218f87fa0d801008fecb61",
             "04709f002ac4642b6a87ea0a9dc76eeaa93f71b3185985817ec1827eae34b46b5d869320efb5c5cbe2a5c13f96463fe0210710b53352a4314188daffe07bd54154",
             "04aff62315e9c18004392a5d9e39496ff5794b2d9f43ab4e8ade64740d7fdfe896969be859b43f26ef5aa4b5a0d11808277b4abfa1a07cc39f2839b89cc2bc6b4c"
-        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());;
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         return Stream.of(
             Arguments.of(mainnet, fedChangeAuthorizedKeysMainnet),
