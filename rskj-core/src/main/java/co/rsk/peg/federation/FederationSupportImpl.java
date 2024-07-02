@@ -111,11 +111,11 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     private Federation getGenesisFederation() {
-        long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
+        long genesisFederationCreationBlockNumber = 1L;
         List<BtcECKey> genesisFederationPublicKeys = constants.getGenesisFederationPublicKeys();
         List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
         Instant genesisFederationCreationTime = constants.getGenesisFederationCreationTime();
-        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, GENESIS_FEDERATION_CREATION_BLOCK_NUMBER, constants.getBtcParams());
+        FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, genesisFederationCreationBlockNumber, constants.getBtcParams());
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 

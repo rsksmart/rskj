@@ -60,8 +60,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -158,6 +157,58 @@ class BridgeSupportTest {
         assertEquals(FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode(), result);
     }
 
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("federation support tests")
+    class FederationSupportTests {
+        FederationSupport federationSupport;
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+        BridgeSupportBuilder bridgeSupportBuilder = new BridgeSupportBuilder();
+        BridgeSupport bridgeSupport;
+
+        Federation federation = new P2shErpFederationBuilder().build();
+
+        @BeforeEach
+        void setUp() {
+            federationSupport = mock(FederationSupportImpl.class);
+
+            bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeMainnetConstants)
+            .withFederationSupport(federationSupport)
+            .build();
+        }
+
+        @Test
+            void getActiveFederation() {
+            when(federationSupport.getActiveFederation()).thenReturn(federation);
+            assertThat(bridgeSupport.getActiveFederation(), is(federation));
+        }
+
+        @Test
+        void getActiveFederationRedeemScript() {
+            Optional<Script> redeemScript = Optional.ofNullable(federation.getRedeemScript());
+
+            when(federationSupport.getActiveFederationRedeemScript()).thenReturn(redeemScript);
+            assertThat(bridgeSupport.getActiveFederationRedeemScript(), is(redeemScript));
+        }
+
+        @Test
+        void getActiveFederationAddress() {
+            Address address = federation.getAddress();
+
+            when(federationSupport.getActiveFederationAddress()).thenReturn(address);
+            assertThat(bridgeSupport.getActiveFederationAddress(), is(address));
+        }
+
+        @Test
+        void getActiveFederationSize() {
+            int size = federation.getSize();
+
+            when(federationSupport.getActiveFederationSize()).thenReturn(size);
+            assertThat(bridgeSupport.getActiveFederationSize(), is(size));
+        }
+    }
+
     @Test
     void getLockingCap() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -194,32 +245,6 @@ class BridgeSupportTest {
             .build();
 
         assertEquals(Optional.empty(), bridgeSupport.getActiveFederationRedeemScript());
-    }
-
-    @Test
-    void getActivePowpegRedeemScript_after_RSKIP293_activation() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-
-        FederationSupport federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
-            .withActivations(activations)
-            .build();
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
-            .withActivations(activations)
-            .withFederationSupport(federationSupport)
-            .build();
-
-        Script federationRedeemScript = genesisFederation.getRedeemScript();
-
-        assertTrue(bridgeSupport.getActiveFederationRedeemScript().isPresent());
-        assertEquals(
-            federationRedeemScript,
-            bridgeSupport.getActiveFederationRedeemScript().get()
-        );
     }
 
     @Test
