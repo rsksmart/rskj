@@ -244,6 +244,15 @@ class BridgeSupportTest {
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
+            bridgeSupport = bridgeSupportBuilder
+                .withWhitelistSupport(whitelistSupport)
+                .withProvider(provider)
+                .withRepository(rskRepository)
+                .withBridgeConstants(bridgeConstantsMainNet)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activations)
+                .build();
+
             // Set of variables to be used mocking
             BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
             StoredBlock storedBlock = mock(StoredBlock.class);
