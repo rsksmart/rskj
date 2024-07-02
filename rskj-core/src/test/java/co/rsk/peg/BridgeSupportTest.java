@@ -28,6 +28,7 @@ import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
+import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
@@ -36,6 +37,7 @@ import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegininstructions.*;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -472,6 +474,9 @@ class BridgeSupportTest {
 
         mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + bridgeConstantsRegtest.getBtc2RskMinimumAcceptableConfirmations(), height);
 
+        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstantsRegtest.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
+        when(mockBridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(mockBridgeStorageProvider)
@@ -480,6 +485,7 @@ class BridgeSupportTest {
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
             .withExecutionBlock(executionBlock)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withFeePerKbSupport(feePerKbSupport)
             .withActivations(activations)
             .build();
 
@@ -546,9 +552,15 @@ class BridgeSupportTest {
             height
         );
 
+        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstantsRegtest.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
+        when(mockBridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
+        Transaction rskTx = mock(Transaction.class);
+        when(rskTx.getHash()).thenReturn(Keccak256.ZERO_HASH);
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(mockBridgeStorageProvider)
+            .withFeePerKbSupport(feePerKbSupport)
             .withEventLogger(mockedEventLogger)
             .withBtcLockSenderProvider(new BtcLockSenderProvider())
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
@@ -557,7 +569,7 @@ class BridgeSupportTest {
             .withActivations(activations)
             .build();
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(rskTx, tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
         verify(mockedEventLogger, atLeastOnce()).logLockBtc(any(RskAddress.class), any(BtcTransaction.class), any(Address.class), any(Coin.class));
     }
     @Test
@@ -744,9 +756,15 @@ class BridgeSupportTest {
 
         mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + bridgeConstantsRegtest.getBtc2RskMinimumAcceptableConfirmations(), height);
 
+        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstantsRegtest.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
+        when(mockBridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
+        Transaction rskTx = mock(Transaction.class);
+        when(rskTx.getHash()).thenReturn(Keccak256.ZERO_HASH);
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(mockBridgeStorageProvider)
+            .withFeePerKbSupport(feePerKbSupport)
             .withEventLogger(mockedEventLogger)
             .withBtcLockSenderProvider(new BtcLockSenderProvider())
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
@@ -755,7 +773,7 @@ class BridgeSupportTest {
             .withActivations(activations)
             .build();
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(rskTx, tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
         verify(mockedEventLogger, atLeastOnce()).logLockBtc(any(RskAddress.class), any(BtcTransaction.class), any(Address.class), any(Coin.class));
         verify(mockedEventLogger, never()).logPeginBtc(any(RskAddress.class), any(BtcTransaction.class), any(Coin.class), anyInt());
@@ -808,6 +826,11 @@ class BridgeSupportTest {
         mockChainOfStoredBlocks(btcBlockStore, btcBlock,
             height + bridgeConstantsRegtest.getBtc2RskMinimumAcceptableConfirmations(), height);
 
+        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstantsRegtest.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
+        when(mockBridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
+        Transaction rskTx = mock(Transaction.class);
+        when(rskTx.getHash()).thenReturn(Keccak256.ZERO_HASH);
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(mockBridgeStorageProvider)
@@ -816,10 +839,11 @@ class BridgeSupportTest {
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
             .withExecutionBlock(executionBlock)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withFeePerKbSupport(feePerKbSupport)
             .withActivations(activations)
             .build();
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(rskTx, tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
         verify(mockedEventLogger, never()).logLockBtc(any(RskAddress.class), any(BtcTransaction.class), any(Address.class), any(Coin.class));
         verify(mockedEventLogger, atLeastOnce()).logPeginBtc(any(RskAddress.class), any(BtcTransaction.class), any(Coin.class), anyInt());
@@ -1276,6 +1300,9 @@ class BridgeSupportTest {
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(666L);
 
+        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstantsRegtest.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
+
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(provider)
@@ -1283,6 +1310,7 @@ class BridgeSupportTest {
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
             .withExecutionBlock(executionBlock)
             .withBtcBlockStoreFactory(mockFactory)
+            .withFeePerKbSupport(feePerKbSupport)
             .withActivations(mockedActivations)
             .build();
 
@@ -2587,6 +2615,8 @@ class BridgeSupportTest {
         // Assert
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(amountToLock);
 
+        whitelist.consume(btcAddress);
+
         assertThat(whitelist.isWhitelisted(btcAddress), is(false));
         Assertions.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
         Assertions.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
@@ -2775,6 +2805,8 @@ class BridgeSupportTest {
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(5, 0));
 
+        whitelist.consume(btcAddress);
+
         assertThat(whitelist.isWhitelisted(btcAddress), is(false));
         Assertions.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
         Assertions.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
@@ -2944,6 +2976,8 @@ class BridgeSupportTest {
         );
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(5, 0));
+
+        whitelist.consume(btcAddress);
 
         assertThat(whitelist.isWhitelisted(btcAddress), is(false));
         Assertions.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
@@ -7006,6 +7040,7 @@ class BridgeSupportTest {
         bridgeSupport.registerBtcTransaction(rskTx, tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
         bridgeSupport.save();
 
+        whitelist.consume(address);
         // If the address is no longer whitelisted, it means it was consumed, whether the lock was rejected by lockingCap or not
         assertThat(whitelist.isWhitelisted(address), is(false));
 
@@ -7051,7 +7086,7 @@ class BridgeSupportTest {
         if (blockStoreFactory == null) {
             blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
         }
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstantsRegtest.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
         return new BridgeSupport(
             constants,
             provider,
