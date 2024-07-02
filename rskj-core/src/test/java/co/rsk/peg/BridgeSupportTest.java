@@ -125,9 +125,9 @@ class BridgeSupportTest {
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         bridgeSupportBuilder = new BridgeSupportBuilder();
-        whitelistSupport = mock(WhitelistSupport.class);
         StorageAccessor inMemoryStorageAccessor = new InMemoryStorage();
         whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorageAccessor);
+        whitelistSupport = new WhitelistSupportImpl(WhitelistMainNetConstants.getInstance(), whitelistStorageProvider, mock(ActivationConfig.ForBlock.class), signatureCache);
     }
 
     @Test
@@ -7127,7 +7127,6 @@ class BridgeSupportTest {
         whitelist.put(address, new OneOffWhiteListEntry(address, lockValue));
         // The address is whitelisted
         assertThat(whitelist.isWhitelisted(address), is(true));
-        WhitelistSupport whitelistSupport = new WhitelistSupportImpl(WhitelistMainNetConstants.getInstance(), whitelistStorageProvider, activations, signatureCache);
 
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
