@@ -7,7 +7,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
 import java.time.ZonedDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,11 +37,11 @@ public class FederationMainNetConstants extends FederationConstants {
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
         genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
 
-        List<ECKey> federationChangeAuthorizedKeys =  Arrays.stream(new String[]{
+        List<ECKey> federationChangeAuthorizedKeys =  Stream.of(
             "04e593d4cde25137b13f19462bc4c02e97ba2ed5a3860813497abf9b4eeb9259e37e0384d12cfd2d9a7a0ba606b31ee34317a9d7f4a8591c6bcf5dfd5563248b2f",
             "045e7f2563e73d44d149c19cffca36e1898597dc759d76166b8104103c0d3f351a8a48e3a224544e9a649ad8ebcfdbd6c39744ddb85925f19c7e3fd48f07fc1c06",
             "0441945e4e272936106f6200b36162f3510e8083535c15e175ac82deaf828da955b85fd72b7534f2a34cedfb45fa63b728cc696a2bd3c5d39ec799ec2618e9aa9f"
-        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
         federationActivationAgeLegacy = 18500L;
@@ -52,13 +51,12 @@ public class FederationMainNetConstants extends FederationConstants {
         fundsMigrationAgeSinceActivationEnd = 10585L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 172_800L; // 60 days, considering 1 block every 30 seconds
 
-        String erpFederator0StringPubKey = "0257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d4";
-        String erpFederator1StringPubKey = "03c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f9";
-        String erpFederator2StringPubKey = "03cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b3";
-        String erpFederator3StringPubKey = "02370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80";
-        erpFedPubKeysList = Arrays.stream(new String[]
-            {erpFederator0StringPubKey, erpFederator1StringPubKey, erpFederator2StringPubKey, erpFederator3StringPubKey})
-            .map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+        erpFedPubKeysList = Stream.of(
+            "0257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d4",
+            "03c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f9",
+            "03cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b3",
+            "02370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80"
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
         erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
 
         oldFederationAddress = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
