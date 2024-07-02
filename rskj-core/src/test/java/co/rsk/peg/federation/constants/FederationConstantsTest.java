@@ -131,99 +131,57 @@ class FederationConstantsTest {
         );
     }
 
-    @ParameterizedTest()
-    @MethodSource("fundsMigrationAgeSinceActivationEndArgsProvider")
-    void test_getFundsMigrationAgeSinceActivationEnd(FederationConstants federationConstants, boolean hasSameValueForBothFields) {
-        // Arrange
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-
-        // Act
-        long fundsMigrationAgeSinceActivationEnd = federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
-
-        // assert
-        assertEquals(fundsMigrationAgeSinceActivationEnd, federationConstants.fundsMigrationAgeSinceActivationEnd);
-        assertEquals(hasSameValueForBothFields,  fundsMigrationAgeSinceActivationEnd == federationConstants.specialCaseFundsMigrationAgeSinceActivationEnd);
+    @ParameterizedTest
+    @MethodSource("fundsMigrationAgeSinceActivationBeginArgs")
+    void getFundsMigrationAgeSinceActivationBegin(FederationConstants constants, long expectedFundsMigrationAge) {
+        assertEquals(expectedFundsMigrationAge, constants.getFundsMigrationAgeSinceActivationBegin());
     }
 
-    @ParameterizedTest()
-    @MethodSource("fundsMigrationAgeSinceActivationEndArgsProvider")
-    void test_getFundsMigrationAgeSinceActivationEnd_post_RSKIP357(FederationConstants federationConstants, boolean hasSameValueForBothMigrationAges) {
-        // Arrange
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+    private static Stream<Arguments> fundsMigrationAgeSinceActivationBeginArgs() {
+        long fundsMigrationAgeSinceActivationBeginMainnet = 0L;
+        long fundsMigrationAgeSinceActivationBeginTestnet = 60L;
+        long fundsMigrationAgeSinceActivationBeginRegtest = 15L;
 
-        // Act
-        long fundsMigrationAgeSinceActivationEnd = federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
-
-        // assert
-        assertEquals(fundsMigrationAgeSinceActivationEnd, federationConstants.specialCaseFundsMigrationAgeSinceActivationEnd);
-        assertEquals(hasSameValueForBothMigrationAges,  fundsMigrationAgeSinceActivationEnd == federationConstants.fundsMigrationAgeSinceActivationEnd);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("fundsMigrationAgeSinceActivationEndArgsProvider")
-    void test_getFundsMigrationAgeSinceActivationEnd_post_RSKIP374(FederationConstants federationConstants, boolean hasSameValueForBothMigrationAges) {
-        // Arrange
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
-
-        // Act
-        long fundsMigrationAgeSinceActivationEnd = federationConstants.getFundsMigrationAgeSinceActivationEnd(activations);
-
-        // assert
-        assertEquals(fundsMigrationAgeSinceActivationEnd, federationConstants.fundsMigrationAgeSinceActivationEnd);
-        assertEquals(hasSameValueForBothMigrationAges,  fundsMigrationAgeSinceActivationEnd == federationConstants.specialCaseFundsMigrationAgeSinceActivationEnd);
-    }
-
-    private static Stream<Arguments> fundsMigrationAgeSinceActivationEndArgsProvider() {
         return Stream.of(
-            Arguments.of(FederationMainNetConstants.getInstance(), false),
-            Arguments.of(FederationTestNetConstants.getInstance(), true),
-            Arguments.of((new BridgeRegTestConstants()).getFederationConstants(), true)
-        );
-    }
-
-    @ParameterizedTest()
-    @MethodSource("federationActivationAgeArgProvider")
-    void test_getFederationActivationAge(FederationConstants federationConstants, boolean isRSKIP383Active) {
-        // Arrange
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(isRSKIP383Active);
-        // Act
-        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
-
-        // assert
-        if (isRSKIP383Active){
-            assertEquals(federationConstants.federationActivationAge, federationActivationAge);
-        } else {
-            assertEquals(federationConstants.federationActivationAgeLegacy, federationActivationAge);
-        }
-    }
-
-    private static Stream<Arguments> federationActivationAgeArgProvider() {
-        return Stream.of(
-            Arguments.of(FederationMainNetConstants.getInstance(), false),
-            Arguments.of(FederationTestNetConstants.getInstance(), false),
-            Arguments.of((new BridgeRegTestConstants()).getFederationConstants(), false),
-            Arguments.of(FederationMainNetConstants.getInstance(), true),
-            Arguments.of(FederationTestNetConstants.getInstance(), true),
-            Arguments.of((new BridgeRegTestConstants()).getFederationConstants(), true)
+            Arguments.of(mainnet, fundsMigrationAgeSinceActivationBeginMainnet),
+            Arguments.of(testnet, fundsMigrationAgeSinceActivationBeginTestnet),
+            Arguments.of(regtest, fundsMigrationAgeSinceActivationBeginRegtest)
         );
     }
 
     @ParameterizedTest
-    @MethodSource("getGenesisFederationCreationTimeTestProvider")
-    void getGenesisFederationCreationTimeTest(FederationConstants federationConstants, Instant expectedGenesisFederationCreationTime){
-        Instant actualGenesisFederationCreationTime = federationConstants.getGenesisFederationCreationTime();
-        assertEquals(expectedGenesisFederationCreationTime, actualGenesisFederationCreationTime);
+    @MethodSource("fundsMigrationAgeSinceActivationEndAndActivationsArgs")
+    void getFundsMigrationAgeSinceActivationEnd(FederationConstants federationConstants, ActivationConfig.ForBlock activations, long expectedActivationAge) {
+        assertEquals(expectedActivationAge, federationConstants.getFundsMigrationAgeSinceActivationEnd(activations));
     }
 
-    private static Stream<Arguments> getGenesisFederationCreationTimeTestProvider() {
+    private static Stream<Arguments> fundsMigrationAgeSinceActivationEndAndActivationsArgs() {
+        // special case is just different for mainnet,
+        // between RSKIPS 357 and 374
+        long specialCaseFundsMigrationAgeSinceActivationEndMainnet = 172_800L;
+        long generalCaseFundsMigrationAgeSinceActivationEndMainnet = 10585L;
+        long fundsMigrationAgeSinceActivationEndTestnet = 900L;
+        long fundsMigrationAgeSinceActivationEndRegtest = 150L;
+        ActivationConfig.ForBlock activationsForSpecialCase = mock(ActivationConfig.ForBlock.class);
+        when(activationsForSpecialCase.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activationsForSpecialCase.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+
+        // before RSKIP 357 or after 374, value is the same for all networks
+        ActivationConfig.ForBlock activationsForGeneralCase1 = mock(ActivationConfig.ForBlock.class);
+        when(activationsForGeneralCase1.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
+        ActivationConfig.ForBlock activationsForGeneralCase2 = mock(ActivationConfig.ForBlock.class);
+        when(activationsForGeneralCase2.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+
         return Stream.of(
-            Arguments.of(BridgeMainNetConstants.getInstance().getFederationConstants(), Instant.ofEpochMilli(1514948400L)),
-            Arguments.of(BridgeTestNetConstants.getInstance().getFederationConstants(), Instant.ofEpochMilli(1538967600L)),
-            Arguments.of((new BridgeRegTestConstants()).getFederationConstants(), Instant.ofEpochSecond(1451606400L))
+            Arguments.of(mainnet, activationsForGeneralCase1, generalCaseFundsMigrationAgeSinceActivationEndMainnet),
+            Arguments.of(testnet, activationsForGeneralCase1, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(regtest, activationsForGeneralCase1, fundsMigrationAgeSinceActivationEndRegtest),
+            Arguments.of(mainnet, activationsForSpecialCase, specialCaseFundsMigrationAgeSinceActivationEndMainnet),
+            Arguments.of(testnet, activationsForSpecialCase, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(regtest, activationsForSpecialCase, fundsMigrationAgeSinceActivationEndRegtest),
+            Arguments.of(mainnet, activationsForGeneralCase2, generalCaseFundsMigrationAgeSinceActivationEndMainnet),
+            Arguments.of(testnet, activationsForGeneralCase2, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(regtest, activationsForGeneralCase2, fundsMigrationAgeSinceActivationEndRegtest)
         );
     }
 }
