@@ -63,6 +63,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -157,133 +159,138 @@ class BridgeSupportTest {
         assertEquals(FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode(), result);
     }
 
-    @Test
-    void getLockWhitelistSize() {
-        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        when(whitelistSupport.getLockWhitelistSize()).thenReturn(10);
+    @Nested
+    @Tag("Whitelist")
+    class WhitelistTest {
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withWhitelistSupport(whitelistSupport)
-            .build();
+        @Test
+        void getLockWhitelistSize() {
+            WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+            when(whitelistSupport.getLockWhitelistSize()).thenReturn(10);
 
-        assertEquals(10, bridgeSupport.getLockWhitelistSize());
-    }
+            BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withWhitelistSupport(whitelistSupport)
+                .build();
 
-    @Test
-    void getLockWhitelistEntryByIndex() {
-        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
-        when(whitelistSupport.getLockWhitelistEntryByIndex(0)).thenReturn(entry);
+            assertEquals(10, bridgeSupport.getLockWhitelistSize());
+        }
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withWhitelistSupport(whitelistSupport)
-            .build();
+        @Test
+        void getLockWhitelistEntryByIndex() {
+            WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+            LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
+            when(whitelistSupport.getLockWhitelistEntryByIndex(0)).thenReturn(entry);
 
-        assertEquals(entry, bridgeSupport.getLockWhitelistEntryByIndex(0));
-    }
+            BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withWhitelistSupport(whitelistSupport)
+                .build();
 
-    @Test
-    void getLockWhitelistEntryByAddress() {
-        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
-        when(whitelistSupport.getLockWhitelistEntryByAddress("address")).thenReturn(entry);
+            assertEquals(entry, bridgeSupport.getLockWhitelistEntryByIndex(0));
+        }
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withWhitelistSupport(whitelistSupport)
-            .build();
+        @Test
+        void getLockWhitelistEntryByAddress() {
+            WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+            LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
+            when(whitelistSupport.getLockWhitelistEntryByAddress("address")).thenReturn(entry);
 
-        assertEquals(entry, bridgeSupport.getLockWhitelistEntryByAddress("address"));
-    }
+            BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withWhitelistSupport(whitelistSupport)
+                .build();
 
-    @Test
-    void addOneOffLockWhitelistAddress() {
-        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        Transaction tx = mock(Transaction.class);
-        String address = "address";
-        BigInteger maxTransferValue = BigInteger.ONE;
-        when(whitelistSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+            assertEquals(entry, bridgeSupport.getLockWhitelistEntryByAddress("address"));
+        }
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withWhitelistSupport(whitelistSupport)
-            .build();
+        @Test
+        void addOneOffLockWhitelistAddress() {
+            WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+            Transaction tx = mock(Transaction.class);
+            String address = "address";
+            BigInteger maxTransferValue = BigInteger.ONE;
+            when(whitelistSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
-        int result = bridgeSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue);
+            BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withWhitelistSupport(whitelistSupport)
+                .build();
 
-        assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
-    }
+            int result = bridgeSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue);
 
-    @Test
-    void addUnlimitedLockWhitelistAddress() {
-        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        Transaction tx = mock(Transaction.class);
-        String address = "address";
-        when(whitelistSupport.addUnlimitedLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+            assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+        }
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withWhitelistSupport(whitelistSupport)
-            .build();
+        @Test
+        void addUnlimitedLockWhitelistAddress() {
+            WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+            Transaction tx = mock(Transaction.class);
+            String address = "address";
+            when(whitelistSupport.addUnlimitedLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
-        int result = bridgeSupport.addUnlimitedLockWhitelistAddress(tx, address);
+            BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withWhitelistSupport(whitelistSupport)
+                .build();
 
-        assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
-    }
+            int result = bridgeSupport.addUnlimitedLockWhitelistAddress(tx, address);
 
-    @Test
-    void removeLockWhitelistAddress() {
-        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        Transaction tx = mock(Transaction.class);
-        String address = "address";
-        when(whitelistSupport.removeLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+            assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+        }
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withWhitelistSupport(whitelistSupport)
-            .build();
+        @Test
+        void removeLockWhitelistAddress() {
+            WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+            Transaction tx = mock(Transaction.class);
+            String address = "address";
+            when(whitelistSupport.removeLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
-        int result = bridgeSupport.removeLockWhitelistAddress(tx, address);
+            BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withWhitelistSupport(whitelistSupport)
+                .build();
 
-        assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
-    }
+            int result = bridgeSupport.removeLockWhitelistAddress(tx, address);
 
-    @Test
-    void setLockWhitelistDisableBlockDelay() throws BlockStoreException, IOException {
-        // Set of Variables to be use in setLockWhitelistDisableBlockDelay
-        WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
-        BigInteger disableBlockDelayBI = BigInteger.ONE;
-        when(whitelistSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI, 0)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+            assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+        }
 
-        // Set of variables to be use in bridgeSupportBuilder
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        Repository rskRepository = mock(Repository.class);
-        BridgeConstants bridgeConstantsMainNet = BridgeMainNetConstants.getInstance();
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        @Test
+        void setLockWhitelistDisableBlockDelay() throws BlockStoreException, IOException {
+            // Set of Variables to be use in setLockWhitelistDisableBlockDelay
+            WhitelistSupport whitelistSupport = mock(WhitelistSupportImpl.class);
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
+            BigInteger disableBlockDelayBI = BigInteger.ONE;
+            when(whitelistSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI, 0)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withWhitelistSupport(whitelistSupport)
-            .withProvider(provider)
-            .withRepository(rskRepository)
-            .withBridgeConstants(bridgeConstantsMainNet)
-            .withBtcBlockStoreFactory(btcBlockStoreFactory)
-            .withActivations(activations)
-            .build();
+            // Set of variables to be use in bridgeSupportBuilder
+            BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+            Repository rskRepository = mock(Repository.class);
+            BridgeConstants bridgeConstantsMainNet = BridgeMainNetConstants.getInstance();
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
+            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
-        // Set of variables to be used mocking
-        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        StoredBlock storedBlock = mock(StoredBlock.class);
-        BtcBlock btcBlock = mock(BtcBlock.class);
-        NetworkParameters btcParams = bridgeConstantsMainNet.getBtcParams();
-        BtcBlock genesisBtcBlock = btcParams.getGenesisBlock();
-        Sha256Hash genesisBtcBlockHash = genesisBtcBlock.getHash();
+            BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withWhitelistSupport(whitelistSupport)
+                .withProvider(provider)
+                .withRepository(rskRepository)
+                .withBridgeConstants(bridgeConstantsMainNet)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activations)
+                .build();
 
-        when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
-        when(storedBlock.getHeader()).thenReturn(btcBlock);
-        when(btcBlock.getHash()).thenReturn(genesisBtcBlockHash);
-        when(btcBlockStoreFactory.newInstance(rskRepository, bridgeConstantsMainNet, provider, activations)).thenReturn(btcBlockStore);
+            // Set of variables to be used mocking
+            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+            StoredBlock storedBlock = mock(StoredBlock.class);
+            BtcBlock btcBlock = mock(BtcBlock.class);
+            NetworkParameters btcParams = bridgeConstantsMainNet.getBtcParams();
+            BtcBlock genesisBtcBlock = btcParams.getGenesisBlock();
+            Sha256Hash genesisBtcBlockHash = genesisBtcBlock.getHash();
 
-        int result = bridgeSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI);
+            when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
+            when(storedBlock.getHeader()).thenReturn(btcBlock);
+            when(btcBlock.getHash()).thenReturn(genesisBtcBlockHash);
+            when(btcBlockStoreFactory.newInstance(rskRepository, bridgeConstantsMainNet, provider, activations)).thenReturn(btcBlockStore);
 
-        assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+            int result = bridgeSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI);
+
+            assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+        }
     }
 
     @Test
