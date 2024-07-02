@@ -50,6 +50,7 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.WhitelistCaller;
+import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import co.rsk.peg.whitelist.WhitelistResponseCode;
 import co.rsk.peg.whitelist.WhitelistStorageProvider;
 import co.rsk.peg.whitelist.WhitelistStorageProviderImpl;
@@ -7126,6 +7127,7 @@ class BridgeSupportTest {
         whitelist.put(address, new OneOffWhiteListEntry(address, lockValue));
         // The address is whitelisted
         assertThat(whitelist.isWhitelisted(address), is(true));
+        WhitelistSupport whitelistSupport = new WhitelistSupportImpl(WhitelistMainNetConstants.getInstance(), whitelistStorageProvider, activations, signatureCache);
 
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
@@ -7141,6 +7143,7 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withSignatureCache(signatureCache)
             .withFeePerKbSupport(feePerKbSupport)
+            .withWhitelistSupport(whitelistSupport)
             .build();
 
         // Simulate blockchain
