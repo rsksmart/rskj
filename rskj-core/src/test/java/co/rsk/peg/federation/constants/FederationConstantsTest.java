@@ -52,21 +52,21 @@ class FederationConstantsTest {
     private static Stream<Arguments> genesisFedPublicKeysArgs() {
         List<BtcECKey> genesisFederationPublicKeysMainnet = Stream.of(
             "03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2",
-                "027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344",
-                "0355a2e9bf100c00fc0a214afd1bf272647c7824eb9cb055480962f0c382596a70",
-                "02566d5ded7c7db1aa7ee4ef6f76989fb42527fcfdcddcd447d6793b7d869e46f7",
-                "0294c817150f78607566e961b3c71df53a22022a80acbb982f83c0c8baac040adc",
-                "0372cd46831f3b6afd4c044d160b7667e8ebf659d6cb51a825a3104df6ee0638c6",
-                "0340df69f28d69eef60845da7d81ff60a9060d4da35c767f017b0dd4e20448fb44",
-                "02ac1901b6fba2c1dbd47d894d2bd76c8ba1d296d65f6ab47f1c6b22afb53e73eb",
-                "031aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d26",
-                "0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea",
-                "02550cc87fa9061162b1dd395a16662529c9d8094c0feca17905a3244713d65fe8",
-                "02481f02b7140acbf3fcdd9f72cf9a7d9484d8125e6df7c9451cfa55ba3b077265",
-                "03f909ae15558c70cc751aff9b1f495199c325b13a9e5b934fd6299cd30ec50be8",
-                "02c6018fcbd3e89f3cf9c7f48b3232ea3638eb8bf217e59ee290f5f0cfb2fb9259",
-                "03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"
-            ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+            "027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344",
+            "0355a2e9bf100c00fc0a214afd1bf272647c7824eb9cb055480962f0c382596a70",
+            "02566d5ded7c7db1aa7ee4ef6f76989fb42527fcfdcddcd447d6793b7d869e46f7",
+            "0294c817150f78607566e961b3c71df53a22022a80acbb982f83c0c8baac040adc",
+            "0372cd46831f3b6afd4c044d160b7667e8ebf659d6cb51a825a3104df6ee0638c6",
+            "0340df69f28d69eef60845da7d81ff60a9060d4da35c767f017b0dd4e20448fb44",
+            "02ac1901b6fba2c1dbd47d894d2bd76c8ba1d296d65f6ab47f1c6b22afb53e73eb",
+            "031aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d26",
+            "0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea",
+            "02550cc87fa9061162b1dd395a16662529c9d8094c0feca17905a3244713d65fe8",
+            "02481f02b7140acbf3fcdd9f72cf9a7d9484d8125e6df7c9451cfa55ba3b077265",
+            "03f909ae15558c70cc751aff9b1f495199c325b13a9e5b934fd6299cd30ec50be8",
+            "02c6018fcbd3e89f3cf9c7f48b3232ea3638eb8bf217e59ee290f5f0cfb2fb9259",
+            "03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         List<BtcECKey> genesisFederationPublicKeysTestnet = Stream.of(
             "039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9",
@@ -160,40 +160,43 @@ class FederationConstantsTest {
     }
 
     private static Stream<Arguments> fundsMigrationAgeSinceActivationEndAndActivationsArgs() {
-        // special case is just different for mainnet,
-        // between RSKIPS 357 and 374
-        long specialCaseFundsMigrationAgeSinceActivationEndMainnet = 172_800L;
-        long generalCaseFundsMigrationAgeSinceActivationEndMainnet = 10585L;
+        long fundsMigrationAgeSinceActivationEndMainnet = 10585L;
         long fundsMigrationAgeSinceActivationEndTestnet = 900L;
         long fundsMigrationAgeSinceActivationEndRegtest = 150L;
-        ActivationConfig.ForBlock activationsForSpecialCase = mock(ActivationConfig.ForBlock.class);
-        when(activationsForSpecialCase.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
-        when(activationsForSpecialCase.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
+        
+        // special case is just different for mainnet,
+        // between RSKIPs 357 and 374
+        long specialCaseFundsMigrationAgeSinceActivationEndMainnet = 172_800L;
+        ActivationConfig.ForBlock activationsSpecialCase = mock(ActivationConfig.ForBlock.class);
+        when(activationsSpecialCase.isActive(ConsensusRule.RSKIP357)).thenReturn(true);
+        when(activationsSpecialCase.isActive(ConsensusRule.RSKIP374)).thenReturn(false);
 
         // before RSKIP 357 or after 374, value is the same for all networks
-        ActivationConfig.ForBlock activationsForGeneralCase1 = mock(ActivationConfig.ForBlock.class);
-        when(activationsForGeneralCase1.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
-        ActivationConfig.ForBlock activationsForGeneralCase2 = mock(ActivationConfig.ForBlock.class);
-        when(activationsForGeneralCase2.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
+        ActivationConfig.ForBlock activationsPreRSKIP357 = mock(ActivationConfig.ForBlock.class);
+        when(activationsPreRSKIP357.isActive(ConsensusRule.RSKIP357)).thenReturn(false);
+        ActivationConfig.ForBlock activationsPostRSKIP374 = mock(ActivationConfig.ForBlock.class);
+        when(activationsPostRSKIP374.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
 
         return Stream.of(
-            Arguments.of(mainnet, activationsForGeneralCase1, generalCaseFundsMigrationAgeSinceActivationEndMainnet),
-            Arguments.of(testnet, activationsForGeneralCase1, fundsMigrationAgeSinceActivationEndTestnet),
-            Arguments.of(regtest, activationsForGeneralCase1, fundsMigrationAgeSinceActivationEndRegtest),
-            Arguments.of(mainnet, activationsForSpecialCase, specialCaseFundsMigrationAgeSinceActivationEndMainnet),
-            Arguments.of(testnet, activationsForSpecialCase, fundsMigrationAgeSinceActivationEndTestnet),
-            Arguments.of(regtest, activationsForSpecialCase, fundsMigrationAgeSinceActivationEndRegtest),
-            Arguments.of(mainnet, activationsForGeneralCase2, generalCaseFundsMigrationAgeSinceActivationEndMainnet),
-            Arguments.of(testnet, activationsForGeneralCase2, fundsMigrationAgeSinceActivationEndTestnet),
-            Arguments.of(regtest, activationsForGeneralCase2, fundsMigrationAgeSinceActivationEndRegtest)
+            Arguments.of(mainnet, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndMainnet),
+            Arguments.of(testnet, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(regtest, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndRegtest),
+            Arguments.of(mainnet, activationsSpecialCase, specialCaseFundsMigrationAgeSinceActivationEndMainnet),
+            Arguments.of(testnet, activationsSpecialCase, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(regtest, activationsSpecialCase, fundsMigrationAgeSinceActivationEndRegtest),
+            Arguments.of(mainnet, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndMainnet),
+            Arguments.of(testnet, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(regtest, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndRegtest)
         );
     }
 
     @ParameterizedTest
     @MethodSource("fedChangeAuthorizerArgs")
     void getFederationChangeAuthorizer(FederationConstants constants, List<ECKey> expectedKeys) {
-        AddressBasedAuthorizer authorizer = new AddressBasedAuthorizer(expectedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
-        assertThat(authorizer, samePropertyValuesAs(constants.getFederationChangeAuthorizer()));
+        AddressBasedAuthorizer expectedAuthorizer =
+            new AddressBasedAuthorizer(expectedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
+
+        assertThat(expectedAuthorizer, samePropertyValuesAs(constants.getFederationChangeAuthorizer()));
     }
 
     private static Stream<Arguments> fedChangeAuthorizerArgs() {
