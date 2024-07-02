@@ -1,5 +1,7 @@
 package co.rsk.peg.federation.constants;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -13,9 +15,11 @@ import java.util.stream.Stream;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.constants.*;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -151,8 +155,8 @@ class FederationConstantsTest {
 
     @ParameterizedTest
     @MethodSource("fundsMigrationAgeSinceActivationEndAndActivationsArgs")
-    void getFundsMigrationAgeSinceActivationEnd(FederationConstants federationConstants, ActivationConfig.ForBlock activations, long expectedActivationAge) {
-        assertEquals(expectedActivationAge, federationConstants.getFundsMigrationAgeSinceActivationEnd(activations));
+    void getFundsMigrationAgeSinceActivationEnd(FederationConstants constants, ActivationConfig.ForBlock activations, long expectedActivationAge) {
+        assertEquals(expectedActivationAge, constants.getFundsMigrationAgeSinceActivationEnd(activations));
     }
 
     private static Stream<Arguments> fundsMigrationAgeSinceActivationEndAndActivationsArgs() {
@@ -182,6 +186,112 @@ class FederationConstantsTest {
             Arguments.of(mainnet, activationsForGeneralCase2, generalCaseFundsMigrationAgeSinceActivationEndMainnet),
             Arguments.of(testnet, activationsForGeneralCase2, fundsMigrationAgeSinceActivationEndTestnet),
             Arguments.of(regtest, activationsForGeneralCase2, fundsMigrationAgeSinceActivationEndRegtest)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("fedChangeAuthorizerArgs")
+    void getFederationChangeAuthorizer(FederationConstants constants, List<ECKey> expectedKeys) {
+        AddressBasedAuthorizer authorizer = new AddressBasedAuthorizer(expectedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
+        assertThat(authorizer, samePropertyValuesAs(constants.getFederationChangeAuthorizer()));
+    }
+
+    private static Stream<Arguments> fedChangeAuthorizerArgs() {
+        List<ECKey> fedChangeAuthorizedKeysMainnet =  Stream.of(
+            "04e593d4cde25137b13f19462bc4c02e97ba2ed5a3860813497abf9b4eeb9259e37e0384d12cfd2d9a7a0ba606b31ee34317a9d7f4a8591c6bcf5dfd5563248b2f",
+            "045e7f2563e73d44d149c19cffca36e1898597dc759d76166b8104103c0d3f351a8a48e3a224544e9a649ad8ebcfdbd6c39744ddb85925f19c7e3fd48f07fc1c06",
+            "0441945e4e272936106f6200b36162f3510e8083535c15e175ac82deaf828da955b85fd72b7534f2a34cedfb45fa63b728cc696a2bd3c5d39ec799ec2618e9aa9f"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+        List<ECKey> fedChangeAuthorizedKeysTestnet = Stream.of(
+            "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
+            "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
+            "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());;
+
+        List<ECKey> fedChangeAuthorizedKeysRegtest = Stream.of(
+            "04dde17c5fab31ffc53c91c2390136c325bb8690dc135b0840075dd7b86910d8ab9e88baad0c32f3eea8833446a6bc5ff1cd2efa99ecb17801bcb65fc16fc7d991",
+            "04af886c67231476807e2a8eee9193878b9d94e30aa2ee469a9611d20e1e1c1b438e5044148f65e6e61bf03e9d72e597cb9cdea96d6fc044001b22099f9ec403e2",
+            "045d4dedf9c69ab3ea139d0f0da0ad00160b7663d01ce7a6155cd44a3567d360112b0480ab6f31cac7345b5f64862205ea7ccf555fcf218f87fa0d801008fecb61",
+            "04709f002ac4642b6a87ea0a9dc76eeaa93f71b3185985817ec1827eae34b46b5d869320efb5c5cbe2a5c13f96463fe0210710b53352a4314188daffe07bd54154",
+            "04aff62315e9c18004392a5d9e39496ff5794b2d9f43ab4e8ade64740d7fdfe896969be859b43f26ef5aa4b5a0d11808277b4abfa1a07cc39f2839b89cc2bc6b4c"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());;
+
+        return Stream.of(
+            Arguments.of(mainnet, fedChangeAuthorizedKeysMainnet),
+            Arguments.of(testnet, fedChangeAuthorizedKeysTestnet),
+            Arguments.of(regtest, fedChangeAuthorizedKeysRegtest)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("erpActivationDelayArgs")
+    void getErpFedActivationDelay(FederationConstants constants, long expectedActivationDelay) {
+        assertEquals(expectedActivationDelay, constants.getErpFedActivationDelay());
+    }
+
+    private static Stream<Arguments> erpActivationDelayArgs() {
+        long erpActivationDelayMainnet = 52_560;
+        long erpActivationDelayTestnet = 52_560;
+        long erpActivationDelayRegtest = 500;
+
+        return Stream.of(
+            Arguments.of(mainnet, erpActivationDelayMainnet),
+            Arguments.of(testnet, erpActivationDelayTestnet),
+            Arguments.of(regtest, erpActivationDelayRegtest)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("erpFedPubKeysArgs")
+    void getErpFedPubKeysList(FederationConstants constants, List<BtcECKey> expectedKeys) {
+        assertEquals(expectedKeys, constants.getErpFedPubKeysList());
+    }
+
+    private static Stream<Arguments> erpFedPubKeysArgs() {
+        List<BtcECKey> erpFedPubKeysMainnet = Stream.of(
+            "0257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d4",
+            "03c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f9",
+            "03cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b3",
+            "02370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80"
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+        List<BtcECKey> erpFedPubKeysTestnet = Stream.of(
+            "0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3",
+            "034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f",
+            "0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+        List<BtcECKey> erpFedPubKeysRegtest = Stream.of(
+            "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
+            "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
+            "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd",
+            "03776b1fd8f86da3c1db3d69699e8250a15877d286734ea9a6da8e9d8ad25d16c1",
+            "03ab0e2cd7ed158687fc13b88019990860cdb72b1f5777b58513312550ea1584bc"
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+        return Stream.of(
+            Arguments.of(mainnet, erpFedPubKeysMainnet),
+            Arguments.of(testnet, erpFedPubKeysTestnet),
+            Arguments.of(regtest, erpFedPubKeysRegtest)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("oldFederationAddressArgs")
+    void getOldFederationAddress(FederationConstants constants, String expectedAddress) {
+        assertEquals(expectedAddress, constants.getOldFederationAddress());
+    }
+
+    private static Stream<Arguments> oldFederationAddressArgs() {
+        String oldFederationAddressMainnet = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
+        String oldFederationAddressTestnet = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
+        String oldFederationAddressRegtest = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
+
+        return Stream.of(
+            Arguments.of(mainnet, oldFederationAddressMainnet),
+            Arguments.of(testnet, oldFederationAddressTestnet),
+            Arguments.of(regtest, oldFederationAddressRegtest)
         );
     }
 }
